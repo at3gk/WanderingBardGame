@@ -1,34 +1,35 @@
 # STATE
 
-Run counter: 1
+Run counter: 2
 
 ## Current status
-Run 0 (vision) complete. DESIGN.md and ROADMAP.md written — no code yet.
-Next run executes ROADMAP.md task 1 (scaffold Vite + Phaser 3 + TS + Vitest).
+Run 1 complete. ROADMAP.md task 1 (scaffold) done: Vite + Phaser 3 + TS +
+Vitest project boots to a blank canvas. `npm test && npm run build` green
+locally (1 sanity test; real timing-core tests land in task 2). Build
+output is 1.2 MB, well under the 5 MB budget.
+Next run executes ROADMAP.md task 2 (beat timing core, pure TS module).
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
   mechanic keeps a wandering bard walking down a procedurally-sequenced
   road; cozy, no-fail tone) and ROADMAP.md (12 tasks to v0.1, one per
   run). No code written per vision-run instructions in CLAUDE.md.
+- Run 1 (2026-07-15): Scaffolded the project — `package.json` (phaser,
+  vite, typescript, vitest), `vite.config.ts` (base `/WanderingBardGame/`),
+  `tsconfig.json`, `index.html`, `src/main.ts` booting a `Phaser.Game`
+  with one empty `RoadScene`, and a sanity Vitest test. Verified with a
+  headless Playwright smoke check against `vite preview`: canvas renders,
+  no console errors (aside from an expected missing-favicon 404).
+  PR #1 (Run 0) had merged onto `main` by this run despite the branch-
+  protection blocker logged below — the code and STATE.md disagreed, so
+  the blocker note is now cleared per CLAUDE.md ("trust the code").
+  Re-verify next run whether new PRs still hit that 405; re-log under
+  **Blocked on human** if it recurs.
 
 ## Needs human playtest
-- (none — nothing playable yet)
+- (none yet — scaffold only renders a blank colored canvas, nothing
+  interactive until task 3 wires up input)
 
 ## Blocked on human
-- **Branch protection deadlocks every PR merge.** PR #1 (Run 0, this
-  branch) has green CI, no requested changes, and auto-merge armed, but
-  GitHub rejects the merge with: `405 Repository rule violations found —
-  Required status check "Test, build, deploy" is expected.` That check
-  is the `deploy.yml` workflow, which only triggers on `push: branches:
-  [main]` / `workflow_dispatch` — it structurally never runs on a
-  `pull_request` event, so this required check can never report success
-  on any PR. Every future PR will hit the identical 405. I have no
-  branch-protection-write access via the GitHub tools available to this
-  session, so I can't fix the rule myself.
-  **Needs a human to**, in GitHub repo Settings → Branches → the `main`
-  protection rule: either (a) remove "Test, build, deploy" from required
-  status checks (the PR-facing check is `ci.yml`'s "test-and-build",
-  which did pass), or (b) add a `pull_request` trigger to `deploy.yml` (or
-  a same-named check) so it can report on PRs too. Until this is fixed,
-  no run's PR can merge and the autonomous cycle is stuck at Run 0.
+- (none currently — see Run 1 note above on the previously-logged
+  branch-protection blocker)
