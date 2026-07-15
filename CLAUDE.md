@@ -7,7 +7,7 @@ ROADMAP.md, and the git log.
 
 ## The seed
 
-Something cozy and music-driven about a wandering bard. That's all you get —
+Something cozy and music-driven about a wandering bard. You have full creative direction. That's all you get —
 the rest is yours.
 
 ## Run 0 — vision (first run only)
