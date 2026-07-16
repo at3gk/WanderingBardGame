@@ -1,31 +1,34 @@
 # STATE
 
-Run counter: 5
+Run counter: 6
 
 ## Current status
-Run 4 complete. ROADMAP.md task 4 (song meter UI) done: `RoadScene` now
-holds a `meter` value (starts at `songMeter.DEFAULT_SONG_METER_CONFIG.max`
-so the game opens already walking, per the DoD "opens directly into the
-walk") and applies `applyHit`/`applyMiss` from `core/songMeter.ts` at the
-same two points task 3 already detected hit/miss (the `handleInput` hit
-branch and the time-based miss detection in `update`). A meter bar
-(track + fill rectangle, both repositioned/resized every frame from
-`scale.width` like the hit line) renders top-center; fill width scales
-with `meter/max` and its color swaps cream-vs-muted-slate depending on
-the new `get walking()` accessor (wraps `isWalking` from the timing
-core). `walking` is the exposed value future tasks (bard sprite, road
-scroll) read — no bard sprite yet, per ROADMAP task 4 scope. `npm test
-&& npm run build` green locally (16 Vitest tests, unchanged — this task
-is Phaser wiring around already-tested pure functions, nothing new to
-unit-test per CLAUDE.md's "Vitest for all headless logic"). Verified
-manually with a headless Playwright check against `vite preview` at a
-390×844 mobile viewport: meter bar renders full at load, and after ~4s
-of no input (all beats missed) the fill visibly drains to empty with no
-rendering errors at the zero-width edge case; only console message was
-the expected missing-favicon 404 (see Run 1 note). Build output ~1.21 MB,
-same single-chunk warning as prior runs, still well under the 5 MB
-budget. Next run executes ROADMAP.md task 5 (bard sprite states: walk/idle
-switching on the `RoadScene.walking` accessor this run added).
+Run 5 complete. ROADMAP.md task 5 (bard sprite states) done: `RoadScene`
+now draws a placeholder bard as a `Phaser.GameObjects.Container` built
+from primitives (two leg rectangles, a body rectangle, a head circle —
+no image assets, consistent with every other visual in the scene so far)
+positioned below the beat lane and repositioned every frame from
+`scale.width/height` like the hit line and meter bar. `setBardAnimState`
+swaps between two Phaser tween sets keyed off the existing `walking`
+accessor (from task 4, itself wrapping `songMeter.isWalking`): walking
+swings both legs opposite-phase and pulses `scaleY` for a bounce; idle
+stops the legs and runs a slow `scaleX`/`scaleY` breathing pulse instead.
+`update()` only calls `setBardAnimState` on an actual walking-state
+transition (tracked via `bardWasWalking`), not every frame, so the
+tweens aren't restarted 60x/sec. `npm test && npm run build` green
+locally (16 Vitest tests, unchanged — this is Phaser/tween wiring around
+the already-tested `walking` boolean, nothing new to unit-test per
+CLAUDE.md's "Vitest for all headless logic"). Verified manually with a
+headless Playwright check against `vite preview` at a 390×844 mobile
+viewport: screenshotted the bard at load (walking, meter full) and again
+after ~7s of no input (meter drained, `walking` false) — sprite renders
+correctly both times with no console errors beyond the expected
+missing-favicon 404 (see Run 1 note) and benign WebGL perf-warning spam.
+A static screenshot can't confirm the tween motion itself, so leg-swing
+smoothness stays a **Needs human playtest** item below. Build output
+~1.21 MB, same single-chunk warning as prior runs, still well under the
+5 MB budget. Next run executes ROADMAP.md task 6 (scrolling road:
+background scroll speed tied to the same `walking` state).
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -55,6 +58,9 @@ switching on the `RoadScene.walking` accessor this run added).
   Current status above). Deliberately left the bard sprite out of this
   run — task 4 is scoped to the meter and the exposed `walking` state
   only, the sprite is task 5.
+- Run 5 (2026-07-16): Added the placeholder bard sprite and walk/idle
+  animation per ROADMAP task 5 (see Current status above). Deliberately
+  left the road static — no scrolling background yet, task 6's scope.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
@@ -67,6 +73,13 @@ switching on the `RoadScene.walking` accessor this run added).
   in ~5 hits from empty. Whether that feels forgiving enough for the
   "cozy, no-fail" tone in DESIGN.md needs a real playtest; doesn't block
   task 5 (the sprite reads the boolean `walking` state, not the tuning).
+- Task 5 bard sprite (this run): leg-swing amplitude/speed
+  (`BARD_WALK_SWING_DEG = 20`, `BARD_WALK_STEP_MS = 260`) and the idle
+  breathing pulse (`BARD_IDLE_BREATH_MS = 1400`) are eyeballed constants
+  verified only via static screenshots, not real motion. Needs a real
+  device playtest to check the walk cycle actually reads as "walking"
+  and not jittery; doesn't block task 6 (road scroll reads `walking`,
+  not these constants).
 
 ## Blocked on human
 - (none currently — see Run 1 note above on the previously-logged

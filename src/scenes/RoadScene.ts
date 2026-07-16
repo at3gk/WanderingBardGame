@@ -10,6 +10,13 @@ const MARKER_RADIUS = 18;
 const EXIT_PROGRESS = 1.35;
 const METER_HEIGHT = 14;
 const METER_MARGIN_TOP = 24;
+const BARD_GROUND_Y_OFFSET = 110;
+const BARD_LEG_COLOR = 0x5b4636;
+const BARD_BODY_COLOR = 0xc98a5b;
+const BARD_HEAD_COLOR = 0xe8c39e;
+const BARD_WALK_SWING_DEG = 20;
+const BARD_WALK_STEP_MS = 260;
+const BARD_IDLE_BREATH_MS = 1400;
 
 interface BeatMarker {
   beat: Beat;
@@ -26,6 +33,11 @@ export class RoadScene extends Phaser.Scene {
   private meter = DEFAULT_SONG_METER_CONFIG.max;
   private meterTrack!: Phaser.GameObjects.Rectangle;
   private meterFill!: Phaser.GameObjects.Rectangle;
+  private bard!: Phaser.GameObjects.Container;
+  private bardLegLeft!: Phaser.GameObjects.Rectangle;
+  private bardLegRight!: Phaser.GameObjects.Rectangle;
+  private bardTweens: Phaser.Tweens.Tween[] = [];
+  private bardWasWalking: boolean | null = null;
 
   constructor() {
     super('RoadScene');
@@ -52,8 +64,66 @@ export class RoadScene extends Phaser.Scene {
     this.meterTrack = this.add.rectangle(0, 0, 0, METER_HEIGHT, 0x2c2536, 0.9);
     this.meterFill = this.add.rectangle(0, 0, 0, METER_HEIGHT - 4, 0xe8d9c0, 1);
 
+    this.bardLegLeft = this.add.rectangle(-6, -11, 6, 22, BARD_LEG_COLOR);
+    this.bardLegRight = this.add.rectangle(6, -11, 6, 22, BARD_LEG_COLOR);
+    const bardBody = this.add.rectangle(0, -39, 26, 34, BARD_BODY_COLOR);
+    const bardHead = this.add.circle(0, -68, 12, BARD_HEAD_COLOR);
+    this.bard = this.add.container(0, 0, [this.bardLegLeft, this.bardLegRight, bardBody, bardHead]);
+    this.bardWasWalking = this.walking;
+    this.setBardAnimState(this.bardWasWalking);
+
     this.input.on('pointerdown', () => this.handleInput());
     this.input.keyboard?.on('keydown-SPACE', () => this.handleInput());
+  }
+
+  /** Swaps the bard's walk/idle animation. Placeholder procedural sprite per ROADMAP task 5. */
+  private setBardAnimState(walking: boolean): void {
+    this.bardTweens.forEach((tween) => tween.stop());
+    this.bardTweens = [];
+    this.bardLegLeft.setAngle(0);
+    this.bardLegRight.setAngle(0);
+    this.bard.setScale(1, 1);
+
+    if (walking) {
+      this.bardTweens.push(
+        this.tweens.add({
+          targets: this.bardLegLeft,
+          angle: { from: -BARD_WALK_SWING_DEG, to: BARD_WALK_SWING_DEG },
+          duration: BARD_WALK_STEP_MS,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        }),
+        this.tweens.add({
+          targets: this.bardLegRight,
+          angle: { from: BARD_WALK_SWING_DEG, to: -BARD_WALK_SWING_DEG },
+          duration: BARD_WALK_STEP_MS,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        }),
+        this.tweens.add({
+          targets: this.bard,
+          scaleY: { from: 1, to: 0.94 },
+          duration: BARD_WALK_STEP_MS,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        })
+      );
+    } else {
+      this.bardTweens.push(
+        this.tweens.add({
+          targets: this.bard,
+          scaleY: { from: 1, to: 1.03 },
+          scaleX: { from: 1, to: 0.98 },
+          duration: BARD_IDLE_BREATH_MS,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        })
+      );
+    }
   }
 
   private laneY(): number {
@@ -135,6 +205,17 @@ export class RoadScene extends Phaser.Scene {
     }
 
     this.updateMeterBar();
+    this.updateBard(hitLineX, laneY);
+  }
+
+  private updateBard(hitLineX: number, laneY: number): void {
+    this.bard.setPosition(hitLineX, laneY + BARD_GROUND_Y_OFFSET);
+
+    const walking = this.walking;
+    if (walking !== this.bardWasWalking) {
+      this.bardWasWalking = walking;
+      this.setBardAnimState(walking);
+    }
   }
 
   private updateMeterBar(): void {
