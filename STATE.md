@@ -1,30 +1,31 @@
 # STATE
 
-Run counter: 4
+Run counter: 5
 
 ## Current status
-Run 3 complete. ROADMAP.md task 3 (render the lane) done: `RoadScene`
-now generates a 300-beat schedule via `core/beats.ts` on create, renders
-markers scrolling right-to-left toward a fixed hit line (position
-recomputed from `scale.width/height` every frame so `Scale.RESIZE`
-reflows cleanly), and spawns/despawns marker graphics lazily as they
-enter/exit the travel window. Input is wired via `pointerdown` (covers
-both touch and mouse) and `keydown-SPACE`, both routed through
-`isWithinHitWindow` against the nearest unresolved beat; a hit tints the
-marker green and flashes the hit line, a miss (via `isBeatMissed`,
-checked every frame) tints the marker muted red — no meter/game-over
-logic yet, that's task 4. `npm test && npm run build` green locally (16
-Vitest tests, all still in `core/`, unchanged — Phaser scene code isn't
-unit-tested per CLAUDE.md's "Vitest for all headless logic"). Verified
+Run 4 complete. ROADMAP.md task 4 (song meter UI) done: `RoadScene` now
+holds a `meter` value (starts at `songMeter.DEFAULT_SONG_METER_CONFIG.max`
+so the game opens already walking, per the DoD "opens directly into the
+walk") and applies `applyHit`/`applyMiss` from `core/songMeter.ts` at the
+same two points task 3 already detected hit/miss (the `handleInput` hit
+branch and the time-based miss detection in `update`). A meter bar
+(track + fill rectangle, both repositioned/resized every frame from
+`scale.width` like the hit line) renders top-center; fill width scales
+with `meter/max` and its color swaps cream-vs-muted-slate depending on
+the new `get walking()` accessor (wraps `isWalking` from the timing
+core). `walking` is the exposed value future tasks (bard sprite, road
+scroll) read — no bard sprite yet, per ROADMAP task 4 scope. `npm test
+&& npm run build` green locally (16 Vitest tests, unchanged — this task
+is Phaser wiring around already-tested pure functions, nothing new to
+unit-test per CLAUDE.md's "Vitest for all headless logic"). Verified
 manually with a headless Playwright check against `vite preview` at a
-390×844 mobile viewport: canvas renders, taps register hits/misses
-visually (screenshot showed a resolved dark-red miss marker past the
-line and cream unresolved markers approaching), only console message was
+390×844 mobile viewport: meter bar renders full at load, and after ~4s
+of no input (all beats missed) the fill visibly drains to empty with no
+rendering errors at the zero-width edge case; only console message was
 the expected missing-favicon 404 (see Run 1 note). Build output ~1.21 MB,
-same single-chunk warning as Run 2, still well under the 5 MB budget.
-Next run executes ROADMAP.md task 4 (song meter UI: on-screen meter
-reflecting `core/songMeter.ts` fill/drain, wired to the hit/miss events
-RoadScene now produces).
+same single-chunk warning as prior runs, still well under the 5 MB
+budget. Next run executes ROADMAP.md task 5 (bard sprite states: walk/idle
+switching on the `RoadScene.walking` accessor this run added).
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -50,14 +51,22 @@ RoadScene now produces).
   status above). Deliberately left the song meter out of this run — task
   3 is scoped to rendering + input + per-beat hit/miss feedback only,
   the meter is task 4.
+- Run 4 (2026-07-16): Added the song meter UI per ROADMAP task 4 (see
+  Current status above). Deliberately left the bard sprite out of this
+  run — task 4 is scoped to the meter and the exposed `walking` state
+  only, the sprite is task 5.
 
 ## Needs human playtest
-- Task 3 render/input (this run): tap-to-hit feel — is `HIT_WINDOW_MS =
-  120` too strict/loose, is `TRAVEL_TIME_MS = 1800` at `BPM = 96` a
-  comfortable read on a real touch device? These are eyeballed constants,
-  not derived from anything; a human playtest is the only way to tune
-  them, and neither blocks task 4 (the meter reads hit/miss state, not
-  the timing constants).
+- Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
+  strict/loose, is `TRAVEL_TIME_MS = 1800` at `BPM = 96` a comfortable
+  read on a real touch device? These are eyeballed constants, not
+  derived from anything; a human playtest is the only way to tune them.
+- Task 4 song meter (this run): `DEFAULT_SONG_METER_CONFIG` (hitGain 8,
+  missDrain 14, walkingThreshold 40, max 100) is also eyeballed — drains
+  roughly 3 consecutive misses to stop walking from a full meter, refills
+  in ~5 hits from empty. Whether that feels forgiving enough for the
+  "cozy, no-fail" tone in DESIGN.md needs a real playtest; doesn't block
+  task 5 (the sprite reads the boolean `walking` state, not the tuning).
 
 ## Blocked on human
 - (none currently — see Run 1 note above on the previously-logged
