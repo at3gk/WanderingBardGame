@@ -1,34 +1,39 @@
 # STATE
 
-Run counter: 7
+Run counter: 8
 
 ## Current status
-Run 6 complete. ROADMAP.md task 6 (scrolling road) done: `RoadScene` now
-generates a small procedural ground tile once via `this.make.graphics(...)
-.generateTexture(...)` (a dark band with a lighter dash — no image assets,
-per CLAUDE.md) and renders it as a `Phaser.GameObjects.TileSprite` sitting
-just below the bard's feet, resized/repositioned every frame from
-`scale.width` and `laneY` like every other element in the scene. It's
-added first in `create()`, before the hit line/meter/bard, so it paints
-behind everything. `update()` now takes Phaser's `(_time, delta)` params
-(previously ignored) and `updateRoad` advances `tilePositionX` by
-`ROAD_SCROLL_PX_PER_SEC * delta / 1000` only while the existing `walking`
-accessor is true — idle freezes the band in place, same state-gating
-pattern as the bard's animation swap from task 5. Single flat band, no
-parallax/biome art yet (that's task 9's "second biome" and the
-consolidation pass). No new pure logic to Vitest here (the scroll math is
-a one-line delta accumulation, not a standalone module) — `npm test`
-stays at 16 tests, green, consistent with how tasks 3/5 handled
-Phaser-only additions. `npm run build` green, ~1.21 MB output, same
-single-chunk warning, still under the 5 MB budget. Verified manually with
-a headless Playwright check against `vite preview` at a 390×844 mobile
-viewport: screenshotted before and after a tap-and-wait, and the ground
-band's dash pattern visibly shifted between frames while the bard and
-meter rendered correctly; no console errors beyond the expected
-missing-favicon 404 (see Run 1 note). A pair of static screenshots can't
-confirm scroll *smoothness*, so scroll-speed feel joins the **Needs human
-playtest** list below. Next run executes ROADMAP.md task 7 (procedural
-audio base layer, behind the audio manifest file).
+Run 7 complete. ROADMAP.md task 7 (procedural audio base layer) done:
+`src/audio/manifest.ts` is the one audio manifest file per CLAUDE.md —
+today it holds `AUDIO_MANIFEST.baseLoop` (waveform, a 4-note semitone
+pattern off a root frequency, gain, note duration); task 8's extra layers
+will extend this same file rather than adding a second one.
+`src/audio/baseLoop.ts` is pure TS (no Web Audio/DOM) turning a manifest
+layer into a concrete note schedule — it reuses `generateBeatSchedule`
+from `core/beats.ts` directly so the audio grid and the visual beat lane
+share one clock and can't drift apart; fully covered by Vitest (4 new
+tests: semitone-to-frequency math, schedule timing, pattern cycling).
+`src/audio/AudioEngine.ts` is the thin Web Audio wrapper: lazily creates
+an `AudioContext` (must happen inside a user-gesture handler or browsers
+block it), pre-schedules the whole bounded note sequence (same
+`BEAT_COUNT` bound the visual lane already uses) as oscillator+gain-
+envelope "pluck" notes on the context's own sample-accurate clock —
+no JS-side lookahead scheduler needed at this length. `RoadScene.
+handleInput` calls `audioEngine.start(BPM, BEAT_COUNT)` on the first tap/
+keypress (the engine no-ops on repeat calls), so audio and the existing
+tap-to-hit input share the same user gesture. No new runtime dependency
+(Web Audio is a browser built-in). `npm test` now 20 tests, green.
+`npm run build` green, ~1.21 MB output, still under the 5 MB budget.
+Verified manually with a headless Playwright check against `vite preview`
+at 390×844: tapped twice with a pause between, no console errors beyond
+the expected missing-favicon 404 and the usual benign software-WebGL
+warnings (see Run 1/6 notes); confirmed `AudioContext` is available in
+the test browser. Playwright can't capture actual audio output, so
+whether the base loop's timbre/pattern/volume actually sounds "cozy" and
+in-time is a **Needs human playtest** item below — doesn't block task 8
+(layering reads the same manifest/engine shape, not the tuning). Next run
+executes ROADMAP.md task 8 (audio layering: additional instrument layers
+fade in/out with the song meter).
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -65,6 +70,10 @@ audio base layer, behind the audio manifest file).
   (see Current status above). Deliberately kept it a single flat
   procedural band with no biome art/parallax — that's task 9's job once
   distance-traveled tracking exists.
+- Run 7 (2026-07-17): Added the procedural Web Audio base loop per
+  ROADMAP task 7 (see Current status above). Deliberately kept it a
+  single continuous layer with no meter-driven fading — that's task 8's
+  scope once the base loop's shape is settled.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
@@ -90,6 +99,15 @@ audio base layer, behind the audio manifest file).
   real device playtest to confirm the ground scroll speed actually reads
   as the same pace as the bard's legs, not faster/slower; doesn't block
   task 7 (audio layer is independent of scroll speed).
+- Task 7 audio base loop (this run): `AUDIO_MANIFEST.baseLoop` (root
+  220 Hz, triangle wave, `[0, 0, 7, 5]` semitone pattern, gain 0.05,
+  180 ms notes) is an eyeballed starting timbre/pattern, not tuned by
+  ear against the "cozy" tone in DESIGN.md — headless checks can confirm
+  the schedule math and that no console errors fire, not what it
+  actually sounds like. Needs a real device/speaker playtest for volume
+  level and whether the pattern feels intentional rather than random;
+  doesn't block task 8 (layering fades additional layers in/out around
+  this same base, independent of its exact notes).
 
 ## Blocked on human
 - (none currently — see Run 1 note above on the previously-logged
