@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { AudioEngine } from '../audio/AudioEngine';
+import { AUDIO_MANIFEST } from '../audio/manifest';
 import { Beat, generateBeatSchedule, isBeatMissed, isWithinHitWindow, scrollProgress } from '../core/beats';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
 
@@ -46,6 +48,7 @@ export class RoadScene extends Phaser.Scene {
   private bardLegRight!: Phaser.GameObjects.Rectangle;
   private bardTweens: Phaser.Tweens.Tween[] = [];
   private bardWasWalking: boolean | null = null;
+  private audioEngine = new AudioEngine(AUDIO_MANIFEST);
 
   constructor() {
     super('RoadScene');
@@ -172,6 +175,7 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private handleInput(): void {
+    this.audioEngine.start(BPM, BEAT_COUNT);
     const nowMs = this.time.now - this.startTimeMs;
     const target = this.markers.find(
       (m) => m.resolved === null && isWithinHitWindow(m.beat, nowMs, HIT_WINDOW_MS)
