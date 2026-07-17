@@ -235,6 +235,7 @@ export class RoadScene extends Phaser.Scene {
 
     this.updateMeterBar();
     this.updateBard(hitLineX, laneY);
+    this.audioEngine.setMeterRatio(this.meter / this.meterConfig.max);
   }
 
   /** Ground band sits below the bard and scrolls at a fixed rate while walking, freezing when the song stalls (ROADMAP task 6). */

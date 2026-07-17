@@ -1,39 +1,48 @@
 # STATE
 
-Run counter: 8
+Run counter: 9
 
 ## Current status
-Run 7 complete. ROADMAP.md task 7 (procedural audio base layer) done:
-`src/audio/manifest.ts` is the one audio manifest file per CLAUDE.md —
-today it holds `AUDIO_MANIFEST.baseLoop` (waveform, a 4-note semitone
-pattern off a root frequency, gain, note duration); task 8's extra layers
-will extend this same file rather than adding a second one.
-`src/audio/baseLoop.ts` is pure TS (no Web Audio/DOM) turning a manifest
-layer into a concrete note schedule — it reuses `generateBeatSchedule`
-from `core/beats.ts` directly so the audio grid and the visual beat lane
-share one clock and can't drift apart; fully covered by Vitest (4 new
-tests: semitone-to-frequency math, schedule timing, pattern cycling).
-`src/audio/AudioEngine.ts` is the thin Web Audio wrapper: lazily creates
-an `AudioContext` (must happen inside a user-gesture handler or browsers
-block it), pre-schedules the whole bounded note sequence (same
-`BEAT_COUNT` bound the visual lane already uses) as oscillator+gain-
-envelope "pluck" notes on the context's own sample-accurate clock —
-no JS-side lookahead scheduler needed at this length. `RoadScene.
-handleInput` calls `audioEngine.start(BPM, BEAT_COUNT)` on the first tap/
-keypress (the engine no-ops on repeat calls), so audio and the existing
-tap-to-hit input share the same user gesture. No new runtime dependency
-(Web Audio is a browser built-in). `npm test` now 20 tests, green.
-`npm run build` green, ~1.21 MB output, still under the 5 MB budget.
-Verified manually with a headless Playwright check against `vite preview`
-at 390×844: tapped twice with a pause between, no console errors beyond
-the expected missing-favicon 404 and the usual benign software-WebGL
-warnings (see Run 1/6 notes); confirmed `AudioContext` is available in
-the test browser. Playwright can't capture actual audio output, so
-whether the base loop's timbre/pattern/volume actually sounds "cozy" and
-in-time is a **Needs human playtest** item below — doesn't block task 8
-(layering reads the same manifest/engine shape, not the tuning). Next run
-executes ROADMAP.md task 8 (audio layering: additional instrument layers
-fade in/out with the song meter).
+Run 8 complete. ROADMAP.md task 8 (audio layering) done: additional
+instrument voices now fade in/out as the song meter rises/falls, so the
+backing track itself becomes feedback for how well the player is doing
+(per DESIGN.md). `src/audio/manifest.ts`'s `AudioManifest` gained a
+`layers: LoopLayer[]` array alongside the existing always-on `baseLoop`
+— still the one manifest file per CLAUDE.md, just a richer shape as
+promised in Run 7's note. Each `LoopLayer` can carry an optional
+`meterThreshold` (0–1 fraction of the meter's max); `baseLoop` has none
+(always on). Two placeholder layers: `harmony` (sine, octave-up
+fifth/fourth pattern, threshold 0.5) and `sparkle` (triangle, two-
+octaves-up pattern, threshold 0.85) — eyeballed voicings, not tuned by
+ear yet (see playtest note below).
+`src/audio/layering.ts` is a new pure function, `isLayerActive(meterRatio,
+layer)`, extracted so the fade-in/out *rule* is Vitest-covered without
+touching Web Audio — same pure-core/thin-wrapper split as `baseLoop.ts`/
+`AudioEngine.ts`. 4 new tests (below/at/above threshold, no-threshold
+default).
+`src/audio/AudioEngine.ts` now schedules every layer (base + extras)
+through its own `GainNode` instead of connecting straight to
+`ctx.destination`; `setMeterRatio(ratio)` (called every frame from
+`RoadScene.update`) checks `isLayerActive` per layer and, only on a
+threshold crossing, ramps that layer's gain node to 0 or 1 over 0.6s via
+`linearRampToValueAtTime` — a smooth crossfade, and cheap to call every
+frame since it no-ops unless the active/inactive state actually flips.
+Base-loop scheduling and note-envelope logic are unchanged, so tuning
+work from Run 7 isn't disturbed. No new runtime dependency (still plain
+Web Audio). `npm test` now 24 tests, green. `npm run build` green,
+~1.22 MB output, still under the 5 MB budget.
+Verified manually with a headless Playwright check against `vite
+preview` at 390×844: three taps spanning past both a 0.5 and 0.85 meter
+crossing (given `DEFAULT_SONG_METER_CONFIG.hitGain = 8` this needs many
+more hits than 3 taps to actually cross 0.85 in-game, so this smoke test
+only confirms no console errors during the fade-check code path, not
+that a crossing was exercised) — no errors beyond the expected missing-
+favicon 404. Playwright can't capture actual audio output, so whether
+the two layers sound intentional together and the 0.6s crossfade timing
+feels right is a **Needs human playtest** item below — doesn't block
+task 9 (biome transition is independent of audio layer tuning). Next run
+executes ROADMAP.md task 9 (second biome + transition on distance
+traveled).
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -74,6 +83,10 @@ fade in/out with the song meter).
   ROADMAP task 7 (see Current status above). Deliberately kept it a
   single continuous layer with no meter-driven fading — that's task 8's
   scope once the base loop's shape is settled.
+- Run 8 (2026-07-17): Added meter-driven audio layering per ROADMAP task
+  8 (see Current status above). Deliberately kept it to two placeholder
+  layers with eyeballed voicings/thresholds — tuning is a playtest item,
+  not this run's scope.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
@@ -108,6 +121,14 @@ fade in/out with the song meter).
   level and whether the pattern feels intentional rather than random;
   doesn't block task 8 (layering fades additional layers in/out around
   this same base, independent of its exact notes).
+- Task 8 audio layering (this run): the `harmony` (threshold 0.5) and
+  `sparkle` (threshold 0.85) layer voicings/gains and the 0.6s crossfade
+  duration are eyeballed, not tuned by ear — headless checks can confirm
+  the threshold-crossing/gain-ramp logic fires without errors, not
+  whether the layers sound cozy together or the crossfade timing feels
+  natural on real speakers. Needs a real device/speaker playtest across
+  a full walk (enough hits to actually cross both thresholds); doesn't
+  block task 9 (biome transitions are independent of audio tuning).
 
 ## Blocked on human
 - (none currently — see Run 1 note above on the previously-logged
