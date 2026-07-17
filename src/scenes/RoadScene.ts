@@ -17,6 +17,13 @@ const BARD_HEAD_COLOR = 0xe8c39e;
 const BARD_WALK_SWING_DEG = 20;
 const BARD_WALK_STEP_MS = 260;
 const BARD_IDLE_BREATH_MS = 1400;
+const ROAD_TILE_KEY = 'roadTile';
+const ROAD_TILE_WIDTH = 64;
+const ROAD_TILE_HEIGHT = 48;
+const ROAD_BAND_COLOR = 0x3a2f3f;
+const ROAD_DASH_COLOR = 0x4d3f52;
+const ROAD_SCROLL_PX_PER_SEC = 90;
+const ROAD_HEIGHT_BELOW_BARD = 60;
 
 interface BeatMarker {
   beat: Beat;
@@ -33,6 +40,7 @@ export class RoadScene extends Phaser.Scene {
   private meter = DEFAULT_SONG_METER_CONFIG.max;
   private meterTrack!: Phaser.GameObjects.Rectangle;
   private meterFill!: Phaser.GameObjects.Rectangle;
+  private road!: Phaser.GameObjects.TileSprite;
   private bard!: Phaser.GameObjects.Container;
   private bardLegLeft!: Phaser.GameObjects.Rectangle;
   private bardLegRight!: Phaser.GameObjects.Rectangle;
@@ -58,6 +66,8 @@ export class RoadScene extends Phaser.Scene {
       resolved: null,
     }));
 
+    this.road = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, this.roadTileTexture());
+
     this.hitLine = this.add.rectangle(0, 0, 4, 0, 0xe8d9c0, 0.8);
     this.flash = this.add.rectangle(0, 0, 4, 0, 0xffffff, 0);
 
@@ -74,6 +84,20 @@ export class RoadScene extends Phaser.Scene {
 
     this.input.on('pointerdown', () => this.handleInput());
     this.input.keyboard?.on('keydown-SPACE', () => this.handleInput());
+  }
+
+  /** Procedural ground tile (dashed band), generated once and reused via TileSprite scrolling. No image assets per CLAUDE.md. */
+  private roadTileTexture(): string {
+    if (!this.textures.exists(ROAD_TILE_KEY)) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      g.fillStyle(ROAD_BAND_COLOR, 1);
+      g.fillRect(0, 0, ROAD_TILE_WIDTH, ROAD_TILE_HEIGHT);
+      g.fillStyle(ROAD_DASH_COLOR, 1);
+      g.fillRect(ROAD_TILE_WIDTH * 0.1, ROAD_TILE_HEIGHT * 0.4, ROAD_TILE_WIDTH * 0.3, 4);
+      g.generateTexture(ROAD_TILE_KEY, ROAD_TILE_WIDTH, ROAD_TILE_HEIGHT);
+      g.destroy();
+    }
+    return ROAD_TILE_KEY;
   }
 
   /** Swaps the bard's walk/idle animation. Placeholder procedural sprite per ROADMAP task 5. */
@@ -170,11 +194,12 @@ export class RoadScene extends Phaser.Scene {
     });
   }
 
-  update(): void {
+  update(_time: number, delta: number): void {
     const nowMs = this.time.now - this.startTimeMs;
     const laneY = this.laneY();
     const hitLineX = this.hitLineX();
 
+    this.updateRoad(laneY, delta);
     this.hitLine.setPosition(hitLineX, laneY);
     this.hitLine.setSize(4, 120);
     this.flash.setPosition(hitLineX, laneY);
@@ -206,6 +231,16 @@ export class RoadScene extends Phaser.Scene {
 
     this.updateMeterBar();
     this.updateBard(hitLineX, laneY);
+  }
+
+  /** Ground band sits below the bard and scrolls at a fixed rate while walking, freezing when the song stalls (ROADMAP task 6). */
+  private updateRoad(laneY: number, delta: number): void {
+    const roadY = laneY + BARD_GROUND_Y_OFFSET;
+    this.road.setPosition(this.scale.width / 2, roadY);
+    this.road.setSize(this.scale.width, ROAD_HEIGHT_BELOW_BARD);
+    if (this.walking) {
+      this.road.tilePositionX += (ROAD_SCROLL_PX_PER_SEC * delta) / 1000;
+    }
   }
 
   private updateBard(hitLineX: number, laneY: number): void {
