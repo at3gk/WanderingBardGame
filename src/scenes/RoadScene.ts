@@ -5,6 +5,7 @@ import { Beat, generateBeatSchedule, isBeatMissed, isWithinHitWindow, scrollProg
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
 import { accumulateDistance } from '../core/distance';
 import { Biome, BIOMES, biomeBlendRatio } from '../core/biome';
+import { accumulateCoins } from '../core/coins';
 
 const BPM = 96;
 const BEAT_COUNT = 300;
@@ -26,6 +27,11 @@ const ROAD_TILE_WIDTH = 64;
 const ROAD_TILE_HEIGHT = 48;
 const ROAD_SCROLL_PX_PER_SEC = 90;
 const ROAD_HEIGHT_BELOW_BARD = 60;
+const COIN_RATE_PER_SEC = 5;
+const COIN_ICON_RADIUS = 8;
+const COIN_ICON_COLOR = 0xe8c157;
+const COIN_MARGIN_TOP = 24;
+const COIN_MARGIN_RIGHT = 24;
 
 interface BeatMarker {
   beat: Beat;
@@ -45,6 +51,9 @@ export class RoadScene extends Phaser.Scene {
   private road!: Phaser.GameObjects.TileSprite;
   private roadNext!: Phaser.GameObjects.TileSprite;
   private distancePx = 0;
+  private coins = 0;
+  private coinIcon!: Phaser.GameObjects.Arc;
+  private coinText!: Phaser.GameObjects.Text;
   private bard!: Phaser.GameObjects.Container;
   private bardLegLeft!: Phaser.GameObjects.Rectangle;
   private bardLegRight!: Phaser.GameObjects.Rectangle;
@@ -81,6 +90,15 @@ export class RoadScene extends Phaser.Scene {
 
     this.meterTrack = this.add.rectangle(0, 0, 0, METER_HEIGHT, 0x2c2536, 0.9);
     this.meterFill = this.add.rectangle(0, 0, 0, METER_HEIGHT - 4, 0xe8d9c0, 1);
+
+    this.coins = 0;
+    this.coinIcon = this.add.circle(0, 0, COIN_ICON_RADIUS, COIN_ICON_COLOR);
+    this.coinText = this.add.text(0, 0, '0', {
+      fontFamily: 'sans-serif',
+      fontSize: '16px',
+      color: '#e8d9c0',
+    });
+    this.coinText.setOrigin(0, 0.5);
 
     this.bardLegLeft = this.add.rectangle(-6, -11, 6, 22, BARD_LEG_COLOR);
     this.bardLegRight = this.add.rectangle(6, -11, 6, 22, BARD_LEG_COLOR);
@@ -257,9 +275,13 @@ export class RoadScene extends Phaser.Scene {
       marker.gfx.setPosition(this.markerX(progress), laneY);
     }
 
+    const meterRatio = this.meter / this.meterConfig.max;
+    this.coins = accumulateCoins(this.coins, meterRatio, delta, COIN_RATE_PER_SEC);
+
     this.updateMeterBar();
+    this.updateCoinReadout();
     this.updateBard(hitLineX, laneY);
-    this.audioEngine.setMeterRatio(this.meter / this.meterConfig.max);
+    this.audioEngine.setMeterRatio(meterRatio);
   }
 
   /**
@@ -305,5 +327,13 @@ export class RoadScene extends Phaser.Scene {
     this.meterFill.setSize(Math.max(0, trackWidth * fillRatio), METER_HEIGHT - 4);
     this.meterFill.setFillStyle(walking ? 0xe8d9c0 : 0x7a6f85, 1);
     this.meterFill.setPosition(centerX - trackWidth / 2 + this.meterFill.width / 2, METER_MARGIN_TOP);
+  }
+
+  /** Coin count readout — a display of song-meter performance, not an interactive system (ROADMAP task 11). */
+  private updateCoinReadout(): void {
+    const iconX = this.scale.width - COIN_MARGIN_RIGHT - COIN_ICON_RADIUS;
+    this.coinIcon.setPosition(iconX, COIN_MARGIN_TOP);
+    this.coinText.setText(Math.floor(this.coins).toString());
+    this.coinText.setPosition(iconX - COIN_ICON_RADIUS - this.coinText.width - 8, COIN_MARGIN_TOP);
   }
 }

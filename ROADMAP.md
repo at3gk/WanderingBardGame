@@ -34,8 +34,10 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 10. ~~**Consolidation pass.**~~ Done (Run 10): no vision drift found; fixed
     one visual rough edge (hit-line indicator overlapped the bard's head —
     see STATE.md). Bundle size and mobile touch input re-verified green.
-11. **Coin readout.** Visual coin accumulation tied directly to song-meter
-    performance (readout only — no shop, no spend loop).
+11. ~~**Coin readout.**~~ Done (Run 11): coins accrue continuously at a rate
+    scaled by the live song-meter ratio, displayed via a procedural coin
+    icon + count in the top-right corner. No drain, no shop, no spend loop
+    — a pure readout.
 12. **v0.1 ship check.** Verify every Definition of Done item in
     DESIGN.md against the live deploy. Fix or explicitly cut (with
     changelog entry) anything unmet. Tag this as v0.1.
@@ -49,4 +51,4 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 
 ## Needs human playtest
 
-- (tracked in STATE.md as items land — nothing playable yet)
+- (tracked in STATE.md as items land)
