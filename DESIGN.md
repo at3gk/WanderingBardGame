@@ -73,3 +73,12 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
 
 - 2026-07-15 — Run 0. Initial vision: single-lane rhythm-walking bard game.
   DESIGN.md and ROADMAP.md authored from the seed prompt.
+- 2026-07-18 — Run 10 (consolidation pass). No vision drift found — the game
+  still matches this document task-for-task (single lane, one meter, bard
+  states, scrolling road, two biomes, layered audio). One noted gap: the
+  Concept section's "endless road" framing isn't literally true yet — the
+  beat schedule is a bounded 300-beat run (~3 min at 96 BPM) generated once
+  at scene start, not regenerated. Doesn't violate the Definition of Done
+  below (nothing there requires unbounded length), so left as-is rather
+  than expanded into a new system this run; tracked in ROADMAP.md for
+  after v0.1 ships.

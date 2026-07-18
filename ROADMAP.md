@@ -31,15 +31,21 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
    the primary feedback for how well the player is doing.
 9. ~~**Second biome + transition.**~~ Done (Run 9): distance-traveled
    counter drives a crossfade to a second "Forest Dusk" scenery biome.
-10. **Consolidation pass.** Per CLAUDE.md drift control: mentally walk the
-    full build, fix rough edges, re-check touch input on a real mobile
-    viewport, confirm bundle size, update DESIGN.md if the game has
-    drifted from vision. No new features this run.
+10. ~~**Consolidation pass.**~~ Done (Run 10): no vision drift found; fixed
+    one visual rough edge (hit-line indicator overlapped the bard's head —
+    see STATE.md). Bundle size and mobile touch input re-verified green.
 11. **Coin readout.** Visual coin accumulation tied directly to song-meter
     performance (readout only — no shop, no spend loop).
 12. **v0.1 ship check.** Verify every Definition of Done item in
     DESIGN.md against the live deploy. Fix or explicitly cut (with
     changelog entry) anything unmet. Tag this as v0.1.
+13. **(Post-v0.1) Unbounded beat schedule.** The beat schedule is currently
+    a fixed 300-beat run generated once at scene start (~3 min at 96 BPM),
+    not a literally endless road per DESIGN.md's Concept section. Extend
+    `generateBeatSchedule`/`RoadScene` to keep generating beats as the
+    player approaches the end of the current schedule. Not required for
+    v0.1's Definition of Done; noted during the Run 10 consolidation pass
+    to avoid it being forgotten.
 
 ## Needs human playtest
 

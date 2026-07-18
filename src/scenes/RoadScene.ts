@@ -11,6 +11,7 @@ const BEAT_COUNT = 300;
 const TRAVEL_TIME_MS = 1800;
 const HIT_WINDOW_MS = 120;
 const MARKER_RADIUS = 18;
+const HIT_LINE_HEIGHT = 56;
 const EXIT_PROGRESS = 1.35;
 const METER_HEIGHT = 14;
 const METER_MARGIN_TOP = 24;
@@ -228,9 +229,9 @@ export class RoadScene extends Phaser.Scene {
 
     this.updateRoad(laneY, delta, biomeBlend);
     this.hitLine.setPosition(hitLineX, laneY);
-    this.hitLine.setSize(4, 120);
+    this.hitLine.setSize(4, HIT_LINE_HEIGHT);
     this.flash.setPosition(hitLineX, laneY);
-    this.flash.setSize(4, 120);
+    this.flash.setSize(4, HIT_LINE_HEIGHT);
 
     for (const marker of this.markers) {
       const progress = scrollProgress(marker.beat, nowMs, TRAVEL_TIME_MS);

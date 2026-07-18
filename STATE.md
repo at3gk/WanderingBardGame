@@ -1,46 +1,38 @@
 # STATE
 
-Run counter: 10
+Run counter: 11
 
 ## Current status
-Run 9 complete. ROADMAP.md task 9 (second biome + transition) done: a
-distance-traveled counter now drives a crossfade from the village-dusk
-scenery to a second "Forest Dusk" biome.
-`src/core/distance.ts` is a new pure function, `accumulateDistance
-(distancePx, walking, deltaMs, speedPxPerSec)` — per the task's own
-scoping note ("derived from walking state, not a new system") it just
-integrates the same `ROAD_SCROLL_PX_PER_SEC` the road already scrolls
-at, only while `walking` is true, holding still otherwise. 4 new tests.
-`src/core/biome.ts` holds the two-biome data (`BIOMES`: `village`/
-`Village Dusk` — the existing palette — and `forest`/`Forest Dusk`, a
-cooler mossy-green palette) plus the pure `biomeBlendRatio(distancePx,
-transitionStartPx, transitionLengthPx)`, a clamped 0→1 linear ramp
-across a transition band so the scenery fades rather than cuts. 6 new
-tests (before/at-start/mid/at-end/beyond/zero-length-band). Same pure-
-core/thin-wrapper split as the audio and beat-timing modules.
-`RoadScene` now tracks `distancePx`, computes `biomeBlendRatio` every
-frame, and uses it two places: `cameras.main.setBackgroundColor` lerps
-between the two biomes' sky colors (new `RoadScene.lerpColor` — a small
-per-channel RGB blend, rendering-only so not pulled into core), and a
-second ground `TileSprite` (`roadNext`, pre-generated with the forest
-palette via the now-per-biome `roadTileTexture(biome)`) sits on top of
-the original and fades its alpha in via the same ratio; both tile
-sprites advance `tilePositionX` in lockstep so the dashes stay aligned
-through the fade. Transition constants (`BIOME_TRANSITION_START_PX =
-4000`, `_LENGTH_PX = 2000`) are eyeballed against `ROAD_SCROLL_PX_PER_SEC
-= 90` (~44s to start, ~67s to fully resolve) — see playtest note below.
-No new runtime dependency. `npm test` now 34 tests, green. `npm run
-build` green, ~1.22 MB output, still under the 5 MB budget.
-Verified manually with a headless Playwright check against `vite
-preview` at 390×844: five taps plus ~4s of runtime, screenshot confirms
-the scene still renders correctly (bard, road, meter, markers) with no
-regression — no errors beyond the expected missing-favicon 404. Getting
-distance past the ~44s transition start isn't practical in a quick smoke
-check, so whether the crossfade timing/colors actually read as a mood
-shift on a real device is a **Needs human playtest** item below; doesn't
-block task 10 (consolidation pass doesn't depend on biome tuning). Next
-run is task 10, the every-10th-run consolidation pass per CLAUDE.md's
-drift control (run counter hits 10).
+Run 10 complete — the every-10th-run consolidation pass per CLAUDE.md's
+drift control. Walked the full build: read every module in `src/`, ran
+`npm test` (34 passed) and `npm run build` (green, 1.22 MB output, gzip
+335 KB, well under the 5 MB budget) from a clean `npm install`, and drove
+a real headless-Chromium check at a 390×664 mobile viewport (iPhone 13
+emulation via Playwright) — cold load in ~500ms (under the 5s DoD
+target), six touch taps at the beat tempo registered as hits (meter
+stayed near full), no console errors beyond the expected missing-favicon
+404.
+Found one genuine visual rough edge from that mobile screenshot: the
+hit-line indicator (`RoadScene.hitLine`/`flash`, height 120px centered on
+the beat lane) extended far enough below the lane that it visibly poked
+through the bard sprite's head at the sprite's resting position — an
+unintentional-looking "pole through the skull." Root cause was two
+unrelated magic numbers (the hit-line height and the bard's vertical
+offset below the lane) that were never checked against each other.
+Fixed by introducing `HIT_LINE_HEIGHT = 56` (was a bare `120` duplicated
+in two `setSize` calls) — sized so the line's bottom edge clears the
+bard's head with a small margin. Pure rendering-constant change, no
+gameplay/timing logic touched. Re-ran the same mobile smoke check after
+the fix to confirm the overlap is gone and touch input still works.
+No other drift found — CI/deploy workflows, `package.json` deps, and
+every core module still match ROADMAP/DESIGN task-for-task. One
+documentation-only gap noted (not fixed, per "no new features this run"):
+the beat schedule is a bounded 300-beat run, not literally endless as
+DESIGN.md's Concept section frames it — doesn't violate the v0.1
+Definition of Done, logged as new ROADMAP task 13 (post-v0.1) and in
+DESIGN.md's changelog so it isn't forgotten.
+`npm test` 34 tests green, `npm run build` green. Next run is ROADMAP
+task 11 (coin readout).
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -82,14 +74,20 @@ drift control (run counter hits 10).
   single continuous layer with no meter-driven fading — that's task 8's
   scope once the base loop's shape is settled.
 - Run 8 (2026-07-17): Added meter-driven audio layering per ROADMAP task
-  8 (see Current status above). Deliberately kept it to two placeholder
-  layers with eyeballed voicings/thresholds — tuning is a playtest item,
-  not this run's scope.
+  8. Deliberately kept it to two placeholder layers with eyeballed
+  voicings/thresholds — tuning is a playtest item, not this run's scope.
 - Run 9 (2026-07-18): Added the distance-driven second biome and
-  crossfade per ROADMAP task 9 (see Current status above). Deliberately
+  crossfade per ROADMAP task 9 (`src/core/distance.ts`,
+  `src/core/biome.ts`, both pure/tested; `RoadScene` crossfades sky color
+  and a second road `TileSprite` via `biomeBlendRatio`). Deliberately
   kept it to two biomes with a palette-only difference (sky + road
   colors) — no new scenery elements/parallax layers, that's beyond this
-  task's scope and risks drift per CLAUDE.md.
+  task's scope and risks drift per CLAUDE.md. `npm test` 34 tests green,
+  build green (~1.22 MB). Transition timing/palette flagged for human
+  playtest (see below).
+- Run 10 (2026-07-18): Consolidation pass (see Current status above).
+  Fixed the hit-line/bard-head overlap; no other changes. Next run
+  resumes feature work at task 11.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
