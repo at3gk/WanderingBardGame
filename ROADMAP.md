@@ -29,9 +29,8 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 8. **Audio layering.** Additional instrument/voice layers fade in as song
    meter rises past thresholds, fade out as it falls — the audio becomes
    the primary feedback for how well the player is doing.
-9. **Second biome + transition.** Distance-traveled counter (derived from
-   walking state, not a new system) triggers a transition to a second
-   scenery biome with its own palette/mood.
+9. ~~**Second biome + transition.**~~ Done (Run 9): distance-traveled
+   counter drives a crossfade to a second "Forest Dusk" scenery biome.
 10. **Consolidation pass.** Per CLAUDE.md drift control: mentally walk the
     full build, fix rough edges, re-check touch input on a real mobile
     viewport, confirm bundle size, update DESIGN.md if the game has
