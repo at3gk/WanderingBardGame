@@ -1,38 +1,30 @@
 # STATE
 
-Run counter: 11
+Run counter: 12
 
 ## Current status
-Run 10 complete — the every-10th-run consolidation pass per CLAUDE.md's
-drift control. Walked the full build: read every module in `src/`, ran
-`npm test` (34 passed) and `npm run build` (green, 1.22 MB output, gzip
-335 KB, well under the 5 MB budget) from a clean `npm install`, and drove
-a real headless-Chromium check at a 390×664 mobile viewport (iPhone 13
-emulation via Playwright) — cold load in ~500ms (under the 5s DoD
-target), six touch taps at the beat tempo registered as hits (meter
-stayed near full), no console errors beyond the expected missing-favicon
-404.
-Found one genuine visual rough edge from that mobile screenshot: the
-hit-line indicator (`RoadScene.hitLine`/`flash`, height 120px centered on
-the beat lane) extended far enough below the lane that it visibly poked
-through the bard sprite's head at the sprite's resting position — an
-unintentional-looking "pole through the skull." Root cause was two
-unrelated magic numbers (the hit-line height and the bard's vertical
-offset below the lane) that were never checked against each other.
-Fixed by introducing `HIT_LINE_HEIGHT = 56` (was a bare `120` duplicated
-in two `setSize` calls) — sized so the line's bottom edge clears the
-bard's head with a small margin. Pure rendering-constant change, no
-gameplay/timing logic touched. Re-ran the same mobile smoke check after
-the fix to confirm the overlap is gone and touch input still works.
-No other drift found — CI/deploy workflows, `package.json` deps, and
-every core module still match ROADMAP/DESIGN task-for-task. One
-documentation-only gap noted (not fixed, per "no new features this run"):
-the beat schedule is a bounded 300-beat run, not literally endless as
-DESIGN.md's Concept section frames it — doesn't violate the v0.1
-Definition of Done, logged as new ROADMAP task 13 (post-v0.1) and in
-DESIGN.md's changelog so it isn't forgotten.
-`npm test` 34 tests green, `npm run build` green. Next run is ROADMAP
-task 11 (coin readout).
+Run 11 complete — ROADMAP task 11 (coin readout). Added `src/core/coins.ts`
+(`accumulateCoins`, pure/tested), a readout-only accumulator with the same
+shape as `accumulateDistance`: no meter-ratio gain, no drain, it just stops
+growing when the meter is empty and speeds up as the meter fills
+(`COIN_RATE_PER_SEC = 5` at full meter). Wired into `RoadScene.update()`
+using the same `meterRatio` already computed for `audioEngine.setMeterRatio`
+so there's one source of truth for it. Display is a small procedural coin
+icon (`add.circle`, gold) plus a `Phaser.GameObjects.Text` count in the
+top-right corner (`updateCoinReadout()`), first `Text` object in the
+codebase — no font assets needed, uses the default sans-serif. Explicitly
+scoped to readout-only per ROADMAP: no shop, no spend loop, coins never
+decrease.
+`npm test` 39 tests green (5 new), `npm run build` green (1.22 MB output,
+gzip ~336 KB). Verified with a headless-Chromium check at a 390×664 mobile
+viewport (Playwright, global install at `/opt/node22/lib/node_modules/
+playwright` symlinked into a scratch `node_modules` since the project
+itself has no Playwright devDependency): cold load, eight touch taps at
+the beat tempo, coin count visibly climbed from the icon's default and
+rendered legibly without overlapping the song meter bar; no console errors
+beyond the expected missing-favicon 404. Screenshot confirmed the icon/text
+pairing sits clear of the meter track at the 390px-wide viewport.
+Next run is ROADMAP task 12 (v0.1 ship check).
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -88,6 +80,10 @@ task 11 (coin readout).
 - Run 10 (2026-07-18): Consolidation pass (see Current status above).
   Fixed the hit-line/bard-head overlap; no other changes. Next run
   resumes feature work at task 11.
+- Run 11 (2026-07-18): Added the coin readout per ROADMAP task 11 (see
+  Current status above). Deliberately kept it a pure accumulate-only
+  readout of the meter ratio — no per-hit bonus, no spend loop, matching
+  DESIGN.md's framing of coins as a readout, not a separate system.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
@@ -141,6 +137,14 @@ task 11 (coin readout).
   as a genuine mood shift on a real screen. Needs a real device playtest
   across a full walk long enough to cross the transition band; doesn't
   block task 10 (the consolidation pass doesn't depend on biome tuning).
+
+- Task 11 coin readout (this run): `COIN_RATE_PER_SEC = 5` (at full meter)
+  is an eyeballed constant, not tuned against how satisfying the count-up
+  feels over a real walk length — headless checks can confirm the accrual
+  math, not the pacing. Needs a real playtest to judge whether the number
+  climbs at a pleasing rate or feels too slow/fast to notice; doesn't
+  block task 12 (the ship check verifies DoD items, none of which specify
+  coin pacing).
 
 ## Blocked on human
 - (none currently — see Run 1 note above on the previously-logged
