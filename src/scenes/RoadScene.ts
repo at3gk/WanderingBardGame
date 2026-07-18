@@ -3,6 +3,8 @@ import { AudioEngine } from '../audio/AudioEngine';
 import { AUDIO_MANIFEST } from '../audio/manifest';
 import { Beat, generateBeatSchedule, isBeatMissed, isWithinHitWindow, scrollProgress } from '../core/beats';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
+import { accumulateDistance } from '../core/distance';
+import { Biome, BIOMES, biomeBlendRatio } from '../core/biome';
 
 const BPM = 96;
 const BEAT_COUNT = 300;
@@ -19,11 +21,8 @@ const BARD_HEAD_COLOR = 0xe8c39e;
 const BARD_WALK_SWING_DEG = 20;
 const BARD_WALK_STEP_MS = 260;
 const BARD_IDLE_BREATH_MS = 1400;
-const ROAD_TILE_KEY = 'roadTile';
 const ROAD_TILE_WIDTH = 64;
 const ROAD_TILE_HEIGHT = 48;
-const ROAD_BAND_COLOR = 0x3a2f3f;
-const ROAD_DASH_COLOR = 0x4d3f52;
 const ROAD_SCROLL_PX_PER_SEC = 90;
 const ROAD_HEIGHT_BELOW_BARD = 60;
 
@@ -43,6 +42,8 @@ export class RoadScene extends Phaser.Scene {
   private meterTrack!: Phaser.GameObjects.Rectangle;
   private meterFill!: Phaser.GameObjects.Rectangle;
   private road!: Phaser.GameObjects.TileSprite;
+  private roadNext!: Phaser.GameObjects.TileSprite;
+  private distancePx = 0;
   private bard!: Phaser.GameObjects.Container;
   private bardLegLeft!: Phaser.GameObjects.Rectangle;
   private bardLegRight!: Phaser.GameObjects.Rectangle;
@@ -60,16 +61,19 @@ export class RoadScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor('#1a1621');
+    this.cameras.main.setBackgroundColor(BIOMES[0].skyColor);
     this.startTimeMs = this.time.now;
     this.meter = this.meterConfig.max;
+    this.distancePx = 0;
     this.markers = generateBeatSchedule(BPM, BEAT_COUNT).map((beat) => ({
       beat,
       gfx: null,
       resolved: null,
     }));
 
-    this.road = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, this.roadTileTexture());
+    this.road = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, this.roadTileTexture(BIOMES[0]));
+    this.roadNext = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, this.roadTileTexture(BIOMES[1]));
+    this.roadNext.setAlpha(0);
 
     this.hitLine = this.add.rectangle(0, 0, 4, 0, 0xe8d9c0, 0.8);
     this.flash = this.add.rectangle(0, 0, 4, 0, 0xffffff, 0);
@@ -89,18 +93,33 @@ export class RoadScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-SPACE', () => this.handleInput());
   }
 
-  /** Procedural ground tile (dashed band), generated once and reused via TileSprite scrolling. No image assets per CLAUDE.md. */
-  private roadTileTexture(): string {
-    if (!this.textures.exists(ROAD_TILE_KEY)) {
+  /** Procedural ground tile (dashed band) per biome, generated once and reused via TileSprite scrolling. No image assets per CLAUDE.md. */
+  private roadTileTexture(biome: Biome): string {
+    const key = `roadTile-${biome.id}`;
+    if (!this.textures.exists(key)) {
       const g = this.make.graphics({ x: 0, y: 0 }, false);
-      g.fillStyle(ROAD_BAND_COLOR, 1);
+      g.fillStyle(biome.roadBandColor, 1);
       g.fillRect(0, 0, ROAD_TILE_WIDTH, ROAD_TILE_HEIGHT);
-      g.fillStyle(ROAD_DASH_COLOR, 1);
+      g.fillStyle(biome.roadDashColor, 1);
       g.fillRect(ROAD_TILE_WIDTH * 0.1, ROAD_TILE_HEIGHT * 0.4, ROAD_TILE_WIDTH * 0.3, 4);
-      g.generateTexture(ROAD_TILE_KEY, ROAD_TILE_WIDTH, ROAD_TILE_HEIGHT);
+      g.generateTexture(key, ROAD_TILE_WIDTH, ROAD_TILE_HEIGHT);
       g.destroy();
     }
-    return ROAD_TILE_KEY;
+    return key;
+  }
+
+  /** Linear per-channel RGB blend, used to crossfade the sky color between biomes. */
+  private static lerpColor(colorA: number, colorB: number, t: number): number {
+    const ar = (colorA >> 16) & 0xff;
+    const ag = (colorA >> 8) & 0xff;
+    const ab = colorA & 0xff;
+    const br = (colorB >> 16) & 0xff;
+    const bg = (colorB >> 8) & 0xff;
+    const bb = colorB & 0xff;
+    const r = Math.round(ar + (br - ar) * t);
+    const g = Math.round(ag + (bg - ag) * t);
+    const b = Math.round(ab + (bb - ab) * t);
+    return (r << 16) | (g << 8) | b;
   }
 
   /** Swaps the bard's walk/idle animation. Placeholder procedural sprite per ROADMAP task 5. */
@@ -203,7 +222,11 @@ export class RoadScene extends Phaser.Scene {
     const laneY = this.laneY();
     const hitLineX = this.hitLineX();
 
-    this.updateRoad(laneY, delta);
+    this.distancePx = accumulateDistance(this.distancePx, this.walking, delta, ROAD_SCROLL_PX_PER_SEC);
+    const biomeBlend = biomeBlendRatio(this.distancePx);
+    this.cameras.main.setBackgroundColor(RoadScene.lerpColor(BIOMES[0].skyColor, BIOMES[1].skyColor, biomeBlend));
+
+    this.updateRoad(laneY, delta, biomeBlend);
     this.hitLine.setPosition(hitLineX, laneY);
     this.hitLine.setSize(4, 120);
     this.flash.setPosition(hitLineX, laneY);
@@ -238,13 +261,24 @@ export class RoadScene extends Phaser.Scene {
     this.audioEngine.setMeterRatio(this.meter / this.meterConfig.max);
   }
 
-  /** Ground band sits below the bard and scrolls at a fixed rate while walking, freezing when the song stalls (ROADMAP task 6). */
-  private updateRoad(laneY: number, delta: number): void {
+  /**
+   * Ground band sits below the bard and scrolls at a fixed rate while
+   * walking, freezing when the song stalls (ROADMAP task 6). A second
+   * biome tile sits on top and crossfades in via alpha as distance
+   * crosses the transition band (ROADMAP task 9) — both scroll in lockstep
+   * so the dashes stay aligned through the fade.
+   */
+  private updateRoad(laneY: number, delta: number, biomeBlend: number): void {
     const roadY = laneY + BARD_GROUND_Y_OFFSET;
     this.road.setPosition(this.scale.width / 2, roadY);
     this.road.setSize(this.scale.width, ROAD_HEIGHT_BELOW_BARD);
+    this.roadNext.setPosition(this.scale.width / 2, roadY);
+    this.roadNext.setSize(this.scale.width, ROAD_HEIGHT_BELOW_BARD);
+    this.roadNext.setAlpha(biomeBlend);
     if (this.walking) {
-      this.road.tilePositionX += (ROAD_SCROLL_PX_PER_SEC * delta) / 1000;
+      const scrollDelta = (ROAD_SCROLL_PX_PER_SEC * delta) / 1000;
+      this.road.tilePositionX += scrollDelta;
+      this.roadNext.tilePositionX += scrollDelta;
     }
   }
 

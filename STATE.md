@@ -1,48 +1,46 @@
 # STATE
 
-Run counter: 9
+Run counter: 10
 
 ## Current status
-Run 8 complete. ROADMAP.md task 8 (audio layering) done: additional
-instrument voices now fade in/out as the song meter rises/falls, so the
-backing track itself becomes feedback for how well the player is doing
-(per DESIGN.md). `src/audio/manifest.ts`'s `AudioManifest` gained a
-`layers: LoopLayer[]` array alongside the existing always-on `baseLoop`
-— still the one manifest file per CLAUDE.md, just a richer shape as
-promised in Run 7's note. Each `LoopLayer` can carry an optional
-`meterThreshold` (0–1 fraction of the meter's max); `baseLoop` has none
-(always on). Two placeholder layers: `harmony` (sine, octave-up
-fifth/fourth pattern, threshold 0.5) and `sparkle` (triangle, two-
-octaves-up pattern, threshold 0.85) — eyeballed voicings, not tuned by
-ear yet (see playtest note below).
-`src/audio/layering.ts` is a new pure function, `isLayerActive(meterRatio,
-layer)`, extracted so the fade-in/out *rule* is Vitest-covered without
-touching Web Audio — same pure-core/thin-wrapper split as `baseLoop.ts`/
-`AudioEngine.ts`. 4 new tests (below/at/above threshold, no-threshold
-default).
-`src/audio/AudioEngine.ts` now schedules every layer (base + extras)
-through its own `GainNode` instead of connecting straight to
-`ctx.destination`; `setMeterRatio(ratio)` (called every frame from
-`RoadScene.update`) checks `isLayerActive` per layer and, only on a
-threshold crossing, ramps that layer's gain node to 0 or 1 over 0.6s via
-`linearRampToValueAtTime` — a smooth crossfade, and cheap to call every
-frame since it no-ops unless the active/inactive state actually flips.
-Base-loop scheduling and note-envelope logic are unchanged, so tuning
-work from Run 7 isn't disturbed. No new runtime dependency (still plain
-Web Audio). `npm test` now 24 tests, green. `npm run build` green,
-~1.22 MB output, still under the 5 MB budget.
+Run 9 complete. ROADMAP.md task 9 (second biome + transition) done: a
+distance-traveled counter now drives a crossfade from the village-dusk
+scenery to a second "Forest Dusk" biome.
+`src/core/distance.ts` is a new pure function, `accumulateDistance
+(distancePx, walking, deltaMs, speedPxPerSec)` — per the task's own
+scoping note ("derived from walking state, not a new system") it just
+integrates the same `ROAD_SCROLL_PX_PER_SEC` the road already scrolls
+at, only while `walking` is true, holding still otherwise. 4 new tests.
+`src/core/biome.ts` holds the two-biome data (`BIOMES`: `village`/
+`Village Dusk` — the existing palette — and `forest`/`Forest Dusk`, a
+cooler mossy-green palette) plus the pure `biomeBlendRatio(distancePx,
+transitionStartPx, transitionLengthPx)`, a clamped 0→1 linear ramp
+across a transition band so the scenery fades rather than cuts. 6 new
+tests (before/at-start/mid/at-end/beyond/zero-length-band). Same pure-
+core/thin-wrapper split as the audio and beat-timing modules.
+`RoadScene` now tracks `distancePx`, computes `biomeBlendRatio` every
+frame, and uses it two places: `cameras.main.setBackgroundColor` lerps
+between the two biomes' sky colors (new `RoadScene.lerpColor` — a small
+per-channel RGB blend, rendering-only so not pulled into core), and a
+second ground `TileSprite` (`roadNext`, pre-generated with the forest
+palette via the now-per-biome `roadTileTexture(biome)`) sits on top of
+the original and fades its alpha in via the same ratio; both tile
+sprites advance `tilePositionX` in lockstep so the dashes stay aligned
+through the fade. Transition constants (`BIOME_TRANSITION_START_PX =
+4000`, `_LENGTH_PX = 2000`) are eyeballed against `ROAD_SCROLL_PX_PER_SEC
+= 90` (~44s to start, ~67s to fully resolve) — see playtest note below.
+No new runtime dependency. `npm test` now 34 tests, green. `npm run
+build` green, ~1.22 MB output, still under the 5 MB budget.
 Verified manually with a headless Playwright check against `vite
-preview` at 390×844: three taps spanning past both a 0.5 and 0.85 meter
-crossing (given `DEFAULT_SONG_METER_CONFIG.hitGain = 8` this needs many
-more hits than 3 taps to actually cross 0.85 in-game, so this smoke test
-only confirms no console errors during the fade-check code path, not
-that a crossing was exercised) — no errors beyond the expected missing-
-favicon 404. Playwright can't capture actual audio output, so whether
-the two layers sound intentional together and the 0.6s crossfade timing
-feels right is a **Needs human playtest** item below — doesn't block
-task 9 (biome transition is independent of audio layer tuning). Next run
-executes ROADMAP.md task 9 (second biome + transition on distance
-traveled).
+preview` at 390×844: five taps plus ~4s of runtime, screenshot confirms
+the scene still renders correctly (bard, road, meter, markers) with no
+regression — no errors beyond the expected missing-favicon 404. Getting
+distance past the ~44s transition start isn't practical in a quick smoke
+check, so whether the crossfade timing/colors actually read as a mood
+shift on a real device is a **Needs human playtest** item below; doesn't
+block task 10 (consolidation pass doesn't depend on biome tuning). Next
+run is task 10, the every-10th-run consolidation pass per CLAUDE.md's
+drift control (run counter hits 10).
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -87,6 +85,11 @@ traveled).
   8 (see Current status above). Deliberately kept it to two placeholder
   layers with eyeballed voicings/thresholds — tuning is a playtest item,
   not this run's scope.
+- Run 9 (2026-07-18): Added the distance-driven second biome and
+  crossfade per ROADMAP task 9 (see Current status above). Deliberately
+  kept it to two biomes with a palette-only difference (sky + road
+  colors) — no new scenery elements/parallax layers, that's beyond this
+  task's scope and risks drift per CLAUDE.md.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
@@ -129,6 +132,17 @@ traveled).
   natural on real speakers. Needs a real device/speaker playtest across
   a full walk (enough hits to actually cross both thresholds); doesn't
   block task 9 (biome transitions are independent of audio tuning).
+
+- Task 9 second biome (this run): `BIOME_TRANSITION_START_PX = 4000` and
+  `BIOME_TRANSITION_LENGTH_PX = 2000` (against `ROAD_SCROLL_PX_PER_SEC =
+  90`, so ~44s in to start, ~67s to fully resolve) and the `Forest Dusk`
+  palette (`skyColor 0x141f1c`, `roadBandColor 0x2f3a2f`, `roadDashColor
+  0x3f4d3a`) are eyeballed, not tuned against real play — headless checks
+  can confirm the blend-ratio math and that both tile sprites stay in
+  lockstep, not whether the timing feels earned or the two palettes read
+  as a genuine mood shift on a real screen. Needs a real device playtest
+  across a full walk long enough to cross the transition band; doesn't
+  block task 10 (the consolidation pass doesn't depend on biome tuning).
 
 ## Blocked on human
 - (none currently — see Run 1 note above on the previously-logged
