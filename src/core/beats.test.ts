@@ -27,6 +27,15 @@ describe('generateBeatSchedule', () => {
     const beats = generateBeatSchedule(60, 2);
     expect(beats.map((b) => b.hitTimeMs)).toEqual([1000, 2000]);
   });
+
+  it('continues indices from indexOffset for a later batch', () => {
+    const first = generateBeatSchedule(120, 2, 0);
+    const second = generateBeatSchedule(120, 2, first[first.length - 1].hitTimeMs, first.length);
+    expect(second).toEqual([
+      { index: 2, hitTimeMs: 1500 },
+      { index: 3, hitTimeMs: 2000 },
+    ]);
+  });
 });
 
 describe('scrollProgress', () => {

@@ -1,3 +1,4 @@
+import { beatIntervalMs } from '../core/beats';
 import { generateBaseLoopSchedule } from './baseLoop';
 import { isLayerActive } from './layering';
 import { AudioManifest, LoopLayer } from './manifest';
@@ -6,11 +7,12 @@ const LAYER_FADE_SECONDS = 0.6;
 
 /**
  * Thin Web Audio wrapper around the procedural base loop and its
- * additional instrument layers. Schedules the whole (bounded) note
- * sequence for every layer up front on the AudioContext's own
- * sample-accurate clock — no JS-side lookahead scheduler needed at this
- * loop length, same bound as the visual beat lane (`BEAT_COUNT` in
- * RoadScene). Each layer plays through its own `GainNode` so
+ * additional instrument layers. Schedules notes for every layer on the
+ * AudioContext's own sample-accurate clock in batches — `start` schedules
+ * the first batch, `extend` schedules further batches as the caller's
+ * beat schedule grows (ROADMAP task 13 — unbounded schedule), continuing
+ * the same tempo/index sequence so the pattern cycle never resets. Each
+ * layer plays through its own `GainNode`, created once in `start`, so
  * `setMeterRatio` can fade extra layers in/out (ROADMAP task 8) without
  * touching the base loop or re-scheduling notes.
  */
@@ -19,6 +21,9 @@ export class AudioEngine {
   private started = false;
   private layerGains = new Map<string, GainNode>();
   private layerActive = new Map<string, boolean>();
+  private startAt = 0;
+  private bpm = 0;
+  private noteIndexOffset = 0;
 
   constructor(private manifest: AudioManifest) {}
 
@@ -36,13 +41,32 @@ export class AudioEngine {
   start(bpm: number, count: number): void {
     if (this.started) return;
     this.started = true;
+    this.bpm = bpm;
 
     const ctx = this.ensureContext();
-    const startAt = ctx.currentTime + 0.05;
+    this.startAt = ctx.currentTime + 0.05;
 
-    this.scheduleLayer(ctx, this.manifest.baseLoop, bpm, count, startAt, true);
+    this.createLayerGain(ctx, this.manifest.baseLoop, true);
     for (const layer of this.manifest.layers) {
-      this.scheduleLayer(ctx, layer, bpm, count, startAt, isLayerActive(0, layer));
+      this.createLayerGain(ctx, layer, isLayerActive(0, layer));
+    }
+
+    this.scheduleAllLayers(ctx, count, 0);
+    this.noteIndexOffset = count;
+  }
+
+  /** Schedules the next `count` beats' worth of notes, continuing seamlessly from the last batch. No-ops until `start` has run. */
+  extend(count: number): void {
+    if (!this.started || !this.context) return;
+    const startTimeMs = this.noteIndexOffset * beatIntervalMs(this.bpm);
+    this.scheduleAllLayers(this.context, count, startTimeMs);
+    this.noteIndexOffset += count;
+  }
+
+  private scheduleAllLayers(ctx: AudioContext, count: number, startTimeMs: number): void {
+    this.scheduleLayerNotes(ctx, this.manifest.baseLoop, count, startTimeMs);
+    for (const layer of this.manifest.layers) {
+      this.scheduleLayerNotes(ctx, layer, count, startTimeMs);
     }
   }
 
@@ -66,23 +90,28 @@ export class AudioEngine {
     }
   }
 
-  private scheduleLayer(
-    ctx: AudioContext,
-    layer: LoopLayer,
-    bpm: number,
-    count: number,
-    startAt: number,
-    startActive: boolean
-  ): void {
+  private createLayerGain(ctx: AudioContext, layer: LoopLayer, startActive: boolean): void {
     const master = ctx.createGain();
     master.gain.value = startActive ? 1 : 0;
     master.connect(ctx.destination);
     this.layerGains.set(layer.id, master);
     this.layerActive.set(layer.id, startActive);
+  }
 
-    const schedule = generateBaseLoopSchedule(bpm, count, this.manifest.rootFrequencyHz, layer);
+  private scheduleLayerNotes(ctx: AudioContext, layer: LoopLayer, count: number, startTimeMs: number): void {
+    const master = this.layerGains.get(layer.id);
+    if (!master) return;
+
+    const schedule = generateBaseLoopSchedule(
+      this.bpm,
+      count,
+      this.manifest.rootFrequencyHz,
+      layer,
+      startTimeMs,
+      this.noteIndexOffset
+    );
     for (const note of schedule) {
-      this.playNote(ctx, master, layer, startAt + note.timeMs / 1000, note.frequencyHz, note.durationMs / 1000);
+      this.playNote(ctx, master, layer, this.startAt + note.timeMs / 1000, note.frequencyHz, note.durationMs / 1000);
     }
   }
 

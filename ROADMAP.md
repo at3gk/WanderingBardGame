@@ -45,13 +45,25 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     human** — this environment's git/GitHub write access can't push a tag
     (see STATE.md's Blocked on human section for the exact command a human
     needs to run).
-13. **(Post-v0.1) Unbounded beat schedule.** The beat schedule is currently
-    a fixed 300-beat run generated once at scene start (~3 min at 96 BPM),
-    not a literally endless road per DESIGN.md's Concept section. Extend
-    `generateBeatSchedule`/`RoadScene` to keep generating beats as the
-    player approaches the end of the current schedule. Not required for
-    v0.1's Definition of Done; noted during the Run 10 consolidation pass
-    to avoid it being forgotten.
+13. ~~**(Post-v0.1) Unbounded beat schedule.**~~ Done (Run 13): the beat
+    schedule now generates in 300-beat batches, appending the next batch
+    once the current one's runway drops under 15s (`RoadScene.
+    appendBeatBatch`, called from `update`). `AudioEngine` gained a
+    matching `extend` method so the backing loop's notes keep pace with
+    the visual schedule instead of going silent after ~3 min. Resolved
+    markers are now filtered out of `RoadScene.markers` each frame so a
+    long/unbounded session doesn't accumulate unbounded memory. Not
+    required for v0.1's Definition of Done (v0.1 already shipped); this
+    closes the "endless road" gap flagged in DESIGN.md's Run 10 changelog
+    entry.
+
+14. **(Post-v0.1) Human playtest pass.** Every eyeballed constant logged
+    under STATE.md's "Needs human playtest" section (hit window, meter
+    gain/drain, bard walk-cycle timing, road scroll speed, audio timbre
+    and layering thresholds, biome transition distance, coin rate) is
+    still untuned by ear/feel on a real device. Once a human has a chance
+    to actually play it, fold their feedback into concrete constant
+    changes here instead of leaving the list to grow indefinitely.
 
 ## Needs human playtest
 

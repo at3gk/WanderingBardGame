@@ -8,7 +8,8 @@ import { Biome, BIOMES, biomeBlendRatio } from '../core/biome';
 import { accumulateCoins } from '../core/coins';
 
 const BPM = 96;
-const BEAT_COUNT = 300;
+const BEAT_BATCH_SIZE = 300;
+const BEAT_LOOKAHEAD_MS = 15000;
 const TRAVEL_TIME_MS = 1800;
 const HIT_WINDOW_MS = 120;
 const MARKER_RADIUS = 18;
@@ -51,6 +52,8 @@ export class RoadScene extends Phaser.Scene {
   private road!: Phaser.GameObjects.TileSprite;
   private roadNext!: Phaser.GameObjects.TileSprite;
   private distancePx = 0;
+  private totalBeatsGenerated = 0;
+  private nextBatchStartTimeMs = 0;
   private coins = 0;
   private coinIcon!: Phaser.GameObjects.Arc;
   private coinText!: Phaser.GameObjects.Text;
@@ -75,11 +78,10 @@ export class RoadScene extends Phaser.Scene {
     this.startTimeMs = this.time.now;
     this.meter = this.meterConfig.max;
     this.distancePx = 0;
-    this.markers = generateBeatSchedule(BPM, BEAT_COUNT).map((beat) => ({
-      beat,
-      gfx: null,
-      resolved: null,
-    }));
+    this.markers = [];
+    this.totalBeatsGenerated = 0;
+    this.nextBatchStartTimeMs = 0;
+    this.appendBeatBatch();
 
     this.road = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, this.roadTileTexture(BIOMES[0]));
     this.roadNext = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, this.roadTileTexture(BIOMES[1]));
@@ -212,8 +214,25 @@ export class RoadScene extends Phaser.Scene {
     return this.scale.width * 0.6;
   }
 
+  /**
+   * Appends the next batch of beats, continuing the schedule seamlessly
+   * from wherever the last batch left off (ROADMAP task 13 — the road is
+   * meant to be endless, so beats aren't all generated once up front).
+   * Extends the audio engine's own note schedule in lockstep so the
+   * backing loop never runs out of scheduled notes either.
+   */
+  private appendBeatBatch(): void {
+    const newBeats = generateBeatSchedule(BPM, BEAT_BATCH_SIZE, this.nextBatchStartTimeMs, this.totalBeatsGenerated);
+    for (const beat of newBeats) {
+      this.markers.push({ beat, gfx: null, resolved: null });
+    }
+    this.totalBeatsGenerated += BEAT_BATCH_SIZE;
+    this.nextBatchStartTimeMs = newBeats[newBeats.length - 1].hitTimeMs;
+    this.audioEngine.extend(BEAT_BATCH_SIZE);
+  }
+
   private handleInput(): void {
-    this.audioEngine.start(BPM, BEAT_COUNT);
+    this.audioEngine.start(BPM, BEAT_BATCH_SIZE);
     const nowMs = this.time.now - this.startTimeMs;
     const target = this.markers.find(
       (m) => m.resolved === null && isWithinHitWindow(m.beat, nowMs, HIT_WINDOW_MS)
@@ -241,6 +260,10 @@ export class RoadScene extends Phaser.Scene {
     const laneY = this.laneY();
     const hitLineX = this.hitLineX();
 
+    if (this.nextBatchStartTimeMs - nowMs < BEAT_LOOKAHEAD_MS) {
+      this.appendBeatBatch();
+    }
+
     this.distancePx = accumulateDistance(this.distancePx, this.walking, delta, ROAD_SCROLL_PX_PER_SEC);
     const biomeBlend = biomeBlendRatio(this.distancePx);
     this.cameras.main.setBackgroundColor(RoadScene.lerpColor(BIOMES[0].skyColor, BIOMES[1].skyColor, biomeBlend));
@@ -251,15 +274,17 @@ export class RoadScene extends Phaser.Scene {
     this.flash.setPosition(hitLineX, laneY);
     this.flash.setSize(4, HIT_LINE_HEIGHT);
 
-    for (const marker of this.markers) {
+    // Filtered in place (not just gfx-destroyed) so a long/unbounded play
+    // session doesn't accumulate every beat ever generated — ROADMAP task 13.
+    this.markers = this.markers.filter((marker) => {
       const progress = scrollProgress(marker.beat, nowMs, TRAVEL_TIME_MS);
 
-      if (progress < 0 || progress > EXIT_PROGRESS) {
-        if (marker.gfx && progress > EXIT_PROGRESS) {
-          marker.gfx.destroy();
-          marker.gfx = null;
-        }
-        continue;
+      if (progress > EXIT_PROGRESS) {
+        marker.gfx?.destroy();
+        return false;
+      }
+      if (progress < 0) {
+        return true;
       }
 
       if (marker.resolved === null && isBeatMissed(marker.beat, nowMs, HIT_WINDOW_MS)) {
@@ -273,7 +298,8 @@ export class RoadScene extends Phaser.Scene {
         marker.gfx = this.add.circle(0, laneY, MARKER_RADIUS, color);
       }
       marker.gfx.setPosition(this.markerX(progress), laneY);
-    }
+      return true;
+    });
 
     const meterRatio = this.meter / this.meterConfig.max;
     this.coins = accumulateCoins(this.coins, meterRatio, delta, COIN_RATE_PER_SEC);
