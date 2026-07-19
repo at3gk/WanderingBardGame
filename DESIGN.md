@@ -82,3 +82,7 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   below (nothing there requires unbounded length), so left as-is rather
   than expanded into a new system this run; tracked in ROADMAP.md for
   after v0.1 ships.
+- 2026-07-19 — Run 12 (v0.1 ship check). Every Definition of Done item
+  below verified against a real production build; all met, nothing cut.
+  v0.1 shipped. Next work (ROADMAP task 13, unbounded beat schedule) is
+  post-v0.1 scope.

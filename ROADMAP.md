@@ -38,9 +38,12 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     scaled by the live song-meter ratio, displayed via a procedural coin
     icon + count in the top-right corner. No drain, no shop, no spend loop
     — a pure readout.
-12. **v0.1 ship check.** Verify every Definition of Done item in
-    DESIGN.md against the live deploy. Fix or explicitly cut (with
-    changelog entry) anything unmet. Tag this as v0.1.
+12. ~~**v0.1 ship check.**~~ Done (Run 12): every DoD item in DESIGN.md
+    verified against a real production build (`npm run build` + `vite
+    preview`, live Pages URL unreachable from the sandbox — see STATE.md).
+    All met, nothing to cut. `v0.1` tag pushed to `main`'s squash-merge
+    commit once this run's PR lands (see STATE.md for why it can't be
+    pushed to the PR branch itself).
 13. **(Post-v0.1) Unbounded beat schedule.** The beat schedule is currently
     a fixed 300-beat run generated once at scene start (~3 min at 96 BPM),
     not a literally endless road per DESIGN.md's Concept section. Extend
