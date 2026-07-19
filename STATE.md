@@ -5,7 +5,7 @@ Run counter: 13
 ## Current status
 Run 12 complete — ROADMAP task 12 (v0.1 ship check). No code changes; this
 run verified every Definition of Done item in DESIGN.md against a real
-production build and tagged `v0.1`.
+production build. All items met.
 
 The live Pages URL (`https://at3gk.github.io/WanderingBardGame/`) is not
 reachable from this sandbox — the network policy denies `*.github.io`
@@ -57,14 +57,11 @@ Checked each DoD item:
   check's `document.body.innerText` was empty (canvas-only page, no DOM
   menu/login markup).
 
-All items met — nothing to cut. `automerge.yml` squash-merges PRs, so a tag
-on this branch's tip commit wouldn't survive onto `main`'s history — this
-run's PR is subscribed for activity and the `v0.1` tag will be pushed to
-the resulting squash-merge commit on `main` once CI goes green and it
-lands (or, if this session ends first, the next scheduled run tags it as
-its first action before starting task 13 — check `git tag` before assuming
-it's missing). ROADMAP task 13 (unbounded beat schedule) is the first
-post-v0.1 task.
+All items met — nothing to cut. PR #13 merged (squash commit `021410f` on
+`main`). ROADMAP task 13 (unbounded beat schedule) is the first post-v0.1
+task.
+
+**The `v0.1` git tag itself could not be pushed — see Blocked on human.**
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -191,5 +188,19 @@ post-v0.1 task.
   coin pacing).
 
 ## Blocked on human
-- (none currently — see Run 1 note above on the previously-logged
-  branch-protection blocker)
+- **v0.1 git tag** (Run 12): ROADMAP task 12 says "Tag this as v0.1."
+  DoD verification and the ship-check PR (#13) are done and merged
+  (squash commit `021410f` on `main`), but the tag itself can't be pushed
+  from this environment: the local git push proxy accepts pushes only to
+  the designated `claude/*` working branch (a plain `git push origin
+  v0.1` / `git push origin refs/tags/v0.1` both got HTTP 403), and the
+  available GitHub MCP tools have no tag/ref-write call — only read-only
+  `get_tag`/`list_tags`/`get_release_by_tag`/`get_latest_release`. Routing
+  around it (e.g. faking a tag via `create_branch`) would be misleading,
+  so this is left undone rather than faked. A human (or a future run with
+  broader GitHub write scope) needs to run, from a clone with real push
+  access:
+  `git tag -a v0.1 021410f -m "v0.1 ship — see DESIGN.md Definition of
+  Done" && git push origin v0.1`
+  Doesn't block ROADMAP task 13 — the game itself already meets every
+  v0.1 DoD item regardless of whether the tag exists.
