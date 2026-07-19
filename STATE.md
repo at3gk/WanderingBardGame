@@ -1,9 +1,54 @@
 # STATE
 
-Run counter: 13
+Run counter: 14
 
 ## Current status
-Run 12 complete — ROADMAP task 12 (v0.1 ship check). No code changes; this
+Run 13 complete — ROADMAP task 13 (unbounded beat schedule). The beat
+schedule (visual markers + backing-loop audio notes) previously ran out
+after a fixed 300-beat batch (~187s at 96 BPM): the game didn't crash, but
+no more beats would spawn, no more hit/miss checks could fire, and the
+audio engine had scheduled all its notes up front so it went silent too.
+Now:
+
+- `RoadScene.appendBeatBatch()` generates another 300-beat batch,
+  continuing the same tempo/index sequence (via `generateBeatSchedule`'s
+  new `indexOffset` param) so there's no seam. Called once in `create()`
+  and again from `update()` whenever the current batch's remaining runway
+  drops under `BEAT_LOOKAHEAD_MS` (15s) — self-throttling since each
+  append buys ~187s of runway, far more than one frame's worth.
+- `AudioEngine.extend(count)` mirrors this on the audio side: `start()`
+  now only creates the layer `GainNode`s and schedules the first batch;
+  `extend()` schedules further batches against the same `AudioContext`
+  clock, continuing the note-pattern index so the backing loop's pattern
+  cycle doesn't reset at a batch boundary. No-ops until `start()` has run
+  (audio doesn't begin until the first tap, same as before).
+- `generateBaseLoopSchedule` and `generateBeatSchedule` both gained an
+  optional `indexOffset` param (default 0, fully backward compatible —
+  existing call sites/tests unchanged) to support this.
+- `RoadScene.update()`'s marker loop now filters resolved/off-screen
+  markers out of `this.markers` each frame instead of only destroying
+  their `gfx` and leaving the object in the array forever. Without this,
+  making the schedule unbounded would have traded "beats stop after 3
+  min" for "the marker array (and per-frame iteration cost) grows
+  forever" — a regression in the opposite direction. Kept in this run
+  since it's the same concern (the feature doesn't actually work for long
+  play without it), not scope creep.
+
+Verified: `npm test` (41 tests green, 2 new — `beats.test.ts`'s indexOffset
+continuation case, `baseLoop.test.ts`'s pattern-cycle continuation case),
+`npm run build` green (bundle unchanged at ~1.22 MB). Also ran a headless
+Playwright smoke check (390×664 mobile viewport, touch emulation) against
+`vite preview`: cold load 721ms, canvas present, 80 taps at a 90ms cadence
+produced no console errors beyond the expected missing-favicon 404. A real
+multi-minute session that actually crosses the old 300-beat/~187s boundary
+wasn't feasible to verify headlessly within this run — the batch-append
+math is unit-tested and the invariant (`noteIndexOffset * beatIntervalMs
+== last scheduled hit time`, verified by induction across `start`+`extend`
+calls) holds by construction, but confirming it sounds/plays seamlessly at
+a real batch boundary is a human playtest item (see below).
+
+## Previous status (Run 12)
+Run 12 — ROADMAP task 12 (v0.1 ship check). No code changes; this
 run verified every Definition of Done item in DESIGN.md against a real
 production build. All items met.
 
@@ -121,10 +166,15 @@ task.
   Current status above). Deliberately kept it a pure accumulate-only
   readout of the meter ratio — no per-hit bonus, no spend loop, matching
   DESIGN.md's framing of coins as a readout, not a separate system.
-- Run 12 (2026-07-19): v0.1 ship check per ROADMAP task 12 (see Current
-  status above). No code changes — verified every DoD item against a real
-  production build, found nothing unmet. `v0.1` tag pending the squash-merge
-  landing on `main` (see Current status above for why).
+- Run 12 (2026-07-19): v0.1 ship check per ROADMAP task 12 (see previous
+  Current status above). No code changes — verified every DoD item against
+  a real production build, found nothing unmet. `v0.1` tag pending the
+  squash-merge landing on `main` (see Blocked on human below for why).
+- Run 13 (2026-07-19): Unbounded beat schedule per ROADMAP task 13 (see
+  Current status above). Deliberately kept the batch size the same
+  (300 beats) rather than tuning it — this run is about the schedule never
+  running out, not about how far ahead it looks; batch size/lookahead are
+  new eyeballed constants for a future playtest to revisit if needed.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
@@ -186,6 +236,16 @@ task.
   climbs at a pleasing rate or feels too slow/fast to notice; doesn't
   block task 12 (the ship check verifies DoD items, none of which specify
   coin pacing).
+
+- Task 13 unbounded beat schedule (this run): `BEAT_BATCH_SIZE = 300` and
+  `BEAT_LOOKAHEAD_MS = 15000` are eyeballed — the lookahead just needs to
+  be comfortably larger than one frame, which it is, but nobody has
+  actually played across a real batch boundary (~172s in) to confirm the
+  transition is inaudible/invisible on real hardware (a dropped audio
+  frame or a visible marker pop-in would be a real bug, not just a feel
+  issue). Needs a real device playtest of a session longer than ~3
+  minutes; doesn't block anything since v0.1 already shipped and no other
+  task depends on schedule length.
 
 ## Blocked on human
 - **v0.1 git tag** (Run 12): ROADMAP task 12 says "Tag this as v0.1."

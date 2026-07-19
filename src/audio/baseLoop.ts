@@ -22,9 +22,10 @@ export function generateBaseLoopSchedule(
   count: number,
   rootHz: number,
   layer: LoopLayer,
-  startTimeMs = 0
+  startTimeMs = 0,
+  indexOffset = 0
 ): ScheduledNote[] {
-  const beats = generateBeatSchedule(bpm, count, startTimeMs);
+  const beats = generateBeatSchedule(bpm, count, startTimeMs, indexOffset);
   return beats.map((beat) => ({
     timeMs: beat.hitTimeMs,
     frequencyHz: semitoneToFrequency(rootHz, layer.pattern[beat.index % layer.pattern.length]),

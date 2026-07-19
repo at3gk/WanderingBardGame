@@ -37,4 +37,14 @@ describe('generateBaseLoopSchedule', () => {
     ]);
     expect(schedule.every((n) => n.durationMs === 100)).toBe(true);
   });
+
+  it('continues the pattern cycle across a later batch via indexOffset', () => {
+    const first = generateBaseLoopSchedule(120, 4, 200, layer, 0);
+    const second = generateBaseLoopSchedule(120, 2, 200, layer, 2000, 4);
+    expect(second.map((n) => n.frequencyHz)).toEqual([
+      semitoneToFrequency(200, 0),
+      semitoneToFrequency(200, 7),
+    ]);
+    expect(second[0].timeMs).toBe(first[first.length - 1].timeMs + 500);
+  });
 });

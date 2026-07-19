@@ -13,12 +13,17 @@ export function beatIntervalMs(bpm: number): number {
  * Schedule of beats, each carrying the timestamp (relative to `startTimeMs`)
  * at which it should cross the hit line. First beat lands one interval after
  * `startTimeMs` so the player gets a beat's worth of runway before playing.
+ *
+ * `indexOffset` lets a caller request a later batch that continues an
+ * earlier one seamlessly (same tempo, indices carrying on from where the
+ * previous batch left off) — used to keep the beat schedule effectively
+ * unbounded without generating it all up front.
  */
-export function generateBeatSchedule(bpm: number, count: number, startTimeMs = 0): Beat[] {
+export function generateBeatSchedule(bpm: number, count: number, startTimeMs = 0, indexOffset = 0): Beat[] {
   const interval = beatIntervalMs(bpm);
-  return Array.from({ length: count }, (_, index) => ({
-    index,
-    hitTimeMs: startTimeMs + interval * (index + 1),
+  return Array.from({ length: count }, (_, i) => ({
+    index: indexOffset + i,
+    hitTimeMs: startTimeMs + interval * (i + 1),
   }));
 }
 
