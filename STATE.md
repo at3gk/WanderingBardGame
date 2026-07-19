@@ -1,30 +1,70 @@
 # STATE
 
-Run counter: 12
+Run counter: 13
 
 ## Current status
-Run 11 complete — ROADMAP task 11 (coin readout). Added `src/core/coins.ts`
-(`accumulateCoins`, pure/tested), a readout-only accumulator with the same
-shape as `accumulateDistance`: no meter-ratio gain, no drain, it just stops
-growing when the meter is empty and speeds up as the meter fills
-(`COIN_RATE_PER_SEC = 5` at full meter). Wired into `RoadScene.update()`
-using the same `meterRatio` already computed for `audioEngine.setMeterRatio`
-so there's one source of truth for it. Display is a small procedural coin
-icon (`add.circle`, gold) plus a `Phaser.GameObjects.Text` count in the
-top-right corner (`updateCoinReadout()`), first `Text` object in the
-codebase — no font assets needed, uses the default sans-serif. Explicitly
-scoped to readout-only per ROADMAP: no shop, no spend loop, coins never
-decrease.
-`npm test` 39 tests green (5 new), `npm run build` green (1.22 MB output,
-gzip ~336 KB). Verified with a headless-Chromium check at a 390×664 mobile
-viewport (Playwright, global install at `/opt/node22/lib/node_modules/
-playwright` symlinked into a scratch `node_modules` since the project
-itself has no Playwright devDependency): cold load, eight touch taps at
-the beat tempo, coin count visibly climbed from the icon's default and
-rendered legibly without overlapping the song meter bar; no console errors
-beyond the expected missing-favicon 404. Screenshot confirmed the icon/text
-pairing sits clear of the meter track at the 390px-wide viewport.
-Next run is ROADMAP task 12 (v0.1 ship check).
+Run 12 complete — ROADMAP task 12 (v0.1 ship check). No code changes; this
+run verified every Definition of Done item in DESIGN.md against a real
+production build and tagged `v0.1`.
+
+The live Pages URL (`https://at3gk.github.io/WanderingBardGame/`) is not
+reachable from this sandbox — the network policy denies `*.github.io`
+(confirmed via the proxy status endpoint, `connect_rejected`/403). Verified
+against `npm run build` + `vite preview` instead (same artifact the deploy
+workflow ships), which is what every prior run's headless check has also
+used. Noted below in case the policy allows it in a future run.
+
+Checked each DoD item:
+- **Loads in <5s, first beat tappable on cold load**: headless Playwright,
+  390×664 mobile viewport, touch+mobile emulation. `canvas` present and a
+  touch tap accepted at 671ms/700ms cold-load time across two runs, well
+  under 5s.
+- **Single-lane mechanic, fully Vitest-covered**: `npm test` — 39 tests
+  green across `beats`, `songMeter`, `coins`, `biome`, `distance`,
+  `baseLoop`, `layering` — unchanged from Run 11.
+- **Bard sprite walk/idle tied to meter state, road scroll tied to walking**:
+  confirmed visually — first tap loop used a naive fixed-cadence tap (every
+  625ms) that drifted outside the 120ms hit window over time and visibly
+  drained the meter (screenshots showed the fill shrinking run-over-run);
+  a tightened tap loop (every 90ms, well inside the hit window) kept the
+  meter full and the bard's legs mid-stride throughout.
+- **≥2 biomes, distance-driven transition**: the tight-tap-loop run held
+  `walking = true` continuously for 70s of real time (`BIOME_TRANSITION_START_PX
+  4000 / ROAD_SCROLL_PX_PER_SEC 90 ≈ 44.4s` to start, `~66.7s` to fully
+  resolve) and the screenshot at ~70s showed the sky/road palette fully
+  shifted from the default (dark purple/mauve) to Forest Dusk (dark green)
+  — confirms the crossfade actually reaches and completes, not just that
+  the math is unit-tested.
+- **Procedural backing loop + meter-driven layering**: code-verified
+  (`AudioEngine`/`AUDIO_MANIFEST` wiring unchanged since Run 8, tests green)
+  plus no Web Audio console errors during either headless run. Headless
+  Chromium can't confirm how it sounds — that's still a human-playtest item
+  (see below), not a ship blocker (DoD only requires the layering to exist
+  and respond to the meter, which it does).
+- **Touch input on mobile viewport, keyboard/mouse on desktop**:
+  `this.input.on('pointerdown', ...)` (fires for touch and mouse alike —
+  confirmed via the touchscreen taps above) and
+  `this.input.keyboard?.on('keydown-SPACE', ...)` in `RoadScene.ts:111-112`,
+  both wired to the same `handleInput()`.
+- **Bundle <5 MB, deploys via CI/deploy workflow**: `npm run build` →
+  `dist/assets/index-*.js` 1.22 MB (gzip ~336 KB), well under the cap.
+  `.github/workflows/deploy.yml` unchanged and gated on CI per README;
+  deploy itself not re-verified this run since Pages is unreachable from
+  this sandbox (see above) — the workflow's shape hasn't changed since it
+  last shipped Run 11's PR.
+- **No menus/login/save, opens directly into the walk**: `src/main.ts`
+  boots a single `Phaser.Game` with one scene (`RoadScene`); headless
+  check's `document.body.innerText` was empty (canvas-only page, no DOM
+  menu/login markup).
+
+All items met — nothing to cut. `automerge.yml` squash-merges PRs, so a tag
+on this branch's tip commit wouldn't survive onto `main`'s history — this
+run's PR is subscribed for activity and the `v0.1` tag will be pushed to
+the resulting squash-merge commit on `main` once CI goes green and it
+lands (or, if this session ends first, the next scheduled run tags it as
+its first action before starting task 13 — check `git tag` before assuming
+it's missing). ROADMAP task 13 (unbounded beat schedule) is the first
+post-v0.1 task.
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -84,6 +124,10 @@ Next run is ROADMAP task 12 (v0.1 ship check).
   Current status above). Deliberately kept it a pure accumulate-only
   readout of the meter ratio — no per-hit bonus, no spend loop, matching
   DESIGN.md's framing of coins as a readout, not a separate system.
+- Run 12 (2026-07-19): v0.1 ship check per ROADMAP task 12 (see Current
+  status above). No code changes — verified every DoD item against a real
+  production build, found nothing unmet. `v0.1` tag pending the squash-merge
+  landing on `main` (see Current status above for why).
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
