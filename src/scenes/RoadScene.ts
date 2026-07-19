@@ -4,7 +4,7 @@ import { AUDIO_MANIFEST } from '../audio/manifest';
 import { Beat, generateBeatSchedule, isBeatMissed, isWithinHitWindow, scrollProgress } from '../core/beats';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
 import { accumulateDistance } from '../core/distance';
-import { Biome, BIOMES, biomeBlendRatio } from '../core/biome';
+import { Biome, BIOMES, biomeBlendAt } from '../core/biome';
 import { accumulateCoins } from '../core/coins';
 
 const BPM = 96;
@@ -51,6 +51,8 @@ export class RoadScene extends Phaser.Scene {
   private meterFill!: Phaser.GameObjects.Rectangle;
   private road!: Phaser.GameObjects.TileSprite;
   private roadNext!: Phaser.GameObjects.TileSprite;
+  private roadFromIndex = 0;
+  private roadToIndex = 0;
   private distancePx = 0;
   private totalBeatsGenerated = 0;
   private nextBatchStartTimeMs = 0;
@@ -83,8 +85,10 @@ export class RoadScene extends Phaser.Scene {
     this.nextBatchStartTimeMs = 0;
     this.appendBeatBatch();
 
+    this.roadFromIndex = 0;
+    this.roadToIndex = 0;
     this.road = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, this.roadTileTexture(BIOMES[0]));
-    this.roadNext = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, this.roadTileTexture(BIOMES[1]));
+    this.roadNext = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, this.roadTileTexture(BIOMES[0]));
     this.roadNext.setAlpha(0);
 
     this.hitLine = this.add.rectangle(0, 0, 4, 0, 0xe8d9c0, 0.8);
@@ -265,10 +269,12 @@ export class RoadScene extends Phaser.Scene {
     }
 
     this.distancePx = accumulateDistance(this.distancePx, this.walking, delta, ROAD_SCROLL_PX_PER_SEC);
-    const biomeBlend = biomeBlendRatio(this.distancePx);
-    this.cameras.main.setBackgroundColor(RoadScene.lerpColor(BIOMES[0].skyColor, BIOMES[1].skyColor, biomeBlend));
+    const blend = biomeBlendAt(this.distancePx);
+    this.cameras.main.setBackgroundColor(
+      RoadScene.lerpColor(BIOMES[blend.fromIndex].skyColor, BIOMES[blend.toIndex].skyColor, blend.ratio)
+    );
 
-    this.updateRoad(laneY, delta, biomeBlend);
+    this.updateRoad(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
     this.hitLine.setPosition(hitLineX, laneY);
     this.hitLine.setSize(4, HIT_LINE_HEIGHT);
     this.flash.setPosition(hitLineX, laneY);
@@ -313,17 +319,29 @@ export class RoadScene extends Phaser.Scene {
   /**
    * Ground band sits below the bard and scrolls at a fixed rate while
    * walking, freezing when the song stalls (ROADMAP task 6). A second
-   * biome tile sits on top and crossfades in via alpha as distance
-   * crosses the transition band (ROADMAP task 9) — both scroll in lockstep
-   * so the dashes stay aligned through the fade.
+   * biome tile sits on top and crossfades in via alpha as distance crosses
+   * a transition band (ROADMAP task 9; generalized to N biomes in task 15)
+   * — both scroll in lockstep so the dashes stay aligned through the fade.
+   * Textures only get swapped when the blend's from/to indices actually
+   * change (there are more than 2 biomes now, so which pair is blending
+   * changes over the course of a walk).
    */
-  private updateRoad(laneY: number, delta: number, biomeBlend: number): void {
+  private updateRoad(laneY: number, delta: number, fromIndex: number, toIndex: number, ratio: number): void {
+    if (fromIndex !== this.roadFromIndex) {
+      this.roadFromIndex = fromIndex;
+      this.road.setTexture(this.roadTileTexture(BIOMES[fromIndex]));
+    }
+    if (toIndex !== this.roadToIndex) {
+      this.roadToIndex = toIndex;
+      this.roadNext.setTexture(this.roadTileTexture(BIOMES[toIndex]));
+    }
+
     const roadY = laneY + BARD_GROUND_Y_OFFSET;
     this.road.setPosition(this.scale.width / 2, roadY);
     this.road.setSize(this.scale.width, ROAD_HEIGHT_BELOW_BARD);
     this.roadNext.setPosition(this.scale.width / 2, roadY);
     this.roadNext.setSize(this.scale.width, ROAD_HEIGHT_BELOW_BARD);
-    this.roadNext.setAlpha(biomeBlend);
+    this.roadNext.setAlpha(ratio);
     if (this.walking) {
       const scrollDelta = (ROAD_SCROLL_PX_PER_SEC * delta) / 1000;
       this.road.tilePositionX += scrollDelta;

@@ -64,6 +64,18 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     still untuned by ear/feel on a real device. Once a human has a chance
     to actually play it, fold their feedback into concrete constant
     changes here instead of leaving the list to grow indefinitely.
+    **Blocked on human** (see STATE.md) — no autonomous run can execute
+    this, so runs skip past it to the next actionable task until a human
+    plays the build.
+15. ~~**(Post-v0.1) Third biome + generalized transitions.**~~ Done
+    (Run 14): DESIGN.md's Concept names three vignettes but only two
+    biomes existed. `src/core/biome.ts`'s `biomeBlendRatio` (hardcoded to
+    exactly 2 biomes) is now `biomeBlendAt`, which walks an array of
+    `BiomeTransition` entries to support any number of biomes; added
+    "Riverside Camp" as the third. `RoadScene` swaps its two TileSprite
+    textures dynamically as the blended pair changes over a walk instead
+    of being hardcoded to `BIOMES[0]`/`BIOMES[1]`. Folds into task 14's
+    playtest scope rather than being separately tracked.
 
 ## Needs human playtest
 

@@ -86,3 +86,9 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   below verified against a real production build; all met, nothing cut.
   v0.1 shipped. Next work (ROADMAP task 13, unbounded beat schedule) is
   post-v0.1 scope.
+- 2026-07-19 — Run 14. Added the third scenery biome (Riverside Camp) named
+  in the Concept section above but never implemented until now — the biome
+  system was hardcoded to exactly two entries. Generalized it to support N
+  biomes instead. ROADMAP task 14 (human playtest pass) was next in line
+  but can't run without an actual human; logged as blocked and this run's
+  slot went to the biome work instead (see STATE.md).

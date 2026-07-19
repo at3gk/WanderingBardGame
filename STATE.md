@@ -1,8 +1,59 @@
 # STATE
 
-Run counter: 14
+Run counter: 15
 
 ## Current status
+Run 14 complete — ROADMAP task 15 (third biome + generalized transitions).
+ROADMAP task 14 ("human playtest pass") needs an actual human playing the
+game — nothing this run can execute, so it's logged under **Blocked on
+human** below and this run picked the next actionable item instead
+(reprioritized in per CLAUDE.md's "reprioritize freely" allowance).
+
+DESIGN.md's Concept section names three vignettes ("a sleepy village, a
+forest at dusk, a riverside camp") but only two biomes existed. This run:
+
+- Added a third biome, **Riverside Camp** (`skyColor 0x141c24, roadBandColor
+  0x2c3a42, roadDashColor 0x3d5560`) to `BIOMES` in `src/core/biome.ts`.
+- Replaced the old two-biome-only `biomeBlendRatio(distance, start, length)`
+  with a general `biomeBlendAt(distance, transitions, biomeCount)` that
+  walks an array of `BiomeTransition { startPx, lengthPx }` entries (one
+  per biome after the first) and returns `{ fromIndex, toIndex, ratio }` —
+  which two biomes are currently blending and how far across. Steady state
+  (before the first transition, between transitions, after the last one)
+  returns `fromIndex === toIndex, ratio: 0`. `BIOME_TRANSITIONS` keeps the
+  original village→forest band (`4000`–`6000` px) and adds a matching
+  forest→riverside band (`9000`–`11000` px, same 2000px length so both
+  crossfades read the same way — eyeballed, not tuned, same caveat as the
+  original transition).
+- `RoadScene` now tracks `roadFromIndex`/`roadToIndex` and only calls
+  `setTexture` on the `road`/`roadNext` TileSprites when the blend's
+  indices actually change (was hardcoded to `BIOMES[0]`/`BIOMES[1]`
+  before) — needed because with 3+ biomes, which pair is blending changes
+  partway through a walk, not just once. Sky color lerp now interpolates
+  between `BIOMES[fromIndex]` and `BIOMES[toIndex]` instead of always
+  `BIOMES[0]`/`BIOMES[1]`.
+- Rewrote `biome.test.ts` for the new `biomeBlendAt` API: steady-state
+  before/between/after, ratio ramp across each of two transition bands,
+  zero-length hard-cut behavior (preserved from the old test), and a case
+  confirming a transition entry is ignored when `biomeCount` doesn't
+  support it (guards the "more transitions than biomes" edge case the old
+  single-pair function couldn't have).
+
+Verified: `npm test` (44 tests green, 5 new in `biome.test.ts`), `npm run
+build` green (bundle ~1.22 MB, unchanged). Also ran a headless Playwright
+smoke check (390×664 mobile viewport, touch emulation, temporarily
+installed via `npm install --no-save playwright` so `package.json`/lock
+stay untouched) against `vite preview`: cold load 1323ms, a continuous
+90ms-cadence tap loop for 120s of real time (~10800px traveled at
+`ROAD_SCROLL_PX_PER_SEC = 90`, comfortably past both transition bands
+ending at 6000px/11000px) produced no console errors beyond the expected
+missing-favicon 404, and the final screenshot showed the Riverside Camp
+palette (dark blue-teal sky/road) fully resolved with a full song meter —
+confirms the blend logic doesn't just pass its unit tests but actually
+drives the visible scene through two consecutive transitions in sequence,
+not just one at a time.
+
+## Previous status (Run 13)
 Run 13 complete — ROADMAP task 13 (unbounded beat schedule). The beat
 schedule (visual markers + backing-loop audio notes) previously ran out
 after a fixed 300-beat batch (~187s at 96 BPM): the game didn't crash, but
@@ -175,6 +226,14 @@ task.
   (300 beats) rather than tuning it — this run is about the schedule never
   running out, not about how far ahead it looks; batch size/lookahead are
   new eyeballed constants for a future playtest to revisit if needed.
+- Run 14 (2026-07-19): Third biome + generalized N-biome transitions per
+  ROADMAP task 15 (see Current status above). ROADMAP task 14 (human
+  playtest pass) was next in line but needs an actual human — reprioritized
+  to this instead and logged task 14 under Blocked on human. Deliberately
+  kept the new transition's start/length identical in shape to the
+  original (same 2000px band) rather than inventing new pacing — this run
+  is about the biome system supporting a third entry at all, not about
+  tuning transition feel, which is playtest scope either way.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
@@ -247,7 +306,26 @@ task.
   minutes; doesn't block anything since v0.1 already shipped and no other
   task depends on schedule length.
 
+- Task 15 third biome (this run): Riverside Camp's palette and the second
+  transition's position/length (`9000`–`11000` px, matching the first
+  transition's shape) are eyeballed, same caveat as task 9's original
+  transition — headless checks confirm the blend math and that the scene
+  visibly resolves to the right palette after two consecutive transitions,
+  not whether the pacing (two ~44s-apart mood shifts over one walk) feels
+  right, or whether Riverside Camp's blue-teal palette reads as distinct
+  enough from Forest Dusk's green on a real screen. Rolls into task 14
+  (human playtest pass) rather than being a separate item.
+
 ## Blocked on human
+- **ROADMAP task 14 — human playtest pass** (Run 14): every item in this
+  "Needs human playtest" section needs a real person actually playing the
+  game on a real device/speakers to judge feel — there's no way to execute
+  "does this feel cozy/comfortable/fun" headlessly. This run reprioritized
+  around it (did task 15 instead, which was actionable) rather than
+  blocking the whole run. Route: whenever a human next plays the build,
+  fold their feedback into concrete constant changes and close this out;
+  until then each new feature run keeps adding to the list above rather
+  than the list ever getting tuned.
 - **v0.1 git tag** (Run 12): ROADMAP task 12 says "Tag this as v0.1."
   DoD verification and the ship-check PR (#13) are done and merged
   (squash commit `021410f` on `main`), but the tag itself can't be pushed
