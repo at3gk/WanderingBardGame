@@ -76,6 +76,18 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     textures dynamically as the blended pair changes over a walk instead
     of being hardcoded to `BIOMES[0]`/`BIOMES[1]`. Folds into task 14's
     playtest scope rather than being separately tracked.
+16. ~~**(Post-v0.1) Per-biome base-loop pattern.**~~ Done (Run 15):
+    DESIGN.md's core-mechanic section names "tempo/pattern variety... as
+    the road changes scenery" as the mechanic's only depth, but the base
+    loop played the exact same 4-note pattern for the entire walk. Added
+    `LoopLayer.patternByBiome` (manifest.ts) so the base loop's melody now
+    differs per biome (village/forest/riverside each get their own
+    4-semitone pattern); `AudioEngine.start`/`extend` take a `biomeId` and
+    resolve the pattern for whichever biome is current when a batch is
+    scheduled. Deliberately scoped to the base loop only (not tempo, not
+    the harmony/sparkle layers) — changing BPM mid-walk risks desyncing
+    the beat schedule and audio clock, and is its own task if wanted
+    later. See STATE.md for the batch-boundary quantization caveat.
 
 ## Needs human playtest
 

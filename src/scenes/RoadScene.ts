@@ -218,12 +218,20 @@ export class RoadScene extends Phaser.Scene {
     return this.scale.width * 0.6;
   }
 
+  /** The scenery biome the walk is currently in, per ROADMAP task 16 — used to pick which pattern the audio engine's next batch plays. */
+  private currentBiomeId(): string {
+    return BIOMES[biomeBlendAt(this.distancePx).fromIndex].id;
+  }
+
   /**
    * Appends the next batch of beats, continuing the schedule seamlessly
    * from wherever the last batch left off (ROADMAP task 13 — the road is
    * meant to be endless, so beats aren't all generated once up front).
    * Extends the audio engine's own note schedule in lockstep so the
-   * backing loop never runs out of scheduled notes either.
+   * backing loop never runs out of scheduled notes either — each new batch
+   * picks up the biome current at the time it's scheduled, so the melody
+   * shifts with the scenery a batch at a time rather than mid-batch
+   * (ROADMAP task 16; see STATE.md for the quantization caveat).
    */
   private appendBeatBatch(): void {
     const newBeats = generateBeatSchedule(BPM, BEAT_BATCH_SIZE, this.nextBatchStartTimeMs, this.totalBeatsGenerated);
@@ -232,11 +240,11 @@ export class RoadScene extends Phaser.Scene {
     }
     this.totalBeatsGenerated += BEAT_BATCH_SIZE;
     this.nextBatchStartTimeMs = newBeats[newBeats.length - 1].hitTimeMs;
-    this.audioEngine.extend(BEAT_BATCH_SIZE);
+    this.audioEngine.extend(BEAT_BATCH_SIZE, this.currentBiomeId());
   }
 
   private handleInput(): void {
-    this.audioEngine.start(BPM, BEAT_BATCH_SIZE);
+    this.audioEngine.start(BPM, BEAT_BATCH_SIZE, this.currentBiomeId());
     const nowMs = this.time.now - this.startTimeMs;
     const target = this.markers.find(
       (m) => m.resolved === null && isWithinHitWindow(m.beat, nowMs, HIT_WINDOW_MS)
