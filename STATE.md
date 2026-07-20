@@ -1,8 +1,67 @@
 # STATE
 
-Run counter: 15
+Run counter: 16
 
 ## Current status
+Run 15 complete — ROADMAP task 16 (per-biome base-loop pattern). ROADMAP
+task 14 (human playtest pass) is still blocked on an actual human — see
+Blocked on human below; this run picked the next actionable item.
+
+DESIGN.md's core-mechanic section calls out "tempo/pattern variety... fed
+to the player as the road changes scenery" as the mechanic's only depth,
+but the base loop played the identical `[0, 0, 7, 5]` pattern for the
+entire walk regardless of biome — no pattern variety existed yet. This
+run:
+
+- Added `LoopLayer.patternByBiome?: Record<string, number[]>` to
+  `src/audio/manifest.ts` — an optional per-biome override of `pattern`,
+  keyed by `Biome.id`. Gave `baseLoop` a `forest` pattern (`[0, 3, 7, 3]`)
+  and a `riverside` pattern (`[0, 5, 9, 5]`); `village` has no entry so it
+  falls back to the original `pattern`, unchanged.
+- Added `resolvePattern(layer, biomeId)` to `src/audio/baseLoop.ts` — pure,
+  tested in isolation — and threaded an optional `biomeId` param through
+  `generateBaseLoopSchedule` so it uses the resolved pattern instead of
+  always reading `layer.pattern`.
+- `AudioEngine.start(bpm, count, biomeId)` and `.extend(count, biomeId)`
+  now take a `biomeId` and pass it down through `scheduleAllLayers` /
+  `scheduleLayerNotes` to every layer's schedule call — applies uniformly
+  to `baseLoop` and the `harmony`/`sparkle` layers, but only `baseLoop` has
+  overrides defined this run, so the other two layers are unaffected
+  (same patterns as before).
+- `RoadScene.currentBiomeId()` reads `BIOMES[biomeBlendAt(this.distancePx)
+  .fromIndex].id` and is passed to both the `start()` call in
+  `handleInput()` and the `extend()` call in `appendBeatBatch()`.
+
+**Known limitation, not a bug**: each batch's pattern is fixed at the
+moment that batch is scheduled (every ~187s, per task 13's
+`BEAT_BATCH_SIZE`/`BEAT_LOOKAHEAD_MS`), using whichever biome is current
+at that instant. A biome transition that happens mid-batch (both of the
+current transitions do, at ~44s and ~122s in, well inside a ~187s batch)
+won't change the melody until the *next* batch boundary — the visual
+scenery crossfades smoothly but the audio pattern switches in a step.
+Tightening this to switch mid-batch would mean re-scheduling in-flight
+notes against the transition band, which is real synchronization work,
+not this task's scope (this task is "pattern varies by biome exists at
+all", not "pattern switch is seamless"). Logged under Needs human
+playtest below since whether the step-change is noticeable/jarring on
+real speakers is a feel question.
+
+Verified: `npm test` (49 tests green, 5 new — 2 in `generateBaseLoopSchedule`
+for the override/fallback cases, 3 for `resolvePattern` directly), `npm run
+build` green (bundle unchanged at ~1.22 MB, no new runtime dependency).
+Also ran a headless Playwright smoke check (390×664 mobile viewport, touch
+emulation, temporarily installed via `npm install --no-save playwright` so
+`package.json`/lock stay untouched) against `vite preview`: cold load
+660ms, a continuous 90ms-cadence tap loop for 50s of real time (crosses
+into the village→forest transition band at ~44s, so both the old and new
+`start`/`extend` call sites and a live pattern batch boundary got
+exercised) produced no console errors beyond the expected missing-favicon
+404 — confirms the new `biomeId` plumbing doesn't throw or silently drop
+notes at runtime, though hearing whether the pattern actually sounds
+different per biome is a human-playtest item (headless Chromium can't
+judge that), same caveat as every other audio task.
+
+## Previous status (Run 14)
 Run 14 complete — ROADMAP task 15 (third biome + generalized transitions).
 ROADMAP task 14 ("human playtest pass") needs an actual human playing the
 game — nothing this run can execute, so it's logged under **Blocked on
@@ -234,6 +293,14 @@ task.
   original (same 2000px band) rather than inventing new pacing — this run
   is about the biome system supporting a third entry at all, not about
   tuning transition feel, which is playtest scope either way.
+- Run 15 (2026-07-20): Per-biome base-loop melodic pattern per ROADMAP
+  task 16 (see Current status above). ROADMAP task 14 (human playtest
+  pass) is still blocked; this run picked the next actionable item.
+  Deliberately scoped to the base loop's pattern only, not tempo (BPM
+  stays fixed at 96 across all biomes — changing it mid-walk risks
+  desyncing the beat schedule/audio clock, out of scope for this task)
+  and not the harmony/sparkle layers (no overrides defined for them this
+  run, so their behavior is unchanged).
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
@@ -315,6 +382,18 @@ task.
   right, or whether Riverside Camp's blue-teal palette reads as distinct
   enough from Forest Dusk's green on a real screen. Rolls into task 14
   (human playtest pass) rather than being a separate item.
+
+- Task 16 per-biome base-loop pattern (this run): the `forest`
+  (`[0, 3, 7, 3]`) and `riverside` (`[0, 5, 9, 5]`) patterns are eyeballed
+  variations on the original `village` pattern, not composed/tuned by
+  ear — headless checks confirm the right pattern is scheduled for the
+  right biome, not whether the melodic difference actually reads as a
+  mood shift on real speakers. Also needs a real-device check of the
+  known batch-boundary quantization (see Current status above): does the
+  pattern's step-change at a batch boundary land close enough to the
+  visual crossfade to feel connected, or far enough off to feel like an
+  unrelated glitch? Doesn't block anything — v0.1 already shipped and no
+  other task depends on pattern tuning.
 
 ## Blocked on human
 - **ROADMAP task 14 — human playtest pass** (Run 14): every item in this

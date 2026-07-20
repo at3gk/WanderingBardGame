@@ -37,8 +37,8 @@ export class AudioEngine {
     return this.context;
   }
 
-  /** Starts the base loop and all manifest layers. Must be called from a user-gesture handler (tap/keydown) — browsers block autoplay otherwise. No-ops after the first call. */
-  start(bpm: number, count: number): void {
+  /** Starts the base loop and all manifest layers. Must be called from a user-gesture handler (tap/keydown) — browsers block autoplay otherwise. No-ops after the first call. `biomeId` selects each layer's `patternByBiome` override, if any. */
+  start(bpm: number, count: number, biomeId: string): void {
     if (this.started) return;
     this.started = true;
     this.bpm = bpm;
@@ -51,22 +51,22 @@ export class AudioEngine {
       this.createLayerGain(ctx, layer, isLayerActive(0, layer));
     }
 
-    this.scheduleAllLayers(ctx, count, 0);
+    this.scheduleAllLayers(ctx, count, 0, biomeId);
     this.noteIndexOffset = count;
   }
 
-  /** Schedules the next `count` beats' worth of notes, continuing seamlessly from the last batch. No-ops until `start` has run. */
-  extend(count: number): void {
+  /** Schedules the next `count` beats' worth of notes, continuing seamlessly from the last batch. No-ops until `start` has run. `biomeId` picks the pattern each layer plays for this batch (ROADMAP task 16). */
+  extend(count: number, biomeId: string): void {
     if (!this.started || !this.context) return;
     const startTimeMs = this.noteIndexOffset * beatIntervalMs(this.bpm);
-    this.scheduleAllLayers(this.context, count, startTimeMs);
+    this.scheduleAllLayers(this.context, count, startTimeMs, biomeId);
     this.noteIndexOffset += count;
   }
 
-  private scheduleAllLayers(ctx: AudioContext, count: number, startTimeMs: number): void {
-    this.scheduleLayerNotes(ctx, this.manifest.baseLoop, count, startTimeMs);
+  private scheduleAllLayers(ctx: AudioContext, count: number, startTimeMs: number, biomeId: string): void {
+    this.scheduleLayerNotes(ctx, this.manifest.baseLoop, count, startTimeMs, biomeId);
     for (const layer of this.manifest.layers) {
-      this.scheduleLayerNotes(ctx, layer, count, startTimeMs);
+      this.scheduleLayerNotes(ctx, layer, count, startTimeMs, biomeId);
     }
   }
 
@@ -98,7 +98,13 @@ export class AudioEngine {
     this.layerActive.set(layer.id, startActive);
   }
 
-  private scheduleLayerNotes(ctx: AudioContext, layer: LoopLayer, count: number, startTimeMs: number): void {
+  private scheduleLayerNotes(
+    ctx: AudioContext,
+    layer: LoopLayer,
+    count: number,
+    startTimeMs: number,
+    biomeId: string
+  ): void {
     const master = this.layerGains.get(layer.id);
     if (!master) return;
 
@@ -108,7 +114,8 @@ export class AudioEngine {
       this.manifest.rootFrequencyHz,
       layer,
       startTimeMs,
-      this.noteIndexOffset
+      this.noteIndexOffset,
+      biomeId
     );
     for (const note of schedule) {
       this.playNote(ctx, master, layer, this.startAt + note.timeMs / 1000, note.frequencyHz, note.durationMs / 1000);

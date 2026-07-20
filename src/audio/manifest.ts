@@ -10,6 +10,8 @@ export interface LoopLayer {
   waveform: OscillatorType;
   /** Semitone offsets from `rootFrequencyHz`, one per beat, cycling. */
   pattern: number[];
+  /** Per-biome override of `pattern`, keyed by `Biome.id`. Falls back to `pattern` for any biome not listed. */
+  patternByBiome?: Record<string, number[]>;
   gain: number;
   noteDurationMs: number;
   /** Song-meter fraction (0–1) at/above which this layer is audible. Omitted (or 0) means always on — used by `baseLoop`. */
@@ -28,6 +30,10 @@ export const AUDIO_MANIFEST: AudioManifest = {
     id: 'baseLoop',
     waveform: 'triangle',
     pattern: [0, 0, 7, 5],
+    patternByBiome: {
+      forest: [0, 3, 7, 3],
+      riverside: [0, 5, 9, 5],
+    },
     gain: 0.05,
     noteDurationMs: 180,
   },
