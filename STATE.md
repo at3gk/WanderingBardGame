@@ -1,8 +1,56 @@
 # STATE
 
-Run counter: 17
+Run counter: 18
 
 ## Current status
+Run 17 complete — ROADMAP task 18 (per-biome patterns for harmony/sparkle
+layers). ROADMAP task 14 (human playtest pass) is still blocked on an
+actual human — see Blocked on human below; this run picked the next
+actionable item.
+
+Task 16 added `patternByBiome` to `LoopLayer` and gave only `baseLoop`
+forest/riverside overrides, deliberately leaving the `harmony` and
+`sparkle` layers unchanged ("no overrides defined for them this run, so
+their behavior is unchanged"). But `resolvePattern`/`generateBaseLoopSchedule`
+were already generic over any `LoopLayer`, and `AudioEngine.scheduleAllLayers`
+already threads the same `biomeId` through `baseLoop` and every entry in
+`manifest.layers` — so the plumbing needed zero code changes. This run:
+
+- Added `patternByBiome.forest`/`.riverside` to both `harmony` and
+  `sparkle` in `src/audio/manifest.ts`. Each biome's override is the
+  layer's own base pattern shifted by the *same per-beat semitone diff*
+  `baseLoop` already uses for that biome (forest is `+[0,3,0,-2]` over the
+  village pattern, riverside is `+[0,5,2,0]`) — so all three layers move
+  together at a biome transition instead of only the melody shifting
+  while the harmony/sparkle layers stay put. Documented the convention
+  inline above `layers:` so a future biome addition knows to keep it.
+- Added `src/audio/manifest.test.ts` (3 new tests): every layer (base
+  loop + both additional layers) has a forest and riverside override,
+  every layer falls back to its base `pattern` for `village` (no entry),
+  and the harmony/sparkle diffs match `baseLoop`'s diffs exactly per
+  biome — guards the "layers drift out of sync with each other" case if
+  a future run edits one layer's override without the others.
+- No changes to `baseLoop.ts`, `AudioEngine.ts`, or `layering.ts` — this
+  was purely manifest data plus the diff-consistency test, confirming the
+  task 16 plumbing really was layer-agnostic as designed.
+
+Verified: `npm test` (52 tests green, 3 new), `npm run build` green
+(bundle ~1.22 MB, unchanged, no new runtime dependency). Also ran a
+headless Playwright smoke check (390×664 mobile viewport, touch
+emulation, temporarily installed via `npm install --no-save playwright`
+so `package.json`/lock stay untouched, launched against the sandbox's
+pre-installed Chromium at `/opt/pw-browsers/chromium-1194` since the
+npm-installed Playwright's own browser download is blocked in this
+environment) against `vite preview`: cold load 831ms, a continuous
+625ms-cadence tap loop (matching the 96 BPM beat interval) for 25s of
+real time produced no console errors beyond the expected missing-favicon
+404 — confirms the new harmony/sparkle biome patterns don't throw or
+drop notes at runtime. Whether the fuller three-layer shift actually
+reads as a stronger mood change per biome on real speakers is, like every
+other audio task, a human-playtest question — folded into the existing
+task 14 item below, not a new one.
+
+## Previous status (Run 16)
 Run 16 complete — ROADMAP task 17 (tighten batch-boundary quantization).
 ROADMAP task 14 (human playtest pass) is still blocked on an actual human
 — see Blocked on human below; this run picked the next actionable item.
@@ -344,6 +392,12 @@ task.
   desyncing the beat schedule/audio clock, out of scope for this task)
   and not the harmony/sparkle layers (no overrides defined for them this
   run, so their behavior is unchanged).
+- Run 17 (2026-07-20): Per-biome patterns for the `harmony`/`sparkle`
+  layers per new ROADMAP task 18 (see Current status above). Task 16 had
+  scoped biome patterns to `baseLoop` only; the resolve/schedule plumbing
+  was already layer-generic, so this run was manifest data (each layer's
+  biome override = its own pattern + the same diff `baseLoop` uses for
+  that biome) plus a consistency test, no logic changes.
 - Run 16 (2026-07-20): Tightened the batch-boundary quantization flagged
   by Run 15, per new ROADMAP task 17 (see Current status above). Shrunk
   `RoadScene.BEAT_BATCH_SIZE` from 300 to 32 — pure constant tuning, no
@@ -447,7 +501,12 @@ task.
   17)**: the worst-case lag is now ~20s instead of up to ~187s (batch size
   shrunk 300 → 32), but the underlying question — does a ~20s-late step
   still read as connected or as a glitch — is unchanged and still needs a
-  real playtest to answer.
+  real playtest to answer. **Update (Run 17, ROADMAP task 18)**: the
+  `harmony`/`sparkle` layers now shift per biome too (same diff as
+  `baseLoop`), not just the base melody — same "eyeballed, not tuned by
+  ear" caveat applies to the two new diff vectors, and whether three
+  layers moving together reads as a stronger/clearer mood shift than one
+  layer alone is itself still a feel question for the same playtest.
 
 ## Blocked on human
 - **ROADMAP task 14 — human playtest pass** (Run 14): every item in this
