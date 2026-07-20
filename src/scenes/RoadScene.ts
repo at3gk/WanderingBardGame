@@ -8,7 +8,7 @@ import { Biome, BIOMES, biomeBlendAt } from '../core/biome';
 import { accumulateCoins } from '../core/coins';
 
 const BPM = 96;
-const BEAT_BATCH_SIZE = 300;
+const BEAT_BATCH_SIZE = 32;
 const BEAT_LOOKAHEAD_MS = 15000;
 const TRAVEL_TIME_MS = 1800;
 const HIT_WINDOW_MS = 120;
@@ -231,7 +231,11 @@ export class RoadScene extends Phaser.Scene {
    * backing loop never runs out of scheduled notes either — each new batch
    * picks up the biome current at the time it's scheduled, so the melody
    * shifts with the scenery a batch at a time rather than mid-batch
-   * (ROADMAP task 16; see STATE.md for the quantization caveat).
+   * (ROADMAP task 16). `BEAT_BATCH_SIZE` is deliberately small (20s worth
+   * of beats, well above `BEAT_LOOKAHEAD_MS`) rather than one big upfront
+   * batch, so a biome-transition pattern switch lands within ~20s of the
+   * visual crossfade instead of waiting for a multi-minute batch boundary
+   * (ROADMAP task 17; see STATE.md for the remaining quantization caveat).
    */
   private appendBeatBatch(): void {
     const newBeats = generateBeatSchedule(BPM, BEAT_BATCH_SIZE, this.nextBatchStartTimeMs, this.totalBeatsGenerated);
