@@ -1,8 +1,51 @@
 # STATE
 
-Run counter: 16
+Run counter: 17
 
 ## Current status
+Run 16 complete — ROADMAP task 17 (tighten batch-boundary quantization).
+ROADMAP task 14 (human playtest pass) is still blocked on an actual human
+— see Blocked on human below; this run picked the next actionable item.
+
+Task 16 (last run) noted that a per-biome audio pattern switch only takes
+effect at the next beat-batch boundary, and at the time `RoadScene.
+BEAT_BATCH_SIZE` was 300 beats (~187s at 96 BPM) — meaning the very first
+biome transition (~44s in) could go a couple of minutes before the melody
+caught up. This run:
+
+- Shrunk `BEAT_BATCH_SIZE` from 300 to 32 (~20s of beats), well above
+  `BEAT_LOOKAHEAD_MS` (15s) so `appendBeatBatch` still doesn't thrash —
+  each batch has ~5s of runway left when the next one is scheduled, same
+  margin as before, just on a shorter cycle.
+- Pure constant change plus an updated `appendBeatBatch` doc comment; no
+  logic touched in `beats.ts`/`baseLoop.ts`/`AudioEngine.ts` — all three
+  already took `count`/`biomeId` as parameters with no assumption baked in
+  about batch size, and no existing test was pinned to the old value of
+  300.
+- This shrinks the worst-case lag between a biome's visual crossfade and
+  its audio pattern switch from ~187s down to ~20s (roughly a 9x
+  reduction) but doesn't eliminate the step-change itself — the pattern
+  still switches at the nearest batch boundary, not the exact instant of
+  the crossfade. Sample-exact sync would mean stopping/rescheduling
+  already-scheduled oscillators mid-batch, which is real synchronization
+  work, not this task's scope.
+
+Verified: `npm test` (49 tests green, unchanged — this was a constant
+change with no new pure logic), `npm run build` green (bundle unchanged
+at ~1.22 MB). Also ran a headless Playwright smoke check (390×664 mobile
+viewport, touch emulation, temporarily installed via `npm install
+--no-save playwright` so `package.json`/lock stay untouched) against `vite
+preview`: cold load 591ms, a continuous 625ms-cadence tap loop (matching
+the 96 BPM beat interval) for 65s of real time — crossing at least 3 of
+the new, more-frequent batch boundaries plus the first biome transition
+band (~44s in) — produced no console errors beyond the expected
+missing-favicon 404, confirming the shorter batch cycle doesn't drop notes
+or throw at runtime. Whether the tighter (but still stepped) pattern
+switch actually reads as connected to the crossfade on real speakers is
+still a feel question — rolls into the existing task 14/16 human-playtest
+item below, not a new one.
+
+## Previous status (Run 15)
 Run 15 complete — ROADMAP task 16 (per-biome base-loop pattern). ROADMAP
 task 14 (human playtest pass) is still blocked on an actual human — see
 Blocked on human below; this run picked the next actionable item.
@@ -301,6 +344,13 @@ task.
   desyncing the beat schedule/audio clock, out of scope for this task)
   and not the harmony/sparkle layers (no overrides defined for them this
   run, so their behavior is unchanged).
+- Run 16 (2026-07-20): Tightened the batch-boundary quantization flagged
+  by Run 15, per new ROADMAP task 17 (see Current status above). Shrunk
+  `RoadScene.BEAT_BATCH_SIZE` from 300 to 32 — pure constant tuning, no
+  new logic — cutting the worst-case lag between a biome's visual
+  crossfade and its audio pattern switch from ~187s to ~20s. Deliberately
+  didn't attempt sample-exact sync (rescheduling in-flight notes
+  mid-batch); that's real synchronization work and its own task if wanted.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
@@ -393,7 +443,11 @@ task.
   pattern's step-change at a batch boundary land close enough to the
   visual crossfade to feel connected, or far enough off to feel like an
   unrelated glitch? Doesn't block anything — v0.1 already shipped and no
-  other task depends on pattern tuning.
+  other task depends on pattern tuning. **Update (Run 16, ROADMAP task
+  17)**: the worst-case lag is now ~20s instead of up to ~187s (batch size
+  shrunk 300 → 32), but the underlying question — does a ~20s-late step
+  still read as connected or as a glitch — is unchanged and still needs a
+  real playtest to answer.
 
 ## Blocked on human
 - **ROADMAP task 14 — human playtest pass** (Run 14): every item in this

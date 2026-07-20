@@ -88,6 +88,20 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     the harmony/sparkle layers) — changing BPM mid-walk risks desyncing
     the beat schedule and audio clock, and is its own task if wanted
     later. See STATE.md for the batch-boundary quantization caveat.
+17. ~~**(Post-v0.1) Tighten batch-boundary quantization.**~~ Done (Run 16):
+    task 16 noted that a per-biome pattern switch only takes effect at the
+    next beat-batch boundary, and the batch size at the time (300 beats,
+    ~187s at 96 BPM) made that lag as long as a full walk's first
+    transition. Shrunk `RoadScene.BEAT_BATCH_SIZE` from 300 to 32 (~20s),
+    comfortably above `BEAT_LOOKAHEAD_MS` (15s) so batches still don't
+    thrash, but short enough that a pattern switch now lands within ~20s
+    of the visual crossfade instead of up to ~187s. Doesn't eliminate the
+    caveat (still a step-change at the nearest boundary, not sample-exact
+    with the crossfade) — that would mean rescheduling in-flight notes,
+    real synchronization work out of scope here — just shrinks its worst
+    case by roughly 9x. Pure constant change, no new logic; existing tests
+    cover the batching math generically (no test was pinned to the old
+    batch size).
 
 ## Needs human playtest
 
