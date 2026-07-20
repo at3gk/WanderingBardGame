@@ -102,6 +102,14 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     case by roughly 9x. Pure constant change, no new logic; existing tests
     cover the batching math generically (no test was pinned to the old
     batch size).
+18. ~~**(Post-v0.1) Per-biome patterns for harmony/sparkle layers.**~~ Done
+    (Run 17): task 16 gave only `baseLoop` a `patternByBiome` override,
+    leaving `harmony`/`sparkle` unchanged even though the resolve/schedule
+    plumbing was already generic per-layer. Added forest/riverside
+    overrides to both, each layer's own pattern shifted by the same
+    per-beat diff `baseLoop` already uses for that biome, so all three
+    layers move together at a transition instead of just the melody.
+    Manifest data + a consistency test only, no logic changes.
 
 ## Needs human playtest
 

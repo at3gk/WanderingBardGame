@@ -37,11 +37,19 @@ export const AUDIO_MANIFEST: AudioManifest = {
     gain: 0.05,
     noteDurationMs: 180,
   },
+  // `harmony`/`sparkle` biome overrides below apply the same per-beat
+  // semitone diff as `baseLoop`'s own forest/riverside overrides (e.g.
+  // forest is +[0,3,0,-2] over the base pattern) so all three layers shift
+  // together at a biome transition instead of only the base melody moving.
   layers: [
     {
       id: 'harmony',
       waveform: 'sine',
       pattern: [12, 12, 19, 17],
+      patternByBiome: {
+        forest: [12, 15, 19, 15],
+        riverside: [12, 17, 21, 17],
+      },
       gain: 0.04,
       noteDurationMs: 220,
       meterThreshold: 0.5,
@@ -50,6 +58,10 @@ export const AUDIO_MANIFEST: AudioManifest = {
       id: 'sparkle',
       waveform: 'triangle',
       pattern: [24, 19, 24, 28],
+      patternByBiome: {
+        forest: [24, 22, 24, 26],
+        riverside: [24, 24, 26, 28],
+      },
       gain: 0.03,
       noteDurationMs: 140,
       meterThreshold: 0.85,
