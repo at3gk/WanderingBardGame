@@ -33,6 +33,12 @@ const COIN_ICON_RADIUS = 8;
 const COIN_ICON_COLOR = 0xe8c157;
 const COIN_MARGIN_TOP = 24;
 const COIN_MARGIN_RIGHT = 24;
+const MUTE_ICON_RADIUS = 10;
+const MUTE_ICON_MARGIN_TOP = 24;
+const MUTE_ICON_MARGIN_LEFT = 24;
+const MUTE_ICON_COLOR_ON = 0xe8d9c0;
+const MUTE_ICON_COLOR_MUTED = 0x554e63;
+const MUTE_SLASH_COLOR = 0x8a5a5a;
 
 interface BeatMarker {
   beat: Beat;
@@ -59,6 +65,8 @@ export class RoadScene extends Phaser.Scene {
   private coins = 0;
   private coinIcon!: Phaser.GameObjects.Arc;
   private coinText!: Phaser.GameObjects.Text;
+  private muteIcon!: Phaser.GameObjects.Arc;
+  private muteSlash!: Phaser.GameObjects.Rectangle;
   private bard!: Phaser.GameObjects.Container;
   private bardLegLeft!: Phaser.GameObjects.Rectangle;
   private bardLegRight!: Phaser.GameObjects.Rectangle;
@@ -106,6 +114,15 @@ export class RoadScene extends Phaser.Scene {
     });
     this.coinText.setOrigin(0, 0.5);
 
+    this.muteIcon = this.add.circle(0, 0, MUTE_ICON_RADIUS, MUTE_ICON_COLOR_ON);
+    this.muteIcon.setInteractive({ useHandCursor: true });
+    this.muteSlash = this.add.rectangle(0, 0, 3, MUTE_ICON_RADIUS * 2, MUTE_SLASH_COLOR);
+    this.muteSlash.setAngle(45);
+    this.muteSlash.setVisible(false);
+    const muteIconX = MUTE_ICON_MARGIN_LEFT + MUTE_ICON_RADIUS;
+    this.muteIcon.setPosition(muteIconX, MUTE_ICON_MARGIN_TOP);
+    this.muteSlash.setPosition(muteIconX, MUTE_ICON_MARGIN_TOP);
+
     this.bardLegLeft = this.add.rectangle(-6, -11, 6, 22, BARD_LEG_COLOR);
     this.bardLegRight = this.add.rectangle(6, -11, 6, 22, BARD_LEG_COLOR);
     const bardBody = this.add.rectangle(0, -39, 26, 34, BARD_BODY_COLOR);
@@ -114,7 +131,13 @@ export class RoadScene extends Phaser.Scene {
     this.bardWasWalking = this.walking;
     this.setBardAnimState(this.bardWasWalking);
 
-    this.input.on('pointerdown', () => this.handleInput());
+    this.input.on('pointerdown', (_pointer: Phaser.Input.Pointer, currentlyOver: Phaser.GameObjects.GameObject[]) => {
+      if (currentlyOver.includes(this.muteIcon)) {
+        this.toggleMute();
+        return;
+      }
+      this.handleInput();
+    });
     this.input.keyboard?.on('keydown-SPACE', () => this.handleInput());
   }
 
@@ -259,6 +282,13 @@ export class RoadScene extends Phaser.Scene {
       this.meter = applyHit(this.meter, this.meterConfig);
     }
     this.flashHitLine(target ? 0x7fd6a0 : 0x555555);
+  }
+
+  /** Toggles the audio mute state (ROADMAP task 20). Doesn't touch the beat/meter game state at all — muting is purely an audio-output concern, tapping it never counts as a beat hit/miss. */
+  private toggleMute(): void {
+    this.audioEngine.setMuted(!this.audioEngine.isMuted);
+    this.muteIcon.setFillStyle(this.audioEngine.isMuted ? MUTE_ICON_COLOR_MUTED : MUTE_ICON_COLOR_ON);
+    this.muteSlash.setVisible(this.audioEngine.isMuted);
   }
 
   private flashHitLine(color: number): void {

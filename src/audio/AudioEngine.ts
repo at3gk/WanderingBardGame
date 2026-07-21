@@ -24,6 +24,8 @@ export class AudioEngine {
   private startAt = 0;
   private bpm = 0;
   private noteIndexOffset = 0;
+  private masterGain: GainNode | null = null;
+  private muted = false;
 
   constructor(private manifest: AudioManifest) {}
 
@@ -37,6 +39,26 @@ export class AudioEngine {
     return this.context;
   }
 
+  /** True if `setMuted(true)` was called (or is pending a not-yet-started context). */
+  get isMuted(): boolean {
+    return this.muted;
+  }
+
+  /**
+   * Mutes/unmutes all layers via one shared gain node, independent of each
+   * layer's own meter-driven fade (ROADMAP task 20) — a mute toggle doesn't
+   * need to know or reset per-layer active state. Safe to call before
+   * `start()`; the muted state is applied once the master gain node exists.
+   */
+  setMuted(muted: boolean): void {
+    this.muted = muted;
+    if (!this.context || !this.masterGain) return;
+    const now = this.context.currentTime;
+    this.masterGain.gain.cancelScheduledValues(now);
+    this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+    this.masterGain.gain.linearRampToValueAtTime(muted ? 0 : 1, now + 0.05);
+  }
+
   /** Starts the base loop and all manifest layers. Must be called from a user-gesture handler (tap/keydown) — browsers block autoplay otherwise. No-ops after the first call. `biomeId` selects each layer's `patternByBiome` override, if any. */
   start(bpm: number, count: number, biomeId: string): void {
     if (this.started) return;
@@ -45,6 +67,10 @@ export class AudioEngine {
 
     const ctx = this.ensureContext();
     this.startAt = ctx.currentTime + 0.05;
+
+    this.masterGain = ctx.createGain();
+    this.masterGain.gain.value = this.muted ? 0 : 1;
+    this.masterGain.connect(ctx.destination);
 
     this.createLayerGain(ctx, this.manifest.baseLoop, true);
     for (const layer of this.manifest.layers) {
@@ -91,10 +117,10 @@ export class AudioEngine {
   }
 
   private createLayerGain(ctx: AudioContext, layer: LoopLayer, startActive: boolean): void {
-    const master = ctx.createGain();
-    master.gain.value = startActive ? 1 : 0;
-    master.connect(ctx.destination);
-    this.layerGains.set(layer.id, master);
+    const layerGain = ctx.createGain();
+    layerGain.gain.value = startActive ? 1 : 0;
+    layerGain.connect(this.masterGain ?? ctx.destination);
+    this.layerGains.set(layer.id, layerGain);
     this.layerActive.set(layer.id, startActive);
   }
 
@@ -105,8 +131,8 @@ export class AudioEngine {
     startTimeMs: number,
     biomeId: string
   ): void {
-    const master = this.layerGains.get(layer.id);
-    if (!master) return;
+    const layerGain = this.layerGains.get(layer.id);
+    if (!layerGain) return;
 
     const schedule = generateBaseLoopSchedule(
       this.bpm,
@@ -118,7 +144,7 @@ export class AudioEngine {
       biomeId
     );
     for (const note of schedule) {
-      this.playNote(ctx, master, layer, this.startAt + note.timeMs / 1000, note.frequencyHz, note.durationMs / 1000);
+      this.playNote(ctx, layerGain, layer, this.startAt + note.timeMs / 1000, note.frequencyHz, note.durationMs / 1000);
     }
   }
 

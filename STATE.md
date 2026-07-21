@@ -1,8 +1,61 @@
 # STATE
 
-Run counter: 19
+Run counter: 20
 
 ## Current status
+Run 19 complete — ROADMAP task 20 (mute toggle). ROADMAP task 14 (human
+playtest pass) is still blocked on an actual human — see Blocked on human
+below; this run added a new task rather than picking a stalled one, since
+no other queued item was actionable.
+
+The game had zero way to silence its audio short of muting the OS/browser
+tab — every prior run's manifest/layering/pattern work added more sound,
+never a way to turn it off, which is a real gap for a browser game someone
+might open on a bus or in a quiet room. This run:
+
+- Added a shared `masterGain` `GainNode` to `AudioEngine`, created in
+  `start()` and connected to `ctx.destination`; every layer's own gain node
+  (`createLayerGain`) now connects to `masterGain` instead of directly to
+  the destination, so muting doesn't disturb each layer's independent
+  meter-driven fade (`setMeterRatio`, ROADMAP task 8) — the two gain stages
+  are fully orthogonal.
+- Added `AudioEngine.setMuted(muted)` / `.isMuted` — a 50ms linear ramp
+  (avoids a click) to 0 or 1 on `masterGain`. Callable before `start()` has
+  ever run (stores the flag, applies it once `masterGain` exists) so
+  toggling mute before the first beat tap — the only user gesture that's
+  allowed to create the `AudioContext` — still works correctly the moment
+  audio actually starts.
+- Added a small interactive mute icon to `RoadScene` (top-left corner,
+  mirroring the coin readout's top-right placement and using the same
+  procedural-shapes style — a plain circle, cream when unmuted, dimmed
+  gray plus a diagonal slash rectangle when muted; no image asset). The
+  scene's single shared `pointerdown` listener now reads Phaser's
+  `currentlyOver` array: a tap that lands on the mute icon toggles mute and
+  returns before reaching `handleInput()`, so it's structurally impossible
+  for a mute tap to register as a beat hit or miss — it doesn't touch
+  `this.meter` at all.
+- No new asset file, no new runtime dependency, no menu (DESIGN.md's "no
+  menus" pillar) — this is a small always-visible icon/control, the same
+  category as the existing coin readout and song meter, not a settings
+  screen.
+
+Verified: `npm test` (52 tests green, unchanged — `AudioEngine` talks
+directly to the real Web Audio API and has never had unit tests for the
+same reason the rest of it doesn't, see existing pattern in
+`src/audio/AudioEngine.ts`; the new logic is a trivial `muted ? 0 : 1`
+ramp target, not worth a dedicated pure-logic module). `npm run build`
+green (bundle ~1.22 MB, unchanged). Also ran a headless Playwright check
+(390×664 mobile viewport, touch emulation, temporarily installed via `npm
+install --no-save playwright` so `package.json`/lock stay untouched)
+against `vite preview` at the real `/WanderingBardGame/` base path: tapped
+a beat (starts audio), tapped the mute icon (screenshot confirms the
+dimmed+slashed icon), tapped it again (screenshot confirms it reverts to
+plain cream) — zero console errors, zero failed/4xx+ requests either time,
+and the song meter/coin count were unaffected by either mute tap,
+confirming the `currentlyOver` guard actually works at runtime and not
+just by code inspection.
+
+## Previous status (Run 18)
 Run 18 complete — ROADMAP task 19 (fix the persistent favicon 404).
 ROADMAP task 14 (human playtest pass) is still blocked on an actual human
 — see Blocked on human below; this run picked a small, contained chore
@@ -365,6 +418,13 @@ a real batch boundary is a human playtest item (see below).
   "Previous status" writeup from this file (its content is fully captured
   in this Recent runs bullet already) to keep STATE.md from growing
   unbounded — not a full consolidation pass, just routine hygiene.
+- Run 19 (2026-07-21): Mute toggle per new ROADMAP task 20 (see Current
+  status above). `AudioEngine` gained a shared `masterGain` node all layers
+  route through plus `setMuted`/`isMuted`; `RoadScene` added a small
+  interactive icon (top-left) that toggles it, excluded from beat-hit
+  handling via Phaser's `currentlyOver` pointerdown list. No prior queued
+  task was actionable (task 14 still blocked), so this run added a new one
+  rather than stalling.
 - Run 16 (2026-07-20): Tightened the batch-boundary quantization flagged
   by Run 15, per new ROADMAP task 17 (see Current status above). Shrunk
   `RoadScene.BEAT_BATCH_SIZE` from 300 to 32 — pure constant tuning, no
@@ -474,6 +534,14 @@ a real batch boundary is a human playtest item (see below).
   ear" caveat applies to the two new diff vectors, and whether three
   layers moving together reads as a stronger/clearer mood shift than one
   layer alone is itself still a feel question for the same playtest.
+
+- Task 20 mute toggle (this run): the icon's size (`MUTE_ICON_RADIUS = 10`,
+  20px touch target) and top-left placement are eyeballed, not checked
+  against real thumb ergonomics on a real phone — headless Playwright
+  confirms it's tappable and toggles correctly at the coordinates it's
+  drawn at, not whether it's comfortably reachable/discoverable one-handed.
+  Doesn't block anything — muting is off by default and every other
+  mechanic is unaffected either way.
 
 ## Blocked on human
 - **ROADMAP task 14 — human playtest pass** (Run 14): every item in this
