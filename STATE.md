@@ -1,8 +1,41 @@
 # STATE
 
-Run counter: 18
+Run counter: 19
 
 ## Current status
+Run 18 complete — ROADMAP task 19 (fix the persistent favicon 404).
+ROADMAP task 14 (human playtest pass) is still blocked on an actual human
+— see Blocked on human below; this run picked a small, contained chore
+instead of a new audio/biome feature.
+
+Every single headless verification note in this file and in every merged
+PR since Run 1 has carried the same trailing caveat: "no console errors
+beyond the expected missing-favicon 404." `index.html` never declared a
+`<link rel="icon">`, so the browser always requested `/favicon.ico` and
+always missed — a real, harmless-but-persistent papercut that's been
+quietly accepted for 18 runs instead of fixed. This run:
+
+- Added an inline SVG data-URI favicon to `index.html` (`<link rel="icon"
+  type="image/svg+xml" href="data:image/svg+xml,...">`) — a small circle
+  in the bard's body color (`0xc98a5b`) on the game's background color
+  (`0x1a1621`), matching the existing procedural-only-no-asset-files
+  approach used everywhere else in the game (bard sprite, road tiles, coin
+  icon). No new file, no new runtime dependency.
+- Nothing else touched — this is a single-line addition to the document
+  head, no game logic involved.
+
+Verified: `npm test` (52 tests green, unchanged — no logic touched),
+`npm run build` green (bundle unchanged at ~1.22 MB). Also ran a headless
+Playwright check (390×664 mobile viewport, touch emulation, temporarily
+installed via `npm install --no-save playwright` so `package.json`/lock
+stay untouched) against `vite preview` at the real `/WanderingBardGame/`
+base path (not the bare `/` redirect): zero console errors and zero
+failed/4xx+ requests of any kind after a cold load plus a tap — the
+favicon 404 that every prior run's PR description mentioned as "expected"
+is actually gone now, confirmed by request-level inspection, not just by
+eyeballing the console.
+
+## Previous status (Run 17)
 Run 17 complete — ROADMAP task 18 (per-biome patterns for harmony/sparkle
 layers). ROADMAP task 14 (human playtest pass) is still blocked on an
 actual human — see Blocked on human below; this run picked the next
@@ -35,20 +68,7 @@ already threads the same `biomeId` through `baseLoop` and every entry in
   task 16 plumbing really was layer-agnostic as designed.
 
 Verified: `npm test` (52 tests green, 3 new), `npm run build` green
-(bundle ~1.22 MB, unchanged, no new runtime dependency). Also ran a
-headless Playwright smoke check (390×664 mobile viewport, touch
-emulation, temporarily installed via `npm install --no-save playwright`
-so `package.json`/lock stay untouched, launched against the sandbox's
-pre-installed Chromium at `/opt/pw-browsers/chromium-1194` since the
-npm-installed Playwright's own browser download is blocked in this
-environment) against `vite preview`: cold load 831ms, a continuous
-625ms-cadence tap loop (matching the 96 BPM beat interval) for 25s of
-real time produced no console errors beyond the expected missing-favicon
-404 — confirms the new harmony/sparkle biome patterns don't throw or
-drop notes at runtime. Whether the fuller three-layer shift actually
-reads as a stronger mood change per biome on real speakers is, like every
-other audio task, a human-playtest question — folded into the existing
-task 14 item below, not a new one.
+(bundle ~1.22 MB, unchanged, no new runtime dependency).
 
 ## Previous status (Run 16)
 Run 16 complete — ROADMAP task 17 (tighten batch-boundary quantization).
@@ -248,67 +268,6 @@ math is unit-tested and the invariant (`noteIndexOffset * beatIntervalMs
 calls) holds by construction, but confirming it sounds/plays seamlessly at
 a real batch boundary is a human playtest item (see below).
 
-## Previous status (Run 12)
-Run 12 — ROADMAP task 12 (v0.1 ship check). No code changes; this
-run verified every Definition of Done item in DESIGN.md against a real
-production build. All items met.
-
-The live Pages URL (`https://at3gk.github.io/WanderingBardGame/`) is not
-reachable from this sandbox — the network policy denies `*.github.io`
-(confirmed via the proxy status endpoint, `connect_rejected`/403). Verified
-against `npm run build` + `vite preview` instead (same artifact the deploy
-workflow ships), which is what every prior run's headless check has also
-used. Noted below in case the policy allows it in a future run.
-
-Checked each DoD item:
-- **Loads in <5s, first beat tappable on cold load**: headless Playwright,
-  390×664 mobile viewport, touch+mobile emulation. `canvas` present and a
-  touch tap accepted at 671ms/700ms cold-load time across two runs, well
-  under 5s.
-- **Single-lane mechanic, fully Vitest-covered**: `npm test` — 39 tests
-  green across `beats`, `songMeter`, `coins`, `biome`, `distance`,
-  `baseLoop`, `layering` — unchanged from Run 11.
-- **Bard sprite walk/idle tied to meter state, road scroll tied to walking**:
-  confirmed visually — first tap loop used a naive fixed-cadence tap (every
-  625ms) that drifted outside the 120ms hit window over time and visibly
-  drained the meter (screenshots showed the fill shrinking run-over-run);
-  a tightened tap loop (every 90ms, well inside the hit window) kept the
-  meter full and the bard's legs mid-stride throughout.
-- **≥2 biomes, distance-driven transition**: the tight-tap-loop run held
-  `walking = true` continuously for 70s of real time (`BIOME_TRANSITION_START_PX
-  4000 / ROAD_SCROLL_PX_PER_SEC 90 ≈ 44.4s` to start, `~66.7s` to fully
-  resolve) and the screenshot at ~70s showed the sky/road palette fully
-  shifted from the default (dark purple/mauve) to Forest Dusk (dark green)
-  — confirms the crossfade actually reaches and completes, not just that
-  the math is unit-tested.
-- **Procedural backing loop + meter-driven layering**: code-verified
-  (`AudioEngine`/`AUDIO_MANIFEST` wiring unchanged since Run 8, tests green)
-  plus no Web Audio console errors during either headless run. Headless
-  Chromium can't confirm how it sounds — that's still a human-playtest item
-  (see below), not a ship blocker (DoD only requires the layering to exist
-  and respond to the meter, which it does).
-- **Touch input on mobile viewport, keyboard/mouse on desktop**:
-  `this.input.on('pointerdown', ...)` (fires for touch and mouse alike —
-  confirmed via the touchscreen taps above) and
-  `this.input.keyboard?.on('keydown-SPACE', ...)` in `RoadScene.ts:111-112`,
-  both wired to the same `handleInput()`.
-- **Bundle <5 MB, deploys via CI/deploy workflow**: `npm run build` →
-  `dist/assets/index-*.js` 1.22 MB (gzip ~336 KB), well under the cap.
-  `.github/workflows/deploy.yml` unchanged and gated on CI per README;
-  deploy itself not re-verified this run since Pages is unreachable from
-  this sandbox (see above) — the workflow's shape hasn't changed since it
-  last shipped Run 11's PR.
-- **No menus/login/save, opens directly into the walk**: `src/main.ts`
-  boots a single `Phaser.Game` with one scene (`RoadScene`); headless
-  check's `document.body.innerText` was empty (canvas-only page, no DOM
-  menu/login markup).
-
-All items met — nothing to cut. PR #13 merged (squash commit `021410f` on
-`main`). ROADMAP task 13 (unbounded beat schedule) is the first post-v0.1
-task.
-
-**The `v0.1` git tag itself could not be pushed — see Blocked on human.**
-
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
   mechanic keeps a wandering bard walking down a procedurally-sequenced
@@ -398,6 +357,14 @@ task.
   was already layer-generic, so this run was manifest data (each layer's
   biome override = its own pattern + the same diff `baseLoop` uses for
   that biome) plus a consistency test, no logic changes.
+- Run 18 (2026-07-21): Fixed the persistent favicon 404 per new ROADMAP
+  task 19 (see Current status above). Every headless verification note
+  since Run 1 carried the same "expected missing-favicon 404" caveat;
+  added an inline SVG data-URI favicon to `index.html` (no new asset
+  file) so it's actually gone. Also trimmed the old Run 12 verbose
+  "Previous status" writeup from this file (its content is fully captured
+  in this Recent runs bullet already) to keep STATE.md from growing
+  unbounded — not a full consolidation pass, just routine hygiene.
 - Run 16 (2026-07-20): Tightened the batch-boundary quantization flagged
   by Run 15, per new ROADMAP task 17 (see Current status above). Shrunk
   `RoadScene.BEAT_BATCH_SIZE` from 300 to 32 — pure constant tuning, no

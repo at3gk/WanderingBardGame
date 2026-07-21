@@ -110,6 +110,15 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     per-beat diff `baseLoop` already uses for that biome, so all three
     layers move together at a transition instead of just the melody.
     Manifest data + a consistency test only, no logic changes.
+19. ~~**(Post-v0.1) Fix the persistent favicon 404.**~~ Done (Run 18): every
+    single headless verification note since Run 1 has carried the same
+    caveat — "no console errors beyond the expected missing-favicon 404."
+    `index.html` had no `<link rel="icon">` at all, so the browser always
+    requested `/favicon.ico` and always missed. Added an inline SVG data-URI
+    favicon (a small bard-body-colored dot on the game's background color,
+    no new asset file) so the console is actually clean, not just
+    clean-with-an-asterisk. Pure `index.html` change, no runtime code
+    touched.
 
 ## Needs human playtest
 
