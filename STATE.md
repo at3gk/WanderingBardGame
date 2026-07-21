@@ -1,8 +1,47 @@
 # STATE
 
-Run counter: 20
+Run counter: 21
 
 ## Current status
+Run 20 complete — consolidation pass (every ~10th run per CLAUDE.md; the
+last one was Run 10). ROADMAP task 14 (human playtest pass) is still
+blocked on an actual human — see Blocked on human below.
+
+- Read through every source file (`src/core/*`, `src/audio/*`,
+  `src/scenes/RoadScene.ts`, `src/main.ts`) end to end looking for drift
+  from DESIGN.md's one-mechanic pillar and for rough edges accumulated
+  over 19 feature runs. Found none: the pure-logic/Phaser-scene split is
+  still clean, the audio manifest is still the single source of truth for
+  sound (CLAUDE.md's "keep audio behind one manifest file"), and nothing
+  has crept in beyond what DESIGN.md describes (single lane, one meter,
+  bard states, scrolling road, three biomes, layered audio, coin readout,
+  mute toggle). No code changes were needed.
+- Found and fixed a real ordering bug in this file's own **Recent runs**
+  log: the Run 16 entry (tighten batch-boundary quantization) was appended
+  after Run 19 instead of between Run 15 and Run 17, out of chronological
+  order. Fixed.
+- Trimmed the verbose **Previous status (Run N)** write-ups for Runs
+  13–18 — each one fully duplicated content already condensed into its
+  own **Recent runs** bullet below (the same redundancy Run 18 already
+  cut once for Run 12's write-up). This file had grown to ~570 lines with
+  the actual duplication ratio increasing every run; only the current and
+  immediately-previous run's full write-up are kept from now on, per the
+  precedent Run 18 set. No information was lost — every trimmed section's
+  content survives in its **Recent runs** bullet.
+- Re-verified the build headlessly rather than trusting "no code changed
+  so it's still green": `npm test` (52 tests, all green, unchanged),
+  `npm run build` (green, bundle ~1.22 MB, unchanged). Also ran a fresh
+  headless Playwright check (390×664 mobile viewport, touch emulation,
+  temporarily installed via `npm install --no-save playwright` so
+  `package.json`/lock stay untouched) against `vite preview` at the real
+  `/WanderingBardGame/` base path: cold load 662ms, canvas renders, 40
+  taps at the 625ms beat cadence (~25s of play, crossing zero biome
+  transitions but exercising the core loop end to end), zero console
+  errors, zero failed/4xx+ requests — confirms the "no drift found"
+  conclusion isn't just a read-through, the shipped build actually still
+  works exactly as the past 19 runs left it.
+
+## Previous status (Run 19)
 Run 19 complete — ROADMAP task 20 (mute toggle). ROADMAP task 14 (human
 playtest pass) is still blocked on an actual human — see Blocked on human
 below; this run added a new task rather than picking a stalled one, since
@@ -55,272 +94,6 @@ and the song meter/coin count were unaffected by either mute tap,
 confirming the `currentlyOver` guard actually works at runtime and not
 just by code inspection.
 
-## Previous status (Run 18)
-Run 18 complete — ROADMAP task 19 (fix the persistent favicon 404).
-ROADMAP task 14 (human playtest pass) is still blocked on an actual human
-— see Blocked on human below; this run picked a small, contained chore
-instead of a new audio/biome feature.
-
-Every single headless verification note in this file and in every merged
-PR since Run 1 has carried the same trailing caveat: "no console errors
-beyond the expected missing-favicon 404." `index.html` never declared a
-`<link rel="icon">`, so the browser always requested `/favicon.ico` and
-always missed — a real, harmless-but-persistent papercut that's been
-quietly accepted for 18 runs instead of fixed. This run:
-
-- Added an inline SVG data-URI favicon to `index.html` (`<link rel="icon"
-  type="image/svg+xml" href="data:image/svg+xml,...">`) — a small circle
-  in the bard's body color (`0xc98a5b`) on the game's background color
-  (`0x1a1621`), matching the existing procedural-only-no-asset-files
-  approach used everywhere else in the game (bard sprite, road tiles, coin
-  icon). No new file, no new runtime dependency.
-- Nothing else touched — this is a single-line addition to the document
-  head, no game logic involved.
-
-Verified: `npm test` (52 tests green, unchanged — no logic touched),
-`npm run build` green (bundle unchanged at ~1.22 MB). Also ran a headless
-Playwright check (390×664 mobile viewport, touch emulation, temporarily
-installed via `npm install --no-save playwright` so `package.json`/lock
-stay untouched) against `vite preview` at the real `/WanderingBardGame/`
-base path (not the bare `/` redirect): zero console errors and zero
-failed/4xx+ requests of any kind after a cold load plus a tap — the
-favicon 404 that every prior run's PR description mentioned as "expected"
-is actually gone now, confirmed by request-level inspection, not just by
-eyeballing the console.
-
-## Previous status (Run 17)
-Run 17 complete — ROADMAP task 18 (per-biome patterns for harmony/sparkle
-layers). ROADMAP task 14 (human playtest pass) is still blocked on an
-actual human — see Blocked on human below; this run picked the next
-actionable item.
-
-Task 16 added `patternByBiome` to `LoopLayer` and gave only `baseLoop`
-forest/riverside overrides, deliberately leaving the `harmony` and
-`sparkle` layers unchanged ("no overrides defined for them this run, so
-their behavior is unchanged"). But `resolvePattern`/`generateBaseLoopSchedule`
-were already generic over any `LoopLayer`, and `AudioEngine.scheduleAllLayers`
-already threads the same `biomeId` through `baseLoop` and every entry in
-`manifest.layers` — so the plumbing needed zero code changes. This run:
-
-- Added `patternByBiome.forest`/`.riverside` to both `harmony` and
-  `sparkle` in `src/audio/manifest.ts`. Each biome's override is the
-  layer's own base pattern shifted by the *same per-beat semitone diff*
-  `baseLoop` already uses for that biome (forest is `+[0,3,0,-2]` over the
-  village pattern, riverside is `+[0,5,2,0]`) — so all three layers move
-  together at a biome transition instead of only the melody shifting
-  while the harmony/sparkle layers stay put. Documented the convention
-  inline above `layers:` so a future biome addition knows to keep it.
-- Added `src/audio/manifest.test.ts` (3 new tests): every layer (base
-  loop + both additional layers) has a forest and riverside override,
-  every layer falls back to its base `pattern` for `village` (no entry),
-  and the harmony/sparkle diffs match `baseLoop`'s diffs exactly per
-  biome — guards the "layers drift out of sync with each other" case if
-  a future run edits one layer's override without the others.
-- No changes to `baseLoop.ts`, `AudioEngine.ts`, or `layering.ts` — this
-  was purely manifest data plus the diff-consistency test, confirming the
-  task 16 plumbing really was layer-agnostic as designed.
-
-Verified: `npm test` (52 tests green, 3 new), `npm run build` green
-(bundle ~1.22 MB, unchanged, no new runtime dependency).
-
-## Previous status (Run 16)
-Run 16 complete — ROADMAP task 17 (tighten batch-boundary quantization).
-ROADMAP task 14 (human playtest pass) is still blocked on an actual human
-— see Blocked on human below; this run picked the next actionable item.
-
-Task 16 (last run) noted that a per-biome audio pattern switch only takes
-effect at the next beat-batch boundary, and at the time `RoadScene.
-BEAT_BATCH_SIZE` was 300 beats (~187s at 96 BPM) — meaning the very first
-biome transition (~44s in) could go a couple of minutes before the melody
-caught up. This run:
-
-- Shrunk `BEAT_BATCH_SIZE` from 300 to 32 (~20s of beats), well above
-  `BEAT_LOOKAHEAD_MS` (15s) so `appendBeatBatch` still doesn't thrash —
-  each batch has ~5s of runway left when the next one is scheduled, same
-  margin as before, just on a shorter cycle.
-- Pure constant change plus an updated `appendBeatBatch` doc comment; no
-  logic touched in `beats.ts`/`baseLoop.ts`/`AudioEngine.ts` — all three
-  already took `count`/`biomeId` as parameters with no assumption baked in
-  about batch size, and no existing test was pinned to the old value of
-  300.
-- This shrinks the worst-case lag between a biome's visual crossfade and
-  its audio pattern switch from ~187s down to ~20s (roughly a 9x
-  reduction) but doesn't eliminate the step-change itself — the pattern
-  still switches at the nearest batch boundary, not the exact instant of
-  the crossfade. Sample-exact sync would mean stopping/rescheduling
-  already-scheduled oscillators mid-batch, which is real synchronization
-  work, not this task's scope.
-
-Verified: `npm test` (49 tests green, unchanged — this was a constant
-change with no new pure logic), `npm run build` green (bundle unchanged
-at ~1.22 MB). Also ran a headless Playwright smoke check (390×664 mobile
-viewport, touch emulation, temporarily installed via `npm install
---no-save playwright` so `package.json`/lock stay untouched) against `vite
-preview`: cold load 591ms, a continuous 625ms-cadence tap loop (matching
-the 96 BPM beat interval) for 65s of real time — crossing at least 3 of
-the new, more-frequent batch boundaries plus the first biome transition
-band (~44s in) — produced no console errors beyond the expected
-missing-favicon 404, confirming the shorter batch cycle doesn't drop notes
-or throw at runtime. Whether the tighter (but still stepped) pattern
-switch actually reads as connected to the crossfade on real speakers is
-still a feel question — rolls into the existing task 14/16 human-playtest
-item below, not a new one.
-
-## Previous status (Run 15)
-Run 15 complete — ROADMAP task 16 (per-biome base-loop pattern). ROADMAP
-task 14 (human playtest pass) is still blocked on an actual human — see
-Blocked on human below; this run picked the next actionable item.
-
-DESIGN.md's core-mechanic section calls out "tempo/pattern variety... fed
-to the player as the road changes scenery" as the mechanic's only depth,
-but the base loop played the identical `[0, 0, 7, 5]` pattern for the
-entire walk regardless of biome — no pattern variety existed yet. This
-run:
-
-- Added `LoopLayer.patternByBiome?: Record<string, number[]>` to
-  `src/audio/manifest.ts` — an optional per-biome override of `pattern`,
-  keyed by `Biome.id`. Gave `baseLoop` a `forest` pattern (`[0, 3, 7, 3]`)
-  and a `riverside` pattern (`[0, 5, 9, 5]`); `village` has no entry so it
-  falls back to the original `pattern`, unchanged.
-- Added `resolvePattern(layer, biomeId)` to `src/audio/baseLoop.ts` — pure,
-  tested in isolation — and threaded an optional `biomeId` param through
-  `generateBaseLoopSchedule` so it uses the resolved pattern instead of
-  always reading `layer.pattern`.
-- `AudioEngine.start(bpm, count, biomeId)` and `.extend(count, biomeId)`
-  now take a `biomeId` and pass it down through `scheduleAllLayers` /
-  `scheduleLayerNotes` to every layer's schedule call — applies uniformly
-  to `baseLoop` and the `harmony`/`sparkle` layers, but only `baseLoop` has
-  overrides defined this run, so the other two layers are unaffected
-  (same patterns as before).
-- `RoadScene.currentBiomeId()` reads `BIOMES[biomeBlendAt(this.distancePx)
-  .fromIndex].id` and is passed to both the `start()` call in
-  `handleInput()` and the `extend()` call in `appendBeatBatch()`.
-
-**Known limitation, not a bug**: each batch's pattern is fixed at the
-moment that batch is scheduled (every ~187s, per task 13's
-`BEAT_BATCH_SIZE`/`BEAT_LOOKAHEAD_MS`), using whichever biome is current
-at that instant. A biome transition that happens mid-batch (both of the
-current transitions do, at ~44s and ~122s in, well inside a ~187s batch)
-won't change the melody until the *next* batch boundary — the visual
-scenery crossfades smoothly but the audio pattern switches in a step.
-Tightening this to switch mid-batch would mean re-scheduling in-flight
-notes against the transition band, which is real synchronization work,
-not this task's scope (this task is "pattern varies by biome exists at
-all", not "pattern switch is seamless"). Logged under Needs human
-playtest below since whether the step-change is noticeable/jarring on
-real speakers is a feel question.
-
-Verified: `npm test` (49 tests green, 5 new — 2 in `generateBaseLoopSchedule`
-for the override/fallback cases, 3 for `resolvePattern` directly), `npm run
-build` green (bundle unchanged at ~1.22 MB, no new runtime dependency).
-Also ran a headless Playwright smoke check (390×664 mobile viewport, touch
-emulation, temporarily installed via `npm install --no-save playwright` so
-`package.json`/lock stay untouched) against `vite preview`: cold load
-660ms, a continuous 90ms-cadence tap loop for 50s of real time (crosses
-into the village→forest transition band at ~44s, so both the old and new
-`start`/`extend` call sites and a live pattern batch boundary got
-exercised) produced no console errors beyond the expected missing-favicon
-404 — confirms the new `biomeId` plumbing doesn't throw or silently drop
-notes at runtime, though hearing whether the pattern actually sounds
-different per biome is a human-playtest item (headless Chromium can't
-judge that), same caveat as every other audio task.
-
-## Previous status (Run 14)
-Run 14 complete — ROADMAP task 15 (third biome + generalized transitions).
-ROADMAP task 14 ("human playtest pass") needs an actual human playing the
-game — nothing this run can execute, so it's logged under **Blocked on
-human** below and this run picked the next actionable item instead
-(reprioritized in per CLAUDE.md's "reprioritize freely" allowance).
-
-DESIGN.md's Concept section names three vignettes ("a sleepy village, a
-forest at dusk, a riverside camp") but only two biomes existed. This run:
-
-- Added a third biome, **Riverside Camp** (`skyColor 0x141c24, roadBandColor
-  0x2c3a42, roadDashColor 0x3d5560`) to `BIOMES` in `src/core/biome.ts`.
-- Replaced the old two-biome-only `biomeBlendRatio(distance, start, length)`
-  with a general `biomeBlendAt(distance, transitions, biomeCount)` that
-  walks an array of `BiomeTransition { startPx, lengthPx }` entries (one
-  per biome after the first) and returns `{ fromIndex, toIndex, ratio }` —
-  which two biomes are currently blending and how far across. Steady state
-  (before the first transition, between transitions, after the last one)
-  returns `fromIndex === toIndex, ratio: 0`. `BIOME_TRANSITIONS` keeps the
-  original village→forest band (`4000`–`6000` px) and adds a matching
-  forest→riverside band (`9000`–`11000` px, same 2000px length so both
-  crossfades read the same way — eyeballed, not tuned, same caveat as the
-  original transition).
-- `RoadScene` now tracks `roadFromIndex`/`roadToIndex` and only calls
-  `setTexture` on the `road`/`roadNext` TileSprites when the blend's
-  indices actually change (was hardcoded to `BIOMES[0]`/`BIOMES[1]`
-  before) — needed because with 3+ biomes, which pair is blending changes
-  partway through a walk, not just once. Sky color lerp now interpolates
-  between `BIOMES[fromIndex]` and `BIOMES[toIndex]` instead of always
-  `BIOMES[0]`/`BIOMES[1]`.
-- Rewrote `biome.test.ts` for the new `biomeBlendAt` API: steady-state
-  before/between/after, ratio ramp across each of two transition bands,
-  zero-length hard-cut behavior (preserved from the old test), and a case
-  confirming a transition entry is ignored when `biomeCount` doesn't
-  support it (guards the "more transitions than biomes" edge case the old
-  single-pair function couldn't have).
-
-Verified: `npm test` (44 tests green, 5 new in `biome.test.ts`), `npm run
-build` green (bundle ~1.22 MB, unchanged). Also ran a headless Playwright
-smoke check (390×664 mobile viewport, touch emulation, temporarily
-installed via `npm install --no-save playwright` so `package.json`/lock
-stay untouched) against `vite preview`: cold load 1323ms, a continuous
-90ms-cadence tap loop for 120s of real time (~10800px traveled at
-`ROAD_SCROLL_PX_PER_SEC = 90`, comfortably past both transition bands
-ending at 6000px/11000px) produced no console errors beyond the expected
-missing-favicon 404, and the final screenshot showed the Riverside Camp
-palette (dark blue-teal sky/road) fully resolved with a full song meter —
-confirms the blend logic doesn't just pass its unit tests but actually
-drives the visible scene through two consecutive transitions in sequence,
-not just one at a time.
-
-## Previous status (Run 13)
-Run 13 complete — ROADMAP task 13 (unbounded beat schedule). The beat
-schedule (visual markers + backing-loop audio notes) previously ran out
-after a fixed 300-beat batch (~187s at 96 BPM): the game didn't crash, but
-no more beats would spawn, no more hit/miss checks could fire, and the
-audio engine had scheduled all its notes up front so it went silent too.
-Now:
-
-- `RoadScene.appendBeatBatch()` generates another 300-beat batch,
-  continuing the same tempo/index sequence (via `generateBeatSchedule`'s
-  new `indexOffset` param) so there's no seam. Called once in `create()`
-  and again from `update()` whenever the current batch's remaining runway
-  drops under `BEAT_LOOKAHEAD_MS` (15s) — self-throttling since each
-  append buys ~187s of runway, far more than one frame's worth.
-- `AudioEngine.extend(count)` mirrors this on the audio side: `start()`
-  now only creates the layer `GainNode`s and schedules the first batch;
-  `extend()` schedules further batches against the same `AudioContext`
-  clock, continuing the note-pattern index so the backing loop's pattern
-  cycle doesn't reset at a batch boundary. No-ops until `start()` has run
-  (audio doesn't begin until the first tap, same as before).
-- `generateBaseLoopSchedule` and `generateBeatSchedule` both gained an
-  optional `indexOffset` param (default 0, fully backward compatible —
-  existing call sites/tests unchanged) to support this.
-- `RoadScene.update()`'s marker loop now filters resolved/off-screen
-  markers out of `this.markers` each frame instead of only destroying
-  their `gfx` and leaving the object in the array forever. Without this,
-  making the schedule unbounded would have traded "beats stop after 3
-  min" for "the marker array (and per-frame iteration cost) grows
-  forever" — a regression in the opposite direction. Kept in this run
-  since it's the same concern (the feature doesn't actually work for long
-  play without it), not scope creep.
-
-Verified: `npm test` (41 tests green, 2 new — `beats.test.ts`'s indexOffset
-continuation case, `baseLoop.test.ts`'s pattern-cycle continuation case),
-`npm run build` green (bundle unchanged at ~1.22 MB). Also ran a headless
-Playwright smoke check (390×664 mobile viewport, touch emulation) against
-`vite preview`: cold load 721ms, canvas present, 80 taps at a 90ms cadence
-produced no console errors beyond the expected missing-favicon 404. A real
-multi-minute session that actually crosses the old 300-beat/~187s boundary
-wasn't feasible to verify headlessly within this run — the batch-append
-math is unit-tested and the invariant (`noteIndexOffset * beatIntervalMs
-== last scheduled hit time`, verified by induction across `start`+`extend`
-calls) holds by construction, but confirming it sounds/plays seamlessly at
-a real batch boundary is a human playtest item (see below).
-
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
   mechanic keeps a wandering bard walking down a procedurally-sequenced
@@ -340,7 +113,7 @@ a real batch boundary is a human playtest item (see below).
 - Run 2 (2026-07-16): Added the beat timing core per ROADMAP task 2 (see
   Current status above). No Phaser/rendering work this run — deliberately
   scoped to the pure-logic module so the one core mechanic is right and
-  tested before it touches a scene.
+  tested before it touches rendering.
 - Run 3 (2026-07-16): Rendered the lane per ROADMAP task 3 (see Current
   status above). Deliberately left the song meter out of this run — task
   3 is scoped to rendering + input + per-beat hit/miss feedback only,
@@ -379,59 +152,71 @@ a real batch boundary is a human playtest item (see below).
   Current status above). Deliberately kept it a pure accumulate-only
   readout of the meter ratio — no per-hit bonus, no spend loop, matching
   DESIGN.md's framing of coins as a readout, not a separate system.
-- Run 12 (2026-07-19): v0.1 ship check per ROADMAP task 12 (see previous
-  Current status above). No code changes — verified every DoD item against
-  a real production build, found nothing unmet. `v0.1` tag pending the
-  squash-merge landing on `main` (see Blocked on human below for why).
-- Run 13 (2026-07-19): Unbounded beat schedule per ROADMAP task 13 (see
-  Current status above). Deliberately kept the batch size the same
-  (300 beats) rather than tuning it — this run is about the schedule never
-  running out, not about how far ahead it looks; batch size/lookahead are
-  new eyeballed constants for a future playtest to revisit if needed.
+- Run 12 (2026-07-19): v0.1 ship check per ROADMAP task 12. No code
+  changes — verified every DoD item against a real production build,
+  found nothing unmet. `v0.1` tag pending the squash-merge landing on
+  `main` (see Blocked on human below for why).
+- Run 13 (2026-07-19): Unbounded beat schedule per ROADMAP task 13.
+  `RoadScene.appendBeatBatch` generates another 300-beat batch once the
+  current one's runway drops under 15s; `AudioEngine.extend` mirrors this
+  on the audio side so the backing loop never runs out of scheduled notes.
+  Resolved markers are now filtered out of `RoadScene.markers` each frame
+  instead of accumulating forever. `npm test` 41 tests green (2 new),
+  build green.
 - Run 14 (2026-07-19): Third biome + generalized N-biome transitions per
-  ROADMAP task 15 (see Current status above). ROADMAP task 14 (human
-  playtest pass) was next in line but needs an actual human — reprioritized
-  to this instead and logged task 14 under Blocked on human. Deliberately
-  kept the new transition's start/length identical in shape to the
-  original (same 2000px band) rather than inventing new pacing — this run
-  is about the biome system supporting a third entry at all, not about
-  tuning transition feel, which is playtest scope either way.
+  ROADMAP task 15. DESIGN.md's Concept names three vignettes but only two
+  biomes existed; `biomeBlendRatio` (hardcoded to 2 biomes) became
+  `biomeBlendAt`, which walks a `BiomeTransition[]` array to support any
+  number of biomes. Added "Riverside Camp" as the third. ROADMAP task 14
+  (human playtest pass) was next in line but needs an actual human;
+  logged as blocked and this run's slot went to the biome work instead.
+  `npm test` 44 tests green (5 new), build green.
 - Run 15 (2026-07-20): Per-biome base-loop melodic pattern per ROADMAP
-  task 16 (see Current status above). ROADMAP task 14 (human playtest
-  pass) is still blocked; this run picked the next actionable item.
-  Deliberately scoped to the base loop's pattern only, not tempo (BPM
-  stays fixed at 96 across all biomes — changing it mid-walk risks
-  desyncing the beat schedule/audio clock, out of scope for this task)
-  and not the harmony/sparkle layers (no overrides defined for them this
-  run, so their behavior is unchanged).
-- Run 17 (2026-07-20): Per-biome patterns for the `harmony`/`sparkle`
-  layers per new ROADMAP task 18 (see Current status above). Task 16 had
-  scoped biome patterns to `baseLoop` only; the resolve/schedule plumbing
-  was already layer-generic, so this run was manifest data (each layer's
-  biome override = its own pattern + the same diff `baseLoop` uses for
-  that biome) plus a consistency test, no logic changes.
-- Run 18 (2026-07-21): Fixed the persistent favicon 404 per new ROADMAP
-  task 19 (see Current status above). Every headless verification note
-  since Run 1 carried the same "expected missing-favicon 404" caveat;
-  added an inline SVG data-URI favicon to `index.html` (no new asset
-  file) so it's actually gone. Also trimmed the old Run 12 verbose
-  "Previous status" writeup from this file (its content is fully captured
-  in this Recent runs bullet already) to keep STATE.md from growing
-  unbounded — not a full consolidation pass, just routine hygiene.
-- Run 19 (2026-07-21): Mute toggle per new ROADMAP task 20 (see Current
-  status above). `AudioEngine` gained a shared `masterGain` node all layers
-  route through plus `setMuted`/`isMuted`; `RoadScene` added a small
-  interactive icon (top-left) that toggles it, excluded from beat-hit
-  handling via Phaser's `currentlyOver` pointerdown list. No prior queued
-  task was actionable (task 14 still blocked), so this run added a new one
-  rather than stalling.
+  task 16. Added `LoopLayer.patternByBiome` (manifest.ts) so the base
+  loop's melody now differs per biome (village/forest/riverside each get
+  their own 4-semitone pattern); `AudioEngine.start`/`extend` take a
+  `biomeId` and resolve the pattern for whichever biome is current when a
+  batch is scheduled. Deliberately scoped to the base loop only (not
+  tempo, not the harmony/sparkle layers). Noted a batch-boundary
+  quantization caveat (pattern switch lags the visual crossfade by up to
+  a full batch) — became task 17. `npm test` 49 tests green (5 new),
+  build green.
 - Run 16 (2026-07-20): Tightened the batch-boundary quantization flagged
-  by Run 15, per new ROADMAP task 17 (see Current status above). Shrunk
-  `RoadScene.BEAT_BATCH_SIZE` from 300 to 32 — pure constant tuning, no
-  new logic — cutting the worst-case lag between a biome's visual
-  crossfade and its audio pattern switch from ~187s to ~20s. Deliberately
-  didn't attempt sample-exact sync (rescheduling in-flight notes
-  mid-batch); that's real synchronization work and its own task if wanted.
+  by Run 15, per new ROADMAP task 17. Shrunk `RoadScene.BEAT_BATCH_SIZE`
+  from 300 to 32 — pure constant tuning, no new logic — cutting the
+  worst-case lag between a biome's visual crossfade and its audio pattern
+  switch from ~187s to ~20s. Deliberately didn't attempt sample-exact sync
+  (rescheduling in-flight notes mid-batch); that's real synchronization
+  work and its own task if wanted. `npm test` 49 tests green (unchanged),
+  build green.
+- Run 17 (2026-07-20): Per-biome patterns for the `harmony`/`sparkle`
+  layers per new ROADMAP task 18. Task 16 had scoped biome patterns to
+  `baseLoop` only; the resolve/schedule plumbing was already
+  layer-generic, so this run was manifest data (each layer's biome
+  override = its own pattern + the same diff `baseLoop` uses for that
+  biome) plus a consistency test, no logic changes. `npm test` 52 tests
+  green (3 new), build green.
+- Run 18 (2026-07-21): Fixed the persistent favicon 404 per new ROADMAP
+  task 19. Every headless verification note since Run 1 carried the same
+  "expected missing-favicon 404" caveat; added an inline SVG data-URI
+  favicon to `index.html` (no new asset file) so it's actually gone. Also
+  trimmed the old Run 12 verbose "Previous status" writeup from this file
+  (its content is fully captured in this Recent runs bullet already) to
+  keep STATE.md from growing unbounded — not a full consolidation pass,
+  just routine hygiene. `npm test` 52 tests green (unchanged), build
+  green.
+- Run 19 (2026-07-21): Mute toggle per new ROADMAP task 20 (see Previous
+  status above). `AudioEngine` gained a shared `masterGain` node all
+  layers route through plus `setMuted`/`isMuted`; `RoadScene` added a
+  small interactive icon (top-left) that toggles it, excluded from
+  beat-hit handling via Phaser's `currentlyOver` pointerdown list. No
+  prior queued task was actionable (task 14 still blocked), so this run
+  added a new one rather than stalling.
+- Run 20 (2026-07-21): Consolidation pass (see Current status above). No
+  vision drift or code rough edges found after a full read-through; fixed
+  a chronological-ordering bug in this file's own Recent runs log and
+  trimmed five redundant "Previous status" write-ups (Runs 13–18) that
+  fully duplicated their own Recent runs bullets. No code changes.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
@@ -520,7 +305,7 @@ a real batch boundary is a human playtest item (see below).
   ear — headless checks confirm the right pattern is scheduled for the
   right biome, not whether the melodic difference actually reads as a
   mood shift on real speakers. Also needs a real-device check of the
-  known batch-boundary quantization (see Current status above): does the
+  known batch-boundary quantization (see Recent runs above): does the
   pattern's step-change at a batch boundary land close enough to the
   visual crossfade to feel connected, or far enough off to feel like an
   unrelated glitch? Doesn't block anything — v0.1 already shipped and no

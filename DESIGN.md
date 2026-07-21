@@ -92,3 +92,11 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   biomes instead. ROADMAP task 14 (human playtest pass) was next in line
   but can't run without an actual human; logged as blocked and this run's
   slot went to the biome work instead (see STATE.md).
+- 2026-07-21 — Run 20 (consolidation pass). No vision drift found — the
+  game still matches this document task-for-task (single lane, one meter,
+  bard states, scrolling road, three biomes, layered audio, coin readout,
+  mute toggle), and a full read-through of every source file found no
+  rough edges worth fixing in code. The only cleanup was documentation
+  bloat in STATE.md (redundant "Previous status" write-ups duplicating its
+  own "Recent runs" log, plus one chronological-ordering bug in that log)
+  — see STATE.md. Nothing cut, nothing reprioritized.
