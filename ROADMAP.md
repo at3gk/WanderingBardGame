@@ -119,6 +119,18 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     no new asset file) so the console is actually clean, not just
     clean-with-an-asterisk. Pure `index.html` change, no runtime code
     touched.
+20. ~~**(Post-v0.1) Mute toggle.**~~ Done (Run 19): the game has no menus
+    per DESIGN.md, but also had no way at all to silence the audio short of
+    muting the OS/tab — a real gap for a browser game someone might open
+    somewhere sound isn't welcome. `AudioEngine` gained a `masterGain` node
+    all layers route through (independent of each layer's own meter-driven
+    fade) plus `setMuted`/`isMuted`; `RoadScene` added a small interactive
+    icon (top-left, mirroring the coin readout's top-right placement) that
+    toggles it. Tapping the icon is excluded from beat-hit handling via
+    Phaser's `currentlyOver` list on the shared `pointerdown` listener, so
+    it never counts as a hit or a miss. No new asset file, no new runtime
+    dependency, no menu — just one more small on-screen readout/control in
+    the same procedural-shapes style as everything else.
 
 ## Needs human playtest
 
