@@ -151,6 +151,17 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     out over 400ms and never reappears for that session. No new asset, no
     new runtime dependency, no menu.
 
+23. ~~**(Post-v0.1) Resume audio after tab backgrounding.**~~ Done (Run 23):
+    mobile browsers suspend the `AudioContext` whenever the tab is
+    backgrounded (app switch, screen lock, an incoming call) — a very
+    ordinary thing to happen on a phone mid-walk. `AudioEngine` only ever
+    resumed the context once, inside `start()`, so a backgrounded-then-
+    returned session stayed silent forever even though gameplay kept
+    running. Added `AudioEngine.resume()` plus a `document.visibilitychange`
+    listener in `RoadScene` that calls it whenever the tab becomes visible
+    again. No new system, no new dependency — a correctness fix for the
+    "mobile-friendly" design pillar.
+
 ## Needs human playtest
 
 - (tracked in STATE.md as items land)

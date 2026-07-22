@@ -1,46 +1,65 @@
 # STATE
 
-Run counter: 23
+Run counter: 24
 
 ## Current status
-Run 22 complete — first-tap onboarding hint per new ROADMAP task 22.
-ROADMAP task 14 (human playtest pass) is still blocked on an actual
-human — see Blocked on human below; no other queued task was actionable
-so this run added a new one, same as Runs 19 and 21.
+Run 23 complete — resume audio after tab backgrounding, a new ROADMAP
+task 23. ROADMAP task 14 (human playtest pass) is still blocked on an
+actual human — see Blocked on human below; no other queued task was
+actionable so this run added a new one, same as Runs 19, 21, and 22.
 
-Checked first whether the obvious candidate (clamping per-frame `delta`
-so a backgrounded tab can't cause a distance/coin catch-up burst on
-return) was a real gap — it isn't: Phaser's `TimeStep.smoothDelta` already
-substitutes a smoothed/clamped delta by default (`smoothStep: true`) when
-a frame gap is large or the window lost focus, so that code path was
-already handled by the framework. Looked for a genuine gap instead:
+Read through `AudioEngine.ts` and `RoadScene.ts` looking for a genuine
+gap rather than another passive readout (three runs in a row have added
+one of those already). Found one: `AudioEngine.ensureContext()` resumes
+a suspended `AudioContext`, but it's only ever called once, from inside
+`start()`. Mobile browsers suspend the `AudioContext` whenever the tab is
+backgrounded — switching apps, locking the screen, an incoming call, all
+very ordinary things to happen mid-walk on a phone. Nothing ever called
+`resume()` again after that first call, so a player who backgrounds the
+tab and comes back would find the backing track silent for the rest of
+the session, even though gameplay (beats, meter, scenery) keeps running
+the whole time — the "song" the game is themed around goes silently dead
+without the player having done anything wrong.
 
-- Every prior run added a passive readout (coins, distance, mute) that
-  explains itself once you already know the mechanic, but nothing on
-  screen ever told a first-time player what to actually do — no menu
-  (correctly, per DESIGN.md's "no menus" pillar), but also no affordance
-  at all for "tap to the beat."
-- Added a small "tap to the beat" `Text` object (`RoadScene.hintText`)
-  above the hit line, visible from scene start. `dismissHint()` fades it
-  out over 400ms on the player's first input via `handleInput()` —
-  dismissal fires on a miss just as readily as a hit, since the point is
-  discovery of the interaction, not rewarding accuracy. Repositions each
-  frame (while shown) alongside the hit line/flash so a resize before the
-  first tap doesn't leave it stranded, matching how the rest of the HUD
-  already re-derives its position from `this.scale` every frame.
-- Pure rendering addition, no new core logic module, no new asset file,
-  no new runtime dependency, no menu.
+- Added `AudioEngine.resume()`: no-ops unless a context exists and is
+  currently `'suspended'`, otherwise calls `context.resume()`.
+- `RoadScene.create()` registers a `document.visibilitychange` listener
+  that calls `this.audioEngine.resume()` whenever `document.
+  visibilityState` becomes `'visible'`; removed on scene shutdown via
+  `Phaser.Scenes.Events.SHUTDOWN` for cleanliness (the game only ever runs
+  one scene instance in practice, but leaking a document-level listener
+  is bad hygiene regardless).
+- Pure correctness fix for the "mobile-friendly" design pillar — no new
+  system, no new asset, no new runtime dependency.
 
-Verified: `npm test` (52 tests green, unchanged — no pure-logic module
-touched). `npm run build` (green, bundle ~1.22 MB, unchanged). Headless
-Playwright smoke check (390×664 mobile viewport, touch emulation,
-`--no-save` install) against `vite preview` at the real
-`/WanderingBardGame/` base path: cold load 794ms; screenshot before the
-first tap confirms the hint renders above the bard with no overlap
-against the meter/coin readout; screenshot ~700ms after the first tap
-confirms it has fully faded and the rest of the HUD (meter, coins,
-distance, road) keeps working normally; zero console errors, zero
-failed/4xx+ requests across 20 further taps at the 625ms beat cadence.
+Verified: `npm test` (52 tests green, unchanged — `AudioEngine` isn't
+unit-tested at all, before or after this change, since it wraps the
+`AudioContext` browser API rather than pure logic; the vitest environment
+is `node`, not `jsdom`, so there's no `AudioContext`/`document` to test
+against headlessly). `npm run build` (green, bundle ~1.22 MB, unchanged).
+Headless Playwright smoke check (iPhone 12 emulation, touch input) against
+`vite preview` at the real `/WanderingBardGame/` base path: cold load
+666ms; one tap to start audio, then `document.visibilityState` stubbed to
+`'hidden'` and a `visibilitychange` event dispatched (simulating
+backgrounding), then stubbed back to `'visible'` and dispatched again
+(simulating return), then 15 more taps at the 625ms beat cadence — zero
+console errors, zero failed/4xx+ requests, screenshot after confirms the
+HUD (meter, coins, distance, bard, road, markers) all still render and
+update normally post-cycle. This confirms the wiring runs without error;
+it can't confirm from a headless single-tab browser that the `AudioContext`
+was *actually* suspended by the OS/browser the way a real backgrounded
+mobile tab would be, since nothing forces that on a Playwright-controlled
+context — that half of the fix (does the real browser really resume
+audible sound after a real backgrounding) still needs a real-device
+playtest, folded into the existing task 14 backlog below.
+
+## Previous status (Run 22)
+Run 22 complete — first-tap onboarding hint per new ROADMAP task 22 (see
+Recent runs below). Pure rendering, no new core module, no new
+dependency. `npm test` 52 tests green (unchanged), build green. Headless
+Playwright check: cold load 794ms, screenshots confirmed the hint renders
+without overlap and fades correctly, zero console errors, zero failed/4xx+
+requests across 20 taps.
 
 ## Previous status (Run 21)
 Run 21 complete — distance-walked readout per new ROADMAP task 21.
@@ -184,12 +203,19 @@ failed/4xx+ requests.
   new core module, no new dependency. `npm test` 52 tests green
   (unchanged), build green.
 - Run 22 (2026-07-22): First-tap onboarding hint per new ROADMAP task 22
-  (see Current status above). A small "tap to the beat" text above the
+  (see Previous status above). A small "tap to the beat" text above the
   hit line, shown from scene start and faded out 400ms after the
   player's first input (hit or miss). Considered and ruled out clamping
   per-frame `delta` for backgrounded-tab catch-up first — Phaser's
   `TimeStep.smoothDelta` already handles that by default. Pure rendering,
   no new core module, no new dependency. `npm test` 52 tests green
+  (unchanged), build green.
+- Run 23 (2026-07-22): Resume audio after tab backgrounding per new
+  ROADMAP task 23 (see Current status above). `AudioEngine.resume()`
+  re-resumes a suspended `AudioContext`; `RoadScene` calls it from a
+  `document.visibilitychange` listener so a backgrounded-then-returned
+  tab doesn't stay silent for the rest of the session. Pure correctness
+  fix, no new core module, no new dependency. `npm test` 52 tests green
   (unchanged), build green.
 
 ## Needs human playtest
@@ -320,6 +346,18 @@ failed/4xx+ requests.
   without also naming the tap-anywhere-on-screen behavior explicitly.
   Doesn't block anything — it's cosmetic onboarding with no effect on the
   underlying mechanic either way.
+
+- Task 23 audio resume (this run): the fix wires a real, correct API
+  (`AudioContext.resume()` on `visibilitychange`) and the headless smoke
+  check confirms the wiring runs without error, but a headless single-tab
+  Playwright browser has no way to make the OS/browser actually suspend
+  the `AudioContext` the way a real backgrounded mobile tab does — the
+  test simulates the *event*, not the underlying browser behavior it
+  responds to. Needs a real mobile device playtest: background the tab
+  mid-walk (switch apps, lock the screen) for a few seconds, return, and
+  confirm the backing track is actually audible again rather than
+  silently stuck off. Doesn't block anything else — the fix is additive
+  and can't make backgrounding behave worse than before.
 
 ## Blocked on human
 - **ROADMAP task 14 — human playtest pass** (Run 14): every item in this
