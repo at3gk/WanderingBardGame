@@ -163,7 +163,23 @@ export class RoadScene extends Phaser.Scene {
       this.handleInput();
     });
     this.input.keyboard?.on('keydown-SPACE', () => this.handleInput());
+
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    });
   }
+
+  /**
+   * Backgrounding the tab (app switch, screen lock, an incoming call on
+   * mobile) suspends the AudioContext; resume it on return so the backing
+   * track doesn't stay silent forever even though gameplay keeps running.
+   */
+  private handleVisibilityChange = (): void => {
+    if (document.visibilityState === 'visible') {
+      this.audioEngine.resume();
+    }
+  };
 
   /** Procedural ground tile (dashed band) per biome, generated once and reused via TileSprite scrolling. No image assets per CLAUDE.md. */
   private roadTileTexture(biome: Biome): string {

@@ -39,6 +39,19 @@ export class AudioEngine {
     return this.context;
   }
 
+  /**
+   * Re-resumes the AudioContext if the browser suspended it (mobile
+   * browsers do this whenever the tab is backgrounded — app switch, screen
+   * lock, an incoming call). Without this, audio stays silent forever after
+   * the player returns to the tab, even though gameplay keeps running.
+   * Safe to call anytime, including before `start()` (no-ops until a
+   * context exists) and while already running (no-ops).
+   */
+  resume(): void {
+    if (!this.context || this.context.state !== 'suspended') return;
+    void this.context.resume();
+  }
+
   /** True if `setMuted(true)` was called (or is pending a not-yet-started context). */
   get isMuted(): boolean {
     return this.muted;
