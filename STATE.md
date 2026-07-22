@@ -1,79 +1,57 @@
 # STATE
 
-Run counter: 22
+Run counter: 23
 
 ## Current status
-Run 21 complete — distance-walked readout per new ROADMAP task 21. ROADMAP
-task 14 (human playtest pass) is still blocked on an actual human — see
-Blocked on human below; no other queued task was actionable so this run
-added a new one, same as Run 19.
+Run 22 complete — first-tap onboarding hint per new ROADMAP task 22.
+ROADMAP task 14 (human playtest pass) is still blocked on an actual
+human — see Blocked on human below; no other queued task was actionable
+so this run added a new one, same as Runs 19 and 21.
 
-DESIGN.md's Concept/mechanic sections list "distance" alongside scenery
-and coins as a *readout* of song-meter performance, but `distancePx`
-(`src/core/distance.ts`, tracked since Run 9) only ever drove the internal
-biome crossfade — nothing surfaced it to the player, unlike coins (task
-11) or the mute state (task 20). This run:
+Checked first whether the obvious candidate (clamping per-frame `delta`
+so a backgrounded tab can't cause a distance/coin catch-up burst on
+return) was a real gap — it isn't: Phaser's `TimeStep.smoothDelta` already
+substitutes a smoothed/clamped delta by default (`smoothStep: true`) when
+a frame gap is large or the window lost focus, so that code path was
+already handled by the framework. Looked for a genuine gap instead:
 
-- Added `RoadScene.updateDistanceReadout()`, a small always-visible text
-  readout ("N steps") bottom-left, in the same procedural/no-asset style
-  as the coin readout and mute icon. Converts `distancePx` to steps via
-  `ROAD_TILE_WIDTH` (64px, the road's own dash-tile size) rather than
-  inventing a new arbitrary unit — one "step" is one tile of ground
-  already scrolling past.
-- Pure rendering/formatting only, no new core logic module — same
-  precedent as the coin readout's `Math.floor(this.coins)` in
-  `updateCoinReadout`, which also has no dedicated test for the display
-  formatting itself (the underlying `accumulateDistance` math already has
-  its own tests from Run 9).
-- No new asset file, no new runtime dependency, no menu.
+- Every prior run added a passive readout (coins, distance, mute) that
+  explains itself once you already know the mechanic, but nothing on
+  screen ever told a first-time player what to actually do — no menu
+  (correctly, per DESIGN.md's "no menus" pillar), but also no affordance
+  at all for "tap to the beat."
+- Added a small "tap to the beat" `Text` object (`RoadScene.hintText`)
+  above the hit line, visible from scene start. `dismissHint()` fades it
+  out over 400ms on the player's first input via `handleInput()` —
+  dismissal fires on a miss just as readily as a hit, since the point is
+  discovery of the interaction, not rewarding accuracy. Repositions each
+  frame (while shown) alongside the hit line/flash so a resize before the
+  first tap doesn't leave it stranded, matching how the rest of the HUD
+  already re-derives its position from `this.scale` every frame.
+- Pure rendering addition, no new core logic module, no new asset file,
+  no new runtime dependency, no menu.
 
 Verified: `npm test` (52 tests green, unchanged — no pure-logic module
 touched). `npm run build` (green, bundle ~1.22 MB, unchanged). Headless
 Playwright smoke check (390×664 mobile viewport, touch emulation,
 `--no-save` install) against `vite preview` at the real
-`/WanderingBardGame/` base path: cold load 1164ms, 32 taps at the 625ms
-beat cadence, screenshot confirms the readout renders bottom-left with no
-overlap against the bard/road/other readouts, zero console errors, zero
+`/WanderingBardGame/` base path: cold load 794ms; screenshot before the
+first tap confirms the hint renders above the bard with no overlap
+against the meter/coin readout; screenshot ~700ms after the first tap
+confirms it has fully faded and the rest of the HUD (meter, coins,
+distance, road) keeps working normally; zero console errors, zero
+failed/4xx+ requests across 20 further taps at the 625ms beat cadence.
+
+## Previous status (Run 21)
+Run 21 complete — distance-walked readout per new ROADMAP task 21.
+`RoadScene.updateDistanceReadout()` shows `distancePx` converted to "N
+steps" (via `ROAD_TILE_WIDTH`) bottom-left — DESIGN.md names distance as a
+readout alongside coins/scenery, but nothing had surfaced it to the player
+since Run 9. Pure rendering, no new core module, no new dependency.
+`npm test` 52 tests green (unchanged), build green. Headless Playwright
+check: cold load 1164ms, 32 taps at the 625ms cadence, screenshot
+confirmed no overlap with other readouts, zero console errors, zero
 failed/4xx+ requests.
-
-## Previous status (Run 20)
-Run 20 complete — consolidation pass (every ~10th run per CLAUDE.md; the
-last one was Run 10). ROADMAP task 14 (human playtest pass) is still
-blocked on an actual human — see Blocked on human below.
-
-- Read through every source file (`src/core/*`, `src/audio/*`,
-  `src/scenes/RoadScene.ts`, `src/main.ts`) end to end looking for drift
-  from DESIGN.md's one-mechanic pillar and for rough edges accumulated
-  over 19 feature runs. Found none: the pure-logic/Phaser-scene split is
-  still clean, the audio manifest is still the single source of truth for
-  sound (CLAUDE.md's "keep audio behind one manifest file"), and nothing
-  has crept in beyond what DESIGN.md describes (single lane, one meter,
-  bard states, scrolling road, three biomes, layered audio, coin readout,
-  mute toggle). No code changes were needed.
-- Found and fixed a real ordering bug in this file's own **Recent runs**
-  log: the Run 16 entry (tighten batch-boundary quantization) was appended
-  after Run 19 instead of between Run 15 and Run 17, out of chronological
-  order. Fixed.
-- Trimmed the verbose **Previous status (Run N)** write-ups for Runs
-  13–18 — each one fully duplicated content already condensed into its
-  own **Recent runs** bullet below (the same redundancy Run 18 already
-  cut once for Run 12's write-up). This file had grown to ~570 lines with
-  the actual duplication ratio increasing every run; only the current and
-  immediately-previous run's full write-up are kept from now on, per the
-  precedent Run 18 set. No information was lost — every trimmed section's
-  content survives in its **Recent runs** bullet.
-- Re-verified the build headlessly rather than trusting "no code changed
-  so it's still green": `npm test` (52 tests, all green, unchanged),
-  `npm run build` (green, bundle ~1.22 MB, unchanged). Also ran a fresh
-  headless Playwright check (390×664 mobile viewport, touch emulation,
-  temporarily installed via `npm install --no-save playwright` so
-  `package.json`/lock stay untouched) against `vite preview` at the real
-  `/WanderingBardGame/` base path: cold load 662ms, canvas renders, 40
-  taps at the 625ms beat cadence (~25s of play, crossing zero biome
-  transitions but exercising the core loop end to end), zero console
-  errors, zero failed/4xx+ requests — confirms the "no drift found"
-  conclusion isn't just a read-through, the shipped build actually still
-  works exactly as the past 19 runs left it.
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -199,11 +177,19 @@ blocked on an actual human — see Blocked on human below.
   trimmed five redundant "Previous status" write-ups (Runs 13–18) that
   fully duplicated their own Recent runs bullets. No code changes.
 - Run 21 (2026-07-22): Distance-walked readout per new ROADMAP task 21
-  (see Current status above). `RoadScene.updateDistanceReadout()` shows
+  (see Previous status above). `RoadScene.updateDistanceReadout()` shows
   `distancePx` converted to "N steps" (via `ROAD_TILE_WIDTH`) bottom-left —
   DESIGN.md names distance as a readout alongside coins/scenery, but
   nothing had surfaced it to the player since Run 9. Pure rendering, no
   new core module, no new dependency. `npm test` 52 tests green
+  (unchanged), build green.
+- Run 22 (2026-07-22): First-tap onboarding hint per new ROADMAP task 22
+  (see Current status above). A small "tap to the beat" text above the
+  hit line, shown from scene start and faded out 400ms after the
+  player's first input (hit or miss). Considered and ruled out clamping
+  per-frame `delta` for backgrounded-tab catch-up first — Phaser's
+  `TimeStep.smoothDelta` already handles that by default. Pure rendering,
+  no new core module, no new dependency. `npm test` 52 tests green
   (unchanged), build green.
 
 ## Needs human playtest
@@ -324,6 +310,16 @@ blocked on an actual human — see Blocked on human below.
   ignored/too-fast/too-slow, the same class of question as task 11's coin
   rate. Doesn't block anything — it's a passive readout with no gameplay
   effect either way.
+
+- Task 22 onboarding hint (this run): the wording ("tap to the beat"),
+  15px size, and position (above the hit line) are eyeballed, not checked
+  against real thumb/eye ergonomics on a phone — headless Playwright
+  confirms it renders without overlap and fades on the first real tap, not
+  whether a genuine first-time player actually reads it in time before the
+  first beat marker arrives, or whether the wording itself is clear enough
+  without also naming the tap-anywhere-on-screen behavior explicitly.
+  Doesn't block anything — it's cosmetic onboarding with no effect on the
+  underlying mechanic either way.
 
 ## Blocked on human
 - **ROADMAP task 14 — human playtest pass** (Run 14): every item in this
