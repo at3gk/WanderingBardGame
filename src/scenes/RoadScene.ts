@@ -39,6 +39,8 @@ const MUTE_ICON_MARGIN_LEFT = 24;
 const MUTE_ICON_COLOR_ON = 0xe8d9c0;
 const MUTE_ICON_COLOR_MUTED = 0x554e63;
 const MUTE_SLASH_COLOR = 0x8a5a5a;
+const DISTANCE_MARGIN_LEFT = 24;
+const DISTANCE_MARGIN_BOTTOM = 20;
 
 interface BeatMarker {
   beat: Beat;
@@ -65,6 +67,7 @@ export class RoadScene extends Phaser.Scene {
   private coins = 0;
   private coinIcon!: Phaser.GameObjects.Arc;
   private coinText!: Phaser.GameObjects.Text;
+  private distanceText!: Phaser.GameObjects.Text;
   private muteIcon!: Phaser.GameObjects.Arc;
   private muteSlash!: Phaser.GameObjects.Rectangle;
   private bard!: Phaser.GameObjects.Container;
@@ -113,6 +116,13 @@ export class RoadScene extends Phaser.Scene {
       color: '#e8d9c0',
     });
     this.coinText.setOrigin(0, 0.5);
+
+    this.distanceText = this.add.text(0, 0, '0 steps', {
+      fontFamily: 'sans-serif',
+      fontSize: '14px',
+      color: '#a89bb5',
+    });
+    this.distanceText.setOrigin(0, 1);
 
     this.muteIcon = this.add.circle(0, 0, MUTE_ICON_RADIUS, MUTE_ICON_COLOR_ON);
     this.muteIcon.setInteractive({ useHandCursor: true });
@@ -354,6 +364,7 @@ export class RoadScene extends Phaser.Scene {
 
     this.updateMeterBar();
     this.updateCoinReadout();
+    this.updateDistanceReadout();
     this.updateBard(hitLineX, laneY);
     this.audioEngine.setMeterRatio(meterRatio);
   }
@@ -421,5 +432,20 @@ export class RoadScene extends Phaser.Scene {
     this.coinIcon.setPosition(iconX, COIN_MARGIN_TOP);
     this.coinText.setText(Math.floor(this.coins).toString());
     this.coinText.setPosition(iconX - COIN_ICON_RADIUS - this.coinText.width - 8, COIN_MARGIN_TOP);
+  }
+
+  /**
+   * Distance-walked readout — DESIGN.md names "distance" alongside scenery
+   * and coins as a readout of song-meter performance, but until now
+   * `distancePx` only drove the biome crossfade internally with nothing
+   * shown to the player. Steps are `distancePx` converted through
+   * `ROAD_TILE_WIDTH` (the road's own dash-tile size) rather than a new
+   * arbitrary unit, so one "step" matches one tile of ground already
+   * scrolling past.
+   */
+  private updateDistanceReadout(): void {
+    const steps = Math.floor(this.distancePx / ROAD_TILE_WIDTH);
+    this.distanceText.setText(`${steps} steps`);
+    this.distanceText.setPosition(DISTANCE_MARGIN_LEFT, this.scale.height - DISTANCE_MARGIN_BOTTOM);
   }
 }

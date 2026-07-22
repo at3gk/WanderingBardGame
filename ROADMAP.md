@@ -131,6 +131,15 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     it never counts as a hit or a miss. No new asset file, no new runtime
     dependency, no menu — just one more small on-screen readout/control in
     the same procedural-shapes style as everything else.
+21. ~~**(Post-v0.1) Distance-walked readout.**~~ Done (Run 21): DESIGN.md's
+    Concept/mechanic sections name "distance" alongside scenery and coins
+    as a readout of song-meter performance, but `distancePx` (tracked
+    since Run 9) only ever drove the internal biome crossfade — nothing
+    surfaced it to the player. Added a small "N steps" text readout
+    (bottom-left), converting `distancePx` via `ROAD_TILE_WIDTH` so one
+    step matches one ground tile already scrolling past. Pure
+    rendering/formatting, no new core module, same precedent as the coin
+    readout's own display formatting.
 
 ## Needs human playtest
 
