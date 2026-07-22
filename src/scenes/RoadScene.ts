@@ -41,6 +41,9 @@ const MUTE_ICON_COLOR_MUTED = 0x554e63;
 const MUTE_SLASH_COLOR = 0x8a5a5a;
 const DISTANCE_MARGIN_LEFT = 24;
 const DISTANCE_MARGIN_BOTTOM = 20;
+const HINT_TEXT = 'tap to the beat';
+const HINT_Y_OFFSET = -70;
+const HINT_FADE_MS = 400;
 
 interface BeatMarker {
   beat: Beat;
@@ -68,6 +71,8 @@ export class RoadScene extends Phaser.Scene {
   private coinIcon!: Phaser.GameObjects.Arc;
   private coinText!: Phaser.GameObjects.Text;
   private distanceText!: Phaser.GameObjects.Text;
+  private hintText!: Phaser.GameObjects.Text;
+  private hintShown = true;
   private muteIcon!: Phaser.GameObjects.Arc;
   private muteSlash!: Phaser.GameObjects.Rectangle;
   private bard!: Phaser.GameObjects.Container;
@@ -104,6 +109,15 @@ export class RoadScene extends Phaser.Scene {
 
     this.hitLine = this.add.rectangle(0, 0, 4, 0, 0xe8d9c0, 0.8);
     this.flash = this.add.rectangle(0, 0, 4, 0, 0xffffff, 0);
+
+    this.hintShown = true;
+    this.hintText = this.add.text(this.hitLineX(), this.laneY() + HINT_Y_OFFSET, HINT_TEXT, {
+      fontFamily: 'sans-serif',
+      fontSize: '15px',
+      color: '#e8d9c0',
+    });
+    this.hintText.setOrigin(0.5, 0.5);
+    this.hintText.setAlpha(0.85);
 
     this.meterTrack = this.add.rectangle(0, 0, 0, METER_HEIGHT, 0x2c2536, 0.9);
     this.meterFill = this.add.rectangle(0, 0, 0, METER_HEIGHT - 4, 0xe8d9c0, 1);
@@ -282,6 +296,7 @@ export class RoadScene extends Phaser.Scene {
 
   private handleInput(): void {
     this.audioEngine.start(BPM, BEAT_BATCH_SIZE, this.currentBiomeId());
+    this.dismissHint();
     const nowMs = this.time.now - this.startTimeMs;
     const target = this.markers.find(
       (m) => m.resolved === null && isWithinHitWindow(m.beat, nowMs, HIT_WINDOW_MS)
@@ -292,6 +307,23 @@ export class RoadScene extends Phaser.Scene {
       this.meter = applyHit(this.meter, this.meterConfig);
     }
     this.flashHitLine(target ? 0x7fd6a0 : 0x555555);
+  }
+
+  /**
+   * Fades out the "tap to the beat" onboarding hint the first time the
+   * player interacts, whether that tap lands a hit or a miss — its job is
+   * discovery, not accuracy (ROADMAP task 22). No-ops on every input after
+   * the first.
+   */
+  private dismissHint(): void {
+    if (!this.hintShown) return;
+    this.hintShown = false;
+    this.tweens.add({
+      targets: this.hintText,
+      alpha: 0,
+      duration: HINT_FADE_MS,
+      onComplete: () => this.hintText.destroy(),
+    });
   }
 
   /** Toggles the audio mute state (ROADMAP task 20). Doesn't touch the beat/meter game state at all — muting is purely an audio-output concern, tapping it never counts as a beat hit/miss. */
@@ -331,6 +363,9 @@ export class RoadScene extends Phaser.Scene {
     this.hitLine.setSize(4, HIT_LINE_HEIGHT);
     this.flash.setPosition(hitLineX, laneY);
     this.flash.setSize(4, HIT_LINE_HEIGHT);
+    if (this.hintShown) {
+      this.hintText.setPosition(hitLineX, laneY + HINT_Y_OFFSET);
+    }
 
     // Filtered in place (not just gfx-destroyed) so a long/unbounded play
     // session doesn't accumulate every beat ever generated — ROADMAP task 13.

@@ -141,6 +141,16 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     rendering/formatting, no new core module, same precedent as the coin
     readout's own display formatting.
 
+22. ~~**(Post-v0.1) First-tap onboarding hint.**~~ Done (Run 22): nothing on
+    screen told a first-time player what to do — no menu (correctly, per
+    DESIGN.md), but also zero affordance for "tap to the beat," unlike every
+    other run's readout (coins, distance, mute) which at least explains
+    itself visually once you know the mechanic. Added a small "tap to the
+    beat" text above the hit line, shown until the player's first input
+    (hit or miss — dismissal is about discovery, not accuracy), then fades
+    out over 400ms and never reappears for that session. No new asset, no
+    new runtime dependency, no menu.
+
 ## Needs human playtest
 
 - (tracked in STATE.md as items land)

@@ -100,3 +100,9 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   bloat in STATE.md (redundant "Previous status" write-ups duplicating its
   own "Recent runs" log, plus one chronological-ordering bug in that log)
   — see STATE.md. Nothing cut, nothing reprioritized.
+- 2026-07-22 — Run 22. Added a "tap to the beat" onboarding hint, shown
+  until the first input. Not a mechanic change — every readout this game
+  has added so far (coins, distance, mute) assumes the player already
+  knows to tap; nothing previously told a first-time player that at all.
+  Fades out permanently after the first tap and never returns, so it stays
+  out of the way of the "no menus" pillar.
