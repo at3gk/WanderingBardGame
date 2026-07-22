@@ -1,8 +1,42 @@
 # STATE
 
-Run counter: 21
+Run counter: 22
 
 ## Current status
+Run 21 complete — distance-walked readout per new ROADMAP task 21. ROADMAP
+task 14 (human playtest pass) is still blocked on an actual human — see
+Blocked on human below; no other queued task was actionable so this run
+added a new one, same as Run 19.
+
+DESIGN.md's Concept/mechanic sections list "distance" alongside scenery
+and coins as a *readout* of song-meter performance, but `distancePx`
+(`src/core/distance.ts`, tracked since Run 9) only ever drove the internal
+biome crossfade — nothing surfaced it to the player, unlike coins (task
+11) or the mute state (task 20). This run:
+
+- Added `RoadScene.updateDistanceReadout()`, a small always-visible text
+  readout ("N steps") bottom-left, in the same procedural/no-asset style
+  as the coin readout and mute icon. Converts `distancePx` to steps via
+  `ROAD_TILE_WIDTH` (64px, the road's own dash-tile size) rather than
+  inventing a new arbitrary unit — one "step" is one tile of ground
+  already scrolling past.
+- Pure rendering/formatting only, no new core logic module — same
+  precedent as the coin readout's `Math.floor(this.coins)` in
+  `updateCoinReadout`, which also has no dedicated test for the display
+  formatting itself (the underlying `accumulateDistance` math already has
+  its own tests from Run 9).
+- No new asset file, no new runtime dependency, no menu.
+
+Verified: `npm test` (52 tests green, unchanged — no pure-logic module
+touched). `npm run build` (green, bundle ~1.22 MB, unchanged). Headless
+Playwright smoke check (390×664 mobile viewport, touch emulation,
+`--no-save` install) against `vite preview` at the real
+`/WanderingBardGame/` base path: cold load 1164ms, 32 taps at the 625ms
+beat cadence, screenshot confirms the readout renders bottom-left with no
+overlap against the bard/road/other readouts, zero console errors, zero
+failed/4xx+ requests.
+
+## Previous status (Run 20)
 Run 20 complete — consolidation pass (every ~10th run per CLAUDE.md; the
 last one was Run 10). ROADMAP task 14 (human playtest pass) is still
 blocked on an actual human — see Blocked on human below.
@@ -40,59 +74,6 @@ blocked on an actual human — see Blocked on human below.
   errors, zero failed/4xx+ requests — confirms the "no drift found"
   conclusion isn't just a read-through, the shipped build actually still
   works exactly as the past 19 runs left it.
-
-## Previous status (Run 19)
-Run 19 complete — ROADMAP task 20 (mute toggle). ROADMAP task 14 (human
-playtest pass) is still blocked on an actual human — see Blocked on human
-below; this run added a new task rather than picking a stalled one, since
-no other queued item was actionable.
-
-The game had zero way to silence its audio short of muting the OS/browser
-tab — every prior run's manifest/layering/pattern work added more sound,
-never a way to turn it off, which is a real gap for a browser game someone
-might open on a bus or in a quiet room. This run:
-
-- Added a shared `masterGain` `GainNode` to `AudioEngine`, created in
-  `start()` and connected to `ctx.destination`; every layer's own gain node
-  (`createLayerGain`) now connects to `masterGain` instead of directly to
-  the destination, so muting doesn't disturb each layer's independent
-  meter-driven fade (`setMeterRatio`, ROADMAP task 8) — the two gain stages
-  are fully orthogonal.
-- Added `AudioEngine.setMuted(muted)` / `.isMuted` — a 50ms linear ramp
-  (avoids a click) to 0 or 1 on `masterGain`. Callable before `start()` has
-  ever run (stores the flag, applies it once `masterGain` exists) so
-  toggling mute before the first beat tap — the only user gesture that's
-  allowed to create the `AudioContext` — still works correctly the moment
-  audio actually starts.
-- Added a small interactive mute icon to `RoadScene` (top-left corner,
-  mirroring the coin readout's top-right placement and using the same
-  procedural-shapes style — a plain circle, cream when unmuted, dimmed
-  gray plus a diagonal slash rectangle when muted; no image asset). The
-  scene's single shared `pointerdown` listener now reads Phaser's
-  `currentlyOver` array: a tap that lands on the mute icon toggles mute and
-  returns before reaching `handleInput()`, so it's structurally impossible
-  for a mute tap to register as a beat hit or miss — it doesn't touch
-  `this.meter` at all.
-- No new asset file, no new runtime dependency, no menu (DESIGN.md's "no
-  menus" pillar) — this is a small always-visible icon/control, the same
-  category as the existing coin readout and song meter, not a settings
-  screen.
-
-Verified: `npm test` (52 tests green, unchanged — `AudioEngine` talks
-directly to the real Web Audio API and has never had unit tests for the
-same reason the rest of it doesn't, see existing pattern in
-`src/audio/AudioEngine.ts`; the new logic is a trivial `muted ? 0 : 1`
-ramp target, not worth a dedicated pure-logic module). `npm run build`
-green (bundle ~1.22 MB, unchanged). Also ran a headless Playwright check
-(390×664 mobile viewport, touch emulation, temporarily installed via `npm
-install --no-save playwright` so `package.json`/lock stay untouched)
-against `vite preview` at the real `/WanderingBardGame/` base path: tapped
-a beat (starts audio), tapped the mute icon (screenshot confirms the
-dimmed+slashed icon), tapped it again (screenshot confirms it reverts to
-plain cream) — zero console errors, zero failed/4xx+ requests either time,
-and the song meter/coin count were unaffected by either mute tap,
-confirming the `currentlyOver` guard actually works at runtime and not
-just by code inspection.
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -212,11 +193,18 @@ just by code inspection.
   beat-hit handling via Phaser's `currentlyOver` pointerdown list. No
   prior queued task was actionable (task 14 still blocked), so this run
   added a new one rather than stalling.
-- Run 20 (2026-07-21): Consolidation pass (see Current status above). No
+- Run 20 (2026-07-21): Consolidation pass (see Previous status above). No
   vision drift or code rough edges found after a full read-through; fixed
   a chronological-ordering bug in this file's own Recent runs log and
   trimmed five redundant "Previous status" write-ups (Runs 13–18) that
   fully duplicated their own Recent runs bullets. No code changes.
+- Run 21 (2026-07-22): Distance-walked readout per new ROADMAP task 21
+  (see Current status above). `RoadScene.updateDistanceReadout()` shows
+  `distancePx` converted to "N steps" (via `ROAD_TILE_WIDTH`) bottom-left —
+  DESIGN.md names distance as a readout alongside coins/scenery, but
+  nothing had surfaced it to the player since Run 9. Pure rendering, no
+  new core module, no new dependency. `npm test` 52 tests green
+  (unchanged), build green.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
@@ -327,6 +315,15 @@ just by code inspection.
   drawn at, not whether it's comfortably reachable/discoverable one-handed.
   Doesn't block anything — muting is off by default and every other
   mechanic is unaffected either way.
+
+- Task 21 distance readout (this run): converting `distancePx` to "steps"
+  via `ROAD_TILE_WIDTH` (64px/step) is an eyeballed choice of unit, not
+  tuned against how a real player perceives pace — headless checks confirm
+  the readout updates and doesn't overlap other UI, not whether "N steps"
+  climbing at that rate reads as a satisfying sense of progress or is
+  ignored/too-fast/too-slow, the same class of question as task 11's coin
+  rate. Doesn't block anything — it's a passive readout with no gameplay
+  effect either way.
 
 ## Blocked on human
 - **ROADMAP task 14 — human playtest pass** (Run 14): every item in this
