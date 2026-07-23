@@ -172,6 +172,19 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     `this.input.keyboard.addCapture('SPACE')`, Phaser's documented API for
     exactly this. One-line fix, no new dependency, no logic change.
 
+25. ~~**(Post-v0.1) Pad the mute icon's touch target.**~~ Done (Run 25): the
+    mute icon (added Run 19) is a 20px-diameter dot with its interactive hit
+    area matching that visual size — well under the 44x44 CSS px minimum
+    both WCAG 2.5.5 and Apple's HIG call for as a comfortable touch target,
+    unlike every other "eyeballed ergonomics" caveat logged in STATE.md,
+    this one is measurable against a documented standard, not a feel
+    question, so it didn't need to wait on human playtest. Added an
+    invisible `Phaser.GameObjects.Zone` (44x44, same center) as the actual
+    interactive target; the visual dot is unchanged. Headless Playwright
+    confirmed a tap 16px off-center (inside the new zone, outside the old
+    dot) now toggles mute, while a tap further out still registers as an
+    ordinary beat input. No new dependency, no visual change.
+
 ## Needs human playtest
 
 - (tracked in STATE.md as items land)

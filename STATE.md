@@ -1,55 +1,49 @@
 # STATE
 
-Run counter: 25
+Run counter: 26
 
 ## Current status
-Run 24 complete — captured the Space key so it stops scrolling the page,
-a new ROADMAP task 24. ROADMAP task 14 (human playtest pass) is still
-blocked on an actual human — see Blocked on human below; no other queued
-task was actionable so this run added a new one, same as Runs 19, 21, 22,
-and 23.
+Run 25 complete — padded the mute icon's touch target, a new ROADMAP
+task 25. ROADMAP task 14 (human playtest pass) is still blocked on an
+actual human — see Blocked on human below; no other queued task was
+actionable so this run added a new one, same as Runs 19, 21, 22, 23, and
+24.
 
-Read through `RoadScene.create()`'s input wiring looking for a genuine gap.
-Found one: `this.input.keyboard?.on('keydown-SPACE', ...)` fires
-`handleInput()` on every Space press, but nothing ever captured the key,
-so the browser's own default action for Space (scroll the page down) also
-fires alongside it. DESIGN.md's mobile-friendly pillar explicitly promises
-"keyboard... works on desktop" — a keyboard player tapping the beat with
-Space would also be fighting the page scrolling underneath the game.
-Confirmed this actually reproduces (not just theoretical) with a headless
-Playwright check against the built `vite preview` output: `window.scrollY`
-moved from 0 to 4 after three Space presses pre-fix, in a real browser
-viewport where `document.body.scrollHeight` (504px) exceeds
-`window.innerHeight` (500px) by a few px.
+Re-read the mute icon added in Run 19: a 20px-diameter dot with its
+`setInteractive()` hit area matching that visual size. Unlike the other
+"eyeballed, needs a real thumb" caveats already logged below (icon
+placement, wording, sizing-by-feel), touch target *size* has a documented,
+non-subjective floor — WCAG 2.5.5 and Apple's HIG both call for at least
+44x44 CSS px for a comfortable tap target — and the mute icon's ~20px hit
+area falls well short of it. That's a fixable gap, not a feel question, so
+it didn't need to wait on task 14.
 
-- Added `this.input.keyboard?.addCapture('SPACE')` in `create()`, Phaser's
-  documented API for telling the input plugin to consume a keycode's
-  native event instead of letting it bubble to the browser. One line, no
-  logic change.
+- Added a `Phaser.GameObjects.Zone` (44x44, `MUTE_TOUCH_TARGET_SIZE`)
+  centered on the same point as the mute icon and made *it* the
+  interactive target instead of the icon circle itself; the icon's visual
+  size (`MUTE_ICON_RADIUS = 10`) is unchanged. The `pointerdown` handler
+  now checks `currentlyOver.includes(this.muteZone)`.
 
 Verified: `npm test` (52 tests green, unchanged — this is a browser-input
 wiring change, nothing pure-logic to unit test). `npm run build` (green,
-bundle ~1.22 MB, unchanged). Re-ran the same headless Playwright
-scroll check post-fix: `window.scrollY` stayed 0 after three Space
-presses. Separately ran the standard iPhone-12-emulation smoke check
-(touch input, `vite preview` at the real `/WanderingBardGame/` base
-path): cold load ~1.1s, 20 taps at the 625ms beat cadence, zero console
-errors, zero failed/4xx+ requests, screenshot after confirms the HUD
-(meter, coins, distance, bard, road, markers) all still render correctly
-— confirming the capture change doesn't affect touch/mouse input at all.
+bundle ~1.22 MB, unchanged). Headless Playwright check against the built
+`vite preview` output: a tap 16px off the icon's center (inside the new
+44px zone, outside the old ~20px dot) now toggles mute — screenshot
+confirms the icon changes color and shows the slash; a tap further out
+(40+px away) leaves it unmuted, confirming it still falls through to an
+ordinary beat input rather than over-triggering the mute toggle. Also
+re-ran the standard iPhone-12-emulation smoke check (touch input, cold
+load, 20 taps at the 625ms beat cadence): ~630ms cold load, zero console
+errors, zero failed/4xx+ requests, HUD renders correctly after.
 
-## Previous status (Run 23)
-Run 23 complete — resume audio after tab backgrounding per new ROADMAP
-task 23. `AudioEngine.resume()` re-resumes a suspended `AudioContext`;
-`RoadScene` calls it from a `document.visibilitychange` listener so a
-backgrounded-then-returned tab doesn't stay silent for the rest of the
-session. Pure correctness fix, no new core module, no new dependency.
-`npm test` 52 tests green (unchanged), build green. Headless Playwright
-check simulated the visibilitychange event cycle plus 15 taps: zero
-console errors, zero failed/4xx+ requests, HUD renders correctly after.
-Can't confirm from a headless browser that a real mobile OS actually
-suspends the `AudioContext` the way this fix assumes — folded into the
-task 14 human-playtest backlog below.
+## Previous status (Run 24)
+Run 24 complete — captured the Space key so it stops scrolling the page,
+a new ROADMAP task 24. `this.input.keyboard.addCapture('SPACE')` stops
+the browser's default scroll-on-Space from firing alongside every
+keyboard beat hit. `npm test` 52 tests green (unchanged), build green.
+Headless Playwright confirmed `window.scrollY` stayed 0 after three Space
+presses post-fix (was 4 pre-fix), plus the standard touch smoke check
+still passed. Pure input-wiring fix, no new dependency.
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -197,11 +191,18 @@ task 14 human-playtest backlog below.
   fix, no new core module, no new dependency. `npm test` 52 tests green
   (unchanged), build green.
 - Run 24 (2026-07-23): Captured the Space key per new ROADMAP task 24 (see
-  Current status above). `keydown-SPACE` triggered `handleInput()` but was
+  Previous status above). `keydown-SPACE` triggered `handleInput()` but was
   never captured, so the browser's default Space action (page scroll)
   fired alongside every keyboard beat hit. Added
   `this.input.keyboard.addCapture('SPACE')`. One-line fix, no new
   dependency. `npm test` 52 tests green (unchanged), build green.
+- Run 25 (2026-07-23): Padded the mute icon's touch target per new ROADMAP
+  task 25 (see Current status above). The icon's interactive hit area
+  matched its 20px visual size, well under the 44x44 CSS px minimum both
+  WCAG 2.5.5 and Apple's HIG call for — a measurable gap, not a feel
+  question, so it didn't need to wait on task 14. Added a 44x44
+  `Phaser.GameObjects.Zone` as the actual tap target; the icon itself is
+  visually unchanged. `npm test` 52 tests green (unchanged), build green.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
