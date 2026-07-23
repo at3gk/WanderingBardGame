@@ -1,76 +1,55 @@
 # STATE
 
-Run counter: 24
+Run counter: 25
 
 ## Current status
-Run 23 complete — resume audio after tab backgrounding, a new ROADMAP
-task 23. ROADMAP task 14 (human playtest pass) is still blocked on an
-actual human — see Blocked on human below; no other queued task was
-actionable so this run added a new one, same as Runs 19, 21, and 22.
+Run 24 complete — captured the Space key so it stops scrolling the page,
+a new ROADMAP task 24. ROADMAP task 14 (human playtest pass) is still
+blocked on an actual human — see Blocked on human below; no other queued
+task was actionable so this run added a new one, same as Runs 19, 21, 22,
+and 23.
 
-Read through `AudioEngine.ts` and `RoadScene.ts` looking for a genuine
-gap rather than another passive readout (three runs in a row have added
-one of those already). Found one: `AudioEngine.ensureContext()` resumes
-a suspended `AudioContext`, but it's only ever called once, from inside
-`start()`. Mobile browsers suspend the `AudioContext` whenever the tab is
-backgrounded — switching apps, locking the screen, an incoming call, all
-very ordinary things to happen mid-walk on a phone. Nothing ever called
-`resume()` again after that first call, so a player who backgrounds the
-tab and comes back would find the backing track silent for the rest of
-the session, even though gameplay (beats, meter, scenery) keeps running
-the whole time — the "song" the game is themed around goes silently dead
-without the player having done anything wrong.
+Read through `RoadScene.create()`'s input wiring looking for a genuine gap.
+Found one: `this.input.keyboard?.on('keydown-SPACE', ...)` fires
+`handleInput()` on every Space press, but nothing ever captured the key,
+so the browser's own default action for Space (scroll the page down) also
+fires alongside it. DESIGN.md's mobile-friendly pillar explicitly promises
+"keyboard... works on desktop" — a keyboard player tapping the beat with
+Space would also be fighting the page scrolling underneath the game.
+Confirmed this actually reproduces (not just theoretical) with a headless
+Playwright check against the built `vite preview` output: `window.scrollY`
+moved from 0 to 4 after three Space presses pre-fix, in a real browser
+viewport where `document.body.scrollHeight` (504px) exceeds
+`window.innerHeight` (500px) by a few px.
 
-- Added `AudioEngine.resume()`: no-ops unless a context exists and is
-  currently `'suspended'`, otherwise calls `context.resume()`.
-- `RoadScene.create()` registers a `document.visibilitychange` listener
-  that calls `this.audioEngine.resume()` whenever `document.
-  visibilityState` becomes `'visible'`; removed on scene shutdown via
-  `Phaser.Scenes.Events.SHUTDOWN` for cleanliness (the game only ever runs
-  one scene instance in practice, but leaking a document-level listener
-  is bad hygiene regardless).
-- Pure correctness fix for the "mobile-friendly" design pillar — no new
-  system, no new asset, no new runtime dependency.
+- Added `this.input.keyboard?.addCapture('SPACE')` in `create()`, Phaser's
+  documented API for telling the input plugin to consume a keycode's
+  native event instead of letting it bubble to the browser. One line, no
+  logic change.
 
-Verified: `npm test` (52 tests green, unchanged — `AudioEngine` isn't
-unit-tested at all, before or after this change, since it wraps the
-`AudioContext` browser API rather than pure logic; the vitest environment
-is `node`, not `jsdom`, so there's no `AudioContext`/`document` to test
-against headlessly). `npm run build` (green, bundle ~1.22 MB, unchanged).
-Headless Playwright smoke check (iPhone 12 emulation, touch input) against
-`vite preview` at the real `/WanderingBardGame/` base path: cold load
-666ms; one tap to start audio, then `document.visibilityState` stubbed to
-`'hidden'` and a `visibilitychange` event dispatched (simulating
-backgrounding), then stubbed back to `'visible'` and dispatched again
-(simulating return), then 15 more taps at the 625ms beat cadence — zero
-console errors, zero failed/4xx+ requests, screenshot after confirms the
-HUD (meter, coins, distance, bard, road, markers) all still render and
-update normally post-cycle. This confirms the wiring runs without error;
-it can't confirm from a headless single-tab browser that the `AudioContext`
-was *actually* suspended by the OS/browser the way a real backgrounded
-mobile tab would be, since nothing forces that on a Playwright-controlled
-context — that half of the fix (does the real browser really resume
-audible sound after a real backgrounding) still needs a real-device
-playtest, folded into the existing task 14 backlog below.
+Verified: `npm test` (52 tests green, unchanged — this is a browser-input
+wiring change, nothing pure-logic to unit test). `npm run build` (green,
+bundle ~1.22 MB, unchanged). Re-ran the same headless Playwright
+scroll check post-fix: `window.scrollY` stayed 0 after three Space
+presses. Separately ran the standard iPhone-12-emulation smoke check
+(touch input, `vite preview` at the real `/WanderingBardGame/` base
+path): cold load ~1.1s, 20 taps at the 625ms beat cadence, zero console
+errors, zero failed/4xx+ requests, screenshot after confirms the HUD
+(meter, coins, distance, bard, road, markers) all still render correctly
+— confirming the capture change doesn't affect touch/mouse input at all.
 
-## Previous status (Run 22)
-Run 22 complete — first-tap onboarding hint per new ROADMAP task 22 (see
-Recent runs below). Pure rendering, no new core module, no new
-dependency. `npm test` 52 tests green (unchanged), build green. Headless
-Playwright check: cold load 794ms, screenshots confirmed the hint renders
-without overlap and fades correctly, zero console errors, zero failed/4xx+
-requests across 20 taps.
-
-## Previous status (Run 21)
-Run 21 complete — distance-walked readout per new ROADMAP task 21.
-`RoadScene.updateDistanceReadout()` shows `distancePx` converted to "N
-steps" (via `ROAD_TILE_WIDTH`) bottom-left — DESIGN.md names distance as a
-readout alongside coins/scenery, but nothing had surfaced it to the player
-since Run 9. Pure rendering, no new core module, no new dependency.
+## Previous status (Run 23)
+Run 23 complete — resume audio after tab backgrounding per new ROADMAP
+task 23. `AudioEngine.resume()` re-resumes a suspended `AudioContext`;
+`RoadScene` calls it from a `document.visibilitychange` listener so a
+backgrounded-then-returned tab doesn't stay silent for the rest of the
+session. Pure correctness fix, no new core module, no new dependency.
 `npm test` 52 tests green (unchanged), build green. Headless Playwright
-check: cold load 1164ms, 32 taps at the 625ms cadence, screenshot
-confirmed no overlap with other readouts, zero console errors, zero
-failed/4xx+ requests.
+check simulated the visibilitychange event cycle plus 15 taps: zero
+console errors, zero failed/4xx+ requests, HUD renders correctly after.
+Can't confirm from a headless browser that a real mobile OS actually
+suspends the `AudioContext` the way this fix assumes — folded into the
+task 14 human-playtest backlog below.
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -211,12 +190,18 @@ failed/4xx+ requests.
   no new core module, no new dependency. `npm test` 52 tests green
   (unchanged), build green.
 - Run 23 (2026-07-22): Resume audio after tab backgrounding per new
-  ROADMAP task 23 (see Current status above). `AudioEngine.resume()`
+  ROADMAP task 23 (see Previous status above). `AudioEngine.resume()`
   re-resumes a suspended `AudioContext`; `RoadScene` calls it from a
   `document.visibilitychange` listener so a backgrounded-then-returned
   tab doesn't stay silent for the rest of the session. Pure correctness
   fix, no new core module, no new dependency. `npm test` 52 tests green
   (unchanged), build green.
+- Run 24 (2026-07-23): Captured the Space key per new ROADMAP task 24 (see
+  Current status above). `keydown-SPACE` triggered `handleInput()` but was
+  never captured, so the browser's default Space action (page scroll)
+  fired alongside every keyboard beat hit. Added
+  `this.input.keyboard.addCapture('SPACE')`. One-line fix, no new
+  dependency. `npm test` 52 tests green (unchanged), build green.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too

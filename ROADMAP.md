@@ -162,6 +162,16 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     again. No new system, no new dependency — a correctness fix for the
     "mobile-friendly" design pillar.
 
+24. ~~**(Post-v0.1) Capture Space so it doesn't scroll the page.**~~ Done
+    (Run 24): keyboard input bound `keydown-SPACE` to `handleInput()` but
+    never captured the key, so every keyboard beat hit also triggered the
+    browser's default Space behavior (scroll the page down) — fighting
+    DESIGN.md's "keyboard/mouse works on desktop" pillar. Confirmed with a
+    headless Playwright check (`window.scrollY` moved after three Space
+    presses pre-fix, stayed at 0 post-fix). Added
+    `this.input.keyboard.addCapture('SPACE')`, Phaser's documented API for
+    exactly this. One-line fix, no new dependency, no logic change.
+
 ## Needs human playtest
 
 - (tracked in STATE.md as items land)
