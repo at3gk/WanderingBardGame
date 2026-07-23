@@ -185,6 +185,37 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     dot) now toggles mute, while a tap further out still registers as an
     ordinary beat input. No new dependency, no visual change.
 
+25. ~~**(Post-v0.1) Pad the mute icon's touch target.**~~ Done (Run 25): the
+    mute icon (added Run 19) is a 20px-diameter dot with its interactive hit
+    area matching that visual size — well under the 44x44 CSS px minimum
+    both WCAG 2.5.5 and Apple's HIG call for as a comfortable touch target,
+    unlike every other "eyeballed ergonomics" caveat logged in STATE.md,
+    this one is measurable against a documented standard, not a feel
+    question, so it didn't need to wait on human playtest. Added an
+    invisible `Phaser.GameObjects.Zone` (44x44, same center) as the actual
+    interactive target; the visual dot is unchanged. Headless Playwright
+    confirmed a tap 16px off-center (inside the new zone, outside the old
+    dot) now toggles mute, while a tap further out still registers as an
+    ordinary beat input. No new dependency, no visual change.
+
+26. ~~**(Post-v0.1) Lock down mobile tap-gesture CSS.**~~ Done (Run 26):
+    `index.html`'s viewport meta tag sets `user-scalable=no`, but modern
+    mobile Safari loosened that flag years ago for accessibility, so it no
+    longer reliably blocks pinch-zoom or double-tap-zoom — and nothing else
+    guarded against it. This game's entire input model is rapid taps in
+    the same on-screen spot (ROADMAP task 3), exactly the gesture that
+    triggers double-tap-zoom, with a long tap also risking the browser's
+    text-selection callout menu — a real gap against the "touch input
+    works on a real mobile viewport" pillar, not a feel question, so it
+    didn't need to wait on task 14 either. Added `touch-action: none` plus
+    `user-select`/`-webkit-touch-callout: none` to `#game`'s CSS. No JS
+    changes — Phaser's pointer handling doesn't go through the browser
+    gestures being suppressed. Headless Playwright (iPhone 12 emulation)
+    confirmed the computed styles landed, `visualViewport.scale` and
+    `window.scrollY` stayed at their defaults through 6 same-spot taps at
+    the beat cadence, and ordinary tap input (meter/coins/bard animation)
+    was unaffected.
+
 ## Needs human playtest
 
 - (tracked in STATE.md as items land)

@@ -1,49 +1,51 @@
 # STATE
 
-Run counter: 26
+Run counter: 27
 
 ## Current status
-Run 25 complete — padded the mute icon's touch target, a new ROADMAP
-task 25. ROADMAP task 14 (human playtest pass) is still blocked on an
+Run 26 complete — added `touch-action: none` plus `user-select`/
+`-webkit-touch-callout: none` to `#game` in `index.html`, a new ROADMAP
+task 26. ROADMAP task 14 (human playtest pass) is still blocked on an
 actual human — see Blocked on human below; no other queued task was
-actionable so this run added a new one, same as Runs 19, 21, 22, 23, and
-24.
+actionable so this run added a new one, same as Runs 19, 21, 22, 23, 24,
+and 25.
 
-Re-read the mute icon added in Run 19: a 20px-diameter dot with its
-`setInteractive()` hit area matching that visual size. Unlike the other
-"eyeballed, needs a real thumb" caveats already logged below (icon
-placement, wording, sizing-by-feel), touch target *size* has a documented,
-non-subjective floor — WCAG 2.5.5 and Apple's HIG both call for at least
-44x44 CSS px for a comfortable tap target — and the mute icon's ~20px hit
-area falls well short of it. That's a fixable gap, not a feel question, so
-it didn't need to wait on task 14.
+Re-read `index.html`: the viewport meta tag has `user-scalable=no`, but
+that flag alone doesn't reliably stop pinch-zoom or double-tap-zoom on
+modern mobile Safari (Apple loosened it for accessibility years ago), and
+nothing else guarded against it. This game's entire input model is rapid
+single/double taps in the same spot (ROADMAP task 3) — exactly the
+gesture mobile browsers key off of for double-tap-zoom, and a long tap is
+also what triggers the text-selection callout menu. Neither is a "feel"
+question like the items below; it's a standard, documented mobile-web
+fix (the same class of gap as task 25's touch-target padding), so it
+didn't need to wait on task 14.
 
-- Added a `Phaser.GameObjects.Zone` (44x44, `MUTE_TOUCH_TARGET_SIZE`)
-  centered on the same point as the mute icon and made *it* the
-  interactive target instead of the icon circle itself; the icon's visual
-  size (`MUTE_ICON_RADIUS = 10`) is unchanged. The `pointerdown` handler
-  now checks `currentlyOver.includes(this.muteZone)`.
+- Added `touch-action: none`, `-webkit-touch-callout: none`,
+  `-webkit-user-select: none`, `user-select: none` to the `#game` div's
+  CSS in `index.html`. No JS changes — Phaser's pointer/touch handling
+  goes through its own event listeners, not the browser gestures being
+  suppressed here.
 
-Verified: `npm test` (52 tests green, unchanged — this is a browser-input
-wiring change, nothing pure-logic to unit test). `npm run build` (green,
-bundle ~1.22 MB, unchanged). Headless Playwright check against the built
-`vite preview` output: a tap 16px off the icon's center (inside the new
-44px zone, outside the old ~20px dot) now toggles mute — screenshot
-confirms the icon changes color and shows the slash; a tap further out
-(40+px away) leaves it unmuted, confirming it still falls through to an
-ordinary beat input rather than over-triggering the mute toggle. Also
-re-ran the standard iPhone-12-emulation smoke check (touch input, cold
-load, 20 taps at the 625ms beat cadence): ~630ms cold load, zero console
-errors, zero failed/4xx+ requests, HUD renders correctly after.
+Verified: `npm test` (52 tests green, unchanged — CSS-only change, no
+logic touched). `npm run build` (green, bundle ~1.22 MB, unchanged).
+Headless Playwright check (iPhone 12 emulation) against the built `vite
+preview` output: confirmed `getComputedStyle(#game).touchAction` is
+`"none"` and `userSelect` is `"none"`; sent 6 taps at the 625ms beat
+cadence at the same point (the classic double-tap-zoom trigger) and
+confirmed `visualViewport.scale` stayed `1` and `window.scrollY` stayed
+`0` throughout; screenshot after the taps shows the meter high, coins
+accrued, and the bard mid-stride — ordinary tap input still reaches the
+game unaffected. Zero console errors, zero failed/4xx+ requests.
 
-## Previous status (Run 24)
-Run 24 complete — captured the Space key so it stops scrolling the page,
-a new ROADMAP task 24. `this.input.keyboard.addCapture('SPACE')` stops
-the browser's default scroll-on-Space from firing alongside every
-keyboard beat hit. `npm test` 52 tests green (unchanged), build green.
-Headless Playwright confirmed `window.scrollY` stayed 0 after three Space
-presses post-fix (was 4 pre-fix), plus the standard touch smoke check
-still passed. Pure input-wiring fix, no new dependency.
+## Previous status (Run 25)
+Run 25 complete — padded the mute icon's touch target so its interactive
+hit area (previously ~20px, matching the icon's visual size) meets the
+44x44 CSS px minimum WCAG 2.5.5 and Apple's HIG call for. Added a 44x44
+`Phaser.GameObjects.Zone` as the actual tap target; the icon itself is
+visually unchanged. `npm test` 52 tests green (unchanged), build green.
+Headless Playwright confirmed a tap 16px off-center now toggles mute
+while a tap further out still registers as an ordinary beat input.
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -197,12 +199,20 @@ still passed. Pure input-wiring fix, no new dependency.
   `this.input.keyboard.addCapture('SPACE')`. One-line fix, no new
   dependency. `npm test` 52 tests green (unchanged), build green.
 - Run 25 (2026-07-23): Padded the mute icon's touch target per new ROADMAP
-  task 25 (see Current status above). The icon's interactive hit area
+  task 25 (see Previous status above). The icon's interactive hit area
   matched its 20px visual size, well under the 44x44 CSS px minimum both
   WCAG 2.5.5 and Apple's HIG call for — a measurable gap, not a feel
   question, so it didn't need to wait on task 14. Added a 44x44
   `Phaser.GameObjects.Zone` as the actual tap target; the icon itself is
   visually unchanged. `npm test` 52 tests green (unchanged), build green.
+- Run 26 (2026-07-23): Locked down mobile tap-gesture CSS on `#game` per
+  new ROADMAP task 26 (see Current status above). `user-scalable=no`
+  alone doesn't reliably block pinch/double-tap-zoom on modern mobile
+  Safari, and this game's whole input model is rapid same-spot taps —
+  exactly what triggers it, plus the long-press text-selection callout.
+  Added `touch-action: none` and the `user-select`/`-webkit-touch-callout`
+  trio; no JS changes, Phaser's own pointer handling is unaffected.
+  `npm test` 52 tests green (unchanged), build green.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
