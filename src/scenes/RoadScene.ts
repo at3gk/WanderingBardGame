@@ -36,6 +36,10 @@ const COIN_MARGIN_RIGHT = 24;
 const MUTE_ICON_RADIUS = 10;
 const MUTE_ICON_MARGIN_TOP = 24;
 const MUTE_ICON_MARGIN_LEFT = 24;
+// WCAG 2.5.5 / Apple HIG both put the minimum comfortable touch target at
+// 44 CSS px — well above the icon's own 20px visual diameter. The zone below
+// pads the *tappable* area out to that size without changing how the icon looks.
+const MUTE_TOUCH_TARGET_SIZE = 44;
 const MUTE_ICON_COLOR_ON = 0xe8d9c0;
 const MUTE_ICON_COLOR_MUTED = 0x554e63;
 const MUTE_SLASH_COLOR = 0x8a5a5a;
@@ -75,6 +79,7 @@ export class RoadScene extends Phaser.Scene {
   private hintShown = true;
   private muteIcon!: Phaser.GameObjects.Arc;
   private muteSlash!: Phaser.GameObjects.Rectangle;
+  private muteZone!: Phaser.GameObjects.Zone;
   private bard!: Phaser.GameObjects.Container;
   private bardLegLeft!: Phaser.GameObjects.Rectangle;
   private bardLegRight!: Phaser.GameObjects.Rectangle;
@@ -139,13 +144,14 @@ export class RoadScene extends Phaser.Scene {
     this.distanceText.setOrigin(0, 1);
 
     this.muteIcon = this.add.circle(0, 0, MUTE_ICON_RADIUS, MUTE_ICON_COLOR_ON);
-    this.muteIcon.setInteractive({ useHandCursor: true });
     this.muteSlash = this.add.rectangle(0, 0, 3, MUTE_ICON_RADIUS * 2, MUTE_SLASH_COLOR);
     this.muteSlash.setAngle(45);
     this.muteSlash.setVisible(false);
     const muteIconX = MUTE_ICON_MARGIN_LEFT + MUTE_ICON_RADIUS;
     this.muteIcon.setPosition(muteIconX, MUTE_ICON_MARGIN_TOP);
     this.muteSlash.setPosition(muteIconX, MUTE_ICON_MARGIN_TOP);
+    this.muteZone = this.add.zone(muteIconX, MUTE_ICON_MARGIN_TOP, MUTE_TOUCH_TARGET_SIZE, MUTE_TOUCH_TARGET_SIZE);
+    this.muteZone.setInteractive({ useHandCursor: true });
 
     this.bardLegLeft = this.add.rectangle(-6, -11, 6, 22, BARD_LEG_COLOR);
     this.bardLegRight = this.add.rectangle(6, -11, 6, 22, BARD_LEG_COLOR);
@@ -156,7 +162,7 @@ export class RoadScene extends Phaser.Scene {
     this.setBardAnimState(this.bardWasWalking);
 
     this.input.on('pointerdown', (_pointer: Phaser.Input.Pointer, currentlyOver: Phaser.GameObjects.GameObject[]) => {
-      if (currentlyOver.includes(this.muteIcon)) {
+      if (currentlyOver.includes(this.muteZone)) {
         this.toggleMute();
         return;
       }
