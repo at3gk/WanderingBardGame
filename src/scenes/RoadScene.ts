@@ -162,6 +162,9 @@ export class RoadScene extends Phaser.Scene {
       }
       this.handleInput();
     });
+    // Without addCapture, Space's default browser action (scroll the page) fires
+    // alongside every keyboard beat hit, fighting the "keyboard works on desktop" pillar.
+    this.input.keyboard?.addCapture('SPACE');
     this.input.keyboard?.on('keydown-SPACE', () => this.handleInput());
 
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
