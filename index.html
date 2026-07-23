@@ -15,6 +15,16 @@
       #game {
         width: 100vw;
         height: 100vh;
+        /* Rapid/double taps are the entire input model here (ROADMAP task 3),
+           so the usual mobile-browser gestures that key off tap timing —
+           double-tap-to-zoom, pinch-zoom, long-press text-selection callout —
+           fight the game instead of doing nothing. user-scalable=no in the
+           viewport meta tag alone doesn't reliably stop this on modern
+           mobile Safari, which loosened that meta flag for accessibility. */
+        touch-action: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
       }
     </style>
   </head>
