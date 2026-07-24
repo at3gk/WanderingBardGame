@@ -1,55 +1,69 @@
 # STATE
 
-Run counter: 28
+Run counter: 29
 
 ## Current status
-Run 27 complete — fixed a phantom ~5px scroll gap on mobile viewports per
-new ROADMAP task 27. ROADMAP task 14 (human playtest pass) is still
+Run 28 complete — fixed a backing-loop/visual-beat phase misalignment per
+new ROADMAP task 28. ROADMAP task 14 (human playtest pass) is still
 blocked on an actual human — see Blocked on human below; no other queued
-task was actionable so this run added a new one, same as Runs 19, 21–26.
+task was actionable so this run added a new one, same as Runs 19, 21–27.
 
-Investigated whether `index.html`'s `height: 100vh` on `#game` was
-actually correct on a real mobile viewport (a known class of mobile-web
-gap, same family as tasks 25/26). Headless Playwright (iPhone 12
-emulation) against the built `vite preview` output showed `#game` and its
-`<canvas>` both correctly sized to `innerHeight` (664px), but
-`document.documentElement.scrollHeight` was 669px — 5px more, making the
-page vertically scrollable (`canScrollY: true`) even though every element
-reported the right size. Root cause: `<canvas>` defaults to `display:
-inline`, so it participates in the page's inline formatting context like
-a line of text and reserves space below itself for descenders — the
-well-documented "canvas phantom scrollbar" gotcha. That's a real,
-measurable defect against the "touch input works on a real mobile
-viewport" pillar, not a feel question, so it didn't need to wait on task
-14.
+Traced how `AudioEngine.start()` picks its time reference. It set
+`this.startAt = ctx.currentTime + 0.05` — i.e. "audio game-time zero is
+right now" — every time it ran, which is the moment of the player's first
+tap (`RoadScene.handleInput` calls it unconditionally). But the *visual*
+beat schedule's game-time zero is scene creation (`this.startTimeMs`), not
+first-tap time, and a player physically cannot tap successfully before the
+first beat reaches the hit line (~625ms into the schedule at 96 BPM,
+longer if they miss it). So on literally every playthrough, the backing
+loop restarted its own note-index-0 phase at whatever real moment the
+first tap landed, while the visual markers kept counting from scene
+creation — the two clocks were offset by the player's own reaction time,
+every single run. That's a sync bug in the one core mechanic DESIGN.md
+describes ("tapping a beat in time as it arrives" against a melody), not a
+feel/tuning question, so — same reasoning as tasks 25–27 — it didn't need
+to wait on task 14.
 
-- Added `#game canvas { display: block; }` to `index.html`. Pure CSS, no
-  JS/logic change.
-- Incidental cleanup while in this file: ROADMAP.md had task 25 listed
-  twice back-to-back (a duplication accident, not two different tasks) —
-  removed the duplicate block. No content lost, both copies were
-  byte-identical.
+- `AudioEngine.start(bpm, count, biomeId, nowMs)` gained a `nowMs` param
+  (the visual schedule's elapsed time at the moment of the first tap) and
+  now anchors `startAt` to game-time-zero (`ctx.currentTime + 0.05 -
+  nowMs / 1000`) instead of tap-time. Future notes land phase-aligned with
+  the visual markers; notes whose beat already scrolled past `nowMs` are
+  skipped entirely (via a new `minTimeMs` filter threaded through
+  `scheduleAllLayers`/`scheduleLayerNotes`) so `start()` doesn't burst-play
+  a backlog of "already missed" notes all at once when it finally runs.
+  `extend()` is unaffected — every future batch it schedules is already
+  ahead of "now" by construction (that's what the lookahead guarantees), so
+  no notes there ever need filtering.
+- `RoadScene.handleInput()` now computes `nowMs` before calling
+  `audioEngine.start(...)` (previously computed just after) and passes it
+  through.
+- Added `src/audio/AudioEngine.test.ts` — this class had zero test coverage
+  before (it wraps the real Web Audio API, which doesn't exist in Vitest's
+  node environment). Added a small fake `AudioContext`/`GainNode`/
+  `OscillatorNode` stand-in (swapped in via the global `AudioContext`
+  constructor) covering: unchanged behavior when the first tap lands at
+  game time 0, correct skip-and-phase-align behavior for a delayed first
+  tap, the "never schedule a note in the past" invariant even for a large
+  delay, and that a later `extend()` batch stays in the same phase `start()`
+  established.
 
-Verified: `npm test` (52 tests green, unchanged — CSS-only change, no
-logic touched). `npm run build` (green, bundle ~1.22 MB, unchanged).
-Headless Playwright re-check post-fix: `documentElement.scrollHeight` now
-equals `innerHeight` exactly (664px both) and `canScrollY` is `false`.
-Follow-up smoke check: 6 taps at the 625ms beat cadence produced zero
-console errors, zero failed/4xx+ requests, `window.scrollY` stayed `0`
-throughout, and a screenshot after the taps shows the bard, meter, coin
-count, and distance readout all rendering normally — ordinary gameplay is
-unaffected by the CSS change.
+Verified: `npm test` (56 tests green, 4 new). `npm run build` (green,
+bundle ~1.22 MB, unchanged). Headless Playwright smoke check against real
+Chromium (not just the fake in the unit tests) with a deliberately delayed
+first tap (waited 1.5s before the first click, then 8 more at the 625ms
+beat cadence) — zero page errors, zero console errors, confirming the real
+`AudioContext.createOscillator()`/`start()` API accepts the new negative-
+offset `startAt` math without throwing.
 
-## Previous status (Run 26)
-Run 26 complete — added `touch-action: none` plus `user-select`/
-`-webkit-touch-callout: none` to `#game` in `index.html`, a new ROADMAP
-task 26, to stop pinch/double-tap-zoom and the text-selection callout menu
-from fighting this game's rapid same-spot-tap input model on modern mobile
-Safari (where `user-scalable=no` alone no longer reliably blocks it).
-`npm test` 52 tests green (unchanged), build green. Headless Playwright
-(iPhone 12 emulation) confirmed the computed styles landed and
-`visualViewport.scale`/`window.scrollY` stayed at their defaults through 6
-same-spot taps at the beat cadence, with ordinary tap input unaffected.
+## Previous status (Run 27)
+Run 27 complete — fixed a phantom ~5px scroll gap on mobile viewports
+(`<canvas>` defaults to `display: inline` and reserves descender space,
+making the page taller than `100vh`). Added `#game canvas { display:
+block; }` to `index.html`. `npm test` 52 tests green (unchanged), build
+green. Headless Playwright (iPhone 12 emulation) confirmed
+`documentElement.scrollHeight` now equals `innerHeight` and ordinary
+gameplay was unaffected.
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -225,6 +239,15 @@ same-spot taps at the beat cadence, with ordinary tap input unaffected.
   `100vh`. Added `#game canvas { display: block; }`. Also deduplicated an
   accidental repeated task-25 entry in ROADMAP.md. `npm test` 52 tests
   green (unchanged), build green.
+- Run 28 (2026-07-24): Fixed a backing-loop/visual-beat phase
+  misalignment per new ROADMAP task 28 (see Current status above).
+  `AudioEngine.start()` anchored its note-scheduling clock to "the real
+  moment of the first tap" instead of the visual schedule's own
+  scene-creation-time zero, so the backing loop was out of phase with the
+  beat markers by the player's own reaction time on every playthrough.
+  Added a `nowMs` param to `start()` to anchor correctly and skip
+  already-passed notes; added `AudioEngine.test.ts` (previously
+  uncovered). `npm test` 56 tests green (4 new), build green.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too

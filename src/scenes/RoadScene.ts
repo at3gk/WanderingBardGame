@@ -320,9 +320,9 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private handleInput(): void {
-    this.audioEngine.start(BPM, BEAT_BATCH_SIZE, this.currentBiomeId());
-    this.dismissHint();
     const nowMs = this.time.now - this.startTimeMs;
+    this.audioEngine.start(BPM, BEAT_BATCH_SIZE, this.currentBiomeId(), nowMs);
+    this.dismissHint();
     const target = this.markers.find(
       (m) => m.resolved === null && isWithinHitWindow(m.beat, nowMs, HIT_WINDOW_MS)
     );

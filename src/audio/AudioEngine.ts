@@ -72,14 +72,28 @@ export class AudioEngine {
     this.masterGain.gain.linearRampToValueAtTime(muted ? 0 : 1, now + 0.05);
   }
 
-  /** Starts the base loop and all manifest layers. Must be called from a user-gesture handler (tap/keydown) — browsers block autoplay otherwise. No-ops after the first call. `biomeId` selects each layer's `patternByBiome` override, if any. */
-  start(bpm: number, count: number, biomeId: string): void {
+  /**
+   * Starts the base loop and all manifest layers. Must be called from a
+   * user-gesture handler (tap/keydown) — browsers block autoplay otherwise.
+   * No-ops after the first call. `biomeId` selects each layer's
+   * `patternByBiome` override, if any.
+   *
+   * `nowMs` is the visual beat schedule's elapsed game time at the moment of
+   * this first gesture (`RoadScene`'s `nowMs`, not real wall-clock time).
+   * The visual schedule's phase-zero is scene creation, but a player never
+   * taps at exactly game time 0 — there's always some reaction delay before
+   * their first tap. Anchoring `startAt` to `nowMs` in the past (rather than
+   * always "now") keeps the backing loop's beat notes in phase with the
+   * markers crossing the hit line instead of restarting the loop's phase
+   * fresh at whatever moment the player happened to first tap.
+   */
+  start(bpm: number, count: number, biomeId: string, nowMs: number): void {
     if (this.started) return;
     this.started = true;
     this.bpm = bpm;
 
     const ctx = this.ensureContext();
-    this.startAt = ctx.currentTime + 0.05;
+    this.startAt = ctx.currentTime + 0.05 - nowMs / 1000;
 
     this.masterGain = ctx.createGain();
     this.masterGain.gain.value = this.muted ? 0 : 1;
@@ -90,7 +104,10 @@ export class AudioEngine {
       this.createLayerGain(ctx, layer, isLayerActive(0, layer));
     }
 
-    this.scheduleAllLayers(ctx, count, 0, biomeId);
+    // Notes already earlier than `nowMs` correspond to beats that have
+    // already scrolled past the hit line — skip them so `start` doesn't
+    // burst-play a backlog of "already happened" notes all at once.
+    this.scheduleAllLayers(ctx, count, 0, biomeId, nowMs);
     this.noteIndexOffset = count;
   }
 
@@ -102,10 +119,16 @@ export class AudioEngine {
     this.noteIndexOffset += count;
   }
 
-  private scheduleAllLayers(ctx: AudioContext, count: number, startTimeMs: number, biomeId: string): void {
-    this.scheduleLayerNotes(ctx, this.manifest.baseLoop, count, startTimeMs, biomeId);
+  private scheduleAllLayers(
+    ctx: AudioContext,
+    count: number,
+    startTimeMs: number,
+    biomeId: string,
+    minTimeMs = 0
+  ): void {
+    this.scheduleLayerNotes(ctx, this.manifest.baseLoop, count, startTimeMs, biomeId, minTimeMs);
     for (const layer of this.manifest.layers) {
-      this.scheduleLayerNotes(ctx, layer, count, startTimeMs, biomeId);
+      this.scheduleLayerNotes(ctx, layer, count, startTimeMs, biomeId, minTimeMs);
     }
   }
 
@@ -142,7 +165,8 @@ export class AudioEngine {
     layer: LoopLayer,
     count: number,
     startTimeMs: number,
-    biomeId: string
+    biomeId: string,
+    minTimeMs = 0
   ): void {
     const layerGain = this.layerGains.get(layer.id);
     if (!layerGain) return;
@@ -157,6 +181,7 @@ export class AudioEngine {
       biomeId
     );
     for (const note of schedule) {
+      if (note.timeMs < minTimeMs) continue;
       this.playNote(ctx, layerGain, layer, this.startAt + note.timeMs / 1000, note.frequencyHz, note.durationMs / 1000);
     }
   }
