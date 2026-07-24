@@ -26,6 +26,14 @@
         -webkit-user-select: none;
         user-select: none;
       }
+      /* <canvas> defaults to display: inline, so it sits on a text baseline
+         and reserves a few px below itself for descenders — the classic
+         "phantom scrollbar" gap. That pushes the page a few px taller than
+         the viewport, making it vertically scrollable even though #game is
+         sized to exactly fill it. */
+      #game canvas {
+        display: block;
+      }
     </style>
   </head>
   <body>
