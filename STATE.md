@@ -1,51 +1,55 @@
 # STATE
 
-Run counter: 27
+Run counter: 28
 
 ## Current status
-Run 26 complete — added `touch-action: none` plus `user-select`/
-`-webkit-touch-callout: none` to `#game` in `index.html`, a new ROADMAP
-task 26. ROADMAP task 14 (human playtest pass) is still blocked on an
-actual human — see Blocked on human below; no other queued task was
-actionable so this run added a new one, same as Runs 19, 21, 22, 23, 24,
-and 25.
+Run 27 complete — fixed a phantom ~5px scroll gap on mobile viewports per
+new ROADMAP task 27. ROADMAP task 14 (human playtest pass) is still
+blocked on an actual human — see Blocked on human below; no other queued
+task was actionable so this run added a new one, same as Runs 19, 21–26.
 
-Re-read `index.html`: the viewport meta tag has `user-scalable=no`, but
-that flag alone doesn't reliably stop pinch-zoom or double-tap-zoom on
-modern mobile Safari (Apple loosened it for accessibility years ago), and
-nothing else guarded against it. This game's entire input model is rapid
-single/double taps in the same spot (ROADMAP task 3) — exactly the
-gesture mobile browsers key off of for double-tap-zoom, and a long tap is
-also what triggers the text-selection callout menu. Neither is a "feel"
-question like the items below; it's a standard, documented mobile-web
-fix (the same class of gap as task 25's touch-target padding), so it
-didn't need to wait on task 14.
+Investigated whether `index.html`'s `height: 100vh` on `#game` was
+actually correct on a real mobile viewport (a known class of mobile-web
+gap, same family as tasks 25/26). Headless Playwright (iPhone 12
+emulation) against the built `vite preview` output showed `#game` and its
+`<canvas>` both correctly sized to `innerHeight` (664px), but
+`document.documentElement.scrollHeight` was 669px — 5px more, making the
+page vertically scrollable (`canScrollY: true`) even though every element
+reported the right size. Root cause: `<canvas>` defaults to `display:
+inline`, so it participates in the page's inline formatting context like
+a line of text and reserves space below itself for descenders — the
+well-documented "canvas phantom scrollbar" gotcha. That's a real,
+measurable defect against the "touch input works on a real mobile
+viewport" pillar, not a feel question, so it didn't need to wait on task
+14.
 
-- Added `touch-action: none`, `-webkit-touch-callout: none`,
-  `-webkit-user-select: none`, `user-select: none` to the `#game` div's
-  CSS in `index.html`. No JS changes — Phaser's pointer/touch handling
-  goes through its own event listeners, not the browser gestures being
-  suppressed here.
+- Added `#game canvas { display: block; }` to `index.html`. Pure CSS, no
+  JS/logic change.
+- Incidental cleanup while in this file: ROADMAP.md had task 25 listed
+  twice back-to-back (a duplication accident, not two different tasks) —
+  removed the duplicate block. No content lost, both copies were
+  byte-identical.
 
 Verified: `npm test` (52 tests green, unchanged — CSS-only change, no
 logic touched). `npm run build` (green, bundle ~1.22 MB, unchanged).
-Headless Playwright check (iPhone 12 emulation) against the built `vite
-preview` output: confirmed `getComputedStyle(#game).touchAction` is
-`"none"` and `userSelect` is `"none"`; sent 6 taps at the 625ms beat
-cadence at the same point (the classic double-tap-zoom trigger) and
-confirmed `visualViewport.scale` stayed `1` and `window.scrollY` stayed
-`0` throughout; screenshot after the taps shows the meter high, coins
-accrued, and the bard mid-stride — ordinary tap input still reaches the
-game unaffected. Zero console errors, zero failed/4xx+ requests.
+Headless Playwright re-check post-fix: `documentElement.scrollHeight` now
+equals `innerHeight` exactly (664px both) and `canScrollY` is `false`.
+Follow-up smoke check: 6 taps at the 625ms beat cadence produced zero
+console errors, zero failed/4xx+ requests, `window.scrollY` stayed `0`
+throughout, and a screenshot after the taps shows the bard, meter, coin
+count, and distance readout all rendering normally — ordinary gameplay is
+unaffected by the CSS change.
 
-## Previous status (Run 25)
-Run 25 complete — padded the mute icon's touch target so its interactive
-hit area (previously ~20px, matching the icon's visual size) meets the
-44x44 CSS px minimum WCAG 2.5.5 and Apple's HIG call for. Added a 44x44
-`Phaser.GameObjects.Zone` as the actual tap target; the icon itself is
-visually unchanged. `npm test` 52 tests green (unchanged), build green.
-Headless Playwright confirmed a tap 16px off-center now toggles mute
-while a tap further out still registers as an ordinary beat input.
+## Previous status (Run 26)
+Run 26 complete — added `touch-action: none` plus `user-select`/
+`-webkit-touch-callout: none` to `#game` in `index.html`, a new ROADMAP
+task 26, to stop pinch/double-tap-zoom and the text-selection callout menu
+from fighting this game's rapid same-spot-tap input model on modern mobile
+Safari (where `user-scalable=no` alone no longer reliably blocks it).
+`npm test` 52 tests green (unchanged), build green. Headless Playwright
+(iPhone 12 emulation) confirmed the computed styles landed and
+`visualViewport.scale`/`window.scrollY` stayed at their defaults through 6
+same-spot taps at the beat cadence, with ordinary tap input unaffected.
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -213,6 +217,14 @@ while a tap further out still registers as an ordinary beat input.
   Added `touch-action: none` and the `user-select`/`-webkit-touch-callout`
   trio; no JS changes, Phaser's own pointer handling is unaffected.
   `npm test` 52 tests green (unchanged), build green.
+- Run 27 (2026-07-24): Fixed a phantom ~5px mobile scroll gap per new
+  ROADMAP task 27 (see Current status above). Phaser's `<canvas>` defaults
+  to `display: inline`, reserving descender space below itself the same
+  way a line of text would, which made the page taller than the viewport
+  and vertically scrollable despite `#game` being sized to exactly
+  `100vh`. Added `#game canvas { display: block; }`. Also deduplicated an
+  accidental repeated task-25 entry in ROADMAP.md. `npm test` 52 tests
+  green (unchanged), build green.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
