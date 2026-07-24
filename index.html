@@ -14,7 +14,18 @@
       }
       #game {
         width: 100vw;
+        /* `100vh` on mobile Safari/Chrome is sized against the *largest*
+           possible viewport (address bar collapsed), not what's actually
+           visible on load (address bar shown) — the classic mobile "100vh"
+           gap, same family of "real mobile viewport" bug as the touch-action
+           and phantom-scroll fixes above. `100dvh` (dynamic viewport height)
+           tracks the currently-visible area as browser chrome shows/hides;
+           the plain `100vh` above it is a fallback for browsers that don't
+           support `dvh` (unknown-value declarations are simply ignored).
+           https://caniuse.com/viewport-unit-variants — supported in every
+           evergreen mobile/desktop browser this game targets. */
         height: 100vh;
+        height: 100dvh;
         /* Rapid/double taps are the entire input model here (ROADMAP task 3),
            so the usual mobile-browser gestures that key off tap timing —
            double-tap-to-zoom, pinch-zoom, long-press text-selection callout —

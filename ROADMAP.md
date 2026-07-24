@@ -237,6 +237,19 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     (deliberately delayed first tap by 1.5s) showing zero console/page
     errors. `npm test` 56 tests green (4 new), build green.
 
+29. ~~**(Post-v0.1) Use `100dvh` for `#game`'s height.**~~ Done (Run 29):
+    `#game` was sized with a plain `height: 100vh`, which on mobile
+    Safari/Chrome is calculated against the *largest* possible viewport
+    (address bar collapsed) rather than what's actually visible on a cold
+    load (address bar shown) — the well-known mobile "100vh" viewport gap,
+    the same class of real-viewport bug as tasks 26 (touch-action) and 27
+    (phantom scroll gap from inline `<canvas>`), not a feel question. Added
+    `height: 100dvh` after the existing `100vh` declaration (kept as a
+    fallback for browsers without `dvh` support, which just ignore the
+    unrecognized value) so `#game` tracks the actually-visible area as
+    browser chrome shows/hides instead of the theoretical maximum. Pure CSS,
+    no JS/logic change.
+
 ## Needs human playtest
 
 - (tracked in STATE.md as items land)
