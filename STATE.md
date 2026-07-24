@@ -1,69 +1,47 @@
 # STATE
 
-Run counter: 29
+Run counter: 30
 
 ## Current status
-Run 28 complete — fixed a backing-loop/visual-beat phase misalignment per
-new ROADMAP task 28. ROADMAP task 14 (human playtest pass) is still
-blocked on an actual human — see Blocked on human below; no other queued
-task was actionable so this run added a new one, same as Runs 19, 21–27.
+Run 29 complete — `#game`'s CSS used a plain `height: 100vh` to fill the
+viewport. On mobile Safari/Chrome, `100vh` is sized against the *largest*
+possible viewport (address bar collapsed), not what's actually visible on
+a cold load (address bar shown) — the well-documented mobile "100vh" gap.
+That's the same family of real-mobile-viewport bug as Run 26's
+`touch-action` fix and Run 27's phantom-scroll-gap fix, not a feel/tuning
+question, so — same reasoning as tasks 25–28 — it didn't need to wait on
+the still-blocked task 14 human playtest.
 
-Traced how `AudioEngine.start()` picks its time reference. It set
-`this.startAt = ctx.currentTime + 0.05` — i.e. "audio game-time zero is
-right now" — every time it ran, which is the moment of the player's first
-tap (`RoadScene.handleInput` calls it unconditionally). But the *visual*
-beat schedule's game-time zero is scene creation (`this.startTimeMs`), not
-first-tap time, and a player physically cannot tap successfully before the
-first beat reaches the hit line (~625ms into the schedule at 96 BPM,
-longer if they miss it). So on literally every playthrough, the backing
-loop restarted its own note-index-0 phase at whatever real moment the
-first tap landed, while the visual markers kept counting from scene
-creation — the two clocks were offset by the player's own reaction time,
-every single run. That's a sync bug in the one core mechanic DESIGN.md
-describes ("tapping a beat in time as it arrives" against a melody), not a
-feel/tuning question, so — same reasoning as tasks 25–27 — it didn't need
-to wait on task 14.
+- Added `height: 100dvh` immediately after the existing `height: 100vh` in
+  `index.html`'s `#game` rule. `dvh` (dynamic viewport height) tracks the
+  currently-visible viewport as browser chrome shows/hides; the `100vh`
+  declaration stays as a fallback for any browser without `dvh` support
+  (an unrecognized value is simply ignored, so the fallback only applies
+  there — evergreen mobile/desktop browsers all support `dvh`). Pure CSS,
+  no JS/logic change, no new dependency.
 
-- `AudioEngine.start(bpm, count, biomeId, nowMs)` gained a `nowMs` param
-  (the visual schedule's elapsed time at the moment of the first tap) and
-  now anchors `startAt` to game-time-zero (`ctx.currentTime + 0.05 -
-  nowMs / 1000`) instead of tap-time. Future notes land phase-aligned with
-  the visual markers; notes whose beat already scrolled past `nowMs` are
-  skipped entirely (via a new `minTimeMs` filter threaded through
-  `scheduleAllLayers`/`scheduleLayerNotes`) so `start()` doesn't burst-play
-  a backlog of "already missed" notes all at once when it finally runs.
-  `extend()` is unaffected — every future batch it schedules is already
-  ahead of "now" by construction (that's what the lookahead guarantees), so
-  no notes there ever need filtering.
-- `RoadScene.handleInput()` now computes `nowMs` before calling
-  `audioEngine.start(...)` (previously computed just after) and passes it
-  through.
-- Added `src/audio/AudioEngine.test.ts` — this class had zero test coverage
-  before (it wraps the real Web Audio API, which doesn't exist in Vitest's
-  node environment). Added a small fake `AudioContext`/`GainNode`/
-  `OscillatorNode` stand-in (swapped in via the global `AudioContext`
-  constructor) covering: unchanged behavior when the first tap lands at
-  game time 0, correct skip-and-phase-align behavior for a delayed first
-  tap, the "never schedule a note in the past" invariant even for a large
-  delay, and that a later `extend()` batch stays in the same phase `start()`
-  established.
+Verified: `npm test` (56 tests green, unchanged — CSS-only change touches
+no logic). `npm run build` (green, bundle ~1.22 MB, unchanged). Headless
+Playwright (iPhone 12 emulation) against the built `vite preview` output
+confirmed the cascade resolves `#game`'s computed CSSOM height rule to
+`100dvh` (the later, dvh-supporting declaration wins) and that
+`getComputedStyle(#game).height` matches `window.innerHeight` exactly
+(664px both); 8 taps at the 625ms beat cadence produced zero console/page
+errors afterward. Caveat: headless Chromium doesn't dynamically show/hide
+a real address bar the way a physical mobile browser does, so this
+confirms the CSS lands and doesn't regress ordinary play, not that the
+previously-hidden mobile gap is now visible on a real device — same class
+of headless-vs-real-device caveat as Run 23's audio-resume fix.
 
-Verified: `npm test` (56 tests green, 4 new). `npm run build` (green,
-bundle ~1.22 MB, unchanged). Headless Playwright smoke check against real
-Chromium (not just the fake in the unit tests) with a deliberately delayed
-first tap (waited 1.5s before the first click, then 8 more at the 625ms
-beat cadence) — zero page errors, zero console errors, confirming the real
-`AudioContext.createOscillator()`/`start()` API accepts the new negative-
-offset `startAt` math without throwing.
-
-## Previous status (Run 27)
-Run 27 complete — fixed a phantom ~5px scroll gap on mobile viewports
-(`<canvas>` defaults to `display: inline` and reserves descender space,
-making the page taller than `100vh`). Added `#game canvas { display:
-block; }` to `index.html`. `npm test` 52 tests green (unchanged), build
-green. Headless Playwright (iPhone 12 emulation) confirmed
-`documentElement.scrollHeight` now equals `innerHeight` and ordinary
-gameplay was unaffected.
+## Previous status (Run 28)
+Run 28 complete — fixed a backing-loop/visual-beat phase misalignment.
+`AudioEngine.start()` anchored its note-scheduling clock to "the real
+moment of the first tap" instead of the visual schedule's own
+scene-creation-time zero, so the backing loop was out of phase with the
+beat markers by the player's own reaction time on every playthrough. Added
+a `nowMs` param to `start()` to anchor correctly and skip already-passed
+notes; added `AudioEngine.test.ts` (previously uncovered). `npm test` 56
+tests green (4 new), build green.
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -240,7 +218,7 @@ gameplay was unaffected.
   accidental repeated task-25 entry in ROADMAP.md. `npm test` 52 tests
   green (unchanged), build green.
 - Run 28 (2026-07-24): Fixed a backing-loop/visual-beat phase
-  misalignment per new ROADMAP task 28 (see Current status above).
+  misalignment per new ROADMAP task 28 (see Previous status above).
   `AudioEngine.start()` anchored its note-scheduling clock to "the real
   moment of the first tap" instead of the visual schedule's own
   scene-creation-time zero, so the backing loop was out of phase with the
@@ -248,6 +226,12 @@ gameplay was unaffected.
   Added a `nowMs` param to `start()` to anchor correctly and skip
   already-passed notes; added `AudioEngine.test.ts` (previously
   uncovered). `npm test` 56 tests green (4 new), build green.
+- Run 29 (2026-07-24): `100dvh` for `#game`'s height per new ROADMAP task
+  29 (see Current status above). `100vh` alone sizes against mobile
+  Safari/Chrome's largest-possible viewport rather than the actually-
+  visible one on cold load — the classic mobile "100vh" gap, same family
+  of real-viewport bug as tasks 26/27. Pure CSS, no new dependency.
+  `npm test` 56 tests green (unchanged), build green.
 
 ## Needs human playtest
 - Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
@@ -389,6 +373,18 @@ gameplay was unaffected.
   confirm the backing track is actually audible again rather than
   silently stuck off. Doesn't block anything else — the fix is additive
   and can't make backgrounding behave worse than before.
+
+- Task 29 `100dvh` fix (this run): the fix uses a real, correct CSS unit
+  (`dvh`) and the headless check confirms it wins the cascade and matches
+  `window.innerHeight` in Chromium's fixed viewport, but headless Chromium
+  never shows/hides a real address bar the way a physical mobile browser
+  does on scroll/load — the test confirms the CSS is correct and doesn't
+  regress anything, not that the previously-invisible mobile gap is now
+  visibly fixed on a real device. Needs a real mobile device check: load
+  the page with the address bar visible, confirm the game fills exactly
+  the visible area with no scrollable sliver below it. Doesn't block
+  anything else — the fix is a strict improvement, `100vh` stays as the
+  fallback for any browser without `dvh` support.
 
 ## Blocked on human
 - **ROADMAP task 14 — human playtest pass** (Run 14): every item in this
