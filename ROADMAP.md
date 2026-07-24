@@ -213,6 +213,30 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     touch-action fix did. Added `#game canvas { display: block; }` to
     `index.html`. Pure CSS, no JS/logic change.
 
+28. ~~**(Post-v0.1) Fix backing-loop/visual-beat phase misalignment.**~~ Done
+    (Run 28): `AudioEngine.start()` always anchored the backing loop's note
+    phase-zero to "the real-world moment the player's first tap fired,"
+    while the visual beat schedule's phase-zero has always been scene
+    creation. Since a player can only ever tap successfully once a beat has
+    scrolled to the hit line (at minimum ~625ms into the visual schedule at
+    96 BPM, longer if the first tap misses), this meant the audio loop
+    started playing note index 0 from scratch at that later real-world
+    moment — putting every single playthrough's backing track out of phase
+    with the markers crossing the hit line by however long the player took
+    to tap. This is the game's one core mechanic (DESIGN.md: "keep a single
+    melody going by tapping a beat in time as it arrives"), so a
+    always-reproducible sync bug in it isn't a feel question deferred to
+    task 14, the same reasoning as tasks 25–27. `AudioEngine.start` now
+    takes the visual schedule's elapsed `nowMs` at the moment of the first
+    tap and anchors its `startAt` reference to game-time-zero instead of
+    tap-time, then skips scheduling any note whose beat has already scrolled
+    past (so `start()` doesn't burst-play a backlog of "missed" notes all at
+    once). Added `src/audio/AudioEngine.test.ts` (4 tests, previously zero
+    coverage on this class) with a fake Web Audio stand-in verifying the
+    phase math; also re-verified with a real headless Chromium run
+    (deliberately delayed first tap by 1.5s) showing zero console/page
+    errors. `npm test` 56 tests green (4 new), build green.
+
 ## Needs human playtest
 
 - (tracked in STATE.md as items land)
