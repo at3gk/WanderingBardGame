@@ -487,7 +487,14 @@ teaching is entirely presentation.
     one, a beat of breath at each phrase end, which is how beginner books
     write it. Verified by autoplay (perfect meter with rests present, so
     they really are un-tappable) and a zoomed screenshot.
-51. **Next.** Nothing queued. Pull from the idea backlog below, or add a
+51. ~~**A third tune per biome.**~~ Done (2026-07-26): *London Bridge*
+    (village), *Frère Jacques* in G (forest) and the *Jingle Bells*
+    chorus (riverside) bring the songbook to nine. Pure data, no new
+    mechanic, 50% more music before anything repeats; each stays in its
+    biome's staff region so the curriculum is untouched. Frère Jacques
+    keeps its authentic "din dan don" dip to the low D — exactly the
+    below-the-staff reading the ledger line exists for.
+52. **Next.** Nothing queued. Pull from the idea backlog below, or add a
     tune to an existing biome set (pure data, no design cost). One real
     v0.4 *direction* rather than a task: **key signatures**, which would
     break the naturals-only rule the whole notation currently rests on —

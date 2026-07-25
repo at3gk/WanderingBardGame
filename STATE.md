@@ -36,13 +36,16 @@ yourself.
   the fact that synthetic pointer events silently do nothing (a trap
   worth not rediscovering — it's in the tools README).
 
-- **Task 48 — a second tune per biome.** Each biome rotates through a set
-  rather than repeating one song: village adds *Hot Cross Buns* and *London Bridge*, forest
-  *Au Clair de la Lune* (in G), riverside *Lightly Row* (an octave up).
-  Both tunes in a set sit in the same staff region, so the low → middle →
-  upper curriculum survives the variety (enforced by test). Hint text now
-  says "tap when a note reaches the line" — the lane is a staff, so the
-  instruction can name what the player is looking at.
+- **Tasks 48 + 51 — the songbook is nine tunes.** Each biome rotates
+  through a set of three instead of repeating one song:
+  village = Mary Had a Little Lamb / Hot Cross Buns / London Bridge,
+  forest = Twinkle Twinkle / Au Clair de la Lune / Frère Jacques (all in
+  G), riverside = Ode to Joy / Lightly Row / Jingle Bells (all an octave
+  up). Every song in a set stays inside its biome's region of the staff,
+  so the low → middle → upper curriculum survives the variety (enforced
+  by a spread test). Hint text now says "tap when a note reaches the
+  line" — the lane is a staff, so the instruction can name what the
+  player is looking at.
 - **Mobile bugs the desktop view hid** (found by shooting an iPhone
   viewport, worth doing after any layout change): the hint clipped off
   the left edge (now clamped so it can't), and played notes drifted over
