@@ -42,16 +42,57 @@ separate system competing for the player's attention.
 Audience: kids (~5–9) meeting written music for the first time — and
 anyone else, because none of it gets in the way of just playing.
 
-**Stance: exposure, never examination.** The mechanic stays exactly what
-it was — one lane, one tap, timing only. The teaching is entirely in the
-presentation: every note is simultaneously *seen* (its true position on a
-real staff), *named* (its letter, baked into the note head), *heard* (the
-backing loop plays the written pitch), and — on a hit — *played* (the
-player's pluck sounds it an octave up). Multi-sensory, simultaneous,
-repeated: that's paired-association learning, and the looping road is the
-spaced repetition. There are no quizzes, no "name this note" prompts, no
-wrong answers. This is how kids learn song lyrics — nobody tests them;
-they just hear the song enough times.
+**Stance: retrieval without examination.** The mechanic stays exactly what
+it was — one lane, one tap, timing only. Every note is simultaneously
+*seen* (its true position on a real staff), *named* (its letter, in the
+note head), *heard* (the backing loop plays the written pitch), and — on a
+hit — *played* (the player's pluck sounds it an octave up).
+
+But exposure alone is not learning, and this is the correction that
+defines v0.4. A letter printed in every note head *forever* is a crutch: a
+child can read the letters fluently and never once encode the position, so
+the position→name association is never retrieved and never consolidates.
+**So the letter is a scaffold, and scaffolds have to fade.**
+
+It fades in **time**, not in opacity. As a staff position becomes
+familiar, its letter arrives later and later in the note's 1800ms flight —
+present from spawn, then 1350ms before the line, then 900, 450, and
+finally not before the tap at all. A half-transparent letter would still
+be perfectly readable and would teach nothing; a letter that arrives 900ms
+late buys 900ms of genuine attempted recall. That silent naming, followed
+by the letter surfacing, is a retrieval-and-confirm loop — the testing
+effect, without ever externalising an answer the game could mark wrong.
+
+The safety rule that makes it humane, and which must never be traded away:
+
+> **Fade the prompt, never the answer.**
+
+Every note reveals its letter when it is struck *and* when it is missed.
+A hidden letter is therefore always answered, and missing costs exactly
+what it cost before — a dimmed note and a little meter — never information.
+
+**Songs they already know are what make this safe.** If a child knows how
+*Twinkle* goes, the pitch is free even when the letter is gone; they are
+never stuck, never anxious, and never unable to play. That frees the whole
+note's flight for the one genuinely new thing on screen: the symbol at its
+position. Fading like this would be reckless with generated melodies. It
+is only defensible because the songbook is nine tunes a child can already
+sing.
+
+**What the game can and cannot know.** A tap proves *timing*, not reading —
+it is confounded by melodic memory, by repeated phrases, and by the fact
+that steady tapping hits most quarter notes anyway. So the fade is a
+**dosage schedule driven by exposure**, not an assessment, and the model
+never claims to measure what a child knows. The one inference it trusts is
+asymmetric: an isolated miss during otherwise-good play means that note
+just asked too much, so help returns. Quick to help, slow to withdraw. The
+honest limit: this game can teach note names to a child who attends; it
+cannot make a child attend.
+
+Still true, and still non-negotiable: no quizzes, no "name this note"
+prompts, no wrong answers, no score, and nothing about the model is ever
+displayed. The only visible sign of progress is the staff quietly starting
+to look like real sheet music.
 
 **What v0.2 teaches, deliberately scoped:**
 
@@ -60,7 +101,12 @@ they just hear the song enough times.
    every beat).
 2. **Letter names A–G, naturals only.** The whole game lives in C major /
    A minor: no sharps, no flats, no key signatures. Every melody note is a
-   white key with a one-letter name.
+   white key with a one-letter name. Where a tune is transposed to sit in a
+   different part of the staff, the transposition is chosen so that the
+   melody still needs no accidental — Twinkle and London Bridge centre on G
+   but never touch F, and Old MacDonald centres on F but never touches B,
+   so no key signature is required and none is written. A transposition
+   that *would* need one is not allowed in; the songbook tests enforce it.
 2b. **Note values** (v0.3): eighth, quarter, dotted quarter, half, whole —
    drawn correctly (filled vs hollow heads, stems, flags, augmentation
    dots) and felt as the time until the next note.
@@ -107,8 +153,21 @@ adding the second axis of notation for free.
   and color knowledge doesn't transfer to real sheet music. Position and
   letter do.
 - *Quiz/recall modes* ("which note is this?"): a second mechanic and a
-  failure state — both against the pillars. Recognition-by-exposure is
-  the whole bet.
+  failure state — both against the pillars. Covert retrieval plus an
+  unconditional reveal (see Stance) recovers most of the testing effect
+  without ever externalising an answer, which is the whole trick: the game
+  cannot evaluate the child, therefore it cannot fail the child.
+- *Fading the letter by opacity* rather than by time: a 40%-alpha letter is
+  still legible, so it produces no retrieval at all — just a uglier game
+  that teaches exactly as much.
+- *Treating a hit on a letterless note as proof of reading*, and driving
+  the fade off a mastery estimate: the inference is invalid (melodic memory
+  and steady tapping both produce hits), and building on it would
+  confidently strip help from a child who never looked at a letter.
+- *Showing progress* — a "notes you know" collection, badges, a lit-up
+  staff: the obvious motivator, and exactly what would convert companionship
+  into performance, create a score, and make every restoration of help
+  legible as a loss.
 - *Rhythm values as held taps*: a hold would change the one input.
   Superseded in v0.3 by writing note values as *spacing* instead — same
   teaching, same single tap (see "Note values" above).

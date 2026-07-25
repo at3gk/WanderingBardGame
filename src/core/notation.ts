@@ -41,6 +41,11 @@ export function staffStepAt(semitoneFromC4: number): number | null {
   return octave * 7 + index;
 }
 
+/** Letter name for a diatonic staff step (C4 = 0), in any octave. */
+export function letterForStep(step: number): string {
+  return NATURALS[((step % 7) + 7) % 7].letter;
+}
+
 /**
  * Engraving rule, always correct because kids learn from this screen:
  * stems point up for notes below the staff's middle line (B4, step 6),
