@@ -378,12 +378,47 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     MB). Screenshot-verified across all three meter states (empty, mid,
     full).
 
+## The v0.2 arc: "the road teaches the scale" (human-set, 2026-07-25)
+
+The human's direction: make this a game that teaches kids typical
+musical notes. DESIGN.md's new Pedagogy section is the contract — read
+it before executing any task below. The mechanic does not change; the
+teaching is entirely presentation.
+
+41. **Notation core + C-major re-voice.** New pure module
+    `src/core/notation.ts`: semitone-from-C4 → letter name (naturals
+    only, null for accidentals) and → diatonic staff step (C4 = 0,
+    treble staff lines at steps 2/4/6/8/10), plus stem-direction and
+    ledger-line rules. Fully tested. Re-voice the manifest: root moves
+    A3 (220 Hz) → middle C (261.63 Hz); village = C D E G A around
+    middle C, forest = G A C5 D5 E5 up the staff, riverside =
+    C D G A D5 leaps — the per-biome note sets that are the curriculum.
+    Add a manifest test asserting every pattern note in every layer and
+    override is a natural (the game's notation must never be wrong).
+42. **The staff lane.** Five faint staff lines across the lane; markers
+    become real quarter notes: pitch-positioned vertically (line gap
+    14px), letter baked dark inside the white head so tints (cream/
+    green/mauve) never eat it, stems up below the middle line and down
+    at/above it, middle C wearing its ledger line. Markers carry their
+    semitone from batch time (same biome quantization as the audio, so
+    what you see is what you hear). Bard drops to
+    `BARD_GROUND_Y_OFFSET = 150` so low notes clear the cap; hit line
+    grows to cover the staff. Screenshot-verify all three biomes'
+    ranges.
+43. **Legibility & first-reader polish.** Letter size/contrast at phone
+    scale, spacing of ledger notes near the bard, hint wording for
+    pre-readers, and a PLAYTEST.md round-3 section written for testing
+    *with a kid* (can they point at a C by the end of a loop?).
+44. **(v0.3 candidate, do not start without a human yes) Rhythm
+    values.** Half/whole notes via tap-and-hold would teach durations
+    but changes the one input. Design question first, not code.
+
 ## Idea backlog (pull from here when nothing is queued)
 
 Unnumbered, unordered, deliberately small — promote one to a numbered
-task at the start of a run if task 38 is still blocked and no better
-idea has emerged. Each respects the one-mechanic rule and the art
-direction (notation icons, warm-vs-cool palette).
+task at the start of a run if nothing above is actionable. Each respects
+the one-mechanic rule and the art direction (notation icons,
+warm-vs-cool palette).
 
 - **Signposts at transitions**: a small silhouette signpost scrolls by
   with the scenery as each biome transition starts — the world
@@ -396,6 +431,10 @@ direction (notation icons, warm-vs-cool palette).
 - **Coin chime cap**: coins currently tick silently; a very quiet chime
   every 25th coin could be pleasant — or annoying. Prototype behind a
   screenshot/listen check before committing.
+- **Stylized treble clef** at the hit line — only if it can be drawn
+  without looking wrong; the notation is not allowed to be incorrect.
+- **Solfège (do-re-mi) letter option** — locale question, letters ship
+  first.
 
 ## Needs human playtest
 

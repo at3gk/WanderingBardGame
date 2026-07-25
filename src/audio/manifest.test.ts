@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolvePattern } from './baseLoop';
+import { noteNameAt } from '../core/notation';
 import { AUDIO_MANIFEST } from './manifest';
 
 describe('AUDIO_MANIFEST layer biome patterns', () => {
@@ -30,5 +31,24 @@ describe('AUDIO_MANIFEST layer biome patterns', () => {
       expect(diff(layer.patternByBiome!.forest, layer.pattern)).toEqual(baseLoopForestDiff);
       expect(diff(layer.patternByBiome!.riverside, layer.pattern)).toEqual(baseLoopRiversideDiff);
     }
+  });
+
+  it('uses only natural notes in every pattern of every layer — the staff must never show an accidental (v0.2 Pedagogy)', () => {
+    const allLayers = [AUDIO_MANIFEST.baseLoop, ...AUDIO_MANIFEST.layers];
+    for (const layer of allLayers) {
+      const patterns: Array<[string, number[]]> = [
+        ['base', layer.pattern],
+        ...Object.entries(layer.patternByBiome ?? {}),
+      ];
+      for (const [which, pattern] of patterns) {
+        for (const semitone of pattern) {
+          expect(noteNameAt(semitone), `${layer.id}/${which} semitone ${semitone}`).not.toBeNull();
+        }
+      }
+    }
+  });
+
+  it('roots the manifest at middle C so staff positions match sounded pitches', () => {
+    expect(AUDIO_MANIFEST.rootFrequencyHz).toBeCloseTo(261.63, 2);
   });
 });
