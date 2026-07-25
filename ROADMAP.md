@@ -475,7 +475,6 @@ teaching is entirely presentation.
     read. Rotation (task 48) bought the same variety without that cost.
     If a fourth is ever wanted, it should come with a reason of its own,
     not as "more scenery".
-<<<<<<< HEAD
 50. ~~**Rests.**~~ Done (2026-07-26): a written silence is now a symbol
     rather than an empty gap. `SongNote` gained `rest`; a rest occupies
     its time, scrolls down the staff like anything else, sounds nothing
@@ -500,10 +499,6 @@ teaching is entirely presentation.
     break the naturals-only rule the whole notation currently rests on —
     worth doing deliberately, with the Pedagogy section rewritten first,
     or not at all.
-=======
-49. **Next.** Nothing queued — pull from the idea backlog below, or grow
-    the songbook further (a fourth biome is the obvious next step).
->>>>>>> origin/main
 
 ## Idea backlog (pull from here when nothing is queued)
 
