@@ -32,6 +32,21 @@ relay verdicts in a session. The next run folds answers into code.
 - [ ] **Stronger palettes** — do the plum → green → blue shifts now
   register as three distinct moods? (`src/core/biome.ts`)
 
+### New since round 1 (overnight session, tasks 30–34)
+
+- [ ] **Bard sprite & animation** — does the new bard (tunic, cap,
+  feather, lute) read at phone size? Walk cycle natural, idle alive?
+- [ ] **Scenery bands** — do village houses / forest trees / riverside
+  camp read as places? Parallax depth visible while walking?
+- [ ] **Notation UI** — eighth-note markers legible as beats on a small
+  screen? Hit pulse satisfying? Miss dim gentle enough?
+- [ ] **The player's note** — on each hit you now play the melody note
+  yourself (+1 octave). Volume sit right on top of the loop
+  (`pluck` gain = 1.6x base in `AudioEngine.ts`)? Does a good run feel
+  like *performing* rather than just timing?
+- [ ] **Night sky** — moon/stars read without stealing attention? Star
+  drift too slow/fast? (`STAR_PARALLAX` — `src/scenes/RoadScene.ts`)
+
 ### Round-1 items never explicitly answered
 
 - [ ] **Viewport fill** — cold load, address bar visible: game fills

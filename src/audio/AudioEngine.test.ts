@@ -70,7 +70,14 @@ beforeEach(() => {
 
 const manifest: AudioManifest = {
   rootFrequencyHz: 220,
-  baseLoop: { id: 'baseLoop', waveform: 'triangle', pattern: [0, 7], gain: 0.05, noteDurationMs: 100 },
+  baseLoop: {
+    id: 'baseLoop',
+    waveform: 'triangle',
+    pattern: [0, 7],
+    patternByBiome: { forest: [3, 10] },
+    gain: 0.05,
+    noteDurationMs: 100,
+  },
   layers: [],
 };
 
@@ -122,5 +129,34 @@ describe('AudioEngine.start phase alignment', () => {
     // start()-time (currentTime + 0.05 - 1200/1000 = -1.15).
     expect(activeContext.oscillators).toHaveLength(4);
     expect(activeContext.oscillators[0].startTimeSec).toBeCloseTo(-1.15 + 2.5);
+  });
+});
+
+describe('AudioEngine.pluck (the player\'s own note)', () => {
+  it('no-ops before start() — no context, no note', () => {
+    const engine = new AudioEngine(manifest);
+    engine.pluck('village', 0);
+    expect(activeContext.oscillators).toHaveLength(0);
+  });
+
+  it('plays the beat\'s melody note one octave above the base loop, immediately', () => {
+    const engine = new AudioEngine(manifest);
+    engine.start(120, 2, 'village', 0);
+    activeContext.oscillators.length = 0;
+
+    engine.pluck('village', 1); // pattern [0, 7] -> semitone 7, +12 octave
+    expect(activeContext.oscillators).toHaveLength(1);
+    const osc = activeContext.oscillators[0];
+    expect(osc.frequency.value).toBeCloseTo(220 * Math.pow(2, 19 / 12));
+    expect(osc.startTimeSec).toBe(activeContext.currentTime);
+  });
+
+  it('cycles the pattern by beat index and respects the biome override', () => {
+    const engine = new AudioEngine(manifest);
+    engine.start(120, 2, 'forest', 0);
+    activeContext.oscillators.length = 0;
+
+    engine.pluck('forest', 2); // forest pattern [3, 10], index 2 -> wraps to 3, +12
+    expect(activeContext.oscillators[0].frequency.value).toBeCloseTo(220 * Math.pow(2, 15 / 12));
   });
 });

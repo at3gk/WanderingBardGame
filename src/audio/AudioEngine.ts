@@ -1,5 +1,5 @@
 import { beatIntervalMs } from '../core/beats';
-import { generateBaseLoopSchedule } from './baseLoop';
+import { generateBaseLoopSchedule, resolvePattern } from './baseLoop';
 import { isLayerActive } from './layering';
 import { AudioManifest, LoopLayer } from './manifest';
 
@@ -150,6 +150,27 @@ export class AudioEngine {
       gainNode.gain.setValueAtTime(gainNode.gain.value, now);
       gainNode.gain.linearRampToValueAtTime(shouldBeActive ? 1 : 0, now + LAYER_FADE_SECONDS);
     }
+  }
+
+  /**
+   * The player's own note (ROADMAP task 33): a hit immediately plays the
+   * melody note belonging to that beat, one octave above the base loop and
+   * a little louder — tapping isn't triggering a sound effect, it's
+   * performing the tune's top voice, so a good run *sounds* like the
+   * player carrying the melody. Misses stay silent (DESIGN.md: a missed
+   * beat lets a note drop out of the tune; it doesn't add a buzzer).
+   * Routes through the master gain, so mute silences it too. No-ops
+   * before `start()` — the first tap's own hit still plucks, because
+   * `start()` runs earlier in the same input handler.
+   */
+  pluck(biomeId: string, beatIndex: number): void {
+    if (!this.started || !this.context || !this.masterGain) return;
+    const layer = this.manifest.baseLoop;
+    const pattern = resolvePattern(layer, biomeId);
+    const semitone = pattern[beatIndex % pattern.length] + 12;
+    const frequencyHz = this.manifest.rootFrequencyHz * Math.pow(2, semitone / 12);
+    const voiced: LoopLayer = { ...layer, gain: layer.gain * 1.6 };
+    this.playNote(this.context, this.masterGain, voiced, this.context.currentTime, frequencyHz, 0.24);
   }
 
   private createLayerGain(ctx: AudioContext, layer: LoopLayer, startActive: boolean): void {

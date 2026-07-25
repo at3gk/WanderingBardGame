@@ -71,6 +71,15 @@ const ROAD_HEIGHT_BELOW_BARD = 60;
 const SCENERY_TILE_WIDTH = 256;
 const SCENERY_TILE_HEIGHT = 120;
 const SCENERY_PARALLAX = 0.45;
+// Night sky (ROADMAP task 34): a starfield drifting far slower than the
+// scenery — three scroll speeds (road 1x, scenery 0.45x, stars 0.08x)
+// is what turns two flat bands into a world with depth. The moon doesn't
+// move at all; it's the moon.
+const STAR_FIELD_HEIGHT = 200;
+const STAR_PARALLAX = 0.08;
+const MOON_X_FRACTION = 0.78;
+const MOON_Y = 84;
+const MOON_RADIUS = 24;
 const COIN_RATE_PER_SEC = 5;
 const COIN_ICON_RADIUS = 8;
 const COIN_ICON_COLOR = 0xe8c157;
@@ -115,6 +124,9 @@ export class RoadScene extends Phaser.Scene {
   private sceneryNext!: Phaser.GameObjects.TileSprite;
   private sceneryFromIndex = 0;
   private sceneryToIndex = 0;
+  private stars!: Phaser.GameObjects.TileSprite;
+  private moon!: Phaser.GameObjects.Arc;
+  private moonGlow!: Phaser.GameObjects.Arc;
   private distancePx = 0;
   private totalBeatsGenerated = 0;
   private nextBatchStartTimeMs = 0;
@@ -155,6 +167,10 @@ export class RoadScene extends Phaser.Scene {
     this.totalBeatsGenerated = 0;
     this.nextBatchStartTimeMs = 0;
     this.appendBeatBatch();
+
+    this.stars = this.add.tileSprite(0, 0, this.scale.width, STAR_FIELD_HEIGHT, this.starFieldTexture());
+    this.moonGlow = this.add.circle(0, MOON_Y, MOON_RADIUS + 14, 0xe8d9c0, 0.12);
+    this.moon = this.add.circle(0, MOON_Y, MOON_RADIUS, 0xe8d9c0, 0.85);
 
     this.sceneryFromIndex = 0;
     this.sceneryToIndex = 0;
@@ -258,6 +274,43 @@ export class RoadScene extends Phaser.Scene {
       g.generateTexture(key, ROAD_TILE_WIDTH, ROAD_TILE_HEIGHT);
       g.destroy();
     }
+    return key;
+  }
+
+  /**
+   * Sparse starfield tile (ROADMAP task 34). Fixed positions rather than
+   * random so every load (and every screenshot) is identical; denser in
+   * the upper half — stars thin out toward the horizon haze. Cream like
+   * the rest of the light in this game, never pure white.
+   */
+  private starFieldTexture(): string {
+    const key = 'star-field';
+    if (this.textures.exists(key)) return key;
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    const stars: Array<[number, number, number, number]> = [
+      [12, 30, 1.2, 0.9],
+      [40, 122, 1.0, 0.5],
+      [66, 58, 1.5, 0.8],
+      [90, 16, 1.0, 0.6],
+      [110, 92, 1.2, 0.7],
+      [140, 38, 1.0, 0.9],
+      [160, 138, 1.3, 0.5],
+      [185, 70, 1.0, 0.8],
+      [205, 22, 1.5, 0.6],
+      [230, 108, 1.0, 0.7],
+      [25, 168, 1.0, 0.4],
+      [75, 150, 1.2, 0.6],
+      [125, 176, 1.0, 0.5],
+      [175, 162, 1.0, 0.45],
+      [220, 154, 1.2, 0.55],
+      [245, 62, 1.0, 0.75],
+    ];
+    for (const [x, y, r, a] of stars) {
+      g.fillStyle(0xe8d9c0, a);
+      g.fillCircle(x, y, r);
+    }
+    g.generateTexture(key, SCENERY_TILE_WIDTH, STAR_FIELD_HEIGHT);
+    g.destroy();
     return key;
   }
 
@@ -617,6 +670,7 @@ export class RoadScene extends Phaser.Scene {
     if (target) {
       target.resolved = 'hit';
       this.meter = applyHit(this.meter, this.meterConfig);
+      this.audioEngine.pluck(this.currentBiomeId(), target.beat.index);
       if (target.gfx) {
         // A struck note pulses once — lands big, settles back — so a hit
         // feels like plucking the note out of the air (ROADMAP task 32).
@@ -681,6 +735,7 @@ export class RoadScene extends Phaser.Scene {
       RoadScene.lerpColor(BIOMES[blend.fromIndex].skyColor, BIOMES[blend.toIndex].skyColor, blend.ratio)
     );
 
+    this.updateSky(delta);
     this.updateScenery(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
     this.updateRoad(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
     this.hitLine.setPosition(hitLineX, laneY);
@@ -761,6 +816,18 @@ export class RoadScene extends Phaser.Scene {
       const scrollDelta = (ROAD_SCROLL_PX_PER_SEC * delta) / 1000;
       this.road.tilePositionX += scrollDelta;
       this.roadNext.tilePositionX += scrollDelta;
+    }
+  }
+
+  /** Stars drift at STAR_PARALLAX of road speed while walking; the moon holds still (ROADMAP task 34). */
+  private updateSky(delta: number): void {
+    this.stars.setPosition(this.scale.width / 2, STAR_FIELD_HEIGHT / 2);
+    this.stars.setSize(this.scale.width, STAR_FIELD_HEIGHT);
+    const moonX = this.scale.width * MOON_X_FRACTION;
+    this.moon.setPosition(moonX, MOON_Y);
+    this.moonGlow.setPosition(moonX, MOON_Y);
+    if (this.walking) {
+      this.stars.tilePositionX += (ROAD_SCROLL_PX_PER_SEC * STAR_PARALLAX * delta) / 1000;
     }
   }
 
