@@ -131,3 +131,21 @@ export function biomeBlendAt(
   const last = Math.max(0, Math.min(limit, biomeCount - 1)) % biomeCount;
   return { fromIndex: last, toIndex: last, ratio: 0 };
 }
+
+/**
+ * Distance (px) at which the `occurrenceIndex`-th transition fires, counting
+ * every wrap of the loop (0 = the first transition, `transitions.length` =
+ * the first transition of the second cycle, and so on). Used to place
+ * one-off scenery events that mark a transition's start — e.g. a signpost
+ * scrolling by — as opposed to `biomeBlendAt`'s per-frame blend state.
+ */
+export function signpostDistanceAt(
+  occurrenceIndex: number,
+  transitions: BiomeTransition[] = BIOME_TRANSITIONS
+): number {
+  const last = transitions[transitions.length - 1];
+  const cycleLengthPx = last.startPx + last.lengthPx;
+  const idx = occurrenceIndex % transitions.length;
+  const cycle = Math.floor(occurrenceIndex / transitions.length);
+  return transitions[idx].startPx + cycle * cycleLengthPx;
+}
