@@ -28,6 +28,18 @@ const HIT_LINE_HEIGHT = 56;
 const EXIT_PROGRESS = 1.35;
 const METER_HEIGHT = 14;
 const METER_MARGIN_TOP = 24;
+// Meter as staff (ROADMAP idea backlog): the song meter joins the notation
+// language established in task 32 — five faint staff lines across the bar,
+// same cream tone as the beat glyphs, sitting on top of the existing
+// track/fill so the meter reads as sheet music filling with light rather
+// than a plain progress bar.
+const METER_STAFF_LINE_COUNT = 5;
+// A mid-tone (not the fill's own cream) so the lines stay visible whether
+// they sit on the dark track or the bright fill — sheet-music lines read
+// the same whether the page under them is blank or inked.
+const METER_STAFF_LINE_COLOR = 0xa8842f;
+const METER_STAFF_LINE_ALPHA = 0.55;
+const METER_STAFF_LINE_THICKNESS = 1;
 const BARD_GROUND_Y_OFFSET = 110;
 // Warm colors throughout so the bard reads against all three biome skies
 // (plum/green/blue — see biome.ts); buckle/feather/strings reuse the UI
@@ -122,6 +134,7 @@ export class RoadScene extends Phaser.Scene {
   private meter = DEFAULT_SONG_METER_CONFIG.max;
   private meterTrack!: Phaser.GameObjects.Rectangle;
   private meterFill!: Phaser.GameObjects.Rectangle;
+  private meterStaffLines: Phaser.GameObjects.Rectangle[] = [];
   private road!: Phaser.GameObjects.TileSprite;
   private roadNext!: Phaser.GameObjects.TileSprite;
   private roadFromIndex = 0;
@@ -206,6 +219,9 @@ export class RoadScene extends Phaser.Scene {
 
     this.meterTrack = this.add.rectangle(0, 0, 0, METER_HEIGHT, 0x2c2536, 0.9);
     this.meterFill = this.add.rectangle(0, 0, 0, METER_HEIGHT - 4, 0xe8d9c0, 1);
+    this.meterStaffLines = Array.from({ length: METER_STAFF_LINE_COUNT }, () =>
+      this.add.rectangle(0, 0, 0, METER_STAFF_LINE_THICKNESS, METER_STAFF_LINE_COLOR, METER_STAFF_LINE_ALPHA)
+    );
 
     this.coins = 0;
     this.coinIcon = this.add.image(0, 0, 'coin-icon');
@@ -941,6 +957,13 @@ export class RoadScene extends Phaser.Scene {
     this.meterFill.setSize(Math.max(0, trackWidth * fillRatio), METER_HEIGHT - 4);
     this.meterFill.setFillStyle(walking ? 0xe8d9c0 : 0x7a6f85, 1);
     this.meterFill.setPosition(centerX - trackWidth / 2 + this.meterFill.width / 2, METER_MARGIN_TOP);
+
+    const lineCount = this.meterStaffLines.length;
+    for (let i = 0; i < lineCount; i++) {
+      const y = METER_MARGIN_TOP - METER_HEIGHT / 2 + ((i + 1) * METER_HEIGHT) / (lineCount + 1);
+      this.meterStaffLines[i].setPosition(centerX, y);
+      this.meterStaffLines[i].setSize(trackWidth, METER_STAFF_LINE_THICKNESS);
+    }
   }
 
   /** Coin count readout — a display of song-meter performance, not an interactive system (ROADMAP task 11). */

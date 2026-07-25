@@ -1,15 +1,30 @@
 # STATE
 
-Run counter: 31
+Run counter: 32
 
 ## Current status
-Run 31 (scheduled, 2026-07-25): **strum on hit** (ROADMAP task 39,
+Run 32 (scheduled, 2026-07-25): **meter as staff** (ROADMAP task 40,
 promoted from the idea backlog — task 38 is still blocked on the human
-round-2 playtest). See ROADMAP task 39's done entry for the full
-writeup; in short, the lute now kicks and springs back on every hit as
-the visual twin of the existing pluck-note audio (task 33). Pure
-`RoadScene` tween addition, no new texture, no new dependency. `npm
-test` 71 green (unchanged), build green, headless-screenshot verified.
+round-2 playtest). See ROADMAP task 40's done entry for the full
+writeup; in short, the song-meter bar now carries five faint staff
+lines drawn on top of the existing track/fill, so it joins the notation
+language every other UI element already speaks (task 32). Screenshot
+verification caught a real bug before commit: the first attempt tinted
+the lines the same cream as the full-meter fill color, silently erasing
+them at 100% meter — only checking the *full* state (not just empty/mid)
+surfaced it. Fixed with a distinct bronze tone. Pure `RoadScene`
+rendering addition, no change to `songMeter`'s logic, no new texture,
+no new dependency. `npm test` 71 green (unchanged), build green, bundle
+unchanged (~1.23 MB).
+
+## Previous status (Run 31, scheduled, 2026-07-25)
+Run 31: **strum on hit** (ROADMAP task 39, promoted from the idea
+backlog — task 38 is still blocked on the human round-2 playtest). See
+ROADMAP task 39's done entry for the full writeup; in short, the lute
+now kicks and springs back on every hit as the visual twin of the
+existing pluck-note audio (task 33). Pure `RoadScene` tween addition, no
+new texture, no new dependency. `npm test` 71 green (unchanged), build
+green, headless-screenshot verified.
 
 ## Previous status (overnight interactive session, 2026-07-25)
 **The game got its round-1 human playtest, and then eight PRs of it.**

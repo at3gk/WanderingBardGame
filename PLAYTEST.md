@@ -54,6 +54,9 @@ relay verdicts in a session. The next run folds answers into code.
 - [ ] **Strum on hit** — does the lute's kick-and-spring on every hit
   read as a strum, or too subtle/too sharp? (`BARD_STRUM_KICK_DEG`,
   `BARD_STRUM_MS` — `src/scenes/RoadScene.ts`)
+- [ ] **Meter as staff** — do the five faint lines on the song-meter bar
+  read as sheet music, or just clutter? Legible at phone size while
+  walking? (`METER_STAFF_LINE_COLOR`/`_ALPHA` — `src/scenes/RoadScene.ts`)
 
 ### Round-1 items never explicitly answered
 
