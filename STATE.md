@@ -37,7 +37,7 @@ yourself.
   worth not rediscovering — it's in the tools README).
 
 - **Task 48 — a second tune per biome.** Each biome rotates through a set
-  rather than repeating one song: village adds *Hot Cross Buns*, forest
+  rather than repeating one song: village adds *Hot Cross Buns* and *London Bridge*, forest
   *Au Clair de la Lune* (in G), riverside *Lightly Row* (an octave up).
   Both tunes in a set sit in the same staff region, so the low → middle →
   upper curriculum survives the variety (enforced by test). Hint text now

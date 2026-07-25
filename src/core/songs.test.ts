@@ -93,10 +93,12 @@ describe('the songbook', () => {
   });
 
   it('rotates through a biome\'s set pass by pass, and wraps', () => {
-    expect(songForBiome('village', 0).id).toBe('mary');
-    expect(songForBiome('village', 1).id).toBe('buns');
-    expect(songForBiome('village', 2).id).toBe('mary');
-    expect(songForBiome('village', -1).id).toBe('buns');
+    const set = SONGS_BY_BIOME.village;
+    for (let pass = 0; pass < set.length * 2; pass++) {
+      expect(songForBiome('village', pass).id).toBe(set[pass % set.length].id);
+    }
+    // Negative passes shouldn't throw or land off the end.
+    expect(songForBiome('village', -1).id).toBe(set[set.length - 1].id);
   });
 
   it('falls back to the village set for an unknown biome', () => {
