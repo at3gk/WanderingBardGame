@@ -396,6 +396,14 @@ tests green (4 new), build green.
   fold their feedback into concrete constant changes and close this out;
   until then each new feature run keeps adding to the list above rather
   than the list ever getting tuned.
+  **Update (2026-07-25, interactive session)**: a human engaged with the
+  blockers directly. Structured playtest questions were presented but not
+  yet answered, so no feel verdicts are recorded. To lower the cost of
+  answering, every item in "Needs human playtest" above is now
+  consolidated into `PLAYTEST.md` — a single ~10-minute checklist with
+  each question, its current constant(s) + file, and what a fix would
+  touch. When answers arrive (checked boxes in PLAYTEST.md or relayed in
+  a session), fold them into constant changes and close this out.
 - **v0.1 git tag** (Run 12): ROADMAP task 12 says "Tag this as v0.1."
   DoD verification and the ship-check PR (#13) are done and merged
   (squash commit `021410f` on `main`), but the tag itself can't be pushed
@@ -412,3 +420,9 @@ tests green (4 new), build green.
   Done" && git push origin v0.1`
   Doesn't block ROADMAP task 13 — the game itself already meets every
   v0.1 DoD item regardless of whether the tag exists.
+  **Update (2026-07-25, interactive session)**: re-tested from the
+  interactive remote environment — `git push origin v0.1` still returns
+  HTTP 403 (tag refs rejected, only the designated working branch is
+  pushable), and the GitHub MCP toolset was re-checked: it has
+  branch/file write calls but still no tag or release *creation* call.
+  Blocker confirmed; the command above remains the only route.
