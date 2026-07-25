@@ -64,6 +64,10 @@ they just hear the song enough times.
 2b. **Note values** (v0.3): eighth, quarter, dotted quarter, half, whole —
    drawn correctly (filled vs hollow heads, stems, flags, augmentation
    dots) and felt as the time until the next note.
+2c. **Rests** (v0.3): a written silence is a symbol, not an empty gap. A
+   rest scrolls down the staff like anything else, but nothing sounds and
+   nothing is tapped — which is exactly what it means. *Hot Cross Buns*
+   carries the first one, a beat of breath at the end of each phrase.
 3. **Middle C's ledger line** — the iconic first lesson of every beginner
    book, met as a real thing the low notes wear.
 4. **Stem direction** (passive exposure only): notes at or above the

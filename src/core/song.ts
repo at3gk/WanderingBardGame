@@ -14,10 +14,17 @@ import { Beat, beatIntervalMs } from './beats';
  */
 
 export interface SongNote {
-  /** Semitones from middle C (C4). Naturals only — see core/notation.ts. */
+  /** Semitones from middle C (C4). Naturals only — see core/notation.ts. Ignored for a rest. */
   semitone: number;
   /** Length in beats. */
   beats: number;
+  /**
+   * A written silence. It occupies its time like any note — the next note
+   * still waits for it — but nothing sounds and nothing is tapped. Rests
+   * are half of reading rhythm, so they get their own symbol on the staff
+   * rather than being an invisible gap.
+   */
+  rest?: true;
 }
 
 export interface Song {
@@ -31,6 +38,7 @@ export interface Song {
 export interface SongBeat extends Beat {
   semitone: number;
   beats: number;
+  rest?: true;
 }
 
 /** Total length of one repetition, in beats. */
@@ -60,6 +68,8 @@ export function expandSong(song: Song, bpm: number, startTimeMs = 0, indexOffset
   return song.notes.map((note, i) => {
     const hitTimeMs = startTimeMs + interval * (1 + cursorBeats);
     cursorBeats += note.beats;
-    return { index: indexOffset + i, hitTimeMs, semitone: note.semitone, beats: note.beats };
+    const placed: SongBeat = { index: indexOffset + i, hitTimeMs, semitone: note.semitone, beats: note.beats };
+    if (note.rest) placed.rest = true;
+    return placed;
   });
 }

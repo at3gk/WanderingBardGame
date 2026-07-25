@@ -74,17 +74,21 @@ export const ODE_TO_JOY: Song = {
   ],
 };
 
-/** Hot Cross Buns — traditional, 5 bars of 4/4. The three-note first tune. */
+/**
+ * Hot Cross Buns — traditional, 5 bars of 4/4. The three-note first tune,
+ * and the first place a reader meets a **rest**: each "hot cross buns" is
+ * three beats and a beat of breath, which is how beginner books write it.
+ */
 export const HOT_CROSS_BUNS: Song = {
   id: 'buns',
   title: 'Hot Cross Buns',
   beatsPerBar: 4,
   notes: [
-    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 2 },
-    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 2 },
+    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 1 }, { semitone: 0, beats: 1, rest: true },
+    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 1 }, { semitone: 0, beats: 1, rest: true },
     { semitone: 0, beats: 1 }, { semitone: 0, beats: 1 }, { semitone: 0, beats: 1 }, { semitone: 0, beats: 1 },
     { semitone: 2, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 2, beats: 1 },
-    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 2 },
+    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 1 }, { semitone: 0, beats: 1, rest: true },
   ],
 };
 
@@ -122,15 +126,69 @@ export const LIGHTLY_ROW: Song = {
   ],
 };
 
+/** London Bridge Is Falling Down — traditional, 8 bars of 4/4. */
+export const LONDON_BRIDGE: Song = {
+  id: 'london',
+  title: 'London Bridge',
+  beatsPerBar: 4,
+  notes: [
+    { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 5, beats: 1 },
+    { semitone: 4, beats: 1 }, { semitone: 5, beats: 1 }, { semitone: 7, beats: 2 },
+    { semitone: 2, beats: 1 }, { semitone: 4, beats: 1 }, { semitone: 5, beats: 2 },
+    { semitone: 4, beats: 1 }, { semitone: 5, beats: 1 }, { semitone: 7, beats: 2 },
+    { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 5, beats: 1 },
+    { semitone: 4, beats: 1 }, { semitone: 5, beats: 1 }, { semitone: 7, beats: 2 },
+    { semitone: 2, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 4, beats: 2 },
+    { semitone: 0, beats: 4 },
+  ],
+};
+
+/** Frère Jacques — traditional, 8 bars of 4/4, in G. The round every child sings. */
+export const FRERE_JACQUES: Song = {
+  id: 'frere',
+  title: 'Frère Jacques',
+  beatsPerBar: 4,
+  notes: [
+    { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 7, beats: 1 },
+    { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 7, beats: 1 },
+    { semitone: 11, beats: 1 }, { semitone: 12, beats: 1 }, { semitone: 14, beats: 2 },
+    { semitone: 11, beats: 1 }, { semitone: 12, beats: 1 }, { semitone: 14, beats: 2 },
+    { semitone: 14, beats: 0.5 }, { semitone: 16, beats: 0.5 }, { semitone: 14, beats: 0.5 },
+    { semitone: 12, beats: 0.5 }, { semitone: 11, beats: 1 }, { semitone: 7, beats: 1 },
+    { semitone: 14, beats: 0.5 }, { semitone: 16, beats: 0.5 }, { semitone: 14, beats: 0.5 },
+    { semitone: 12, beats: 0.5 }, { semitone: 11, beats: 1 }, { semitone: 7, beats: 1 },
+    { semitone: 7, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 7, beats: 2 },
+    { semitone: 7, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 7, beats: 2 },
+  ],
+};
+
+/** Jingle Bells (chorus) — Pierpont, 1857. 8 bars of 4/4, an octave up. */
+export const JINGLE_BELLS: Song = {
+  id: 'jingle',
+  title: 'Jingle Bells',
+  beatsPerBar: 4,
+  notes: [
+    { semitone: 16, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 16, beats: 2 },
+    { semitone: 16, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 16, beats: 2 },
+    { semitone: 16, beats: 1 }, { semitone: 19, beats: 1 }, { semitone: 12, beats: 1 }, { semitone: 14, beats: 1 },
+    { semitone: 16, beats: 4 },
+    { semitone: 17, beats: 1 }, { semitone: 17, beats: 1 }, { semitone: 17, beats: 1 }, { semitone: 17, beats: 1 },
+    { semitone: 17, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 16, beats: 1 },
+    { semitone: 16, beats: 0.5 }, { semitone: 16, beats: 0.5 },
+    { semitone: 16, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 16, beats: 1 },
+    { semitone: 14, beats: 2 }, { semitone: 19, beats: 2 },
+  ],
+};
+
 /**
  * Each biome's set, played in rotation so a long walk isn't one tune on
- * repeat. Both songs in a set live in the same region of the staff, so the
+ * repeat. Every song in a set lives in the same region of the staff, so the
  * curriculum (low → middle → upper) survives the variety.
  */
 export const SONGS_BY_BIOME: Record<string, Song[]> = {
-  village: [MARY_HAD_A_LITTLE_LAMB, HOT_CROSS_BUNS],
-  forest: [TWINKLE_TWINKLE, AU_CLAIR_DE_LA_LUNE],
-  riverside: [ODE_TO_JOY, LIGHTLY_ROW],
+  village: [MARY_HAD_A_LITTLE_LAMB, HOT_CROSS_BUNS, LONDON_BRIDGE],
+  forest: [TWINKLE_TWINKLE, AU_CLAIR_DE_LA_LUNE, FRERE_JACQUES],
+  riverside: [ODE_TO_JOY, LIGHTLY_ROW, JINGLE_BELLS],
 };
 
 export const SONGS: Song[] = Object.values(SONGS_BY_BIOME).flat();

@@ -36,13 +36,16 @@ yourself.
   the fact that synthetic pointer events silently do nothing (a trap
   worth not rediscovering — it's in the tools README).
 
-- **Task 48 — a second tune per biome.** Each biome rotates through a set
-  rather than repeating one song: village adds *Hot Cross Buns*, forest
-  *Au Clair de la Lune* (in G), riverside *Lightly Row* (an octave up).
-  Both tunes in a set sit in the same staff region, so the low → middle →
-  upper curriculum survives the variety (enforced by test). Hint text now
-  says "tap when a note reaches the line" — the lane is a staff, so the
-  instruction can name what the player is looking at.
+- **Tasks 48 + 51 — the songbook is nine tunes.** Each biome rotates
+  through a set of three instead of repeating one song:
+  village = Mary Had a Little Lamb / Hot Cross Buns / London Bridge,
+  forest = Twinkle Twinkle / Au Clair de la Lune / Frère Jacques (all in
+  G), riverside = Ode to Joy / Lightly Row / Jingle Bells (all an octave
+  up). Every song in a set stays inside its biome's region of the staff,
+  so the low → middle → upper curriculum survives the variety (enforced
+  by a spread test). Hint text now says "tap when a note reaches the
+  line" — the lane is a staff, so the instruction can name what the
+  player is looking at.
 - **Mobile bugs the desktop view hid** (found by shooting an iPhone
   viewport, worth doing after any layout change): the hint clipped off
   the left edge (now clamped so it can't), and played notes drifted over
@@ -72,6 +75,16 @@ that silently samples a prefix is worse than none.
   middle and upper thirds of it, so a fourth would either duplicate a
   region (weakening the curriculum) or sit in unreadable ledger
   territory. Rotation bought the variety instead.
+
+- **Task 50 — rests.** A written silence is now a symbol, not an empty
+  gap: `SongNote.rest` occupies its time, scrolls the staff, sounds
+  nothing, and is never tapped or missed — it's born `resolved: 'rest'`,
+  so it falls out of hit-finding and miss-detection by construction
+  rather than by special cases scattered around. Engraved by value
+  (whole hangs under the line above the middle, half sits on it, quarter
+  is the zigzag). *Hot Cross Buns* carries the first one. Autoplay still
+  holds a perfect meter with rests in the schedule, which is the proof
+  they really are un-tappable.
 
 **Next run: nothing is queued and nothing is blocked.** Read DESIGN.md's
 Pedagogy section first, then take ROADMAP task 50's suggestions or the

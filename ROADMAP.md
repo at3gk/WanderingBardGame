@@ -459,7 +459,6 @@ teaching is entirely presentation.
     repeats, with no new mechanic — just data plus a per-biome pass
     counter. Hint text also updated now that the lane is a staff: "tap
     when a note reaches the line".
-<<<<<<< HEAD
 49. ~~**Consolidation pass.**~~ Done (2026-07-26): drift check clean — the
     songbook is still a readout of the one mechanic (tap a note as it
     reaches the line), no new systems, no new runtime dependencies.
@@ -476,17 +475,30 @@ teaching is entirely presentation.
     read. Rotation (task 48) bought the same variety without that cost.
     If a fourth is ever wanted, it should come with a reason of its own,
     not as "more scenery".
-50. **Next.** Nothing queued. Pull from the idea backlog below. Growth
-    ideas with real teaching value, in rough order of appeal: **rests**
-    (a written rest is half of rhythm and the song format could carry one
-    as a non-tappable marker), a **fifth/sixth tune** in an existing
-    biome set (pure data, no design cost), and **key signatures** — which
-    would be a genuine v0.4 direction, not a task, since it breaks the
-    naturals-only rule the whole notation currently rests on.
-=======
-49. **Next.** Nothing queued — pull from the idea backlog below, or grow
-    the songbook further (a fourth biome is the obvious next step).
->>>>>>> origin/main
+50. ~~**Rests.**~~ Done (2026-07-26): a written silence is now a symbol
+    rather than an empty gap. `SongNote` gained `rest`; a rest occupies
+    its time, scrolls down the staff like anything else, sounds nothing
+    and is never tapped or missed (born `resolved: 'rest'`, so it drops
+    out of both hit-finding and miss-detection by construction). Engraved
+    by value: whole rest hanging under the line above the middle, half
+    rest sitting on it — the pair beginners are taught to tell apart —
+    and the quarter-rest zigzag. *Hot Cross Buns* now carries the first
+    one, a beat of breath at each phrase end, which is how beginner books
+    write it. Verified by autoplay (perfect meter with rests present, so
+    they really are un-tappable) and a zoomed screenshot.
+51. ~~**A third tune per biome.**~~ Done (2026-07-26): *London Bridge*
+    (village), *Frère Jacques* in G (forest) and the *Jingle Bells*
+    chorus (riverside) bring the songbook to nine. Pure data, no new
+    mechanic, 50% more music before anything repeats; each stays in its
+    biome's staff region so the curriculum is untouched. Frère Jacques
+    keeps its authentic "din dan don" dip to the low D — exactly the
+    below-the-staff reading the ledger line exists for.
+52. **Next.** Nothing queued. Pull from the idea backlog below, or add a
+    tune to an existing biome set (pure data, no design cost). One real
+    v0.4 *direction* rather than a task: **key signatures**, which would
+    break the naturals-only rule the whole notation currently rests on —
+    worth doing deliberately, with the Pedagogy section rewritten first,
+    or not at all.
 
 ## Idea backlog (pull from here when nothing is queued)
 
