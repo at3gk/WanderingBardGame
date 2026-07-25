@@ -493,7 +493,28 @@ teaching is entirely presentation.
     biome's staff region so the curriculum is untouched. Frère Jacques
     keeps its authentic "din dan don" dip to the low D — exactly the
     below-the-staff reading the ledger line exists for.
-52. **Next.** Nothing queued. Pull from the idea backlog below, or add a
+52. ~~**Signposts at transitions.**~~ Done (Run 33, scheduled): a small
+    silhouette signpost (post + two angled boards) now spawns at the
+    screen's right edge the instant `distancePx` crosses each biome
+    transition's start distance, scrolling by at the scenery band's own
+    parallax rate — the world announcing the next vignette, per the idea
+    backlog. `core/biome.ts` gained `signpostDistanceAt(occurrenceIndex)`,
+    a pure function giving the distance the nth transition fires at
+    (accounting for the loop's wrap, same cycle math as `biomeBlendAt`),
+    with its own tests. `RoadScene` reuses a fixed 2-image pool rather than
+    an unbounded array (transitions are 5000px apart; a signpost takes far
+    less than that to cross the screen at `SCENERY_PARALLAX`, so at most
+    one is ever on screen) — pre-created right after the scenery band and
+    before the road in `create()` so display-list order alone gives
+    correct paint depth, no `setDepth` needed. Same neutral silhouette
+    color in every biome (it isn't a light source, so per the art
+    direction it stays cool, not warm) and picks up the dusk tint like the
+    rest of the world layer. Verified by a screenshot with transition
+    distances temporarily shrunk (reverted after, `git diff --stat`
+    confirmed clean) — the post+boards render correctly anchored to the
+    road's top edge among the tree silhouettes. `npm test` 157 green (5
+    new), build green.
+53. **Next.** Nothing queued. Pull from the idea backlog below, or add a
     tune to an existing biome set (pure data, no design cost). One real
     v0.4 *direction* rather than a task: **key signatures**, which would
     break the naturals-only rule the whole notation currently rests on —
@@ -507,9 +528,7 @@ task at the start of a run if nothing above is actionable. Each respects
 the one-mechanic rule and the art direction (notation icons,
 warm-vs-cool palette).
 
-- **Signposts at transitions**: a small silhouette signpost scrolls by
-  with the scenery as each biome transition starts — the world
-  announcing the next vignette. Scenery-tile addition, no logic.
+- ~~**Signposts at transitions**~~ — shipped as task 53 above.
 - **Sharper mobile rendering**: check `devicePixelRatio` handling in the
   Phaser config; procedural shapes may render noticeably crisper on
   phones with `resolution`/zoom set correctly. Measure first.
