@@ -11,6 +11,10 @@ export interface Biome {
   skyColor: number;
   roadBandColor: number;
   roadDashColor: number;
+  /** Silhouette color for the background scenery band (darker than the sky so features read as shapes against it). */
+  sceneryColor: number;
+  /** Small warm/lit accent used inside the scenery (village windows, riverside water glints) — see RoadScene's per-biome tile drawers. */
+  sceneryAccent: number;
 }
 
 // Human playtest (2026-07-25): the original palettes were so close in hue
@@ -25,6 +29,8 @@ export const BIOMES: Biome[] = [
     skyColor: 0x2a1a2e,
     roadBandColor: 0x4a3450,
     roadDashColor: 0x66486c,
+    sceneryColor: 0x1c1020,
+    sceneryAccent: 0xe8c157,
   },
   {
     id: 'forest',
@@ -32,6 +38,8 @@ export const BIOMES: Biome[] = [
     skyColor: 0x0f2818,
     roadBandColor: 0x24422a,
     roadDashColor: 0x3c6242,
+    sceneryColor: 0x081a0e,
+    sceneryAccent: 0xb5d98a,
   },
   {
     id: 'riverside',
@@ -39,6 +47,8 @@ export const BIOMES: Biome[] = [
     skyColor: 0x0f2438,
     roadBandColor: 0x22475c,
     roadDashColor: 0x3d7291,
+    sceneryColor: 0x081624,
+    sceneryAccent: 0x5da8c9,
   },
 ];
 

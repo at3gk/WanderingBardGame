@@ -272,6 +272,14 @@ of headless-vs-real-device caveat as Run 23's audio-resume fix.
   a separate upper-body container so feet stay grounded) and a
   breathing/lute-sway idle. Verified with headless screenshots of both
   anim states, not just green tests. `npm test` 56 green, build green.
+- Overnight session, task 31 (2026-07-25): per-biome background scenery
+  per ROADMAP task 31. Silhouette band between sky and road at 0.45x
+  parallax, crossfaded biome-to-biome like the road; village houses with
+  lit windows / forest conifers with fireflies / riverside water-tent-
+  campfire-reeds. `Biome` gained `sceneryColor`/`sceneryAccent`. All
+  three biomes screenshot-verified (throwaway build with shortened
+  transitions; shipped constants untouched). `npm test` 56 green, build
+  green.
 
 ## Needs human playtest
 Round-1 feedback (2026-07-25) answered the original feel questions for
