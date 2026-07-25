@@ -12,6 +12,15 @@ beats and the tune fades out — the bard stops walking and busks quietly in
 place until you pick the rhythm back up. There is no game over. There is
 only the walk.
 
+**And the walk teaches you to read music.** (v0.2 direction, human-set,
+2026-07-25.) The lane the notes travel down is a real treble staff. Every
+marker is a real note sitting at its true pitch position, carrying its
+letter name, sounding at its written pitch — and when you tap it, you play
+it. A kid who plays this game is doing a motor task they already understand
+(tap to the beat) while position ↔ letter ↔ sound quietly bind together in
+the background. Nobody is quizzed. Nobody fails. They just walk the road
+enough times, and one day the notes have names.
+
 ## The one core mechanic
 
 **Single-lane rhythm tapping.** Beat markers scroll toward a hit line at a
@@ -27,6 +36,63 @@ into the beat.
 Everything else in the game (scenery, coins, distance, unlockable
 backdrops) is a *readout* of how well you're keeping the tune, not a
 separate system competing for the player's attention.
+
+## Pedagogy (v0.2 — "the road teaches the scale", 2026-07-25)
+
+Audience: kids (~5–9) meeting written music for the first time — and
+anyone else, because none of it gets in the way of just playing.
+
+**Stance: exposure, never examination.** The mechanic stays exactly what
+it was — one lane, one tap, timing only. The teaching is entirely in the
+presentation: every note is simultaneously *seen* (its true position on a
+real staff), *named* (its letter, baked into the note head), *heard* (the
+backing loop plays the written pitch), and — on a hit — *played* (the
+player's pluck sounds it an octave up). Multi-sensory, simultaneous,
+repeated: that's paired-association learning, and the looping road is the
+spaced repetition. There are no quizzes, no "name this note" prompts, no
+wrong answers. This is how kids learn song lyrics — nobody tests them;
+they just hear the song enough times.
+
+**What v0.2 teaches, deliberately scoped:**
+
+1. **The staff itself** — five lines, notes live on lines and in spaces,
+   higher on the staff = higher pitch (the ear confirms what the eye sees,
+   every beat).
+2. **Letter names A–G, naturals only.** The whole game lives in C major /
+   A minor: no sharps, no flats, no key signatures. Every melody note is a
+   white key with a one-letter name.
+3. **Middle C's ledger line** — the iconic first lesson of every beginner
+   book, met as a real thing the low notes wear.
+4. **Stem direction** (passive exposure only): notes at or above the
+   middle line point their stems down, below point up. Never mentioned,
+   always correct — the game's notation is simply never wrong.
+
+**The curriculum is the biomes.** Each vignette's melody draws from a
+different region of the staff, so a full loop of the road is a walking
+tour of it:
+
+- **Village Dusk** — first notes: C D E G A around middle C. Where every
+  beginner starts; introduces the ledger line.
+- **Forest Dusk** — climbing: G A C D E in the staff's upper half; stems
+  flip down; higher position, audibly higher pitch.
+- **Riverside Camp** — leaps: C D G A D across the whole range; reading
+  bigger intervals at a glance.
+
+The road loops (task 35), so the sets return in order, forever — natural
+spaced repetition with zero menus.
+
+**Considered and rejected:**
+
+- *Color-coded note names* (Boomwhacker-style): breaks the art direction,
+  and color knowledge doesn't transfer to real sheet music. Position and
+  letter do.
+- *Quiz/recall modes* ("which note is this?"): a second mechanic and a
+  failure state — both against the pillars. Recognition-by-exposure is
+  the whole bet.
+- *Rhythm values* (half/whole notes needing holds): changes the input
+  mechanic. Logged as a possible v0.3 arc, not v0.2.
+- *Solfège (do-re-mi) labels*: worth considering later as a locale
+  option; letters first, they're what beginner books here use.
 
 ## Tone
 
@@ -49,9 +115,12 @@ the music.**
 - Each biome's world is a cool dark-dusk palette (plum, green, blue):
   sky lightest, scenery silhouettes darkest, road band in between.
 - Everything the player reads or touches is musical notation: beat
-  markers are eighth notes, the coin is stamped with a note, the mute
-  toggle is a note. If a future element needs an icon, it comes from the
-  same songbook.
+  markers are real quarter notes on a real staff (v0.2 — correct pitch
+  position, letter in the head, stem direction right), the coin is
+  stamped with a note, the mute toggle is a note. If a future element
+  needs an icon, it comes from the same songbook. Because kids are now
+  learning from it, the notation is never allowed to be *wrong* — cute
+  is fine, incorrect is not.
 - All art is Graphics-drawn procedural shapes — flat fills, soft
   silhouettes, tiny accent lights. No image assets, no outlines, no
   gradients (the one exception: a faint radial glow is allowed around
@@ -150,3 +219,17 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   everything remains a readout of the one mechanic. The game as shipped
   tonight is, for the first time, the game this document described on
   Run 0.
+- 2026-07-25 (second overnight session) — **v0.2 direction, set by the
+  human: teach kids to read music.** New Pedagogy section above; Concept
+  extended. The insight that makes this a deepening rather than a pivot:
+  the lane already scrolls notes toward a line in time — that IS a
+  staff. v0.2 makes it a real one: treble staff lines in the lane,
+  markers become true quarter notes at their real pitch positions with
+  letter names in their heads and correct stem directions, melodies
+  re-voiced to C major (root moves A3 → C4, naturals only) so every
+  note a kid meets is nameable, middle C wears its ledger line. The
+  mechanic, pillars, tone, and no-fail stance are all unchanged — the
+  teaching is pure presentation, and the biome loop is the spaced
+  repetition. Rejected on the way: color-coded notes (doesn't transfer
+  to real reading), quiz modes (a second mechanic and a failure state),
+  rhythm values (v0.3 candidate, changes the input).

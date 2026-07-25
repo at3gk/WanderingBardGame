@@ -3,6 +3,21 @@
 Run counter: 32
 
 ## Current status
+Second overnight interactive session (2026-07-25) — **v0.2 direction set
+by the human: teach kids to read music.** DESIGN.md gained a full
+Pedagogy section (read it first — it is the contract for the v0.2 arc,
+ROADMAP tasks 41–44). Executed so far this session:
+
+- **Task 41 — notation core + C-major re-voice**: `src/core/notation.ts`
+  (semitone→letter, semitone→staff step, stem/ledger engraving rules; 10
+  tests) and the manifest re-voiced — root A3 → middle C (261.63 Hz),
+  every pattern naturals-only (village C D E G A / forest G A C5 D5 E5 /
+  riverside C D G A D5 — the biome curriculum), sparkle moved from +24
+  to +19 (octave+fifth, keeps naturals natural), plus manifest tests
+  enforcing no-accidentals and the middle-C root. 83 tests green.
+- **Task 42 — staff lane**: in progress (see ROADMAP).
+
+## Previous status (Run 32, scheduled)
 Run 32 (scheduled, 2026-07-25): **meter as staff** (ROADMAP task 40,
 promoted from the idea backlog — task 38 is still blocked on the human
 round-2 playtest). See ROADMAP task 40's done entry for the full
