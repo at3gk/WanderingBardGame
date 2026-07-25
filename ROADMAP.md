@@ -412,10 +412,17 @@ teaching is entirely presentation.
     `BEAT_BATCH_SIZE`, since the 15s scheduling lookahead delays pattern
     switches past a shrunken biome cycle — worth knowing for future
     far-state audio/visual checks; shipped constants untouched).
-43. **Legibility & first-reader polish.** Letter size/contrast at phone
-    scale, spacing of ledger notes near the bard, hint wording for
-    pre-readers, and a PLAYTEST.md round-3 section written for testing
-    *with a kid* (can they point at a C by the end of a loop?).
+43. ~~**Legibility & first-reader polish.**~~ Done (2026-07-25, second
+    overnight session): iPhone-viewport screenshot confirmed the DPR
+    scale-up renders note letters large and crisp on phones — no size
+    change needed. Hint wording kept ("tap to the beat"): pre-readers
+    can't read *any* wording, so the real affordance added instead is a
+    **silent metronome** — the hit line brightens on every beat and
+    fades until the next, driven by the same clock as the beats, so the
+    rhythm can be *felt* before anything can be read. PLAYTEST.md gained
+    a full round-3 section for testing with an actual kid (observe,
+    don't coach: labels noticed? pitch-position link? paper-staff
+    transfer? does the busking pause read as rest, not losing?).
 44. **(v0.3 candidate, do not start without a human yes) Rhythm
     values.** Half/whole notes via tap-and-hold would teach durations
     but changes the one input. Design question first, not code.

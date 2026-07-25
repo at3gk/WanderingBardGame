@@ -904,6 +904,12 @@ export class RoadScene extends Phaser.Scene {
       this.staffLines[i].setPosition(this.scale.width / 2, this.staffY(STAFF_LINE_STEPS[i], laneY));
       this.staffLines[i].setSize(this.scale.width, 1.5);
     }
+    // Silent metronome (ROADMAP task 43): the hit line brightens on every
+    // beat and fades until the next, so a pre-reader can feel where taps
+    // belong without reading the hint. Derived from the same clock as the
+    // beats, so it is never out of step with them.
+    const beatPhase = (((nowMs % MS_PER_BEAT) + MS_PER_BEAT) % MS_PER_BEAT) / MS_PER_BEAT;
+    this.hitLine.setAlpha(0.45 + 0.4 * (1 - beatPhase));
     this.hitLine.setPosition(hitLineX, laneY);
     this.flash.setPosition(hitLineX, laneY);
     this.flash.setSize(6, HIT_LINE_HEIGHT);
