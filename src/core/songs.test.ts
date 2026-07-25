@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { noteNameAt, staffStepAt } from './notation';
 import { songLengthBeats } from './song';
-import { SONG_BY_BIOME, SONGS, songForBiome } from './songs';
+import { SONGS, SONGS_BY_BIOME, songForBiome } from './songs';
 
 /**
  * These are engraving checks, not style checks. Kids read this screen, so a
@@ -55,19 +55,41 @@ describe.each(SONGS)('song: $title', (song) => {
 });
 
 describe('the songbook', () => {
-  it('gives every biome its own distinct song', () => {
-    const ids = Object.values(SONG_BY_BIOME).map((s) => s.id);
-    expect(ids).toEqual(['mary', 'twinkle', 'ode']);
+  it('never repeats a song across the whole book', () => {
+    const ids = SONGS.map((s) => s.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it('gives every biome a set to rotate through', () => {
+    for (const [biome, set] of Object.entries(SONGS_BY_BIOME)) {
+      expect(set.length, `${biome} set`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
   it('walks up the staff across the biomes, low to high', () => {
-    const lowest = (id: string) => Math.min(...SONG_BY_BIOME[id].notes.map((n) => staffStepAt(n.semitone)!));
+    const lowest = (id: string) =>
+      Math.min(...SONGS_BY_BIOME[id].flatMap((s) => s.notes.map((n) => staffStepAt(n.semitone)!)));
     expect(lowest('village')).toBeLessThan(lowest('forest'));
     expect(lowest('forest')).toBeLessThan(lowest('riverside'));
   });
 
-  it('falls back to the village tune for an unknown biome', () => {
+  it('keeps every song in a biome inside the same region of the staff', () => {
+    // Rotation must not smuggle a low tune into the upper-staff vignette;
+    // the curriculum is the point of the biome split.
+    for (const [biome, set] of Object.entries(SONGS_BY_BIOME)) {
+      const lows = set.map((s) => Math.min(...s.notes.map((n) => staffStepAt(n.semitone)!)));
+      expect(Math.max(...lows) - Math.min(...lows), `${biome} spread`).toBeLessThanOrEqual(4);
+    }
+  });
+
+  it('rotates through a biome\'s set pass by pass, and wraps', () => {
+    expect(songForBiome('village', 0).id).toBe('mary');
+    expect(songForBiome('village', 1).id).toBe('buns');
+    expect(songForBiome('village', 2).id).toBe('mary');
+    expect(songForBiome('village', -1).id).toBe('buns');
+  });
+
+  it('falls back to the village set for an unknown biome', () => {
     expect(songForBiome('nowhere').id).toBe('mary');
   });
 });

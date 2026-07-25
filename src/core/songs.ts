@@ -74,16 +74,72 @@ export const ODE_TO_JOY: Song = {
   ],
 };
 
-/** Which song each biome plays, keyed by `Biome.id`. */
-export const SONG_BY_BIOME: Record<string, Song> = {
-  village: MARY_HAD_A_LITTLE_LAMB,
-  forest: TWINKLE_TWINKLE,
-  riverside: ODE_TO_JOY,
+/** Hot Cross Buns — traditional, 5 bars of 4/4. The three-note first tune. */
+export const HOT_CROSS_BUNS: Song = {
+  id: 'buns',
+  title: 'Hot Cross Buns',
+  beatsPerBar: 4,
+  notes: [
+    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 2 },
+    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 2 },
+    { semitone: 0, beats: 1 }, { semitone: 0, beats: 1 }, { semitone: 0, beats: 1 }, { semitone: 0, beats: 1 },
+    { semitone: 2, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 2, beats: 1 },
+    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 2 },
+  ],
 };
 
-export const SONGS: Song[] = [MARY_HAD_A_LITTLE_LAMB, TWINKLE_TWINKLE, ODE_TO_JOY];
+/** Au Clair de la Lune — traditional, 8 bars of 4/4, in G. */
+export const AU_CLAIR_DE_LA_LUNE: Song = {
+  id: 'auclair',
+  title: 'Au Clair de la Lune',
+  beatsPerBar: 4,
+  notes: [
+    { semitone: 7, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 },
+    { semitone: 11, beats: 2 }, { semitone: 9, beats: 2 },
+    { semitone: 7, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 9, beats: 1 },
+    { semitone: 7, beats: 4 },
+    { semitone: 7, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 },
+    { semitone: 11, beats: 2 }, { semitone: 9, beats: 2 },
+    { semitone: 7, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 9, beats: 1 },
+    { semitone: 7, beats: 4 },
+  ],
+};
 
-/** The song for a biome, falling back to the village tune for an unknown id. */
-export function songForBiome(biomeId: string): Song {
-  return SONG_BY_BIOME[biomeId] ?? MARY_HAD_A_LITTLE_LAMB;
+/** Lightly Row — traditional, 8 bars of 4/4, an octave up. */
+export const LIGHTLY_ROW: Song = {
+  id: 'lightly',
+  title: 'Lightly Row',
+  beatsPerBar: 4,
+  notes: [
+    { semitone: 19, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 16, beats: 2 },
+    { semitone: 17, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 14, beats: 2 },
+    { semitone: 12, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 17, beats: 1 },
+    { semitone: 19, beats: 1 }, { semitone: 19, beats: 1 }, { semitone: 19, beats: 2 },
+    { semitone: 19, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 16, beats: 2 },
+    { semitone: 17, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 14, beats: 2 },
+    { semitone: 12, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 17, beats: 1 },
+    { semitone: 19, beats: 1 }, { semitone: 19, beats: 1 }, { semitone: 19, beats: 2 },
+  ],
+};
+
+/**
+ * Each biome's set, played in rotation so a long walk isn't one tune on
+ * repeat. Both songs in a set live in the same region of the staff, so the
+ * curriculum (low → middle → upper) survives the variety.
+ */
+export const SONGS_BY_BIOME: Record<string, Song[]> = {
+  village: [MARY_HAD_A_LITTLE_LAMB, HOT_CROSS_BUNS],
+  forest: [TWINKLE_TWINKLE, AU_CLAIR_DE_LA_LUNE],
+  riverside: [ODE_TO_JOY, LIGHTLY_ROW],
+};
+
+export const SONGS: Song[] = Object.values(SONGS_BY_BIOME).flat();
+
+/**
+ * The song a biome plays on its `pass`-th time through, cycling. Falls back
+ * to the village set for an unknown biome id.
+ */
+export function songForBiome(biomeId: string, pass = 0): Song {
+  const set = SONGS_BY_BIOME[biomeId] ?? SONGS_BY_BIOME.village;
+  return set[((pass % set.length) + set.length) % set.length];
 }

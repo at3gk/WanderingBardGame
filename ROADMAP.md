@@ -450,8 +450,17 @@ teaching is entirely presentation.
     walk, leaks and *every pitch it hears* (must be a natural, in tune to
     within a cent); `proofsheet.mjs` bakes every note-value × staff
     position for engraving review. Both found real bugs on first run.
-48. **Next.** Nothing queued — pull from the idea backlog below, or
-    extend the songbook (a fourth biome/tune is the obvious growth).
+48. ~~**A second tune per biome.**~~ Done: each biome now rotates through a
+    set instead of repeating one song — village adds *Hot Cross Buns*,
+    forest adds *Au Clair de la Lune* (in G), riverside adds *Lightly Row*
+    (an octave up). Both tunes in a set sit in the same region of the
+    staff, so the low → middle → upper curriculum survives the variety
+    (enforced by test). Doubles the length of a full walk before anything
+    repeats, with no new mechanic — just data plus a per-biome pass
+    counter. Hint text also updated now that the lane is a staff: "tap
+    when a note reaches the line".
+49. **Next.** Nothing queued — pull from the idea backlog below, or grow
+    the songbook further (a fourth biome is the obvious next step).
 
 ## Idea backlog (pull from here when nothing is queued)
 

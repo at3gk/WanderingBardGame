@@ -36,9 +36,34 @@ yourself.
   the fact that synthetic pointer events silently do nothing (a trap
   worth not rediscovering — it's in the tools README).
 
-Verified: `npm test` 106 green (35 new), `npm run build` green, autoplay
-harness PASS (meter 100 under perfect play, 267 notes scheduled, pitches
-heard = C D E G = exactly Mary's note set, no leaks, no page errors).
+- **Task 48 — a second tune per biome.** Each biome rotates through a set
+  rather than repeating one song: village adds *Hot Cross Buns*, forest
+  *Au Clair de la Lune* (in G), riverside *Lightly Row* (an octave up).
+  Both tunes in a set sit in the same staff region, so the low → middle →
+  upper curriculum survives the variety (enforced by test). Hint text now
+  says "tap when a note reaches the line" — the lane is a staff, so the
+  instruction can name what the player is looking at.
+- **Mobile bugs the desktop view hid** (found by shooting an iPhone
+  viewport, worth doing after any layout change): the hint clipped off
+  the left edge (now clamped so it can't), and played notes drifted over
+  the clef at the lane's left end (now they fade out past the hit line,
+  `EXIT_PROGRESS` 1.35 → 1.28 — which also just looks better).
+
+Verified: `npm test` 127 green (56 new), `npm run build` green, and two
+long autoplay runs (200s+) PASS. The 200s run is the good one: it crossed
+all three biomes and wrapped home, reporting **pitches heard = A B C D E
+F G** (all seven natural names, zero off-scale, in tune within a cent)
+and the running order
+`Buns → Mary → Buns → Mary → Twinkle → Au Clair → Ode → Lightly Row →
+Ode → Buns → Mary → Buns`
+— which verifies rotation, biome hand-off *and* the loop home in one
+shot. Meter held at 100 under perfect play; markers and textures both
+bounded (26 live markers, 49 textures steady).
+
+Note the harness bug that hid this at first: it analysed only the first
+400 recorded notes, so later biomes' pitches were invisible. Analysis now
+runs in-page over every note. Worth remembering — a verification tool
+that silently samples a prefix is worse than none.
 
 ## Previous status (second overnight session, 2026-07-25)
 **v0.2 direction set by the human: teach kids to read music.** DESIGN.md gained a full

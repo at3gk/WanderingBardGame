@@ -37,6 +37,18 @@ await page.addInitScript(() => {
 await page.goto('http://localhost:4173/WanderingBardGame/', { waitUntil: 'networkidle' });
 await page.waitForTimeout(500);
 
+// Record the running order of tunes, so a long walk can be checked for
+// actually rotating through the songbook rather than looping one song.
+await page.evaluate(() => {
+  const scene = window.game.scene.scenes[0];
+  window.__songs = [];
+  const origAnnounce = scene.announceSong.bind(scene);
+  scene.announceSong = (song) => {
+    if (window.__songs[window.__songs.length - 1] !== song.title) window.__songs.push(song.title);
+    return origAnnounce(song);
+  };
+});
+
 // Autoplay: real trusted input (synthetic PointerEvents don't reach
 // Phaser's input manager). Ask the page how long until the next unresolved
 // note is due, wait that long, click.
@@ -78,7 +90,27 @@ const result = await page.evaluate(() => {
   const scene = window.game.scene.scenes[0];
   const hits = scene.markers.filter((m) => m.resolved === 'hit').length;
   const misses = scene.markers.filter((m) => m.resolved === 'miss').length;
-  return { hits, misses, notes: window.__notes.slice(0, 400), total: window.__notes.length };
+  // Analyse *every* pitch in the page — slicing a prefix here would only
+  // ever check the first biome's tune.
+  const NAMES = ['C', null, 'D', null, 'E', 'F', null, 'G', null, 'A', null, 'B'];
+  const heard = new Set();
+  const offPitch = [];
+  for (const n of window.__notes) {
+    const semis = Math.round(12 * Math.log2(n.hz / 261.63));
+    const cents = Math.abs(1200 * Math.log2(n.hz / (261.63 * Math.pow(2, semis / 12))));
+    const name = NAMES[((semis % 12) + 12) % 12];
+    if (cents > 1 || name === null) offPitch.push({ hz: Math.round(n.hz), semis, cents: Math.round(cents) });
+    else heard.add(name);
+  }
+  return {
+    hits,
+    misses,
+    total: window.__notes.length,
+    heard: [...heard].sort(),
+    offPitch: offPitch.slice(0, 5),
+    offPitchCount: offPitch.length,
+    songsPlayed: window.__songs ?? [],
+  };
 });
 result.taps = taps;
 
@@ -102,21 +134,14 @@ const markerCounts = samples.map((s) => s.liveMarkers);
 if (Math.max(...markerCounts) > 120) fail.push(`marker list grew to ${Math.max(...markerCounts)}`);
 
 // Every sounded pitch must be a natural note in equal temperament from C4.
-const NAMES = ['C', null, 'D', null, 'E', 'F', null, 'G', null, 'A', null, 'B'];
-const offPitch = [];
-const heard = new Set();
-for (const n of result.notes) {
-  const semis = Math.round(12 * Math.log2(n.hz / 261.63));
-  const cents = Math.abs(1200 * Math.log2(n.hz / (261.63 * Math.pow(2, semis / 12))));
-  const name = NAMES[((semis % 12) + 12) % 12];
-  if (cents > 1 || name === null) offPitch.push({ hz: Math.round(n.hz), semis, cents: Math.round(cents) });
-  else heard.add(name);
+if (result.offPitchCount) {
+  fail.push(`${result.offPitchCount} off-scale pitches, e.g. ${JSON.stringify(result.offPitch[0])}`);
 }
-if (offPitch.length) fail.push(`${offPitch.length} off-scale pitches, e.g. ${JSON.stringify(offPitch[0])}`);
 
 console.log('samples:', JSON.stringify(samples, null, 1));
 console.log('play:', { taps: result.taps, hits: result.hits, misses: result.misses, notesScheduled: result.total });
-console.log('pitches heard:', [...heard].sort().join(' '));
+console.log('pitches heard:', result.heard.join(' '));
+console.log('songs played:', result.songsPlayed.join(' -> ') || '(not tracked)');
 console.log(fail.length ? `FAIL:\n - ${fail.join('\n - ')}` : 'PASS: all checks green');
 
 await browser.close();

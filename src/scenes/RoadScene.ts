@@ -57,7 +57,10 @@ const NOTE_ORIGIN_X = NOTE_HEAD_X / NOTE_TEX_W;
 const SONG_TITLE_Y = 52;
 const SONG_TITLE_HOLD_MS = 2600;
 const HIT_LINE_HEIGHT = 120;
-const EXIT_PROGRESS = 1.35;
+// A note fades out once it's past the line and is gone before it reaches
+// the clef — on a narrow phone the lane's left end is only a few dozen
+// pixels past the hit line, and played notes used to pile over the clef.
+const EXIT_PROGRESS = 1.28;
 const METER_HEIGHT = 14;
 const METER_MARGIN_TOP = 24;
 // Meter as staff (ROADMAP idea backlog): the song meter joins the notation
@@ -145,7 +148,10 @@ const MUTE_ICON_COLOR_MUTED = 0x554e63;
 const MUTE_SLASH_COLOR = 0x8a5a5a;
 const DISTANCE_MARGIN_LEFT = 24;
 const DISTANCE_MARGIN_BOTTOM = 20;
-const HINT_TEXT = 'tap to the beat';
+// Now that the lane is a staff, the instruction can name what the player
+// is actually looking at — and it doubles as the first thing that tells a
+// new reader those shapes are notes.
+const HINT_TEXT = 'tap when a note reaches the line';
 const HINT_Y_OFFSET = -92;
 const HINT_FADE_MS = 400;
 // Strum on hit (ROADMAP idea backlog): the visual twin of AudioEngine.pluck
@@ -191,6 +197,8 @@ export class RoadScene extends Phaser.Scene {
   private totalNotesGenerated = 0;
   private nextPassStartTimeMs = 0;
   private currentSongId: string | null = null;
+  /** How many passes each biome has played, so its set rotates rather than repeating one tune. */
+  private passesByBiome = new Map<string, number>();
   private songTitleText!: Phaser.GameObjects.Text;
   private pendingAnnounce: Array<{ atMs: number; title: string }> = [];
   private coins = 0;
@@ -230,6 +238,7 @@ export class RoadScene extends Phaser.Scene {
     this.totalNotesGenerated = 0;
     this.nextPassStartTimeMs = 0;
     this.currentSongId = null;
+    this.passesByBiome.clear();
 
     this.stars = this.add.tileSprite(0, 0, this.scale.width, STAR_FIELD_HEIGHT, this.starFieldTexture());
     this.moonGlow = this.add.circle(0, MOON_Y, MOON_RADIUS + 14, 0xe8d9c0, 1);
@@ -909,7 +918,10 @@ export class RoadScene extends Phaser.Scene {
    * plumbing and its batch-quantization caveat, ROADMAP tasks 16–17).
    */
   private appendSongPass(): void {
-    const song = songForBiome(this.currentBiomeId());
+    const biomeId = this.currentBiomeId();
+    const pass = this.passesByBiome.get(biomeId) ?? 0;
+    this.passesByBiome.set(biomeId, pass + 1);
+    const song = songForBiome(biomeId, pass);
     const notes = expandSong(song, BPM, this.nextPassStartTimeMs, this.totalNotesGenerated);
     for (const beat of notes) {
       const name = noteNameAt(beat.semitone);
@@ -1045,7 +1057,10 @@ export class RoadScene extends Phaser.Scene {
     this.flash.setPosition(hitLineX, laneY);
     this.flash.setSize(6, HIT_LINE_HEIGHT);
     if (this.hintShown) {
-      this.hintText.setPosition(hitLineX, laneY + HINT_Y_OFFSET);
+      // Sits over the hit line so it points at what it's describing, but
+      // never so far left that a narrow phone clips it.
+      const hintX = Math.max(hitLineX, this.hintText.width / 2 + 12);
+      this.hintText.setPosition(hintX, laneY + HINT_Y_OFFSET);
     }
 
     // Filtered in place (not just gfx-destroyed) so a long/unbounded play
@@ -1077,6 +1092,10 @@ export class RoadScene extends Phaser.Scene {
         if (marker.resolved === 'miss') marker.gfx.setAlpha(0.75);
       }
       marker.gfx.setPosition(this.markerX(progress), this.staffY(marker.step, laneY));
+      if (progress > 1) {
+        const base = marker.resolved === 'miss' ? 0.75 : 1;
+        marker.gfx.setAlpha(base * Math.max(0, 1 - (progress - 1) / (EXIT_PROGRESS - 1)));
+      }
       return true;
     });
 
