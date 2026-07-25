@@ -278,11 +278,17 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     screenshots of all three biomes (temporarily shortened transition
     distances in a throwaway build to reach forest/riverside quickly;
     shipped constants unchanged).
-32. **(Playtest feedback) Art-style consolidation pass.** After 30–31,
-    unify the look: one consistent shape language/palette across bard,
-    markers, road, scenery, and UI readouts, so the game reads as one
-    deliberate style rather than accumulated placeholders. Update
-    DESIGN.md with the chosen style so future runs stay on it.
+32. ~~**(Playtest feedback) Art-style consolidation pass.**~~ Done
+    (2026-07-25, overnight session): adopted one visual language —
+    everything the player reads or touches is musical notation. Beat
+    markers are now tintable eighth-note glyphs (cream upcoming, green
+    pulse on hit as if plucked, dimmed mauve on miss — no red, per
+    DESIGN.md's tone), the coin icon is a gold coin stamped with a note,
+    the mute toggle is the same note glyph, and the hit line has soft
+    rounded caps. DESIGN.md gained an "Art direction" section codifying
+    the rule (world cool and quiet; warmth belongs to the bard and the
+    music) so future runs extend the style instead of re-inventing it.
+    Screenshot-verified including a live hit pulse.
 
 ## Needs human playtest
 

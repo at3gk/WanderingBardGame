@@ -38,6 +38,27 @@ drop out of the tune, which is disappointing in a "the song lost its
 harmony" way, not a "you lost" way. The game should feel like it wants you
 to relax, not perform.
 
+## Art direction (adopted 2026-07-25, tasks 30–32)
+
+One rule: **the world is cool and quiet; warmth belongs to the bard and
+the music.**
+
+- The warm palette (tunic rust, coin gold, cream) is reserved for the
+  bard, the musical notation, and anything lit by human warmth — village
+  windows, the riverside campfire.
+- Each biome's world is a cool dark-dusk palette (plum, green, blue):
+  sky lightest, scenery silhouettes darkest, road band in between.
+- Everything the player reads or touches is musical notation: beat
+  markers are eighth notes, the coin is stamped with a note, the mute
+  toggle is a note. If a future element needs an icon, it comes from the
+  same songbook.
+- All art is Graphics-drawn procedural shapes — flat fills, soft
+  silhouettes, tiny accent lights. No image assets, no outlines, no
+  gradients (the one exception: a faint radial glow is allowed around
+  literal light sources like the campfire).
+- Feedback is gentle, per the Tone section: a hit makes the note pulse
+  as if plucked; a miss just dims it to mauve. Nothing flashes red.
+
 ## What makes it distinct
 
 Most rhythm games are about accuracy under pressure (many lanes, punishing
@@ -106,3 +127,14 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   knows to tap; nothing previously told a first-time player that at all.
   Fades out permanently after the first tap and never returns, so it stays
   out of the way of the "no menus" pillar.
+- 2026-07-25 — Human playtest round 1 + overnight art session (tasks
+  30–32). The playtest verdict was blunt and correct: the mechanic was
+  tuned but the game *looked* like accumulated placeholders. Constants
+  were retuned the same day (hit window, meter refill, recomposed
+  melodies, beat-synced walk/scroll, stronger biome palettes), then the
+  three art tasks executed: a real multi-part bard with a lute, per-biome
+  scenery silhouettes, and one unified visual language. The new "Art
+  direction" section above codifies it so future runs extend the style
+  instead of re-inventing it. Tone section's "soft pixel-art" phrasing
+  now reads as "soft procedural shapes" in practice — same intent,
+  honest wording for what the game actually is.
