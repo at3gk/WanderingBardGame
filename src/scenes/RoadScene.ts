@@ -5,6 +5,7 @@ import { Beat, generateBeatSchedule, isBeatMissed, isWithinHitWindow, scrollProg
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
 import { accumulateDistance } from '../core/distance';
 import { Biome, BIOMES, biomeBlendAt } from '../core/biome';
+import { duskShadeAt, nightnessAt } from '../core/dusk';
 import { accumulateCoins } from '../core/coins';
 
 const BPM = 96;
@@ -169,8 +170,8 @@ export class RoadScene extends Phaser.Scene {
     this.appendBeatBatch();
 
     this.stars = this.add.tileSprite(0, 0, this.scale.width, STAR_FIELD_HEIGHT, this.starFieldTexture());
-    this.moonGlow = this.add.circle(0, MOON_Y, MOON_RADIUS + 14, 0xe8d9c0, 0.12);
-    this.moon = this.add.circle(0, MOON_Y, MOON_RADIUS, 0xe8d9c0, 0.85);
+    this.moonGlow = this.add.circle(0, MOON_Y, MOON_RADIUS + 14, 0xe8d9c0, 1);
+    this.moon = this.add.circle(0, MOON_Y, MOON_RADIUS, 0xe8d9c0, 1);
 
     this.sceneryFromIndex = 0;
     this.sceneryToIndex = 0;
@@ -731,9 +732,22 @@ export class RoadScene extends Phaser.Scene {
 
     this.distancePx = accumulateDistance(this.distancePx, this.walking, delta, ROAD_SCROLL_PX_PER_SEC);
     const blend = biomeBlendAt(this.distancePx);
-    this.cameras.main.setBackgroundColor(
-      RoadScene.lerpColor(BIOMES[blend.fromIndex].skyColor, BIOMES[blend.toIndex].skyColor, blend.ratio)
+    // The dusk cycle darkens the world — sky, scenery, road — but never
+    // the bard or the notation: warmth belongs to the bard and the music
+    // (DESIGN.md art direction), so the character carries their own light
+    // through the deepest part of the night (ROADMAP task 36).
+    const shade = duskShadeAt(this.distancePx);
+    const skyColor = RoadScene.lerpColor(
+      BIOMES[blend.fromIndex].skyColor,
+      BIOMES[blend.toIndex].skyColor,
+      blend.ratio
     );
+    this.cameras.main.setBackgroundColor(RoadScene.lerpColor(skyColor, 0x000000, 1 - shade));
+    const worldTint = RoadScene.lerpColor(0xffffff, 0x000000, 1 - shade);
+    this.scenery.setTint(worldTint);
+    this.sceneryNext.setTint(worldTint);
+    this.road.setTint(worldTint);
+    this.roadNext.setTint(worldTint);
 
     this.updateSky(delta);
     this.updateScenery(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
@@ -819,13 +833,22 @@ export class RoadScene extends Phaser.Scene {
     }
   }
 
-  /** Stars drift at STAR_PARALLAX of road speed while walking; the moon holds still (ROADMAP task 34). */
+  /**
+   * Stars drift at STAR_PARALLAX of road speed while walking; the moon
+   * holds still (ROADMAP task 34). As the dusk cycle deepens toward
+   * night, the stars and moon brighten while the world darkens — the sky
+   * inverts the ground's shade (ROADMAP task 36).
+   */
   private updateSky(delta: number): void {
+    const nightness = nightnessAt(this.distancePx);
     this.stars.setPosition(this.scale.width / 2, STAR_FIELD_HEIGHT / 2);
     this.stars.setSize(this.scale.width, STAR_FIELD_HEIGHT);
+    this.stars.setAlpha(0.75 + 0.25 * nightness);
     const moonX = this.scale.width * MOON_X_FRACTION;
     this.moon.setPosition(moonX, MOON_Y);
+    this.moon.setAlpha(0.8 + 0.2 * nightness);
     this.moonGlow.setPosition(moonX, MOON_Y);
+    this.moonGlow.setAlpha(0.1 + 0.14 * nightness);
     if (this.walking) {
       this.stars.tilePositionX += (ROAD_SCROLL_PX_PER_SEC * STAR_PARALLAX * delta) / 1000;
     }

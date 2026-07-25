@@ -320,14 +320,16 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     5 new tests (64 total); screenshot-verified past the wrap (village
     again at ~29 steps, second-cycle forest at ~38 steps in a shortened
     throwaway build).
-36. **Slow dusk cycle.** DESIGN.md's Tone section has always promised a
-    palette "that shifts with time-of-day-per-biome" — never built. Add a
-    very slow global brightness/tint drift on top of the biome palettes
-    (dusk → deep night → pre-dawn → dusk across a few full biome loops),
-    readout-only, no new mechanic. Subtle: the sky lerp already exists,
-    this multiplies it by a slowly cycling shade. Verify with the
-    shortened-transitions throwaway-build screenshot trick (see STATE.md
-    process notes).
+36. ~~**Slow dusk cycle.**~~ Done (2026-07-25, overnight session):
+    `src/core/dusk.ts` — a cosine dusk → deep-night → dusk brightness
+    curve, one full cycle every three 16000px biome loops (~13 min of
+    walking), dipping at most 22%. The sky, scenery, and road darken
+    together while the stars and moon *brighten* (the sky inverts the
+    ground's shade); the bard and the notation are deliberately never
+    darkened — warmth belongs to the bard and the music, so the character
+    carries their own light through the deepest night. Pure function + 7
+    tests (71 total); deep-night state screenshot-verified via a
+    shortened-cycle throwaway build.
 37. **Consolidation pass.** Run counter will be near ~40 by the time this
     lands (last consolidation was Run 20; the overnight session shipped
     six PRs). Reread DESIGN.md's core mechanic, play the build steps
