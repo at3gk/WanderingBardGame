@@ -290,9 +290,56 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     music) so future runs extend the style instead of re-inventing it.
     Screenshot-verified including a live hit pulse.
 
+33. ~~**The player's own note.**~~ Done (2026-07-25, overnight session):
+    tapping was completely silent — in a music game, the player never
+    made a sound. A hit now immediately plays that beat's melody note one
+    octave above the base loop and slightly louder (`AudioEngine.pluck`),
+    so a good run *sounds* like the player carrying the tune's top voice.
+    Misses stay silent per DESIGN.md (a missed beat lets a note drop out;
+    it never adds a buzzer). Routes through the master gain so mute
+    covers it. 3 new tests (59 total).
+34. ~~**Night sky.**~~ Done (2026-07-25, overnight session): the upper
+    third of the screen was empty flat color. Added a sparse cream
+    starfield (fixed positions — every load identical) drifting at 0.08x
+    road speed, and a still moon with a soft glow. Three scroll speeds
+    (road 1x, scenery 0.45x, stars 0.08x) give the world real depth.
+    Screenshot-verified.
+
+## The next arc: "the road loops home" (queued for future runs)
+
+35. **The road loops home.** After Riverside Camp the scenery currently
+    stays riverside forever — the Concept's "endless road" is only true
+    of the beat schedule. Make biome transitions cyclic (village → forest
+    → riverside → village → …): generalize `biomeBlendAt` to wrap
+    (cycle-aware transition list + distance modulo), with the same pure
+    tests the current version has. Audio already follows whatever biome
+    is current, so the melody loops home with the scenery. One caution:
+    keep the transition *distances* per loop identical so the walk's
+    rhythm of change stays steady.
+36. **Slow dusk cycle.** DESIGN.md's Tone section has always promised a
+    palette "that shifts with time-of-day-per-biome" — never built. Add a
+    very slow global brightness/tint drift on top of the biome palettes
+    (dusk → deep night → pre-dawn → dusk across a few full biome loops),
+    readout-only, no new mechanic. Subtle: the sky lerp already exists,
+    this multiplies it by a slowly cycling shade. Verify with the
+    shortened-transitions throwaway-build screenshot trick (see STATE.md
+    process notes).
+37. **Consolidation pass.** Run counter will be near ~40 by the time this
+    lands (last consolidation was Run 20; the overnight session shipped
+    six PRs). Reread DESIGN.md's core mechanic, play the build steps
+    mentally, prune rough edges, verify bundle size and mobile pillars
+    still hold. Cut anything that has crept toward "system" instead of
+    "readout."
+38. **Round-2 playtest fold-in.** When the human answers PLAYTEST.md
+    round 2, fold verdicts into constants the same way round 1 was folded
+    in (see ROADMAP task 14's done entry for the protocol). Blocked on
+    human — skip past it to the next actionable task until answers exist.
+
 ## Needs human playtest
 
 - Round 2 (see PLAYTEST.md): re-judge the four retuned areas — tighter
   90ms hit window, faster meter refill, recomposed melodies, beat-synced
-  walk/scroll, stronger biome palettes — plus the still-unanswered
-  round-1 verification items (mobile fixes, batch boundary, audio phase).
+  walk/scroll, stronger biome palettes — plus the overnight additions
+  (bard sprite/animation, scenery bands, notation UI, the player's-note
+  pluck, night sky) and the still-unanswered round-1 verification items
+  (mobile fixes, batch boundary, audio phase).

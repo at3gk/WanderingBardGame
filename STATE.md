@@ -287,6 +287,15 @@ of headless-vs-real-device caveat as Run 23's audio-resume fix.
   "Art direction" section codifying the language (world cool and quiet;
   warmth belongs to the bard and the music). Screenshot-verified with a
   live tap run (hit pulse captured). `npm test` 56 green, build green.
+- Overnight session, tasks 33+34 (2026-07-25): the player's own note +
+  night sky. `AudioEngine.pluck(biomeId, beatIndex)` — a hit immediately
+  plays that beat's melody note +1 octave at 1.6x base gain (tapping was
+  previously silent in a music game); misses stay silent per DESIGN.md
+  tone; mute covers it via master gain; 3 new tests. Night sky: sparse
+  fixed-position cream starfield at 0.08x parallax + still moon with soft
+  glow — road 1x / scenery 0.45x / stars 0.08x gives the scene depth.
+  New ROADMAP arc queued for future runs ("the road loops home", tasks
+  35–38). `npm test` 59 green, build green, screenshot-verified.
 
 ## Needs human playtest
 Round-1 feedback (2026-07-25) answered the original feel questions for
