@@ -1,18 +1,21 @@
 import Phaser from 'phaser';
 import { AudioEngine } from '../audio/AudioEngine';
 import { AUDIO_MANIFEST } from '../audio/manifest';
-import { Beat, generateBeatSchedule, isBeatMissed, isWithinHitWindow, scrollProgress } from '../core/beats';
+import { isBeatMissed, isWithinHitWindow, scrollProgress } from '../core/beats';
+import { expandSong, Song, SongBeat, songDurationMs } from '../core/song';
+import { songForBiome } from '../core/songs';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
 import { accumulateDistance } from '../core/distance';
 import { Biome, BIOMES, biomeBlendAt } from '../core/biome';
 import { duskShadeAt, nightnessAt } from '../core/dusk';
 import { accumulateCoins } from '../core/coins';
 import { needsLedger, noteNameAt, staffStepAt, stemDown } from '../core/notation';
-import { resolvePattern } from '../audio/baseLoop';
 
 const BPM = 96;
 const MS_PER_BEAT = 60000 / BPM;
-const BEAT_BATCH_SIZE = 32;
+// How far ahead of the music the next song pass is queued. Comfortably
+// more than one frame and less than the shortest song, so there is always
+// runway without the schedule running far ahead of the walk.
 const BEAT_LOOKAHEAD_MS = 15000;
 const TRAVEL_TIME_MS = 1800;
 // Human playtest (2026-07-25): 120ms read as "too loose" — clearly-off taps
@@ -32,16 +35,28 @@ const NOTE_TINT_MISS = 0x8a5a5a;
 // middle line (B4, step 6) sits on laneY; steps come from
 // core/notation.ts. Notation is never darkened by the dusk cycle and never
 // wrong — kids learn from this screen.
-const STAFF_LINE_GAP = 14;
+// Roomy for young eyes: the staff gap sets the size of everything on it
+// (heads are one gap tall, as in real engraving), so this is the single
+// dial for notation legibility. 18px keeps the whole staff inside a phone
+// viewport while making letters comfortably readable.
+const STAFF_LINE_GAP = 18;
 const STAFF_HALF_GAP = STAFF_LINE_GAP / 2;
 const STAFF_MIDDLE_STEP = 6;
 const STAFF_LINE_STEPS = [2, 4, 6, 8, 10];
 const STAFF_LINE_ALPHA = 0.22;
-const NOTE_LETTER_STYLE = { fontFamily: 'sans-serif', fontSize: '13px', fontStyle: 'bold', color: '#241a20' };
-const NOTE_TEX_W = 30;
-const NOTE_TEX_H = 46;
-const NOTE_STEM_LEN = 26;
-const HIT_LINE_HEIGHT = 96;
+const NOTE_LETTER_STYLE = { fontFamily: 'sans-serif', fontSize: '15px', fontStyle: 'bold', color: '#241a20' };
+// A hollow (half/whole) head shows the sky through it, so its letter is
+// drawn light instead of dark — readable either way, under any tint.
+const NOTE_LETTER_STYLE_HOLLOW = { fontFamily: 'sans-serif', fontSize: '13px', fontStyle: 'bold', color: '#ffffff' };
+const NOTE_TEX_W = 42;
+const NOTE_TEX_H = 60;
+const NOTE_HEAD_X = 19;
+const NOTE_HEAD_INSET_Y = 18;
+const NOTE_STEM_LEN = 32;
+const NOTE_ORIGIN_X = NOTE_HEAD_X / NOTE_TEX_W;
+const SONG_TITLE_Y = 52;
+const SONG_TITLE_HOLD_MS = 2600;
+const HIT_LINE_HEIGHT = 120;
 const EXIT_PROGRESS = 1.35;
 const METER_HEIGHT = 14;
 const METER_MARGIN_TOP = 24;
@@ -57,10 +72,10 @@ const METER_STAFF_LINE_COUNT = 5;
 const METER_STAFF_LINE_COLOR = 0xa8842f;
 const METER_STAFF_LINE_ALPHA = 0.55;
 const METER_STAFF_LINE_THICKNESS = 1;
-// 110 → 150 with the staff lane (task 42): middle C plus its letter sits
-// ~50px below laneY, and the bard's cap used to reach laneY+17 — low notes
-// would have scrolled through the bard's hat.
-const BARD_GROUND_Y_OFFSET = 150;
+// Grew with the staff (tasks 42, 46): the bard walks below the notation, so
+// this offset has to clear the lowest note the songbook can write plus its
+// ledger line — middle C's head bottom now sits ~63px under the lane.
+const BARD_GROUND_Y_OFFSET = 178;
 // Warm colors throughout so the bard reads against all three biome skies
 // (plum/green/blue — see biome.ts); buckle/feather/strings reuse the UI
 // accent colors (coin gold, cream) so the whole screen shares one palette.
@@ -140,12 +155,12 @@ const BARD_STRUM_KICK_DEG = 14;
 const BARD_STRUM_MS = 140;
 
 interface BeatMarker {
-  beat: Beat;
+  beat: SongBeat;
   gfx: Phaser.GameObjects.Image | null;
   resolved: 'hit' | 'miss' | null;
   /** Diatonic staff step (core/notation.ts) — fixes the marker's y on the staff. */
   step: number;
-  /** Texture key for this marker's engraved quarter note (letter + stem + ledger baked). */
+  /** Texture key for this marker's engraved note (head, letter, stem, ledger baked). */
   texKey: string;
 }
 
@@ -173,8 +188,11 @@ export class RoadScene extends Phaser.Scene {
   private moon!: Phaser.GameObjects.Arc;
   private moonGlow!: Phaser.GameObjects.Arc;
   private distancePx = 0;
-  private totalBeatsGenerated = 0;
-  private nextBatchStartTimeMs = 0;
+  private totalNotesGenerated = 0;
+  private nextPassStartTimeMs = 0;
+  private currentSongId: string | null = null;
+  private songTitleText!: Phaser.GameObjects.Text;
+  private pendingAnnounce: Array<{ atMs: number; title: string }> = [];
   private coins = 0;
   private coinIcon!: Phaser.GameObjects.Image;
   private coinText!: Phaser.GameObjects.Text;
@@ -209,9 +227,9 @@ export class RoadScene extends Phaser.Scene {
     this.meter = this.meterConfig.max;
     this.distancePx = 0;
     this.markers = [];
-    this.totalBeatsGenerated = 0;
-    this.nextBatchStartTimeMs = 0;
-    this.appendBeatBatch();
+    this.totalNotesGenerated = 0;
+    this.nextPassStartTimeMs = 0;
+    this.currentSongId = null;
 
     this.stars = this.add.tileSprite(0, 0, this.scale.width, STAR_FIELD_HEIGHT, this.starFieldTexture());
     this.moonGlow = this.add.circle(0, MOON_Y, MOON_RADIUS + 14, 0xe8d9c0, 1);
@@ -234,6 +252,9 @@ export class RoadScene extends Phaser.Scene {
     );
     this.clef = this.add.image(0, 0, 'treble-clef');
     this.clef.setOrigin(0.5, 12 / 104);
+    // The clef texture is drawn against a 7px half-gap staff; scale it to
+    // whatever the staff actually uses so its spiral keeps sitting on G.
+    this.clef.setScale(STAFF_HALF_GAP / 7);
     this.clef.setTint(NOTE_TINT_UPCOMING);
     this.clef.setAlpha(0.5);
 
@@ -250,6 +271,17 @@ export class RoadScene extends Phaser.Scene {
     });
     this.hintText.setOrigin(0.5, 0.5);
     this.hintText.setAlpha(0.85);
+
+    this.pendingAnnounce = [];
+    this.songTitleText = this.add.text(0, SONG_TITLE_Y, '', {
+      fontFamily: 'sans-serif',
+      fontSize: '15px',
+      fontStyle: 'italic',
+      color: '#e8d9c0',
+    });
+    this.songTitleText.setOrigin(0.5, 0.5);
+    this.songTitleText.setAlpha(0);
+    this.appendSongPass();
 
     this.meterTrack = this.add.rectangle(0, 0, 0, METER_HEIGHT, 0x2c2536, 0.9);
     this.meterFill = this.add.rectangle(0, 0, 0, METER_HEIGHT - 4, 0xe8d9c0, 1);
@@ -729,39 +761,77 @@ export class RoadScene extends Phaser.Scene {
   }
 
   /**
-   * Engraved quarter-note texture for one named staff position (ROADMAP
-   * task 42), baked once per distinct note: white head and stem (tintable
-   * — cream upcoming, green hit, mauve miss), the letter name dark inside
-   * the head so any tint leaves it readable, stem up below the middle
-   * line / down at or above it, and a ledger line where notation requires
-   * one (middle C being the classic). Baked via RenderTexture because
-   * Graphics can't draw text.
+   * Engraved note texture for one named staff position and written length
+   * (ROADMAP tasks 42, 46), baked once per distinct combination. Everything
+   * a beginner's book would show is here and correct: filled head for a
+   * quarter or shorter, hollow for a half, hollow-and-stemless for a whole,
+   * a flag on an eighth, an augmentation dot after a dotted value, a stem
+   * up below the middle line and down at or above it, and a ledger line
+   * where the pitch needs one (middle C being the classic).
+   *
+   * The letter name sits in the head — dark on a filled head, light inside
+   * a hollow one, so it stays readable either way and under any tint.
+   * Baked via RenderTexture because Graphics can't draw text.
    */
-  private quarterNoteTexture(name: string, step: number): string {
-    const key = `qnote-${name}${step}`;
+  private noteTexture(name: string, step: number, beats: number): string {
+    const key = `note-${name}-${step}-${beats}`;
     if (this.textures.exists(key)) return key;
 
     const down = stemDown(step);
-    const headY = down ? 12 : NOTE_TEX_H - 12;
+    const hollow = beats >= 2;
+    const stemless = beats >= 4;
+    const dotted = beats === 1.5 || beats === 3;
+    const flagged = beats < 1;
+    const headY = down ? NOTE_HEAD_INSET_Y : NOTE_TEX_H - NOTE_HEAD_INSET_Y;
+    const headX = NOTE_HEAD_X;
 
     const g = this.make.graphics({ x: 0, y: 0 }, false);
     g.fillStyle(0xffffff, 1);
     if (needsLedger(step)) {
-      g.fillRect(1, headY - 1.25, NOTE_TEX_W - 2, 2.5);
+      g.fillRect(2, headY - 1.5, 34, 3);
     }
-    g.fillEllipse(15, headY, 20, 14);
-    if (down) {
-      g.fillRect(5, headY, 3, NOTE_STEM_LEN);
+    if (hollow) {
+      // Thin ring on a slightly larger head, so the letter inside keeps a
+      // dark gap around it instead of merging into the ring.
+      g.lineStyle(3, 0xffffff, 1);
+      g.strokeEllipse(headX, headY, 28, 20);
     } else {
-      g.fillRect(22, headY - NOTE_STEM_LEN, 3, NOTE_STEM_LEN);
+      g.fillEllipse(headX, headY, 26, 18);
+    }
+    if (!stemless) {
+      const stemX = down ? headX - 13 : headX + 10;
+      const stemTop = down ? headY : headY - NOTE_STEM_LEN;
+      g.fillRect(stemX, stemTop, 3.5, NOTE_STEM_LEN);
+      if (flagged) {
+        // A single flag off the free end of the stem, curving back toward
+        // the head the way an engraved eighth note does.
+        const tipY = down ? headY + NOTE_STEM_LEN : headY - NOTE_STEM_LEN;
+        const dir = down ? -1 : 1;
+        g.fillPoints(
+          [
+            new Phaser.Geom.Point(stemX + 3.5, tipY),
+            new Phaser.Geom.Point(stemX + 13, tipY + 9 * dir),
+            new Phaser.Geom.Point(stemX + 12, tipY + 18 * dir),
+            new Phaser.Geom.Point(stemX + 3.5, tipY + 10 * dir),
+          ],
+          true
+        );
+      }
+    }
+    if (dotted) {
+      g.fillStyle(0xffffff, 1);
+      g.fillCircle(headX + 19, headY - 5, 3);
     }
 
-    const letter = this.make.text({ x: 0, y: 0, text: name, style: NOTE_LETTER_STYLE }, false);
+    const letter = this.make.text(
+      { x: 0, y: 0, text: name, style: hollow ? NOTE_LETTER_STYLE_HOLLOW : NOTE_LETTER_STYLE },
+      false
+    );
     letter.setOrigin(0.5, 0.5);
 
     const rt = this.make.renderTexture({ x: 0, y: 0, width: NOTE_TEX_W, height: NOTE_TEX_H }, false);
     rt.draw(g, 0, 0);
-    rt.draw(letter, 15, headY);
+    rt.draw(letter, headX, headY);
     rt.saveTexture(key);
     rt.destroy();
     letter.destroy();
@@ -769,9 +839,39 @@ export class RoadScene extends Phaser.Scene {
     return key;
   }
 
+  /**
+   * Names the tune as it begins (ROADMAP task 46). Passes are queued a
+   * lookahead ahead of time, so the title is held until playback actually
+   * reaches the song's first note — then it fades up and away. Knowing
+   * you're playing "Twinkle Twinkle Little Star" is most of why a real
+   * song teaches better than a pattern.
+   */
+  private announceSong(song: Song): void {
+    if (song.id === this.currentSongId) return;
+    this.currentSongId = song.id;
+    this.pendingAnnounce.push({ atMs: this.nextPassStartTimeMs - songDurationMs(song, BPM), title: song.title });
+  }
+
+  private updateSongTitle(nowMs: number): void {
+    this.songTitleText.setPosition(this.scale.width / 2, SONG_TITLE_Y);
+    while (this.pendingAnnounce.length > 0 && this.pendingAnnounce[0].atMs <= nowMs) {
+      const announcement = this.pendingAnnounce.shift()!;
+      this.songTitleText.setText(announcement.title);
+      this.songTitleText.setAlpha(0);
+      this.tweens.killTweensOf(this.songTitleText);
+      this.tweens.add({
+        targets: this.songTitleText,
+        alpha: { from: 0, to: 0.75 },
+        duration: 700,
+        yoyo: true,
+        hold: SONG_TITLE_HOLD_MS,
+      });
+    }
+  }
+
   /** Origin that puts the note *head* (not the texture center) on the staff position. */
   private noteOriginY(step: number): number {
-    return (stemDown(step) ? 12 : NOTE_TEX_H - 12) / NOTE_TEX_H;
+    return (stemDown(step) ? NOTE_HEAD_INSET_Y : NOTE_TEX_H - NOTE_HEAD_INSET_Y) / NOTE_TEX_H;
   }
 
   private hitLineX(): number {
@@ -797,50 +897,50 @@ export class RoadScene extends Phaser.Scene {
   }
 
   /**
-   * Appends the next batch of beats, continuing the schedule seamlessly
-   * from wherever the last batch left off (ROADMAP task 13 — the road is
-   * meant to be endless, so beats aren't all generated once up front).
-   * Extends the audio engine's own note schedule in lockstep so the
-   * backing loop never runs out of scheduled notes either — each new batch
-   * picks up the biome current at the time it's scheduled, so the melody
-   * shifts with the scenery a batch at a time rather than mid-batch
-   * (ROADMAP task 16). `BEAT_BATCH_SIZE` is deliberately small (20s worth
-   * of beats, well above `BEAT_LOOKAHEAD_MS`) rather than one big upfront
-   * batch, so a biome-transition pattern switch lands within ~20s of the
-   * visual crossfade instead of waiting for a multi-minute batch boundary
-   * (ROADMAP task 17; see STATE.md for the remaining quantization caveat).
+   * Queues the next pass of the current biome's song, seamlessly after the
+   * last one (ROADMAP task 46 — the road is endless, so the songbook keeps
+   * playing). One whole song is appended at a time, and the biome is read
+   * once per pass: a walk that crosses into the forest finishes the tune
+   * it's on and *then* starts the new one, which is how a musician would
+   * do it — never a cut mid-phrase.
+   *
+   * Markers and audio are built from the same `SongBeat`s, so the staff and
+   * the sound can't disagree (this replaced the old two-sided pattern
+   * plumbing and its batch-quantization caveat, ROADMAP tasks 16–17).
    */
-  private appendBeatBatch(): void {
-    const biomeId = this.currentBiomeId();
-    // Each marker learns its written note at batch time from the same
-    // per-biome pattern the audio schedules with (ROADMAP task 42) — same
-    // batch quantization on both sides, so what the staff shows is
-    // exactly what the backing loop plays.
-    const pattern = resolvePattern(AUDIO_MANIFEST.baseLoop, biomeId);
-    const newBeats = generateBeatSchedule(BPM, BEAT_BATCH_SIZE, this.nextBatchStartTimeMs, this.totalBeatsGenerated);
-    for (const beat of newBeats) {
-      const semitone = pattern[beat.index % pattern.length];
-      const name = noteNameAt(semitone);
-      const step = staffStepAt(semitone);
-      // Naturals are enforced by the manifest test; the fallback exists so
-      // a hypothetical accidental degrades to an unlabeled mid-staff note
+  private appendSongPass(): void {
+    const song = songForBiome(this.currentBiomeId());
+    const notes = expandSong(song, BPM, this.nextPassStartTimeMs, this.totalNotesGenerated);
+    for (const beat of notes) {
+      const name = noteNameAt(beat.semitone);
+      const step = staffStepAt(beat.semitone);
+      // Naturals are enforced by songs.test.ts; the fallback exists so a
+      // hypothetical accidental degrades to an unlabeled mid-staff note
       // rather than a crash.
       this.markers.push({
         beat,
         gfx: null,
         resolved: null,
         step: step ?? STAFF_MIDDLE_STEP,
-        texKey: name !== null && step !== null ? this.quarterNoteTexture(name, step) : 'note-glyph',
+        texKey: name !== null && step !== null ? this.noteTexture(name, step, beat.beats) : 'note-glyph',
       });
     }
-    this.totalBeatsGenerated += BEAT_BATCH_SIZE;
-    this.nextBatchStartTimeMs = newBeats[newBeats.length - 1].hitTimeMs;
-    this.audioEngine.extend(BEAT_BATCH_SIZE, biomeId);
+    this.totalNotesGenerated += notes.length;
+    this.nextPassStartTimeMs += songDurationMs(song, BPM);
+    this.announceSong(song);
+    this.audioEngine.schedule(notes);
   }
 
   private handleInput(): void {
     const nowMs = this.time.now - this.startTimeMs;
-    this.audioEngine.start(BPM, BEAT_BATCH_SIZE, this.currentBiomeId(), nowMs);
+    if (!this.audioEngine.isStarted) {
+      // The first gesture unlocks audio; hand it everything already queued
+      // so the performance picks up mid-song rather than restarting.
+      this.audioEngine.start(
+        this.markers.map((m) => m.beat),
+        nowMs
+      );
+    }
     this.dismissHint();
     const target = this.markers.find(
       (m) => m.resolved === null && isWithinHitWindow(m.beat, nowMs, HIT_WINDOW_MS)
@@ -848,7 +948,7 @@ export class RoadScene extends Phaser.Scene {
     if (target) {
       target.resolved = 'hit';
       this.meter = applyHit(this.meter, this.meterConfig);
-      this.audioEngine.pluck(this.currentBiomeId(), target.beat.index);
+      this.audioEngine.pluck(target.beat.semitone);
       this.strumLute();
       if (target.gfx) {
         // A struck note pulses once — lands big, settles back — so a hit
@@ -904,8 +1004,8 @@ export class RoadScene extends Phaser.Scene {
     const laneY = this.laneY();
     const hitLineX = this.hitLineX();
 
-    if (this.nextBatchStartTimeMs - nowMs < BEAT_LOOKAHEAD_MS) {
-      this.appendBeatBatch();
+    if (this.nextPassStartTimeMs - nowMs < BEAT_LOOKAHEAD_MS) {
+      this.appendSongPass();
     }
 
     this.distancePx = accumulateDistance(this.distancePx, this.walking, delta, ROAD_SCROLL_PX_PER_SEC);
@@ -972,7 +1072,7 @@ export class RoadScene extends Phaser.Scene {
         const tint =
           marker.resolved === 'hit' ? NOTE_TINT_HIT : marker.resolved === 'miss' ? NOTE_TINT_MISS : NOTE_TINT_UPCOMING;
         marker.gfx = this.add.image(0, 0, marker.texKey);
-        marker.gfx.setOrigin(0.5, this.noteOriginY(marker.step));
+        marker.gfx.setOrigin(NOTE_ORIGIN_X, this.noteOriginY(marker.step));
         marker.gfx.setTint(tint);
         if (marker.resolved === 'miss') marker.gfx.setAlpha(0.75);
       }
@@ -983,6 +1083,7 @@ export class RoadScene extends Phaser.Scene {
     const meterRatio = this.meter / this.meterConfig.max;
     this.coins = accumulateCoins(this.coins, meterRatio, delta, COIN_RATE_PER_SEC);
 
+    this.updateSongTitle(nowMs);
     this.updateMeterBar();
     this.updateCoinReadout();
     this.updateDistanceReadout();

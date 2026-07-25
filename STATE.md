@@ -3,8 +3,45 @@
 Run counter: 32
 
 ## Current status
-Second overnight interactive session (2026-07-25) — **v0.2 direction set
-by the human: teach kids to read music.** DESIGN.md gained a full
+Third overnight session (2026-07-26) — **v0.3: the songbook**, plus the
+project's first real self-verification harness. The human's standing
+instruction this session: don't queue questions for a playtest, test it
+yourself.
+
+- **Tasks 45–46 — real songs.** The melody is no longer generated. Three
+  public-domain tunes, one per biome (Mary Had a Little Lamb / Twinkle
+  Twinkle / Ode to Joy), carry real note values. Note values needed no
+  input change: a half note simply takes two beats to arrive, so its
+  length is felt in the waiting — which also answers the old task 44
+  (tap-and-hold) by making it unnecessary.
+  Architecturally this *deleted* machinery: markers and audio are built
+  from one list of `SongBeat`s, so the staff and the sound can't disagree;
+  `patternByBiome`/`resolvePattern`/`generateBaseLoopSchedule` and the
+  batch-quantization caveat are gone. `LoopLayer` now carries a
+  `semitoneOffset` (melody / octave-below drone / octave-above sparkle)
+  instead of its own pattern.
+- **Task 47 — `tools/`.** A headless harness that plays the game by
+  itself (real CDP input; synthetic PointerEvents do *not* reach Phaser)
+  and asserts on meter, walk, page errors, marker/texture leaks, and —
+  the good part — **every pitch it hears**, by instrumenting
+  `createOscillator` and checking each frequency is a natural note in
+  tune to within a cent. A `proofsheet.mjs` bakes every note-value ×
+  staff-position combination for engraving review. See `tools/README.md`.
+- **Notation grew up.** `STAFF_LINE_GAP` 14 → 18 (one dial: heads are one
+  gap tall, as in real engraving) after the proof sheet showed letters
+  were cramped; bard dropped to ground offset 178 to clear the lower
+  ledger territory; clef scales off the staff gap.
+- **What the harness caught on its first runs**: hollow-head letters
+  merging into the ring (fixed by a thinner ring on a larger head), and
+  the fact that synthetic pointer events silently do nothing (a trap
+  worth not rediscovering — it's in the tools README).
+
+Verified: `npm test` 106 green (35 new), `npm run build` green, autoplay
+harness PASS (meter 100 under perfect play, 267 notes scheduled, pitches
+heard = C D E G = exactly Mary's note set, no leaks, no page errors).
+
+## Previous status (second overnight session, 2026-07-25)
+**v0.2 direction set by the human: teach kids to read music.** DESIGN.md gained a full
 Pedagogy section (read it first — it is the contract for the v0.2 arc,
 ROADMAP tasks 41–44). Executed so far this session:
 
