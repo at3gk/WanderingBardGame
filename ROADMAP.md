@@ -307,15 +307,19 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 
 ## The next arc: "the road loops home" (queued for future runs)
 
-35. **The road loops home.** After Riverside Camp the scenery currently
-    stays riverside forever — the Concept's "endless road" is only true
-    of the beat schedule. Make biome transitions cyclic (village → forest
-    → riverside → village → …): generalize `biomeBlendAt` to wrap
-    (cycle-aware transition list + distance modulo), with the same pure
-    tests the current version has. Audio already follows whatever biome
-    is current, so the melody loops home with the scenery. One caution:
-    keep the transition *distances* per loop identical so the walk's
-    rhythm of change stays steady.
+35. ~~**The road loops home.**~~ Done (2026-07-25, overnight session):
+    `biomeBlendAt` now wraps — when the transition list is as long as the
+    biome list, the final transition leads back to biome 0 and the whole
+    schedule repeats every cycle (distance modulo the last transition's
+    end; shorter lists keep the old clamping behavior, still tested).
+    Added the third transition (riverside → village at 14000–16000px), so
+    the walk is village → forest → riverside → village → … forever, each
+    cycle's rhythm of change identical (village band 0–4000 of every
+    16000px cycle, a transition every 5000px). Audio patterns already
+    follow the current biome, so the melody loops home with the scenery.
+    5 new tests (64 total); screenshot-verified past the wrap (village
+    again at ~29 steps, second-cycle forest at ~38 steps in a shortened
+    throwaway build).
 36. **Slow dusk cycle.** DESIGN.md's Tone section has always promised a
     palette "that shifts with time-of-day-per-biome" — never built. Add a
     very slow global brightness/tint drift on top of the biome palettes

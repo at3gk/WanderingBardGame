@@ -60,14 +60,20 @@ export interface BiomeTransition {
 }
 
 /**
- * One entry per biome after the first: `BIOME_TRANSITIONS[i]` is the
- * transition from `BIOMES[i]` to `BIOMES[i + 1]`. Same start/length as the
- * original village→forest transition (task 9), repeated at a further
- * distance for forest→riverside so both crossfades read the same way.
+ * `BIOME_TRANSITIONS[i]` is the transition from `BIOMES[i % N]` to
+ * `BIOMES[(i + 1) % N]`. When the list is as long as the biome list, the
+ * final transition wraps back to biome 0 and the whole sequence repeats
+ * every cycle (ROADMAP task 35 — "the road loops home"): the walk is
+ * village → forest → riverside → village → … forever, making the
+ * Concept's endless road true of the scenery, not just the beat schedule.
+ * The cycle length is the last transition's end; distances are taken
+ * modulo that, so every loop's rhythm of change is identical (village
+ * band 0–4000 of each cycle, transitions every 5000px).
  */
 export const BIOME_TRANSITIONS: BiomeTransition[] = [
   { startPx: 4000, lengthPx: 2000 },
   { startPx: 9000, lengthPx: 2000 },
+  { startPx: 14000, lengthPx: 2000 },
 ];
 
 export interface BiomeBlend {
@@ -80,25 +86,48 @@ export interface BiomeBlend {
 /**
  * Which two biomes (by index into `biomes`) the scenery is currently
  * blending between at a given distance, and how far across that blend.
- * Before the first transition starts, or after the last one completes,
- * `fromIndex === toIndex` and `ratio` is 0 (steady state, no blend needed).
+ * In steady state (between transitions) `fromIndex === toIndex` and
+ * `ratio` is 0.
+ *
+ * Wrapping (ROADMAP task 35): when the transition list is at least as
+ * long as the biome list, the final transition leads back to biome 0 and
+ * the whole schedule repeats every cycle (distance modulo the last
+ * transition's end). A shorter list keeps the original clamping behavior
+ * — walk ends parked on the final biome — so the pure math stays usable
+ * for non-looping sequences.
  */
 export function biomeBlendAt(
   distancePx: number,
   transitions: BiomeTransition[] = BIOME_TRANSITIONS,
   biomeCount: number = BIOMES.length
 ): BiomeBlend {
-  for (let i = 0; i < transitions.length && i < biomeCount - 1; i++) {
-    const { startPx, lengthPx } = transitions[i];
-    if (distancePx < startPx) {
-      return { fromIndex: i, toIndex: i, ratio: 0 };
-    }
-    const end = startPx + lengthPx;
-    if (distancePx < end || lengthPx <= 0) {
-      const ratio = lengthPx <= 0 ? 1 : (distancePx - startPx) / lengthPx;
-      return { fromIndex: i, toIndex: i + 1, ratio: Math.min(1, Math.max(0, ratio)) };
+  const wraps = transitions.length > 0 && transitions.length >= biomeCount;
+  let d = distancePx;
+  if (wraps) {
+    const last = transitions[transitions.length - 1];
+    const cycleLengthPx = last.startPx + last.lengthPx;
+    if (cycleLengthPx > 0) {
+      d = ((distancePx % cycleLengthPx) + cycleLengthPx) % cycleLengthPx;
     }
   }
-  const last = Math.max(0, Math.min(transitions.length, biomeCount - 1));
+
+  const limit = wraps ? transitions.length : Math.min(transitions.length, biomeCount - 1);
+  for (let i = 0; i < limit; i++) {
+    const { startPx, lengthPx } = transitions[i];
+    if (d < startPx) {
+      const idx = i % biomeCount;
+      return { fromIndex: idx, toIndex: idx, ratio: 0 };
+    }
+    const end = startPx + lengthPx;
+    if (d < end || lengthPx <= 0) {
+      const ratio = lengthPx <= 0 ? 1 : (d - startPx) / lengthPx;
+      return {
+        fromIndex: i % biomeCount,
+        toIndex: (i + 1) % biomeCount,
+        ratio: Math.min(1, Math.max(0, ratio)),
+      };
+    }
+  }
+  const last = Math.max(0, Math.min(limit, biomeCount - 1)) % biomeCount;
   return { fromIndex: last, toIndex: last, ratio: 0 };
 }
