@@ -280,6 +280,13 @@ of headless-vs-real-device caveat as Run 23's audio-resume fix.
   three biomes screenshot-verified (throwaway build with shortened
   transitions; shipped constants untouched). `npm test` 56 green, build
   green.
+- Overnight session, task 32 (2026-07-25): art-style consolidation per
+  ROADMAP task 32. Beat markers → tintable eighth-note glyphs (cream /
+  green hit-pulse / dimmed mauve miss), coin icon → note-stamped coin,
+  mute toggle → note glyph, hit line → rounded caps; DESIGN.md gained an
+  "Art direction" section codifying the language (world cool and quiet;
+  warmth belongs to the bard and the music). Screenshot-verified with a
+  live tap run (hit pulse captured). `npm test` 56 green, build green.
 
 ## Needs human playtest
 Round-1 feedback (2026-07-25) answered the original feel questions for

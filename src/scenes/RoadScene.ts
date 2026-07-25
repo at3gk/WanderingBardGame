@@ -16,6 +16,13 @@ const TRAVEL_TIME_MS = 1800;
 // still counted as hits. Tightened to ±90ms.
 const HIT_WINDOW_MS = 90;
 const MARKER_RADIUS = 18;
+// One visual language for everything the player reads or touches
+// (ROADMAP task 32): beat markers are eighth notes, the coin is stamped
+// with a note, the mute toggle is a note. The glyph texture is drawn
+// white and tinted per use.
+const NOTE_TINT_UPCOMING = 0xe8d9c0;
+const NOTE_TINT_HIT = 0x7fd6a0;
+const NOTE_TINT_MISS = 0x8a5a5a;
 const HIT_LINE_HEIGHT = 56;
 const EXIT_PROGRESS = 1.35;
 const METER_HEIGHT = 14;
@@ -87,14 +94,14 @@ const HINT_FADE_MS = 400;
 
 interface BeatMarker {
   beat: Beat;
-  gfx: Phaser.GameObjects.Arc | null;
+  gfx: Phaser.GameObjects.Image | null;
   resolved: 'hit' | 'miss' | null;
 }
 
 export class RoadScene extends Phaser.Scene {
   private startTimeMs = 0;
   private markers: BeatMarker[] = [];
-  private hitLine!: Phaser.GameObjects.Rectangle;
+  private hitLine!: Phaser.GameObjects.Image;
   private flash!: Phaser.GameObjects.Rectangle;
   private meterConfig: SongMeterConfig = DEFAULT_SONG_METER_CONFIG;
   private meter = DEFAULT_SONG_METER_CONFIG.max;
@@ -112,12 +119,12 @@ export class RoadScene extends Phaser.Scene {
   private totalBeatsGenerated = 0;
   private nextBatchStartTimeMs = 0;
   private coins = 0;
-  private coinIcon!: Phaser.GameObjects.Arc;
+  private coinIcon!: Phaser.GameObjects.Image;
   private coinText!: Phaser.GameObjects.Text;
   private distanceText!: Phaser.GameObjects.Text;
   private hintText!: Phaser.GameObjects.Text;
   private hintShown = true;
-  private muteIcon!: Phaser.GameObjects.Arc;
+  private muteIcon!: Phaser.GameObjects.Image;
   private muteSlash!: Phaser.GameObjects.Rectangle;
   private muteZone!: Phaser.GameObjects.Zone;
   private bard!: Phaser.GameObjects.Container;
@@ -139,6 +146,7 @@ export class RoadScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.createStyleTextures();
     this.cameras.main.setBackgroundColor(BIOMES[0].skyColor);
     this.startTimeMs = this.time.now;
     this.meter = this.meterConfig.max;
@@ -160,7 +168,9 @@ export class RoadScene extends Phaser.Scene {
     this.roadNext = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, this.roadTileTexture(BIOMES[0]));
     this.roadNext.setAlpha(0);
 
-    this.hitLine = this.add.rectangle(0, 0, 4, 0, 0xe8d9c0, 0.8);
+    this.hitLine = this.add.image(0, 0, 'hit-line');
+    this.hitLine.setTint(NOTE_TINT_UPCOMING);
+    this.hitLine.setAlpha(0.8);
     this.flash = this.add.rectangle(0, 0, 4, 0, 0xffffff, 0);
 
     this.hintShown = true;
@@ -176,7 +186,7 @@ export class RoadScene extends Phaser.Scene {
     this.meterFill = this.add.rectangle(0, 0, 0, METER_HEIGHT - 4, 0xe8d9c0, 1);
 
     this.coins = 0;
-    this.coinIcon = this.add.circle(0, 0, COIN_ICON_RADIUS, COIN_ICON_COLOR);
+    this.coinIcon = this.add.image(0, 0, 'coin-icon');
     this.coinText = this.add.text(0, 0, '0', {
       fontFamily: 'sans-serif',
       fontSize: '16px',
@@ -191,8 +201,10 @@ export class RoadScene extends Phaser.Scene {
     });
     this.distanceText.setOrigin(0, 1);
 
-    this.muteIcon = this.add.circle(0, 0, MUTE_ICON_RADIUS, MUTE_ICON_COLOR_ON);
-    this.muteSlash = this.add.rectangle(0, 0, 3, MUTE_ICON_RADIUS * 2, MUTE_SLASH_COLOR);
+    this.muteIcon = this.add.image(0, 0, 'note-glyph');
+    this.muteIcon.setScale((MUTE_ICON_RADIUS * 2) / 34);
+    this.muteIcon.setTint(MUTE_ICON_COLOR_ON);
+    this.muteSlash = this.add.rectangle(0, 0, 3, MUTE_ICON_RADIUS * 2 + 6, MUTE_SLASH_COLOR);
     this.muteSlash.setAngle(45);
     this.muteSlash.setVisible(false);
     const muteIconX = MUTE_ICON_MARGIN_LEFT + MUTE_ICON_RADIUS;
@@ -247,6 +259,43 @@ export class RoadScene extends Phaser.Scene {
       g.destroy();
     }
     return key;
+  }
+
+  /**
+   * Shared UI textures for the "musical notation" visual language
+   * (ROADMAP task 32): a white, tintable eighth-note glyph (beat markers,
+   * mute toggle), a note-stamped coin, and a soft rounded hit line. Drawn
+   * once per texture manager lifetime, Graphics only.
+   */
+  private createStyleTextures(): void {
+    if (!this.textures.exists('note-glyph')) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      g.fillStyle(0xffffff, 1);
+      g.fillEllipse(9, 28, 16, 11);
+      g.fillRect(15, 4, 3, 25);
+      g.fillTriangle(18, 4, 27, 10, 18, 16);
+      g.generateTexture('note-glyph', 28, 34);
+      g.destroy();
+    }
+    if (!this.textures.exists('coin-icon')) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      g.fillStyle(0xb5923c, 1);
+      g.fillCircle(10, 10, 9);
+      g.fillStyle(COIN_ICON_COLOR, 1);
+      g.fillCircle(10, 10, 7.5);
+      g.fillStyle(0xa8842f, 1);
+      g.fillEllipse(8, 13, 6, 4.5);
+      g.fillRect(10, 5, 1.5, 8.5);
+      g.generateTexture('coin-icon', 20, 20);
+      g.destroy();
+    }
+    if (!this.textures.exists('hit-line')) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      g.fillStyle(0xffffff, 1);
+      g.fillRoundedRect(0, 0, 6, HIT_LINE_HEIGHT, 3);
+      g.generateTexture('hit-line', 6, HIT_LINE_HEIGHT);
+      g.destroy();
+    }
   }
 
   /**
@@ -567,10 +616,20 @@ export class RoadScene extends Phaser.Scene {
     );
     if (target) {
       target.resolved = 'hit';
-      target.gfx?.setFillStyle(0x7fd6a0, 1);
       this.meter = applyHit(this.meter, this.meterConfig);
+      if (target.gfx) {
+        // A struck note pulses once — lands big, settles back — so a hit
+        // feels like plucking the note out of the air (ROADMAP task 32).
+        target.gfx.setTint(NOTE_TINT_HIT);
+        this.tweens.add({
+          targets: target.gfx,
+          scale: { from: 1.35, to: 1 },
+          duration: 160,
+          ease: 'Sine.easeOut',
+        });
+      }
     }
-    this.flashHitLine(target ? 0x7fd6a0 : 0x555555);
+    this.flashHitLine(target ? NOTE_TINT_HIT : 0x555555);
   }
 
   /**
@@ -593,7 +652,7 @@ export class RoadScene extends Phaser.Scene {
   /** Toggles the audio mute state (ROADMAP task 20). Doesn't touch the beat/meter game state at all — muting is purely an audio-output concern, tapping it never counts as a beat hit/miss. */
   private toggleMute(): void {
     this.audioEngine.setMuted(!this.audioEngine.isMuted);
-    this.muteIcon.setFillStyle(this.audioEngine.isMuted ? MUTE_ICON_COLOR_MUTED : MUTE_ICON_COLOR_ON);
+    this.muteIcon.setTint(this.audioEngine.isMuted ? MUTE_ICON_COLOR_MUTED : MUTE_ICON_COLOR_ON);
     this.muteSlash.setVisible(this.audioEngine.isMuted);
   }
 
@@ -625,7 +684,6 @@ export class RoadScene extends Phaser.Scene {
     this.updateScenery(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
     this.updateRoad(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
     this.hitLine.setPosition(hitLineX, laneY);
-    this.hitLine.setSize(4, HIT_LINE_HEIGHT);
     this.flash.setPosition(hitLineX, laneY);
     this.flash.setSize(4, HIT_LINE_HEIGHT);
     if (this.hintShown) {
@@ -647,13 +705,17 @@ export class RoadScene extends Phaser.Scene {
 
       if (marker.resolved === null && isBeatMissed(marker.beat, nowMs, HIT_WINDOW_MS)) {
         marker.resolved = 'miss';
-        marker.gfx?.setFillStyle(0x8a5a5a, 0.7);
+        marker.gfx?.setTint(NOTE_TINT_MISS);
+        marker.gfx?.setAlpha(0.75);
         this.meter = applyMiss(this.meter, this.meterConfig);
       }
 
       if (!marker.gfx) {
-        const color = marker.resolved === 'hit' ? 0x7fd6a0 : marker.resolved === 'miss' ? 0x8a5a5a : 0xe8d9c0;
-        marker.gfx = this.add.circle(0, laneY, MARKER_RADIUS, color);
+        const tint =
+          marker.resolved === 'hit' ? NOTE_TINT_HIT : marker.resolved === 'miss' ? NOTE_TINT_MISS : NOTE_TINT_UPCOMING;
+        marker.gfx = this.add.image(0, laneY, 'note-glyph');
+        marker.gfx.setTint(tint);
+        if (marker.resolved === 'miss') marker.gfx.setAlpha(0.75);
       }
       marker.gfx.setPosition(this.markerX(progress), laneY);
       return true;
