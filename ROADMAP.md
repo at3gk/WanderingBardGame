@@ -445,8 +445,13 @@ warm-vs-cool palette).
 - **Coin chime cap**: coins currently tick silently; a very quiet chime
   every 25th coin could be pleasant — or annoying. Prototype behind a
   screenshot/listen check before committing.
-- **Stylized treble clef** at the hit line — only if it can be drawn
-  without looking wrong; the notation is not allowed to be incorrect.
+- ~~**Stylized treble clef**~~ — shipped (2026-07-25, second overnight
+  session) at the staff's left edge, where real sheet music puts it: a
+  stroked-arc stylization (top curl, stem, spiral wrapping the G line,
+  bottom hook), faint cream at 0.5 alpha so passing notes stay
+  dominant. Screenshot check agreed it reads as a treble clef; the
+  spiral sits correctly on the G line, so it is stylized but not
+  *wrong*.
 - **Solfège (do-re-mi) letter option** — locale question, letters ship
   first.
 
