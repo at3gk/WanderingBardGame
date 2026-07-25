@@ -160,6 +160,7 @@ export class RoadScene extends Phaser.Scene {
   private meterFill!: Phaser.GameObjects.Rectangle;
   private meterStaffLines: Phaser.GameObjects.Rectangle[] = [];
   private staffLines: Phaser.GameObjects.Rectangle[] = [];
+  private clef!: Phaser.GameObjects.Image;
   private road!: Phaser.GameObjects.TileSprite;
   private roadNext!: Phaser.GameObjects.TileSprite;
   private roadFromIndex = 0;
@@ -231,6 +232,10 @@ export class RoadScene extends Phaser.Scene {
     this.staffLines = STAFF_LINE_STEPS.map(() =>
       this.add.rectangle(0, 0, this.scale.width, 1.5, 0xe8d9c0, STAFF_LINE_ALPHA)
     );
+    this.clef = this.add.image(0, 0, 'treble-clef');
+    this.clef.setOrigin(0.5, 12 / 104);
+    this.clef.setTint(NOTE_TINT_UPCOMING);
+    this.clef.setAlpha(0.5);
 
     this.hitLine = this.add.image(0, 0, 'hit-line');
     this.hitLine.setTint(NOTE_TINT_UPCOMING);
@@ -398,6 +403,31 @@ export class RoadScene extends Phaser.Scene {
       g.fillStyle(0xffffff, 1);
       g.fillRoundedRect(0, 0, 6, HIT_LINE_HEIGHT, 3);
       g.generateTexture('hit-line', 6, HIT_LINE_HEIGHT);
+      g.destroy();
+    }
+    if (!this.textures.exists('treble-clef')) {
+      // Stylized treble clef (idea backlog → shipped only because the
+      // screenshot check agreed it reads as one): a straight stem, a top
+      // curl, a two-arc spiral wrapping the G line, and a bottom hook.
+      // Texture rows map to staff steps: top staff line (F5, step 10) at
+      // y=12, 7px per step, so the spiral's center lands on the G line
+      // (step 4, y=54) when the image's y=12 row is pinned to F5.
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      g.lineStyle(3, 0xffffff, 1);
+      g.beginPath();
+      g.arc(26, 13, 8, Math.PI, Math.PI * 2);
+      g.strokePath();
+      g.lineBetween(20, 6, 20, 90);
+      g.beginPath();
+      g.arc(20, 54, 11, -Math.PI / 2, Math.PI);
+      g.strokePath();
+      g.beginPath();
+      g.arc(18, 54, 5.5, Math.PI, Math.PI * 2.6);
+      g.strokePath();
+      g.beginPath();
+      g.arc(14, 91, 6, 0, Math.PI * 0.9);
+      g.strokePath();
+      g.generateTexture('treble-clef', 44, 104);
       g.destroy();
     }
   }
@@ -904,6 +934,7 @@ export class RoadScene extends Phaser.Scene {
       this.staffLines[i].setPosition(this.scale.width / 2, this.staffY(STAFF_LINE_STEPS[i], laneY));
       this.staffLines[i].setSize(this.scale.width, 1.5);
     }
+    this.clef.setPosition(30, this.staffY(10, laneY));
     // Silent metronome (ROADMAP task 43): the hit line brightens on every
     // beat and fades until the next, so a pre-reader can feel where taps
     // belong without reading the hint. Derived from the same clock as the

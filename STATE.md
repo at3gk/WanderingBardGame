@@ -26,6 +26,10 @@ ROADMAP tasks 41–44). Executed so far this session:
   switches ~15s past the visual crossfade — with throwaway shrunken
   biome cycles you must also shrink `BEAT_BATCH_SIZE` and wait out the
   lookahead to see a non-village pattern on screen.
+- **Bonus (backlog) — treble clef**: shipped. Stroked-arc stylization at
+  the staff's left edge, spiral correctly on the G line, 0.5 alpha so
+  notes stay dominant. The backlog gated it on "doesn't look wrong";
+  the screenshot check passed it.
 - **Task 43 — first-reader polish**: done. Mobile legibility confirmed
   by iPhone-viewport screenshot (DPR scale-up makes letters large; no
   change needed). Added the silent metronome (hit line brightens each
