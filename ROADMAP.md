@@ -459,7 +459,6 @@ teaching is entirely presentation.
     repeats, with no new mechanic — just data plus a per-biome pass
     counter. Hint text also updated now that the lane is a staff: "tap
     when a note reaches the line".
-<<<<<<< HEAD
 49. ~~**Consolidation pass.**~~ Done (2026-07-26): drift check clean — the
     songbook is still a readout of the one mechanic (tap a note as it
     reaches the line), no new systems, no new runtime dependencies.
@@ -476,6 +475,7 @@ teaching is entirely presentation.
     read. Rotation (task 48) bought the same variety without that cost.
     If a fourth is ever wanted, it should come with a reason of its own,
     not as "more scenery".
+<<<<<<< HEAD
 50. ~~**Rests.**~~ Done (2026-07-26): a written silence is now a symbol
     rather than an empty gap. `SongNote` gained `rest`; a rest occupies
     its time, scrolls down the staff like anything else, sounds nothing
