@@ -15,7 +15,17 @@ ROADMAP tasks 41–44). Executed so far this session:
   riverside C D G A D5 — the biome curriculum), sparkle moved from +24
   to +19 (octave+fifth, keeps naturals natural), plus manifest tests
   enforcing no-accidentals and the middle-C root. 83 tests green.
-- **Task 42 — staff lane**: in progress (see ROADMAP).
+- **Task 42 — staff lane**: done. The lane is a real treble staff; markers
+  are engraved quarter notes (RenderTexture-baked per pitch: dark letter
+  in a tintable white head, correct stems, middle-C ledger), positioned
+  by `core/notation.ts` steps from the same batch-time biome pattern the
+  audio uses. Bard dropped to ground offset 150 so low notes clear the
+  cap; hit line spans the staff. Screenshot-verified across low/high
+  ranges (stem-up C-D-E with ledger; stem-down C5-D5-E5). Note for
+  future far-state checks: the 15s `BEAT_LOOKAHEAD_MS` delays pattern
+  switches ~15s past the visual crossfade — with throwaway shrunken
+  biome cycles you must also shrink `BEAT_BATCH_SIZE` and wait out the
+  lookahead to see a non-village pattern on screen.
 
 ## Previous status (Run 32, scheduled)
 Run 32 (scheduled, 2026-07-25): **meter as staff** (ROADMAP task 40,

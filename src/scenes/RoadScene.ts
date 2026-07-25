@@ -7,6 +7,8 @@ import { accumulateDistance } from '../core/distance';
 import { Biome, BIOMES, biomeBlendAt } from '../core/biome';
 import { duskShadeAt, nightnessAt } from '../core/dusk';
 import { accumulateCoins } from '../core/coins';
+import { needsLedger, noteNameAt, staffStepAt, stemDown } from '../core/notation';
+import { resolvePattern } from '../audio/baseLoop';
 
 const BPM = 96;
 const MS_PER_BEAT = 60000 / BPM;
@@ -24,7 +26,22 @@ const MARKER_RADIUS = 18;
 const NOTE_TINT_UPCOMING = 0xe8d9c0;
 const NOTE_TINT_HIT = 0x7fd6a0;
 const NOTE_TINT_MISS = 0x8a5a5a;
-const HIT_LINE_HEIGHT = 56;
+// The staff lane (ROADMAP task 42; DESIGN.md Pedagogy): the lane is a real
+// treble staff. Markers are quarter notes at their true pitch position,
+// letters baked dark into the heads so tints never eat them. The staff's
+// middle line (B4, step 6) sits on laneY; steps come from
+// core/notation.ts. Notation is never darkened by the dusk cycle and never
+// wrong — kids learn from this screen.
+const STAFF_LINE_GAP = 14;
+const STAFF_HALF_GAP = STAFF_LINE_GAP / 2;
+const STAFF_MIDDLE_STEP = 6;
+const STAFF_LINE_STEPS = [2, 4, 6, 8, 10];
+const STAFF_LINE_ALPHA = 0.22;
+const NOTE_LETTER_STYLE = { fontFamily: 'sans-serif', fontSize: '13px', fontStyle: 'bold', color: '#241a20' };
+const NOTE_TEX_W = 30;
+const NOTE_TEX_H = 46;
+const NOTE_STEM_LEN = 26;
+const HIT_LINE_HEIGHT = 96;
 const EXIT_PROGRESS = 1.35;
 const METER_HEIGHT = 14;
 const METER_MARGIN_TOP = 24;
@@ -40,7 +57,10 @@ const METER_STAFF_LINE_COUNT = 5;
 const METER_STAFF_LINE_COLOR = 0xa8842f;
 const METER_STAFF_LINE_ALPHA = 0.55;
 const METER_STAFF_LINE_THICKNESS = 1;
-const BARD_GROUND_Y_OFFSET = 110;
+// 110 → 150 with the staff lane (task 42): middle C plus its letter sits
+// ~50px below laneY, and the bard's cap used to reach laneY+17 — low notes
+// would have scrolled through the bard's hat.
+const BARD_GROUND_Y_OFFSET = 150;
 // Warm colors throughout so the bard reads against all three biome skies
 // (plum/green/blue — see biome.ts); buckle/feather/strings reuse the UI
 // accent colors (coin gold, cream) so the whole screen shares one palette.
@@ -111,7 +131,7 @@ const MUTE_SLASH_COLOR = 0x8a5a5a;
 const DISTANCE_MARGIN_LEFT = 24;
 const DISTANCE_MARGIN_BOTTOM = 20;
 const HINT_TEXT = 'tap to the beat';
-const HINT_Y_OFFSET = -70;
+const HINT_Y_OFFSET = -92;
 const HINT_FADE_MS = 400;
 // Strum on hit (ROADMAP idea backlog): the visual twin of AudioEngine.pluck
 // — the lute kicks toward the strings and springs back, as if the hit just
@@ -123,6 +143,10 @@ interface BeatMarker {
   beat: Beat;
   gfx: Phaser.GameObjects.Image | null;
   resolved: 'hit' | 'miss' | null;
+  /** Diatonic staff step (core/notation.ts) — fixes the marker's y on the staff. */
+  step: number;
+  /** Texture key for this marker's engraved quarter note (letter + stem + ledger baked). */
+  texKey: string;
 }
 
 export class RoadScene extends Phaser.Scene {
@@ -135,6 +159,7 @@ export class RoadScene extends Phaser.Scene {
   private meterTrack!: Phaser.GameObjects.Rectangle;
   private meterFill!: Phaser.GameObjects.Rectangle;
   private meterStaffLines: Phaser.GameObjects.Rectangle[] = [];
+  private staffLines: Phaser.GameObjects.Rectangle[] = [];
   private road!: Phaser.GameObjects.TileSprite;
   private roadNext!: Phaser.GameObjects.TileSprite;
   private roadFromIndex = 0;
@@ -202,6 +227,10 @@ export class RoadScene extends Phaser.Scene {
     this.road = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, this.roadTileTexture(BIOMES[0]));
     this.roadNext = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, this.roadTileTexture(BIOMES[0]));
     this.roadNext.setAlpha(0);
+
+    this.staffLines = STAFF_LINE_STEPS.map(() =>
+      this.add.rectangle(0, 0, this.scale.width, 1.5, 0xe8d9c0, STAFF_LINE_ALPHA)
+    );
 
     this.hitLine = this.add.image(0, 0, 'hit-line');
     this.hitLine.setTint(NOTE_TINT_UPCOMING);
@@ -664,6 +693,57 @@ export class RoadScene extends Phaser.Scene {
     return this.scale.height / 2;
   }
 
+  /** Y of a diatonic staff step: the staff's middle line (B4, step 6) sits on laneY; each step is half a line gap. */
+  private staffY(step: number, laneY: number): number {
+    return laneY + (STAFF_MIDDLE_STEP - step) * STAFF_HALF_GAP;
+  }
+
+  /**
+   * Engraved quarter-note texture for one named staff position (ROADMAP
+   * task 42), baked once per distinct note: white head and stem (tintable
+   * — cream upcoming, green hit, mauve miss), the letter name dark inside
+   * the head so any tint leaves it readable, stem up below the middle
+   * line / down at or above it, and a ledger line where notation requires
+   * one (middle C being the classic). Baked via RenderTexture because
+   * Graphics can't draw text.
+   */
+  private quarterNoteTexture(name: string, step: number): string {
+    const key = `qnote-${name}${step}`;
+    if (this.textures.exists(key)) return key;
+
+    const down = stemDown(step);
+    const headY = down ? 12 : NOTE_TEX_H - 12;
+
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xffffff, 1);
+    if (needsLedger(step)) {
+      g.fillRect(1, headY - 1.25, NOTE_TEX_W - 2, 2.5);
+    }
+    g.fillEllipse(15, headY, 20, 14);
+    if (down) {
+      g.fillRect(5, headY, 3, NOTE_STEM_LEN);
+    } else {
+      g.fillRect(22, headY - NOTE_STEM_LEN, 3, NOTE_STEM_LEN);
+    }
+
+    const letter = this.make.text({ x: 0, y: 0, text: name, style: NOTE_LETTER_STYLE }, false);
+    letter.setOrigin(0.5, 0.5);
+
+    const rt = this.make.renderTexture({ x: 0, y: 0, width: NOTE_TEX_W, height: NOTE_TEX_H }, false);
+    rt.draw(g, 0, 0);
+    rt.draw(letter, 15, headY);
+    rt.saveTexture(key);
+    rt.destroy();
+    letter.destroy();
+    g.destroy();
+    return key;
+  }
+
+  /** Origin that puts the note *head* (not the texture center) on the staff position. */
+  private noteOriginY(step: number): number {
+    return (stemDown(step) ? 12 : NOTE_TEX_H - 12) / NOTE_TEX_H;
+  }
+
   private hitLineX(): number {
     return this.scale.width * 0.25;
   }
@@ -701,13 +781,31 @@ export class RoadScene extends Phaser.Scene {
    * (ROADMAP task 17; see STATE.md for the remaining quantization caveat).
    */
   private appendBeatBatch(): void {
+    const biomeId = this.currentBiomeId();
+    // Each marker learns its written note at batch time from the same
+    // per-biome pattern the audio schedules with (ROADMAP task 42) — same
+    // batch quantization on both sides, so what the staff shows is
+    // exactly what the backing loop plays.
+    const pattern = resolvePattern(AUDIO_MANIFEST.baseLoop, biomeId);
     const newBeats = generateBeatSchedule(BPM, BEAT_BATCH_SIZE, this.nextBatchStartTimeMs, this.totalBeatsGenerated);
     for (const beat of newBeats) {
-      this.markers.push({ beat, gfx: null, resolved: null });
+      const semitone = pattern[beat.index % pattern.length];
+      const name = noteNameAt(semitone);
+      const step = staffStepAt(semitone);
+      // Naturals are enforced by the manifest test; the fallback exists so
+      // a hypothetical accidental degrades to an unlabeled mid-staff note
+      // rather than a crash.
+      this.markers.push({
+        beat,
+        gfx: null,
+        resolved: null,
+        step: step ?? STAFF_MIDDLE_STEP,
+        texKey: name !== null && step !== null ? this.quarterNoteTexture(name, step) : 'note-glyph',
+      });
     }
     this.totalBeatsGenerated += BEAT_BATCH_SIZE;
     this.nextBatchStartTimeMs = newBeats[newBeats.length - 1].hitTimeMs;
-    this.audioEngine.extend(BEAT_BATCH_SIZE, this.currentBiomeId());
+    this.audioEngine.extend(BEAT_BATCH_SIZE, biomeId);
   }
 
   private handleInput(): void {
@@ -802,6 +900,10 @@ export class RoadScene extends Phaser.Scene {
     this.updateSky(delta);
     this.updateScenery(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
     this.updateRoad(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
+    for (let i = 0; i < this.staffLines.length; i++) {
+      this.staffLines[i].setPosition(this.scale.width / 2, this.staffY(STAFF_LINE_STEPS[i], laneY));
+      this.staffLines[i].setSize(this.scale.width, 1.5);
+    }
     this.hitLine.setPosition(hitLineX, laneY);
     this.flash.setPosition(hitLineX, laneY);
     this.flash.setSize(6, HIT_LINE_HEIGHT);
@@ -832,11 +934,12 @@ export class RoadScene extends Phaser.Scene {
       if (!marker.gfx) {
         const tint =
           marker.resolved === 'hit' ? NOTE_TINT_HIT : marker.resolved === 'miss' ? NOTE_TINT_MISS : NOTE_TINT_UPCOMING;
-        marker.gfx = this.add.image(0, laneY, 'note-glyph');
+        marker.gfx = this.add.image(0, 0, marker.texKey);
+        marker.gfx.setOrigin(0.5, this.noteOriginY(marker.step));
         marker.gfx.setTint(tint);
         if (marker.resolved === 'miss') marker.gfx.setAlpha(0.75);
       }
-      marker.gfx.setPosition(this.markerX(progress), laneY);
+      marker.gfx.setPosition(this.markerX(progress), this.staffY(marker.step, laneY));
       return true;
     });
 
