@@ -51,6 +51,12 @@ relay verdicts in a session. The next run folds answers into code.
 - [ ] **Dusk cycle** — over a long walk (~13 min per full cycle), does
   the slow darkening read as night deepening, or go unnoticed / too
   dark? (`DUSK_CYCLE_PX`, `DUSK_MAX_DARKEN` — `src/core/dusk.ts`)
+- [ ] **Strum on hit** — does the lute's kick-and-spring on every hit
+  read as a strum, or too subtle/too sharp? (`BARD_STRUM_KICK_DEG`,
+  `BARD_STRUM_MS` — `src/scenes/RoadScene.ts`)
+- [ ] **Meter as staff** — do the five faint lines on the song-meter bar
+  read as sheet music, or just clutter? Legible at phone size while
+  walking? (`METER_STAFF_LINE_COLOR`/`_ALPHA` — `src/scenes/RoadScene.ts`)
 
 ### Round-1 items never explicitly answered
 

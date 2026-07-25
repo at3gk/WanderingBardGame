@@ -1,13 +1,36 @@
 # STATE
 
-Run counter: 30
+Run counter: 32
 
 ## Current status
-Overnight interactive session (2026-07-25) — **the game got its round-1
-human playtest, and then eight PRs of it.** A human played the build,
-gave verdicts, and granted an extended session ("keep running and
-cook"). Everything below merged to main the same night (PRs #32–#39,
-each CI-green before merge):
+Run 32 (scheduled, 2026-07-25): **meter as staff** (ROADMAP task 40,
+promoted from the idea backlog — task 38 is still blocked on the human
+round-2 playtest). See ROADMAP task 40's done entry for the full
+writeup; in short, the song-meter bar now carries five faint staff
+lines drawn on top of the existing track/fill, so it joins the notation
+language every other UI element already speaks (task 32). Screenshot
+verification caught a real bug before commit: the first attempt tinted
+the lines the same cream as the full-meter fill color, silently erasing
+them at 100% meter — only checking the *full* state (not just empty/mid)
+surfaced it. Fixed with a distinct bronze tone. Pure `RoadScene`
+rendering addition, no change to `songMeter`'s logic, no new texture,
+no new dependency. `npm test` 71 green (unchanged), build green, bundle
+unchanged (~1.23 MB).
+
+## Previous status (Run 31, scheduled, 2026-07-25)
+Run 31: **strum on hit** (ROADMAP task 39, promoted from the idea
+backlog — task 38 is still blocked on the human round-2 playtest). See
+ROADMAP task 39's done entry for the full writeup; in short, the lute
+now kicks and springs back on every hit as the visual twin of the
+existing pluck-note audio (task 33). Pure `RoadScene` tween addition, no
+new texture, no new dependency. `npm test` 71 green (unchanged), build
+green, headless-screenshot verified.
+
+## Previous status (overnight interactive session, 2026-07-25)
+**The game got its round-1 human playtest, and then eight PRs of it.**
+A human played the build, gave verdicts, and granted an extended
+session ("keep running and cook"). Everything below merged to main the
+same night (PRs #32–#39, each CI-green before merge):
 
 1. **Playtest fold-in** (#32): hit window 120→90ms, hitGain 8→12,
    melodies recomposed as 8-beat pentatonic phrases, walk/scroll
@@ -328,6 +351,11 @@ of headless-vs-real-device caveat as Run 23's audio-resume fix.
   stars/moon brighten; bard + notation never darkened per art direction.
   7 new tests (71 total); deep-night screenshot-verified via shortened-
   cycle throwaway build. `npm test` 71 green, build green.
+- Run 31 (2026-07-25, scheduled): strum on hit per new ROADMAP task 39,
+  promoted from the idea backlog since task 38 (round-2 playtest) is
+  still blocked on human. See ROADMAP task 39's done entry for the full
+  writeup. `npm test` 71 green (unchanged), build green, headless
+  screenshot confirmed the strum tween with zero console/page errors.
 
 ## Needs human playtest
 Round-1 feedback (2026-07-25) answered the original feel questions for

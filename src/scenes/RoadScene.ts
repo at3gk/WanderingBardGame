@@ -28,6 +28,18 @@ const HIT_LINE_HEIGHT = 56;
 const EXIT_PROGRESS = 1.35;
 const METER_HEIGHT = 14;
 const METER_MARGIN_TOP = 24;
+// Meter as staff (ROADMAP idea backlog): the song meter joins the notation
+// language established in task 32 — five faint staff lines across the bar,
+// same cream tone as the beat glyphs, sitting on top of the existing
+// track/fill so the meter reads as sheet music filling with light rather
+// than a plain progress bar.
+const METER_STAFF_LINE_COUNT = 5;
+// A mid-tone (not the fill's own cream) so the lines stay visible whether
+// they sit on the dark track or the bright fill — sheet-music lines read
+// the same whether the page under them is blank or inked.
+const METER_STAFF_LINE_COLOR = 0xa8842f;
+const METER_STAFF_LINE_ALPHA = 0.55;
+const METER_STAFF_LINE_THICKNESS = 1;
 const BARD_GROUND_Y_OFFSET = 110;
 // Warm colors throughout so the bard reads against all three biome skies
 // (plum/green/blue — see biome.ts); buckle/feather/strings reuse the UI
@@ -101,6 +113,11 @@ const DISTANCE_MARGIN_BOTTOM = 20;
 const HINT_TEXT = 'tap to the beat';
 const HINT_Y_OFFSET = -70;
 const HINT_FADE_MS = 400;
+// Strum on hit (ROADMAP idea backlog): the visual twin of AudioEngine.pluck
+// — the lute kicks toward the strings and springs back, as if the hit just
+// struck a chord. Tiny tween, reuses the existing lute image, no new texture.
+const BARD_STRUM_KICK_DEG = 14;
+const BARD_STRUM_MS = 140;
 
 interface BeatMarker {
   beat: Beat;
@@ -117,6 +134,7 @@ export class RoadScene extends Phaser.Scene {
   private meter = DEFAULT_SONG_METER_CONFIG.max;
   private meterTrack!: Phaser.GameObjects.Rectangle;
   private meterFill!: Phaser.GameObjects.Rectangle;
+  private meterStaffLines: Phaser.GameObjects.Rectangle[] = [];
   private road!: Phaser.GameObjects.TileSprite;
   private roadNext!: Phaser.GameObjects.TileSprite;
   private roadFromIndex = 0;
@@ -201,6 +219,9 @@ export class RoadScene extends Phaser.Scene {
 
     this.meterTrack = this.add.rectangle(0, 0, 0, METER_HEIGHT, 0x2c2536, 0.9);
     this.meterFill = this.add.rectangle(0, 0, 0, METER_HEIGHT - 4, 0xe8d9c0, 1);
+    this.meterStaffLines = Array.from({ length: METER_STAFF_LINE_COUNT }, () =>
+      this.add.rectangle(0, 0, 0, METER_STAFF_LINE_THICKNESS, METER_STAFF_LINE_COLOR, METER_STAFF_LINE_ALPHA)
+    );
 
     this.coins = 0;
     this.coinIcon = this.add.image(0, 0, 'coin-icon');
@@ -599,16 +620,44 @@ export class RoadScene extends Phaser.Scene {
           repeat: -1,
           ease: 'Sine.easeInOut',
         }),
-        this.tweens.add({
-          targets: this.bardLute,
-          angle: { from: BARD_LUTE_ANGLE_DEG - 2, to: BARD_LUTE_ANGLE_DEG + 2 },
-          duration: BARD_IDLE_BREATH_MS,
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.easeInOut',
-        })
+        this.startIdleLuteSway()
       );
     }
+  }
+
+  /** The lute's slow idle sway, factored out so a hit's one-shot strum tween (which stops it) can restart it afterward. */
+  private startIdleLuteSway(): Phaser.Tweens.Tween {
+    return this.tweens.add({
+      targets: this.bardLute,
+      angle: { from: BARD_LUTE_ANGLE_DEG - 2, to: BARD_LUTE_ANGLE_DEG + 2 },
+      duration: BARD_IDLE_BREATH_MS,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  /**
+   * A hit's visual twin to AudioEngine.pluck (ROADMAP idea backlog: "strum
+   * on hit"): the lute kicks toward the strings and springs back, as if the
+   * chord was just struck. Stops whatever's currently animating the lute's
+   * angle first (the idle sway, or a previous strum still settling) so the
+   * two don't fight over the same property; if the bard is idle when the
+   * strum finishes, restarts the idle sway so it doesn't go still.
+   */
+  private strumLute(): void {
+    this.tweens.killTweensOf(this.bardLute);
+    this.tweens.add({
+      targets: this.bardLute,
+      angle: { from: BARD_LUTE_ANGLE_DEG - BARD_STRUM_KICK_DEG, to: BARD_LUTE_ANGLE_DEG },
+      duration: BARD_STRUM_MS,
+      ease: 'Sine.easeOut',
+      onComplete: () => {
+        if (!this.walking) {
+          this.bardTweens.push(this.startIdleLuteSway());
+        }
+      },
+    });
   }
 
   private laneY(): number {
@@ -672,6 +721,7 @@ export class RoadScene extends Phaser.Scene {
       target.resolved = 'hit';
       this.meter = applyHit(this.meter, this.meterConfig);
       this.audioEngine.pluck(this.currentBiomeId(), target.beat.index);
+      this.strumLute();
       if (target.gfx) {
         // A struck note pulses once — lands big, settles back — so a hit
         // feels like plucking the note out of the air (ROADMAP task 32).
@@ -907,6 +957,13 @@ export class RoadScene extends Phaser.Scene {
     this.meterFill.setSize(Math.max(0, trackWidth * fillRatio), METER_HEIGHT - 4);
     this.meterFill.setFillStyle(walking ? 0xe8d9c0 : 0x7a6f85, 1);
     this.meterFill.setPosition(centerX - trackWidth / 2 + this.meterFill.width / 2, METER_MARGIN_TOP);
+
+    const lineCount = this.meterStaffLines.length;
+    for (let i = 0; i < lineCount; i++) {
+      const y = METER_MARGIN_TOP - METER_HEIGHT / 2 + ((i + 1) * METER_HEIGHT) / (lineCount + 1);
+      this.meterStaffLines[i].setPosition(centerX, y);
+      this.meterStaffLines[i].setSize(trackWidth, METER_STAFF_LINE_THICKNESS);
+    }
   }
 
   /** Coin count readout — a display of song-meter performance, not an interactive system (ROADMAP task 11). */
