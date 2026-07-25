@@ -46,6 +46,11 @@ relay verdicts in a session. The next run folds answers into code.
   like *performing* rather than just timing?
 - [ ] **Night sky** — moon/stars read without stealing attention? Star
   drift too slow/fast? (`STAR_PARALLAX` — `src/scenes/RoadScene.ts`)
+- [ ] **The road loops home** — walk past Riverside Camp (~156 steps in):
+  does returning to the village feel like coming home or like a repeat?
+- [ ] **Dusk cycle** — over a long walk (~13 min per full cycle), does
+  the slow darkening read as night deepening, or go unnoticed / too
+  dark? (`DUSK_CYCLE_PX`, `DUSK_MAX_DARKEN` — `src/core/dusk.ts`)
 
 ### Round-1 items never explicitly answered
 

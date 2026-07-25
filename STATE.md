@@ -304,6 +304,12 @@ of headless-vs-real-device caveat as Run 23's audio-resume fix.
   identical. 5 new tests (64 total); wrap screenshot-verified via the
   shortened-transitions throwaway build. `npm test` 64 green, build
   green.
+- Overnight session, task 36 (2026-07-25): slow dusk cycle
+  (`src/core/dusk.ts`) — cosine brightness curve, one cycle per three
+  biome loops, max 22% darken; world (sky/scenery/road) darkens while
+  stars/moon brighten; bard + notation never darkened per art direction.
+  7 new tests (71 total); deep-night screenshot-verified via shortened-
+  cycle throwaway build. `npm test` 71 green, build green.
 
 ## Needs human playtest
 Round-1 feedback (2026-07-25) answered the original feel questions for
