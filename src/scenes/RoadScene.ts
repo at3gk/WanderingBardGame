@@ -21,10 +21,31 @@ const EXIT_PROGRESS = 1.35;
 const METER_HEIGHT = 14;
 const METER_MARGIN_TOP = 24;
 const BARD_GROUND_Y_OFFSET = 110;
-const BARD_LEG_COLOR = 0x5b4636;
-const BARD_BODY_COLOR = 0xc98a5b;
-const BARD_HEAD_COLOR = 0xe8c39e;
+// Warm colors throughout so the bard reads against all three biome skies
+// (plum/green/blue — see biome.ts); buckle/feather/strings reuse the UI
+// accent colors (coin gold, cream) so the whole screen shares one palette.
+const BARD_PALETTE = {
+  boot: 0x4a3428,
+  trouser: 0x5b4636,
+  tunic: 0xc9784a,
+  tunicShade: 0xa05c38,
+  belt: 0x4a3428,
+  buckle: 0xe8c157,
+  skin: 0xe8c39e,
+  hair: 0x6b4a2f,
+  cap: 0xa04e50,
+  feather: 0xe8d9c0,
+  luteWood: 0xb07a45,
+  luteNeck: 0x7a5433,
+  luteHole: 0x4a3428,
+  string: 0xe8d9c0,
+};
+const BARD_HIP_Y = -27;
+const BARD_SCALE = 1.15;
+const BARD_LUTE_ANGLE_DEG = -22;
 const BARD_WALK_SWING_DEG = 20;
+const BARD_WALK_BOB_PX = 3;
+const BARD_WALK_ROCK_DEG = 1.6;
 // Human playtest (2026-07-25): legs visibly out of sync with the ground
 // scroll (260ms swings over a 90px/s scroll = ~23px per footfall — mincing
 // steps under fast legs). Both are now derived from the beat instead of
@@ -90,8 +111,10 @@ export class RoadScene extends Phaser.Scene {
   private muteSlash!: Phaser.GameObjects.Rectangle;
   private muteZone!: Phaser.GameObjects.Zone;
   private bard!: Phaser.GameObjects.Container;
-  private bardLegLeft!: Phaser.GameObjects.Rectangle;
-  private bardLegRight!: Phaser.GameObjects.Rectangle;
+  private bardLegLeft!: Phaser.GameObjects.Image;
+  private bardLegRight!: Phaser.GameObjects.Image;
+  private bardUpper!: Phaser.GameObjects.Container;
+  private bardLute!: Phaser.GameObjects.Image;
   private bardTweens: Phaser.Tweens.Tween[] = [];
   private bardWasWalking: boolean | null = null;
   private audioEngine = new AudioEngine(AUDIO_MANIFEST);
@@ -162,11 +185,7 @@ export class RoadScene extends Phaser.Scene {
     this.muteZone = this.add.zone(muteIconX, MUTE_ICON_MARGIN_TOP, MUTE_TOUCH_TARGET_SIZE, MUTE_TOUCH_TARGET_SIZE);
     this.muteZone.setInteractive({ useHandCursor: true });
 
-    this.bardLegLeft = this.add.rectangle(-6, -11, 6, 22, BARD_LEG_COLOR);
-    this.bardLegRight = this.add.rectangle(6, -11, 6, 22, BARD_LEG_COLOR);
-    const bardBody = this.add.rectangle(0, -39, 26, 34, BARD_BODY_COLOR);
-    const bardHead = this.add.circle(0, -68, 12, BARD_HEAD_COLOR);
-    this.bard = this.add.container(0, 0, [this.bardLegLeft, this.bardLegRight, bardBody, bardHead]);
+    this.createBard();
     this.bardWasWalking = this.walking;
     this.setBardAnimState(this.bardWasWalking);
 
@@ -228,13 +247,125 @@ export class RoadScene extends Phaser.Scene {
     return (r << 16) | (g << 8) | b;
   }
 
-  /** Swaps the bard's walk/idle animation. Placeholder procedural sprite per ROADMAP task 5. */
+  /**
+   * Builds the bard's part textures (once) and assembles the container:
+   * two hip-pivoting legs, plus an "upper" sub-container (tunic'd torso,
+   * lute, capped head) that bobs/rocks as one piece so the feet never
+   * leave the ground (ROADMAP task 30 — replaces the three-rectangle
+   * placeholder from task 5). All parts are Graphics-drawn textures, no
+   * image assets per CLAUDE.md. The bard faces right, the walk direction.
+   */
+  private createBard(): void {
+    const P = BARD_PALETTE;
+
+    if (!this.textures.exists('bard-leg')) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      // Trouser leg with a boot whose toe points forward (+X).
+      g.fillStyle(P.trouser, 1);
+      g.fillRoundedRect(2, 0, 8, 24, 3);
+      g.fillStyle(P.boot, 1);
+      g.fillRoundedRect(2, 22, 10, 8, { tl: 2, tr: 4, bl: 2, br: 2 });
+      g.generateTexture('bard-leg', 12, 30);
+      g.destroy();
+    }
+
+    if (!this.textures.exists('bard-torso')) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      // Tunic: shoulders narrower than the hem so it reads as clothing,
+      // not a box; belt + gold buckle break up the silhouette.
+      g.fillStyle(P.tunic, 1);
+      g.fillPoints(
+        [new Phaser.Geom.Point(9, 4), new Phaser.Geom.Point(25, 4), new Phaser.Geom.Point(27, 34), new Phaser.Geom.Point(7, 34)],
+        true
+      );
+      g.fillStyle(P.tunicShade, 1);
+      g.fillRect(7, 31, 20, 3);
+      g.fillStyle(P.belt, 1);
+      g.fillRect(8, 24, 18, 4);
+      g.fillStyle(P.buckle, 1);
+      g.fillRect(15, 24, 4, 4);
+      // Front arm: a sleeve reaching down-left across the body toward the
+      // lute's neck, ending in a skin-tone hand.
+      g.fillStyle(P.tunicShade, 1);
+      g.fillPoints(
+        [new Phaser.Geom.Point(22, 6), new Phaser.Geom.Point(26, 9), new Phaser.Geom.Point(15, 21), new Phaser.Geom.Point(12, 17)],
+        true
+      );
+      g.fillStyle(P.skin, 1);
+      g.fillCircle(13, 20, 3);
+      g.generateTexture('bard-torso', 34, 38);
+      g.destroy();
+    }
+
+    if (!this.textures.exists('bard-head')) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      // Hair behind, face in front (offset right = facing the walk
+      // direction), floppy cap on top with a cream feather.
+      g.fillStyle(P.hair, 1);
+      g.fillCircle(15, 15, 10);
+      g.fillStyle(P.skin, 1);
+      g.fillCircle(17, 18, 9);
+      g.fillStyle(P.cap, 1);
+      g.fillEllipse(15, 9, 24, 12);
+      g.fillStyle(P.feather, 1);
+      g.fillPoints(
+        [new Phaser.Geom.Point(24, 9), new Phaser.Geom.Point(32, 1), new Phaser.Geom.Point(34, 4), new Phaser.Geom.Point(26, 12)],
+        true
+      );
+      g.fillStyle(0x3a2c22, 1);
+      g.fillRect(21, 17, 2, 2);
+      g.generateTexture('bard-head', 36, 30);
+      g.destroy();
+    }
+
+    if (!this.textures.exists('bard-lute')) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      // Drawn horizontal (neck left, pear body right); angled at placement.
+      g.fillStyle(P.luteNeck, 1);
+      g.fillRect(2, 10, 24, 4);
+      g.fillRect(0, 8, 5, 8);
+      g.fillStyle(P.luteWood, 1);
+      g.fillEllipse(31, 12, 18, 16);
+      g.fillStyle(P.luteHole, 1);
+      g.fillCircle(30, 12, 3);
+      g.lineStyle(1, P.string, 0.9);
+      g.lineBetween(3, 12, 36, 12);
+      g.generateTexture('bard-lute', 40, 24);
+      g.destroy();
+    }
+
+    this.bardLegLeft = this.add.image(-5, BARD_HIP_Y, 'bard-leg');
+    this.bardLegLeft.setOrigin(0.5, 0.08);
+    this.bardLegRight = this.add.image(5, BARD_HIP_Y, 'bard-leg');
+    this.bardLegRight.setOrigin(0.5, 0.08);
+
+    const torso = this.add.image(0, -44, 'bard-torso');
+    this.bardLute = this.add.image(4, -39, 'bard-lute');
+    this.bardLute.setAngle(BARD_LUTE_ANGLE_DEG);
+    const head = this.add.image(2, -66, 'bard-head');
+    this.bardUpper = this.add.container(0, 0, [torso, this.bardLute, head]);
+
+    this.bard = this.add.container(0, 0, [this.bardLegLeft, this.bardLegRight, this.bardUpper]);
+    this.bard.setScale(BARD_SCALE);
+  }
+
+  /**
+   * Swaps the bard's walk/idle animation (ROADMAP task 30). Walking: legs
+   * swing at the hips at one footfall per beat (cadence shared with the
+   * ground scroll and the music — see BARD_WALK_STEP_MS), while the upper
+   * body dips once per footfall (half the leg period) and rocks gently
+   * with the stride. Idle: a slow breathing pulse plus a small lute sway,
+   * so the bard never reads as frozen.
+   */
   private setBardAnimState(walking: boolean): void {
     this.bardTweens.forEach((tween) => tween.stop());
     this.bardTweens = [];
     this.bardLegLeft.setAngle(0);
     this.bardLegRight.setAngle(0);
-    this.bard.setScale(1, 1);
+    this.bardUpper.setPosition(0, 0);
+    this.bardUpper.setAngle(0);
+    this.bardUpper.setScale(1, 1);
+    this.bardLute.setAngle(BARD_LUTE_ANGLE_DEG);
 
     if (walking) {
       this.bardTweens.push(
@@ -255,8 +386,16 @@ export class RoadScene extends Phaser.Scene {
           ease: 'Sine.easeInOut',
         }),
         this.tweens.add({
-          targets: this.bard,
-          scaleY: { from: 1, to: 0.94 },
+          targets: this.bardUpper,
+          y: { from: 0, to: -BARD_WALK_BOB_PX },
+          duration: BARD_WALK_STEP_MS / 2,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        }),
+        this.tweens.add({
+          targets: this.bardUpper,
+          angle: { from: -BARD_WALK_ROCK_DEG, to: BARD_WALK_ROCK_DEG },
           duration: BARD_WALK_STEP_MS,
           yoyo: true,
           repeat: -1,
@@ -266,9 +405,17 @@ export class RoadScene extends Phaser.Scene {
     } else {
       this.bardTweens.push(
         this.tweens.add({
-          targets: this.bard,
+          targets: this.bardUpper,
           scaleY: { from: 1, to: 1.03 },
-          scaleX: { from: 1, to: 0.98 },
+          scaleX: { from: 1, to: 0.99 },
+          duration: BARD_IDLE_BREATH_MS,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        }),
+        this.tweens.add({
+          targets: this.bardLute,
+          angle: { from: BARD_LUTE_ANGLE_DEG - 2, to: BARD_LUTE_ANGLE_DEG + 2 },
           duration: BARD_IDLE_BREATH_MS,
           yoyo: true,
           repeat: -1,
