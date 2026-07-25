@@ -360,6 +360,23 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     verified by screenshot rather than a unit test), build green,
     headless screenshot confirmed the kicked angle mid-tween with zero
     console/page errors.
+40. ~~**Meter as staff.**~~ Done (Run 32, scheduled): promoted from the
+    idea backlog below — task 38 is still blocked on the human round-2
+    playtest. The song-meter bar was the last UI element not speaking the
+    notation language task 32 established. Added five faint horizontal
+    lines (`meterStaffLines`) drawn on top of the existing track/fill
+    rectangles, resized alongside them every frame in `updateMeterBar` —
+    no new texture, no change to the pure `songMeter` logic. First pass
+    tinted the lines the same cream as the "walking" fill color, so a
+    full meter erased them entirely (fill and lines were the same color);
+    caught by screenshotting the full-meter state specifically, not just
+    empty/mid. Fixed by giving the lines their own mid-tone (bronze
+    `0xa8842f`, alpha 0.55) distinct from both the dark track and the
+    cream fill, so they read as sheet-music lines whether the bar under
+    them is blank or lit. `npm test` 71 green (unchanged — pure
+    rendering, no logic touched), build green, bundle unchanged (~1.23
+    MB). Screenshot-verified across all three meter states (empty, mid,
+    full).
 
 ## Idea backlog (pull from here when nothing is queued)
 
@@ -371,8 +388,6 @@ direction (notation icons, warm-vs-cool palette).
 - **Signposts at transitions**: a small silhouette signpost scrolls by
   with the scenery as each biome transition starts — the world
   announcing the next vignette. Scenery-tile addition, no logic.
-- **Meter as staff**: restyle the song-meter bar as five faint staff
-  lines that fill with light — the meter joins the notation language.
 - **Sharper mobile rendering**: check `devicePixelRatio` handling in the
   Phaser config; procedural shapes may render noticeably crisper on
   phones with `resolution`/zoom set correctly. Measure first.
