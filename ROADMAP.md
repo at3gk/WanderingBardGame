@@ -330,12 +330,16 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     carries their own light through the deepest night. Pure function + 7
     tests (71 total); deep-night state screenshot-verified via a
     shortened-cycle throwaway build.
-37. **Consolidation pass.** Run counter will be near ~40 by the time this
-    lands (last consolidation was Run 20; the overnight session shipped
-    six PRs). Reread DESIGN.md's core mechanic, play the build steps
-    mentally, prune rough edges, verify bundle size and mobile pillars
-    still hold. Cut anything that has crept toward "system" instead of
-    "readout."
+37. ~~**Consolidation pass.**~~ Done (2026-07-25, overnight session, as
+    the session's closer): drift check clean — every overnight addition
+    is a readout or feedback on the one mechanic (pluck = the mechanic's
+    own sound, sky/dusk/loop = scenery readouts; no new systems, no new
+    runtime dependencies, bundle steady at ~1.22 MB of the 5 MB budget).
+    One rough edge found and fixed (hit-flash overlay was still 4px wide
+    after the hit line became 6px). STATE.md gained "Process notes for
+    future runs" (headless screenshot workflow, throwaway-build trick,
+    PR cadence); DESIGN.md changelog wrapped the session. Next scheduled
+    run: propose a fresh arc — task 38 below is blocked on human.
 38. **Round-2 playtest fold-in.** When the human answers PLAYTEST.md
     round 2, fold verdicts into constants the same way round 1 was folded
     in (see ROADMAP task 14's done entry for the protocol). Blocked on

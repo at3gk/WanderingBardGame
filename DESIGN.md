@@ -138,3 +138,15 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   instead of re-inventing it. Tone section's "soft pixel-art" phrasing
   now reads as "soft procedural shapes" in practice — same intent,
   honest wording for what the game actually is.
+- 2026-07-25 (later the same night) — tasks 33–37. Two Concept/Tone
+  promises finally became true: the endless road now literally loops
+  (village → forest → riverside → village forever, task 35) and the
+  palette shifts with time of day (slow dusk cycle, task 36 — world
+  darkens, stars and moon brighten, the bard is never darkened). The
+  mechanic also gained its own sound: a hit plays that beat's melody
+  note an octave up (task 33), so a good run is the player performing
+  the tune's top voice — misses still just drop a note out, silent.
+  Night sky added (task 34). Consolidation (task 37) found no drift:
+  everything remains a readout of the one mechanic. The game as shipped
+  tonight is, for the first time, the game this document described on
+  Run 0.
