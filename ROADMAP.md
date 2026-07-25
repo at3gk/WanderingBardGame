@@ -395,16 +395,23 @@ teaching is entirely presentation.
     C D G A D5 leaps — the per-biome note sets that are the curriculum.
     Add a manifest test asserting every pattern note in every layer and
     override is a natural (the game's notation must never be wrong).
-42. **The staff lane.** Five faint staff lines across the lane; markers
-    become real quarter notes: pitch-positioned vertically (line gap
-    14px), letter baked dark inside the white head so tints (cream/
-    green/mauve) never eat it, stems up below the middle line and down
-    at/above it, middle C wearing its ledger line. Markers carry their
-    semitone from batch time (same biome quantization as the audio, so
-    what you see is what you hear). Bard drops to
+42. ~~**The staff lane.**~~ Done (2026-07-25, second overnight session):
+    five faint staff lines across the lane (middle line B4 on laneY);
+    markers are engraved quarter notes baked per distinct pitch via
+    RenderTexture (Graphics can't draw text) — white head/stem tintable
+    cream/green/mauve, letter dark inside the head so no tint eats it,
+    stems up below the middle line / down at or above it, middle C
+    wearing its ledger. Markers learn their note at batch time from the
+    same per-biome pattern the audio schedules with, so what the staff
+    shows is exactly what the loop plays. Bard dropped to
     `BARD_GROUND_Y_OFFSET = 150` so low notes clear the cap; hit line
-    grows to cover the staff. Screenshot-verify all three biomes'
-    ranges.
+    grew to span the staff (96px); staff-line alpha raised 0.16 → 0.22
+    after a first screenshot read too faint. Screenshot-verified: C-D-E
+    ascent with middle C's ledger, stem-up lows, and forest's C5-D5-E5
+    stem-down highs (via a throwaway build that also shrank
+    `BEAT_BATCH_SIZE`, since the 15s scheduling lookahead delays pattern
+    switches past a shrunken biome cycle — worth knowing for future
+    far-state audio/visual checks; shipped constants untouched).
 43. **Legibility & first-reader polish.** Letter size/contrast at phone
     scale, spacing of ledger notes near the bard, hint wording for
     pre-readers, and a PLAYTEST.md round-3 section written for testing
