@@ -16,6 +16,7 @@ const LEGAL_DURATIONS = [0.5, 1, 1.5, 2, 3, 4];
 describe.each(SONGS)('song: $title', (song) => {
   it('uses only natural notes — every note has a one-letter name', () => {
     for (const note of song.notes) {
+      if (note.rest) continue;
       expect(noteNameAt(note.semitone), `semitone ${note.semitone}`).not.toBeNull();
     }
   });
@@ -42,6 +43,7 @@ describe.each(SONGS)('song: $title', (song) => {
 
   it('stays in a range the staff can draw legibly', () => {
     for (const note of song.notes) {
+      if (note.rest) continue;
       const step = staffStepAt(note.semitone)!;
       // One ledger below middle C through one ledger above the staff.
       expect(step, `semitone ${note.semitone}`).toBeGreaterThanOrEqual(-2);
@@ -50,7 +52,11 @@ describe.each(SONGS)('song: $title', (song) => {
   });
 
   it('is long enough to be recognizable as a tune', () => {
-    expect(song.notes.length).toBeGreaterThanOrEqual(16);
+    expect(song.notes.filter((n) => !n.rest).length).toBeGreaterThanOrEqual(16);
+  });
+
+  it('never opens with a rest — the tune should start when the player does', () => {
+    expect(song.notes[0].rest).toBeUndefined();
   });
 });
 
@@ -68,7 +74,9 @@ describe('the songbook', () => {
 
   it('walks up the staff across the biomes, low to high', () => {
     const lowest = (id: string) =>
-      Math.min(...SONGS_BY_BIOME[id].flatMap((s) => s.notes.map((n) => staffStepAt(n.semitone)!)));
+      Math.min(
+        ...SONGS_BY_BIOME[id].flatMap((s) => s.notes.filter((n) => !n.rest).map((n) => staffStepAt(n.semitone)!))
+      );
     expect(lowest('village')).toBeLessThan(lowest('forest'));
     expect(lowest('forest')).toBeLessThan(lowest('riverside'));
   });
@@ -77,7 +85,9 @@ describe('the songbook', () => {
     // Rotation must not smuggle a low tune into the upper-staff vignette;
     // the curriculum is the point of the biome split.
     for (const [biome, set] of Object.entries(SONGS_BY_BIOME)) {
-      const lows = set.map((s) => Math.min(...s.notes.map((n) => staffStepAt(n.semitone)!)));
+      const lows = set.map((s) =>
+        Math.min(...s.notes.filter((n) => !n.rest).map((n) => staffStepAt(n.semitone)!))
+      );
       expect(Math.max(...lows) - Math.min(...lows), `${biome} spread`).toBeLessThanOrEqual(4);
     }
   });

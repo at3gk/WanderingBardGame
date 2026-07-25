@@ -178,7 +178,7 @@ export class AudioEngine {
     if (!layerGain) return;
 
     for (const note of notes) {
-      if (note.hitTimeMs < minTimeMs) continue;
+      if (note.rest || note.hitTimeMs < minTimeMs) continue;
       const frequencyHz = semitoneToFrequency(this.manifest.rootFrequencyHz, note.semitone + layer.semitoneOffset);
       const durationSec = (layer.noteDurationMs * note.beats) / 1000;
       this.playNote(ctx, layerGain, layer, this.startAt + note.hitTimeMs / 1000, frequencyHz, durationSec);

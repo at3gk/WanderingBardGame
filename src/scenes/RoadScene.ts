@@ -163,7 +163,8 @@ const BARD_STRUM_MS = 140;
 interface BeatMarker {
   beat: SongBeat;
   gfx: Phaser.GameObjects.Image | null;
-  resolved: 'hit' | 'miss' | null;
+  /** A rest is born resolved: it scrolls past like a note but is never tapped and never missed. */
+  resolved: 'hit' | 'miss' | 'rest' | null;
   /** Diatonic staff step (core/notation.ts) — fixes the marker's y on the staff. */
   step: number;
   /** Texture key for this marker's engraved note (head, letter, stem, ledger baked). */
@@ -849,6 +850,45 @@ export class RoadScene extends Phaser.Scene {
   }
 
   /**
+   * A written silence (ROADMAP task 51), baked per value. Engraved as a
+   * reader expects: a whole rest hangs *under* the second line from the
+   * top, a half rest sits *on* the middle line — the pair a beginner is
+   * taught to tell apart by which side of the line the block is on — and
+   * a quarter rest is the zigzag. Drawn at the middle-line position, so
+   * `staffY(STAFF_MIDDLE_STEP)` places it correctly.
+   */
+  private restTexture(beats: number): string {
+    const key = `rest-${beats}`;
+    if (this.textures.exists(key)) return key;
+
+    const midY = NOTE_TEX_H / 2;
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xffffff, 1);
+
+    if (beats >= 4) {
+      // Whole rest: block hanging below the line one gap above the middle.
+      g.fillRect(NOTE_HEAD_X - 9, midY - STAFF_LINE_GAP, 18, STAFF_LINE_GAP / 2);
+    } else if (beats >= 2) {
+      // Half rest: block sitting on the middle line.
+      g.fillRect(NOTE_HEAD_X - 9, midY - STAFF_LINE_GAP / 2, 18, STAFF_LINE_GAP / 2);
+    } else {
+      // Quarter rest: the zigzag, drawn as three strokes down the middle.
+      g.lineStyle(3.5, 0xffffff, 1);
+      g.beginPath();
+      g.moveTo(NOTE_HEAD_X - 5, midY - 16);
+      g.lineTo(NOTE_HEAD_X + 5, midY - 6);
+      g.lineTo(NOTE_HEAD_X - 5, midY + 3);
+      g.lineTo(NOTE_HEAD_X + 6, midY + 14);
+      g.strokePath();
+      g.fillCircle(NOTE_HEAD_X - 1, midY + 8, 3.5);
+    }
+
+    g.generateTexture(key, NOTE_TEX_W, NOTE_TEX_H);
+    g.destroy();
+    return key;
+  }
+
+  /**
    * Names the tune as it begins (ROADMAP task 46). Passes are queued a
    * lookahead ahead of time, so the title is held until playback actually
    * reaches the song's first note — then it fades up and away. Knowing
@@ -876,6 +916,13 @@ export class RoadScene extends Phaser.Scene {
         hold: SONG_TITLE_HOLD_MS,
       });
     }
+  }
+
+  /** Resting alpha for a marker: a miss dims, a rest sits back a little (there's nothing to do about it), a live note is full. */
+  private markerBaseAlpha(marker: BeatMarker): number {
+    if (marker.resolved === 'miss') return 0.75;
+    if (marker.resolved === 'rest') return 0.7;
+    return 1;
   }
 
   /** Origin that puts the note *head* (not the texture center) on the staff position. */
@@ -924,6 +971,16 @@ export class RoadScene extends Phaser.Scene {
     const song = songForBiome(biomeId, pass);
     const notes = expandSong(song, BPM, this.nextPassStartTimeMs, this.totalNotesGenerated);
     for (const beat of notes) {
+      if (beat.rest) {
+        this.markers.push({
+          beat,
+          gfx: null,
+          resolved: 'rest',
+          step: STAFF_MIDDLE_STEP,
+          texKey: this.restTexture(beat.beats),
+        });
+        continue;
+      }
       const name = noteNameAt(beat.semitone);
       const step = staffStepAt(beat.semitone);
       // Naturals are enforced by songs.test.ts; the fallback exists so a
@@ -1087,13 +1144,15 @@ export class RoadScene extends Phaser.Scene {
         const tint =
           marker.resolved === 'hit' ? NOTE_TINT_HIT : marker.resolved === 'miss' ? NOTE_TINT_MISS : NOTE_TINT_UPCOMING;
         marker.gfx = this.add.image(0, 0, marker.texKey);
-        marker.gfx.setOrigin(NOTE_ORIGIN_X, this.noteOriginY(marker.step));
+        // A rest glyph is drawn around the middle of its texture; a note is
+        // anchored by its head.
+        marker.gfx.setOrigin(NOTE_ORIGIN_X, marker.resolved === 'rest' ? 0.5 : this.noteOriginY(marker.step));
         marker.gfx.setTint(tint);
-        if (marker.resolved === 'miss') marker.gfx.setAlpha(0.75);
+        marker.gfx.setAlpha(this.markerBaseAlpha(marker));
       }
       marker.gfx.setPosition(this.markerX(progress), this.staffY(marker.step, laneY));
       if (progress > 1) {
-        const base = marker.resolved === 'miss' ? 0.75 : 1;
+        const base = this.markerBaseAlpha(marker);
         marker.gfx.setAlpha(base * Math.max(0, 1 - (progress - 1) / (EXIT_PROGRESS - 1)));
       }
       return true;

@@ -74,17 +74,21 @@ export const ODE_TO_JOY: Song = {
   ],
 };
 
-/** Hot Cross Buns — traditional, 5 bars of 4/4. The three-note first tune. */
+/**
+ * Hot Cross Buns — traditional, 5 bars of 4/4. The three-note first tune,
+ * and the first place a reader meets a **rest**: each "hot cross buns" is
+ * three beats and a beat of breath, which is how beginner books write it.
+ */
 export const HOT_CROSS_BUNS: Song = {
   id: 'buns',
   title: 'Hot Cross Buns',
   beatsPerBar: 4,
   notes: [
-    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 2 },
-    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 2 },
+    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 1 }, { semitone: 0, beats: 1, rest: true },
+    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 1 }, { semitone: 0, beats: 1, rest: true },
     { semitone: 0, beats: 1 }, { semitone: 0, beats: 1 }, { semitone: 0, beats: 1 }, { semitone: 0, beats: 1 },
     { semitone: 2, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 2, beats: 1 },
-    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 2 },
+    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 1 }, { semitone: 0, beats: 1, rest: true },
   ],
 };
 

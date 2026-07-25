@@ -73,6 +73,16 @@ that silently samples a prefix is worse than none.
   region (weakening the curriculum) or sit in unreadable ledger
   territory. Rotation bought the variety instead.
 
+- **Task 50 — rests.** A written silence is now a symbol, not an empty
+  gap: `SongNote.rest` occupies its time, scrolls the staff, sounds
+  nothing, and is never tapped or missed — it's born `resolved: 'rest'`,
+  so it falls out of hit-finding and miss-detection by construction
+  rather than by special cases scattered around. Engraved by value
+  (whole hangs under the line above the middle, half sits on it, quarter
+  is the zigzag). *Hot Cross Buns* carries the first one. Autoplay still
+  holds a perfect meter with rests in the schedule, which is the proof
+  they really are un-tappable.
+
 **Next run: nothing is queued and nothing is blocked.** Read DESIGN.md's
 Pedagogy section first, then take ROADMAP task 50's suggestions or the
 idea backlog. Run `tools/autoplay.mjs` before and after any change to the
