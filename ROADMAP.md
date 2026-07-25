@@ -266,12 +266,18 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     read against all three biome skies; buckle/feather/strings reuse the
     coin-gold and cream UI accents. Verified by real headless screenshots
     of both states.
-31. **(Playtest feedback) Per-biome background scenery.** Human verdict:
-    "not much biome or features in the background at all." Each biome gets
-    a few silhouette-layer features scrolling with (or slightly slower
-    than, for parallax) the road: village houses/lantern glows, forest
-    tree shapes, riverside water band/tents. Procedural shapes in each
-    biome's palette; keep the bundle small.
+31. ~~**(Playtest feedback) Per-biome background scenery.**~~ Done
+    (2026-07-25, overnight session): a silhouette scenery band now sits
+    between sky and road, scrolling at 0.45x road speed for parallax
+    depth, crossfading between biomes with the same two-TileSprite
+    pattern the road uses. Village: three gabled houses with warm lit
+    windows and a chimney. Forest: conifer + round-canopy silhouettes
+    with fireflies. Riverside: water band with wave glints, a tent, a
+    campfire glow, reeds. `Biome` gained `sceneryColor`/`sceneryAccent`;
+    all shapes are Graphics-drawn tiles (no assets). Verified by
+    screenshots of all three biomes (temporarily shortened transition
+    distances in a throwaway build to reach forest/riverside quickly;
+    shipped constants unchanged).
 32. **(Playtest feedback) Art-style consolidation pass.** After 30–31,
     unify the look: one consistent shape language/palette across bard,
     markers, road, scenery, and UI readouts, so the game reads as one

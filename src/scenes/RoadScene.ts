@@ -58,6 +58,12 @@ const ROAD_TILE_WIDTH = 64;
 const ROAD_TILE_HEIGHT = 48;
 const ROAD_SCROLL_PX_PER_SEC = ROAD_TILE_WIDTH / (MS_PER_BEAT / 1000);
 const ROAD_HEIGHT_BELOW_BARD = 60;
+// Background scenery band (ROADMAP task 31): silhouette features sitting on
+// the horizon, scrolling slower than the road so the world reads as having
+// depth. One repeating tile per biome, crossfaded exactly like the road.
+const SCENERY_TILE_WIDTH = 256;
+const SCENERY_TILE_HEIGHT = 120;
+const SCENERY_PARALLAX = 0.45;
 const COIN_RATE_PER_SEC = 5;
 const COIN_ICON_RADIUS = 8;
 const COIN_ICON_COLOR = 0xe8c157;
@@ -98,6 +104,10 @@ export class RoadScene extends Phaser.Scene {
   private roadNext!: Phaser.GameObjects.TileSprite;
   private roadFromIndex = 0;
   private roadToIndex = 0;
+  private scenery!: Phaser.GameObjects.TileSprite;
+  private sceneryNext!: Phaser.GameObjects.TileSprite;
+  private sceneryFromIndex = 0;
+  private sceneryToIndex = 0;
   private distancePx = 0;
   private totalBeatsGenerated = 0;
   private nextBatchStartTimeMs = 0;
@@ -137,6 +147,12 @@ export class RoadScene extends Phaser.Scene {
     this.totalBeatsGenerated = 0;
     this.nextBatchStartTimeMs = 0;
     this.appendBeatBatch();
+
+    this.sceneryFromIndex = 0;
+    this.sceneryToIndex = 0;
+    this.scenery = this.add.tileSprite(0, 0, this.scale.width, SCENERY_TILE_HEIGHT, this.sceneryTileTexture(BIOMES[0]));
+    this.sceneryNext = this.add.tileSprite(0, 0, this.scale.width, SCENERY_TILE_HEIGHT, this.sceneryTileTexture(BIOMES[0]));
+    this.sceneryNext.setAlpha(0);
 
     this.roadFromIndex = 0;
     this.roadToIndex = 0;
@@ -230,6 +246,73 @@ export class RoadScene extends Phaser.Scene {
       g.generateTexture(key, ROAD_TILE_WIDTH, ROAD_TILE_HEIGHT);
       g.destroy();
     }
+    return key;
+  }
+
+  /**
+   * Procedural background scenery tile per biome (ROADMAP task 31):
+   * silhouette features drawn against a transparent sky so the camera's
+   * blended background color shows through. Each biome gets its own shapes
+   * — this is the "three vignettes" of DESIGN.md's concept finally visible
+   * as places, not just palette swaps. Silhouettes are anchored to the
+   * tile's bottom edge, which sits on the road band's top edge.
+   */
+  private sceneryTileTexture(biome: Biome): string {
+    const key = `scenery-${biome.id}`;
+    if (this.textures.exists(key)) return key;
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    const H = SCENERY_TILE_HEIGHT;
+
+    if (biome.id === 'village') {
+      // Three gabled houses of varying heights, warm lit windows, a chimney.
+      g.fillStyle(biome.sceneryColor, 1);
+      g.fillRect(24, H - 60, 52, 60);
+      g.fillTriangle(18, H - 60, 82, H - 60, 50, H - 90);
+      g.fillRect(64, H - 82, 8, 14);
+      g.fillRect(124, H - 45, 44, 45);
+      g.fillTriangle(118, H - 45, 172, H - 45, 146, H - 70);
+      g.fillRect(202, H - 35, 36, 35);
+      g.fillTriangle(198, H - 35, 240, H - 35, 220, H - 56);
+      g.fillStyle(biome.sceneryAccent, 0.9);
+      g.fillRect(34, H - 40, 6, 8);
+      g.fillRect(58, H - 40, 6, 8);
+      g.fillRect(140, H - 30, 6, 7);
+      g.fillRect(216, H - 25, 5, 6);
+    } else if (biome.id === 'forest') {
+      // Conifer silhouettes, one round-canopy tree, a couple of fireflies.
+      g.fillStyle(biome.sceneryColor, 1);
+      g.fillTriangle(20, H, 60, H, 40, H - 80);
+      g.fillTriangle(70, H, 110, H, 90, H - 55);
+      g.fillTriangle(125, H, 175, H, 150, H - 90);
+      g.fillRect(211, H - 25, 8, 25);
+      g.fillCircle(215, H - 40, 22);
+      g.fillStyle(biome.sceneryAccent, 0.8);
+      g.fillCircle(70, H - 30, 1.5);
+      g.fillCircle(185, H - 50, 1.5);
+      g.fillCircle(120, H - 20, 1.2);
+    } else {
+      // Riverside: water band with glints, a tent, a campfire, reeds.
+      g.fillStyle(0x16344a, 1);
+      g.fillRect(0, H - 24, SCENERY_TILE_WIDTH, 24);
+      g.fillStyle(biome.sceneryAccent, 0.8);
+      g.fillRect(20, H - 16, 18, 2);
+      g.fillRect(80, H - 10, 14, 2);
+      g.fillRect(150, H - 18, 16, 2);
+      g.fillRect(210, H - 12, 12, 2);
+      g.fillStyle(biome.sceneryColor, 1);
+      g.fillTriangle(40, H - 24, 90, H - 24, 65, H - 60);
+      g.fillTriangle(58, H - 24, 72, H - 24, 65, H - 46);
+      g.fillRect(160, H - 34, 2, 12);
+      g.fillRect(166, H - 36, 2, 14);
+      g.fillRect(230, H - 32, 2, 10);
+      g.fillStyle(0xe8c157, 0.95);
+      g.fillCircle(110, H - 28, 3);
+      g.fillStyle(0xe8c157, 0.25);
+      g.fillCircle(110, H - 28, 7);
+    }
+
+    g.generateTexture(key, SCENERY_TILE_WIDTH, SCENERY_TILE_HEIGHT);
+    g.destroy();
     return key;
   }
 
@@ -539,6 +622,7 @@ export class RoadScene extends Phaser.Scene {
       RoadScene.lerpColor(BIOMES[blend.fromIndex].skyColor, BIOMES[blend.toIndex].skyColor, blend.ratio)
     );
 
+    this.updateScenery(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
     this.updateRoad(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
     this.hitLine.setPosition(hitLineX, laneY);
     this.hitLine.setSize(4, HIT_LINE_HEIGHT);
@@ -615,6 +699,37 @@ export class RoadScene extends Phaser.Scene {
       const scrollDelta = (ROAD_SCROLL_PX_PER_SEC * delta) / 1000;
       this.road.tilePositionX += scrollDelta;
       this.roadNext.tilePositionX += scrollDelta;
+    }
+  }
+
+  /**
+   * Scenery band mirrors updateRoad's two-TileSprite crossfade, but
+   * scrolls at SCENERY_PARALLAX of the road speed — background features
+   * sliding slower than the ground is what makes the road read as nearer
+   * than the houses/trees/water (ROADMAP task 31). Its bottom edge sits on
+   * the road band's top edge.
+   */
+  private updateScenery(laneY: number, delta: number, fromIndex: number, toIndex: number, ratio: number): void {
+    if (fromIndex !== this.sceneryFromIndex) {
+      this.sceneryFromIndex = fromIndex;
+      this.scenery.setTexture(this.sceneryTileTexture(BIOMES[fromIndex]));
+    }
+    if (toIndex !== this.sceneryToIndex) {
+      this.sceneryToIndex = toIndex;
+      this.sceneryNext.setTexture(this.sceneryTileTexture(BIOMES[toIndex]));
+    }
+
+    const roadTopY = laneY + BARD_GROUND_Y_OFFSET - ROAD_HEIGHT_BELOW_BARD / 2;
+    const sceneryY = roadTopY - SCENERY_TILE_HEIGHT / 2;
+    this.scenery.setPosition(this.scale.width / 2, sceneryY);
+    this.scenery.setSize(this.scale.width, SCENERY_TILE_HEIGHT);
+    this.sceneryNext.setPosition(this.scale.width / 2, sceneryY);
+    this.sceneryNext.setSize(this.scale.width, SCENERY_TILE_HEIGHT);
+    this.sceneryNext.setAlpha(ratio);
+    if (this.walking) {
+      const scrollDelta = (ROAD_SCROLL_PX_PER_SEC * SCENERY_PARALLAX * delta) / 1000;
+      this.scenery.tilePositionX += scrollDelta;
+      this.sceneryNext.tilePositionX += scrollDelta;
     }
   }
 
