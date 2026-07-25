@@ -264,6 +264,14 @@ of headless-vs-real-device caveat as Run 23's audio-resume fix.
   round-2 checklist for the retuned values). Also re-confirmed the v0.1
   tag push is impossible from this environment (still HTTP 403; GitHub
   MCP has no tag/release write call). `npm test` 56 green, build green.
+- Overnight session, task 30 (2026-07-25): bard sprite & walk-animation
+  overhaul per ROADMAP task 30 (human granted an extended interactive
+  session to execute the art tasks directly). Placeholder rectangles →
+  multi-part procedural character (legs/tunic/lute/capped head with
+  feather) with beat-synced walk (legs + per-footfall bob + stride rock on
+  a separate upper-body container so feet stay grounded) and a
+  breathing/lute-sway idle. Verified with headless screenshots of both
+  anim states, not just green tests. `npm test` 56 green, build green.
 
 ## Needs human playtest
 Round-1 feedback (2026-07-25) answered the original feel questions for

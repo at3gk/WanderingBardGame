@@ -253,14 +253,19 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     browser chrome shows/hides instead of the theoretical maximum. Pure CSS,
     no JS/logic change.
 
-30. **(Playtest feedback) Bard sprite & walk-animation overhaul.** The
-    human verdict on the current three-rectangle bard: "need some better
-    animation for the bard... spend a lot more time focused on art style,
-    sprite style." Replace the placeholder with a real (still procedural
-    or CC0, per CLAUDE.md) bard sprite — distinct head/body/limbs/lute,
-    a proper multi-keyframe walk cycle synced to the beat-derived footfall
-    cadence from the 2026-07-25 tuning, and an idle strum. Biggest visible
-    payoff of the three art tasks, so it goes first.
+30. ~~**(Playtest feedback) Bard sprite & walk-animation overhaul.**~~ Done
+    (2026-07-25, overnight session): the three-rectangle placeholder is
+    now a multi-part procedural character — booted hip-pivoting legs,
+    belted tunic with a gold buckle, a sleeve reaching across to a lute
+    (neck up, strings + soundhole), and a capped head with a cream
+    feather, all Graphics-drawn textures (no assets). Walk cycle: legs
+    swing at one footfall per beat, upper body dips once per footfall and
+    rocks with the stride (feet never leave the ground — the bob applies
+    to a separate upper-body container). Idle: breathing pulse + gentle
+    lute sway so the bard never freezes. Palette is deliberately warm to
+    read against all three biome skies; buckle/feather/strings reuse the
+    coin-gold and cream UI accents. Verified by real headless screenshots
+    of both states.
 31. **(Playtest feedback) Per-biome background scenery.** Human verdict:
     "not much biome or features in the background at all." Each biome gets
     a few silhouette-layer features scrolling with (or slightly slower
