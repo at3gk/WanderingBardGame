@@ -459,8 +459,29 @@ teaching is entirely presentation.
     repeats, with no new mechanic — just data plus a per-biome pass
     counter. Hint text also updated now that the lane is a staff: "tap
     when a note reaches the line".
-49. **Next.** Nothing queued — pull from the idea backlog below, or grow
-    the songbook further (a fourth biome is the obvious next step).
+49. ~~**Consolidation pass.**~~ Done (2026-07-26): drift check clean — the
+    songbook is still a readout of the one mechanic (tap a note as it
+    reaches the line), no new systems, no new runtime dependencies.
+    STATE.md trimmed (four stale per-run write-ups that duplicated their
+    own Recent-runs entries and ROADMAP done-entries), and its "Needs
+    human playtest" section rewritten now that the harness answers most
+    of it mechanically.
+    **Considered and rejected: a fourth biome.** Naturals-only (the
+    Pedagogy rule) means the usable staff is about two octaves, and
+    village/forest/riverside already occupy the low, middle and upper
+    thirds of it. A fourth vignette would have to either duplicate an
+    existing region — weakening the curriculum, which is the point of the
+    biome split — or live in heavy ledger territory that a beginner can't
+    read. Rotation (task 48) bought the same variety without that cost.
+    If a fourth is ever wanted, it should come with a reason of its own,
+    not as "more scenery".
+50. **Next.** Nothing queued. Pull from the idea backlog below. Growth
+    ideas with real teaching value, in rough order of appeal: **rests**
+    (a written rest is half of rhythm and the song format could carry one
+    as a non-tappable marker), a **fifth/sixth tune** in an existing
+    biome set (pure data, no design cost), and **key signatures** — which
+    would be a genuine v0.4 direction, not a task, since it breaks the
+    naturals-only rule the whole notation currently rests on.
 
 ## Idea backlog (pull from here when nothing is queued)
 

@@ -65,6 +65,19 @@ Note the harness bug that hid this at first: it analysed only the first
 runs in-page over every note. Worth remembering — a verification tool
 that silently samples a prefix is worse than none.
 
+- **Task 49 — consolidation.** Drift check clean; STATE.md trimmed of
+  four stale per-run write-ups. A fourth biome was considered and
+  rejected with a reason worth keeping: naturals-only gives about two
+  usable octaves, and the three existing vignettes already own the low,
+  middle and upper thirds of it, so a fourth would either duplicate a
+  region (weakening the curriculum) or sit in unreadable ledger
+  territory. Rotation bought the variety instead.
+
+**Next run: nothing is queued and nothing is blocked.** Read DESIGN.md's
+Pedagogy section first, then take ROADMAP task 50's suggestions or the
+idea backlog. Run `tools/autoplay.mjs` before and after any change to the
+schedule, the songbook or the audio — it catches what unit tests can't.
+
 ## Previous status (second overnight session, 2026-07-25)
 **v0.2 direction set by the human: teach kids to read music.** DESIGN.md gained a full
 Pedagogy section (read it first — it is the contract for the v0.2 arc,
@@ -101,61 +114,11 @@ ROADMAP tasks 41–44). Executed so far this session:
   shipped; task 44 (rhythm values) is a design question gated on an
   explicit human yes.
 
-## Previous status (Run 32, scheduled)
-Run 32 (scheduled, 2026-07-25): **meter as staff** (ROADMAP task 40,
-promoted from the idea backlog — task 38 is still blocked on the human
-round-2 playtest). See ROADMAP task 40's done entry for the full
-writeup; in short, the song-meter bar now carries five faint staff
-lines drawn on top of the existing track/fill, so it joins the notation
-language every other UI element already speaks (task 32). Screenshot
-verification caught a real bug before commit: the first attempt tinted
-the lines the same cream as the full-meter fill color, silently erasing
-them at 100% meter — only checking the *full* state (not just empty/mid)
-surfaced it. Fixed with a distinct bronze tone. Pure `RoadScene`
-rendering addition, no change to `songMeter`'s logic, no new texture,
-no new dependency. `npm test` 71 green (unchanged), build green, bundle
-unchanged (~1.23 MB).
+## Previous status (older sessions)
+Trimmed during the 2026-07-26 consolidation pass: the per-run write-ups
+for Runs 29–32 and the first overnight session duplicated their own
+`Recent runs` entries below and their ROADMAP done-entries. See those.
 
-## Previous status (Run 31, scheduled, 2026-07-25)
-Run 31: **strum on hit** (ROADMAP task 39, promoted from the idea
-backlog — task 38 is still blocked on the human round-2 playtest). See
-ROADMAP task 39's done entry for the full writeup; in short, the lute
-now kicks and springs back on every hit as the visual twin of the
-existing pluck-note audio (task 33). Pure `RoadScene` tween addition, no
-new texture, no new dependency. `npm test` 71 green (unchanged), build
-green, headless-screenshot verified.
-
-## Previous status (overnight interactive session, 2026-07-25)
-**The game got its round-1 human playtest, and then eight PRs of it.**
-A human played the build, gave verdicts, and granted an extended
-session ("keep running and cook"). Everything below merged to main the
-same night (PRs #32–#39, each CI-green before merge):
-
-1. **Playtest fold-in** (#32): hit window 120→90ms, hitGain 8→12,
-   melodies recomposed as 8-beat pentatonic phrases, walk/scroll
-   beat-derived (one footfall per beat, one tile per footfall), biome
-   palettes re-pitched. See ROADMAP task 14's done entry.
-2. **Bard sprite & animation overhaul** (#33, task 30) — multi-part
-   procedural bard (tunic/cap/feather/lute), beat-synced walk, live idle.
-3. **Per-biome scenery bands** (#34, task 31) — village houses / forest
-   conifers / riverside camp silhouettes at 0.45x parallax.
-4. **Art-style consolidation** (#35, task 32) — one visual language:
-   everything the player touches is musical notation; DESIGN.md gained an
-   "Art direction" section.
-5. **The player's own note + night sky** (#36, tasks 33–34) — hits play
-   the beat's melody note (+1 octave); starfield + moon at 0.08x parallax.
-6. **The road loops home** (#37, task 35) — cyclic biome transitions,
-   village → forest → riverside → village forever.
-7. **Slow dusk cycle** (#38, task 36) — the time-of-day shift DESIGN.md
-   promised at Run 0; world darkens, stars/moon brighten, bard stays warm.
-8. **Consolidation** (#39, task 37) — this entry, process notes below,
-   flash-width nit fixed, drift check clean.
-
-Tests 56 → 71, all green; bundle ~1.22 MB (limit 5 MB); no new runtime
-dependencies. Next actionable work for scheduled runs: nothing queued —
-propose a fresh arc (task 38 is blocked on human round-2 playtest;
-PLAYTEST.md covers everything above). `ROAD_SCROLL_PX_PER_SEC` note:
-90 → 102.4 with the beat-derived walk, so transitions arrive ~12% sooner.
 
 ## Process notes for future runs
 
@@ -175,37 +138,6 @@ PLAYTEST.md covers everything above). `ROAD_SCROLL_PX_PER_SEC` note:
 - **This session's PR cadence** (if working interactively again): commit
   per task on the working branch, PR to main, enable auto-merge (squash),
   merge origin/main back after each squash lands, repeat.
-
-## Previous status (Run 29)
-Run 29 complete — `#game`'s CSS used a plain `height: 100vh` to fill the
-viewport. On mobile Safari/Chrome, `100vh` is sized against the *largest*
-possible viewport (address bar collapsed), not what's actually visible on
-a cold load (address bar shown) — the well-documented mobile "100vh" gap.
-That's the same family of real-mobile-viewport bug as Run 26's
-`touch-action` fix and Run 27's phantom-scroll-gap fix, not a feel/tuning
-question, so — same reasoning as tasks 25–28 — it didn't need to wait on
-the still-blocked task 14 human playtest.
-
-- Added `height: 100dvh` immediately after the existing `height: 100vh` in
-  `index.html`'s `#game` rule. `dvh` (dynamic viewport height) tracks the
-  currently-visible viewport as browser chrome shows/hides; the `100vh`
-  declaration stays as a fallback for any browser without `dvh` support
-  (an unrecognized value is simply ignored, so the fallback only applies
-  there — evergreen mobile/desktop browsers all support `dvh`). Pure CSS,
-  no JS/logic change, no new dependency.
-
-Verified: `npm test` (56 tests green, unchanged — CSS-only change touches
-no logic). `npm run build` (green, bundle ~1.22 MB, unchanged). Headless
-Playwright (iPhone 12 emulation) against the built `vite preview` output
-confirmed the cascade resolves `#game`'s computed CSSOM height rule to
-`100dvh` (the later, dvh-supporting declaration wins) and that
-`getComputedStyle(#game).height` matches `window.innerHeight` exactly
-(664px both); 8 taps at the 625ms beat cadence produced zero console/page
-errors afterward. Caveat: headless Chromium doesn't dynamically show/hide
-a real address bar the way a physical mobile browser does, so this
-confirms the CSS lands and doesn't regress ordinary play, not that the
-previously-hidden mobile gap is now visible on a real device — same class
-of headless-vs-real-device caveat as Run 23's audio-resume fix.
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -457,22 +389,23 @@ of headless-vs-real-device caveat as Run 23's audio-resume fix.
   screenshot confirmed the strum tween with zero console/page errors.
 
 ## Needs human playtest
-Round-1 feedback (2026-07-25) answered the original feel questions for
-tasks 3–29; that itemized list is retired (see git history / PLAYTEST.md).
-Open items for round 2:
 
-- **Retuned values need re-judging**: 90ms hit window (tighter — did it
-  overshoot into "too strict"?), hitGain 12 refill pace, the recomposed
-  8-beat phrases (do they now read as intentional, cozy music?),
-  beat-synced walk/scroll (do legs and ground finally read as one motion?),
-  and the stronger biome palettes (do the three moods land now?).
-- **Round-1 items never explicitly answered**: real-device verification of
-  the mobile fixes (viewport gap, gesture lockdown, audio resume after
-  backgrounding — tasks 23/26/27/29), audible dropouts or marker pop-in at
-  beat-batch boundaries (task 13), and whether backing-loop notes land on
-  the markers after Run 28's phase fix.
+Much smaller than it used to be: `tools/autoplay.mjs` now answers
+mechanically what used to be queued for a person — that the melody is in
+tune and naturals-only, that the songbook rotates and loops, that perfect
+play holds the meter, that nothing leaks over a long walk. Round-1
+feedback (2026-07-25) settled the original feel questions. What genuinely
+still needs a human:
 
-PLAYTEST.md is the round-2 checklist; fold answers in the same way.
+- **Subjective feel a machine can't judge**: is 96 BPM comfortable for a
+  small child, does the 90ms hit window forgive a young hand, does the
+  music actually sound cozy on real speakers.
+- **Real-device behaviours headless can't reproduce**: audio resume after
+  backgrounding the tab, gesture lockdown against pinch/double-tap zoom,
+  and the visible-viewport fit on a phone with browser chrome showing.
+- **The teaching outcome**, which is the whole point and is not
+  measurable here: does a child start naming notes? PLAYTEST.md's round-3
+  protocol is written for exactly that.
 
 ## Blocked on human
 - **v0.1 git tag** (Run 12): ROADMAP task 12 says "Tag this as v0.1."
