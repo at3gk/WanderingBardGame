@@ -296,6 +296,14 @@ of headless-vs-real-device caveat as Run 23's audio-resume fix.
   glow — road 1x / scenery 0.45x / stars 0.08x gives the scene depth.
   New ROADMAP arc queued for future runs ("the road loops home", tasks
   35–38). `npm test` 59 green, build green, screenshot-verified.
+- Overnight session, task 35 (2026-07-25): the road loops home.
+  `biomeBlendAt` wraps when the transition list is as long as the biome
+  list (distance modulo cycle length; shorter lists keep the clamping
+  behavior). Third transition added (riverside → village, 14000–16000px)
+  → village → forest → riverside → village → … forever, every cycle
+  identical. 5 new tests (64 total); wrap screenshot-verified via the
+  shortened-transitions throwaway build. `npm test` 64 green, build
+  green.
 
 ## Needs human playtest
 Round-1 feedback (2026-07-25) answered the original feel questions for

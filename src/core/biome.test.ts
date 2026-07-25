@@ -50,9 +50,52 @@ describe('biomeBlendAt', () => {
     expect(biomeBlendAt(1000, hardCut, 2)).toEqual({ fromIndex: 0, toIndex: 1, ratio: 1 });
   });
 
-  it('ignores transitions beyond biomeCount - 1', () => {
-    // Only 2 biomes but 2 transitions supplied — the second transition
-    // should never be reached since there's no third biome to blend into.
-    expect(biomeBlendAt(3250, TWO_STAGE, 2)).toEqual({ fromIndex: 1, toIndex: 1, ratio: 0 });
+  it('wraps home when the transition list is as long as the biome list (task 35)', () => {
+    // 2 biomes, 2 transitions: the second transition now leads back to
+    // biome 0 instead of being ignored (pre-task-35 clamping behavior).
+    const blend = biomeBlendAt(3250, TWO_STAGE, 2);
+    expect(blend.fromIndex).toBe(1);
+    expect(blend.toIndex).toBe(0);
+    expect(blend.ratio).toBeCloseTo(0.5, 5);
+  });
+});
+
+describe('biomeBlendAt cyclic wrapping (task 35 — the road loops home)', () => {
+  // 3 biomes, 3 transitions; the last one wraps 2 -> 0. Cycle length is
+  // the last transition's end: 5500.
+  const LOOP: BiomeTransition[] = [
+    { startPx: 1000, lengthPx: 500 },
+    { startPx: 3000, lengthPx: 500 },
+    { startPx: 5000, lengthPx: 500 },
+  ];
+
+  it('ramps the final transition from the last biome back to biome 0', () => {
+    const blend = biomeBlendAt(5250, LOOP, 3);
+    expect(blend.fromIndex).toBe(2);
+    expect(blend.toIndex).toBe(0);
+    expect(blend.ratio).toBeCloseTo(0.5, 5);
+  });
+
+  it('is steady on biome 0 again just past the cycle boundary', () => {
+    expect(biomeBlendAt(5600, LOOP, 3)).toEqual({ fromIndex: 0, toIndex: 0, ratio: 0 });
+  });
+
+  it('repeats the first transition in the second cycle at the same in-cycle distance', () => {
+    const firstCycle = biomeBlendAt(1100, LOOP, 3);
+    const secondCycle = biomeBlendAt(5500 + 1100, LOOP, 3);
+    expect(secondCycle).toEqual(firstCycle);
+    expect(secondCycle.toIndex).toBe(1);
+    expect(secondCycle.ratio).toBeCloseTo(0.2, 5);
+  });
+
+  it('keeps cycling at very large distances', () => {
+    const blend = biomeBlendAt(5500 * 100 + 3250, LOOP, 3);
+    expect(blend.fromIndex).toBe(1);
+    expect(blend.toIndex).toBe(2);
+    expect(blend.ratio).toBeCloseTo(0.5, 5);
+  });
+
+  it('still clamps (no wrap) when the transition list is shorter than the biome list', () => {
+    expect(biomeBlendAt(100000, TWO_STAGE, 3)).toEqual({ fromIndex: 2, toIndex: 2, ratio: 0 });
   });
 });
