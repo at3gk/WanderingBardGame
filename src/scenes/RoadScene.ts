@@ -188,7 +188,7 @@ export class RoadScene extends Phaser.Scene {
     this.hitLine = this.add.image(0, 0, 'hit-line');
     this.hitLine.setTint(NOTE_TINT_UPCOMING);
     this.hitLine.setAlpha(0.8);
-    this.flash = this.add.rectangle(0, 0, 4, 0, 0xffffff, 0);
+    this.flash = this.add.rectangle(0, 0, 6, 0, 0xffffff, 0);
 
     this.hintShown = true;
     this.hintText = this.add.text(this.hitLineX(), this.laneY() + HINT_Y_OFFSET, HINT_TEXT, {
@@ -754,7 +754,7 @@ export class RoadScene extends Phaser.Scene {
     this.updateRoad(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
     this.hitLine.setPosition(hitLineX, laneY);
     this.flash.setPosition(hitLineX, laneY);
-    this.flash.setSize(4, HIT_LINE_HEIGHT);
+    this.flash.setSize(6, HIT_LINE_HEIGHT);
     if (this.hintShown) {
       this.hintText.setPosition(hitLineX, laneY + HINT_Y_OFFSET);
     }

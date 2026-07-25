@@ -3,38 +3,56 @@
 Run counter: 30
 
 ## Current status
-Interactive session (2026-07-25) — **the task 14 human playtest happened.**
-A human played the build and gave verdicts; all four were folded into code
-the same session:
+Overnight interactive session (2026-07-25) — **the game got its round-1
+human playtest, and then eight PRs of it.** A human played the build,
+gave verdicts, and granted an extended session ("keep running and
+cook"). Everything below merged to main the same night (PRs #32–#39,
+each CI-green before merge):
 
-- **Hit window too loose** → `HIT_WINDOW_MS` 120 → 90 (`RoadScene.ts`).
-- **Meter refills too slowly** → `hitGain` 8 → 12 (`songMeter.ts`):
-  empty→walking now ~3.3 hits (was 5), empty→full ~8.3 (was 12.5). Drain
-  unchanged — ~3 misses to stop from full felt fine.
-- **Melody feels random** → all three layers recomposed (`manifest.ts`):
-  8-beat phrases sharing one arch contour (rise to the octave, fall back),
-  village = A major pentatonic, forest = A minor pentatonic, riverside =
-  open fourths/fifths; harmony/sparkle double the phrase +1/+2 octaves so
-  the per-beat biome diff stays identical across layers by construction.
-- **Walk/scroll mismatch + biome shifts weak** → walk cadence and scroll
-  speed are now both derived from the beat instead of eyeballed
-  independently (`RoadScene.ts`: one footfall per beat = 96 steps/min, one
-  road tile of ground per footfall = 102.4 px/s, so legs/ground/"N steps"
-  readout/music share one clock); biome palettes re-pitched with clearly
-  separated hues (`biome.ts`: warm plum / saturated green / cool blue).
-- The bigger art-direction feedback ("need some better animation for the
-  bard, not much biome or features in the background at all. Spend a lot
-  more time focused on art style, sprite style") is multi-run feature
-  work, not tuning — split into new ROADMAP tasks 30–32 (bard sprite
-  overhaul, per-biome background scenery, art-style consolidation pass).
+1. **Playtest fold-in** (#32): hit window 120→90ms, hitGain 8→12,
+   melodies recomposed as 8-beat pentatonic phrases, walk/scroll
+   beat-derived (one footfall per beat, one tile per footfall), biome
+   palettes re-pitched. See ROADMAP task 14's done entry.
+2. **Bard sprite & animation overhaul** (#33, task 30) — multi-part
+   procedural bard (tunic/cap/feather/lute), beat-synced walk, live idle.
+3. **Per-biome scenery bands** (#34, task 31) — village houses / forest
+   conifers / riverside camp silhouettes at 0.45x parallax.
+4. **Art-style consolidation** (#35, task 32) — one visual language:
+   everything the player touches is musical notation; DESIGN.md gained an
+   "Art direction" section.
+5. **The player's own note + night sky** (#36, tasks 33–34) — hits play
+   the beat's melody note (+1 octave); starfield + moon at 0.08x parallax.
+6. **The road loops home** (#37, task 35) — cyclic biome transitions,
+   village → forest → riverside → village forever.
+7. **Slow dusk cycle** (#38, task 36) — the time-of-day shift DESIGN.md
+   promised at Run 0; world darkens, stars/moon brighten, bard stays warm.
+8. **Consolidation** (#39, task 37) — this entry, process notes below,
+   flash-width nit fixed, drift check clean.
 
-Note: `ROAD_SCROLL_PX_PER_SEC` rose 90 → 102.4, so biome transitions
-arrive ~12% sooner in wall-clock time (first fade now starts ~39s in,
-resolves ~59s). Transition px positions unchanged.
+Tests 56 → 71, all green; bundle ~1.22 MB (limit 5 MB); no new runtime
+dependencies. Next actionable work for scheduled runs: nothing queued —
+propose a fresh arc (task 38 is blocked on human round-2 playtest;
+PLAYTEST.md covers everything above). `ROAD_SCROLL_PX_PER_SEC` note:
+90 → 102.4 with the beat-derived walk, so transitions arrive ~12% sooner.
 
-Verified: `npm test` (56 tests green), `npm run build` (green, bundle
-~1.22 MB unchanged). All retuned constants need a **round-2 playtest**
-(PLAYTEST.md rewritten for it).
+## Process notes for future runs
+
+- **Visual verification is possible and expected for visual work.**
+  Pattern: `npm run build && npm run preview` (port 4173), then a
+  Playwright script in the scratchpad (NOT a project dependency — keep
+  package.json clean) with
+  `chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })`,
+  screenshot, and actually look at the image. Tap input can be simulated
+  with `page.mouse.click` swept across beat offsets.
+- **Far-state screenshots** (later biomes, dusk states, wrap points):
+  temporarily sed the relevant constants down (transition distances,
+  `DUSK_CYCLE_PX`, `missDrain` → 0 so the bard never stops), `npx vite
+  build`, screenshot, then `git checkout` / sed back before committing.
+  The rendering path exercised is identical; shipped constants stay
+  untouched. Always run `git diff --stat` afterward to prove it.
+- **This session's PR cadence** (if working interactively again): commit
+  per task on the working branch, PR to main, enable auto-merge (squash),
+  merge origin/main back after each squash lands, repeat.
 
 ## Previous status (Run 29)
 Run 29 complete — `#game`'s CSS used a plain `height: 100vh` to fill the
