@@ -58,6 +58,37 @@ relay verdicts in a session. The next run folds answers into code.
   read as sheet music, or just clutter? Legible at phone size while
   walking? (`METER_STAFF_LINE_COLOR`/`_ALPHA` — `src/scenes/RoadScene.ts`)
 
+## Round 3 — test with a kid (v0.2 teaching goals)
+
+The v0.2 direction is "teach kids typical musical notes" (DESIGN.md
+Pedagogy). This round needs a child (~5–9), a phone with sound on, and
+one instruction only: **"tap when the notes reach the line."** Observe,
+don't coach.
+
+- [ ] **Mechanic accessible** — are they tapping at roughly the right
+  moments within the first minute?
+- [ ] **Labels noticed** — after one village stretch (~2 min), point at
+  an approaching note: "which one is that?" Do they answer with the
+  letter?
+- [ ] **Pitch-position link** — do they remark, unprompted or asked,
+  that higher notes sit higher on the lines? ("why is that one up
+  there?")
+- [ ] **Melody lands** — can they hum a bit of the tune after a loop?
+- [ ] **Transfer (the real win)** — afterwards, away from the screen,
+  draw five lines on paper and put a dot in the bottom space: "what
+  might this one be called?" *Any* reasonable attempt at a letter is a
+  pass — this is exposure, not examination.
+- [ ] **Letter legibility** — readable at their arm's length? (13px
+  baked into `qnote-*` textures — `NOTE_LETTER_STYLE`,
+  `src/scenes/RoadScene.ts`)
+- [ ] **The pause reads as rest** — when the meter empties and the bard
+  stops to busk, is it neutral/cozy for them, or do they read it as
+  losing? (DESIGN.md's no-fail tone is the promise to check.)
+- [ ] **Silent metronome** — does the hit line's per-beat brightening
+  help them find the rhythm before they can read anything?
+
+Fold answers into constants/patterns exactly like rounds 1–2.
+
 ### Round-1 items never explicitly answered
 
 - [ ] **Viewport fill** — cold load, address bar visible: game fills

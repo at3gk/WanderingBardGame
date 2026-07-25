@@ -26,6 +26,14 @@ ROADMAP tasks 41–44). Executed so far this session:
   switches ~15s past the visual crossfade — with throwaway shrunken
   biome cycles you must also shrink `BEAT_BATCH_SIZE` and wait out the
   lookahead to see a non-village pattern on screen.
+- **Task 43 — first-reader polish**: done. Mobile legibility confirmed
+  by iPhone-viewport screenshot (DPR scale-up makes letters large; no
+  change needed). Added the silent metronome (hit line brightens each
+  beat, fades to the next — beat-clock-derived, never out of step) so
+  pre-readers can feel the rhythm. PLAYTEST.md gained the round-3
+  kid-testing protocol. The v0.2 arc's buildable tasks (41–43) are all
+  shipped; task 44 (rhythm values) is a design question gated on an
+  explicit human yes.
 
 ## Previous status (Run 32, scheduled)
 Run 32 (scheduled, 2026-07-25): **meter as staff** (ROADMAP task 40,
