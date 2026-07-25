@@ -8,10 +8,13 @@ import { Biome, BIOMES, biomeBlendAt } from '../core/biome';
 import { accumulateCoins } from '../core/coins';
 
 const BPM = 96;
+const MS_PER_BEAT = 60000 / BPM;
 const BEAT_BATCH_SIZE = 32;
 const BEAT_LOOKAHEAD_MS = 15000;
 const TRAVEL_TIME_MS = 1800;
-const HIT_WINDOW_MS = 120;
+// Human playtest (2026-07-25): 120ms read as "too loose" — clearly-off taps
+// still counted as hits. Tightened to ±90ms.
+const HIT_WINDOW_MS = 90;
 const MARKER_RADIUS = 18;
 const HIT_LINE_HEIGHT = 56;
 const EXIT_PROGRESS = 1.35;
@@ -22,11 +25,17 @@ const BARD_LEG_COLOR = 0x5b4636;
 const BARD_BODY_COLOR = 0xc98a5b;
 const BARD_HEAD_COLOR = 0xe8c39e;
 const BARD_WALK_SWING_DEG = 20;
-const BARD_WALK_STEP_MS = 260;
+// Human playtest (2026-07-25): legs visibly out of sync with the ground
+// scroll (260ms swings over a 90px/s scroll = ~23px per footfall — mincing
+// steps under fast legs). Both are now derived from the beat instead of
+// eyeballed independently: one footfall per beat (96 steps/min, a normal
+// leisurely walking cadence) and one road tile of ground per footfall, so
+// legs, ground, the "N steps" readout, and the music all share one clock.
+const BARD_WALK_STEP_MS = MS_PER_BEAT;
 const BARD_IDLE_BREATH_MS = 1400;
 const ROAD_TILE_WIDTH = 64;
 const ROAD_TILE_HEIGHT = 48;
-const ROAD_SCROLL_PX_PER_SEC = 90;
+const ROAD_SCROLL_PX_PER_SEC = ROAD_TILE_WIDTH / (MS_PER_BEAT / 1000);
 const ROAD_HEIGHT_BELOW_BARD = 60;
 const COIN_RATE_PER_SEC = 5;
 const COIN_ICON_RADIUS = 8;

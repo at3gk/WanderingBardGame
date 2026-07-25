@@ -3,6 +3,40 @@
 Run counter: 30
 
 ## Current status
+Interactive session (2026-07-25) — **the task 14 human playtest happened.**
+A human played the build and gave verdicts; all four were folded into code
+the same session:
+
+- **Hit window too loose** → `HIT_WINDOW_MS` 120 → 90 (`RoadScene.ts`).
+- **Meter refills too slowly** → `hitGain` 8 → 12 (`songMeter.ts`):
+  empty→walking now ~3.3 hits (was 5), empty→full ~8.3 (was 12.5). Drain
+  unchanged — ~3 misses to stop from full felt fine.
+- **Melody feels random** → all three layers recomposed (`manifest.ts`):
+  8-beat phrases sharing one arch contour (rise to the octave, fall back),
+  village = A major pentatonic, forest = A minor pentatonic, riverside =
+  open fourths/fifths; harmony/sparkle double the phrase +1/+2 octaves so
+  the per-beat biome diff stays identical across layers by construction.
+- **Walk/scroll mismatch + biome shifts weak** → walk cadence and scroll
+  speed are now both derived from the beat instead of eyeballed
+  independently (`RoadScene.ts`: one footfall per beat = 96 steps/min, one
+  road tile of ground per footfall = 102.4 px/s, so legs/ground/"N steps"
+  readout/music share one clock); biome palettes re-pitched with clearly
+  separated hues (`biome.ts`: warm plum / saturated green / cool blue).
+- The bigger art-direction feedback ("need some better animation for the
+  bard, not much biome or features in the background at all. Spend a lot
+  more time focused on art style, sprite style") is multi-run feature
+  work, not tuning — split into new ROADMAP tasks 30–32 (bard sprite
+  overhaul, per-biome background scenery, art-style consolidation pass).
+
+Note: `ROAD_SCROLL_PX_PER_SEC` rose 90 → 102.4, so biome transitions
+arrive ~12% sooner in wall-clock time (first fade now starts ~39s in,
+resolves ~59s). Transition px positions unchanged.
+
+Verified: `npm test` (56 tests green), `npm run build` (green, bundle
+~1.22 MB unchanged). All retuned constants need a **round-2 playtest**
+(PLAYTEST.md rewritten for it).
+
+## Previous status (Run 29)
 Run 29 complete — `#game`'s CSS used a plain `height: 100vh` to fill the
 viewport. On mobile Safari/Chrome, `100vh` is sized against the *largest*
 possible viewport (address bar collapsed), not what's actually visible on
@@ -32,16 +66,6 @@ a real address bar the way a physical mobile browser does, so this
 confirms the CSS lands and doesn't regress ordinary play, not that the
 previously-hidden mobile gap is now visible on a real device — same class
 of headless-vs-real-device caveat as Run 23's audio-resume fix.
-
-## Previous status (Run 28)
-Run 28 complete — fixed a backing-loop/visual-beat phase misalignment.
-`AudioEngine.start()` anchored its note-scheduling clock to "the real
-moment of the first tap" instead of the visual schedule's own
-scene-creation-time zero, so the backing loop was out of phase with the
-beat markers by the player's own reaction time on every playthrough. Added
-a `nowMs` param to `start()` to anchor correctly and skip already-passed
-notes; added `AudioEngine.test.ts` (previously uncovered). `npm test` 56
-tests green (4 new), build green.
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
@@ -227,183 +251,39 @@ tests green (4 new), build green.
   already-passed notes; added `AudioEngine.test.ts` (previously
   uncovered). `npm test` 56 tests green (4 new), build green.
 - Run 29 (2026-07-24): `100dvh` for `#game`'s height per new ROADMAP task
-  29 (see Current status above). `100vh` alone sizes against mobile
+  29 (see Previous status above). `100vh` alone sizes against mobile
   Safari/Chrome's largest-possible viewport rather than the actually-
   visible one on cold load — the classic mobile "100vh" gap, same family
   of real-viewport bug as tasks 26/27. Pure CSS, no new dependency.
   `npm test` 56 tests green (unchanged), build green.
+- Interactive session (2026-07-25): ROADMAP task 14 (human playtest pass)
+  executed and closed (see Current status above). Human verdicts folded
+  into `HIT_WINDOW_MS`, `hitGain`, all `manifest.ts` patterns, beat-derived
+  walk/scroll constants, and `biome.ts` palettes; art-direction feedback
+  became ROADMAP tasks 30–32; PLAYTEST.md added (round-1 answers recorded,
+  round-2 checklist for the retuned values). Also re-confirmed the v0.1
+  tag push is impossible from this environment (still HTTP 403; GitHub
+  MCP has no tag/release write call). `npm test` 56 green, build green.
 
 ## Needs human playtest
-- Task 3 render/input: tap-to-hit feel — is `HIT_WINDOW_MS = 120` too
-  strict/loose, is `TRAVEL_TIME_MS = 1800` at `BPM = 96` a comfortable
-  read on a real touch device? These are eyeballed constants, not
-  derived from anything; a human playtest is the only way to tune them.
-- Task 4 song meter (this run): `DEFAULT_SONG_METER_CONFIG` (hitGain 8,
-  missDrain 14, walkingThreshold 40, max 100) is also eyeballed — drains
-  roughly 3 consecutive misses to stop walking from a full meter, refills
-  in ~5 hits from empty. Whether that feels forgiving enough for the
-  "cozy, no-fail" tone in DESIGN.md needs a real playtest; doesn't block
-  task 5 (the sprite reads the boolean `walking` state, not the tuning).
-- Task 5 bard sprite (this run): leg-swing amplitude/speed
-  (`BARD_WALK_SWING_DEG = 20`, `BARD_WALK_STEP_MS = 260`) and the idle
-  breathing pulse (`BARD_IDLE_BREATH_MS = 1400`) are eyeballed constants
-  verified only via static screenshots, not real motion. Needs a real
-  device playtest to check the walk cycle actually reads as "walking"
-  and not jittery; doesn't block task 6 (road scroll reads `walking`,
-  not these constants).
-- Task 6 scrolling road (this run): `ROAD_SCROLL_PX_PER_SEC = 90` is an
-  eyeballed constant chosen to roughly match the bard's own walk-cycle
-  cadence by eye in a screenshot diff, not measured against it. Needs a
-  real device playtest to confirm the ground scroll speed actually reads
-  as the same pace as the bard's legs, not faster/slower; doesn't block
-  task 7 (audio layer is independent of scroll speed).
-- Task 7 audio base loop (this run): `AUDIO_MANIFEST.baseLoop` (root
-  220 Hz, triangle wave, `[0, 0, 7, 5]` semitone pattern, gain 0.05,
-  180 ms notes) is an eyeballed starting timbre/pattern, not tuned by
-  ear against the "cozy" tone in DESIGN.md — headless checks can confirm
-  the schedule math and that no console errors fire, not what it
-  actually sounds like. Needs a real device/speaker playtest for volume
-  level and whether the pattern feels intentional rather than random;
-  doesn't block task 8 (layering fades additional layers in/out around
-  this same base, independent of its exact notes).
-- Task 8 audio layering (this run): the `harmony` (threshold 0.5) and
-  `sparkle` (threshold 0.85) layer voicings/gains and the 0.6s crossfade
-  duration are eyeballed, not tuned by ear — headless checks can confirm
-  the threshold-crossing/gain-ramp logic fires without errors, not
-  whether the layers sound cozy together or the crossfade timing feels
-  natural on real speakers. Needs a real device/speaker playtest across
-  a full walk (enough hits to actually cross both thresholds); doesn't
-  block task 9 (biome transitions are independent of audio tuning).
+Round-1 feedback (2026-07-25) answered the original feel questions for
+tasks 3–29; that itemized list is retired (see git history / PLAYTEST.md).
+Open items for round 2:
 
-- Task 9 second biome (this run): `BIOME_TRANSITION_START_PX = 4000` and
-  `BIOME_TRANSITION_LENGTH_PX = 2000` (against `ROAD_SCROLL_PX_PER_SEC =
-  90`, so ~44s in to start, ~67s to fully resolve) and the `Forest Dusk`
-  palette (`skyColor 0x141f1c`, `roadBandColor 0x2f3a2f`, `roadDashColor
-  0x3f4d3a`) are eyeballed, not tuned against real play — headless checks
-  can confirm the blend-ratio math and that both tile sprites stay in
-  lockstep, not whether the timing feels earned or the two palettes read
-  as a genuine mood shift on a real screen. Needs a real device playtest
-  across a full walk long enough to cross the transition band; doesn't
-  block task 10 (the consolidation pass doesn't depend on biome tuning).
+- **Retuned values need re-judging**: 90ms hit window (tighter — did it
+  overshoot into "too strict"?), hitGain 12 refill pace, the recomposed
+  8-beat phrases (do they now read as intentional, cozy music?),
+  beat-synced walk/scroll (do legs and ground finally read as one motion?),
+  and the stronger biome palettes (do the three moods land now?).
+- **Round-1 items never explicitly answered**: real-device verification of
+  the mobile fixes (viewport gap, gesture lockdown, audio resume after
+  backgrounding — tasks 23/26/27/29), audible dropouts or marker pop-in at
+  beat-batch boundaries (task 13), and whether backing-loop notes land on
+  the markers after Run 28's phase fix.
 
-- Task 11 coin readout (this run): `COIN_RATE_PER_SEC = 5` (at full meter)
-  is an eyeballed constant, not tuned against how satisfying the count-up
-  feels over a real walk length — headless checks can confirm the accrual
-  math, not the pacing. Needs a real playtest to judge whether the number
-  climbs at a pleasing rate or feels too slow/fast to notice; doesn't
-  block task 12 (the ship check verifies DoD items, none of which specify
-  coin pacing).
-
-- Task 13 unbounded beat schedule (this run): `BEAT_BATCH_SIZE = 300` and
-  `BEAT_LOOKAHEAD_MS = 15000` are eyeballed — the lookahead just needs to
-  be comfortably larger than one frame, which it is, but nobody has
-  actually played across a real batch boundary (~172s in) to confirm the
-  transition is inaudible/invisible on real hardware (a dropped audio
-  frame or a visible marker pop-in would be a real bug, not just a feel
-  issue). Needs a real device playtest of a session longer than ~3
-  minutes; doesn't block anything since v0.1 already shipped and no other
-  task depends on schedule length.
-
-- Task 15 third biome (this run): Riverside Camp's palette and the second
-  transition's position/length (`9000`–`11000` px, matching the first
-  transition's shape) are eyeballed, same caveat as task 9's original
-  transition — headless checks confirm the blend math and that the scene
-  visibly resolves to the right palette after two consecutive transitions,
-  not whether the pacing (two ~44s-apart mood shifts over one walk) feels
-  right, or whether Riverside Camp's blue-teal palette reads as distinct
-  enough from Forest Dusk's green on a real screen. Rolls into task 14
-  (human playtest pass) rather than being a separate item.
-
-- Task 16 per-biome base-loop pattern (this run): the `forest`
-  (`[0, 3, 7, 3]`) and `riverside` (`[0, 5, 9, 5]`) patterns are eyeballed
-  variations on the original `village` pattern, not composed/tuned by
-  ear — headless checks confirm the right pattern is scheduled for the
-  right biome, not whether the melodic difference actually reads as a
-  mood shift on real speakers. Also needs a real-device check of the
-  known batch-boundary quantization (see Recent runs above): does the
-  pattern's step-change at a batch boundary land close enough to the
-  visual crossfade to feel connected, or far enough off to feel like an
-  unrelated glitch? Doesn't block anything — v0.1 already shipped and no
-  other task depends on pattern tuning. **Update (Run 16, ROADMAP task
-  17)**: the worst-case lag is now ~20s instead of up to ~187s (batch size
-  shrunk 300 → 32), but the underlying question — does a ~20s-late step
-  still read as connected or as a glitch — is unchanged and still needs a
-  real playtest to answer. **Update (Run 17, ROADMAP task 18)**: the
-  `harmony`/`sparkle` layers now shift per biome too (same diff as
-  `baseLoop`), not just the base melody — same "eyeballed, not tuned by
-  ear" caveat applies to the two new diff vectors, and whether three
-  layers moving together reads as a stronger/clearer mood shift than one
-  layer alone is itself still a feel question for the same playtest.
-
-- Task 20 mute toggle (this run): the icon's size (`MUTE_ICON_RADIUS = 10`,
-  20px touch target) and top-left placement are eyeballed, not checked
-  against real thumb ergonomics on a real phone — headless Playwright
-  confirms it's tappable and toggles correctly at the coordinates it's
-  drawn at, not whether it's comfortably reachable/discoverable one-handed.
-  Doesn't block anything — muting is off by default and every other
-  mechanic is unaffected either way.
-
-- Task 21 distance readout (this run): converting `distancePx` to "steps"
-  via `ROAD_TILE_WIDTH` (64px/step) is an eyeballed choice of unit, not
-  tuned against how a real player perceives pace — headless checks confirm
-  the readout updates and doesn't overlap other UI, not whether "N steps"
-  climbing at that rate reads as a satisfying sense of progress or is
-  ignored/too-fast/too-slow, the same class of question as task 11's coin
-  rate. Doesn't block anything — it's a passive readout with no gameplay
-  effect either way.
-
-- Task 22 onboarding hint (this run): the wording ("tap to the beat"),
-  15px size, and position (above the hit line) are eyeballed, not checked
-  against real thumb/eye ergonomics on a phone — headless Playwright
-  confirms it renders without overlap and fades on the first real tap, not
-  whether a genuine first-time player actually reads it in time before the
-  first beat marker arrives, or whether the wording itself is clear enough
-  without also naming the tap-anywhere-on-screen behavior explicitly.
-  Doesn't block anything — it's cosmetic onboarding with no effect on the
-  underlying mechanic either way.
-
-- Task 23 audio resume (this run): the fix wires a real, correct API
-  (`AudioContext.resume()` on `visibilitychange`) and the headless smoke
-  check confirms the wiring runs without error, but a headless single-tab
-  Playwright browser has no way to make the OS/browser actually suspend
-  the `AudioContext` the way a real backgrounded mobile tab does — the
-  test simulates the *event*, not the underlying browser behavior it
-  responds to. Needs a real mobile device playtest: background the tab
-  mid-walk (switch apps, lock the screen) for a few seconds, return, and
-  confirm the backing track is actually audible again rather than
-  silently stuck off. Doesn't block anything else — the fix is additive
-  and can't make backgrounding behave worse than before.
-
-- Task 29 `100dvh` fix (this run): the fix uses a real, correct CSS unit
-  (`dvh`) and the headless check confirms it wins the cascade and matches
-  `window.innerHeight` in Chromium's fixed viewport, but headless Chromium
-  never shows/hides a real address bar the way a physical mobile browser
-  does on scroll/load — the test confirms the CSS is correct and doesn't
-  regress anything, not that the previously-invisible mobile gap is now
-  visibly fixed on a real device. Needs a real mobile device check: load
-  the page with the address bar visible, confirm the game fills exactly
-  the visible area with no scrollable sliver below it. Doesn't block
-  anything else — the fix is a strict improvement, `100vh` stays as the
-  fallback for any browser without `dvh` support.
+PLAYTEST.md is the round-2 checklist; fold answers in the same way.
 
 ## Blocked on human
-- **ROADMAP task 14 — human playtest pass** (Run 14): every item in this
-  "Needs human playtest" section needs a real person actually playing the
-  game on a real device/speakers to judge feel — there's no way to execute
-  "does this feel cozy/comfortable/fun" headlessly. This run reprioritized
-  around it (did task 15 instead, which was actionable) rather than
-  blocking the whole run. Route: whenever a human next plays the build,
-  fold their feedback into concrete constant changes and close this out;
-  until then each new feature run keeps adding to the list above rather
-  than the list ever getting tuned.
-  **Update (2026-07-25, interactive session)**: a human engaged with the
-  blockers directly. Structured playtest questions were presented but not
-  yet answered, so no feel verdicts are recorded. To lower the cost of
-  answering, every item in "Needs human playtest" above is now
-  consolidated into `PLAYTEST.md` — a single ~10-minute checklist with
-  each question, its current constant(s) + file, and what a fix would
-  touch. When answers arrive (checked boxes in PLAYTEST.md or relayed in
-  a session), fold them into constant changes and close this out.
 - **v0.1 git tag** (Run 12): ROADMAP task 12 says "Tag this as v0.1."
   DoD verification and the ship-check PR (#13) are done and merged
   (squash commit `021410f` on `main`), but the tag itself can't be pushed

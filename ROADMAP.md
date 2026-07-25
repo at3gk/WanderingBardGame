@@ -57,16 +57,19 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     closes the "endless road" gap flagged in DESIGN.md's Run 10 changelog
     entry.
 
-14. **(Post-v0.1) Human playtest pass.** Every eyeballed constant logged
-    under STATE.md's "Needs human playtest" section (hit window, meter
-    gain/drain, bard walk-cycle timing, road scroll speed, audio timbre
-    and layering thresholds, biome transition distance, coin rate) is
-    still untuned by ear/feel on a real device. Once a human has a chance
-    to actually play it, fold their feedback into concrete constant
-    changes here instead of leaving the list to grow indefinitely.
-    **Blocked on human** (see STATE.md) — no autonomous run can execute
-    this, so runs skip past it to the next actionable task until a human
-    plays the build.
+14. ~~**(Post-v0.1) Human playtest pass.**~~ Done (2026-07-25, interactive
+    session): a human played the build and answered structured feedback
+    questions. Verdicts folded into constants the same session: hit window
+    was **too loose** (`HIT_WINDOW_MS` 120 → 90), meter **refilled too
+    slowly** (`hitGain` 8 → 12), the melody **read as random** (all three
+    layers recomposed as 8-beat pentatonic phrases with a shared arch
+    contour — see manifest.ts), the **walk/scroll mismatched** (both now
+    derived from the beat: one footfall per beat, one road tile per
+    footfall), and **biome shifts were too weak** (palettes re-pitched
+    with clearly separated hues). The bigger art-direction feedback —
+    better bard animation, actual background features per biome, a real
+    art-style focus — is multi-run work, split into tasks 30–32 below.
+    Retuned constants need a round-2 playtest (see PLAYTEST.md).
 15. ~~**(Post-v0.1) Third biome + generalized transitions.**~~ Done
     (Run 14): DESIGN.md's Concept names three vignettes but only two
     biomes existed. `src/core/biome.ts`'s `biomeBlendRatio` (hardcoded to
@@ -250,6 +253,29 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     browser chrome shows/hides instead of the theoretical maximum. Pure CSS,
     no JS/logic change.
 
+30. **(Playtest feedback) Bard sprite & walk-animation overhaul.** The
+    human verdict on the current three-rectangle bard: "need some better
+    animation for the bard... spend a lot more time focused on art style,
+    sprite style." Replace the placeholder with a real (still procedural
+    or CC0, per CLAUDE.md) bard sprite — distinct head/body/limbs/lute,
+    a proper multi-keyframe walk cycle synced to the beat-derived footfall
+    cadence from the 2026-07-25 tuning, and an idle strum. Biggest visible
+    payoff of the three art tasks, so it goes first.
+31. **(Playtest feedback) Per-biome background scenery.** Human verdict:
+    "not much biome or features in the background at all." Each biome gets
+    a few silhouette-layer features scrolling with (or slightly slower
+    than, for parallax) the road: village houses/lantern glows, forest
+    tree shapes, riverside water band/tents. Procedural shapes in each
+    biome's palette; keep the bundle small.
+32. **(Playtest feedback) Art-style consolidation pass.** After 30–31,
+    unify the look: one consistent shape language/palette across bard,
+    markers, road, scenery, and UI readouts, so the game reads as one
+    deliberate style rather than accumulated placeholders. Update
+    DESIGN.md with the chosen style so future runs stay on it.
+
 ## Needs human playtest
 
-- (tracked in STATE.md as items land)
+- Round 2 (see PLAYTEST.md): re-judge the four retuned areas — tighter
+  90ms hit window, faster meter refill, recomposed melodies, beat-synced
+  walk/scroll, stronger biome palettes — plus the still-unanswered
+  round-1 verification items (mobile fixes, batch boundary, audio phase).

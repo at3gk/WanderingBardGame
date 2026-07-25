@@ -13,27 +13,32 @@ export interface Biome {
   roadDashColor: number;
 }
 
+// Human playtest (2026-07-25): the original palettes were so close in hue
+// and lightness (all three skies within a few RGB points of each other)
+// that transitions barely registered. Re-pitched with clearly separated
+// hues — warm plum, saturated green, cool blue — while staying dark enough
+// that markers/UI keep their contrast.
 export const BIOMES: Biome[] = [
   {
     id: 'village',
     name: 'Village Dusk',
-    skyColor: 0x1a1621,
-    roadBandColor: 0x3a2f3f,
-    roadDashColor: 0x4d3f52,
+    skyColor: 0x2a1a2e,
+    roadBandColor: 0x4a3450,
+    roadDashColor: 0x66486c,
   },
   {
     id: 'forest',
     name: 'Forest Dusk',
-    skyColor: 0x141f1c,
-    roadBandColor: 0x2f3a2f,
-    roadDashColor: 0x3f4d3a,
+    skyColor: 0x0f2818,
+    roadBandColor: 0x24422a,
+    roadDashColor: 0x3c6242,
   },
   {
     id: 'riverside',
     name: 'Riverside Camp',
-    skyColor: 0x141c24,
-    roadBandColor: 0x2c3a42,
-    roadDashColor: 0x3d5560,
+    skyColor: 0x0f2438,
+    roadBandColor: 0x22475c,
+    roadDashColor: 0x3d7291,
   },
 ];
 
