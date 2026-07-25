@@ -5,7 +5,7 @@ import { LoopLayer } from './manifest';
 const layer: LoopLayer = {
   id: 'test',
   waveform: 'sine',
-  pattern: [0],
+  semitoneOffset: 0,
   gain: 0.04,
   noteDurationMs: 100,
   meterThreshold: 0.5,

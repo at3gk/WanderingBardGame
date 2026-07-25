@@ -1,20 +1,21 @@
-import { beatIntervalMs } from '../core/beats';
-import { generateBaseLoopSchedule, resolvePattern } from './baseLoop';
+import { SongBeat } from '../core/song';
+import { semitoneToFrequency } from './baseLoop';
 import { isLayerActive } from './layering';
 import { AudioManifest, LoopLayer } from './manifest';
 
 const LAYER_FADE_SECONDS = 0.6;
 
 /**
- * Thin Web Audio wrapper around the procedural base loop and its
- * additional instrument layers. Schedules notes for every layer on the
- * AudioContext's own sample-accurate clock in batches — `start` schedules
- * the first batch, `extend` schedules further batches as the caller's
- * beat schedule grows (ROADMAP task 13 — unbounded schedule), continuing
- * the same tempo/index sequence so the pattern cycle never resets. Each
- * layer plays through its own `GainNode`, created once in `start`, so
- * `setMeterRatio` can fade extra layers in/out (ROADMAP task 8) without
- * touching the base loop or re-scheduling notes.
+ * Thin Web Audio wrapper that performs whatever song the scene is walking
+ * through. Notes come in already placed on the timeline (`SongBeat`s from
+ * `core/song.ts`) — the same objects the beat markers are drawn from, so
+ * what the player sees on the staff and what they hear are one schedule,
+ * not two that must be kept in sync (ROADMAP task 46; this replaced the
+ * old per-biome pattern plumbing and its batch-quantization caveat).
+ *
+ * Each manifest layer plays the same melody transposed by its own
+ * `semitoneOffset` through its own `GainNode`, so `setMeterRatio` can fade
+ * the extra voices in and out (ROADMAP task 8) without rescheduling.
  */
 export class AudioEngine {
   private context: AudioContext | null = null;
@@ -22,12 +23,15 @@ export class AudioEngine {
   private layerGains = new Map<string, GainNode>();
   private layerActive = new Map<string, boolean>();
   private startAt = 0;
-  private bpm = 0;
-  private noteIndexOffset = 0;
   private masterGain: GainNode | null = null;
   private muted = false;
 
   constructor(private manifest: AudioManifest) {}
+
+  /** True once `start` has run — the scene uses this to know whether to schedule further passes. */
+  get isStarted(): boolean {
+    return this.started;
+  }
 
   private ensureContext(): AudioContext {
     if (!this.context) {
@@ -73,24 +77,20 @@ export class AudioEngine {
   }
 
   /**
-   * Starts the base loop and all manifest layers. Must be called from a
-   * user-gesture handler (tap/keydown) — browsers block autoplay otherwise.
-   * No-ops after the first call. `biomeId` selects each layer's
-   * `patternByBiome` override, if any.
+   * Starts the performance. Must be called from a user-gesture handler
+   * (tap/keydown) — browsers block autoplay otherwise. No-ops after the
+   * first call.
    *
-   * `nowMs` is the visual beat schedule's elapsed game time at the moment of
-   * this first gesture (`RoadScene`'s `nowMs`, not real wall-clock time).
-   * The visual schedule's phase-zero is scene creation, but a player never
-   * taps at exactly game time 0 — there's always some reaction delay before
-   * their first tap. Anchoring `startAt` to `nowMs` in the past (rather than
-   * always "now") keeps the backing loop's beat notes in phase with the
-   * markers crossing the hit line instead of restarting the loop's phase
-   * fresh at whatever moment the player happened to first tap.
+   * `nowMs` is the visual schedule's elapsed game time at the moment of the
+   * first gesture. The visual schedule's phase-zero is scene creation, but
+   * a player never taps at exactly game time 0, so anchoring `startAt` to
+   * `nowMs` in the past (rather than "now") keeps the performance in phase
+   * with the notes crossing the hit line instead of restarting the song at
+   * whatever moment the player happened to first tap.
    */
-  start(bpm: number, count: number, biomeId: string, nowMs: number): void {
+  start(notes: SongBeat[], nowMs: number): void {
     if (this.started) return;
     this.started = true;
-    this.bpm = bpm;
 
     const ctx = this.ensureContext();
     this.startAt = ctx.currentTime + 0.05 - nowMs / 1000;
@@ -104,32 +104,39 @@ export class AudioEngine {
       this.createLayerGain(ctx, layer, isLayerActive(0, layer));
     }
 
-    // Notes already earlier than `nowMs` correspond to beats that have
-    // already scrolled past the hit line — skip them so `start` doesn't
-    // burst-play a backlog of "already happened" notes all at once.
-    this.scheduleAllLayers(ctx, count, 0, biomeId, nowMs);
-    this.noteIndexOffset = count;
+    // Notes earlier than `nowMs` belong to beats that already scrolled past
+    // the hit line — skip them so `start` doesn't burst-play a backlog.
+    this.schedule(notes, nowMs);
   }
 
-  /** Schedules the next `count` beats' worth of notes, continuing seamlessly from the last batch. No-ops until `start` has run. `biomeId` picks the pattern each layer plays for this batch (ROADMAP task 16). */
-  extend(count: number, biomeId: string): void {
-    if (!this.started || !this.context) return;
-    const startTimeMs = this.noteIndexOffset * beatIntervalMs(this.bpm);
-    this.scheduleAllLayers(this.context, count, startTimeMs, biomeId);
-    this.noteIndexOffset += count;
-  }
-
-  private scheduleAllLayers(
-    ctx: AudioContext,
-    count: number,
-    startTimeMs: number,
-    biomeId: string,
-    minTimeMs = 0
-  ): void {
-    this.scheduleLayerNotes(ctx, this.manifest.baseLoop, count, startTimeMs, biomeId, minTimeMs);
+  /**
+   * Schedules a run of song notes on every layer. No-ops until `start` has
+   * run. `minTimeMs` drops notes already in the past (only used by `start`).
+   */
+  schedule(notes: SongBeat[], minTimeMs = 0): void {
+    const ctx = this.context;
+    if (!this.started || !ctx) return;
+    this.scheduleLayer(ctx, this.manifest.baseLoop, notes, minTimeMs);
     for (const layer of this.manifest.layers) {
-      this.scheduleLayerNotes(ctx, layer, count, startTimeMs, biomeId, minTimeMs);
+      this.scheduleLayer(ctx, layer, notes, minTimeMs);
     }
+  }
+
+  /**
+   * The player's own note (ROADMAP task 33): a hit immediately sounds the
+   * note that was written on the staff, an octave up and a little louder —
+   * tapping isn't triggering a sound effect, it's performing the melody's
+   * top voice, so a good run *sounds* like the player carrying the tune.
+   * Misses stay silent (DESIGN.md: a missed beat lets a note drop out of
+   * the tune; it doesn't add a buzzer). Routes through the master gain, so
+   * mute silences it too.
+   */
+  pluck(semitone: number): void {
+    if (!this.started || !this.context || !this.masterGain) return;
+    const layer = this.manifest.baseLoop;
+    const frequencyHz = semitoneToFrequency(this.manifest.rootFrequencyHz, semitone + 12);
+    const voiced: LoopLayer = { ...layer, gain: layer.gain * 1.6 };
+    this.playNote(this.context, this.masterGain, voiced, this.context.currentTime, frequencyHz, 0.24);
   }
 
   /** Fades additional layers in/out as the song meter (0–1 fraction of max) crosses each layer's `meterThreshold` (ROADMAP task 8). No-ops until `start` has run. */
@@ -152,27 +159,6 @@ export class AudioEngine {
     }
   }
 
-  /**
-   * The player's own note (ROADMAP task 33): a hit immediately plays the
-   * melody note belonging to that beat, one octave above the base loop and
-   * a little louder — tapping isn't triggering a sound effect, it's
-   * performing the tune's top voice, so a good run *sounds* like the
-   * player carrying the melody. Misses stay silent (DESIGN.md: a missed
-   * beat lets a note drop out of the tune; it doesn't add a buzzer).
-   * Routes through the master gain, so mute silences it too. No-ops
-   * before `start()` — the first tap's own hit still plucks, because
-   * `start()` runs earlier in the same input handler.
-   */
-  pluck(biomeId: string, beatIndex: number): void {
-    if (!this.started || !this.context || !this.masterGain) return;
-    const layer = this.manifest.baseLoop;
-    const pattern = resolvePattern(layer, biomeId);
-    const semitone = pattern[beatIndex % pattern.length] + 12;
-    const frequencyHz = this.manifest.rootFrequencyHz * Math.pow(2, semitone / 12);
-    const voiced: LoopLayer = { ...layer, gain: layer.gain * 1.6 };
-    this.playNote(this.context, this.masterGain, voiced, this.context.currentTime, frequencyHz, 0.24);
-  }
-
   private createLayerGain(ctx: AudioContext, layer: LoopLayer, startActive: boolean): void {
     const layerGain = ctx.createGain();
     layerGain.gain.value = startActive ? 1 : 0;
@@ -181,29 +167,21 @@ export class AudioEngine {
     this.layerActive.set(layer.id, startActive);
   }
 
-  private scheduleLayerNotes(
-    ctx: AudioContext,
-    layer: LoopLayer,
-    count: number,
-    startTimeMs: number,
-    biomeId: string,
-    minTimeMs = 0
-  ): void {
+  /**
+   * One layer's take on the melody: same notes, transposed by the layer's
+   * `semitoneOffset`, each note sounding for a slice of its *written*
+   * length — so a half note is audibly twice a quarter, which is the whole
+   * point of putting note values on the staff.
+   */
+  private scheduleLayer(ctx: AudioContext, layer: LoopLayer, notes: SongBeat[], minTimeMs: number): void {
     const layerGain = this.layerGains.get(layer.id);
     if (!layerGain) return;
 
-    const schedule = generateBaseLoopSchedule(
-      this.bpm,
-      count,
-      this.manifest.rootFrequencyHz,
-      layer,
-      startTimeMs,
-      this.noteIndexOffset,
-      biomeId
-    );
-    for (const note of schedule) {
-      if (note.timeMs < minTimeMs) continue;
-      this.playNote(ctx, layerGain, layer, this.startAt + note.timeMs / 1000, note.frequencyHz, note.durationMs / 1000);
+    for (const note of notes) {
+      if (note.hitTimeMs < minTimeMs) continue;
+      const frequencyHz = semitoneToFrequency(this.manifest.rootFrequencyHz, note.semitone + layer.semitoneOffset);
+      const durationSec = (layer.noteDurationMs * note.beats) / 1000;
+      this.playNote(ctx, layerGain, layer, this.startAt + note.hitTimeMs / 1000, frequencyHz, durationSec);
     }
   }
 

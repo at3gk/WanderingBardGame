@@ -3,8 +3,70 @@
 Run counter: 32
 
 ## Current status
-Second overnight interactive session (2026-07-25) — **v0.2 direction set
-by the human: teach kids to read music.** DESIGN.md gained a full
+Third overnight session (2026-07-26) — **v0.3: the songbook**, plus the
+project's first real self-verification harness. The human's standing
+instruction this session: don't queue questions for a playtest, test it
+yourself.
+
+- **Tasks 45–46 — real songs.** The melody is no longer generated. Three
+  public-domain tunes, one per biome (Mary Had a Little Lamb / Twinkle
+  Twinkle / Ode to Joy), carry real note values. Note values needed no
+  input change: a half note simply takes two beats to arrive, so its
+  length is felt in the waiting — which also answers the old task 44
+  (tap-and-hold) by making it unnecessary.
+  Architecturally this *deleted* machinery: markers and audio are built
+  from one list of `SongBeat`s, so the staff and the sound can't disagree;
+  `patternByBiome`/`resolvePattern`/`generateBaseLoopSchedule` and the
+  batch-quantization caveat are gone. `LoopLayer` now carries a
+  `semitoneOffset` (melody / octave-below drone / octave-above sparkle)
+  instead of its own pattern.
+- **Task 47 — `tools/`.** A headless harness that plays the game by
+  itself (real CDP input; synthetic PointerEvents do *not* reach Phaser)
+  and asserts on meter, walk, page errors, marker/texture leaks, and —
+  the good part — **every pitch it hears**, by instrumenting
+  `createOscillator` and checking each frequency is a natural note in
+  tune to within a cent. A `proofsheet.mjs` bakes every note-value ×
+  staff-position combination for engraving review. See `tools/README.md`.
+- **Notation grew up.** `STAFF_LINE_GAP` 14 → 18 (one dial: heads are one
+  gap tall, as in real engraving) after the proof sheet showed letters
+  were cramped; bard dropped to ground offset 178 to clear the lower
+  ledger territory; clef scales off the staff gap.
+- **What the harness caught on its first runs**: hollow-head letters
+  merging into the ring (fixed by a thinner ring on a larger head), and
+  the fact that synthetic pointer events silently do nothing (a trap
+  worth not rediscovering — it's in the tools README).
+
+- **Task 48 — a second tune per biome.** Each biome rotates through a set
+  rather than repeating one song: village adds *Hot Cross Buns*, forest
+  *Au Clair de la Lune* (in G), riverside *Lightly Row* (an octave up).
+  Both tunes in a set sit in the same staff region, so the low → middle →
+  upper curriculum survives the variety (enforced by test). Hint text now
+  says "tap when a note reaches the line" — the lane is a staff, so the
+  instruction can name what the player is looking at.
+- **Mobile bugs the desktop view hid** (found by shooting an iPhone
+  viewport, worth doing after any layout change): the hint clipped off
+  the left edge (now clamped so it can't), and played notes drifted over
+  the clef at the lane's left end (now they fade out past the hit line,
+  `EXIT_PROGRESS` 1.35 → 1.28 — which also just looks better).
+
+Verified: `npm test` 127 green (56 new), `npm run build` green, and two
+long autoplay runs (200s+) PASS. The 200s run is the good one: it crossed
+all three biomes and wrapped home, reporting **pitches heard = A B C D E
+F G** (all seven natural names, zero off-scale, in tune within a cent)
+and the running order
+`Buns → Mary → Buns → Mary → Twinkle → Au Clair → Ode → Lightly Row →
+Ode → Buns → Mary → Buns`
+— which verifies rotation, biome hand-off *and* the loop home in one
+shot. Meter held at 100 under perfect play; markers and textures both
+bounded (26 live markers, 49 textures steady).
+
+Note the harness bug that hid this at first: it analysed only the first
+400 recorded notes, so later biomes' pitches were invisible. Analysis now
+runs in-page over every note. Worth remembering — a verification tool
+that silently samples a prefix is worse than none.
+
+## Previous status (second overnight session, 2026-07-25)
+**v0.2 direction set by the human: teach kids to read music.** DESIGN.md gained a full
 Pedagogy section (read it first — it is the contract for the v0.2 arc,
 ROADMAP tasks 41–44). Executed so far this session:
 

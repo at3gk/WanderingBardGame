@@ -61,25 +61,41 @@ they just hear the song enough times.
 2. **Letter names A–G, naturals only.** The whole game lives in C major /
    A minor: no sharps, no flats, no key signatures. Every melody note is a
    white key with a one-letter name.
+2b. **Note values** (v0.3): eighth, quarter, dotted quarter, half, whole —
+   drawn correctly (filled vs hollow heads, stems, flags, augmentation
+   dots) and felt as the time until the next note.
 3. **Middle C's ledger line** — the iconic first lesson of every beginner
    book, met as a real thing the low notes wear.
 4. **Stem direction** (passive exposure only): notes at or above the
    middle line point their stems down, below point up. Never mentioned,
    always correct — the game's notation is simply never wrong.
 
-**The curriculum is the biomes.** Each vignette's melody draws from a
-different region of the staff, so a full loop of the road is a walking
-tour of it:
+**The curriculum is the songbook.** (v0.3, 2026-07-25 — this replaced
+generated note patterns, which taught positions but were nothing anyone
+could hum.) Each vignette plays a real, public-domain tune a child is
+likely to already know, and the three are ordered so the walk is at once a
+tour of real music and an ascending tour of the staff:
 
-- **Village Dusk** — first notes: C D E G A around middle C. Where every
-  beginner starts; introduces the ledger line.
-- **Forest Dusk** — climbing: G A C D E in the staff's upper half; stems
-  flip down; higher position, audibly higher pitch.
-- **Riverside Camp** — leaps: C D G A D across the whole range; reading
-  bigger intervals at a glance.
+- **Village Dusk** — *Mary Had a Little Lamb*, C major (C4–G4). Five
+  notes, the simplest tune there is, sitting around middle C so the
+  ledger line is met in the first bar.
+- **Forest Dusk** — *Twinkle Twinkle Little Star*, G major (G4–E5).
+  Longer, wider, mid-staff; stems begin to flip.
+- **Riverside Camp** — *Ode to Joy*, C major up an octave (C5–G5).
+  Stepwise motion across the upper staff, and the only tune with a dotted
+  rhythm — the advanced vignette.
 
-The road loops (task 35), so the sets return in order, forever — natural
+Recognition is the point: a child who already knows how *Twinkle* goes has
+something to attach the symbols to, which a generated phrase can never
+offer. The road loops (task 35), so the songs return in order, forever —
 spaced repetition with zero menus.
+
+**Note values, without changing the input.** Real songs need quarter, half
+and whole notes, and drawing them correctly is half of learning to read. A
+half note is *not* held down — it simply takes twice as long to arrive, so
+its length is felt in the waiting rather than in the finger. One tap per
+note, always. That keeps the one core mechanic exactly as it was while
+adding the second axis of notation for free.
 
 **Considered and rejected:**
 
@@ -89,8 +105,9 @@ spaced repetition with zero menus.
 - *Quiz/recall modes* ("which note is this?"): a second mechanic and a
   failure state — both against the pillars. Recognition-by-exposure is
   the whole bet.
-- *Rhythm values* (half/whole notes needing holds): changes the input
-  mechanic. Logged as a possible v0.3 arc, not v0.2.
+- *Rhythm values as held taps*: a hold would change the one input.
+  Superseded in v0.3 by writing note values as *spacing* instead — same
+  teaching, same single tap (see "Note values" above).
 - *Solfège (do-re-mi) labels*: worth considering later as a locale
   option; letters first, they're what beginner books here use.
 
@@ -219,6 +236,19 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   everything remains a readout of the one mechanic. The game as shipped
   tonight is, for the first time, the game this document described on
   Run 0.
+- 2026-07-26 (third overnight session) — **v0.3: the songbook.** The
+  melody stopped being generated and became *music*: Mary Had a Little
+  Lamb, Twinkle Twinkle Little Star and Ode to Joy, one per biome, with
+  real note values. A generated phrase could teach where E sits on the
+  staff, but a child cannot hum it back, and humming it back is what
+  makes the symbols stick. Note values arrived without touching the one
+  input, by writing length as spacing. Architecturally this also
+  *removed* machinery: markers and audio are now built from one list of
+  song notes, so the staff and the sound cannot disagree, and the old
+  per-biome pattern plumbing and its batch-quantization caveat are gone.
+  The session also built `tools/` — a headless harness that plays the
+  game by itself and verifies the pitches it hears — so future runs can
+  check their own work instead of queuing questions for a human.
 - 2026-07-25 (second overnight session) — **v0.2 direction, set by the
   human: teach kids to read music.** New Pedagogy section above; Concept
   extended. The insight that makes this a deepening rather than a pivot:

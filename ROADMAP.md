@@ -423,9 +423,44 @@ teaching is entirely presentation.
     a full round-3 section for testing with an actual kid (observe,
     don't coach: labels noticed? pitch-position link? paper-staff
     transfer? does the busking pause read as rest, not losing?).
-44. **(v0.3 candidate, do not start without a human yes) Rhythm
-    values.** Half/whole notes via tap-and-hold would teach durations
-    but changes the one input. Design question first, not code.
+44. ~~**Rhythm values.**~~ Answered by design, not by asking (2026-07-26):
+    tap-and-hold was the wrong shape — it changes the one input. Note
+    values instead became *spacing*: a half note takes two beats to
+    arrive, so its length is felt in the waiting, and the mechanic is
+    untouched. Shipped as part of task 45.
+
+## The v0.3 arc: "the songbook" (2026-07-26)
+
+45. ~~**Real songs.**~~ Done: `core/song.ts` (song/note types, timeline
+    expansion with per-note durations, seamless looping) and
+    `core/songs.ts` (Mary Had a Little Lamb / Twinkle Twinkle / Ode to
+    Joy, one per biome — see DESIGN.md's curriculum). Songs are validated
+    by *engraving* tests, not style ones: naturals only, writable note
+    values, whole bars, no note running over a bar line, everything
+    inside a drawable staff range.
+46. ~~**The game plays the songbook.**~~ Done: markers and audio are both
+    built from one list of `SongBeat`s, so what the staff shows and what
+    the ear hears cannot drift apart; note heads render by value (filled,
+    hollow, stemless whole, flags, dots); each pass announces its title;
+    a biome change waits for the current tune to finish rather than
+    cutting mid-phrase. This *removed* the per-biome pattern plumbing and
+    the batch-quantization caveat that came with it.
+47. ~~**Self-verification harness.**~~ Done: `tools/` (see its README) —
+    `autoplay.mjs` plays the game with real input and asserts on meter,
+    walk, leaks and *every pitch it hears* (must be a natural, in tune to
+    within a cent); `proofsheet.mjs` bakes every note-value × staff
+    position for engraving review. Both found real bugs on first run.
+48. ~~**A second tune per biome.**~~ Done: each biome now rotates through a
+    set instead of repeating one song — village adds *Hot Cross Buns*,
+    forest adds *Au Clair de la Lune* (in G), riverside adds *Lightly Row*
+    (an octave up). Both tunes in a set sit in the same region of the
+    staff, so the low → middle → upper curriculum survives the variety
+    (enforced by test). Doubles the length of a full walk before anything
+    repeats, with no new mechanic — just data plus a per-biome pass
+    counter. Hint text also updated now that the lane is a staff: "tap
+    when a note reaches the line".
+49. **Next.** Nothing queued — pull from the idea backlog below, or grow
+    the songbook further (a fourth biome is the obvious next step).
 
 ## Idea backlog (pull from here when nothing is queued)
 

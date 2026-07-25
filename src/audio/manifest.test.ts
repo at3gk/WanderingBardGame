@@ -1,54 +1,35 @@
 import { describe, expect, it } from 'vitest';
-import { resolvePattern } from './baseLoop';
 import { noteNameAt } from '../core/notation';
 import { AUDIO_MANIFEST } from './manifest';
 
-describe('AUDIO_MANIFEST layer biome patterns', () => {
-  it('gives every layer (base loop and additional layers) a forest and riverside override', () => {
-    const allLayers = [AUDIO_MANIFEST.baseLoop, ...AUDIO_MANIFEST.layers];
-    for (const layer of allLayers) {
-      expect(layer.patternByBiome?.forest, `${layer.id} forest pattern`).toBeDefined();
-      expect(layer.patternByBiome?.riverside, `${layer.id} riverside pattern`).toBeDefined();
-    }
+describe('AUDIO_MANIFEST', () => {
+  it('roots the manifest at middle C so staff positions match sounded pitches', () => {
+    expect(AUDIO_MANIFEST.rootFrequencyHz).toBeCloseTo(261.63, 2);
   });
 
-  it('falls back to the base pattern for village (no override) on every layer', () => {
+  it('transposes every layer by whole octaves, so no voice can introduce an accidental', () => {
+    // Songs are naturals-only (songs.test.ts). An octave keeps a note's
+    // letter name, so the sounding chord always agrees with the staff —
+    // any other interval could voice a C as an F#.
     const allLayers = [AUDIO_MANIFEST.baseLoop, ...AUDIO_MANIFEST.layers];
     for (const layer of allLayers) {
-      expect(resolvePattern(layer, 'village')).toEqual(layer.pattern);
-    }
-  });
-
-  it('shifts harmony and sparkle by the same per-beat diff as the base loop at each biome', () => {
-    const diff = (pattern: number[], base: number[]) => pattern.map((n, i) => n - base[i]);
-    const baseLoopForestDiff = diff(AUDIO_MANIFEST.baseLoop.patternByBiome!.forest, AUDIO_MANIFEST.baseLoop.pattern);
-    const baseLoopRiversideDiff = diff(
-      AUDIO_MANIFEST.baseLoop.patternByBiome!.riverside,
-      AUDIO_MANIFEST.baseLoop.pattern
-    );
-
-    for (const layer of AUDIO_MANIFEST.layers) {
-      expect(diff(layer.patternByBiome!.forest, layer.pattern)).toEqual(baseLoopForestDiff);
-      expect(diff(layer.patternByBiome!.riverside, layer.pattern)).toEqual(baseLoopRiversideDiff);
-    }
-  });
-
-  it('uses only natural notes in every pattern of every layer — the staff must never show an accidental (v0.2 Pedagogy)', () => {
-    const allLayers = [AUDIO_MANIFEST.baseLoop, ...AUDIO_MANIFEST.layers];
-    for (const layer of allLayers) {
-      const patterns: Array<[string, number[]]> = [
-        ['base', layer.pattern],
-        ...Object.entries(layer.patternByBiome ?? {}),
-      ];
-      for (const [which, pattern] of patterns) {
-        for (const semitone of pattern) {
-          expect(noteNameAt(semitone), `${layer.id}/${which} semitone ${semitone}`).not.toBeNull();
-        }
+      expect(Math.abs(layer.semitoneOffset % 12), `${layer.id} offset`).toBe(0);
+      for (const semitone of [0, 2, 4, 5, 7, 9, 11]) {
+        expect(noteNameAt(semitone + layer.semitoneOffset)).toBe(noteNameAt(semitone));
       }
     }
   });
 
-  it('roots the manifest at middle C so staff positions match sounded pitches', () => {
-    expect(AUDIO_MANIFEST.rootFrequencyHz).toBeCloseTo(261.63, 2);
+  it('keeps the melody the loudest voice', () => {
+    for (const layer of AUDIO_MANIFEST.layers) {
+      expect(layer.gain, `${layer.id} gain`).toBeLessThanOrEqual(AUDIO_MANIFEST.baseLoop.gain);
+    }
+  });
+
+  it('brings extra voices in at rising meter thresholds, none of them always-on', () => {
+    expect(AUDIO_MANIFEST.baseLoop.meterThreshold).toBeUndefined();
+    const thresholds = AUDIO_MANIFEST.layers.map((l) => l.meterThreshold ?? 0);
+    expect(thresholds.every((t) => t > 0)).toBe(true);
+    expect([...thresholds].sort((a, b) => a - b)).toEqual(thresholds);
   });
 });
