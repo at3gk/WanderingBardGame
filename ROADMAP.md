@@ -345,6 +345,30 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     in (see ROADMAP task 14's done entry for the protocol). Blocked on
     human — skip past it to the next actionable task until answers exist.
 
+## Idea backlog (pull from here when nothing is queued)
+
+Unnumbered, unordered, deliberately small — promote one to a numbered
+task at the start of a run if task 38 is still blocked and no better
+idea has emerged. Each respects the one-mechanic rule and the art
+direction (notation icons, warm-vs-cool palette).
+
+- **Strum on hit**: the bard's front arm flicks across the lute strings
+  on each hit — the visual twin of the pluck note. Tiny tween, no new
+  texture.
+- **Signposts at transitions**: a small silhouette signpost scrolls by
+  with the scenery as each biome transition starts — the world
+  announcing the next vignette. Scenery-tile addition, no logic.
+- **Meter as staff**: restyle the song-meter bar as five faint staff
+  lines that fill with light — the meter joins the notation language.
+- **Sharper mobile rendering**: check `devicePixelRatio` handling in the
+  Phaser config; procedural shapes may render noticeably crisper on
+  phones with `resolution`/zoom set correctly. Measure first.
+- **Riverside water shimmer**: slow alpha pulse on the water-glint
+  dashes — one tween on the scenery TileSprite's tint, if it reads.
+- **Coin chime cap**: coins currently tick silently; a very quiet chime
+  every 25th coin could be pleasant — or annoying. Prototype behind a
+  screenshot/listen check before committing.
+
 ## Needs human playtest
 
 - Round 2 (see PLAYTEST.md): re-judge the four retuned areas — tighter
