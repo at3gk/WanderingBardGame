@@ -459,6 +459,7 @@ teaching is entirely presentation.
     repeats, with no new mechanic — just data plus a per-biome pass
     counter. Hint text also updated now that the lane is a staff: "tap
     when a note reaches the line".
+<<<<<<< HEAD
 49. ~~**Consolidation pass.**~~ Done (2026-07-26): drift check clean — the
     songbook is still a readout of the one mechanic (tap a note as it
     reaches the line), no new systems, no new runtime dependencies.
@@ -482,6 +483,10 @@ teaching is entirely presentation.
     biome set (pure data, no design cost), and **key signatures** — which
     would be a genuine v0.4 direction, not a task, since it breaks the
     naturals-only rule the whole notation currently rests on.
+=======
+49. **Next.** Nothing queued — pull from the idea backlog below, or grow
+    the songbook further (a fourth biome is the obvious next step).
+>>>>>>> origin/main
 
 ## Idea backlog (pull from here when nothing is queued)
 
