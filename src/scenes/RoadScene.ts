@@ -101,6 +101,11 @@ const DISTANCE_MARGIN_BOTTOM = 20;
 const HINT_TEXT = 'tap to the beat';
 const HINT_Y_OFFSET = -70;
 const HINT_FADE_MS = 400;
+// Strum on hit (ROADMAP idea backlog): the visual twin of AudioEngine.pluck
+// — the lute kicks toward the strings and springs back, as if the hit just
+// struck a chord. Tiny tween, reuses the existing lute image, no new texture.
+const BARD_STRUM_KICK_DEG = 14;
+const BARD_STRUM_MS = 140;
 
 interface BeatMarker {
   beat: Beat;
@@ -599,16 +604,44 @@ export class RoadScene extends Phaser.Scene {
           repeat: -1,
           ease: 'Sine.easeInOut',
         }),
-        this.tweens.add({
-          targets: this.bardLute,
-          angle: { from: BARD_LUTE_ANGLE_DEG - 2, to: BARD_LUTE_ANGLE_DEG + 2 },
-          duration: BARD_IDLE_BREATH_MS,
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.easeInOut',
-        })
+        this.startIdleLuteSway()
       );
     }
+  }
+
+  /** The lute's slow idle sway, factored out so a hit's one-shot strum tween (which stops it) can restart it afterward. */
+  private startIdleLuteSway(): Phaser.Tweens.Tween {
+    return this.tweens.add({
+      targets: this.bardLute,
+      angle: { from: BARD_LUTE_ANGLE_DEG - 2, to: BARD_LUTE_ANGLE_DEG + 2 },
+      duration: BARD_IDLE_BREATH_MS,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  /**
+   * A hit's visual twin to AudioEngine.pluck (ROADMAP idea backlog: "strum
+   * on hit"): the lute kicks toward the strings and springs back, as if the
+   * chord was just struck. Stops whatever's currently animating the lute's
+   * angle first (the idle sway, or a previous strum still settling) so the
+   * two don't fight over the same property; if the bard is idle when the
+   * strum finishes, restarts the idle sway so it doesn't go still.
+   */
+  private strumLute(): void {
+    this.tweens.killTweensOf(this.bardLute);
+    this.tweens.add({
+      targets: this.bardLute,
+      angle: { from: BARD_LUTE_ANGLE_DEG - BARD_STRUM_KICK_DEG, to: BARD_LUTE_ANGLE_DEG },
+      duration: BARD_STRUM_MS,
+      ease: 'Sine.easeOut',
+      onComplete: () => {
+        if (!this.walking) {
+          this.bardTweens.push(this.startIdleLuteSway());
+        }
+      },
+    });
   }
 
   private laneY(): number {
@@ -672,6 +705,7 @@ export class RoadScene extends Phaser.Scene {
       target.resolved = 'hit';
       this.meter = applyHit(this.meter, this.meterConfig);
       this.audioEngine.pluck(this.currentBiomeId(), target.beat.index);
+      this.strumLute();
       if (target.gfx) {
         // A struck note pulses once — lands big, settles back — so a hit
         // feels like plucking the note out of the air (ROADMAP task 32).

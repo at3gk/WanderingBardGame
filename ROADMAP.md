@@ -344,6 +344,22 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
     round 2, fold verdicts into constants the same way round 1 was folded
     in (see ROADMAP task 14's done entry for the protocol). Blocked on
     human — skip past it to the next actionable task until answers exist.
+39. ~~**Strum on hit.**~~ Done (Run 31, scheduled): promoted from the idea
+    backlog below — task 38 is still blocked on the human round-2
+    playtest. `AudioEngine.pluck` (task 33) already gave a hit its own
+    sound; the lute had no visual twin for it. Added `RoadScene.strumLute`:
+    a one-shot ~140ms tween kicking the lute's angle toward the strings
+    and springing back on every hit, as if the chord was just struck. The
+    idle sway tween (previously inline in `setBardAnimState`) is now
+    factored into `startIdleLuteSway()` so a hit can `killTweensOf` it
+    (avoiding two tweens fighting over the same angle property) and, if
+    the bard settles back to idle before the strum finishes, restart the
+    sway from `strumLute`'s `onComplete` instead of leaving the lute
+    frozen. No new texture, no new dependency. `npm test` 71 green
+    (unchanged — Phaser scene tween, same precedent as tasks 30–34 which
+    verified by screenshot rather than a unit test), build green,
+    headless screenshot confirmed the kicked angle mid-tween with zero
+    console/page errors.
 
 ## Idea backlog (pull from here when nothing is queued)
 
@@ -352,9 +368,6 @@ task at the start of a run if task 38 is still blocked and no better
 idea has emerged. Each respects the one-mechanic rule and the art
 direction (notation icons, warm-vs-cool palette).
 
-- **Strum on hit**: the bard's front arm flicks across the lute strings
-  on each hit — the visual twin of the pluck note. Tiny tween, no new
-  texture.
 - **Signposts at transitions**: a small silhouette signpost scrolls by
   with the scenery as each biome transition starts — the world
   announcing the next vignette. Scenery-tile addition, no logic.
