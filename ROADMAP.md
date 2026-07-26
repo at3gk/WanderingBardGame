@@ -542,7 +542,18 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     Familiarity is load-bearing now, not decoration: if a child knows how
     the tune goes, the pitch is free when the letter is gone, so they are
     never stuck — which is the only reason fading is safe at all.
-55. **Next.** Nothing queued. The open question the model cannot answer
+55. ~~**Riverside water shimmer.**~~ Done (2026-07-26, from the idea
+    backlog): the water's glints were baked into the riverside scenery
+    tile, so they sat dead still. They now live in two transparent layers
+    of their own, pulsed at **opposite phases** — a single layer pulsing
+    as one reads as a light blinking, two out of phase read as water
+    moving. They scroll in lockstep with the scenery, pick up the dusk
+    tint like the rest of the world layer, and fade with
+    `riversidePresence()` so they only glint while there is water on
+    screen, including part-way through a crossfade. Verified by
+    instrumenting the live alphas (0.37 vs 0.69 at full riverside —
+    genuinely out of phase) and by two screenshots a beat apart.
+56. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth
@@ -584,8 +595,6 @@ warm-vs-cool palette).
   capping at `Math.min(dpr, 2)` for most of the sharpness at 4× rather than
   9× the cost, and check `tools/autoplay.mjs`'s fps sample before and after
   on that device rather than in headless (where it means nothing).
-- **Riverside water shimmer**: slow alpha pulse on the water-glint
-  dashes — one tween on the scenery TileSprite's tint, if it reads.
 - **Coin chime cap**: coins currently tick silently; a very quiet chime
   every 25th coin could be pleasant — or annoying. Prototype behind a
   screenshot/listen check before committing.

@@ -124,6 +124,13 @@ const ROAD_HEIGHT_BELOW_BARD = 60;
 const SCENERY_TILE_WIDTH = 256;
 const SCENERY_TILE_HEIGHT = 120;
 const SCENERY_PARALLAX = 0.45;
+// Riverside water shimmer (ROADMAP idea backlog): the glints live in two
+// layers pulsed at opposite phases, slow enough to read as water moving
+// rather than a light blinking.
+const GLINT_PERIOD_MS = 3400;
+const GLINT_ALPHA = 0.85;
+const GLINT_MIN_ALPHA = 0.25;
+const RIVERSIDE_GLINT_COLOR = 0x5da8c9;
 // Night sky (ROADMAP task 34): a starfield drifting far slower than the
 // scenery — three scroll speeds (road 1x, scenery 0.45x, stars 0.08x)
 // is what turns two flat bands into a world with depth. The moon doesn't
@@ -225,6 +232,7 @@ export class RoadScene extends Phaser.Scene {
   private sceneryNext!: Phaser.GameObjects.TileSprite;
   private sceneryFromIndex = 0;
   private sceneryToIndex = 0;
+  private sceneryGlints: Phaser.GameObjects.TileSprite[] = [];
   private signposts: Phaser.GameObjects.Image[] = [];
   private signpostSpawnDistancePx: number[] = [];
   private nextSignpostCount = 0;
@@ -289,6 +297,11 @@ export class RoadScene extends Phaser.Scene {
     this.scenery = this.add.tileSprite(0, 0, this.scale.width, SCENERY_TILE_HEIGHT, this.sceneryTileTexture(BIOMES[0]));
     this.sceneryNext = this.add.tileSprite(0, 0, this.scale.width, SCENERY_TILE_HEIGHT, this.sceneryTileTexture(BIOMES[0]));
     this.sceneryNext.setAlpha(0);
+    this.sceneryGlints = [0, 1].map((half) => {
+      const t = this.add.tileSprite(0, 0, this.scale.width, SCENERY_TILE_HEIGHT, this.glintTexture(half as 0 | 1));
+      t.setAlpha(0);
+      return t;
+    });
 
     // Created here (after the scenery band, before the road) so their display-list
     // position — not an explicit depth — paints them in front of the scenery
@@ -427,6 +440,46 @@ export class RoadScene extends Phaser.Scene {
       g.destroy();
     }
     return key;
+  }
+
+  /**
+   * One half of the riverside's water glints, on transparent, so the two
+   * halves can be pulsed at opposite phases. A single layer pulsing as one
+   * reads as a light blinking; two out of phase read as water moving.
+   */
+  private glintTexture(half: 0 | 1): string {
+    const key = `scenery-glint-${half}`;
+    if (this.textures.exists(key)) return key;
+    const H = SCENERY_TILE_HEIGHT;
+    const dashes: Array<[number, number, number]> =
+      half === 0
+        ? [
+            [20, H - 16, 18],
+            [150, H - 18, 16],
+          ]
+        : [
+            [80, H - 10, 14],
+            [210, H - 12, 12],
+          ];
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xffffff, 1);
+    for (const [x, y, w] of dashes) g.fillRect(x, y, w, 2);
+    g.generateTexture(key, SCENERY_TILE_WIDTH, SCENERY_TILE_HEIGHT);
+    g.destroy();
+    return key;
+  }
+
+  /**
+   * How much of the riverside is on screen right now (0–1), so its water
+   * only glints while there is water to glint on — including part-way
+   * through a crossfade.
+   */
+  private riversidePresence(fromIndex: number, toIndex: number, ratio: number): number {
+    const isRiver = (i: number) => BIOMES[i]?.id === 'riverside';
+    if (isRiver(fromIndex) && isRiver(toIndex)) return 1;
+    if (isRiver(toIndex)) return ratio;
+    if (isRiver(fromIndex)) return 1 - ratio;
+    return 0;
   }
 
   /**
@@ -573,11 +626,8 @@ export class RoadScene extends Phaser.Scene {
       // Riverside: water band with glints, a tent, a campfire, reeds.
       g.fillStyle(0x16344a, 1);
       g.fillRect(0, H - 24, SCENERY_TILE_WIDTH, 24);
-      g.fillStyle(biome.sceneryAccent, 0.8);
-      g.fillRect(20, H - 16, 18, 2);
-      g.fillRect(80, H - 10, 14, 2);
-      g.fillRect(150, H - 18, 16, 2);
-      g.fillRect(210, H - 12, 12, 2);
+      // The water's glints are NOT baked here — they live in their own
+      // layers so they can shimmer (see glintTexture).
       g.fillStyle(biome.sceneryColor, 1);
       g.fillTriangle(40, H - 24, 90, H - 24, 65, H - 60);
       g.fillTriangle(58, H - 24, 72, H - 24, 65, H - 46);
@@ -1214,6 +1264,10 @@ export class RoadScene extends Phaser.Scene {
     this.road.setTint(worldTint);
     this.roadNext.setTint(worldTint);
     for (const signpost of this.signposts) signpost.setTint(worldTint);
+    // Glints are drawn white so they can carry the riverside's own accent,
+    // dimmed by the same dusk shade as everything else in the world layer.
+    const glintTint = RoadScene.lerpColor(RIVERSIDE_GLINT_COLOR, 0x000000, 1 - shade);
+    for (const glint of this.sceneryGlints) glint.setTint(glintTint);
 
     this.updateSky(delta);
     this.updateScenery(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
@@ -1408,10 +1462,24 @@ export class RoadScene extends Phaser.Scene {
     this.sceneryNext.setPosition(this.scale.width / 2, sceneryY);
     this.sceneryNext.setSize(this.scale.width, SCENERY_TILE_HEIGHT);
     this.sceneryNext.setAlpha(ratio);
+
+    // Water glints breathe at opposite phases, and only while there is
+    // riverside on screen to glint on.
+    const presence = this.riversidePresence(fromIndex, toIndex, ratio);
+    for (let i = 0; i < this.sceneryGlints.length; i++) {
+      const glint = this.sceneryGlints[i];
+      glint.setPosition(this.scale.width / 2, sceneryY);
+      glint.setSize(this.scale.width, SCENERY_TILE_HEIGHT);
+      const phase = (this.time.now / GLINT_PERIOD_MS) * Math.PI * 2 + i * Math.PI;
+      const pulse = GLINT_MIN_ALPHA + (1 - GLINT_MIN_ALPHA) * (0.5 + 0.5 * Math.sin(phase));
+      glint.setAlpha(presence * pulse * GLINT_ALPHA);
+    }
+
     if (this.walking) {
       const scrollDelta = (ROAD_SCROLL_PX_PER_SEC * SCENERY_PARALLAX * delta) / 1000;
       this.scenery.tilePositionX += scrollDelta;
       this.sceneryNext.tilePositionX += scrollDelta;
+      for (const glint of this.sceneryGlints) glint.tilePositionX += scrollDelta;
     }
   }
 
