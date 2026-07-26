@@ -1,2 +1,7 @@
 node_modules
 dist
+
+# Verification artefacts. tools/ scripts now run in place (PLAYWRIGHT_PATH),
+# so their screenshots and proof sheets land in the working tree rather than
+# wherever Playwright happened to be installed.
+*.png

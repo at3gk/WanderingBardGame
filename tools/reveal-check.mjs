@@ -1,4 +1,21 @@
-import { chromium } from 'playwright';
+// Playwright is deliberately not a project dependency (CLAUDE.md: the game
+// itself stays dependency-free), so it lives wherever it was installed. Set
+// PLAYWRIGHT_PATH to that install and these scripts run *in place*, straight
+// out of the repo, instead of having to be copied next to it.
+//
+// That copy step is not just friction: this session twice ran a stale copy
+// of a script and once had a crashed run "prove" that nothing had changed.
+// Running the file you actually edited removes the whole class of mistake.
+const pwPath = process.env.PLAYWRIGHT_PATH
+  ? (/\.[cm]?js$/.test(process.env.PLAYWRIGHT_PATH)
+      ? process.env.PLAYWRIGHT_PATH
+      : `${process.env.PLAYWRIGHT_PATH.replace(/\/$/, '')}/index.js`)
+  : 'playwright';
+// playwright's entry is CommonJS, so a dynamic import may deliver the
+// module under `default` rather than as named exports.
+const pw = await import(pwPath);
+const chromium = pw.chromium ?? pw.default?.chromium;
+if (!chromium) throw new Error(`could not load playwright's chromium from ${pwPath}`);
 
 /**
  * Checks *which* mechanism actually shows a child the letter.

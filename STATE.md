@@ -432,6 +432,12 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   ROADMAP *task-number collisions*, since a scheduled run will happily
   claim the next number while you hold it too. Renumber yours; don't
   renumber theirs (theirs is already merged and referenced).
+- **The checks run in place now.** `export
+  PLAYWRIGHT_PATH=<dir>/node_modules/playwright`, then
+  `node tools/verify-all.mjs` from the repo. They used to have to be copied
+  next to the Playwright install, and running the copies is how this session
+  twice tested a stale script — once letting a crashed run "prove" nothing
+  had changed. Artefacts land in the working dir and are gitignored.
 - **Run the checks with one command**: `node tools/verify-all.mjs` (all
   15, ~20 min) or `... quick` (the fast eight, ~5 min), from the directory
   where Playwright is installed, with `npm run preview` up. It runs them
