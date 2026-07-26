@@ -514,12 +514,41 @@ teaching is entirely presentation.
     confirmed clean) — the post+boards render correctly anchored to the
     road's top edge among the tree silhouettes. `npm test` 157 green (5
     new), build green.
-53. **Next.** Nothing queued. Pull from the idea backlog below, or add a
-    tune to an existing biome set (pure data, no design cost). One real
-    v0.4 *direction* rather than a task: **key signatures**, which would
-    break the naturals-only rule the whole notation currently rests on —
-    worth doing deliberately, with the Pedagogy section rewritten first,
-    or not at all.
+
+## The v0.4 arc: "learning, not just exposure" (human-set, 2026-07-26)
+
+The human's direction: *"If we can add that in where they can actually
+learn music, that's the true goal here, just thru songs that they already
+know."* DESIGN.md's rewritten Pedagogy section is the contract.
+
+53. ~~**The letter is a scaffold, and scaffolds fade.**~~ Done: a letter
+    printed in every note head forever is a crutch — a child can read the
+    letters fluently and never encode the positions. `core/scaffold.ts`
+    now tracks familiarity per *staff position* and fades the letter in
+    **time**: it arrives later and later in the note's flight as a
+    position is practised, down to a floor of 350ms before the tap. That
+    buys ~1450ms of genuine attempted recall, then always confirms.
+    Governing rule, never to be traded away: **fade the prompt, never the
+    answer** — a hidden letter is revealed on the strike *and* on a miss,
+    so it is never a dead end and a miss never costs information.
+    Help returns on two misses during good play, instantly when the meter
+    drops, always for the first sighting of a position in each tune, and
+    partially after days away. Nothing about the model is ever displayed.
+54. ~~**Songs they already know.**~~ Done: the two method-book tunes went
+    out and two S-tier ones came in — *Row, Row, Row Your Boat* (village)
+    and *Old MacDonald Had a Farm* (riverside), with London Bridge moved
+    up to the forest register and Frère Jacques retitled *Are You
+    Sleeping?*, which is what English-speaking children actually call it.
+    Familiarity is load-bearing now, not decoration: if a child knows how
+    the tune goes, the pitch is free when the letter is gone, so they are
+    never stuck — which is the only reason fading is safe at all.
+55. **Next.** Nothing queued. The open question the model cannot answer
+    itself is whether the fade pace suits a real five-year-old; the single
+    dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
+    sitting), not the thresholds. Ideas with teaching value: a fourth
+    support band spacing tuned by observation, more tunes in existing
+    sets, and **key signatures** — still a genuine v0.4+ *direction*
+    rather than a task, since it breaks naturals-only.
 
 ## Idea backlog (pull from here when nothing is queued)
 

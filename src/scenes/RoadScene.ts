@@ -10,6 +10,8 @@ import { Biome, BIOMES, biomeBlendAt, BIOME_TRANSITIONS, signpostDistanceAt } fr
 import { duskShadeAt, nightnessAt } from '../core/dusk';
 import { accumulateCoins } from '../core/coins';
 import { needsLedger, noteNameAt, staffStepAt, stemDown } from '../core/notation';
+import { displaySupport, encounter, leadMsFor, ScaffoldState, supportFor } from '../core/scaffold';
+import { loadScaffold, saveScaffold } from '../core/scaffoldStorage';
 
 const BPM = 96;
 const MS_PER_BEAT = 60000 / BPM;
@@ -167,6 +169,12 @@ const HINT_FADE_MS = 400;
 // Strum on hit (ROADMAP idea backlog): the visual twin of AudioEngine.pluck
 // — the lute kicks toward the strings and springs back, as if the hit just
 // struck a chord. Tiny tween, reuses the existing lute image, no new texture.
+// A child whose meter has been on the floor this long isn't struggling with
+// one note, they're lost — every letter comes back until they're walking.
+const LOST_GRACE_MS = 4000;
+// More misses than this in a single frame means the tab was asleep, not that
+// the child forgot a fistful of notes at once.
+const MASS_MISS_LIMIT = 2;
 const BARD_STRUM_KICK_DEG = 14;
 const BARD_STRUM_MS = 140;
 
@@ -179,7 +187,23 @@ interface BeatMarker {
   step: number;
   /** Texture key for this marker's engraved note (head, letter, stem, ledger baked). */
   texKey: string;
+  /** Same note engraved without its letter — the faded-scaffold variant. */
+  bareTexKey?: string;
+  /** Game time at which this note's letter becomes readable (see core/scaffold.ts). */
+  revealAtMs?: number;
+  /** Whether the letter is currently showing, so the swap happens once. */
+  lettered?: boolean;
+  /** First sighting of this staff position within the current pass of the tune. */
+  firstInPass?: boolean;
 }
+
+/**
+ * The learning record outlives the scene. `create()` re-runs on a resize
+ * (main.ts uses Scale.RESIZE, so an orientation change is enough), and
+ * resetting a child's progress because they turned the phone would be a
+ * silent, invisible bug — so this is loaded once per page, not per scene.
+ */
+const scaffold: ScaffoldState = loadScaffold();
 
 export class RoadScene extends Phaser.Scene {
   private startTimeMs = 0;
@@ -213,6 +237,8 @@ export class RoadScene extends Phaser.Scene {
   private currentSongId: string | null = null;
   /** How many passes each biome has played, so its set rotates rather than repeating one tune. */
   private passesByBiome = new Map<string, number>();
+  /** When the meter first fell below walking, so "lost" can be distinguished from "one bad note". */
+  private lostSinceMs: number | null = null;
   private songTitleText!: Phaser.GameObjects.Text;
   private pendingAnnounce: Array<{ atMs: number; title: string }> = [];
   private coins = 0;
@@ -382,6 +408,9 @@ export class RoadScene extends Phaser.Scene {
   private handleVisibilityChange = (): void => {
     if (document.visibilityState === 'visible') {
       this.audioEngine.resume();
+    } else {
+      // Leaving may be the last chance to write; the throttle doesn't apply.
+      saveScaffold(scaffold, true);
     }
   };
 
@@ -834,8 +863,8 @@ export class RoadScene extends Phaser.Scene {
    * a hollow one, so it stays readable either way and under any tint.
    * Baked via RenderTexture because Graphics can't draw text.
    */
-  private noteTexture(name: string, step: number, beats: number): string {
-    const key = `note-${name}-${step}-${beats}`;
+  private noteTexture(name: string, step: number, beats: number, showLetter = true): string {
+    const key = `note-${name}-${step}-${beats}-${showLetter ? 'l' : 'b'}`;
     if (this.textures.exists(key)) return key;
 
     const down = stemDown(step);
@@ -884,18 +913,19 @@ export class RoadScene extends Phaser.Scene {
       g.fillCircle(headX + 19, headY - 5, 3);
     }
 
-    const letter = this.make.text(
-      { x: 0, y: 0, text: name, style: hollow ? NOTE_LETTER_STYLE_HOLLOW : NOTE_LETTER_STYLE },
-      false
-    );
-    letter.setOrigin(0.5, 0.5);
-
     const rt = this.make.renderTexture({ x: 0, y: 0, width: NOTE_TEX_W, height: NOTE_TEX_H }, false);
     rt.draw(g, 0, 0);
-    rt.draw(letter, headX, headY);
+    if (showLetter) {
+      const letter = this.make.text(
+        { x: 0, y: 0, text: name, style: hollow ? NOTE_LETTER_STYLE_HOLLOW : NOTE_LETTER_STYLE },
+        false
+      );
+      letter.setOrigin(0.5, 0.5);
+      rt.draw(letter, headX, headY);
+      letter.destroy();
+    }
     rt.saveTexture(key);
     rt.destroy();
-    letter.destroy();
     g.destroy();
     return key;
   }
@@ -969,6 +999,28 @@ export class RoadScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Puts the letter back on a note — instantly, because it should feel
+   * plucked out of the note along with its pitch. Called when a note is
+   * struck, when it is missed, and when its scheduled reveal time arrives.
+   */
+  private revealLetter(marker: BeatMarker): void {
+    if (marker.lettered || !marker.gfx || marker.resolved === 'rest') return;
+    marker.lettered = true;
+    marker.gfx.setTexture(marker.texKey);
+  }
+
+  /**
+   * Feeds one played note to the learning model, unless the page was
+   * hidden — a throttled requestAnimationFrame in a background tab
+   * produces bursts that mean nothing about what a child knows.
+   */
+  private recordEncounter(step: number, outcome: 'hit' | 'miss', walking: boolean): void {
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+    encounter(scaffold, step, outcome, walking);
+    saveScaffold(scaffold);
+  }
+
   /** Resting alpha for a marker: a miss dims, a rest sits back a little (there's nothing to do about it), a live note is full. */
   private markerBaseAlpha(marker: BeatMarker): number {
     if (marker.resolved === 'miss') return 0.75;
@@ -1021,6 +1073,11 @@ export class RoadScene extends Phaser.Scene {
     this.passesByBiome.set(biomeId, pass + 1);
     const song = songForBiome(biomeId, pass);
     const notes = expandSong(song, BPM, this.nextPassStartTimeMs, this.totalNotesGenerated);
+    // These tunes are built of exact repeats, so the first sighting of each
+    // position in a pass keeps its letter and the repeats are left to the
+    // child — the teacher points at the note, then lets you try the next
+    // three (core/scaffold.ts, displaySupport).
+    const seenSteps = new Set<number>();
     for (const beat of notes) {
       if (beat.rest) {
         this.markers.push({
@@ -1037,12 +1094,17 @@ export class RoadScene extends Phaser.Scene {
       // Naturals are enforced by songs.test.ts; the fallback exists so a
       // hypothetical accidental degrades to an unlabeled mid-staff note
       // rather than a crash.
+      const resolvedStep = step ?? STAFF_MIDDLE_STEP;
+      const firstInPass = !seenSteps.has(resolvedStep);
+      seenSteps.add(resolvedStep);
       this.markers.push({
         beat,
         gfx: null,
         resolved: null,
-        step: step ?? STAFF_MIDDLE_STEP,
+        step: resolvedStep,
+        firstInPass,
         texKey: name !== null && step !== null ? this.noteTexture(name, step, beat.beats) : 'note-glyph',
+        bareTexKey: name !== null && step !== null ? this.noteTexture(name, step, beat.beats, false) : undefined,
       });
     }
     this.totalNotesGenerated += notes.length;
@@ -1070,6 +1132,11 @@ export class RoadScene extends Phaser.Scene {
       this.meter = applyHit(this.meter, this.meterConfig);
       this.audioEngine.pluck(target.beat.semitone);
       this.strumLute();
+      this.recordEncounter(target.step, 'hit', true);
+      // Whatever the child just recalled (or didn't), the answer arrives
+      // with the note they played. This is what keeps a faded letter from
+      // ever being a dead end.
+      this.revealLetter(target);
       if (target.gfx) {
         // A struck note pulses once — lands big, settles back — so a hit
         // feels like plucking the note out of the air (ROADMAP task 32).
@@ -1173,6 +1240,11 @@ export class RoadScene extends Phaser.Scene {
       this.hintText.setPosition(hintX, laneY + HINT_Y_OFFSET);
     }
 
+    // A tab that was backgrounded resumes with every overdue note going
+    // missed in a single frame. That's harmless for the meter, but it must
+    // never be read as "this child forgot ten notes at once".
+    const missedThisFrame: Array<{ step: number; walking: boolean; isRest: boolean }> = [];
+
     // Filtered in place (not just gfx-destroyed) so a long/unbounded play
     // session doesn't accumulate every beat ever generated — ROADMAP task 13.
     this.markers = this.markers.filter((marker) => {
@@ -1187,21 +1259,47 @@ export class RoadScene extends Phaser.Scene {
       }
 
       if (marker.resolved === null && isBeatMissed(marker.beat, nowMs, HIT_WINDOW_MS)) {
+        const wasWalking = this.walking;
         marker.resolved = 'miss';
         marker.gfx?.setTint(NOTE_TINT_MISS);
         marker.gfx?.setAlpha(0.75);
         this.meter = applyMiss(this.meter, this.meterConfig);
+        this.revealLetter(marker);
+        // Only real notes reach here — a rest is born resolved, so it never
+        // enters this branch and can never be credited to a position.
+        missedThisFrame.push({ step: marker.step, walking: wasWalking, isRest: false });
       }
 
       if (!marker.gfx) {
         const tint =
           marker.resolved === 'hit' ? NOTE_TINT_HIT : marker.resolved === 'miss' ? NOTE_TINT_MISS : NOTE_TINT_UPCOMING;
-        marker.gfx = this.add.image(0, 0, marker.texKey);
+        // How much help this note gets is decided once, here, as it enters
+        // the lane — never re-read afterwards. A letter appearing on notes
+        // already in flight would be the game visibly reacting to a miss,
+        // which is punishment however gently it's drawn.
+        if (marker.bareTexKey && marker.resolved === null) {
+          const support = displaySupport(supportFor(scaffold, marker.step), {
+            firstInPass: marker.firstInPass ?? true,
+            struggling: !this.walking,
+            lost: this.lostSinceMs !== null && nowMs - this.lostSinceMs >= LOST_GRACE_MS,
+          });
+          marker.revealAtMs = marker.beat.hitTimeMs - leadMsFor(support);
+        } else {
+          marker.revealAtMs = -Infinity;
+        }
+        marker.lettered = nowMs >= (marker.revealAtMs ?? -Infinity);
+        marker.gfx = this.add.image(0, 0, marker.lettered ? marker.texKey : marker.bareTexKey ?? marker.texKey);
         // A rest glyph is drawn around the middle of its texture; a note is
         // anchored by its head.
         marker.gfx.setOrigin(NOTE_ORIGIN_X, marker.resolved === 'rest' ? 0.5 : this.noteOriginY(marker.step));
         marker.gfx.setTint(tint);
         marker.gfx.setAlpha(this.markerBaseAlpha(marker));
+      }
+      // The letter surfaces on its own schedule; a struck or missed note
+      // gets it immediately (revealLetter). Fade the prompt, never the
+      // answer — a hidden letter is always answered.
+      if (!marker.lettered && nowMs >= (marker.revealAtMs ?? Infinity)) {
+        this.revealLetter(marker);
       }
       marker.gfx.setPosition(this.markerX(progress), this.staffY(marker.step, laneY));
       if (progress > 1) {
@@ -1210,6 +1308,17 @@ export class RoadScene extends Phaser.Scene {
       }
       return true;
     });
+
+    // Only an isolated miss during otherwise-good play is evidence that a
+    // note asked too much. A fistful of them in one frame means the tab was
+    // asleep, or the child put the phone down — never that they unlearned.
+    if (missedThisFrame.length > 0 && missedThisFrame.length <= MASS_MISS_LIMIT) {
+      for (const miss of missedThisFrame) {
+        if (!miss.isRest) this.recordEncounter(miss.step, 'miss', miss.walking);
+      }
+    }
+
+    this.lostSinceMs = this.walking ? null : this.lostSinceMs ?? nowMs;
 
     const meterRatio = this.meter / this.meterConfig.max;
     this.coins = accumulateCoins(this.coins, meterRatio, delta, COIN_RATE_PER_SEC);

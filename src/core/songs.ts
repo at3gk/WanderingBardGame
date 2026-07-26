@@ -92,61 +92,71 @@ export const HOT_CROSS_BUNS: Song = {
   ],
 };
 
-/** Au Clair de la Lune — traditional, 8 bars of 4/4, in G. */
-export const AU_CLAIR_DE_LA_LUNE: Song = {
-  id: 'auclair',
-  title: 'Au Clair de la Lune',
+/** Row, Row, Row Your Boat — traditional, 8 bars of 4/4, in C. */
+export const ROW_YOUR_BOAT: Song = {
+  id: 'row',
+  title: 'Row, Row, Row Your Boat',
   beatsPerBar: 4,
   notes: [
-    { semitone: 7, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 },
-    { semitone: 11, beats: 2 }, { semitone: 9, beats: 2 },
-    { semitone: 7, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 9, beats: 1 },
+    { semitone: 0, beats: 2 }, { semitone: 0, beats: 2 },
+    { semitone: 0, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 4, beats: 2 },
+    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 4, beats: 1 }, { semitone: 5, beats: 1 },
     { semitone: 7, beats: 4 },
-    { semitone: 7, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 },
-    { semitone: 11, beats: 2 }, { semitone: 9, beats: 2 },
-    { semitone: 7, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 9, beats: 1 },
-    { semitone: 7, beats: 4 },
+    { semitone: 12, beats: 0.5 }, { semitone: 12, beats: 0.5 }, { semitone: 12, beats: 1 },
+    { semitone: 7, beats: 0.5 }, { semitone: 7, beats: 0.5 }, { semitone: 7, beats: 1 },
+    { semitone: 4, beats: 0.5 }, { semitone: 4, beats: 0.5 }, { semitone: 4, beats: 1 },
+    { semitone: 0, beats: 0.5 }, { semitone: 0, beats: 0.5 }, { semitone: 0, beats: 1 },
+    { semitone: 7, beats: 1 }, { semitone: 5, beats: 1 }, { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 },
+    { semitone: 0, beats: 4 },
   ],
 };
 
-/** Lightly Row — traditional, 8 bars of 4/4, an octave up. */
-export const LIGHTLY_ROW: Song = {
-  id: 'lightly',
-  title: 'Lightly Row',
+/** Old MacDonald Had a Farm — traditional, 12 bars of 4/4, an octave up. */
+export const OLD_MACDONALD: Song = {
+  id: 'macdonald',
+  title: 'Old MacDonald Had a Farm',
   beatsPerBar: 4,
   notes: [
-    { semitone: 19, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 16, beats: 2 },
-    { semitone: 17, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 14, beats: 2 },
-    { semitone: 12, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 17, beats: 1 },
-    { semitone: 19, beats: 1 }, { semitone: 19, beats: 1 }, { semitone: 19, beats: 2 },
-    { semitone: 19, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 16, beats: 2 },
-    { semitone: 17, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 14, beats: 2 },
-    { semitone: 12, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 17, beats: 1 },
-    { semitone: 19, beats: 1 }, { semitone: 19, beats: 1 }, { semitone: 19, beats: 2 },
+    { semitone: 17, beats: 1 }, { semitone: 17, beats: 1 }, { semitone: 17, beats: 1 }, { semitone: 12, beats: 1 },
+    { semitone: 14, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 12, beats: 2 },
+    { semitone: 21, beats: 1 }, { semitone: 21, beats: 1 }, { semitone: 19, beats: 1 }, { semitone: 19, beats: 1 },
+    { semitone: 17, beats: 4 },
+    { semitone: 17, beats: 1 }, { semitone: 17, beats: 1 }, { semitone: 17, beats: 1 }, { semitone: 12, beats: 1 },
+    { semitone: 14, beats: 0.5 }, { semitone: 14, beats: 0.5 }, { semitone: 14, beats: 1 }, { semitone: 12, beats: 2 },
+    { semitone: 21, beats: 1 }, { semitone: 21, beats: 1 }, { semitone: 19, beats: 1 }, { semitone: 19, beats: 1 },
+    { semitone: 17, beats: 4 },
+    { semitone: 17, beats: 0.5 }, { semitone: 17, beats: 0.5 }, { semitone: 17, beats: 1 },
+    { semitone: 17, beats: 1 }, { semitone: 17, beats: 1 },
+    { semitone: 17, beats: 0.5 }, { semitone: 17, beats: 0.5 }, { semitone: 17, beats: 1 },
+    { semitone: 17, beats: 1 }, { semitone: 17, beats: 1 },
+    { semitone: 17, beats: 0.5 }, { semitone: 17, beats: 0.5 }, { semitone: 17, beats: 1 },
+    { semitone: 17, beats: 0.5 }, { semitone: 17, beats: 0.5 }, { semitone: 17, beats: 1 },
+    { semitone: 17, beats: 0.5 }, { semitone: 17, beats: 0.5 }, { semitone: 17, beats: 0.5 },
+    { semitone: 17, beats: 0.5 }, { semitone: 17, beats: 1 }, { semitone: 17, beats: 1 },
   ],
 };
 
-/** London Bridge Is Falling Down — traditional, 8 bars of 4/4. */
+/** London Bridge Is Falling Down — traditional, 8 bars of 4/4, in G. */
 export const LONDON_BRIDGE: Song = {
   id: 'london',
   title: 'London Bridge',
   beatsPerBar: 4,
   notes: [
-    { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 5, beats: 1 },
-    { semitone: 4, beats: 1 }, { semitone: 5, beats: 1 }, { semitone: 7, beats: 2 },
-    { semitone: 2, beats: 1 }, { semitone: 4, beats: 1 }, { semitone: 5, beats: 2 },
-    { semitone: 4, beats: 1 }, { semitone: 5, beats: 1 }, { semitone: 7, beats: 2 },
-    { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 5, beats: 1 },
-    { semitone: 4, beats: 1 }, { semitone: 5, beats: 1 }, { semitone: 7, beats: 2 },
-    { semitone: 2, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 4, beats: 2 },
-    { semitone: 0, beats: 4 },
+    { semitone: 14, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 12, beats: 1 },
+    { semitone: 11, beats: 1 }, { semitone: 12, beats: 1 }, { semitone: 14, beats: 2 },
+    { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 12, beats: 2 },
+    { semitone: 11, beats: 1 }, { semitone: 12, beats: 1 }, { semitone: 14, beats: 2 },
+    { semitone: 14, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 12, beats: 1 },
+    { semitone: 11, beats: 1 }, { semitone: 12, beats: 1 }, { semitone: 14, beats: 2 },
+    { semitone: 9, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 11, beats: 2 },
+    { semitone: 7, beats: 4 },
   ],
 };
 
-/** Frère Jacques — traditional, 8 bars of 4/4, in G. The round every child sings. */
-export const FRERE_JACQUES: Song = {
+/** Are You Sleeping? (Frère Jacques) — traditional, 8 bars of 4/4, in G. The round every child sings. */
+export const ARE_YOU_SLEEPING: Song = {
   id: 'frere',
-  title: 'Frère Jacques',
+  title: 'Are You Sleeping?',
   beatsPerBar: 4,
   notes: [
     { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 7, beats: 1 },
@@ -186,9 +196,9 @@ export const JINGLE_BELLS: Song = {
  * curriculum (low → middle → upper) survives the variety.
  */
 export const SONGS_BY_BIOME: Record<string, Song[]> = {
-  village: [MARY_HAD_A_LITTLE_LAMB, HOT_CROSS_BUNS, LONDON_BRIDGE],
-  forest: [TWINKLE_TWINKLE, AU_CLAIR_DE_LA_LUNE, FRERE_JACQUES],
-  riverside: [ODE_TO_JOY, LIGHTLY_ROW, JINGLE_BELLS],
+  village: [MARY_HAD_A_LITTLE_LAMB, HOT_CROSS_BUNS, ROW_YOUR_BOAT],
+  forest: [TWINKLE_TWINKLE, LONDON_BRIDGE, ARE_YOU_SLEEPING],
+  riverside: [ODE_TO_JOY, JINGLE_BELLS, OLD_MACDONALD],
 };
 
 export const SONGS: Song[] = Object.values(SONGS_BY_BIOME).flat();

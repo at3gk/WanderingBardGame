@@ -3,6 +3,70 @@
 Run counter: 33
 
 ## Current status
+**v0.4 — learning, not just exposure** (2026-07-26). The human sharpened
+the goal: *"where they can actually learn music... thru songs that they
+already know."* The weakness that named: a letter printed in every note
+head **forever** is a crutch. A child can read the letters fluently and
+never once encode the position, so the position→name association is never
+retrieved and never sticks.
+
+- **The letter now fades in *time*, not opacity** (`src/core/scaffold.ts`,
+  27 tests). Familiarity is tracked per *staff position* (not per letter —
+  C5 is a different thing to learn than middle C). As a position is
+  practised its letter arrives later and later in the note's 1800ms
+  flight: 1800 → 1350 → 950 → 600 → 350ms before the tap. A half-opacity
+  letter would still be perfectly readable and teach nothing; a letter
+  that arrives late buys real recall time.
+- **Fade the prompt, never the answer.** The 350ms floor is load-bearing:
+  a note only lives ~500ms past the hit line, so relying on an
+  after-the-fact reveal would have left a child checking themselves
+  against a letter already fading away. Now every note always shows its
+  name before the tap, and also reveals on strike and on miss. A miss
+  costs exactly what it did before — a dimmed note and a little meter —
+  and never information.
+- **Quick to help, slow to withdraw.** +1 per hit; −3 per miss but only
+  while still walking (a child who has lost the beat misses everything);
+  hysteresis wider than the miss penalty so no single wobble flips a band;
+  a +12 per-sitting cap so a scaffold can't vanish faster than the memory
+  forms; help restored instantly when the meter drops, always on the first
+  sighting of a position in each tune, and partially after days away.
+- **Honest about what a tap proves**: timing, not reading — it is
+  confounded by melodic memory. So this is a *dosage schedule driven by
+  exposure*, not an assessment, and DESIGN.md says so plainly.
+- **Songs they already know** (task 53): Au Clair de la Lune and Lightly
+  Row — method-book tunes many children have never heard — were replaced
+  by *Row, Row, Row Your Boat* and *Old MacDonald Had a Farm*. Familiarity
+  is now load-bearing rather than decorative: if the child knows the tune,
+  the pitch is free when the letter is gone, so they are never stuck.
+  That is the only reason fading is safe here at all.
+- **Persistence** (`scaffoldStorage.ts`): one ~200-byte localStorage key,
+  no login, no menu, no identifiers, every access in try/catch. Loaded
+  once per page, *not* in `create()` — a resize re-runs `create()` and
+  wiping a child's progress on an orientation change would be a silent,
+  invisible bug.
+
+Verified: `npm test` **179 green** (+27 for the model alone), build green,
+and a new `tools/learning-check.mjs` that unit tests cannot replace — it
+plays well for 90s, then deliberately stops. Result: **67 letterless
+repeats** (real recall attempts), C4/D4/E4 faded 1800 → 950ms lead while
+rare positions correctly stayed fully supported, and **full help returned**
+after the bad stretch. `autoplay.mjs` still PASSes with all-natural pitches.
+
+Design was worked out by a five-agent workflow before any code: a pedagogy
+model, a familiarity audit of the songbook, a code-integration map, and two
+adversarial critiques. The critiques earned their keep — one did the
+arithmetic showing a revealed letter was only visible ~400ms *while
+fading* (fixed by the 350ms lead floor), and both caught that a single miss
+could flip a band (fixed by widening hysteresis past the miss penalty) and
+that the session cap was gross rather than net (a miss now refunds
+allowance, so a wobble can't strand a position for a whole sitting).
+
+Deviation from CLAUDE.md worth flagging: this is more than "exactly ONE
+roadmap task" — it is a model, a persistence layer, a songbook swap and a
+harness. That rule governs the scheduled autonomous runs; this was an
+interactive session with an explicit human direction to build the thing.
+
+## Previous status
 Third overnight session (2026-07-26) — **v0.3: the songbook**, plus the
 project's first real self-verification harness. The human's standing
 instruction this session: don't queue questions for a playtest, test it
