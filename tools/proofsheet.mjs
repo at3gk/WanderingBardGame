@@ -20,7 +20,7 @@ if (!chromium) throw new Error(`could not load playwright's chromium from ${pwPa
 // Notation proof sheet: bakes every note-value x staff-position combination
 // the songbook can produce and lays them out in a grid, so engraving can be
 // verified deterministically instead of by catching moving notes.
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 980, height: 800 }, deviceScaleFactor: 2 });
 const errors = [];
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));

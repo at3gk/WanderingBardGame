@@ -28,7 +28,7 @@ if (!chromium) throw new Error(`could not load playwright's chromium from ${pwPa
  * by taps that landed nowhere near a note.
  */
 const SECONDS = Number(process.argv[2] ?? 60);
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--autoplay-policy=no-user-gesture-required'] });
+const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
 const page = await browser.newPage({ viewport: { width: 390, height: 664 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));

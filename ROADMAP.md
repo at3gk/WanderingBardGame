@@ -8,7 +8,7 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the last numbered entry (currently 79). If it says
+- **What to do next** is the last numbered entry (currently 80). If it says
   "Nothing queued", promote something from the **Idea backlog** near the
   bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
   has lifted.
@@ -771,23 +771,69 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     now, ~17s). `npm test` 215 green (8 new), build green (bundle
     unaffected — no new texture, no new dependency), full `verify-all quick`
     (9 checks) also green.
-79. **Next.** Nothing queued.
+79. ~~**Next: nothing queued → wire the checks into CI.**~~ Done (Run 35,
+    scheduled): re-checked both blockers first per the note this task
+    started with — the forest-song fetch still 403s on every host tried
+    (including a plain Wikipedia page), and the GitHub MCP toolset still
+    has no tag/ref-write call — both unchanged, nothing to route around.
+    No playtest answer had arrived (none can, autonomously). The idea
+    backlog was down to one item needing a real phone, so per its own
+    "that's a signal to write a fresh idea" note, this task is the fresh
+    idea: the 17 headless checks in `tools/` were real, comprehensive,
+    and had caught real bugs all session — but they only ever ran when a
+    session remembered to run them locally. Nothing wired them into CI, so
+    a regression they'd have caught could ship silently between runs.
+    Two things made that possible:
+    - Every one of the 18 Playwright-launching scripts hardcoded
+      `executablePath: '/opt/pw-browsers/chromium'`, this environment's
+      own pre-installed browser path — which is also *why* they were
+      deliberately never wired in (tools/README.md said so explicitly).
+      Turns out this was unnecessary: Playwright resolves its own browser
+      via the standard `PLAYWRIGHT_BROWSERS_PATH` env var (already set in
+      this environment) when no `executablePath` is given at all, and
+      falls back to its own install cache when nothing is set — which is
+      exactly the state a stock CI runner or fresh machine starts in.
+      Verified this both ways (a playwright install matching the pinned
+      browser resolves it via the env var; a same-version mismatch install
+      correctly reports "run playwright install" instead of silently
+      picking the wrong binary). Removed the hardcode from all 18 scripts;
+      `tools/README.md` updated to match — no environment-specific edit
+      needed to run them anywhere.
+    - Added `.github/workflows/headless-checks.yml`: runs the fast nine
+      (`verify-all.mjs quick`) after every push to `main`, installing
+      Playwright + Chromium ad hoc exactly as documented in
+      `tools/README.md` (kept out of `package.json` on purpose — the game
+      itself must stay dependency-free). Deliberately **not** wired into
+      `ci.yml` or gating auto-merge: it triggers on `push: main`, not
+      `pull_request`, and can't be verified end-to-end from this
+      environment (no way to watch a real Actions run land), so it stays
+      informational (`continue-on-error: true`) rather than a merge gate
+      until it's proven itself. If it goes red after a real merge, that's
+      the next run's task.
+    `npm test` 215 green (unchanged, no game code touched), build green,
+    quick suite re-run twice locally with the de-hardcoded scripts: 9/9
+    green (one `dusk-check` flake on a loaded run turned out to be
+    environmental — a clean re-run passed, and the isolated script also
+    passed standalone — consistent with this project's own lesson that a
+    failing check is worth suspecting before the game).
 
-    **First, check the blockers.** Re-checked this run (see task 78): both
-    remain blocked. A fourth forest song needs one page fetch (still 403 on
-    every host as of this run) or a human transcription; the v0.1 tag needs
-    push/ref-write access this environment's tools still don't expose.
+80. **Next.** Nothing queued.
 
-    **Second, if a playtest answer has arrived**, fold it in. The single
-    open question the project cannot answer itself is whether the fade pace
-    suits a real five-year-old; the one dial is `SESSION_GAIN_CAP`
-    (currently 12, i.e. at most two bands per sitting), *not* the band
-    thresholds and *not* the lead times. PLAYTEST.md opens with how to ask.
+    **First, check the blockers.** Re-checked task 79: both remain blocked
+    (forest-song fetch still 403s everywhere; the GitHub MCP toolset still
+    has no tag/ref-write call).
 
-    **Third, the idea backlog below.** Only sharper mobile rendering is left
-    in it, and it needs a real phone to judge the fill-rate trade — not
-    something this environment can do. If it's still the only thing there
-    next run, that's a signal to write a fresh idea rather than force it.
+    **Second, if a playtest answer has arrived**, fold it in — see task 79
+    for the one open dial (`SESSION_GAIN_CAP`).
+
+    **Third, watch `.github/workflows/headless-checks.yml`'s first real
+    run** (task 79). If it comes back red on a merge that the local quick
+    suite passed, that mismatch — CI environment vs. this one — is the
+    task, not a new feature. If it's been green for a few runs, consider
+    promoting it from `continue-on-error` to a real gate.
+
+    **Fourth, the idea backlog below.** Only sharper mobile rendering is
+    left, and it still needs a real phone to judge the fill-rate trade.
 
     **What not to reach for.** The verification suite is comprehensive now
     (17 checks); adding another for its own sake is drift. So is another

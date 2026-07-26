@@ -51,7 +51,6 @@ const VIEWPORTS = [
 ];
 
 const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium',
   args: ['--autoplay-policy=no-user-gesture-required'],
 });
 

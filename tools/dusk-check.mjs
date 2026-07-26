@@ -33,7 +33,6 @@ if (!chromium) throw new Error(`could not load playwright's chromium from ${pwPa
  * it — it is ~24000px in, about four minutes of play.
  */
 const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium',
   args: ['--autoplay-policy=no-user-gesture-required'],
 });
 const page = await browser.newPage({ viewport: { width: 900, height: 600 } });

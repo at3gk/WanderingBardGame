@@ -59,6 +59,11 @@ A red build does not deploy — the last good version stays live. Day-to-day
 development happens on short-lived `claude/dev` branches merged to `main`
 via PR once CI is green.
 
+After each merge, the fast nine of the [`tools/`](./tools) headless checks
+also run in CI (`.github/workflows/headless-checks.yml`). This is
+informational only — it doesn't gate the merge or the deploy — since it
+exercises a real browser and heavier setup than the PR gate needs.
+
 ## Project docs
 
 This game is developed autonomously per [CLAUDE.md](./CLAUDE.md):
