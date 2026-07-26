@@ -27,6 +27,7 @@ import {
 } from '../render/engraving';
 import {
   glintTexture,
+  moonTexture,
   ROAD_TILE_WIDTH,
   roadTileTexture,
   SCENERY_TILE_HEIGHT,
@@ -244,7 +245,7 @@ export class RoadScene extends Phaser.Scene {
   private signpostSpawnDistancePx: number[] = [];
   private nextSignpostCount = 0;
   private stars!: Phaser.GameObjects.TileSprite;
-  private moon!: Phaser.GameObjects.Arc;
+  private moon!: Phaser.GameObjects.Image;
   private moonGlow!: Phaser.GameObjects.Arc;
   private distancePx = 0;
   private totalNotesGenerated = 0;
@@ -297,7 +298,7 @@ export class RoadScene extends Phaser.Scene {
 
     this.stars = this.add.tileSprite(0, 0, this.scale.width, STAR_FIELD_HEIGHT, starFieldTexture(this));
     this.moonGlow = this.add.circle(0, MOON_Y, MOON_RADIUS + 14, 0xe8d9c0, 1);
-    this.moon = this.add.circle(0, MOON_Y, MOON_RADIUS, 0xe8d9c0, 1);
+    this.moon = this.add.image(0, MOON_Y, moonTexture(this, MOON_RADIUS));
 
     this.sceneryFromIndex = 0;
     this.sceneryToIndex = 0;

@@ -286,6 +286,13 @@ by `wc -l` before anything else ran, reverted with `git checkout`. Match
 method spans by walking braces line-by-line, and check the line delta
 against what you expected before running any test.
 
+**The moon has craters** — the last flat thing in the world. Everything
+else carries shape (gables and lit windows, conifers and fireflies, a tent
+and a campfire); the moon was a plain disc and it is the largest object in
+the sky. Baked as a texture now, craters only slightly darker than the disc
+and clear of the rim, so it still reads as a light source rather than as
+detail to study. In `render/scenery.ts`, covered by `scenery-sheet.mjs`.
+
 **Coming back after days away is verified end-to-end**
 (`tools/timeaway-check.mjs`). The decay arithmetic was unit-tested but the
 round trip through real `localStorage` with a real backdated timestamp was
