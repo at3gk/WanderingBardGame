@@ -986,7 +986,14 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
 
     No code touched this run; `npm test` (254 green) and `npm run build`
     re-confirmed as a baseline check before deciding not to change CI.
-93. **Next.** Nothing queued.
+93. ~~**Soak the new mode.**~~ Done: `tools/practice-soak.mjs`.
+    Practice is the one path that accumulates on purpose — every correct
+    note appends to the written phrase — so "it clears" needed holding to
+    over hundreds of passes rather than the six notes a functional check
+    plays. 8576 notes, ~504 complete passes through Hot Cross Buns over
+    eight minutes: objects hover 77–83 as the phrase builds and clears,
+    tweens bounded, textures flat, frame rate steady. Nothing accumulates.
+94. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked this run (task 92): both
     remain blocked (forest-song fetch still 403s everywhere; the GitHub MCP
