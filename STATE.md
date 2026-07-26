@@ -11,8 +11,8 @@ Run counter: 33
   ~200 bytes of `localStorage`. The core mechanic is one tap.
 - **Eleven songs**, four per biome except forest, which has three and is
   short a fourth (blocked — see *Blocked on human*).
-- **207 unit tests**; **ten headless checks** in `tools/`, run them all with
-  `node tools/verify-all.mjs` (or `quick` for the fast five). All green as
+- **207 unit tests**; **15 headless checks** in `tools/`, run them all with
+  `node tools/verify-all.mjs` (or `quick` for the fast eight). All green as
   of 2026-07-26.
 - **Source layout**: `core/` pure logic, `audio/` one manifest + engine,
   `render/` texture baking (engraving, scenery, ui), `scenes/RoadScene.ts`
@@ -433,7 +433,7 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   claim the next number while you hold it too. Renumber yours; don't
   renumber theirs (theirs is already merged and referenced).
 - **Run the checks with one command**: `node tools/verify-all.mjs` (all
-  nine, ~13 min) or `... quick` (the fast four, ~4 min), from the directory
+  15, ~20 min) or `... quick` (the fast eight, ~5 min), from the directory
   where Playwright is installed, with `npm run preview` up. It runs them
   serially on purpose — several Chromium instances starve each other, and a
   long run measured under that contention reported 11fps and a third of its
