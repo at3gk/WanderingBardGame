@@ -43,11 +43,11 @@ this environment. Change it if you're running elsewhere.
 Runs the whole suite and prints one summary. **Start here.**
 
 ```bash
-node /path/to/repo/tools/verify-all.mjs          # all 15, ~20 min
+node /path/to/repo/tools/verify-all.mjs          # all 16, ~22 min
 node /path/to/repo/tools/verify-all.mjs quick    # the fast eight, ~5 min
 ```
 
-There are fifteen checks now, several of which take minutes, and a run that has
+There are sixteen checks now, several of which take minutes, and a run that has
 to remember all of them will sooner or later remember only the fast ones.
 
 It runs them **one at a time on purpose.** Several Chromium instances
@@ -218,6 +218,34 @@ regardless of the meter — deliberately, since that is what lets a lost child
 hear where they are — so sound continues at three layers x 1.6 beats/sec.
 A buzzer on every missed note would add another ~1.6/sec and trip the
 threshold.
+
+## `title-check.mjs [seconds]`
+
+Does the title on screen name the tune you are actually hearing?
+
+Not cosmetic. The whole premise is that the child already knows these songs
+— *"if you know how the tune goes, the pitch is free"* — so naming the wrong
+one does not merely look sloppy, it teaches a false association to exactly
+the child who is paying attention. And the timing is non-obvious: passes are
+queued a lookahead ahead of playback, so `announceSong` holds the title back
+until the music reaches that song's first note, arithmetic that had no test.
+
+Result, 2026-07-26: every title lands within ~50ms of its own pass starting
+and names the right song.
+
+Three attempts, and the game was fine in all three:
+
+1. Slicing `s.markers` from a remembered index. That array is filtered in
+   place as notes scroll off, so it shrinks under the index and each "pass"
+   came out as a fraction of a second instead of twenty. Every title then
+   looked wildly early.
+2. Recording the notes handed to `audioEngine.schedule`. Better, but the
+   *first* call carries the entire pre-tap backlog rather than one song, so
+   pass N and title N are not the same thing — and the check was pairing
+   them by index. Every title then looked late by exactly one song.
+3. Taking each pass's window from `nextPassStartTimeMs` before and after the
+   call, and matching each title to whichever pass was playing at that
+   moment. No index pairing at all.
 
 ## `dusk-check.mjs`
 
