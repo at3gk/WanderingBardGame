@@ -102,6 +102,34 @@ It fails if any position reaches band 0 within a single sitting (the cap
 is broken) or if no further fading happens across sittings (persistence or
 the per-sitting reset is broken).
 
+## `rotate-check.mjs`
+
+Rotates a phone mid-game — portrait → landscape → portrait, playing
+continuously throughout — and checks that coins, walk distance, the audio
+engine, the marker list and (above all) the child's saved learning progress
+survive. Rotation re-runs Phaser's `create()`, which is the path that forced
+the scaffold to module scope in the first place, so it deserves a check
+rather than an assumption.
+
+Verdict as of 2026-07-26: **rotation is fine.** Meter holds at 100 across
+both rotations, coins and steps rise monotonically, and no staff position
+ends weaker than it started.
+
+That verdict took three attempts, and the two wrong ones are the reason this
+file exists rather than a one-off script:
+
+1. The first version **paused tapping for 1.2s** after each resize. Those
+   are perfectly genuine misses, and the resulting strength loss read as
+   "rotation costs the child progress". It does not.
+2. The second version tapped a **fixed (200, 520)**. In landscape the
+   viewport is only 390px tall, so every tap landed outside the page and the
+   meter crashed to zero — which again looked like rotation breaking the
+   game. It now taps a point derived from the current viewport.
+
+Both times the harness was the bug and the game was innocent. A
+self-verifying project has to treat a failing check as a claim about the
+*check* first.
+
 ## `pillar-check.mjs`
 
 Checks the two CLAUDE.md design pillars that had never actually been

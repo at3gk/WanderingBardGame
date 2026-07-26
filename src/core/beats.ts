@@ -57,3 +57,38 @@ export function isWithinHitWindow(beat: Beat, inputTimeMs: number, hitWindowMs: 
 export function isBeatMissed(beat: Beat, nowMs: number, hitWindowMs: number): boolean {
   return nowMs > beat.hitTimeMs + hitWindowMs;
 }
+
+/**
+ * Whether the beat's *entire* hit window fell between two frames — so no
+ * input could possibly have landed on it.
+ *
+ * The learning model treats a miss as evidence that a position was asked
+ * for too early, which is only fair when the child actually had a chance.
+ * A garbage-collection pause, a throttled background tab or a slow device
+ * can skip far enough that a note's whole window elapses inside one frame
+ * gap, and the child is charged for a note that was never on screen.
+ *
+ * The scene already had two guards on this premise: encounters are dropped
+ * while the document is hidden, and a frame that misses more than
+ * MASS_MISS_LIMIT notes at once is treated as a sleeping tab rather than
+ * forgetting. This closes the band between them — a hitch big enough to
+ * swallow one or two notes but not enough to trip the mass-miss rule,
+ * which is what a moderate stall on a cheap phone looks like.
+ *
+ * Scope, honestly: a phone rotation was the suspected trigger and it is
+ * *not* one. Measured headless, rotation peaks at a 50ms frame gap and
+ * backgrounding at 69ms, both far short of the 180ms window; the strength
+ * loss that prompted the investigation turned out to be the test harness
+ * pausing its own taps. So this guard is insurance against device
+ * conditions that cannot be reproduced here, not a fix for an observed bug.
+ *
+ * It is exact rather than heuristic — it asks whether the window closed
+ * before the frame began, not whether the frame merely felt long — so it is
+ * provably inert during ordinary play, where frame gaps are far shorter
+ * than the window is wide. `beats.test.ts` checks that exhaustively.
+ */
+export function wasUnplayable(beat: Beat, nowMs: number, previousMs: number, hitWindowMs: number): boolean {
+  const opensAt = beat.hitTimeMs - hitWindowMs;
+  const closesAt = beat.hitTimeMs + hitWindowMs;
+  return opensAt > previousMs && closesAt <= nowMs;
+}

@@ -136,6 +136,48 @@ so it reported a comfortable 110px gap and passed without ever seeing the
 case it existed for. It now computes the worst case from tempo, flight time
 and runway. A check that cannot see its own failure case is not a check.
 
+**Rotation is safe, and the harness lied twice about it**
+(`tools/rotate-check.mjs`, 2026-07-26). Rotating a phone re-runs Phaser's
+`create()` — the path that forced the scaffold to module scope — so it now
+has a check: portrait → landscape → portrait, playing throughout. Verdict:
+coins, steps, audio, markers and saved learning progress all survive, meter
+holds at 100, and no position ends weaker than it started.
+
+Getting there took three attempts, and the two failures were both mine:
+the first version paused tapping for 1.2s after each resize (genuine
+misses, which read as "rotation costs progress"), and the second tapped a
+fixed (200, 520) that falls outside the 390px-tall landscape viewport (so
+every tap missed the page and the meter crashed to zero). Both times the
+game was innocent. **A self-verifying project has to treat a failing check
+as a claim about the check first** — that is the standing lesson, and it
+is why each harness now documents the wrong version as well as the right
+one.
+
+**One real change came out of it**: `wasUnplayable` in `core/beats.ts`. A
+note whose *entire* hit window elapses inside a single frame gap was never
+on screen to be played, so it no longer feeds the learning model — it still
+misses visibly and still dips the meter, it just isn't taken as evidence
+about what the child knows. Scoped honestly: this is **insurance, not a fix
+for an observed bug.** Rotation was the suspected trigger and measurably is
+not one (peak frame gap 50ms rotating, 69ms backgrounded, against a 180ms
+window). It closes the band between the two guards the scene already had —
+wider than the hidden-tab check, narrower than `MASS_MISS_LIMIT` — which is
+what a moderate stall on a cheap phone looks like. Exhaustively tested to be
+inert for every frame gap up to the full window width.
+
+**Songbook blocked, not skipped**: the forest set is one song short and
+should get a fourth. It did not get one this session because this
+environment's network policy blocks outbound fetches (403 on CONNECT to
+every host), so a transcription cannot be verified note-for-note against a
+published source — the exact standard that caused the forest *This Old Man*
+to be rejected. Candidate already researched: **Here We Go Round the
+Mulberry Bush**, traditional (tune dates to 1700s London, clearly public
+domain), which in C major uses scale degrees 1/2/3/5/6/7 only — all
+naturals — and sits G4–G5, matching the forest register. *Wheels on the Bus*
+was considered and **rejected on rights**: it is attributed to Verna Hills,
+1939, which does not meet CLAUDE.md's CC0-only bar. Ship Mulberry Bush from
+a run with network access, or from a human-supplied transcription.
+
 Deviation from CLAUDE.md worth flagging: this is more than "exactly ONE
 roadmap task" — it is a model, a persistence layer, a songbook swap and a
 harness. That rule governs the scheduled autonomous runs; this was an

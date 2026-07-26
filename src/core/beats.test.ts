@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { beatIntervalMs, generateBeatSchedule, isBeatMissed, isWithinHitWindow, scrollProgress } from './beats';
+import {
+  beatIntervalMs,
+  generateBeatSchedule,
+  isBeatMissed,
+  isWithinHitWindow,
+  scrollProgress,
+  wasUnplayable,
+} from './beats';
 
 describe('beatIntervalMs', () => {
   it('converts BPM to milliseconds per beat', () => {
@@ -77,5 +84,56 @@ describe('isBeatMissed', () => {
 
   it('is missed once the window has fully passed', () => {
     expect(isBeatMissed(beat, 2101, 100)).toBe(true);
+  });
+});
+
+describe('wasUnplayable', () => {
+  // A note is only excused when its whole window fell inside one frame gap.
+  // The risk of this guard is that it excuses too much: if it fired on
+  // ordinary misses, a child could never generate the evidence the learning
+  // model runs on, and letters would stop fading. So most of these cases are
+  // about it staying OUT of the way.
+  const beat = { index: 0, hitTimeMs: 1000 };
+  const W = 90; // HIT_WINDOW_MS
+
+  it('excuses a note whose whole window fell between two frames', () => {
+    // Frame gap 800ms -> 1200ms swallows the window 910..1090 entirely.
+    expect(wasUnplayable(beat, 1200, 800, W)).toBe(true);
+  });
+
+  it('does not excuse an ordinary miss at a normal frame rate', () => {
+    // 16ms frame: the window was open across many frames before this one.
+    expect(wasUnplayable(beat, 1100, 1084, W)).toBe(false);
+  });
+
+  it('does not excuse a note whose window was already open last frame', () => {
+    // The child had from 910ms onwards; the hitch only ate the tail.
+    expect(wasUnplayable(beat, 1200, 950, W)).toBe(false);
+  });
+
+  it('does not excuse a note whose window is still open now', () => {
+    // Still playable this instant — it is not a miss yet at all.
+    expect(wasUnplayable(beat, 1050, 900, W)).toBe(false);
+  });
+
+  it('is exact at the boundaries rather than fuzzy', () => {
+    // previousMs exactly at the window's open time: the frame did NOT skip
+    // it, so it is a real miss.
+    expect(wasUnplayable(beat, 1200, 910, W)).toBe(false);
+    // One millisecond earlier and the window opened inside the gap.
+    expect(wasUnplayable(beat, 1200, 909, W)).toBe(true);
+    // nowMs exactly at the close time still counts as fully elapsed.
+    expect(wasUnplayable(beat, 1090, 800, W)).toBe(true);
+    expect(wasUnplayable(beat, 1089, 800, W)).toBe(false);
+  });
+
+  it('never fires while frame gaps stay shorter than the window is wide', () => {
+    // The structural reason this costs nothing in ordinary play: a gap has
+    // to exceed the full window width (2W) to swallow one.
+    for (let gap = 1; gap <= 2 * W; gap++) {
+      for (let now = 900; now <= 1300; now++) {
+        expect(wasUnplayable(beat, now, now - gap, W), `gap ${gap} at ${now}`).toBe(false);
+      }
+    }
   });
 });
