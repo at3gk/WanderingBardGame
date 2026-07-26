@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 34
+Run counter: 35
 
 ## Current status
 
@@ -13,7 +13,10 @@ Run counter: 34
   short a fourth (blocked — see *Blocked on human*).
 - **215 unit tests**; **17 headless checks** in `tools/`. Run them all with
   `PLAYWRIGHT_PATH=<dir>/node_modules/playwright node tools/verify-all.mjs`
-  (or `quick` for the fast nine). All green as of 2026-07-26.
+  (or `quick` for the fast nine). All green as of 2026-07-26. The fast nine
+  now also run automatically after every merge to `main`
+  (`.github/workflows/headless-checks.yml`), informational only — it
+  doesn't gate the merge or the deploy.
 - **Source layout**: `core/` pure logic, `audio/` one manifest + engine,
   `render/` texture baking (engraving, scenery, ui), `scenes/RoadScene.ts`
   the one scene (1264 lines, down from 1584). Every texture the game draws
@@ -797,6 +800,22 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   measuring it. Every harness now documents its wrong versions next to its
   right one — that write-up is the most useful thing this session produced
   for whoever runs next.
+- Run 35 (2026-07-26, scheduled): wired the headless checks into CI, per
+  new ROADMAP task 79 — see its done-entry for the full writeup. Short
+  version: all 18 `tools/*.mjs` scripts hardcoded this environment's own
+  Playwright browser path, which is why they were never run in CI; removed
+  the hardcode (Playwright resolves its own browser without it, verified
+  both here and via a deliberate version-mismatch check), and added
+  `.github/workflows/headless-checks.yml` — the fast nine run after every
+  merge to `main`, informational only (`continue-on-error`, not a required
+  check), since this environment can't watch a real Actions run land to
+  confirm it end-to-end. `npm test` 215 green (no game code touched),
+  build green, quick suite 9/9 green on a clean local re-run (one
+  `dusk-check` flake on a loaded run didn't reproduce — see task 79).
+  **Needs human/next-run attention**: watch whether
+  `headless-checks.yml`'s first real run on `main` actually goes green: it
+  installs Playwright fresh and downloads Chromium on a stock GitHub-hosted
+  runner, which this session had no way to rehearse.
 
 ## Needs human playtest
 

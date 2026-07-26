@@ -1,0 +1,42 @@
+name: Headless checks
+
+# Informational only: runs after a merge to main, alongside (not blocking)
+# the deploy workflow. Not a required PR check — ci.yml's `npm test` and
+# `npm run build` are what gate merges. This exists because the 17
+# Playwright-driven checks in tools/ (see tools/README.md) previously only
+# ran when an autonomous session remembered to run them locally, which is
+# the kind of thing that quietly stops happening. `continue-on-error` keeps
+# a red run here from ever affecting anything else.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  quick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run preview &
+      - name: Wait for the preview server
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4173/WanderingBardGame/ > /dev/null && exit 0
+            sleep 1
+          done
+          echo "preview server never came up on :4173" >&2
+          exit 1
+      - name: Install Playwright ad hoc (kept out of package.json — see tools/README.md)
+        run: |
+          mkdir -p /tmp/pw && cd /tmp/pw && npm init -y && npm i playwright
+          npx playwright install --with-deps chromium
+      - name: Run the fast nine checks
+        run: PLAYWRIGHT_PATH=/tmp/pw/node_modules/playwright node tools/verify-all.mjs quick

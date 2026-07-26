@@ -12,8 +12,12 @@ Install it ad hoc, outside the project, and run the scripts directly.
 
 ```bash
 npm run build && npm run preview &        # serves http://localhost:4173
-cd "$(mktemp -d)" && npm init -y && npm i playwright   # anywhere but the repo
+cd "$(mktemp -d)" && npm init -y && npm i playwright && npx playwright install chromium   # anywhere but the repo
 ```
+
+(Skip `playwright install chromium` if a browser is already reachable via
+`PLAYWRIGHT_BROWSERS_PATH` — true in this environment, where one is
+pre-installed.)
 
 Then point `PLAYWRIGHT_PATH` at that install and run the scripts **in
 place**, from the repo:
@@ -34,9 +38,11 @@ whole class of mistake.
 Artefacts (`proofsheet.png`, `scenery-sheet.png`, `ui-sheet.png`, screenshots)
 are written to the working directory and are gitignored.
 
-All three launch the browser with
-`executablePath: '/opt/pw-browsers/chromium'` — the pre-installed binary in
-this environment. Change it if you're running elsewhere.
+None of the scripts hardcode a browser path — `chromium.launch()` is called
+with no `executablePath`, so Playwright resolves its own binary the normal
+way (via `PLAYWRIGHT_BROWSERS_PATH` if set, as it is in this environment; via
+its own install cache otherwise). That's what makes them portable to CI or
+any other machine without editing a path first.
 
 ## `verify-all.mjs [quick]`
 

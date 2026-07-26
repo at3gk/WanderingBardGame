@@ -28,7 +28,6 @@ const ROOT_HZ = 261.63; // core/notation.ts / audio/manifest.ts — middle C
 const CHIME_HZ = ROOT_HZ * Math.pow(2, 24 / 12); // two octaves up
 
 const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium',
   args: ['--autoplay-policy=no-user-gesture-required'],
 });
 const page = await browser.newPage({ viewport: { width: 900, height: 600 } });

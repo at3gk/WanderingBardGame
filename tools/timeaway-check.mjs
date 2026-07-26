@@ -31,7 +31,6 @@ if (!chromium) throw new Error(`could not load playwright's chromium from ${pwPa
  * reload, and check what survived.
  */
 const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium',
   args: ['--autoplay-policy=no-user-gesture-required'],
 });
 const page = await browser.newPage({ viewport: { width: 900, height: 600 } });

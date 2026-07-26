@@ -33,7 +33,7 @@ const OUT = 'ui-sheet.png';
 // "proved" nothing had changed by comparing against its own leftover file.
 if (existsSync(OUT)) unlinkSync(OUT);
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 500, height: 320 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));

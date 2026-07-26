@@ -34,7 +34,7 @@ const OUT = 'scenery-sheet.png';
 // how a crashed script once "proved" that nothing had changed.
 if (existsSync(OUT)) unlinkSync(OUT);
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 900, height: 900 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));

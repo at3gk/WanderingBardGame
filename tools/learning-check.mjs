@@ -34,7 +34,6 @@ const PLAY_SECONDS = Number(process.argv[2] ?? 100);
 const SULK_SECONDS = Number(process.argv[3] ?? 25);
 
 const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium',
   args: ['--autoplay-policy=no-user-gesture-required'],
 });
 const page = await browser.newPage({ viewport: { width: 900, height: 600 } });

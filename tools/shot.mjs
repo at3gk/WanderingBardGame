@@ -21,7 +21,7 @@ if (!chromium) throw new Error(`could not load playwright's chromium from ${pwPa
 const prefix = process.argv[2] ?? 'shot';
 const settleMs = Number(process.argv[3] ?? 1500);
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 900, height: 600 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
