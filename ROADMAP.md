@@ -993,7 +993,19 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     plays. 8576 notes, ~504 complete passes through Hot Cross Buns over
     eight minutes: objects hover 77–83 as the phrase builds and clears,
     tweens bounded, textures flat, frame rate steady. Nothing accumulates.
-94. **Next.** Nothing queued.
+94. ~~**Stop free play running off the bottom of a landscape phone.**~~
+    Done — third and last bug from probing the seams. `freePlayStaff`
+    preferred overflowing to shrinking its touch targets, and on a 664x390
+    landscape screen the default margins leave 260px for twelve 26px gaps.
+    It overflowed: **middle C landed at y=386 on a 390px screen**, clipped
+    at the edge and impossible to tap. There is no scrolling, so overflow
+    is not "recoverable" as the old comment claimed — it is simply gone.
+    It now squeezes the margins first (the song title and the hint both
+    have somewhere else to be; an unreachable note does not), and only
+    overflows if even the minimums cannot fit. C sits at y=346 now, 44px
+    clear. Tested across all nine real viewports: every offered note on
+    screen, every gap still at or above the finger floor.
+95. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked this run (task 92): both
     remain blocked (forest-song fetch still 403s everywhere; the GitHub MCP

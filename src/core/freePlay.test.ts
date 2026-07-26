@@ -6,6 +6,7 @@ import {
   freePlayStepAt,
   freePlayStepY,
   MIN_STEP_BAND,
+  MIN_TOP_MARGIN,
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
 import { advanceSequence, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
@@ -172,5 +173,49 @@ describe('writing the tune out left to right', () => {
 
   it('never returns a negative column for a nonsense index', () => {
     expect(writtenNoteSlot(-4, 360).column).toBe(0);
+  });
+});
+
+describe('fitting the ladder on the screen', () => {
+  // The bug this exists for: on a 664x390 landscape phone the default
+  // margins leave 260px for twelve gaps, under the 26px floor — and simply
+  // overflowing put middle C at y=386 on a 390px screen, clipped at the
+  // bottom edge and impossible to tap.
+  const REAL: Array<[string, number]> = [
+    ['narrow 320', 568], ['iPhone SE', 667], ['iPhone 12', 664],
+    ['Pixel 5', 727], ['landscape', 390], ['iPad', 1024],
+    ['desktop', 600], ['wide short', 560], ['tall narrow', 900],
+  ];
+
+  it('keeps every offered note on screen, on every real viewport', () => {
+    for (const [name, h] of REAL) {
+      const staff = freePlayStaff(h, 74, 56);
+      expect(freePlayStepY(FREE_PLAY_LOW_STEP, staff), `${name} lowest`).toBeLessThanOrEqual(h);
+      expect(freePlayStepY(FREE_PLAY_HIGH_STEP, staff), `${name} highest`).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('still keeps targets a finger can hit while doing it', () => {
+    for (const [name, h] of REAL) {
+      expect(freePlayStaff(h, 74, 56).stepGap, name).toBeGreaterThanOrEqual(MIN_STEP_BAND);
+    }
+  });
+
+  it('squeezes the margins rather than the notes', () => {
+    // 390 tall: the default 74/56 cannot fit twelve 26px gaps, so the top
+    // margin has to give.
+    const tight = freePlayStaff(390, 74, 56);
+    expect(tight.topY).toBeLessThan(74);
+    expect(tight.topY).toBeGreaterThanOrEqual(MIN_TOP_MARGIN);
+    // A roomy screen keeps its margins untouched.
+    expect(freePlayStaff(900, 74, 56).topY).toBe(74);
+  });
+
+  it('gives up and overflows only when even the minimum margins cannot fit', () => {
+    // Nothing sane is this short; the point is that it degrades rather
+    // than producing a zero or negative gap.
+    const absurd = freePlayStaff(120, 74, 56);
+    expect(absurd.stepGap).toBeGreaterThanOrEqual(MIN_STEP_BAND);
+    expect(absurd.topY).toBe(MIN_TOP_MARGIN);
   });
 });

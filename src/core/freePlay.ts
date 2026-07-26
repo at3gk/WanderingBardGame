@@ -40,6 +40,15 @@ export const FREE_PLAY_HIGH_STEP = 12;
  */
 export const MIN_STEP_BAND = 26;
 
+/**
+ * How far the margins may be squeezed before the ladder is allowed to
+ * overflow. The top margin holds the song title and the bottom one the
+ * hint; both have somewhere else to be on a short screen, and an
+ * unreachable note does not.
+ */
+export const MIN_TOP_MARGIN = 34;
+export const MIN_BOTTOM_MARGIN = 16;
+
 export interface FreePlayStaff {
   /** Vertical distance between adjacent steps (a line to its neighbouring space). */
   stepGap: number;
@@ -59,10 +68,25 @@ export interface FreePlayStaff {
  */
 export function freePlayStaff(viewportH: number, topMargin: number, bottomMargin: number): FreePlayStaff {
   const steps = FREE_PLAY_HIGH_STEP - FREE_PLAY_LOW_STEP;
-  const usable = Math.max(steps * MIN_STEP_BAND, viewportH - topMargin - bottomMargin);
+  const needed = steps * MIN_STEP_BAND;
+
+  // Give back margin before giving up on target size, and give up on target
+  // size before running off the screen. A short landscape phone has 260px
+  // between the default margins for twelve gaps, which is under the floor —
+  // and simply overflowing put middle C at y=386 on a 390px screen, clipped
+  // at the edge and unreachable. Squeezing the margins first buys 27px a
+  // step, which clears the floor and keeps every note on screen.
+  let top = topMargin;
+  let bottom = bottomMargin;
+  if (viewportH - top - bottom < needed) {
+    top = Math.min(top, Math.max(MIN_TOP_MARGIN, viewportH - bottom - needed));
+    bottom = Math.min(bottom, Math.max(MIN_BOTTOM_MARGIN, viewportH - top - needed));
+  }
+
+  const usable = Math.max(steps * MIN_STEP_BAND, viewportH - top - bottom);
   const stepGap = usable / steps;
-  const bottomY = topMargin + usable;
-  return { stepGap, bottomY, topY: topMargin };
+  const bottomY = top + usable;
+  return { stepGap, bottomY, topY: top };
 }
 
 /** Screen y of a staff step in free play. */
