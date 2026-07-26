@@ -552,6 +552,20 @@ export class RoadScene extends Phaser.Scene {
       this.handleInput();
     });
 
+    // The free-play staff is laid out once, from the height available. The
+    // walk's own staff is recomputed every frame so it rides a resize for
+    // free; this one does not, and after a rotation into landscape it was
+    // still spread for a portrait screen — the lowest notes ran off the
+    // bottom and could not be reached at all.
+    //
+    // The picker is closed rather than re-laid-out: a rotation is a big
+    // enough change of context that reappearing in a new shape is more
+    // startling than simply being dismissed, and it is one tap to reopen.
+    this.scale.on(Phaser.Scale.Events.RESIZE, () => {
+      if (this.pickerOpen) this.closePicker();
+      if (this.mode === 'play') this.buildFreeStaff(false);
+    });
+
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       document.removeEventListener('visibilitychange', this.handleVisibilityChange);
@@ -1032,7 +1046,7 @@ export class RoadScene extends Phaser.Scene {
    * *space* and ledger position too — without them a child aiming at a
    * space is aiming at nothing, and the whole mode is aiming.
    */
-  private buildFreeStaff(): void {
+  private buildFreeStaff(resetProgress = true): void {
     this.tearDownFreeStaff();
     const w = this.scale.width;
     const staff = freePlayStaff(this.scale.height, FREEPLAY_TOP_MARGIN, FREEPLAY_BOTTOM_MARGIN);
@@ -1100,11 +1114,15 @@ export class RoadScene extends Phaser.Scene {
     this.songTitleText.setAlpha(chosen ? 0.6 : 0);
 
     this.freeSequence = songStepSequence(chosen);
-    this.freeIndex = 0;
+    // A rebuild caused by a rotation must not throw away how far through
+    // the tune the child had got — turning the phone is not starting again.
+    if (resetProgress) this.freeIndex = 0;
+    if (this.freeSequence.length) this.freeIndex %= this.freeSequence.length;
+    else this.freeIndex = 0;
     this.freePips = this.freePips.filter((p) => p.active);
     this.freeCursor = null;
     if (this.freeSequence.length) {
-      const cursor = this.add.circle(30, freePlayStepY(this.freeSequence[0], staff), 6, PICKER_CHOSEN_BG, 1);
+      const cursor = this.add.circle(30, freePlayStepY(this.freeSequence[this.freeIndex], staff), 6, PICKER_CHOSEN_BG, 1);
       cursor.setDepth(FREEPLAY_DEPTH + 2);
       this.freeCursor = cursor;
       this.freeParts.push(cursor);
