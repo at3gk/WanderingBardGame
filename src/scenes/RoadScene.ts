@@ -200,6 +200,12 @@ const DISTANCE_MARGIN_BOTTOM = 20;
 // is actually looking at — and it doubles as the first thing that tells a
 // new reader those shapes are notes.
 const HINT_TEXT = 'tap when a note reaches the line';
+// Free play has to say what it is, once. The two modes ask for opposite
+// things — catch what arrives, versus go and find one — and a child who
+// pressed the lute button expecting the road would otherwise be looking at
+// a ladder with no idea it responds to anything.
+const FREE_HINT_TEXT = 'tap a line to hear it';
+const FREE_HINT_TEXT_SONG = 'find the glowing note';
 // Songbook picker (choose one song to learn instead of letting them
 // rotate). Sits beside the mute toggle, same 44px touch target — the two
 // are the only chrome in the game and they belong together.
@@ -330,6 +336,7 @@ export class RoadScene extends Phaser.Scene {
   private freeCursor: Phaser.GameObjects.Arc | null = null;
   /** The song's note markers, kept so finishing the tune can ripple through them. */
   private freePips: Phaser.GameObjects.Arc[] = [];
+  private freeHint: Phaser.GameObjects.Text | null = null;
   private totalNotesGenerated = 0;
   private nextPassStartTimeMs = 0;
   private currentSongId: string | null = null;
@@ -992,6 +999,7 @@ export class RoadScene extends Phaser.Scene {
     this.freeParts = [];
     this.freePips = [];
     this.freeCursor = null;
+    this.freeHint = null;
     this.freeStaff = null;
   }
 
@@ -1111,6 +1119,24 @@ export class RoadScene extends Phaser.Scene {
       });
     }
 
+    // Say what this is, once. It fades on the first tap, exactly like the
+    // road's own hint — its job is discovery, not instruction, and a child
+    // who has understood it should not have to keep reading it.
+    // Below the staff, not above it: the song title already lives at the
+    // top of the screen, and the first attempt put these two lines of text
+    // straight through each other.
+    const hint = this.add.text(
+      this.scale.width / 2,
+      Math.min(this.scale.height - 18, staff.bottomY + 30),
+      this.freeSequence.length ? FREE_HINT_TEXT_SONG : FREE_HINT_TEXT,
+      { fontFamily: 'sans-serif', fontSize: '13px', color: '#e8d9c0' }
+    );
+    hint.setOrigin(0.5, 0.5);
+    hint.setAlpha(0.7);
+    hint.setDepth(FREEPLAY_DEPTH + 2);
+    this.freeHint = hint;
+    this.freeParts.push(hint);
+
     // Fade the staff up, for the same reason the picker fades: a
     // full-height ladder appearing between two frames reads as a glitch.
     for (const part of this.freeParts) {
@@ -1127,6 +1153,11 @@ export class RoadScene extends Phaser.Scene {
     if (!staff) return;
     const step = freePlayStepAt(y, staff);
     const semitone = semitoneAtStep(step);
+    if (this.freeHint) {
+      const hint = this.freeHint;
+      this.freeHint = null;
+      this.tweens.add({ targets: hint, alpha: 0, duration: 320, onComplete: () => hint.destroy() });
+    }
     // A wrong note sounds and costs nothing — you just have not moved on.
     // There is no penalty to apply and no streak to break, so a child
     // hunting around the right answer is doing exactly what this is for.
@@ -1660,6 +1691,7 @@ export class RoadScene extends Phaser.Scene {
     this.roadNext.setPosition(this.scale.width / 2, roadY);
     this.roadNext.setSize(this.scale.width, ROAD_HEIGHT_BELOW_BARD);
     this.roadNext.setAlpha(ratio);
+    this.roadNext.setVisible(ratio > 0);
     if (this.walking) {
       const scrollDelta = (ROAD_SCROLL_PX_PER_SEC * delta) / 1000;
       this.road.tilePositionX += scrollDelta;
@@ -1722,7 +1754,12 @@ export class RoadScene extends Phaser.Scene {
       layer.setSize(this.scale.width, FAR_TILE_HEIGHT);
       layer.tilePositionX += (ROAD_SCROLL_PX_PER_SEC * FAR_PARALLAX * delta) / 1000 * (this.walking ? 1 : 0);
     }
+    // Alpha 0 still costs a draw. Outside a transition — which is most of
+    // the time, and *all* of the time once a song is chosen and the biome
+    // is pinned — the second layer of each crossfading pair contributes
+    // nothing but fill rate, so take it out of the display list entirely.
     this.farNext.setAlpha(ratio);
+    this.farNext.setVisible(ratio > 0);
 
     const sceneryY = this.roadTopY(laneY) - SCENERY_TILE_HEIGHT / 2;
     this.scenery.setPosition(this.scale.width / 2, sceneryY);
@@ -1730,6 +1767,7 @@ export class RoadScene extends Phaser.Scene {
     this.sceneryNext.setPosition(this.scale.width / 2, sceneryY);
     this.sceneryNext.setSize(this.scale.width, SCENERY_TILE_HEIGHT);
     this.sceneryNext.setAlpha(ratio);
+    this.sceneryNext.setVisible(ratio > 0);
 
     // Water glints breathe at opposite phases, and only while there is
     // riverside on screen to glint on.

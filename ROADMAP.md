@@ -889,7 +889,19 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     not a score. DESIGN.md's no-fail stance cuts both ways: a game that
     celebrates loudly has started grading quietly, so it says "that was the
     whole song" and gets out of the way.
-86. **Next.** Nothing queued.
+86. ~~**Say what free play is, and stop drawing invisible layers.**~~
+    Done. Two unlabelled buttons had appeared with no way to know what they
+    do, so free play now carries a one-line hint that fades on the first
+    tap, exactly like the road's: "tap a line to hear it", or "find the
+    glowing note" when a song is chosen. It sits *below* the staff — the
+    first attempt put it straight through the song title.
+    Separately: each crossfading pair (road, scenery, far) drew its second
+    layer every frame even at alpha 0, which is most of the time and *all*
+    of the time once a song pins the biome. They are hidden outside a
+    transition now. Principled, but honestly unproven here — headless
+    software GL varies 15–19fps run to run, which is wider than any effect
+    this could have.
+87. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked task 79: both remain blocked
     (forest-song fetch still 403s everywhere; the GitHub MCP toolset still
