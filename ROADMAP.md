@@ -949,20 +949,57 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     time they play a bar. It wraps like a line of sheet music when the
     line fills, and clears when the tune comes round. A *wrong* note still
     appears under the finger and fades, so the two can never be confused.
-92. **Next.** Nothing queued.
+92. ~~**Decide on promoting `headless-checks.yml` to a real gate.**~~ Done
+    (Run 36, scheduled). Re-checked both standing blockers first, as this
+    task's own note asked: the forest-song fetch still 403s (tried a plain
+    Wikipedia page again via `WebFetch`, same result as every prior check),
+    and the GitHub MCP toolset still has no tag/ref-write call (re-scanned
+    the full tool list — `create_branch`, `create_or_update_file`,
+    `enable_pr_auto_merge` and friends exist, nothing that writes a tag,
+    release, or branch-protection rule). Both unchanged.
 
-    **First, check the blockers.** Re-checked task 79: both remain blocked
-    (forest-song fetch still 403s everywhere; the GitHub MCP toolset still
-    has no tag/ref-write call).
+    The check itself has earned real confidence: `headless-checks.yml` has
+    gone **19/19 green** across every merge to `main` since it landed
+    (spanning ~19 PRs over ~7 hours) — comfortably past "a few more merges."
+    But promoting it to an actual required gate turns out to be **blocked on
+    human**, not just a matter of confidence: GitHub only lets a non-required
+    check block a merge if branch protection names it as a required status
+    check, and the GitHub MCP toolset available here has no call that writes
+    branch-protection rules (confirmed by scanning the full tool list — nothing
+    like `update-branch-protection` exists; only read/write calls for files,
+    branches, PRs, issues and releases). That is a repository Settings action
+    behind a permission this session doesn't have, the same shape of blocker
+    as the v0.1 git tag. Logged as a new **Blocked on human** item in STATE.md
+    with the exact steps.
+
+    Also considered and **rejected**: adding a `pull_request` trigger to the
+    workflow while leaving `continue-on-error: true`, purely for pre-merge
+    visibility without gating anything. Not done — GitHub holds a PR
+    non-mergeable while *any* check attached to it is still running, required
+    or not, so this would add the check's own runtime (Playwright install +
+    build + preview + nine checks, minutes) to every single merge in the
+    three-times-daily autonomous cycle, for a check nobody is watching in real
+    time between runs (no human sits between merges here). That is a real,
+    not-quickly-reversible cost to the whole pipeline's cadence for a benefit
+    (a red X on a PR nobody opens) that doesn't apply to this project's
+    actual usage pattern. Left `headless-checks.yml` completely unchanged.
+
+    No code touched this run; `npm test` (254 green) and `npm run build`
+    re-confirmed as a baseline check before deciding not to change CI.
+93. **Next.** Nothing queued.
+
+    **First, check the blockers.** Re-checked this run (task 92): both
+    remain blocked (forest-song fetch still 403s everywhere; the GitHub MCP
+    toolset still has no tag/ref-write *or* branch-protection-write call).
 
     **Second, if a playtest answer has arrived**, fold it in — see task 79
     for the one open dial (`SESSION_GAIN_CAP`).
 
-    **Third, `.github/workflows/headless-checks.yml`'s first run is in**
-    (task 79) — green, all 9 quick checks passed on a real GitHub-hosted
-    runner (see STATE.md). Keep an eye on it for a few more merges before
-    considering promoting it from `continue-on-error` to a real gate; one
-    green run isn't a pattern yet.
+    **Third, CI gating is settled for now** (task 92): `headless-checks.yml`
+    stays informational (`continue-on-error`, push-to-`main`-only) until a
+    human configures branch protection — see STATE.md's Blocked on human.
+    Nothing left to decide here autonomously; don't re-litigate it every run,
+    just re-check whether the human item has been resolved.
 
     **Fourth, the idea backlog below.** Only sharper mobile rendering is
     left, and it still needs a real phone to judge the fill-rate trade.
