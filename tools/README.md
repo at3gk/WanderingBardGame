@@ -35,7 +35,7 @@ node /path/to/repo/tools/verify-all.mjs          # everything, ~25 min
 node /path/to/repo/tools/verify-all.mjs quick    # the fast four, ~4 min
 ```
 
-There are eleven checks now, several of which take minutes, and a run that has
+There are twelve checks now, several of which take minutes, and a run that has
 to remember all of them will sooner or later remember only the fast ones.
 
 It runs them **one at a time on purpose.** Several Chromium instances
@@ -158,6 +158,27 @@ hardware is orders of magnitude tighter.
 `autoplay.mjs` reports the raw clock gap as information only. If this is
 ever picked up again, measure a note against **its own** scheduled
 oscillator, captured at scheduling time — not by matching lists afterwards.
+
+## `input-check.mjs`
+
+The two input paths nothing else touches: the **mute toggle** and the
+**keyboard**.
+
+Every other harness taps the middle of the canvas, which exercises the one
+core mechanic and nothing else — so a broken mute button or a dead spacebar
+could have gone unnoticed indefinitely. Mute matters more than it looks: it
+is the control a parent reaches for, in a game aimed at a five-year-old.
+
+It checks that muting **actually silences the output** rather than only
+changing the icon (it reads the master gain, which cannot lie the way the
+icon can), that the slash appears, that tapping mute is *never* counted as a
+beat — the button sits over the playfield, so a stray press must not cost
+the child a note — that the walk keeps earning while muted, that unmuting
+restores the gain, and that the spacebar plays a beat exactly like a tap.
+
+Result, 2026-07-26: all good. Mute takes master gain 1 → 0 and back, the
+meter is untouched by pressing it (58 → 58), and the spacebar landed 19
+hits with 0 misses.
 
 ## `mash-check.mjs [seconds]`
 
