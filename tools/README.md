@@ -142,6 +142,42 @@ hardware is orders of magnitude tighter.
 ever picked up again, measure a note against **its own** scheduled
 oscillator, captured at scheduling time — not by matching lists afterwards.
 
+## `timeaway-check.mjs`
+
+What a child comes back to after days away. `loadScaffold` reads the saved
+record, works out how long it has been, and applies the decay; that
+arithmetic is unit-tested, but the round trip through real `localStorage`
+with a real backdated timestamp was not — and it is a path where a mistake
+is both silent and unkind, either wiping a week of practice or leaving a
+child with letters that quietly vanished.
+
+It plays two sittings until positions fade, backdates the stored timestamp,
+and checks what survived. Results, 2026-07-26:
+
+```
+after practice     {"0":24,"1":24,"2":18,"3":14,"4":23,"5":2,"7":6}  bands {0:1,1:1,2:1,3:2,4:1,5:4,7:3}
+after 1 day away   {"0":24,"1":24,"2":15,...}                        bands unchanged
+after 30 days away {"0":24,"1":24,"2":12,...}                        bands {...,2:2,...}
+corrupt record     game still starts = true
+```
+
+Well-practised positions held; a mid-strength one decayed and was handed a
+band of help back; no record was ever wiped; and a deliberately corrupted
+record starts the game fresh rather than breaking it. It asserts that a gap
+can only ever return support, never remove it, and never raises a position's
+`peak`.
+
+Two traps this fell into, both worth knowing before writing anything similar:
+
+- **A reload force-saves.** Reloading fires `visibilitychange` → hidden,
+  which is the scene's force-save path — so backdating the record and *then*
+  reloading writes the live state and a fresh timestamp straight over the
+  backdate, and the gap never happens. Settle first, backdate second.
+- **Saves are throttled to 5s**, so reading storage right after playing can
+  be several hits out of date. The baseline and the post-gap readings must
+  be taken the same way, or a stale baseline makes the gap look as though it
+  *added* practice.
+
 ## `scenery-sheet.mjs`
 
 The scenery equivalent of `proofsheet.mjs`: bakes every world texture the
