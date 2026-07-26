@@ -215,3 +215,34 @@ describe('AudioEngine.pluck (the player\'s own note)', () => {
     expect(osc.startTimeSec).toBe(activeContext.currentTime);
   });
 });
+
+describe('AudioEngine.chime (the coin milestone)', () => {
+  it('no-ops before start() — no context, no chime', () => {
+    const engine = new AudioEngine(manifest);
+    engine.chime();
+    expect(activeContext.oscillators).toHaveLength(0);
+  });
+
+  it('sounds a plain sine two octaves above the root, immediately', () => {
+    const engine = new AudioEngine(manifest);
+    engine.start(expandSong(SONG, BPM), 0);
+    activeContext.oscillators.length = 0;
+
+    engine.chime();
+    expect(activeContext.oscillators).toHaveLength(1);
+    const osc = activeContext.oscillators[0];
+    expect(osc.type).toBe('sine');
+    expect(osc.frequency.value).toBeCloseTo(400); // root * 2^(24/12)
+    expect(osc.startTimeSec).toBe(activeContext.currentTime);
+  });
+
+  it('never sounds a pitch drawn from the song\'s own layers', () => {
+    const engine = new AudioEngine(manifest);
+    engine.start(expandSong(SONG, BPM), 0);
+    const songFrequencies = activeContext.oscillators.map((o) => o.frequency.value);
+    activeContext.oscillators.length = 0;
+
+    engine.chime();
+    expect(songFrequencies).not.toContain(activeContext.oscillators[0].frequency.value);
+  });
+});

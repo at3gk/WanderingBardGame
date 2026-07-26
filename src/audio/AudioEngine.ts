@@ -169,6 +169,35 @@ export class AudioEngine {
     this.playNote(this.context, this.masterGain, voiced, this.context.currentTime, frequencyHz, 0.24);
   }
 
+  /**
+   * A very quiet chime on every 25th coin (idea backlog: "coin chime cap") —
+   * coins otherwise accrue in total silence. Deliberately its own voice, not
+   * `pluck`'s: `pluck` says "you just played that note"; this is a small
+   * aside about the case filling up, so it stays a plain sine two octaves
+   * above the root, quieter and shorter than any layer in the manifest, and
+   * never a pitch drawn from the song being played. Routes through the
+   * master gain, so mute silences it too.
+   */
+  chime(): void {
+    if (!this.started || !this.context || !this.masterGain) return;
+    const frequencyHz = semitoneToFrequency(this.manifest.rootFrequencyHz, 24);
+    const chimeLayer: LoopLayer = {
+      id: 'chime',
+      waveform: 'sine',
+      semitoneOffset: 0,
+      gain: this.manifest.baseLoop.gain * 0.5,
+      noteDurationMs: 220,
+    };
+    this.playNote(
+      this.context,
+      this.masterGain,
+      chimeLayer,
+      this.context.currentTime,
+      frequencyHz,
+      chimeLayer.noteDurationMs / 1000
+    );
+  }
+
   /** Fades additional layers in/out as the song meter (0–1 fraction of max) crosses each layer's `meterThreshold` (ROADMAP task 8). No-ops until `start` has run. */
   setMeterRatio(meterRatio: number): void {
     const ctx = this.context;

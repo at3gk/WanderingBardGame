@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 33
+Run counter: 34
 
 ## Current status
 
@@ -11,9 +11,9 @@ Run counter: 33
   ~200 bytes of `localStorage`. The core mechanic is one tap.
 - **Eleven songs**, four per biome except forest, which has three and is
   short a fourth (blocked — see *Blocked on human*).
-- **207 unit tests**; **15 headless checks** in `tools/`. Run them all with
+- **215 unit tests**; **17 headless checks** in `tools/`. Run them all with
   `PLAYWRIGHT_PATH=<dir>/node_modules/playwright node tools/verify-all.mjs`
-  (or `quick` for the fast eight). All green as of 2026-07-26.
+  (or `quick` for the fast nine). All green as of 2026-07-26.
 - **Source layout**: `core/` pure logic, `audio/` one manifest + engine,
   `render/` texture baking (engraving, scenery, ui), `scenes/RoadScene.ts`
   the one scene (1264 lines, down from 1584). Every texture the game draws
@@ -750,6 +750,17 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   queued (task 38, round-2 playtest, is still blocked on human). See
   ROADMAP task 52's done entry and Current status above for the full
   writeup. `npm test` 157 green (5 new), build green, screenshot-verified.
+- Run 34 (2026-07-26, scheduled): coin chime per new ROADMAP task 78,
+  promoted from the idea backlog after re-checking both *Blocked on human*
+  items (still blocked — see below) and finding no playtest answer waiting.
+  `AudioEngine.chime()` sounds a quiet, fixed sine two octaves above the
+  root on every 25th coin; `core/coins.ts` gained the pure
+  `crossedCoinMilestone` to detect a whole-coin threshold against
+  continuous fractional accrual. New `tools/coinchime-check.mjs` (added to
+  `verify-all`'s fast set) hooks oscillator creation the way
+  `nofail-check`/`autoplay` do to confirm it headlessly, since nothing here
+  can listen. `npm test` 215 green (8 new), build green, `verify-all quick`
+  (9 checks) green.
 - Interactive session (2026-07-26, overnight): the long one. Shipped as
   PRs #57–#84, each squash-merged to `main`, every deploy green.
 
@@ -825,6 +836,10 @@ still needs a human:
   (*Wheels on the Bus* is the obvious alternative and is **rejected on
   rights**: attributed to Verna Hills, 1939, which fails CLAUDE.md's
   CC0-only rule.)
+  **Update (2026-07-26, Run 34)**: re-checked — `WebFetch` still returns
+  HTTP 403 on every host tried, including a plain Wikipedia page (not just
+  music-transcription sites), so this isn't a site-specific block. Blocker
+  confirmed, nothing new to route around.
 - **v0.1 git tag** (Run 12): ROADMAP task 12 says "Tag this as v0.1."
   DoD verification and the ship-check PR (#13) are done and merged
   (squash commit `021410f` on `main`), but the tag itself can't be pushed
@@ -847,3 +862,6 @@ still needs a human:
   pushable), and the GitHub MCP toolset was re-checked: it has
   branch/file write calls but still no tag or release *creation* call.
   Blocker confirmed; the command above remains the only route.
+  **Update (2026-07-26, Run 34)**: re-checked the GitHub MCP tool list again
+  — still `get_tag`/`list_tags`/`get_release_by_tag`/`get_latest_release`
+  only, no ref-write or release-creation call. Blocker unchanged.

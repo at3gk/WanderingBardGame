@@ -8,7 +8,7 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the last numbered entry (currently 66). If it says
+- **What to do next** is the last numbered entry (currently 79). If it says
   "Nothing queued", promote something from the **Idea backlog** near the
   bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
   has lifted.
@@ -749,14 +749,34 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     markers peaked at 70, 2110 of 2115 taps landed, all eleven songs
     appeared. The "child leaves it running" case, which a seven-minute run
     cannot reach.
-78. **Next.** Nothing queued — and after the 2026-07-26 session that is a
-    meaningful statement rather than an empty one, so here is where to look.
+78. ~~**Coin chime.**~~ Done (Run 34, scheduled): promoted from the idea
+    backlog — both *Blocked on human* items were re-checked first (network
+    still 403s on every host, including plain page fetches like Wikipedia;
+    the GitHub MCP toolset still has no tag/ref-write call) and remain
+    blocked, and no playtest answer had arrived. `AudioEngine.chime()` plays
+    a very quiet, fixed sine two octaves above the root on every 25th coin —
+    deliberately not `pluck`'s voice (that means "you just played this
+    note"; the chime is a small aside about the case filling up, so it's
+    never a pitch drawn from the song). `core/coins.ts` gained
+    `crossedCoinMilestone(prevCoins, coins, every)`, a pure function reading
+    the floor before/after a frame's fractional accrual, since coins accrue
+    continuously and a whole-coin milestone can't be caught by equality.
+    Wired into `RoadScene`'s per-frame coin accrual. The idea backlog asked
+    for this to be prototyped behind a check before committing, and headless
+    can't listen — so `tools/coinchime-check.mjs` hooks
+    `AudioContext.createOscillator` the way `nofail-check`/`autoplay`
+    already do and confirms the chime's distinctive voice sounds exactly
+    once per real 25-coin milestone, not on every note (48.2 coins → 1
+    chime heard, 1 expected). Added to `verify-all`'s fast set (17 checks
+    now, ~17s). `npm test` 215 green (8 new), build green (bundle
+    unaffected — no new texture, no new dependency), full `verify-all quick`
+    (9 checks) also green.
+79. **Next.** Nothing queued.
 
-    **First, check the blockers.** Both items under *Blocked on human* in
-    STATE.md are genuinely actionable the moment their blocker lifts, and
-    both are worth more than anything invented from scratch:
-    a fourth forest song (needs one page fetch, or a transcription from a
-    human) and the v0.1 tag (needs push rights this environment lacks).
+    **First, check the blockers.** Re-checked this run (see task 78): both
+    remain blocked. A fourth forest song needs one page fetch (still 403 on
+    every host as of this run) or a human transcription; the v0.1 tag needs
+    push/ref-write access this environment's tools still don't expose.
 
     **Second, if a playtest answer has arrived**, fold it in. The single
     open question the project cannot answer itself is whether the fade pace
@@ -764,17 +784,18 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     (currently 12, i.e. at most two bands per sitting), *not* the band
     thresholds and *not* the lead times. PLAYTEST.md opens with how to ask.
 
-    **Third, the idea backlog below.** Note that the two biggest items there
-    still need a human or a device: sharper mobile rendering wants a real
-    phone to judge the fill-rate trade, and the coin chime wants an ear.
+    **Third, the idea backlog below.** Only sharper mobile rendering is left
+    in it, and it needs a real phone to judge the fill-rate trade — not
+    something this environment can do. If it's still the only thing there
+    next run, that's a signal to write a fresh idea rather than force it.
 
     **What not to reach for.** The verification suite is comprehensive now
-    (16 checks); adding a seventeenth for its own sake is drift. So is
-    another render extraction — `createBard` is the only drawing code left
-    in the scene and it is genuinely entangled with scene state, so moving
-    it would relocate the tangle rather than remove it. **Key signatures**
-    remain a v0.4+ *direction* rather than a task, because they break
-    naturals-only, which is load-bearing for the whole letter-fading model.
+    (17 checks); adding another for its own sake is drift. So is another
+    render extraction — `createBard` is the only drawing code left in the
+    scene and it is genuinely entangled with scene state, so moving it would
+    relocate the tangle rather than remove it. **Key signatures** remain a
+    v0.4+ *direction* rather than a task, because they break naturals-only,
+    which is load-bearing for the whole letter-fading model.
 
 ## Idea backlog (pull from here when nothing is queued)
 
@@ -810,9 +831,7 @@ warm-vs-cool palette).
   capping at `Math.min(dpr, 2)` for most of the sharpness at 4× rather than
   9× the cost, and check `tools/autoplay.mjs`'s fps sample before and after
   on that device rather than in headless (where it means nothing).
-- **Coin chime cap**: coins currently tick silently; a very quiet chime
-  every 25th coin could be pleasant — or annoying. Prototype behind a
-  screenshot/listen check before committing.
+- ~~**Coin chime cap**~~ — shipped as task 78 above.
 - ~~**Stylized treble clef**~~ — shipped (2026-07-25, second overnight
   session) at the staff's left edge, where real sheet music puts it: a
   stroked-arc stylization (top curl, stem, spiral wrapping the G line,
