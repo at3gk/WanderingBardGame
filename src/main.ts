@@ -7,6 +7,7 @@ import {
   signpostTexture,
   starFieldTexture,
 } from './render/scenery';
+import { createStyleTextures } from './render/ui';
 import { RoadScene } from './scenes/RoadScene';
 
 const game = new Phaser.Game({
@@ -46,3 +47,6 @@ const game = new Phaser.Game({
   starFieldTexture,
   signpostTexture,
 };
+
+// And the shared UI glyphs, for tools/ui-sheet.mjs.
+(window as unknown as { ui: unknown }).ui = { createStyleTextures };

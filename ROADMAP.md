@@ -669,7 +669,16 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     ones that get skipped. Serial on purpose — concurrent Chromium
     instances starve each other badly enough to fake a performance
     regression. Full run: all nine green in ~13 minutes.
-66. **Next.** Nothing queued. The open question the model cannot answer
+66. ~~**Consolidation, third and last chunk: the UI glyphs.**~~ Done:
+    `src/render/ui.ts` takes the eighth-note glyph, coin, hit line and
+    treble clef. RoadScene 1325 → **1263**, from 1584 at the start of the
+    session. A new `tools/ui-sheet.mjs` completes the set of three texture
+    sheets, so every texture the game draws is now checkable in a
+    deterministic image; the sheet was byte-identical across the move, as
+    were the other two. The scene's remaining drawing code is `createBard`,
+    which is genuinely entangled with scene state (containers, tweens,
+    walk/idle) and is *not* worth the same treatment — leave it.
+67. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth

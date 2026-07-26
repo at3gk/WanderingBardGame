@@ -36,6 +36,7 @@ import {
   STAR_FIELD_HEIGHT,
   starFieldTexture,
 } from '../render/scenery';
+import { createStyleTextures, HIT_LINE_HEIGHT } from '../render/ui';
 import { displaySupport, encounter, leadMsFor, ScaffoldState, supportFor } from '../core/scaffold';
 import { loadScaffold, saveScaffold } from '../core/scaffoldStorage';
 
@@ -73,7 +74,6 @@ const STAFF_LINE_STEPS = [2, 4, 6, 8, 10];
 const STAFF_LINE_ALPHA = 0.22;
 const SONG_TITLE_Y = 52;
 const SONG_TITLE_HOLD_MS = 2600;
-const HIT_LINE_HEIGHT = 120;
 // A note fades out once it's past the line and is gone before it reaches
 // the clef — on a narrow phone the lane's left end is only a few dozen
 // pixels past the hit line, and played notes used to pile over the clef.
@@ -160,7 +160,6 @@ const MOON_Y = 84;
 const MOON_RADIUS = 24;
 const COIN_RATE_PER_SEC = 5;
 const COIN_ICON_RADIUS = 8;
-const COIN_ICON_COLOR = 0xe8c157;
 const COIN_MARGIN_TOP = 24;
 const COIN_MARGIN_RIGHT = 24;
 const MUTE_ICON_RADIUS = 10;
@@ -285,7 +284,7 @@ export class RoadScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.createStyleTextures();
+    createStyleTextures(this);
     this.cameras.main.setBackgroundColor(BIOMES[0].skyColor);
     this.startTimeMs = this.time.now;
     this.meter = this.meterConfig.max;
@@ -451,67 +450,6 @@ export class RoadScene extends Phaser.Scene {
   }
 
 
-  /**
-   * Shared UI textures for the "musical notation" visual language
-   * (ROADMAP task 32): a white, tintable eighth-note glyph (beat markers,
-   * mute toggle), a note-stamped coin, and a soft rounded hit line. Drawn
-   * once per texture manager lifetime, Graphics only.
-   */
-  private createStyleTextures(): void {
-    if (!this.textures.exists('note-glyph')) {
-      const g = this.make.graphics({ x: 0, y: 0 }, false);
-      g.fillStyle(0xffffff, 1);
-      g.fillEllipse(9, 28, 16, 11);
-      g.fillRect(15, 4, 3, 25);
-      g.fillTriangle(18, 4, 27, 10, 18, 16);
-      g.generateTexture('note-glyph', 28, 34);
-      g.destroy();
-    }
-    if (!this.textures.exists('coin-icon')) {
-      const g = this.make.graphics({ x: 0, y: 0 }, false);
-      g.fillStyle(0xb5923c, 1);
-      g.fillCircle(10, 10, 9);
-      g.fillStyle(COIN_ICON_COLOR, 1);
-      g.fillCircle(10, 10, 7.5);
-      g.fillStyle(0xa8842f, 1);
-      g.fillEllipse(8, 13, 6, 4.5);
-      g.fillRect(10, 5, 1.5, 8.5);
-      g.generateTexture('coin-icon', 20, 20);
-      g.destroy();
-    }
-    if (!this.textures.exists('hit-line')) {
-      const g = this.make.graphics({ x: 0, y: 0 }, false);
-      g.fillStyle(0xffffff, 1);
-      g.fillRoundedRect(0, 0, 6, HIT_LINE_HEIGHT, 3);
-      g.generateTexture('hit-line', 6, HIT_LINE_HEIGHT);
-      g.destroy();
-    }
-    if (!this.textures.exists('treble-clef')) {
-      // Stylized treble clef (idea backlog → shipped only because the
-      // screenshot check agreed it reads as one): a straight stem, a top
-      // curl, a two-arc spiral wrapping the G line, and a bottom hook.
-      // Texture rows map to staff steps: top staff line (F5, step 10) at
-      // y=12, 7px per step, so the spiral's center lands on the G line
-      // (step 4, y=54) when the image's y=12 row is pinned to F5.
-      const g = this.make.graphics({ x: 0, y: 0 }, false);
-      g.lineStyle(3, 0xffffff, 1);
-      g.beginPath();
-      g.arc(26, 13, 8, Math.PI, Math.PI * 2);
-      g.strokePath();
-      g.lineBetween(20, 6, 20, 90);
-      g.beginPath();
-      g.arc(20, 54, 11, -Math.PI / 2, Math.PI);
-      g.strokePath();
-      g.beginPath();
-      g.arc(18, 54, 5.5, Math.PI, Math.PI * 2.6);
-      g.strokePath();
-      g.beginPath();
-      g.arc(14, 91, 6, 0, Math.PI * 0.9);
-      g.strokePath();
-      g.generateTexture('treble-clef', 44, 104);
-      g.destroy();
-    }
-  }
 
 
 

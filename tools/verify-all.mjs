@@ -6,11 +6,11 @@ import { fileURLToPath } from 'node:url';
 /**
  * Runs the whole headless suite and prints one summary.
  *
- * There are nine scripts here now, several of which take minutes, and a run
+ * There are ten scripts here now, several of which take minutes, and a run
  * that has to remember all of them will sooner or later remember only the
  * fast ones. This is the single command to reach for.
  *
- *   node verify-all.mjs          # everything (~25 min)
+ *   node verify-all.mjs          # everything (~14 min)
  *   node verify-all.mjs quick    # the fast ones only (~4 min)
  *
  * Expects the preview server on :4173 and Playwright installed in the
@@ -27,6 +27,7 @@ const quick = process.argv[2] === 'quick';
 const CHECKS = [
   { name: 'proofsheet', args: ['proofsheet.mjs'] },
   { name: 'scenery-sheet', args: ['scenery-sheet.mjs'] },
+  { name: 'ui-sheet', args: ['ui-sheet.mjs'] },
   { name: 'autoplay', args: ['autoplay.mjs', '70'] },
   { name: 'pillar-check', args: ['pillar-check.mjs'] },
   { name: 'reveal-check', args: ['reveal-check.mjs', '90'], slow: true },
@@ -59,17 +60,26 @@ function run(check) {
   });
 }
 
+/**
+ * Progress goes to stderr, not stdout. Node block-buffers stdout when it is
+ * a pipe rather than a terminal, so `verify-all | tee log` showed absolutely
+ * nothing for the full fourteen minutes and then everything at once — which
+ * is indistinguishable from a hang, and was briefly mistaken for one.
+ * stderr is unbuffered, so the running commentary streams either way.
+ */
+const progress = (text) => process.stderr.write(text);
+
 const results = [];
 for (const check of CHECKS) {
   if (quick && check.slow) {
-    console.log(`- ${check.name}: skipped (quick)`);
+    progress(`- ${check.name}: skipped (quick)\n`);
     continue;
   }
-  process.stdout.write(`- ${check.name}: running... `);
+  progress(`- ${check.name}: running... `);
   const r = await run(check);
   results.push(r);
-  console.log(`${r.code === 0 ? 'ok' : 'FAILED'} (${r.seconds}s)`);
-  if (r.code !== 0) console.log(r.full.trimEnd().split('\n').slice(-12).join('\n'));
+  progress(`${r.code === 0 ? 'ok' : 'FAILED'} (${r.seconds}s)\n`);
+  if (r.code !== 0) progress(r.full.trimEnd().split('\n').slice(-12).join('\n') + '\n');
 }
 
 console.log('\n== summary ==');
