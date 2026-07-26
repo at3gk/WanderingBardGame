@@ -602,7 +602,17 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     access. (*Wheels on the Bus* is the obvious alternative and is
     **rejected on rights**: attributed to Verna Hills, 1939, which fails
     CLAUDE.md's CC0-only rule.)
-61. **Next.** Nothing queued. The open question the model cannot answer
+61. ~~**Stop the audio drifting away from the staff.**~~ Done: `AudioEngine`
+    anchored the audio clock to the visual one once at `start()` and
+    scheduled every later pass against that anchor, letting the difference
+    between `performance.now` and the sound hardware's clock accumulate for
+    a whole session. `schedule()` re-anchors per pass now, bounding it to
+    one song; `nowMs` is required so there is a single mapping between the
+    two clocks. Two unit tests, one of which moves the clocks apart by hand.
+    No browser assertion — five attempts to measure it live gave five
+    answers and the instrument was wrong every time (written up in
+    `tools/README.md`).
+62. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth

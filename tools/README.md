@@ -102,6 +102,46 @@ It fails if any position reaches band 0 within a single sitting (the cap
 is broken) or if no further fading happens across sittings (persistence or
 the per-sitting reset is broken).
 
+## A note on audio/visual sync — and why there is no check for it
+
+Visuals run off Phaser's time (`performance.now`), audio off
+`AudioContext.currentTime`, which is driven by the sound hardware. The two
+are never exactly the same rate, so a rhythm game has to keep re-locking
+them or what you see and what you hear slide apart.
+
+`AudioEngine.schedule` now re-anchors the audio clock to the visual one on
+every pass, which bounds that error to a single song instead of a whole
+sitting. That change is covered by unit tests (`AudioEngine.test.ts`,
+"corrects audio-clock drift at every pass"), where both clocks can be moved
+by hand and the arithmetic checked exactly.
+
+**There is deliberately no browser-based sync assertion.** Five attempts at
+measuring it in a live page produced five different answers — 17s, 1.2s,
+scattered ±900ms, −22s, −566ms — and every single time the bug was in the
+instrument, not the game:
+
+- concurrent Chromium instances starving the audio thread (the 17s figure
+  was pure CPU contention from other checks running alongside);
+- comparing the raw gap between the two clocks, which *should* grow and is
+  harmless on its own, rather than comparing when a note sounds against
+  when it is seen;
+- matching "next unresolved marker" against "soonest pending oscillator" —
+  a tap lands up to a hit-window early, so those are routinely different
+  notes;
+- indexing oscillators as if the layers were interleaved, when
+  `scheduleLayer` emits all of one layer's notes before starting the next.
+
+Reading the anchor directly out of a live `schedule()` call gives ~7ms,
+which agrees with the unit tests. But a check that has been wrong five
+times has not earned the right to fail a run, so it is not wired up.
+Headless is also the wrong place to judge this: with no audio device
+Chromium's clock runs ~0.17% slow against a software sink, where real
+hardware is orders of magnitude tighter.
+
+`autoplay.mjs` reports the raw clock gap as information only. If this is
+ever picked up again, measure a note against **its own** scheduled
+oscillator, captured at scheduling time — not by matching lists afterwards.
+
 ## `rotate-check.mjs`
 
 Rotates a phone mid-game — portrait → landscape → portrait, playing

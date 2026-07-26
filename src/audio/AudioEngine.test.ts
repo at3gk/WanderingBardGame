@@ -120,22 +120,43 @@ describe('AudioEngine.start phase alignment', () => {
     }
   });
 
-  it('keeps a later pass in the same phase established by start()', () => {
+  it('re-anchors a later pass to the visual clock rather than inheriting the original anchor', () => {
     const engine = new AudioEngine(manifest);
     engine.start(expandSong(SONG, BPM), 1200);
     activeContext.oscillators.length = 0;
 
-    engine.schedule(expandSong(SONG, BPM, songDurationMs(SONG, BPM), SONG.notes.length));
+    // 2 seconds of visual time have passed, and the audio clock agrees.
+    activeContext.currentTime = 2;
+    engine.schedule(expandSong(SONG, BPM, songDurationMs(SONG, BPM), SONG.notes.length), 2000);
 
-    // Pass 2 starts at 2000ms, so its first note lands at 2500ms; startAt
-    // is anchored at start()-time (0 + 0.05 - 1.2 = -1.15).
+    // Pass 2's first note is written at 2500ms, i.e. 500ms from now.
     expect(activeContext.oscillators).toHaveLength(3);
-    expect(activeContext.oscillators[0].startTimeSec).toBeCloseTo(-1.15 + 2.5);
+    expect(activeContext.oscillators[0].startTimeSec).toBeCloseTo(2 + 0.05 + 0.5);
+  });
+
+  it('corrects audio-clock drift at every pass instead of letting it accumulate', () => {
+    // The two clocks are independent — visuals run off performance.now, audio
+    // off the sound hardware — so they are never exactly the same rate. If
+    // every pass were scheduled against the anchor taken at start(), that
+    // difference would accumulate for as long as the session lasted, and what
+    // you see and what you hear would slide apart. In a rhythm game that is
+    // the one failure that ruins it.
+    const engine = new AudioEngine(manifest);
+    engine.start(expandSong(SONG, BPM), 1200);
+    activeContext.oscillators.length = 0;
+
+    // Visual time is 2000ms, but the audio clock has fallen 300ms behind.
+    activeContext.currentTime = 1.7;
+    engine.schedule(expandSong(SONG, BPM, songDurationMs(SONG, BPM), SONG.notes.length), 2000);
+
+    // The note must land 500ms from the audio clock's *present*, absorbing
+    // the 300ms of accumulated error rather than carrying it forward.
+    expect(activeContext.oscillators[0].startTimeSec).toBeCloseTo(1.7 + 0.05 + 0.5);
   });
 
   it('does nothing before start() — the first gesture is what unlocks audio', () => {
     const engine = new AudioEngine(manifest);
-    engine.schedule(expandSong(SONG, BPM));
+    engine.schedule(expandSong(SONG, BPM), 0);
     expect(activeContext.oscillators).toHaveLength(0);
     expect(engine.isStarted).toBe(false);
   });

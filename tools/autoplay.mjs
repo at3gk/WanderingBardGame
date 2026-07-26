@@ -19,8 +19,20 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(`console: ${m.text()}`); });
 
-// Record every scheduled oscillator before the game boots.
+// Record every scheduled oscillator before the game boots, and keep a
+// handle on the AudioContext so the audio clock can be compared with the
+// visual one. Visuals run off Phaser's time, audio off
+// AudioContext.currentTime — two independent clocks, and a rhythm game is
+// only correct while they stay locked.
 await page.addInitScript(() => {
+  window.__ctxs = [];
+  const OrigCtx = AudioContext;
+  window.AudioContext = function (...args) {
+    const ctx = new OrigCtx(...args);
+    window.__ctxs.push(ctx);
+    return ctx;
+  };
+  window.AudioContext.prototype = OrigCtx.prototype;
   window.__notes = [];
   const origCreate = AudioContext.prototype.createOscillator;
   AudioContext.prototype.createOscillator = function () {
@@ -103,6 +115,15 @@ while (Date.now() < deadline) {
       textures: scene.textures.list ? Object.keys(scene.textures.list).length : -1,
       fps: Math.round(window.game.loop.actualFps),
       song: scene.currentSongId,
+      // Raw gap between the two clocks, reported for information only.
+      // It is NOT a sync measurement and nothing asserts on it: the sound
+      // hardware's clock simply is not the same rate as performance.now,
+      // so this grows for as long as a session lasts and is harmless by
+      // itself. See tools/README.md for the sync investigation and why
+      // there is no automated assertion here.
+      clockGapMs: window.__ctxs[0]
+        ? Math.round(scene.time.now - scene.startTimeMs - window.__ctxs[0].currentTime * 1000)
+        : null,
     };
     }));
   }
@@ -165,6 +186,18 @@ if (errors.length) fail.push(`page errors: ${errors.join(' | ')}`);
 // Marker list must not grow without bound over a long walk.
 const markerCounts = samples.map((s) => s.liveMarkers);
 if (Math.max(...markerCounts) > 120) fail.push(`marker list grew to ${Math.max(...markerCounts)}`);
+
+// Texture count must plateau. It grows as new songs are met — each distinct
+// (staff position, note value) pair bakes a lettered and a bare variant —
+// but the songbook is finite, so it must stop. 85 note/rest textures plus
+// scenery and UI is the whole set.
+const texCounts = samples.map((s) => s.textures);
+if (Math.max(...texCounts) > 160) fail.push(`texture count reached ${Math.max(...texCounts)} — baking is unbounded`);
+
+const gaps = samples.map((s) => s.clockGapMs).filter((g) => g !== null);
+if (gaps.length >= 2) {
+  console.log(`clock gap drifted ${Math.round(gaps[gaps.length - 1] - gaps[0])}ms over the run (informational)`);
+}
 
 // Every sounded pitch must be a natural note in equal temperament from C4.
 if (result.offPitchCount) {
