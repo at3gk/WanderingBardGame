@@ -50,6 +50,30 @@ Caveat: headless Chromium renders through software GL, so the FPS number is
 only a floor check for pathological slowness — it says nothing about frame
 rate on a real device.
 
+## `learning-check.mjs [playSeconds] [sulkSeconds]`
+
+Proves the **learning model** (`src/core/scaffold.ts`) works in the running
+game, which unit tests cannot: it plays well for a stretch and checks the
+note letters **fade**, then deliberately stops playing and checks they
+**come back**.
+
+It measures the only thing that matters to a child: `leadMs` — how long
+before the hit line each note's letter becomes readable. 1800 means the
+letter is present for the whole flight (full help); 350 is the floor, where
+the child gets ~1450ms of blank note to recall against.
+
+Why the stop-playing phase matters: `autoplay.mjs` is a *perfect* player, so
+it can only ever demonstrate the fade half of the loop and would report
+success even if the return-on-struggle path were completely broken. Support
+returning is the accessibility mechanism — there is deliberately no "show
+the letters" button, because that would be a menu — so it is the half worth
+testing hardest.
+
+Note what it does and does not prove. It shows *displayed* support
+recovering, which is what the child experiences; that recovery comes partly
+from stored strength dropping and partly from the meter-driven modifiers
+(help is restored instantly while the bard is stopped). Both are intended.
+
 ## `proofsheet.mjs`
 
 Bakes **every** note-value × staff-position combination the songbook can
