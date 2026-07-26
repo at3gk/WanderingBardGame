@@ -63,3 +63,23 @@ export function stemDown(step: number): boolean {
 export function needsLedger(step: number): boolean {
   return step <= 0 || step >= 12;
 }
+
+/**
+ * The inverse of `staffStepAt`: which pitch sits on a given staff step.
+ *
+ * The walk only ever needs step-from-pitch, because the song says what to
+ * play. Free play needs the other direction — a child points at a line or
+ * a space and the game has to know what note that *is*. Naturals only, so
+ * seven steps to the octave.
+ */
+export function semitoneAtStep(step: number): number {
+  const octave = Math.floor(step / 7);
+  const index = ((step % 7) + 7) % 7;
+  return octave * 12 + NATURALS[index].semitone;
+}
+
+/** Letter name for a staff step. Always defined — every step is a natural. */
+export function noteNameAtStep(step: number): string {
+  const index = ((step % 7) + 7) % 7;
+  return NATURALS[index].letter;
+}

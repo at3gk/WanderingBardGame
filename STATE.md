@@ -6,6 +6,13 @@ Run counter: 35
 
 **At a glance** — read this, then only the sections you need.
 
+- **There are two ways to learn now.** The *walk* is the original: notes
+  scroll, you tap in time, letters fade as positions become familiar.
+  *Free play* (the lute button) is the inverse — the staff spread out big
+  and still, every position labelled, tap one to hear it. The walk asks for
+  timing; free play asks for nothing. Free play deliberately does not feed
+  the learning model.
+
 - **The world got deeper and stopped looking tiled** (2026-07-26): a fourth
   parallax plane (a far ridge behind the scenery, at 0.19 vs scenery 0.45
   and stars 0.08) and scenery tiles doubled to 512px with silhouettes that

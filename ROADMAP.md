@@ -843,7 +843,23 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     biome, so it survives the next palette re-pitch. Also redrew the
     songbook icon: a closed book was shapeless at 22px and an open book
     read as a list menu, so it is a page of sheet music with one bold note.
-82. **Next.** Nothing queued.
+82. ~~**Free play: the staff as an instrument.**~~ Done (human-set:
+    "another idea besides the walking bard as a way to learn"). The walk
+    hands a child notes and asks for timing, and DESIGN.md is honest that a
+    tap proves timing rather than reading — knowing the tune tells you when
+    to tap whatever is written. This is the inverse: nothing scrolls,
+    nothing is asked, nothing can be missed, and the child points at a line
+    or a space and hears what it is. Position → sound → name, chosen by
+    them rather than presented to them, which is the one direction the walk
+    cannot exercise.
+    It needed its own geometry: the walk's steps are 9px apart, which is
+    fine to read and impossible to aim at, so free play spreads the same
+    thirteen positions over the screen (45px on a phone). Letters are
+    always shown — nothing is being asked, so nothing is withheld; this is
+    the reference the walk deliberately fades. And it does **not** feed the
+    learning model, because a note the child picked is not evidence they
+    can read one the game picked.
+83. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked task 79: both remain blocked
     (forest-song fetch still 403s everywhere; the GitHub MCP toolset still

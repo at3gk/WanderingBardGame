@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { needsLedger, noteNameAt, staffStepAt, stemDown } from './notation';
+import { needsLedger, noteNameAt, noteNameAtStep, semitoneAtStep, staffStepAt, stemDown } from './notation';
 
 describe('noteNameAt', () => {
   it('names the naturals of the C4 octave', () => {
@@ -74,5 +74,30 @@ describe('needsLedger', () => {
 
   it('starts ledgers again above the staff at A5', () => {
     expect(needsLedger(12)).toBe(true);
+  });
+});
+
+describe('reading the staff the other way round', () => {
+  it('round-trips every drawable step through pitch and back', () => {
+    // One ledger below middle C to one above the staff — the range the
+    // songbook draws and the range free play offers.
+    for (let step = -2; step <= 12; step++) {
+      expect(staffStepAt(semitoneAtStep(step)), `step ${step}`).toBe(step);
+    }
+  });
+
+  it('puts the landmarks where a reader expects them', () => {
+    expect(semitoneAtStep(0)).toBe(0); // middle C, on its ledger
+    expect(semitoneAtStep(2)).toBe(4); // E, the staff's bottom line
+    expect(semitoneAtStep(4)).toBe(7); // G, the line the clef spirals on
+    expect(semitoneAtStep(10)).toBe(17); // F, the top line
+    expect(semitoneAtStep(7)).toBe(12); // C5, an octave up
+  });
+
+  it('names every step with a single letter, below middle C too', () => {
+    for (let step = -3; step <= 13; step++) {
+      expect(noteNameAtStep(step), `step ${step}`).toMatch(/^[A-G]$/);
+      expect(noteNameAtStep(step)).toBe(noteNameAt(semitoneAtStep(step)));
+    }
   });
 });
