@@ -53,7 +53,7 @@ node /path/to/repo/tools/verify-all.mjs          # all 17, ~22 min
 node /path/to/repo/tools/verify-all.mjs quick    # the fast nine, ~5 min
 ```
 
-There are seventeen checks now, several of which take minutes, and a run that has
+There are eighteen checks now, several of which take minutes, and a run that has
 to remember all of them will sooner or later remember only the fast ones.
 
 It runs them **one at a time on purpose.** Several Chromium instances
@@ -314,6 +314,25 @@ Watching the meter across the press was the first version and it is flaky —
 notes keep arriving, so a beat can be missed purely because time passed
 between the two readings. It passed by luck once and then failed against a
 game that was perfectly fine.
+
+## `freeplay-check.mjs`
+
+Free play — the staff as an instrument — checked by **listening**. The thing
+worth verifying is not that the mode opens but that pointing at a line or a
+space plays *that note*, so it taps all thirteen positions in turn and reads
+the pitches back off the oscillators.
+
+Verdict, 2026-07-26: `C D E F G A B C D E F G A` — thirteen ascending
+naturals, one per position, none of them an accidental. Step gap 45px on a
+phone against the 9px the walk uses, which is the entire reason the mode has
+its own geometry. Entering clears the lane, stops the bard and hides the
+walk's own staff; leaving brings the road back. And **zero** encounters are
+recorded by exploring: a note the child picked is not evidence they can read
+one the game picked, so free play must not feed the learning model.
+
+It asks the scene where it actually put the steps rather than recomputing
+the layout — a check that re-derives the thing it is checking will agree
+with itself no matter how wrong both are.
 
 ## `songpick-check.mjs`
 

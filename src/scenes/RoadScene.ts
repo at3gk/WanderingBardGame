@@ -12,12 +12,20 @@ import {
 import { expandSong, Song, SongBeat, songDurationMs } from '../core/song';
 import { SONGS } from '../core/songs';
 import { homeBiomeOf, SongChoice, songForPass, songGridLayout } from '../core/songChoice';
+import {
+  FREE_PLAY_HIGH_STEP,
+  FREE_PLAY_LOW_STEP,
+  freePlayStaff,
+  FreePlayStaff,
+  freePlayStepAt,
+  freePlayStepY,
+} from '../core/freePlay';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
 import { accumulateDistance } from '../core/distance';
 import { BIOMES, biomeBlendAt, BIOME_TRANSITIONS, signpostDistanceAt } from '../core/biome';
 import { duskShadeAt, nightnessAt } from '../core/dusk';
 import { accumulateCoins, crossedCoinMilestone } from '../core/coins';
-import { noteNameAt, staffStepAt, stemDown } from '../core/notation';
+import { noteNameAt, noteNameAtStep, semitoneAtStep, staffStepAt, stemDown } from '../core/notation';
 import {
   NOTE_HEAD_INSET_Y,
   NOTE_ORIGIN_X,
@@ -40,7 +48,7 @@ import {
   STAR_FIELD_HEIGHT,
   starFieldTexture,
 } from '../render/scenery';
-import { createStyleTextures, HIT_LINE_HEIGHT, songbookTexture } from '../render/ui';
+import { createStyleTextures, freePlayTexture, HIT_LINE_HEIGHT, songbookTexture } from '../render/ui';
 import { displaySupport, encounter, leadMsFor, ScaffoldState, supportFor } from '../core/scaffold';
 import { getSongChoice, loadScaffold, saveScaffold, setSongChoice } from '../core/scaffoldStorage';
 
@@ -208,6 +216,18 @@ const PICKER_ROW_BG = 0x2c2233;
 // without an explicit depth a note that appears while the picker is open
 // draws straight over the song list — which it did, first try.
 const PICKER_DEPTH = 1000;
+// Free play (the staff as an instrument). Its own chrome sits below the
+// picker but above the world.
+const FREEPLAY_DEPTH = 500;
+const FREEPLAY_TOP_MARGIN = 74;
+const FREEPLAY_BOTTOM_MARGIN = 56;
+const FREEPLAY_LINE_COLOR = 0xe8d9c0;
+// The five real staff lines have to stay legible as *the staff* inside the
+// wider ladder of guides, or the child learns a thirteen-line instrument
+// that does not exist on paper.
+const FREEPLAY_LINE_ALPHA = 0.44;
+const FREEPLAY_LEDGER_ALPHA = 0.11;
+const FREEPLAY_NOTE_MS = 900;
 const HINT_Y_OFFSET = -92;
 const HINT_FADE_MS = 400;
 // Strum on hit (ROADMAP idea backlog): the visual twin of AudioEngine.pluck
@@ -292,6 +312,12 @@ export class RoadScene extends Phaser.Scene {
   /** Every object making up the picker overlay, so it can be torn down as one. */
   private pickerParts: Phaser.GameObjects.GameObject[] = [];
   private pickerOpen = false;
+  /** 'walk' is the road; 'play' is the staff as an instrument. */
+  private mode: 'walk' | 'play' = 'walk';
+  private luteIcon!: Phaser.GameObjects.Image;
+  private luteZone!: Phaser.GameObjects.Zone;
+  private freeParts: Phaser.GameObjects.GameObject[] = [];
+  private freeStaff: FreePlayStaff | null = null;
   private totalNotesGenerated = 0;
   private nextPassStartTimeMs = 0;
   private currentSongId: string | null = null;
@@ -325,6 +351,11 @@ export class RoadScene extends Phaser.Scene {
 
   /** Walking-vs-stopped state derived from the song meter, per DESIGN.md. Read by later tasks (bard sprite, road scroll). */
   get walking(): boolean {
+    // The bard stands still to play. Free play has no beat to keep, so
+    // there is nothing for walking to mean — and a bard striding along
+    // while the child picks notes off a stationary staff would be the
+    // world contradicting what they are doing.
+    if (this.mode === 'play') return false;
     return isWalking(this.meter, this.meterConfig);
   }
 
@@ -459,6 +490,13 @@ export class RoadScene extends Phaser.Scene {
     this.bookZone = this.add.zone(bookX, MUTE_ICON_MARGIN_TOP, MUTE_TOUCH_TARGET_SIZE, MUTE_TOUCH_TARGET_SIZE);
     this.bookZone.setInteractive({ useHandCursor: true });
 
+    const luteX = BOOK_MARGIN_LEFT + BOOK_ICON_RADIUS * 2 + 24;
+    this.luteIcon = this.add.image(luteX, MUTE_ICON_MARGIN_TOP, freePlayTexture(this));
+    this.luteIcon.setScale((BOOK_ICON_RADIUS * 2) / 26);
+    this.luteIcon.setTint(this.mode === 'play' ? PICKER_CHOSEN_BG : MUTE_ICON_COLOR_ON);
+    this.luteZone = this.add.zone(luteX, MUTE_ICON_MARGIN_TOP, MUTE_TOUCH_TARGET_SIZE, MUTE_TOUCH_TARGET_SIZE);
+    this.luteZone.setInteractive({ useHandCursor: true });
+
     this.createBard();
     this.bardWasWalking = this.walking;
     this.setBardAnimState(this.bardWasWalking);
@@ -476,12 +514,24 @@ export class RoadScene extends Phaser.Scene {
         this.openPicker();
         return;
       }
+      if (currentlyOver.includes(this.luteZone)) {
+        if (this.mode === 'play') this.exitFreePlay();
+        else this.enterFreePlay();
+        return;
+      }
+      if (this.mode === 'play') {
+        this.playFreeNote(_pointer.y, _pointer.x);
+        return;
+      }
       this.handleInput();
     });
     // Without addCapture, Space's default browser action (scroll the page) fires
     // alongside every keyboard beat hit, fighting the "keyboard works on desktop" pillar.
     this.input.keyboard?.addCapture('SPACE');
-    this.input.keyboard?.on('keydown-SPACE', () => this.handleInput());
+    this.input.keyboard?.on('keydown-SPACE', () => {
+      if (this.pickerOpen || this.mode === 'play') return;
+      this.handleInput();
+    });
 
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -866,6 +916,142 @@ export class RoadScene extends Phaser.Scene {
   }
 
   /**
+   * Free play: stop the road, spread the staff out, and let the child pick
+   * notes instead of catching them.
+   *
+   * Entering clears the lane. Notes already in flight belong to a schedule
+   * that is about to stop existing, and leaving them to scroll into a
+   * stationary staff would be two games at once.
+   */
+  private enterFreePlay(): void {
+    if (this.mode === 'play') return;
+    this.mode = 'play';
+    this.audioEngine.cancelPending();
+    for (const m of this.markers) m.gfx?.destroy();
+    this.markers = [];
+    this.pendingAnnounce = [];
+    this.currentSongId = null;
+    this.songTitleText.setAlpha(0);
+    this.dismissHint();
+    this.luteIcon.setTint(PICKER_CHOSEN_BG);
+    this.setWalkChromeVisible(false);
+    this.buildFreeStaff();
+  }
+
+  private exitFreePlay(): void {
+    if (this.mode !== 'play') return;
+    this.mode = 'walk';
+    this.luteIcon.setTint(MUTE_ICON_COLOR_ON);
+    this.setWalkChromeVisible(true);
+    this.tearDownFreeStaff();
+    // Pick the schedule back up from here rather than from wherever it
+    // stopped, so the road does not resume with a backlog of notes that
+    // were due while the child was playing.
+    const nowMs = this.time.now - this.startTimeMs;
+    this.nextPassStartTimeMs = nowMs + TRAVEL_TIME_MS;
+    this.passesByBiome.clear();
+    this.appendSongPass();
+  }
+
+  /**
+   * Shows or hides the chrome that only means something while walking: the
+   * small staff and its clef, the hit line, the meter. Leaving them up
+   * behind the big staff drew two staves at once, which is exactly the
+   * confusion this mode exists to avoid.
+   */
+  private setWalkChromeVisible(visible: boolean): void {
+    for (const line of this.staffLines) line.setVisible(visible);
+    for (const line of this.meterStaffLines) line.setVisible(visible);
+    this.clef.setVisible(visible);
+    this.hitLine.setVisible(visible);
+    this.flash.setVisible(visible);
+    this.meterTrack.setVisible(visible);
+    this.meterFill.setVisible(visible);
+  }
+
+  private tearDownFreeStaff(): void {
+    for (const part of this.freeParts) part.destroy();
+    this.freeParts = [];
+    this.freeStaff = null;
+  }
+
+  /**
+   * Draws the big staff. Five real lines, plus a faint guide at every
+   * *space* and ledger position too — without them a child aiming at a
+   * space is aiming at nothing, and the whole mode is aiming.
+   */
+  private buildFreeStaff(): void {
+    this.tearDownFreeStaff();
+    const w = this.scale.width;
+    const staff = freePlayStaff(this.scale.height, FREEPLAY_TOP_MARGIN, FREEPLAY_BOTTOM_MARGIN);
+    this.freeStaff = staff;
+
+    for (let step = FREE_PLAY_LOW_STEP; step <= FREE_PLAY_HIGH_STEP; step++) {
+      const y = freePlayStepY(step, staff);
+      const isStaffLine = STAFF_LINE_STEPS.includes(step);
+      const line = this.add.rectangle(
+        w / 2,
+        y,
+        w - 24,
+        isStaffLine ? 2.5 : 1,
+        FREEPLAY_LINE_COLOR,
+        isStaffLine ? FREEPLAY_LINE_ALPHA : FREEPLAY_LEDGER_ALPHA
+      );
+      line.setDepth(FREEPLAY_DEPTH);
+      this.freeParts.push(line);
+
+      // The letter, always. Nothing is being asked here, so nothing is
+      // withheld — this is the reference the walk deliberately fades.
+      const label = this.add.text(14, y, noteNameAtStep(step), {
+        fontFamily: 'sans-serif',
+        fontSize: '13px',
+        fontStyle: 'bold',
+        color: '#e8d9c0',
+      });
+      label.setOrigin(0.5, 0.5);
+      // Letters follow the same hierarchy: the five line-notes are the
+      // landmarks a reader actually navigates by.
+      label.setAlpha(isStaffLine ? 0.9 : 0.55);
+      label.setDepth(FREEPLAY_DEPTH + 1);
+      this.freeParts.push(label);
+    }
+  }
+
+  /** Sounds the note a tap landed on, and draws it where it was played. */
+  private playFreeNote(y: number, x: number): void {
+    const staff = this.freeStaff;
+    if (!staff) return;
+    const step = freePlayStepAt(y, staff);
+    const semitone = semitoneAtStep(step);
+    const name = noteNameAt(semitone) ?? '';
+    this.audioEngine.pluck(semitone);
+    this.strumLute();
+
+    const noteY = freePlayStepY(step, staff);
+    const noteX = Math.max(60, Math.min(this.scale.width - 40, x));
+    const img = this.add.image(noteX, noteY, noteTexture(this, name, step, 1));
+    img.setOrigin(NOTE_ORIGIN_X, this.noteOriginY(step));
+    img.setTint(NOTE_TINT_HIT);
+    img.setDepth(FREEPLAY_DEPTH + 2);
+    this.tweens.add({
+      targets: img,
+      scale: { from: 1.4, to: 1 },
+      duration: 170,
+      ease: 'Sine.easeOut',
+    });
+    // It fades on its own. A note that stayed would turn the staff into a
+    // drawing the child has to clear; one that vanishes leaves the staff
+    // ready for the next poke.
+    this.tweens.add({
+      targets: img,
+      alpha: { from: 1, to: 0 },
+      duration: FREEPLAY_NOTE_MS,
+      delay: 220,
+      onComplete: () => img.destroy(),
+    });
+  }
+
+  /**
    * The songbook. A full-screen panel listing every tune plus "wander",
    * because eleven entries plus a heading is more than fits beside the
    * staff on a phone, and half-covering the game would leave notes
@@ -1131,7 +1317,11 @@ export class RoadScene extends Phaser.Scene {
     const laneY = this.laneY();
     const hitLineX = this.hitLineX();
 
-    if (this.nextPassStartTimeMs - nowMs < BEAT_LOOKAHEAD_MS) {
+    // Free play stops the schedule entirely: no new passes are queued, no
+    // markers move, and nothing can be missed. The world keeps going —
+    // scenery, dusk, the bard's idle — because the mode is a change of what
+    // the child is doing, not a pause screen.
+    if (this.mode === 'walk' && this.nextPassStartTimeMs - nowMs < BEAT_LOOKAHEAD_MS) {
       this.appendSongPass();
     }
 

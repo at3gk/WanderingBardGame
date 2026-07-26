@@ -120,3 +120,40 @@ export function songbookTexture(scene: Phaser.Scene): string {
   g.destroy();
   return key;
 }
+
+/**
+ * The free-play icon: a hand-plucked string.
+ *
+ * It has to say "you play this one" next to a page of sheet music that
+ * says "choose what to play" and a bare note that says "sound on". A
+ * single string with a note leaving it reads as plucking without needing
+ * the whole lute, which at 22px would be a brown smudge.
+ */
+export function freePlayTexture(scene: Phaser.Scene): string {
+  const key = 'freeplay-icon';
+  if (scene.textures.exists(key)) return key;
+
+  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+  g.fillStyle(0xffffff, 1);
+
+  // The string, bowed as if just released.
+  g.lineStyle(1.6, 0xffffff, 1);
+  g.beginPath();
+  g.moveTo(6, 3);
+  g.lineTo(6, 23);
+  g.strokePath();
+  g.beginPath();
+  g.moveTo(6, 3);
+  g.lineTo(10.5, 13);
+  g.lineTo(6, 23);
+  g.strokePath();
+
+  // A note sounding away from it.
+  g.fillEllipse(17, 17, 6.5, 5);
+  g.fillRect(19.4, 8, 1.5, 8);
+  g.fillTriangle(20.9, 8, 24.5, 10.5, 20.9, 13.5);
+
+  g.generateTexture(key, 26, 26);
+  g.destroy();
+  return key;
+}
