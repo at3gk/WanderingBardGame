@@ -38,7 +38,7 @@ npm run preview  # serve the production build locally
 ```
 
 Beyond the unit tests there is a headless harness in [`tools/`](./tools) —
-eleven checks that drive a real browser against the production build and
+fifteen checks that drive a real browser against the production build and
 assert on things unit tests cannot reach: that the melody is in tune and
 naturals-only, that the letter-fading actually fades and recovers, that
 progress survives a reload, a rotation and a month away, that the layout

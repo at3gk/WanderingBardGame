@@ -31,8 +31,8 @@ this environment. Change it if you're running elsewhere.
 Runs the whole suite and prints one summary. **Start here.**
 
 ```bash
-node /path/to/repo/tools/verify-all.mjs          # everything, ~25 min
-node /path/to/repo/tools/verify-all.mjs quick    # the fast four, ~4 min
+node /path/to/repo/tools/verify-all.mjs          # all 15, ~20 min
+node /path/to/repo/tools/verify-all.mjs quick    # the fast eight, ~5 min
 ```
 
 There are fifteen checks now, several of which take minutes, and a run that has

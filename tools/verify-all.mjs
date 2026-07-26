@@ -10,8 +10,8 @@ import { fileURLToPath } from 'node:url';
  * that has to remember all of them will sooner or later remember only the
  * fast ones. This is the single command to reach for.
  *
- *   node verify-all.mjs          # everything (~14 min)
- *   node verify-all.mjs quick    # the fast ones only (~4 min)
+ *   node verify-all.mjs          # all 15 (~20 min)
+ *   node verify-all.mjs quick    # the fast eight (~5 min)
  *
  * Expects the preview server on :4173 and Playwright installed in the
  * working directory — see Setup above in README.md. Runs the checks one at
