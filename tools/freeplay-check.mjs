@@ -161,6 +161,28 @@ const afterSix = await page.evaluate(() => window.game.scene.scenes[0].freeIndex
 console.log('index after one wrong note then six right ones:', afterSix);
 if (afterSix !== 6) fail.push(`six correct notes advanced to ${afterSix}, expected 6`);
 
+// --- the tune writes itself out, left to right ----------------------------
+// Reading order is not obvious to a beginner. Correct notes are laid across
+// the staff in the order they are played, so the phrase accumulates the way
+// it would on paper.
+const written = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  return s.freeWritten.map((n) => Math.round(n.x));
+});
+console.log('written-out phrase, note x positions:', JSON.stringify(written));
+if (written.length < 6) {
+  fail.push(`only ${written.length} notes were written out after six correct ones`);
+}
+for (let i = 1; i < written.length; i++) {
+  if (written[i] <= written[i - 1]) {
+    fail.push(`the phrase is not laid out left to right (${written[i - 1]} -> ${written[i]})`);
+    break;
+  }
+}
+// Note this must be read BEFORE the tune is played to its end: finishing it
+// clears the written phrase on purpose, so a check placed after that sees
+// an empty staff and reports a bug that is not there. It did, once.
+
 const titled = await page.evaluate(() => {
   const t = window.game.scene.scenes[0].songTitleText;
   return { text: t.text, alpha: Number(t.alpha.toFixed(2)) };

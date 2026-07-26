@@ -21,6 +21,7 @@ import {
   freePlayStepAt,
   freePlayStepY,
   songStepSequence,
+  writtenNoteSlot,
   stepsUsedBy,
 } from '../core/freePlay';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
@@ -345,6 +346,9 @@ export class RoadScene extends Phaser.Scene {
   /** The song's note markers, kept so finishing the tune can ripple through them. */
   private freePips: Phaser.GameObjects.Arc[] = [];
   private freeHint: Phaser.GameObjects.Text | null = null;
+  /** Notes written out so far in practice, and which line they belong to. */
+  private freeWritten: Phaser.GameObjects.Image[] = [];
+  private freeWrittenLine = 0;
   private totalNotesGenerated = 0;
   private nextPassStartTimeMs = 0;
   private currentSongId: string | null = null;
@@ -1039,6 +1043,13 @@ export class RoadScene extends Phaser.Scene {
    */
   private celebrateTune(): void {
     this.audioEngine.chime();
+    // The phrase written out so far goes with it — the tune is complete,
+    // and the next pass starts on a clean staff.
+    for (const note of this.freeWritten) {
+      this.tweens.add({ targets: note, alpha: 0, duration: 420, onComplete: () => note.destroy() });
+    }
+    this.freeWritten = [];
+    this.freeWrittenLine = 0;
     const pips = [...this.freePips].sort((a, b) => b.y - a.y);
     pips.forEach((pip, i) => {
       this.tweens.add({
@@ -1131,6 +1142,9 @@ export class RoadScene extends Phaser.Scene {
     if (this.freeSequence.length) this.freeIndex %= this.freeSequence.length;
     else this.freeIndex = 0;
     this.freePips = this.freePips.filter((p) => p.active);
+    for (const note of this.freeWritten) note.destroy();
+    this.freeWritten = [];
+    this.freeWrittenLine = 0;
     this.freeCursor = null;
     if (this.freeSequence.length) {
       const cursor = this.add.circle(30, freePlayStepY(this.freeSequence[this.freeIndex], staff), 6, PICKER_CHOSEN_BG, 1);
@@ -1190,10 +1204,14 @@ export class RoadScene extends Phaser.Scene {
     // A wrong note sounds and costs nothing — you just have not moved on.
     // There is no penalty to apply and no streak to break, so a child
     // hunting around the right answer is doing exactly what this is for.
+    let wasCorrect = false;
+    let writtenIndex = 0;
     if (this.freeSequence.length) {
+      writtenIndex = this.freeIndex;
       const next = advanceSequence(this.freeIndex, step, this.freeSequence);
       const found = next !== this.freeIndex;
       const finished = found && next === 0;
+      wasCorrect = found;
       this.freeIndex = next;
       if (finished) this.celebrateTune();
       if (this.freeCursor) {
@@ -1210,7 +1228,25 @@ export class RoadScene extends Phaser.Scene {
     this.strumLute();
 
     const noteY = freePlayStepY(step, staff);
-    const noteX = Math.max(60, Math.min(this.scale.width - 40, x));
+    // In practice a *correct* note is written out left to right, so the
+    // phrase accumulates across the staff the way it would on paper.
+    // Reading order is not obvious to a beginner; it has to be shown, and
+    // this shows it every time they play a bar. A wrong note still appears
+    // where the finger landed and fades, so the two are never confused.
+    const writing = this.freeSequence.length > 0 && wasCorrect;
+    let noteX = Math.max(60, Math.min(this.scale.width - 40, x));
+    if (writing) {
+      const leftX = 52;
+      const slot = writtenNoteSlot(writtenIndex, this.scale.width - leftX - 24);
+      if (slot.line !== this.freeWrittenLine) {
+        this.freeWrittenLine = slot.line;
+        for (const note of this.freeWritten) {
+          this.tweens.add({ targets: note, alpha: 0, duration: 260, onComplete: () => note.destroy() });
+        }
+        this.freeWritten = [];
+      }
+      noteX = leftX + slot.column * ((this.scale.width - leftX - 24) / slot.perLine) + 12;
+    }
     const img = this.add.image(noteX, noteY, noteTexture(this, name, step, 1));
     img.setOrigin(NOTE_ORIGIN_X, this.noteOriginY(step));
     img.setTint(NOTE_TINT_HIT);
@@ -1221,16 +1257,22 @@ export class RoadScene extends Phaser.Scene {
       duration: 170,
       ease: 'Sine.easeOut',
     });
-    // It fades on its own. A note that stayed would turn the staff into a
-    // drawing the child has to clear; one that vanishes leaves the staff
-    // ready for the next poke.
-    this.tweens.add({
-      targets: img,
-      alpha: { from: 1, to: 0 },
-      duration: FREEPLAY_NOTE_MS,
-      delay: 220,
-      onComplete: () => img.destroy(),
-    });
+    if (writing) {
+      // Written notes stay: they are the phrase so far, and watching it
+      // build is the point. They clear a line at a time, and all together
+      // when the tune comes round.
+      this.freeWritten.push(img);
+    } else {
+      // A freely-explored note fades on its own. One that stayed would turn
+      // the staff into a drawing the child has to clear.
+      this.tweens.add({
+        targets: img,
+        alpha: { from: 1, to: 0 },
+        duration: FREEPLAY_NOTE_MS,
+        delay: 220,
+        onComplete: () => img.destroy(),
+      });
+    }
   }
 
   /**
