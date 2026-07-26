@@ -102,6 +102,36 @@ It fails if any position reaches band 0 within a single sitting (the cap
 is broken) or if no further fading happens across sittings (persistence or
 the per-sitting reset is broken).
 
+## `reveal-check.mjs [seconds]`
+
+Answers *which* mechanism actually shows a child the letter — the question
+behind DESIGN.md's "fade the prompt, never the answer".
+
+The code carries three reveal paths (scheduled mid-flight, on the strike,
+on a miss) and only one of them can be doing the work. This hooks
+`revealLetter`, attributes every genuine reveal to its caller, plays well
+enough to fade the letters, and then deliberately drops notes while the
+meter is still high.
+
+Verdict as of 2026-07-26: **86 reveals over 90s, all scheduled, none from
+strike or miss.** The lead floor (350ms) clears the hit window (±90ms), so
+the letter is always already showing before a tap can land — the strike and
+miss handlers are unreachable backstops.
+
+That is the *stronger* guarantee, which is why it's worth pinning: the
+answer arrives on a bright, upright, full-alpha note the child is still
+about to play. The weak version — a letter that first appears after a miss,
+on a note that is dimmed, scrolling away and fading out over ~400ms — is
+what you'd silently fall back to by lowering the fade floor. So the script
+fails if any reveal arrives via the miss path, and `scaffold.test.ts` ("the
+answer always beats the tap") guards the same invariant in Vitest.
+
+Note the trap this script fell into first: **never tapping is the wrong
+test.** The meter drops, the scaffold restores full support, and every note
+is then born lettered, so nothing is revealed at all. Letters only go
+missing for a child who is doing well, so that is the child whose misses
+have to be measured.
+
 ## `proofsheet.mjs`
 
 Bakes **every** note-value × staff-position combination the songbook can

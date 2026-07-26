@@ -78,6 +78,48 @@ Band 4 is full help, 0 is fully faded. C4/D4/E4 take exactly three sittings;
 the rarer F4 (step 3) correctly lags far behind, so the fade follows real
 exposure rather than a clock. This is `SESSION_GAIN_CAP` doing its job.
 
+**The songbook is eleven tunes** (2026-07-26): *This Old Man* joined the
+village set and *The Itsy Bitsy Spider* the riverside, so village and
+riverside now rotate four songs each and forest three. Both were
+transcribed and then independently verified against published sources
+before landing. A forest transposition of *This Old Man* was drafted and
+**rejected** — its contour matched the real tune for only 6 of 32 notes,
+including an inverted phrase on the song's most recognizable line, and a
+wrong contour actively mis-teaches a child who knows the song. Forest is
+therefore deliberately one short rather than wrong.
+
+**Which mechanism actually keeps the promise** (2026-07-26). "Fade the
+prompt, never the answer" was credited in DESIGN.md and in three code
+comments to the reveal-on-strike and reveal-on-miss handlers. That was
+wrong, and `tools/reveal-check.mjs` (new) proves it: over a 90s walk, 86
+letters were revealed and **every one came from the scheduled mid-flight
+path — zero from strike, zero from miss**, including through four seconds
+of deliberate missing at a high meter. The reason is arithmetic: the reveal
+lead floor (350ms) is wider than the hit window (±90ms), so the letter is
+always already showing before a tap can register. The two handlers are
+unreachable backstops.
+
+This is the *stronger* guarantee — the answer lands on a bright, upright,
+full-alpha note the child is still about to play, not on one already
+dimmed and scrolling away — but it held only by coincidence of two
+constants in different files. `HIT_WINDOW_MS`/`TRAVEL_TIME_MS` moved to
+`core/beats.ts` and `scaffold.test.ts` now enforces the relationship ("the
+answer always beats the tap"), so tightening the fade to make the game
+harder can no longer silently downgrade the promise to a ~400ms fading
+consolation. The guard was mutation-checked: dropping the floor to 50ms
+fails it with a clear message.
+
+**The autoplay harness was not checking the thing it exists to check**
+(2026-07-26). Its hit/miss counts filtered the *live* marker list, which is
+culled as notes scroll off — so "hits: 1" after 207 taps was the last
+second's state printed as a total. Nothing asserted on them either, so a
+regression that broke input outright would still have gone green (the meter
+never drains if notes are never resolved). Counting now hooks
+`recordEncounter`, and there are assertions on hit and miss rate. Turning
+those on exposed a third bug in the harness: its tap loop capped its wait
+at 400ms then clicked regardless, firing about one tap into empty air for
+every real one. Now: 100 taps, 100 hits, 0 misses.
+
 Deviation from CLAUDE.md worth flagging: this is more than "exactly ONE
 roadmap task" — it is a model, a persistence layer, a songbook swap and a
 harness. That rule governs the scheduled autonomous runs; this was an

@@ -553,7 +553,28 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     screen, including part-way through a crossfade. Verified by
     instrumenting the live alphas (0.37 vs 0.69 at full riverside —
     genuinely out of phase) and by two screenshots a beat apart.
-56. **Next.** Nothing queued. The open question the model cannot answer
+56. ~~**Two more songs they already know.**~~ Done: *This Old Man*
+    (village, C4–G4 — its bars 5–6 walk the C-major pentascale straight up,
+    the cleanest drill the village has, hidden inside a tune kids can
+    already sing) and *The Itsy Bitsy Spider* (riverside, C5–G5, the
+    songbook's clearest use of written silence). Both verified against
+    published sources before landing. A forest *This Old Man* was drafted
+    and **rejected** — 6 of 32 notes matched the real tune, with an
+    inverted phrase on its most recognizable line. Forest stays at three
+    songs rather than carrying a wrong contour.
+57. ~~**Find out which mechanism actually keeps the safety promise.**~~
+    Done. "Fade the prompt, never the answer" was credited to the
+    reveal-on-strike and reveal-on-miss handlers; `tools/reveal-check.mjs`
+    shows those never fire. All 86 reveals over a 90s walk came from the
+    scheduled mid-flight path, because the 350ms lead floor clears the
+    ±90ms hit window. That is the stronger guarantee, so it was promoted
+    from coincidence to contract: the timing constants moved to
+    `core/beats.ts` and `scaffold.test.ts` enforces the relationship.
+    DESIGN.md and three misleading comments corrected. Also fixed the
+    autoplay harness, which reported a last-second snapshot as a cumulative
+    hit count, asserted nothing about it, and tapped into empty air about
+    half the time.
+58. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth

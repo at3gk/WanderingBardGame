@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { AudioEngine } from '../audio/AudioEngine';
 import { AUDIO_MANIFEST } from '../audio/manifest';
-import { isBeatMissed, isWithinHitWindow, scrollProgress } from '../core/beats';
+import { HIT_WINDOW_MS, isBeatMissed, isWithinHitWindow, scrollProgress, TRAVEL_TIME_MS } from '../core/beats';
 import { expandSong, Song, SongBeat, songDurationMs } from '../core/song';
 import { songForBiome } from '../core/songs';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
@@ -19,10 +19,10 @@ const MS_PER_BEAT = 60000 / BPM;
 // more than one frame and less than the shortest song, so there is always
 // runway without the schedule running far ahead of the walk.
 const BEAT_LOOKAHEAD_MS = 15000;
-const TRAVEL_TIME_MS = 1800;
-// Human playtest (2026-07-25): 120ms read as "too loose" — clearly-off taps
-// still counted as hits. Tightened to ±90ms.
-const HIT_WINDOW_MS = 90;
+// TRAVEL_TIME_MS and HIT_WINDOW_MS (±90ms — human playtest 2026-07-25 found
+// 120ms read as "too loose") now live in core/beats.ts, because the
+// scaffold's reveal schedule is measured against them and the relationship
+// between the two is a tested invariant rather than a coincidence.
 const MARKER_RADIUS = 18;
 // One visual language for everything the player reads or touches
 // (ROADMAP task 32): beat markers are eighth notes, the coin is stamped
@@ -1053,6 +1053,15 @@ export class RoadScene extends Phaser.Scene {
    * Puts the letter back on a note — instantly, because it should feel
    * plucked out of the note along with its pitch. Called when a note is
    * struck, when it is missed, and when its scheduled reveal time arrives.
+   *
+   * In practice only the scheduled path ever reaches a lettered=false
+   * marker: the reveal lead floor (350ms) is larger than the hit window
+   * (90ms), so the letter is always already showing by the time a tap can
+   * register or a miss can be declared. Measured, not assumed — 86 reveals
+   * over a 90s walk, all scheduled, none from strike or miss
+   * (tools/reveal-check.mjs). The other two calls are backstops kept for
+   * the day those constants change; the relationship between them is
+   * pinned by scaffold.test.ts, "the answer always beats the tap".
    */
   private revealLetter(marker: BeatMarker): void {
     if (marker.lettered || !marker.gfx || marker.resolved === 'rest') return;
@@ -1183,9 +1192,11 @@ export class RoadScene extends Phaser.Scene {
       this.audioEngine.pluck(target.beat.semitone);
       this.strumLute();
       this.recordEncounter(target.step, 'hit', true);
-      // Whatever the child just recalled (or didn't), the answer arrives
-      // with the note they played. This is what keeps a faded letter from
-      // ever being a dead end.
+      // Backstop only: the letter is already showing by now, because the
+      // reveal lead floor clears the hit window. What actually keeps a
+      // faded letter from being a dead end is that scheduled reveal — the
+      // answer lands on a bright, upright note the child is still about to
+      // play, rather than on one already scrolling away. See revealLetter.
       this.revealLetter(target);
       if (target.gfx) {
         // A struck note pulses once — lands big, settles back — so a hit
@@ -1349,9 +1360,9 @@ export class RoadScene extends Phaser.Scene {
         marker.gfx.setTint(tint);
         marker.gfx.setAlpha(this.markerBaseAlpha(marker));
       }
-      // The letter surfaces on its own schedule; a struck or missed note
-      // gets it immediately (revealLetter). Fade the prompt, never the
-      // answer — a hidden letter is always answered.
+      // Fade the prompt, never the answer. This is the line that delivers
+      // that rule: every hidden letter surfaces here, mid-flight, at full
+      // brightness and always before the note reaches the line.
       if (!marker.lettered && nowMs >= (marker.revealAtMs ?? Infinity)) {
         this.revealLetter(marker);
       }

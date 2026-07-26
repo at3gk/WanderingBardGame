@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { HIT_WINDOW_MS, TRAVEL_TIME_MS } from './beats';
 import {
   beginSession,
   createScaffold,
@@ -8,6 +9,7 @@ import {
   leadMsFor,
   MAX_SUPPORT,
   SESSION_GAIN_CAP,
+  SUPPORT_LEAD_MS,
   supportFor,
 } from './scaffold';
 
@@ -202,5 +204,51 @@ describe('display support — help that is never written back', () => {
 
   it('leaves a faded position faded during ordinary good play', () => {
     expect(displaySupport(0, { firstInPass: false, struggling: false, lost: false })).toBe(0);
+  });
+});
+
+describe('the answer always beats the tap', () => {
+  // DESIGN.md's safety rule is "fade the prompt, never the answer". The code
+  // reads as though the strike and miss handlers are what deliver on it —
+  // both call revealLetter, and both are commented as the reason a faded
+  // note is never a dead end.
+  //
+  // They are not what delivers on it, and instrumenting a real playthrough
+  // proves it: over a 90s walk, 86 letters were revealed and every single
+  // one came from the scheduled mid-flight reveal. The strike and miss paths
+  // fired zero times, including through four seconds of deliberate missing
+  // at a high meter (tools/reveal-check.mjs).
+  //
+  // The reason is arithmetic. The earliest a tap can register is
+  // HIT_WINDOW_MS *before* the note reaches the line; the latest a letter can
+  // appear is the lead floor before the line. While the floor is the larger
+  // number, the letter is always already showing, and both handlers are
+  // unreachable backstops.
+  //
+  // That is the stronger guarantee — the answer lands on a bright, upright,
+  // full-alpha note the child is still about to play, rather than on one
+  // that is dimmed, scrolling away and fading out. But it holds only by
+  // coincidence of two constants that live in different files, and lowering
+  // the floor to make the game harder would silently downgrade it: reveals
+  // would start arriving via the miss path, where a note is visible for
+  // roughly 400ms at declining opacity. This test is what makes the
+  // coincidence a contract.
+  const floorMs = Math.min(...SUPPORT_LEAD_MS);
+
+  it('shows every letter before the earliest moment a tap could land', () => {
+    expect(floorMs).toBeGreaterThanOrEqual(HIT_WINDOW_MS);
+  });
+
+  it('holds at every support band, not just the most-faded one', () => {
+    for (let support = 0; support <= MAX_SUPPORT; support++) {
+      expect(leadMsFor(support), `support ${support}`).toBeGreaterThanOrEqual(HIT_WINDOW_MS);
+    }
+  });
+
+  it('never schedules a reveal before the note exists', () => {
+    // A lead longer than the flight would mean revealAtMs lands before spawn.
+    // Harmless today (the note is simply born lettered) but it would make the
+    // most-supported band silently identical to the one below it.
+    expect(Math.max(...SUPPORT_LEAD_MS)).toBeLessThanOrEqual(TRAVEL_TIME_MS);
   });
 });
