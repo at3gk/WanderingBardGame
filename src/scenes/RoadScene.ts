@@ -328,6 +328,8 @@ export class RoadScene extends Phaser.Scene {
   private freeIndex = 0;
   /** The pip marking the note to look for, kept so it can be moved rather than rebuilt. */
   private freeCursor: Phaser.GameObjects.Arc | null = null;
+  /** The song's note markers, kept so finishing the tune can ripple through them. */
+  private freePips: Phaser.GameObjects.Arc[] = [];
   private totalNotesGenerated = 0;
   private nextPassStartTimeMs = 0;
   private currentSongId: string | null = null;
@@ -977,12 +979,44 @@ export class RoadScene extends Phaser.Scene {
     this.flash.setVisible(visible);
     this.meterTrack.setVisible(visible);
     this.meterFill.setVisible(visible);
+    // Steps and coins are both counts of walking. Leaving them on screen
+    // while the road is stopped invites a child to wonder why they are not
+    // going up.
+    this.distanceText.setVisible(visible);
+    this.coinText.setVisible(visible);
+    this.coinIcon.setVisible(visible);
   }
 
   private tearDownFreeStaff(): void {
     for (const part of this.freeParts) part.destroy();
     this.freeParts = [];
+    this.freePips = [];
+    this.freeCursor = null;
     this.freeStaff = null;
+  }
+
+  /**
+   * Reaching the end of the tune.
+   *
+   * Deliberately not a score, a star or a "well done" — DESIGN.md's no-fail
+   * stance cuts both ways, and a game that celebrates loudly has started
+   * grading quietly. A chime and a ripple up the notes the child just
+   * played says "that was the whole song" and then gets out of the way, so
+   * the tune simply comes round again.
+   */
+  private celebrateTune(): void {
+    this.audioEngine.chime();
+    const pips = [...this.freePips].sort((a, b) => b.y - a.y);
+    pips.forEach((pip, i) => {
+      this.tweens.add({
+        targets: pip,
+        scale: { from: 1, to: 1.9 },
+        duration: 190,
+        delay: i * 70,
+        yoyo: true,
+        ease: 'Sine.easeOut',
+      });
+    });
   }
 
   /**
@@ -1026,6 +1060,7 @@ export class RoadScene extends Phaser.Scene {
         const pip = this.add.circle(30, y, 3.5, PICKER_CHOSEN_BG, 0.95);
         pip.setDepth(FREEPLAY_DEPTH + 1);
         this.freeParts.push(pip);
+        this.freePips.push(pip);
       }
 
       // The letter, always. Nothing is being asked here, so nothing is
@@ -1058,6 +1093,7 @@ export class RoadScene extends Phaser.Scene {
 
     this.freeSequence = songStepSequence(chosen);
     this.freeIndex = 0;
+    this.freePips = this.freePips.filter((p) => p.active);
     this.freeCursor = null;
     if (this.freeSequence.length) {
       const cursor = this.add.circle(30, freePlayStepY(this.freeSequence[0], staff), 6, PICKER_CHOSEN_BG, 1);
@@ -1097,7 +1133,9 @@ export class RoadScene extends Phaser.Scene {
     if (this.freeSequence.length) {
       const next = advanceSequence(this.freeIndex, step, this.freeSequence);
       const found = next !== this.freeIndex;
+      const finished = found && next === 0;
       this.freeIndex = next;
+      if (finished) this.celebrateTune();
       if (this.freeCursor) {
         this.freeCursor.setPosition(30, freePlayStepY(this.freeSequence[next], staff));
         if (found) {
@@ -1575,10 +1613,17 @@ export class RoadScene extends Phaser.Scene {
     this.lostSinceMs = this.walking ? null : this.lostSinceMs ?? nowMs;
 
     const meterRatio = this.meter / this.meterConfig.max;
-    const prevCoins = this.coins;
-    this.coins = accumulateCoins(this.coins, meterRatio, delta, COIN_RATE_PER_SEC);
-    if (crossedCoinMilestone(prevCoins, this.coins, COIN_CHIME_EVERY)) {
-      this.audioEngine.chime();
+    // Coins are the road's reward for keeping the song alive. In free play
+    // there is no road and no meter to keep up, but the meter keeps
+    // whatever value it had — so without this they would tick up while the
+    // child sat poking at a stationary staff, which is paying them for
+    // nothing.
+    if (this.mode === 'walk') {
+      const prevCoins = this.coins;
+      this.coins = accumulateCoins(this.coins, meterRatio, delta, COIN_RATE_PER_SEC);
+      if (crossedCoinMilestone(prevCoins, this.coins, COIN_CHIME_EVERY)) {
+        this.audioEngine.chime();
+      }
     }
 
     this.updateSongTitle(nowMs);
