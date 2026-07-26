@@ -102,6 +102,44 @@ It fails if any position reaches band 0 within a single sitting (the cap
 is broken) or if no further fading happens across sittings (persistence or
 the per-sitting reset is broken).
 
+## `pillar-check.mjs`
+
+Checks the two CLAUDE.md design pillars that had never actually been
+measured — "playable in under 5 seconds, no login" and "mobile-friendly" —
+across six viewports from iPhone SE to desktop.
+
+Layout is read from the scene's real geometry rather than eyeballed from a
+screenshot, so a regression fails a run instead of waiting to be noticed.
+It asserts that every drawable staff position (one ledger below middle C to
+one above the staff) lands on screen with room for its stem, that the hit
+line leaves both an exit lane and enough approach runway to read a note,
+that a tap in the lower half registers, and that the game becomes *playable*
+— a note in flight, not merely a painted page — inside five seconds.
+
+Baseline, 2026-07-26:
+
+```
+viewport              size       ready   runway  minNoteGap
+iPhone SE             375x667    884ms   281px   49px
+iPhone 12             390x664    764ms   293px   51px
+Pixel 5               393x727    708ms   295px   51px
+iPhone 12 landscape   664x390    721ms   498px   86px
+iPad portrait         768x1024  1290ms   576px  100px
+desktop               900x600    899ms   675px  117px
+```
+
+`minNoteGap` is the tightest the songbook can draw — two eighth notes at 96
+BPM — against a note head of roughly 24px. It is **computed** from tempo,
+flight time and runway, not sampled. Sampling was the first attempt and it
+quietly measured nothing: over a few seconds of play only quarter notes came
+around, so it reported a comfortable 110px and passed without ever seeing
+the case it was written for. Confirmed visually at 375px on This Old Man's
+run of eighth-note C's — clearly separated, letters legible.
+
+Frame rate is deliberately **not** checked here. Headless software GL says
+nothing about a real phone; see the sharper-mobile-rendering note in
+ROADMAP, which is still waiting on a device.
+
 ## `reveal-check.mjs [seconds]`
 
 Answers *which* mechanism actually shows a child the letter — the question
