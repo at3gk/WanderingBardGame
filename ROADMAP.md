@@ -678,7 +678,16 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     were the other two. The scene's remaining drawing code is `createBard`,
     which is genuinely entangled with scene state (containers, tweens,
     walk/idle) and is *not* worth the same treatment — leave it.
-67. **Next.** Nothing queued. The open question the model cannot answer
+67. ~~**Give the moon a face.**~~ Done (from the same instinct as the
+    riverside shimmer): the moon was the largest thing in the sky and the
+    only element in the world with no shape at all — a flat cream disc,
+    while the houses have gables and lit windows, the forest has conifers
+    and fireflies, the riverside has a tent and a campfire. It is baked as
+    a texture now with four craters, drawn only slightly darker than the
+    disc and kept clear of the rim so it still reads as a *light source*
+    from across the room rather than as a thing to study. Covered by
+    `scenery-sheet.mjs`.
+68. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth

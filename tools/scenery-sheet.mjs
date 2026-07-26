@@ -53,10 +53,11 @@ const rows = await page.evaluate(() => {
   scene.add.image(120, y, S.glintTexture(scene, 0)).setOrigin(0, 0.5);
   scene.add.image(400, y, S.glintTexture(scene, 1)).setOrigin(0, 0.5);
   y += 130;
-  label(8, y, 'stars / signpost');
+  label(8, y, 'stars / signpost / moon');
   scene.add.image(120, y, S.starFieldTexture(scene)).setOrigin(0, 0.5);
   scene.add.image(400, y, S.signpostTexture(scene)).setOrigin(0, 1);
-  drawn += 4;
+  scene.add.image(460, y, S.moonTexture(scene, 24)).setOrigin(0, 0.5);
+  drawn += 5;
 
   return drawn;
 });

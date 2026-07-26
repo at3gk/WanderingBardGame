@@ -201,3 +201,43 @@ export function signpostTexture(scene: Phaser.Scene): string {
   g.destroy();
   return key;
 }
+
+/**
+ * The moon: a warm cream disc with a few craters.
+ *
+ * It is the largest single thing in the sky and was a plain flat circle
+ * while every other element in the world — the gabled houses, the conifers,
+ * the tent and campfire — carries some shape. The craters are drawn only a
+ * little darker than the disc, and never outlined: the art direction makes
+ * the moon a *light source*, so it has to keep reading as one from across
+ * the room. They are texture, not detail to be studied.
+ *
+ * Baked rather than assembled from Arcs so the whole moon is one image the
+ * scene can fade with the dusk cycle in a single setAlpha.
+ */
+export function moonTexture(scene: Phaser.Scene, radius: number): string {
+  const key = `moon-${radius}`;
+  if (scene.textures.exists(key)) return key;
+
+  const d = radius * 2;
+  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+  g.fillStyle(0xe8d9c0, 1);
+  g.fillCircle(radius, radius, radius);
+  // Craters, as a fraction of the radius so the moon can be resized without
+  // them drifting off its face. Kept clear of the rim — a crater breaking
+  // the edge would read as a bite taken out of it rather than as a shadow.
+  g.fillStyle(0xd6c4a6, 1);
+  const craters: Array<[number, number, number]> = [
+    [-0.30, -0.26, 0.20],
+    [0.26, 0.10, 0.15],
+    [-0.10, 0.38, 0.11],
+    [0.34, -0.36, 0.08],
+  ];
+  for (const [cx, cy, cr] of craters) {
+    g.fillCircle(radius + cx * radius, radius + cy * radius, cr * radius);
+  }
+
+  g.generateTexture(key, d, d);
+  g.destroy();
+  return key;
+}
