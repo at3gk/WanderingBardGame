@@ -330,6 +330,13 @@ walk's own staff; leaving brings the road back. And **zero** encounters are
 recorded by exploring: a note the child picked is not evidence they can read
 one the game picked, so free play must not feed the learning model.
 
+It covers the **seams** between the three surfaces, which is where every bug
+in this feature actually lived — each one worked perfectly alone. Choosing a
+song from inside free play, switching between two songs without leaving the
+mode, choosing "wander" and having the previous tune's pips, cursor, written
+phrase and title all go with it, rotating the phone mid-practice, and
+reloading out of free play back onto a road that is actually running.
+
 It also covers **practice**: with a song chosen, free play becomes the tune
 as a list of positions to find. Mary reads back as `[2,1,0,1,2,2,2]` — E D C
 D E E E — a deliberately wrong note sounds without advancing, six right ones

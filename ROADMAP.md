@@ -1005,7 +1005,14 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     overflows if even the minimums cannot fit. C sits at y=346 now, 44px
     clear. Tested across all nine real viewports: every offered note on
     screen, every gap still at or above the finger floor.
-95. **Next.** Nothing queued.
+95. ~~**Cover the last two seams.**~~ Done, and both were already
+    correct — choosing "wander" from inside free play clears the previous
+    tune's pips, cursor, written phrase and title and resets the hint,
+    with no phantom road notes; and reloading out of free play comes back
+    on the road, running, with the song choice intact. Locked into
+    `freeplay-check` anyway. Every bug in this feature lived in a seam
+    rather than a feature, so the seams are the thing worth holding still.
+96. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked this run (task 92): both
     remain blocked (forest-song fetch still 403s everywhere; the GitHub MCP
