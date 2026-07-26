@@ -231,6 +231,57 @@ if (switched.markers !== 0) {
 }
 if (switched.title !== 'Hot Cross Buns') fail.push(`title still reads "${switched.title}"`);
 
+// --- rotating the phone mid-practice --------------------------------------
+// The walk's staff is recomputed every frame and rides a resize for free.
+// This one is laid out once from the height available, so after a rotation
+// into landscape it was still spread for a portrait screen and the lowest
+// notes ran off the bottom, unreachable.
+await page.evaluate(() => window.game.scene.scenes[0].chooseSong('mary'));
+await page.waitForTimeout(400);
+for (let i = 0; i < 3; i++) {
+  const step = await page.evaluate(() => {
+    const s = window.game.scene.scenes[0];
+    return s.freeSequence[s.freeIndex];
+  });
+  await page.mouse.click(230, await yFor(step));
+  await page.waitForTimeout(120);
+}
+const beforeRotate = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  return { index: s.freeIndex, gap: Math.round(s.freeStaff.stepGap) };
+});
+await page.setViewportSize({ width: 664, height: 390 });
+await page.waitForTimeout(900);
+const afterRotate = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  return { index: s.freeIndex, gap: Math.round(s.freeStaff.stepGap), h: s.scale.height,
+           lowest: Math.round(s.freeStaff.bottomY) };
+});
+console.log('practice across a rotation:', JSON.stringify({ beforeRotate, afterRotate }));
+if (afterRotate.gap === beforeRotate.gap) {
+  fail.push('the staff kept its portrait layout in landscape — the low notes are off screen');
+}
+if (afterRotate.lowest > afterRotate.h) {
+  fail.push(`the lowest note sits at y=${afterRotate.lowest} on a ${afterRotate.h}px screen`);
+}
+// Turning the phone is not starting the tune again.
+if (afterRotate.index !== beforeRotate.index) {
+  fail.push(`rotation reset practice progress (${beforeRotate.index} -> ${afterRotate.index})`);
+}
+// And the next note is still findable at the new layout.
+const nextStep = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  return s.freeSequence[s.freeIndex];
+});
+await page.mouse.click(330, await yFor(nextStep));
+await page.waitForTimeout(200);
+const advanced = await page.evaluate(() => window.game.scene.scenes[0].freeIndex);
+if (advanced === afterRotate.index) fail.push('could not play the next note after rotating');
+await page.setViewportSize({ width: 390, height: 664 });
+await page.waitForTimeout(700);
+await page.evaluate(() => window.game.scene.scenes[0].chooseSong(null));
+await page.waitForTimeout(300);
+
 // --- and back to the road -------------------------------------------------
 await page.mouse.click(124, 24);
 await page.waitForTimeout(2600);

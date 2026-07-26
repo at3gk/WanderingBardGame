@@ -912,7 +912,18 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     meter, and **fed the learning model with misses the child never had a
     chance at** — exactly the corruption free play is designed to avoid.
     Measured before the fix: 26 phantom markers. After: 0.
-88. **Next.** Nothing queued.
+88. ~~**Make free play survive a rotation.**~~ Done — the second real
+    bug from probing interactions. The walk's staff is recomputed every
+    frame and rides a resize for free; the free-play staff is laid out
+    once from the height available, so after turning the phone into
+    landscape it was still spread for a portrait screen and the lowest
+    notes ran off the bottom, unreachable. It rebuilds on resize now
+    (gap 45 → 26 → 45 across a rotation and back), **without** resetting
+    how far through the tune the child had got: turning the phone is not
+    starting again. The picker is closed rather than re-laid-out — a
+    rotation is a big enough change of context that reappearing in a new
+    shape is more startling than being dismissed, and it is one tap back.
+89. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked task 79: both remain blocked
     (forest-song fetch still 403s everywhere; the GitHub MCP toolset still
