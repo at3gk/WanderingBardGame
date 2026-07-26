@@ -721,7 +721,11 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     sounds on a miss (asserted as an oscillator-rate ceiling, since the tune
     itself deliberately plays on). The kindest part of the design was the
     least tested part of it.
-73. **Next.** Nothing queued. The open question the model cannot answer
+73. ~~**Put a number behind the bundle-size pillar.**~~ Done: `pillar-check`
+    sums everything the page pulls over the wire and asserts CLAUDE.md's
+    "<5 MB". Currently 1.19 MB. Measured as what a phone downloads rather
+    than as dist/ on disk, and mutation-checked at a 1 MB threshold.
+74. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth

@@ -286,6 +286,14 @@ by `wc -l` before anything else ran, reverted with `git checkout`. Match
 method spans by walking braces line-by-line, and check the line delta
 against what you expected before running any test.
 
+**The bundle-size pillar has a number behind it now.** CLAUDE.md asks for
+"small bundle (<5 MB)" and nothing measured it. `pillar-check` now sums
+everything the page pulls over the wire — what a phone actually downloads
+to play, rather than `du -sh dist` — and asserts the pillar. Currently
+**1.19 MB**, four times the headroom. Mutation-checked by tightening the
+threshold to 1 MB and confirming it fires, since a guard that cannot fail
+is worthless.
+
 **The no-fail promise is now asserted** (`tools/nofail-check.mjs`). Every
 other harness plays well or plays chaotically; none checked what happens to
 a child who simply is not managing. Tapping once and then doing nothing for
