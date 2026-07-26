@@ -95,3 +95,40 @@ export function stepsUsedBy(song: Song | null | undefined): Set<number> {
   }
   return steps;
 }
+
+/**
+ * The chosen song as a plain sequence of staff positions to find.
+ *
+ * This is what turns free play from a ladder into practice. Rests are
+ * dropped: a silence is part of reading rhythm, and rhythm is what the
+ * *walk* teaches — here there is no clock at all, so a rest is just a step
+ * with nothing to press, which would read as the game having stopped
+ * responding.
+ */
+export function songStepSequence(song: Song | null | undefined): number[] {
+  if (!song) return [];
+  const steps: number[] = [];
+  for (const note of song.notes) {
+    if (note.rest) continue;
+    const step = staffStepAt(note.semitone);
+    if (step !== null) steps.push(step);
+  }
+  return steps;
+}
+
+/**
+ * Where the sequence goes after a tap.
+ *
+ * The rule that makes this practice rather than a test: a wrong note
+ * *sounds* and costs nothing — you simply have not moved on yet. There is
+ * no penalty to apply, no streak to break and nothing to undo, so a child
+ * exploring around the right answer is doing the thing this mode is for.
+ * Reaching the end wraps to the beginning, because a tune you have just
+ * finished is the one you are most likely to want again.
+ */
+export function advanceSequence(index: number, tappedStep: number, sequence: number[]): number {
+  if (!sequence.length) return 0;
+  const here = ((index % sequence.length) + sequence.length) % sequence.length;
+  if (sequence[here] !== tappedStep) return here;
+  return (here + 1) % sequence.length;
+}

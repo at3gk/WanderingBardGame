@@ -868,7 +868,19 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     notes of the chosen tune with a warm pip: the ladder on its own gives
     no hint where to start, and this says "here are the ones in Twinkle"
     without an instruction nobody can read.
-84. **Next.** Nothing queued.
+84. ~~**Practice: play the chosen song at your own pace.**~~ Done — the
+    piece that makes free play more than a xylophone. With a song chosen,
+    the ladder becomes that tune as a list of positions to find: a breathing
+    pip marks the next note, finding it moves on, and **a wrong note sounds
+    and costs nothing**. That last rule is the whole design. There is no
+    penalty to apply, no streak to break and nothing to undo, so a child
+    hunting around the right answer is doing exactly what the mode is for —
+    and it is the only place in the game where reading the staff, rather
+    than remembering the tune, is what actually moves you forward.
+    Rests are dropped from the sequence: a silence is part of reading
+    *rhythm*, which is the walk's job, and here it would read as the game
+    having stopped responding.
+85. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked task 79: both remain blocked
     (forest-song fetch still 403s everywhere; the GitHub MCP toolset still
