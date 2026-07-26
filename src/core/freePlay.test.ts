@@ -8,8 +8,8 @@ import {
   MIN_STEP_BAND,
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
-import { stepsUsedBy } from './freePlay';
-import { MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
+import { advanceSequence, songStepSequence, stepsUsedBy } from './freePlay';
+import { ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
 
 const VIEWPORTS: Array<[string, number]> = [
   ['narrow 320', 568],
@@ -104,5 +104,48 @@ describe('marking the chosen song\'s notes', () => {
     const span = FREE_PLAY_HIGH_STEP - FREE_PLAY_LOW_STEP + 1;
     expect(stepsUsedBy(MARY_HAD_A_LITTLE_LAMB).size).toBeLessThan(span / 2);
     expect(stepsUsedBy(ODE_TO_JOY).size).toBeLessThan(span);
+  });
+});
+
+describe('playing a chosen song at your own pace', () => {
+  const mary = songStepSequence(MARY_HAD_A_LITTLE_LAMB);
+
+  it('is the tune in order, as positions to find', () => {
+    // "Mary had a little lamb" opens E D C D E E E.
+    expect(mary.slice(0, 7)).toEqual([2, 1, 0, 1, 2, 2, 2]);
+    expect(mary.length).toBe(MARY_HAD_A_LITTLE_LAMB.notes.filter((n) => !n.rest).length);
+  });
+
+  it('drops rests — there is no clock here, so a silence has nothing to press', () => {
+    const spider = songStepSequence(ITSY_BITSY_SPIDER);
+    expect(spider.length).toBe(ITSY_BITSY_SPIDER.notes.filter((n) => !n.rest).length);
+    expect(spider.length).toBeLessThan(ITSY_BITSY_SPIDER.notes.length);
+  });
+
+  it('moves on when the right note is found', () => {
+    expect(advanceSequence(0, mary[0], mary)).toBe(1);
+    expect(advanceSequence(5, mary[5], mary)).toBe(6);
+  });
+
+  it('stays put on a wrong note, and costs nothing', () => {
+    // The rule that makes this practice rather than a test.
+    const wrong = mary[0] === 5 ? 6 : 5;
+    expect(advanceSequence(0, wrong, mary)).toBe(0);
+    expect(advanceSequence(3, wrong, mary)).toBe(3);
+  });
+
+  it('wraps at the end, because you will want it again', () => {
+    const last = mary.length - 1;
+    expect(advanceSequence(last, mary[last], mary)).toBe(0);
+  });
+
+  it('survives an out-of-range index rather than reading past the end', () => {
+    expect(advanceSequence(mary.length + 4, mary[4], mary)).toBe(5);
+    expect(advanceSequence(-1, mary[mary.length - 1], mary)).toBe(0);
+  });
+
+  it('does nothing at all when wandering', () => {
+    expect(songStepSequence(null)).toEqual([]);
+    expect(advanceSequence(0, 4, [])).toBe(0);
   });
 });

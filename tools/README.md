@@ -330,6 +330,11 @@ walk's own staff; leaving brings the road back. And **zero** encounters are
 recorded by exploring: a note the child picked is not evidence they can read
 one the game picked, so free play must not feed the learning model.
 
+It also covers **practice**: with a song chosen, free play becomes the tune
+as a list of positions to find. Mary reads back as `[2,1,0,1,2,2,2]` — E D C
+D E E E — a deliberately wrong note sounds without advancing, six right ones
+move six places, and the tune being practised is named on screen.
+
 It asks the scene where it actually put the steps rather than recomputing
 the layout — a check that re-derives the thing it is checking will agree
 with itself no matter how wrong both are.

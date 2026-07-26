@@ -12,6 +12,10 @@ Run counter: 35
   and still, every position labelled, tap one to hear it. The walk asks for
   timing; free play asks for nothing. Free play deliberately does not feed
   the learning model.
+- **With a song chosen, free play becomes practice**: the tune as positions
+  to find, a pip marking the next one, and a wrong note that sounds and
+  costs nothing. It is the only place in the game where *reading* the staff
+  — rather than remembering how the tune goes — is what moves you forward.
 
 - **The world got deeper and stopped looking tiled** (2026-07-26): a fourth
   parallax plane (a far ridge behind the scenery, at 0.19 vs scenery 0.45

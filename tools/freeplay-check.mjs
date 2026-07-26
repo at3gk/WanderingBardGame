@@ -119,6 +119,60 @@ if (enc.hit || enc.miss) {
   fail.push('free play fed the learning model — a note the child picked is not evidence they can read one the game picked');
 }
 
+// --- practice: the chosen song, one note at a time ------------------------
+// With a song chosen, free play stops being a ladder and becomes practice.
+// The rule that makes it practice rather than a test is that a wrong note
+// sounds and costs nothing — you simply have not moved on.
+await page.mouse.click(124, 24); // back to the road so the choice can be made
+await page.waitForTimeout(400);
+await page.evaluate(() => window.game.scene.scenes[0].chooseSong('mary'));
+await page.waitForTimeout(400);
+await page.mouse.click(124, 24); // and into practice
+await page.waitForTimeout(600);
+
+const yFor = (step) =>
+  page.evaluate((st) => {
+    const s = window.game.scene.scenes[0];
+    return Math.round(s.freeStaff.bottomY - st * s.freeStaff.stepGap);
+  }, step);
+
+const seq = await page.evaluate(() => window.game.scene.scenes[0].freeSequence.slice(0, 7));
+console.log('Mary as positions to find:', JSON.stringify(seq));
+// E D C D E E E — the opening of the tune, as staff steps.
+if (JSON.stringify(seq) !== JSON.stringify([2, 1, 0, 1, 2, 2, 2])) {
+  fail.push(`practice sequence is not the tune: ${JSON.stringify(seq)}`);
+}
+
+const wrongStep = seq[0] === 5 ? 6 : 5;
+await page.mouse.click(230, await yFor(wrongStep));
+await page.waitForTimeout(180);
+const afterWrong = await page.evaluate(() => window.game.scene.scenes[0].freeIndex);
+if (afterWrong !== 0) fail.push(`a wrong note advanced the tune (index ${afterWrong})`);
+
+for (let i = 0; i < 6; i++) {
+  const step = await page.evaluate(() => {
+    const s = window.game.scene.scenes[0];
+    return s.freeSequence[s.freeIndex];
+  });
+  await page.mouse.click(230, await yFor(step));
+  await page.waitForTimeout(140);
+}
+const afterSix = await page.evaluate(() => window.game.scene.scenes[0].freeIndex);
+console.log('index after one wrong note then six right ones:', afterSix);
+if (afterSix !== 6) fail.push(`six correct notes advanced to ${afterSix}, expected 6`);
+
+const titled = await page.evaluate(() => {
+  const t = window.game.scene.scenes[0].songTitleText;
+  return { text: t.text, alpha: Number(t.alpha.toFixed(2)) };
+});
+console.log('title while practising:', JSON.stringify(titled));
+if (titled.text !== 'Mary Had a Little Lamb' || titled.alpha === 0) {
+  fail.push('the tune being practised is not named on screen');
+}
+
+// Leave the choice as it found it, so the check is repeatable.
+await page.evaluate(() => window.game.scene.scenes[0].chooseSong(null));
+
 // --- and back to the road -------------------------------------------------
 await page.mouse.click(124, 24);
 await page.waitForTimeout(2600);

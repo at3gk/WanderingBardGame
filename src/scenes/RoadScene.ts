@@ -13,12 +13,14 @@ import { expandSong, Song, SongBeat, songDurationMs } from '../core/song';
 import { SONGS } from '../core/songs';
 import { homeBiomeOf, SongChoice, songForPass, songGridLayout } from '../core/songChoice';
 import {
+  advanceSequence,
   FREE_PLAY_HIGH_STEP,
   FREE_PLAY_LOW_STEP,
   freePlayStaff,
   FreePlayStaff,
   freePlayStepAt,
   freePlayStepY,
+  songStepSequence,
   stepsUsedBy,
 } from '../core/freePlay';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
@@ -321,6 +323,11 @@ export class RoadScene extends Phaser.Scene {
   private luteZone!: Phaser.GameObjects.Zone;
   private freeParts: Phaser.GameObjects.GameObject[] = [];
   private freeStaff: FreePlayStaff | null = null;
+  /** The chosen song as positions to find, and how far through it the child is. */
+  private freeSequence: number[] = [];
+  private freeIndex = 0;
+  /** The pip marking the note to look for, kept so it can be moved rather than rebuilt. */
+  private freeCursor: Phaser.GameObjects.Arc | null = null;
   private totalNotesGenerated = 0;
   private nextPassStartTimeMs = 0;
   private currentSongId: string | null = null;
@@ -934,7 +941,6 @@ export class RoadScene extends Phaser.Scene {
     this.markers = [];
     this.pendingAnnounce = [];
     this.currentSongId = null;
-    this.songTitleText.setAlpha(0);
     this.dismissHint();
     this.luteIcon.setTint(PICKER_CHOSEN_BG);
     this.setWalkChromeVisible(false);
@@ -946,6 +952,7 @@ export class RoadScene extends Phaser.Scene {
     this.mode = 'walk';
     this.luteIcon.setTint(MUTE_ICON_COLOR_ON);
     this.setWalkChromeVisible(true);
+    this.songTitleText.setAlpha(0);
     this.tearDownFreeStaff();
     // Pick the schedule back up from here rather than from wherever it
     // stopped, so the road does not resume with a backlog of notes that
@@ -994,7 +1001,8 @@ export class RoadScene extends Phaser.Scene {
     // marking the song's own notes turns it into "here are the ones in
     // Twinkle, try those" without adding an instruction nobody can read.
     // Wandering marks nothing — there is no one tune to point at.
-    const inSong = stepsUsedBy(this.songChoice ? SONGS.find((song) => song.id === this.songChoice) : null);
+    const chosen = this.songChoice ? SONGS.find((song) => song.id === this.songChoice) ?? null : null;
+    const inSong = stepsUsedBy(chosen);
 
     for (let step = FREE_PLAY_LOW_STEP; step <= FREE_PLAY_HIGH_STEP; step++) {
       const y = freePlayStepY(step, staff);
@@ -1036,6 +1044,37 @@ export class RoadScene extends Phaser.Scene {
       this.freeParts.push(label);
     }
 
+    // With a song chosen, free play stops being a ladder and becomes
+    // practice: the tune is a list of positions to find, one at a time, at
+    // whatever pace the child wants. Wandering leaves the sequence empty
+    // and every marked note simply stays marked.
+    // Name the tune being practised, and leave it up. On the road the
+    // title is an announcement that fades; here it is a label — a child
+    // hunting for the next note should not have to remember which song
+    // they picked, and there is no beat for it to distract from.
+    this.tweens.killTweensOf(this.songTitleText);
+    this.songTitleText.setText(chosen ? chosen.title : '');
+    this.songTitleText.setAlpha(chosen ? 0.6 : 0);
+
+    this.freeSequence = songStepSequence(chosen);
+    this.freeIndex = 0;
+    this.freeCursor = null;
+    if (this.freeSequence.length) {
+      const cursor = this.add.circle(30, freePlayStepY(this.freeSequence[0], staff), 6, PICKER_CHOSEN_BG, 1);
+      cursor.setDepth(FREEPLAY_DEPTH + 2);
+      this.freeCursor = cursor;
+      this.freeParts.push(cursor);
+      // A slow breath, so the eye finds it without it ever nagging.
+      this.tweens.add({
+        targets: cursor,
+        scale: { from: 1, to: 1.45 },
+        duration: 620,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+    }
+
     // Fade the staff up, for the same reason the picker fades: a
     // full-height ladder appearing between two frames reads as a glitch.
     for (const part of this.freeParts) {
@@ -1052,6 +1091,22 @@ export class RoadScene extends Phaser.Scene {
     if (!staff) return;
     const step = freePlayStepAt(y, staff);
     const semitone = semitoneAtStep(step);
+    // A wrong note sounds and costs nothing — you just have not moved on.
+    // There is no penalty to apply and no streak to break, so a child
+    // hunting around the right answer is doing exactly what this is for.
+    if (this.freeSequence.length) {
+      const next = advanceSequence(this.freeIndex, step, this.freeSequence);
+      const found = next !== this.freeIndex;
+      this.freeIndex = next;
+      if (this.freeCursor) {
+        this.freeCursor.setPosition(30, freePlayStepY(this.freeSequence[next], staff));
+        if (found) {
+          // A brief brightening on the note you were looking for, so
+          // finding it feels like finding it.
+          this.tweens.add({ targets: this.freeCursor, alpha: { from: 0.25, to: 1 }, duration: 260, ease: 'Quad.easeOut' });
+        }
+      }
+    }
     const name = noteNameAt(semitone) ?? '';
     this.audioEngine.pluck(semitone);
     this.strumLute();
