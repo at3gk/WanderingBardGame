@@ -294,6 +294,16 @@ by `wc -l` before anything else ran, reverted with `git checkout`. Match
 method spans by walking braces line-by-line, and check the line delta
 against what you expected before running any test.
 
+**The song title is proven to name the tune actually playing**
+(`tools/title-check.mjs`). Passes are queued a lookahead ahead of playback,
+so `announceSong` holds the title until the music reaches that song's first
+note — arithmetic with no test behind it, and getting it wrong would teach a
+false name to exactly the child who is paying attention. Every title lands
+within ~50ms of its own pass starting. Took three instrumentation attempts
+(marker-index slicing, then pairing schedule calls to titles by index, then
+finally matching each title to whichever pass was playing); the game was
+fine in all three.
+
 **The mobile gesture lockdown is asserted, not just written.**
 `index.html` has long disabled double-tap-to-zoom, pinch-zoom, the
 long-press callout and overscroll — rapid taps are the input model, so a

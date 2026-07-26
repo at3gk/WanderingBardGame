@@ -738,7 +738,12 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     page does not scroll. It was all CSS and a meta tag with nothing
     guarding it — the kind of thing a later edit removes silently, and
     double-tap zoom would ruin a tap-to-the-beat game. Mutation-checked.
-76. **Next.** Nothing queued. The open question the model cannot answer
+76. ~~**Check the song title names the tune actually playing.**~~ Done:
+    `tools/title-check.mjs`. Titles are queued a lookahead ahead of the
+    music, and the arithmetic holding them back had no test; naming the
+    wrong tune would actively mis-teach. Every title lands within ~50ms of
+    its own pass. Three instrumentation attempts, game fine in all three.
+77. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth
