@@ -66,154 +66,12 @@ roadmap task" — it is a model, a persistence layer, a songbook swap and a
 harness. That rule governs the scheduled autonomous runs; this was an
 interactive session with an explicit human direction to build the thing.
 
-## Previous status
-Third overnight session (2026-07-26) — **v0.3: the songbook**, plus the
-project's first real self-verification harness. The human's standing
-instruction this session: don't queue questions for a playtest, test it
-yourself.
-
-- **Tasks 45–46 — real songs.** The melody is no longer generated. Three
-  public-domain tunes, one per biome (Mary Had a Little Lamb / Twinkle
-  Twinkle / Ode to Joy), carry real note values. Note values needed no
-  input change: a half note simply takes two beats to arrive, so its
-  length is felt in the waiting — which also answers the old task 44
-  (tap-and-hold) by making it unnecessary.
-  Architecturally this *deleted* machinery: markers and audio are built
-  from one list of `SongBeat`s, so the staff and the sound can't disagree;
-  `patternByBiome`/`resolvePattern`/`generateBaseLoopSchedule` and the
-  batch-quantization caveat are gone. `LoopLayer` now carries a
-  `semitoneOffset` (melody / octave-below drone / octave-above sparkle)
-  instead of its own pattern.
-- **Task 47 — `tools/`.** A headless harness that plays the game by
-  itself (real CDP input; synthetic PointerEvents do *not* reach Phaser)
-  and asserts on meter, walk, page errors, marker/texture leaks, and —
-  the good part — **every pitch it hears**, by instrumenting
-  `createOscillator` and checking each frequency is a natural note in
-  tune to within a cent. A `proofsheet.mjs` bakes every note-value ×
-  staff-position combination for engraving review. See `tools/README.md`.
-- **Notation grew up.** `STAFF_LINE_GAP` 14 → 18 (one dial: heads are one
-  gap tall, as in real engraving) after the proof sheet showed letters
-  were cramped; bard dropped to ground offset 178 to clear the lower
-  ledger territory; clef scales off the staff gap.
-- **What the harness caught on its first runs**: hollow-head letters
-  merging into the ring (fixed by a thinner ring on a larger head), and
-  the fact that synthetic pointer events silently do nothing (a trap
-  worth not rediscovering — it's in the tools README).
-
-- **Tasks 48 + 51 — the songbook is nine tunes.** Each biome rotates
-  through a set of three instead of repeating one song:
-  village = Mary Had a Little Lamb / Hot Cross Buns / London Bridge,
-  forest = Twinkle Twinkle / Au Clair de la Lune / Frère Jacques (all in
-  G), riverside = Ode to Joy / Lightly Row / Jingle Bells (all an octave
-  up). Every song in a set stays inside its biome's region of the staff,
-  so the low → middle → upper curriculum survives the variety (enforced
-  by a spread test). Hint text now says "tap when a note reaches the
-  line" — the lane is a staff, so the instruction can name what the
-  player is looking at.
-- **Mobile bugs the desktop view hid** (found by shooting an iPhone
-  viewport, worth doing after any layout change): the hint clipped off
-  the left edge (now clamped so it can't), and played notes drifted over
-  the clef at the lane's left end (now they fade out past the hit line,
-  `EXIT_PROGRESS` 1.35 → 1.28 — which also just looks better).
-
-Verified: `npm test` 127 green (56 new), `npm run build` green, and two
-long autoplay runs (200s+) PASS. The 200s run is the good one: it crossed
-all three biomes and wrapped home, reporting **pitches heard = A B C D E
-F G** (all seven natural names, zero off-scale, in tune within a cent)
-and the running order
-`Buns → Mary → Buns → Mary → Twinkle → Au Clair → Ode → Lightly Row →
-Ode → Buns → Mary → Buns`
-— which verifies rotation, biome hand-off *and* the loop home in one
-shot. Meter held at 100 under perfect play; markers and textures both
-bounded (26 live markers, 49 textures steady).
-
-Note the harness bug that hid this at first: it analysed only the first
-400 recorded notes, so later biomes' pitches were invisible. Analysis now
-runs in-page over every note. Worth remembering — a verification tool
-that silently samples a prefix is worse than none.
-
-- **Task 49 — consolidation.** Drift check clean; STATE.md trimmed of
-  four stale per-run write-ups. A fourth biome was considered and
-  rejected with a reason worth keeping: naturals-only gives about two
-  usable octaves, and the three existing vignettes already own the low,
-  middle and upper thirds of it, so a fourth would either duplicate a
-  region (weakening the curriculum) or sit in unreadable ledger
-  territory. Rotation bought the variety instead.
-
-- **Task 50 — rests.** A written silence is now a symbol, not an empty
-  gap: `SongNote.rest` occupies its time, scrolls the staff, sounds
-  nothing, and is never tapped or missed — it's born `resolved: 'rest'`,
-  so it falls out of hit-finding and miss-detection by construction
-  rather than by special cases scattered around. Engraved by value
-  (whole hangs under the line above the middle, half sits on it, quarter
-  is the zigzag). *Hot Cross Buns* carries the first one. Autoplay still
-  holds a perfect meter with rests in the schedule, which is the proof
-  they really are un-tappable.
-
-- **Task 52 — signposts at transitions.** Promoted from the idea backlog:
-  a small silhouette signpost now spawns at the right edge the instant a
-  biome transition starts and scrolls by at the scenery band's own
-  parallax rate, per DESIGN.md's "world is cool and quiet" rule (neutral
-  silhouette color in every biome, no warm accent — it isn't a light
-  source). `core/biome.ts` gained `signpostDistanceAt(occurrenceIndex)`
-  (pure, tested, same cycle/wrap math as `biomeBlendAt`) so RoadScene just
-  loops calling it rather than duplicating the modulo arithmetic.
-  `RoadScene` reuses a fixed 2-image pool (transitions are 5000px apart;
-  a signpost takes far less than that to cross the screen at
-  `SCENERY_PARALLAX`, so at most one is ever visible) instead of an
-  unbounded array — pre-created right after the scenery band and before
-  the road in `create()` so display-list order alone gives correct paint
-  depth, no `setDepth` needed anywhere else in the scene. Verified with a
-  screenshot (transition distances temporarily shrunk via the established
-  far-state pattern, reverted after — `git diff --stat` confirmed clean):
-  the post-and-boards render correctly anchored to the road's top edge.
-
-**Next run: nothing is queued and nothing is blocked.** Read DESIGN.md's
-Pedagogy section first, then take ROADMAP task 53's suggestions or the
-idea backlog. Run `tools/autoplay.mjs` before and after any change to the
-schedule, the songbook or the audio — it catches what unit tests can't.
-
-## Previous status (second overnight session, 2026-07-25)
-**v0.2 direction set by the human: teach kids to read music.** DESIGN.md gained a full
-Pedagogy section (read it first — it is the contract for the v0.2 arc,
-ROADMAP tasks 41–44). Executed so far this session:
-
-- **Task 41 — notation core + C-major re-voice**: `src/core/notation.ts`
-  (semitone→letter, semitone→staff step, stem/ledger engraving rules; 10
-  tests) and the manifest re-voiced — root A3 → middle C (261.63 Hz),
-  every pattern naturals-only (village C D E G A / forest G A C5 D5 E5 /
-  riverside C D G A D5 — the biome curriculum), sparkle moved from +24
-  to +19 (octave+fifth, keeps naturals natural), plus manifest tests
-  enforcing no-accidentals and the middle-C root. 83 tests green.
-- **Task 42 — staff lane**: done. The lane is a real treble staff; markers
-  are engraved quarter notes (RenderTexture-baked per pitch: dark letter
-  in a tintable white head, correct stems, middle-C ledger), positioned
-  by `core/notation.ts` steps from the same batch-time biome pattern the
-  audio uses. Bard dropped to ground offset 150 so low notes clear the
-  cap; hit line spans the staff. Screenshot-verified across low/high
-  ranges (stem-up C-D-E with ledger; stem-down C5-D5-E5). Note for
-  future far-state checks: the 15s `BEAT_LOOKAHEAD_MS` delays pattern
-  switches ~15s past the visual crossfade — with throwaway shrunken
-  biome cycles you must also shrink `BEAT_BATCH_SIZE` and wait out the
-  lookahead to see a non-village pattern on screen.
-- **Bonus (backlog) — treble clef**: shipped. Stroked-arc stylization at
-  the staff's left edge, spiral correctly on the G line, 0.5 alpha so
-  notes stay dominant. The backlog gated it on "doesn't look wrong";
-  the screenshot check passed it.
-- **Task 43 — first-reader polish**: done. Mobile legibility confirmed
-  by iPhone-viewport screenshot (DPR scale-up makes letters large; no
-  change needed). Added the silent metronome (hit line brightens each
-  beat, fades to the next — beat-clock-derived, never out of step) so
-  pre-readers can feel the rhythm. PLAYTEST.md gained the round-3
-  kid-testing protocol. The v0.2 arc's buildable tasks (41–43) are all
-  shipped; task 44 (rhythm values) is a design question gated on an
-  explicit human yes.
-
-## Previous status (older sessions)
-Trimmed during the 2026-07-26 consolidation pass: the per-run write-ups
-for Runs 29–32 and the first overnight session duplicated their own
-`Recent runs` entries below and their ROADMAP done-entries. See those.
-
+## Previous status (v0.3 and earlier sessions)
+Trimmed during the 2026-07-26 consolidation. The v0.3 session (the
+songbook, note values, rests, and the `tools/` self-verification harness),
+the art-direction sessions, and every scheduled run before them are
+written up in their ROADMAP done-entries and the `Recent runs` log below.
+`tools/README.md` documents the harnesses.
 
 ## Process notes for future runs
 
@@ -232,7 +90,26 @@ for Runs 29–32 and the first overnight session duplicated their own
   untouched. Always run `git diff --stat` afterward to prove it.
 - **This session's PR cadence** (if working interactively again): commit
   per task on the working branch, PR to main, enable auto-merge (squash),
-  merge origin/main back after each squash lands, repeat.
+  merge origin/main back after each squash lands, repeat. Expect conflicts
+  in STATE/ROADMAP against scheduled runs landing in parallel — and expect
+  ROADMAP *task-number collisions*, since a scheduled run will happily
+  claim the next number while you hold it too. Renumber yours; don't
+  renumber theirs (theirs is already merged and referenced).
+- **Verify behaviour, not just green tests.** `tools/autoplay.mjs` plays
+  the game and checks every pitch it hears; `tools/learning-check.mjs`
+  plays *well and then badly* to prove the letter-fading model both fades
+  and restores. Run both after touching the schedule, the songbook, the
+  audio or the scaffold. Note that autoplay is a *perfect* player, so it
+  structurally cannot detect a broken return-on-struggle path — that is
+  exactly why the second harness exists.
+- **For a feature with real design risk, design it in a workflow first.**
+  The v0.4 learning model was specced by parallel agents (pedagogy model,
+  songbook familiarity audit, code-integration map) and then attacked by
+  two adversarial critics before a line was written. The critics earned it:
+  they found that a revealed letter would only be visible ~400ms *while
+  fading* (arithmetic I had not done), that a single miss could flip a
+  support band, and that the session cap was gross rather than net. All
+  three were real, and all three were cheaper to fix on paper.
 
 ## Recent runs
 - Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
