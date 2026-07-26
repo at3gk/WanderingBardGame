@@ -621,10 +621,18 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     harnesses green. `window.engraving` is now an explicit tooling handle
     in `main.ts` — `proofsheet.mjs` used to reach a private method and
     broke silently when it moved.
-    **Next candidates if another consolidation run is due**: the scenery,
-    star-field and signpost texture bakers (~350 more lines) are the same
-    shape of extraction and would take the scene under 1200.
-63. **Next.** Nothing queued. The open question the model cannot answer
+63. ~~**Consolidation, second chunk: the scenery bakers.**~~ Done:
+    `src/render/scenery.ts` takes the road, biome silhouette, water-glint,
+    star-field and signpost textures. RoadScene 1485 → 1325; across both
+    chunks 1584 → 1325. Tile dimensions are exported from the module rather
+    than duplicated, since the scene places what the module draws. Verified
+    by a new `tools/scenery-sheet.mjs` that bakes all ten world textures
+    into one sheet — byte-identical across the move, as was the proof
+    sheet, with all eight harnesses green.
+    **Next candidate if another consolidation run is due**: `createBard`
+    and `createStyleTextures` (~250 lines) are the last big drawing blocks
+    in the scene and would take it near 1000.
+64. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth

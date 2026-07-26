@@ -237,6 +237,27 @@ harnesses pass. Two things worth keeping from how that went:
   that nothing changed about an image nothing rewrote. Third instrument bug
   of the session, same lesson each time.
 
+**Consolidation, second chunk: the scenery too** (`src/render/scenery.ts`).
+The road, biome silhouette, water-glint, star-field and signpost bakers
+moved out the same way: **RoadScene 1485 → 1325**, and across both chunks
+**1584 → 1325** with 359 lines now living in two focused render modules.
+The tile dimensions are exported from the module rather than duplicated,
+because the scene has to *place* what the module *draws* and two copies of
+those numbers would be free to drift apart.
+
+Verified by a new `tools/scenery-sheet.mjs`, which bakes all ten world
+textures into one labelled sheet — a live screenshot only ever shows the
+biome you happen to be walking through. Sheet **byte-identical** across the
+move (md5 `0126afb…`), proof sheet still byte-identical too, and all eight
+harnesses green.
+
+Note for whoever refactors next: the first attempt at this extraction used
+a regex to find method bodies and silently removed **478 lines instead of
+163** — the optional doc-comment group matched a comment far above. Caught
+by `wc -l` before anything else ran, reverted with `git checkout`. Match
+method spans by walking braces line-by-line, and check the line delta
+against what you expected before running any test.
+
 Deviation from CLAUDE.md worth flagging: this is more than "exactly ONE
 roadmap task" — it is a model, a persistence layer, a songbook swap and a
 harness. That rule governs the scheduled autonomous runs; this was an
