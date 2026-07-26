@@ -286,6 +286,15 @@ by `wc -l` before anything else ran, reverted with `git checkout`. Match
 method spans by walking braces line-by-line, and check the line delta
 against what you expected before running any test.
 
+**The mobile gesture lockdown is asserted, not just written.**
+`index.html` has long disabled double-tap-to-zoom, pinch-zoom, the
+long-press callout and overscroll — rapid taps are the input model, so a
+browser reading two quick taps as "zoom" fights the game. It was all CSS and
+a meta tag with nothing checking it, which is exactly what a later edit
+strips without noticing. `pillar-check` now reads the computed result at
+every viewport, plus the observable consequence: the page must not scroll.
+Mutation-checked.
+
 **Backgrounding is mechanised, and Phaser's spare AudioContext is gone**
 (`tools/backgrounding-check.mjs`). "Audio resume after backgrounding" had
 been a *human* playtest item since round 1; it did not need to be. Forcing
