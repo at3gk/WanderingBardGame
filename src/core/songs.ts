@@ -191,14 +191,71 @@ export const JINGLE_BELLS: Song = {
 };
 
 /**
+ * This Old Man — traditional, 8 bars of 4/4, in C. Also the tune of
+ * Barney's "I love you", which is why almost every child already has it.
+ * Bars 5–6 happen to walk the C-major pentascale straight up with the
+ * tonic hammered before it — the cleanest possible drill for the village's
+ * five notes, hidden inside a song they can already sing.
+ */
+export const THIS_OLD_MAN: Song = {
+  id: 'oldman',
+  title: 'This Old Man',
+  beatsPerBar: 4,
+  notes: [
+    { semitone: 7, beats: 1 }, { semitone: 4, beats: 1 }, { semitone: 7, beats: 2 },
+    { semitone: 7, beats: 1 }, { semitone: 4, beats: 1 }, { semitone: 7, beats: 2 },
+    { semitone: 9, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 5, beats: 1 }, { semitone: 4, beats: 1 },
+    { semitone: 2, beats: 1 }, { semitone: 4, beats: 1 }, { semitone: 5, beats: 1 },
+    { semitone: 4, beats: 0.5 }, { semitone: 5, beats: 0.5 },
+    { semitone: 7, beats: 1 }, { semitone: 0, beats: 1 },
+    { semitone: 0, beats: 0.5 }, { semitone: 0, beats: 0.5 }, { semitone: 0, beats: 1 },
+    { semitone: 0, beats: 0.5 }, { semitone: 2, beats: 0.5 }, { semitone: 4, beats: 0.5 },
+    { semitone: 5, beats: 0.5 }, { semitone: 7, beats: 2 },
+    { semitone: 7, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 5, beats: 1 },
+    { semitone: 4, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 0, beats: 2 },
+  ],
+};
+
+/**
+ * The Itsy Bitsy Spider — traditional, 14 bars of 4/4, an octave up. Its
+ * phrase-ending rests are the songbook's clearest use of written silence:
+ * the spider pauses, and so does the player.
+ */
+export const ITSY_BITSY_SPIDER: Song = {
+  id: 'spider',
+  title: 'The Itsy Bitsy Spider',
+  beatsPerBar: 4,
+  notes: [
+    { semitone: 12, beats: 1 }, { semitone: 12, beats: 1 }, { semitone: 12, beats: 1 }, { semitone: 12, beats: 1 },
+    { semitone: 14, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 16, beats: 2 },
+    { semitone: 16, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 12, beats: 1 },
+    { semitone: 14, beats: 0.5 }, { semitone: 16, beats: 0.5 },
+    { semitone: 12, beats: 3 }, { semitone: 0, beats: 1, rest: true },
+    { semitone: 16, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 17, beats: 1 }, { semitone: 19, beats: 1 },
+    { semitone: 19, beats: 1 }, { semitone: 17, beats: 1 }, { semitone: 16, beats: 1 },
+    { semitone: 17, beats: 0.5 }, { semitone: 19, beats: 0.5 },
+    { semitone: 16, beats: 3 }, { semitone: 0, beats: 1, rest: true },
+    { semitone: 12, beats: 1 }, { semitone: 12, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 16, beats: 1 },
+    { semitone: 16, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 12, beats: 1 },
+    { semitone: 14, beats: 0.5 }, { semitone: 16, beats: 0.5 },
+    { semitone: 12, beats: 3 }, { semitone: 0, beats: 1, rest: true },
+    { semitone: 12, beats: 1 }, { semitone: 12, beats: 1 }, { semitone: 12, beats: 1 }, { semitone: 12, beats: 1 },
+    { semitone: 12, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 16, beats: 1 },
+    { semitone: 16, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 12, beats: 1 },
+    { semitone: 14, beats: 0.5 }, { semitone: 16, beats: 0.5 },
+    { semitone: 12, beats: 4 },
+  ],
+};
+
+/**
  * Each biome's set, played in rotation so a long walk isn't one tune on
  * repeat. Every song in a set lives in the same region of the staff, so the
  * curriculum (low → middle → upper) survives the variety.
  */
 export const SONGS_BY_BIOME: Record<string, Song[]> = {
-  village: [MARY_HAD_A_LITTLE_LAMB, HOT_CROSS_BUNS, ROW_YOUR_BOAT],
+  village: [MARY_HAD_A_LITTLE_LAMB, HOT_CROSS_BUNS, ROW_YOUR_BOAT, THIS_OLD_MAN],
   forest: [TWINKLE_TWINKLE, LONDON_BRIDGE, ARE_YOU_SLEEPING],
-  riverside: [ODE_TO_JOY, JINGLE_BELLS, OLD_MACDONALD],
+  riverside: [ODE_TO_JOY, JINGLE_BELLS, OLD_MACDONALD, ITSY_BITSY_SPIDER],
 };
 
 export const SONGS: Song[] = Object.values(SONGS_BY_BIOME).flat();
