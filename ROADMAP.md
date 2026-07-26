@@ -743,7 +743,13 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     music, and the arithmetic holding them back had no test; naming the
     wrong tune would actively mis-teach. Every title lands within ~50ms of
     its own pass. Three instrumentation attempts, game fine in all three.
-77. **Next.** Nothing queued — and after the 2026-07-26 session that is a
+77. ~~**A real soak.**~~ Done: 25 minutes of continuous autoplay, the
+    longest run yet — 3.2 full dusk cycles and ~9.6 biome loops. No
+    degradation at all: fps flat end to end, textures plateaued at 118,
+    markers peaked at 70, 2110 of 2115 taps landed, all eleven songs
+    appeared. The "child leaves it running" case, which a seven-minute run
+    cannot reach.
+78. **Next.** Nothing queued — and after the 2026-07-26 session that is a
     meaningful statement rather than an empty one, so here is where to look.
 
     **First, check the blockers.** Both items under *Blocked on human* in
