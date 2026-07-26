@@ -132,6 +132,34 @@ for (const vp of VIEWPORTS) {
   const tapWorked = await page.evaluate(() => window.game.scene.scenes[0].hintShown === false);
   if (!tapWorked) fail.push(`${vp.name}: a tap in the lower half did not register`);
 
+  // Mobile gesture lockdown. index.html disables double-tap-to-zoom,
+  // pinch-zoom, the long-press callout and overscroll, because rapid taps
+  // ARE the input model here — a browser that treats two quick taps as
+  // "zoom" fights the game instead of playing it. All of that is CSS and a
+  // meta tag, i.e. exactly the sort of thing a later edit removes without
+  // noticing. Assert the computed result rather than the source.
+  const touch = await page.evaluate(() => {
+    const el = document.getElementById('game');
+    const cs = getComputedStyle(el);
+    const canvas = el.querySelector('canvas');
+    return {
+      touchAction: cs.touchAction,
+      userSelect: cs.userSelect || cs.webkitUserSelect,
+      overscroll: getComputedStyle(document.documentElement).overscrollBehavior,
+      viewportMeta: document.querySelector('meta[name=viewport]')?.getAttribute('content') ?? '',
+      canvasDisplay: canvas ? getComputedStyle(canvas).display : null,
+      // The observable consequence of getting all of it right: the page
+      // itself does not scroll.
+      pageScrolls: document.documentElement.scrollHeight > window.innerHeight + 1,
+    };
+  });
+  if (touch.touchAction !== 'none') fail.push(`${vp.name}: touch-action is "${touch.touchAction}" — double-tap zoom will fight the beat`);
+  if (touch.userSelect !== 'none') fail.push(`${vp.name}: user-select is "${touch.userSelect}" — long-press will select text mid-play`);
+  if (!/user-scalable\s*=\s*no/.test(touch.viewportMeta)) fail.push(`${vp.name}: viewport meta lost user-scalable=no`);
+  if (touch.overscroll !== 'none') fail.push(`${vp.name}: overscroll-behavior is "${touch.overscroll}" — pull-to-refresh can fire mid-play`);
+  if (touch.canvasDisplay !== 'block') fail.push(`${vp.name}: canvas display is "${touch.canvasDisplay}" — the phantom-scrollbar gap is back`);
+  if (touch.pageScrolls) fail.push(`${vp.name}: the page scrolls (${vp.height}px viewport) — the game should exactly fill it`);
+
   // CLAUDE.md pillar 3: "small bundle (<5 MB)".
   const MB = 1024 * 1024;
   if (transferredBytes > 5 * MB) {

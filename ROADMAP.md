@@ -732,7 +732,13 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     human. Turned up a real find: Phaser's sound manager was holding a
     second, unused AudioContext open all session, now disabled with
     `audio: { noAudio: true }` since every sound here is hand-rolled.
-75. **Next.** Nothing queued. The open question the model cannot answer
+75. ~~**Assert the mobile gesture lockdown.**~~ Done: `pillar-check` reads
+    the computed `touch-action`, `user-select`, `overscroll-behavior`,
+    canvas `display` and the viewport meta at every viewport, and checks the
+    page does not scroll. It was all CSS and a meta tag with nothing
+    guarding it — the kind of thing a later edit removes silently, and
+    double-tap zoom would ruin a tap-to-the-beat game. Mutation-checked.
+76. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth
