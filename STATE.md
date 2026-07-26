@@ -812,10 +812,14 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   confirm it end-to-end. `npm test` 215 green (no game code touched),
   build green, quick suite 9/9 green on a clean local re-run (one
   `dusk-check` flake on a loaded run didn't reproduce — see task 79).
-  **Needs human/next-run attention**: watch whether
-  `headless-checks.yml`'s first real run on `main` actually goes green: it
-  installs Playwright fresh and downloads Chromium on a stock GitHub-hosted
-  runner, which this session had no way to rehearse.
+  **Confirmed (2026-07-26, same day, follow-up check)**: `headless-checks.yml`'s
+  first-ever run (on the merge commit, run #1) came back green on a real
+  GitHub-hosted runner — Playwright installed fresh, Chromium downloaded
+  fresh, all 9 quick checks passed
+  (https://github.com/at3gk/WanderingBardGame/actions/runs/30210381321).
+  The step itself succeeded (not just masked by `continue-on-error`), so
+  the portable-browser-resolution fix holds outside this environment too.
+  Nothing further needed here.
 
 ## Needs human playtest
 

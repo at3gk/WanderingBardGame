@@ -826,11 +826,11 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     **Second, if a playtest answer has arrived**, fold it in — see task 79
     for the one open dial (`SESSION_GAIN_CAP`).
 
-    **Third, watch `.github/workflows/headless-checks.yml`'s first real
-    run** (task 79). If it comes back red on a merge that the local quick
-    suite passed, that mismatch — CI environment vs. this one — is the
-    task, not a new feature. If it's been green for a few runs, consider
-    promoting it from `continue-on-error` to a real gate.
+    **Third, `.github/workflows/headless-checks.yml`'s first run is in**
+    (task 79) — green, all 9 quick checks passed on a real GitHub-hosted
+    runner (see STATE.md). Keep an eye on it for a few more merges before
+    considering promoting it from `continue-on-error` to a real gate; one
+    green run isn't a pattern yet.
 
     **Fourth, the idea backlog below.** Only sharper mobile rendering is
     left, and it still needs a real phone to judge the fill-rate trade.
