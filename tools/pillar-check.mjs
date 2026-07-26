@@ -13,12 +13,20 @@ import { chromium } from 'playwright';
  */
 
 const VIEWPORTS = [
+  // 320 is the narrowest screen still worth supporting (iPhone SE 1st gen,
+  // and the width most CSS baselines treat as the floor). The odd aspect
+  // ratios below it are not devices so much as the shapes a browser window
+  // can actually take — a short landscape phone with chrome showing, a tall
+  // narrow split-screen, a wide desktop window dragged short.
+  { name: 'narrow 320', width: 320, height: 568 },
   { name: 'iPhone SE', width: 375, height: 667 },
   { name: 'iPhone 12', width: 390, height: 664 },
   { name: 'Pixel 5', width: 393, height: 727 },
   { name: 'iPhone 12 landscape', width: 664, height: 390 },
   { name: 'iPad portrait', width: 768, height: 1024 },
   { name: 'desktop', width: 900, height: 600 },
+  { name: 'tall narrow', width: 360, height: 900 },
+  { name: 'wide short', width: 1440, height: 560 },
 ];
 
 const browser = await chromium.launch({
