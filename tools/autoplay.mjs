@@ -39,6 +39,12 @@ await page.waitForTimeout(500);
 
 // Record the running order of tunes, so a long walk can be checked for
 // actually rotating through the songbook rather than looping one song.
+//
+// Also count outcomes *cumulatively*. Markers are culled once they scroll
+// off, so counting `resolved === 'hit'` over the live marker list at the
+// end reports whatever happened in the last second — a number that looks
+// like a total and isn't. `recordEncounter` is the one choke point both
+// outcomes pass through, so hooking it is the honest count.
 await page.evaluate(() => {
   const scene = window.game.scene.scenes[0];
   window.__songs = [];
@@ -46,6 +52,13 @@ await page.evaluate(() => {
   scene.announceSong = (song) => {
     if (window.__songs[window.__songs.length - 1] !== song.title) window.__songs.push(song.title);
     return origAnnounce(song);
+  };
+
+  window.__outcomes = { hit: 0, miss: 0 };
+  const origRecord = scene.recordEncounter.bind(scene);
+  scene.recordEncounter = (step, outcome, walking) => {
+    window.__outcomes[outcome] = (window.__outcomes[outcome] ?? 0) + 1;
+    return origRecord(step, outcome, walking);
   };
 });
 
@@ -64,7 +77,16 @@ while (Date.now() < deadline) {
     const next = scene.markers.find((m) => m.resolved === null && m.beat.hitTimeMs > now - 40);
     return next ? next.beat.hitTimeMs - now : 50;
   });
-  if (waitMs > 2) await page.waitForTimeout(Math.min(waitMs, 400));
+  // Wait in slices so the page stays responsive, but only tap once the next
+  // note is actually due. Tapping at the end of every slice regardless (the
+  // old behaviour) fired roughly one tap into empty air for every real one,
+  // which made the tap count meaningless as a denominator — and modelled a
+  // player who mashes rather than one who plays.
+  if (waitMs > 400) {
+    await page.waitForTimeout(400);
+    continue;
+  }
+  if (waitMs > 2) await page.waitForTimeout(waitMs);
   await page.mouse.click(600, 520);
   taps++;
 
@@ -87,9 +109,8 @@ while (Date.now() < deadline) {
 }
 
 const result = await page.evaluate(() => {
-  const scene = window.game.scene.scenes[0];
-  const hits = scene.markers.filter((m) => m.resolved === 'hit').length;
-  const misses = scene.markers.filter((m) => m.resolved === 'miss').length;
+  const hits = window.__outcomes.hit;
+  const misses = window.__outcomes.miss;
   // Analyse *every* pitch in the page — slicing a prefix here would only
   // ever check the first biome's tune.
   const NAMES = ['C', null, 'D', null, 'E', 'F', null, 'G', null, 'A', null, 'B'];
@@ -126,6 +147,18 @@ if (last.coins < SECONDS * 2) fail.push(`only ${last.coins} coins in ${SECONDS}s
 // for pathological slowness, not a real-device frame-rate measurement.
 if (last.fps < 12) fail.push(`fps ${last.fps}`);
 if (result.taps < 10) fail.push(`autoplay only tapped ${result.taps} times`);
+// The whole point of the tool is that it *plays*. Without this, a change
+// that stopped registering taps entirely would still pass: the meter and
+// coin checks are indirect, and a scene that never resolved a note would
+// simply never drain the meter. Autoplay taps on the beat, so nearly
+// everything should land; allow slack for the first note's runway and for
+// notes tapped during a song changeover.
+if (result.hits < result.taps * 0.8) {
+  fail.push(`only ${result.hits} hits from ${result.taps} taps — taps are not landing`);
+}
+if (result.misses > result.hits * 0.1) {
+  fail.push(`${result.misses} misses against ${result.hits} hits under on-beat play`);
+}
 if (result.total === 0) fail.push('no audio scheduled at all');
 if (errors.length) fail.push(`page errors: ${errors.join(' | ')}`);
 
