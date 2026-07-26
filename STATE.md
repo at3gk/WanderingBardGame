@@ -286,6 +286,18 @@ by `wc -l` before anything else ran, reverted with `git checkout`. Match
 method spans by walking braces line-by-line, and check the line delta
 against what you expected before running any test.
 
+**The no-fail promise is now asserted** (`tools/nofail-check.mjs`). Every
+other harness plays well or plays chaotically; none checked what happens to
+a child who simply is not managing. Tapping once and then doing nothing for
+45s: the meter floors at 0 and the bard stops, but the scene stays active,
+notes keep arriving so the child can rejoin whenever they like, the missed
+note is mauve (`0x8A5A5A` — red channel nowhere near dominant, per
+DESIGN.md's "nothing flashes red"), the only text on screen is the song
+title and the readouts, and nothing sounds on a miss. That last one is
+asserted via an oscillator-rate ceiling: the tune plays on regardless of
+the meter (deliberately — it is how a lost child hears where they are), so
+the test allows three layers at tempo and would catch a buzzer added on top.
+
 **Deep night proven not to dim the teaching surface**
 (`tools/dusk-check.mjs`). The art direction promises the dusk cycle darkens
 the world but never the bard or the notation; nothing asserted it. At the
