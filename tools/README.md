@@ -35,7 +35,7 @@ node /path/to/repo/tools/verify-all.mjs          # everything, ~25 min
 node /path/to/repo/tools/verify-all.mjs quick    # the fast four, ~4 min
 ```
 
-There are fourteen checks now, several of which take minutes, and a run that has
+There are fifteen checks now, several of which take minutes, and a run that has
 to remember all of them will sooner or later remember only the fast ones.
 
 It runs them **one at a time on purpose.** Several Chromium instances
@@ -159,6 +159,28 @@ hardware is orders of magnitude tighter.
 ever picked up again, measure a note against **its own** scheduled
 oscillator, captured at scheduling time — not by matching lists afterwards.
 
+## `backgrounding-check.mjs`
+
+What happens when a phone gets put down: app switch, screen lock, an
+incoming call. Mobile browsers suspend the AudioContext, and without a
+resume the game plays on in silence forever — which, for a game whose whole
+teaching premise is *"the tune you already know carries you"*, is a quiet
+and total failure.
+
+PLAYTEST.md carried this as a **human** item since round 1. It does not need
+to be: the suspend can be forced and the resume observed. Result —
+`running -> suspended -> running`, the learning record force-written on the
+way out, and 126 oscillators over 20s of play after returning, meter back to
+100. What still needs a real device is whether iOS suspends in ways
+Chromium does not; this narrows the question rather than answering all of it.
+
+Writing it turned up something real: **Phaser's sound manager was creating a
+second, unused AudioContext** and holding it open for the whole session. The
+game's audio is all hand-rolled and never touches Phaser's, so it is
+disabled now (`audio: { noAudio: true }`). The first version of this check
+grabbed that context, watched Phaser resume it, and concluded the game had
+failed to suspend.
+
 ## `nofail-check.mjs [seconds]`
 
 The game's central emotional promise, asserted rather than assumed.
@@ -224,9 +246,14 @@ beat — the button sits over the playfield, so a stray press must not cost
 the child a note — that the walk keeps earning while muted, that unmuting
 restores the gain, and that the spacebar plays a beat exactly like a tap.
 
-Result, 2026-07-26: all good. Mute takes master gain 1 → 0 and back, the
-meter is untouched by pressing it (58 → 58), and the spacebar landed 19
-hits with 0 misses.
+Result, 2026-07-26: all good. Mute takes master gain 1 → 0 and back, pressing
+it scores no beat, and the spacebar landed 18 hits with 0 misses.
+
+The "costs no beat" assertion watches the **scoring path**, not the meter.
+Watching the meter across the press was the first version and it is flaky —
+notes keep arriving, so a beat can be missed purely because time passed
+between the two readings. It passed by luck once and then failed against a
+game that was perfectly fine.
 
 ## `mash-check.mjs [seconds]`
 

@@ -725,7 +725,14 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     sums everything the page pulls over the wire and asserts CLAUDE.md's
     "<5 MB". Currently 1.19 MB. Measured as what a phone downloads rather
     than as dist/ on disk, and mutation-checked at a 1 MB threshold.
-74. **Next.** Nothing queued. The open question the model cannot answer
+74. ~~**Mechanise the backgrounding playtest item.**~~ Done:
+    `tools/backgrounding-check.mjs` forces the suspend and observes the
+    resume — `running → suspended → running`, progress force-saved on the
+    way out, sound and meter restored on return. One fewer item needing a
+    human. Turned up a real find: Phaser's sound manager was holding a
+    second, unused AudioContext open all session, now disabled with
+    `audio: { noAudio: true }` since every sound here is hand-rolled.
+75. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth

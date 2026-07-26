@@ -286,6 +286,22 @@ by `wc -l` before anything else ran, reverted with `git checkout`. Match
 method spans by walking braces line-by-line, and check the line delta
 against what you expected before running any test.
 
+**Backgrounding is mechanised, and Phaser's spare AudioContext is gone**
+(`tools/backgrounding-check.mjs`). "Audio resume after backgrounding" had
+been a *human* playtest item since round 1; it did not need to be. Forcing
+the suspend and observing the resume gives `running → suspended → running`,
+with the learning record force-written on the way out and sound plus meter
+fully restored on return. A real device is still needed for whether iOS
+suspends in ways Chromium does not — the question is narrowed, not closed.
+
+Writing it found something real: **Phaser's sound manager was creating a
+second, unused AudioContext** and holding it open all session. Every sound
+here is hand-rolled Web Audio, so it is disabled now
+(`audio: { noAudio: true }` in `main.ts`) — one fewer idle claim on a
+phone's audio hardware. The first version of the check grabbed *that*
+context, watched Phaser resume it, and concluded the game had failed to
+suspend.
+
 **The bundle-size pillar has a number behind it now.** CLAUDE.md asks for
 "small bundle (<5 MB)" and nothing measured it. `pillar-check` now sums
 everything the page pulls over the wire — what a phone actually downloads
