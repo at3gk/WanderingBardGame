@@ -923,7 +923,15 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     starting again. The picker is closed rather than re-laid-out — a
     rotation is a big enough change of context that reappearing in a new
     shape is more startling than being dismissed, and it is one tap back.
-89. **Next.** Nothing queued.
+89. ~~**Ground the bard.**~~ Done: a contact shadow, the single cheapest
+    thing that stops a character reading as pasted on top of the world
+    rather than standing in it. It tightens and fades as he rises on each
+    step and spreads when he lands, which is what gives a walk weight —
+    and it is derived from the upper body's own bob rather than its own
+    timer, so it can never fall out of step with the legs. Deliberately
+    not black: nothing else in this world is black, and a black smudge
+    under a warm little figure reads as a hole in the road.
+90. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked task 79: both remain blocked
     (forest-song fetch still 403s everywhere; the GitHub MCP toolset still
