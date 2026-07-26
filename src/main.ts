@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { noteTexture, restTexture } from './render/engraving';
 import { RoadScene } from './scenes/RoadScene';
 
 const game = new Phaser.Game({
@@ -19,3 +20,11 @@ const game = new Phaser.Game({
 // notation. Phaser keeps no global registry of its own, and a read-only
 // handle costs nothing at runtime.
 (window as unknown as { game: Phaser.Game }).game = game;
+
+// The engraving functions, for the same reason. tools/proofsheet.mjs bakes
+// every note-value x staff-position the songbook can produce and checks
+// them in one grid; it has to call the *same* code the game calls, or the
+// proof sheet stops being proof. It used to reach a private method on the
+// scene, which quietly broke the moment the engraving moved to its own
+// module — so the handle is explicit now rather than incidental.
+(window as unknown as { engraving: unknown }).engraving = { noteTexture, restTexture };

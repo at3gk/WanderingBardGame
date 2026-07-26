@@ -214,6 +214,29 @@ own CPU contention from running three Chromium instances at once — a
 reminder to run long measurements alone. `autoplay.mjs` now asserts the
 texture count plateaus.
 
+**Consolidation: the engraving has its own module** (`src/render/engraving.ts`,
+2026-07-26). RoadScene had grown to 1584 lines — 46% of the codebase in one
+file, which is a real risk for autonomous runs that have to read it before
+touching it. The note and rest glyph baking moved out with its geometry
+constants: 1584 → 1485 lines in the scene, 156 in a module that has no
+access to game state and so cannot start depending on it. A glyph is a pure
+function of (name, position, note value), which is exactly what lets
+`proofsheet.mjs` check every combination at once.
+
+Proved behaviour-preserving rather than assumed: the proof sheet is
+**byte-identical** before and after (md5 `fbc8094…`), and all seven
+harnesses pass. Two things worth keeping from how that went:
+
+- The refactor **broke `proofsheet.mjs`**, which called a private method on
+  the scene. The engraving functions are now exposed on `window.engraving`
+  from `main.ts`, deliberately and with a comment, instead of tooling
+  reaching into scene internals.
+- The first "identical" result was a **false pass**: the script had crashed,
+  so the comparison ran against the previous run's leftover PNG. Delete the
+  artefact before regenerating it — otherwise a screenshot diff confirms
+  that nothing changed about an image nothing rewrote. Third instrument bug
+  of the session, same lesson each time.
+
 Deviation from CLAUDE.md worth flagging: this is more than "exactly ONE
 roadmap task" — it is a model, a persistence layer, a songbook swap and a
 harness. That rule governs the scheduled autonomous runs; this was an

@@ -54,7 +54,7 @@ const info = await page.evaluate(() => {
     SEMIS.forEach((semi, ci) => {
       const semitone = semi + row.octave;
       const step = Math.floor(semitone / 12) * 7 + SEMIS.indexOf(semitone % 12);
-      const key = scene.noteTexture(NAMES[ci], step, row.beats);
+      const key = window.engraving.noteTexture(scene, NAMES[ci], step, row.beats);
       const img = scene.add.image(200 + ci * 55, y + (6 - step) * 9, key);
       img.setOrigin(19 / 42, (step >= 6 ? 18 : 60 - 18) / 60);
       img.setTint(0xe8d9c0);

@@ -247,9 +247,17 @@ hollow heads, stem direction flipping at the middle line, stemless whole
 notes, flags, augmentation dots, ledger lines, and letter legibility — all
 at once, deterministically, instead of trying to catch moving notes.
 
-It reaches into the live scene through `window.game` (exposed in
-`src/main.ts`) and calls the scene's own texture baker, so what it shows is
+It reaches into the live page through `window.engraving` (exposed in
+`src/main.ts`) and calls the game's own texture baker, so what it shows is
 exactly what the game draws.
+
+It used to reach a *private method* on the scene instead, which broke
+silently the moment the engraving moved to `src/render/engraving.ts`. Worth
+remembering how that nearly passed: the comparison was made against a
+`proofsheet.png` left over from the previous run, so the file matched
+byte-for-byte while the script had actually crashed. **Delete the artefact
+before regenerating it**, or a screenshot diff will happily confirm that
+nothing changed about an image nothing rewrote.
 
 ## `shot.mjs [prefix] [settleMs]`
 

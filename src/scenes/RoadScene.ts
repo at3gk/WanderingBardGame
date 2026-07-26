@@ -16,7 +16,15 @@ import { accumulateDistance } from '../core/distance';
 import { Biome, BIOMES, biomeBlendAt, BIOME_TRANSITIONS, signpostDistanceAt } from '../core/biome';
 import { duskShadeAt, nightnessAt } from '../core/dusk';
 import { accumulateCoins } from '../core/coins';
-import { needsLedger, noteNameAt, staffStepAt, stemDown } from '../core/notation';
+import { noteNameAt, staffStepAt, stemDown } from '../core/notation';
+import {
+  NOTE_HEAD_INSET_Y,
+  NOTE_ORIGIN_X,
+  NOTE_TEX_H,
+  noteTexture,
+  restTexture,
+  STAFF_LINE_GAP,
+} from '../render/engraving';
 import { displaySupport, encounter, leadMsFor, ScaffoldState, supportFor } from '../core/scaffold';
 import { loadScaffold, saveScaffold } from '../core/scaffoldStorage';
 
@@ -48,21 +56,10 @@ const NOTE_TINT_MISS = 0x8a5a5a;
 // (heads are one gap tall, as in real engraving), so this is the single
 // dial for notation legibility. 18px keeps the whole staff inside a phone
 // viewport while making letters comfortably readable.
-const STAFF_LINE_GAP = 18;
 const STAFF_HALF_GAP = STAFF_LINE_GAP / 2;
 const STAFF_MIDDLE_STEP = 6;
 const STAFF_LINE_STEPS = [2, 4, 6, 8, 10];
 const STAFF_LINE_ALPHA = 0.22;
-const NOTE_LETTER_STYLE = { fontFamily: 'sans-serif', fontSize: '15px', fontStyle: 'bold', color: '#241a20' };
-// A hollow (half/whole) head shows the sky through it, so its letter is
-// drawn light instead of dark — readable either way, under any tint.
-const NOTE_LETTER_STYLE_HOLLOW = { fontFamily: 'sans-serif', fontSize: '13px', fontStyle: 'bold', color: '#ffffff' };
-const NOTE_TEX_W = 42;
-const NOTE_TEX_H = 60;
-const NOTE_HEAD_X = 19;
-const NOTE_HEAD_INSET_Y = 18;
-const NOTE_STEM_LEN = 32;
-const NOTE_ORIGIN_X = NOTE_HEAD_X / NOTE_TEX_W;
 const SONG_TITLE_Y = 52;
 const SONG_TITLE_HOLD_MS = 2600;
 const HIT_LINE_HEIGHT = 120;
@@ -908,125 +905,6 @@ export class RoadScene extends Phaser.Scene {
   }
 
   /**
-   * Engraved note texture for one named staff position and written length
-   * (ROADMAP tasks 42, 46), baked once per distinct combination. Everything
-   * a beginner's book would show is here and correct: filled head for a
-   * quarter or shorter, hollow for a half, hollow-and-stemless for a whole,
-   * a flag on an eighth, an augmentation dot after a dotted value, a stem
-   * up below the middle line and down at or above it, and a ledger line
-   * where the pitch needs one (middle C being the classic).
-   *
-   * The letter name sits in the head — dark on a filled head, light inside
-   * a hollow one, so it stays readable either way and under any tint.
-   * Baked via RenderTexture because Graphics can't draw text.
-   */
-  private noteTexture(name: string, step: number, beats: number, showLetter = true): string {
-    const key = `note-${name}-${step}-${beats}-${showLetter ? 'l' : 'b'}`;
-    if (this.textures.exists(key)) return key;
-
-    const down = stemDown(step);
-    const hollow = beats >= 2;
-    const stemless = beats >= 4;
-    const dotted = beats === 1.5 || beats === 3;
-    const flagged = beats < 1;
-    const headY = down ? NOTE_HEAD_INSET_Y : NOTE_TEX_H - NOTE_HEAD_INSET_Y;
-    const headX = NOTE_HEAD_X;
-
-    const g = this.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0xffffff, 1);
-    if (needsLedger(step)) {
-      g.fillRect(2, headY - 1.5, 34, 3);
-    }
-    if (hollow) {
-      // Thin ring on a slightly larger head, so the letter inside keeps a
-      // dark gap around it instead of merging into the ring.
-      g.lineStyle(3, 0xffffff, 1);
-      g.strokeEllipse(headX, headY, 28, 20);
-    } else {
-      g.fillEllipse(headX, headY, 26, 18);
-    }
-    if (!stemless) {
-      const stemX = down ? headX - 13 : headX + 10;
-      const stemTop = down ? headY : headY - NOTE_STEM_LEN;
-      g.fillRect(stemX, stemTop, 3.5, NOTE_STEM_LEN);
-      if (flagged) {
-        // A single flag off the free end of the stem, curving back toward
-        // the head the way an engraved eighth note does.
-        const tipY = down ? headY + NOTE_STEM_LEN : headY - NOTE_STEM_LEN;
-        const dir = down ? -1 : 1;
-        g.fillPoints(
-          [
-            new Phaser.Geom.Point(stemX + 3.5, tipY),
-            new Phaser.Geom.Point(stemX + 13, tipY + 9 * dir),
-            new Phaser.Geom.Point(stemX + 12, tipY + 18 * dir),
-            new Phaser.Geom.Point(stemX + 3.5, tipY + 10 * dir),
-          ],
-          true
-        );
-      }
-    }
-    if (dotted) {
-      g.fillStyle(0xffffff, 1);
-      g.fillCircle(headX + 19, headY - 5, 3);
-    }
-
-    const rt = this.make.renderTexture({ x: 0, y: 0, width: NOTE_TEX_W, height: NOTE_TEX_H }, false);
-    rt.draw(g, 0, 0);
-    if (showLetter) {
-      const letter = this.make.text(
-        { x: 0, y: 0, text: name, style: hollow ? NOTE_LETTER_STYLE_HOLLOW : NOTE_LETTER_STYLE },
-        false
-      );
-      letter.setOrigin(0.5, 0.5);
-      rt.draw(letter, headX, headY);
-      letter.destroy();
-    }
-    rt.saveTexture(key);
-    rt.destroy();
-    g.destroy();
-    return key;
-  }
-
-  /**
-   * A written silence (ROADMAP task 51), baked per value. Engraved as a
-   * reader expects: a whole rest hangs *under* the second line from the
-   * top, a half rest sits *on* the middle line — the pair a beginner is
-   * taught to tell apart by which side of the line the block is on — and
-   * a quarter rest is the zigzag. Drawn at the middle-line position, so
-   * `staffY(STAFF_MIDDLE_STEP)` places it correctly.
-   */
-  private restTexture(beats: number): string {
-    const key = `rest-${beats}`;
-    if (this.textures.exists(key)) return key;
-
-    const midY = NOTE_TEX_H / 2;
-    const g = this.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0xffffff, 1);
-
-    if (beats >= 4) {
-      // Whole rest: block hanging below the line one gap above the middle.
-      g.fillRect(NOTE_HEAD_X - 9, midY - STAFF_LINE_GAP, 18, STAFF_LINE_GAP / 2);
-    } else if (beats >= 2) {
-      // Half rest: block sitting on the middle line.
-      g.fillRect(NOTE_HEAD_X - 9, midY - STAFF_LINE_GAP / 2, 18, STAFF_LINE_GAP / 2);
-    } else {
-      // Quarter rest: the zigzag, drawn as three strokes down the middle.
-      g.lineStyle(3.5, 0xffffff, 1);
-      g.beginPath();
-      g.moveTo(NOTE_HEAD_X - 5, midY - 16);
-      g.lineTo(NOTE_HEAD_X + 5, midY - 6);
-      g.lineTo(NOTE_HEAD_X - 5, midY + 3);
-      g.lineTo(NOTE_HEAD_X + 6, midY + 14);
-      g.strokePath();
-      g.fillCircle(NOTE_HEAD_X - 1, midY + 8, 3.5);
-    }
-
-    g.generateTexture(key, NOTE_TEX_W, NOTE_TEX_H);
-    g.destroy();
-    return key;
-  }
-
-  /**
    * Names the tune as it begins (ROADMAP task 46). Passes are queued a
    * lookahead ahead of time, so the title is held until playback actually
    * reaches the song's first note — then it fades up and away. Knowing
@@ -1151,7 +1029,7 @@ export class RoadScene extends Phaser.Scene {
           gfx: null,
           resolved: 'rest',
           step: STAFF_MIDDLE_STEP,
-          texKey: this.restTexture(beat.beats),
+          texKey: restTexture(this, beat.beats),
         });
         continue;
       }
@@ -1169,8 +1047,8 @@ export class RoadScene extends Phaser.Scene {
         resolved: null,
         step: resolvedStep,
         firstInPass,
-        texKey: name !== null && step !== null ? this.noteTexture(name, step, beat.beats) : 'note-glyph',
-        bareTexKey: name !== null && step !== null ? this.noteTexture(name, step, beat.beats, false) : undefined,
+        texKey: name !== null && step !== null ? noteTexture(this, name, step, beat.beats) : 'note-glyph',
+        bareTexKey: name !== null && step !== null ? noteTexture(this, name, step, beat.beats, false) : undefined,
       });
     }
     this.totalNotesGenerated += notes.length;

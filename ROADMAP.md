@@ -612,7 +612,19 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     No browser assertion — five attempts to measure it live gave five
     answers and the instrument was wrong every time (written up in
     `tools/README.md`).
-62. **Next.** Nothing queued. The open question the model cannot answer
+62. ~~**Consolidation: split the engraving out of RoadScene.**~~ Done.
+    RoadScene had reached 1584 lines, 46% of the codebase in one file. The
+    note and rest glyph baking moved to `src/render/engraving.ts` with its
+    geometry constants (scene 1584 → 1485; module 156). Plain functions
+    taking the scene, not methods, so the engraving has no game state to
+    depend on. Proof sheet byte-identical before and after; all seven
+    harnesses green. `window.engraving` is now an explicit tooling handle
+    in `main.ts` — `proofsheet.mjs` used to reach a private method and
+    broke silently when it moved.
+    **Next candidates if another consolidation run is due**: the scenery,
+    star-field and signpost texture bakers (~350 more lines) are the same
+    shape of extraction and would take the scene under 1200.
+63. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth
