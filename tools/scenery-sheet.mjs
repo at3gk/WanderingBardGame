@@ -35,7 +35,7 @@ const OUT = 'scenery-sheet.png';
 if (existsSync(OUT)) unlinkSync(OUT);
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 900, height: 900 } });
+const page = await browser.newPage({ viewport: { width: 1100, height: 1000 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 await page.goto('http://localhost:4173/WanderingBardGame/', { waitUntil: 'networkidle' });
@@ -57,21 +57,24 @@ const rows = await page.evaluate(() => {
   const label = (x, y, text) =>
     scene.add.text(x, y, text, { fontFamily: 'sans-serif', fontSize: '13px', color: '#e8d9c0' }).setOrigin(0, 0.5);
 
-  let y = 30;
+  // Tiles are 120px tall and centred, so the first row must start below 60
+  // or the roofs are clipped out of the very sheet that exists to show them.
+  let y = 75;
   let drawn = 0;
   for (const b of BIOMES) {
     label(8, y, b.id);
     scene.add.image(120, y, S.sceneryTileTexture(scene, b)).setOrigin(0, 0.5);
-    scene.add.image(400, y, S.roadTileTexture(scene, b)).setOrigin(0, 0.5);
-    drawn += 2;
+    scene.add.image(700, y, S.roadTileTexture(scene, b)).setOrigin(0, 0.5);
+    scene.add.image(800, y, S.farTileTexture(scene, b)).setOrigin(0, 0.5).setScale(0.5);
+    drawn += 3;
     y += 130;
   }
   label(8, y, 'glint 0 / 1');
-  scene.add.image(120, y, S.glintTexture(scene, 0)).setOrigin(0, 0.5);
-  scene.add.image(400, y, S.glintTexture(scene, 1)).setOrigin(0, 0.5);
+  scene.add.image(120, y, S.glintTexture(scene, 0)).setOrigin(0, 0.5).setScale(0.5);
+  scene.add.image(700, y, S.glintTexture(scene, 1)).setOrigin(0, 0.5).setScale(0.5);
   y += 130;
   label(8, y, 'stars / signpost / moon');
-  scene.add.image(120, y, S.starFieldTexture(scene)).setOrigin(0, 0.5);
+  scene.add.image(120, y, S.starFieldTexture(scene)).setOrigin(0, 0.5).setScale(0.6);
   scene.add.image(400, y, S.signpostTexture(scene)).setOrigin(0, 1);
   scene.add.image(460, y, S.moonTexture(scene, 24)).setOrigin(0, 0.5);
   drawn += 5;

@@ -25,7 +25,11 @@ export const ROAD_TILE_HEIGHT = 48;
 // Background scenery band (ROADMAP task 31): silhouette features sitting on
 // the horizon, scrolling slower than the road so the world reads as having
 // depth. One repeating tile per biome, crossfaded exactly like the road.
-export const SCENERY_TILE_WIDTH = 256;
+// Doubled from 256. At 256 the same three houses repeated three and a half
+// times across a desktop screen and the repeat was the first thing you saw.
+// 512 halves that frequency and, more importantly, leaves room for the
+// silhouettes inside one tile to differ from each other.
+export const SCENERY_TILE_WIDTH = 512;
 export const SCENERY_TILE_HEIGHT = 120;
 // Night sky (ROADMAP task 34): a starfield drifting far slower than the
 // scenery is what turns two flat bands into a world with depth.
@@ -62,10 +66,14 @@ export function glintTexture(scene: Phaser.Scene, half: 0 | 1): string {
       ? [
           [20, H - 16, 18],
           [150, H - 18, 16],
+          [276, H - 15, 20],
+          [410, H - 17, 15],
         ]
       : [
           [80, H - 10, 14],
           [210, H - 12, 12],
+          [338, H - 11, 16],
+          [468, H - 13, 13],
         ];
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
   g.fillStyle(0xffffff, 1);
@@ -102,6 +110,20 @@ export function starFieldTexture(scene: Phaser.Scene): string {
     [175, 162, 1.0, 0.45],
     [220, 154, 1.2, 0.55],
     [245, 62, 1.0, 0.75],
+    [268, 44, 1.1, 0.6],
+    [300, 112, 1.0, 0.5],
+    [325, 20, 1.4, 0.85],
+    [352, 76, 1.0, 0.55],
+    [378, 134, 1.2, 0.6],
+    [402, 34, 1.0, 0.7],
+    [430, 98, 1.3, 0.5],
+    [455, 52, 1.0, 0.8],
+    [478, 146, 1.1, 0.45],
+    [290, 172, 1.0, 0.5],
+    [340, 158, 1.2, 0.55],
+    [396, 180, 1.0, 0.4],
+    [446, 166, 1.0, 0.5],
+    [500, 120, 1.1, 0.6],
   ];
   for (const [x, y, r, a] of stars) {
     g.fillStyle(0xe8d9c0, a);
@@ -127,32 +149,67 @@ export function sceneryTileTexture(scene: Phaser.Scene, biome: Biome): string {
   const H = SCENERY_TILE_HEIGHT;
 
   if (biome.id === 'village') {
-    // Three gabled houses of varying heights, warm lit windows, a chimney.
+    // Seven buildings across the tile, no two the same height and no two
+    // the same gap apart — an evenly spaced row reads as wallpaper however
+    // wide the tile is.
     g.fillStyle(biome.sceneryColor, 1);
-    g.fillRect(24, H - 60, 52, 60);
-    g.fillTriangle(18, H - 60, 82, H - 60, 50, H - 90);
+    const houses: Array<[number, number, number]> = [
+      // [left, width, wall height]
+      [24, 52, 60],
+      [124, 44, 45],
+      [202, 36, 35],
+      [258, 58, 68],
+      [340, 40, 40],
+      [396, 48, 54],
+      [462, 34, 32],
+    ];
+    for (const [x, w, wall] of houses) {
+      g.fillRect(x, H - wall, w, wall);
+      // Roof pitch scales with the house, so a tall one is not wearing a
+      // small one's hat.
+      g.fillTriangle(x - 6, H - wall, x + w + 6, H - wall, x + w / 2, H - wall - (14 + w * 0.28));
+    }
+    // Two chimneys, on the two tallest.
     g.fillRect(64, H - 82, 8, 14);
-    g.fillRect(124, H - 45, 44, 45);
-    g.fillTriangle(118, H - 45, 172, H - 45, 146, H - 70);
-    g.fillRect(202, H - 35, 36, 35);
-    g.fillTriangle(198, H - 35, 240, H - 35, 220, H - 56);
+    g.fillRect(300, H - 92, 8, 15);
+    // Lit windows: not on every house, because a village at dusk has some
+    // dark ones, and the gaps are what make the lit ones read as light.
     g.fillStyle(biome.sceneryAccent, 0.9);
-    g.fillRect(34, H - 40, 6, 8);
-    g.fillRect(58, H - 40, 6, 8);
-    g.fillRect(140, H - 30, 6, 7);
-    g.fillRect(216, H - 25, 5, 6);
+    const windows: Array<[number, number, number, number]> = [
+      [34, H - 40, 6, 8],
+      [58, H - 40, 6, 8],
+      [140, H - 30, 6, 7],
+      [216, H - 25, 5, 6],
+      [270, H - 46, 6, 8],
+      [294, H - 46, 6, 8],
+      [408, H - 36, 6, 7],
+      [472, H - 22, 5, 6],
+    ];
+    for (const [x, y, w, h] of windows) g.fillRect(x, y, w, h);
   } else if (biome.id === 'forest') {
-    // Conifer silhouettes, one round-canopy tree, a couple of fireflies.
+    // A stand of conifers at varying heights plus two round-canopy trees.
     g.fillStyle(biome.sceneryColor, 1);
-    g.fillTriangle(20, H, 60, H, 40, H - 80);
-    g.fillTriangle(70, H, 110, H, 90, H - 55);
-    g.fillTriangle(125, H, 175, H, 150, H - 90);
+    const firs: Array<[number, number, number]> = [
+      // [centre, half-width, height]
+      [40, 20, 80],
+      [90, 20, 55],
+      [150, 25, 90],
+      [268, 22, 72],
+      [318, 17, 48],
+      [372, 26, 96],
+      [438, 19, 62],
+    ];
+    for (const [cx, hw, ht] of firs) g.fillTriangle(cx - hw, H, cx + hw, H, cx, H - ht);
     g.fillRect(211, H - 25, 8, 25);
     g.fillCircle(215, H - 40, 22);
+    g.fillRect(480, H - 20, 7, 20);
+    g.fillCircle(483, H - 32, 17);
+    // Fireflies, scattered rather than spaced.
     g.fillStyle(biome.sceneryAccent, 0.8);
-    g.fillCircle(70, H - 30, 1.5);
-    g.fillCircle(185, H - 50, 1.5);
-    g.fillCircle(120, H - 20, 1.2);
+    for (const [x, y, r] of [[70, H - 30, 1.5], [185, H - 50, 1.5], [120, H - 20, 1.2],
+                             [300, H - 38, 1.4], [420, H - 26, 1.2], [455, H - 54, 1.5]]) {
+      g.fillCircle(x, y, r);
+    }
   } else {
     // Riverside: water band with glints, a tent, a campfire, reeds.
     g.fillStyle(0x16344a, 1);
@@ -160,15 +217,22 @@ export function sceneryTileTexture(scene: Phaser.Scene, biome: Biome): string {
     // The water's glints are NOT baked here — they live in their own
     // layers so they can shimmer (see glintTexture).
     g.fillStyle(biome.sceneryColor, 1);
-    g.fillTriangle(40, H - 24, 90, H - 24, 65, H - 60);
-    g.fillTriangle(58, H - 24, 72, H - 24, 65, H - 46);
-    g.fillRect(160, H - 34, 2, 12);
-    g.fillRect(166, H - 36, 2, 14);
-    g.fillRect(230, H - 32, 2, 10);
-    g.fillStyle(0xe8c157, 0.95);
-    g.fillCircle(110, H - 28, 3);
-    g.fillStyle(0xe8c157, 0.25);
-    g.fillCircle(110, H - 28, 7);
+    // Two camps along the bank rather than one repeated every 256px.
+    for (const cx of [65, 330]) {
+      g.fillTriangle(cx - 25, H - 24, cx + 25, H - 24, cx, H - 60);
+      g.fillTriangle(cx - 7, H - 24, cx + 7, H - 24, cx, H - 46);
+    }
+    // Reeds in loose clumps.
+    for (const [x, h] of [[160, 12], [166, 14], [230, 10], [388, 13], [396, 16], [462, 11], [470, 9]]) {
+      g.fillRect(x, H - 24 - h, 2, h);
+    }
+    // Campfires, each with its glow.
+    for (const cx of [110, 375]) {
+      g.fillStyle(0xe8c157, 0.95);
+      g.fillCircle(cx, H - 28, 3);
+      g.fillStyle(0xe8c157, 0.25);
+      g.fillCircle(cx, H - 28, 7);
+    }
   }
 
   g.generateTexture(key, SCENERY_TILE_WIDTH, SCENERY_TILE_HEIGHT);
@@ -238,6 +302,81 @@ export function moonTexture(scene: Phaser.Scene, radius: number): string {
   }
 
   g.generateTexture(key, d, d);
+  g.destroy();
+  return key;
+}
+
+/**
+ * Aerial perspective: how far a silhouette recedes toward the sky.
+ *
+ * Distant things are not just smaller, they are *paler* — haze between you
+ * and them washes them toward the colour of the sky. Deriving the far
+ * layer's colour from each biome's own sky and silhouette (rather than
+ * adding a hand-picked colour to every biome) means it stays correct for
+ * free whenever a palette is re-pitched, which has already happened once.
+ */
+export function recede(sceneryColor: number, skyColor: number, amount: number): number {
+  const t = Math.max(0, Math.min(1, amount));
+  const mix = (shift: number) => {
+    const a = (sceneryColor >> shift) & 0xff;
+    const b = (skyColor >> shift) & 0xff;
+    return Math.round(a + (b - a) * t) & 0xff;
+  };
+  return (mix(16) << 16) | (mix(8) << 8) | mix(0);
+}
+
+export const FAR_TILE_WIDTH = 512;
+export const FAR_TILE_HEIGHT = 96;
+
+/**
+ * The far band: a low ridge behind the scenery, on its own parallax plane.
+ *
+ * Two problems, one layer. The world had exactly one silhouette plane
+ * between the stars and the road, so a 256px scenery tile repeated three
+ * and a half times across a desktop screen and the repeat was the first
+ * thing you saw. And three planes (stars 0.08, scenery 0.45, road 1.0)
+ * left a conspicuous gap in the middle of the depth range.
+ *
+ * This tile is twice as wide as the scenery one and drifts at a different
+ * rate, so the two never line up into a visible period — the cheapest way
+ * to make a repeating background stop looking repeated is to have a second
+ * thing repeating at a rate that does not divide into the first.
+ */
+export function farTileTexture(scene: Phaser.Scene, biome: Biome): string {
+  const key = `far-${biome.id}`;
+  if (scene.textures.exists(key)) return key;
+
+  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+  const H = FAR_TILE_HEIGHT;
+  const W = FAR_TILE_WIDTH;
+  g.fillStyle(recede(biome.sceneryColor, biome.skyColor, 0.55), 1);
+
+  if (biome.id === 'forest') {
+    // A ridge of distant conifers: many small peaks of varying height,
+    // deliberately not evenly spaced.
+    const peaks = [14, 26, 9, 31, 18, 11, 35, 22, 15, 28, 12, 33, 20, 25, 10, 30];
+    const step = W / peaks.length;
+    for (let i = 0; i < peaks.length; i++) {
+      const x = i * step;
+      g.fillTriangle(x - step * 0.55, H, x + step * 0.55, H, x, H - 22 - peaks[i]);
+    }
+  } else if (biome.id === 'riverside') {
+    // The far bank: a long low bluff with a couple of rises.
+    g.fillRect(0, H - 20, W, 20);
+    g.fillEllipse(90, H - 20, 200, 46);
+    g.fillEllipse(300, H - 20, 150, 32);
+    g.fillEllipse(430, H - 20, 190, 40);
+  } else {
+    // Rolling hills behind the village, at three sizes so the horizon has
+    // a shape rather than a wave.
+    g.fillRect(0, H - 14, W, 14);
+    g.fillEllipse(70, H - 14, 230, 60);
+    g.fillEllipse(210, H - 14, 150, 36);
+    g.fillEllipse(340, H - 14, 260, 72);
+    g.fillEllipse(470, H - 14, 140, 30);
+  }
+
+  g.generateTexture(key, W, H);
   g.destroy();
   return key;
 }

@@ -6,6 +6,13 @@ Run counter: 35
 
 **At a glance** — read this, then only the sections you need.
 
+- **The world got deeper and stopped looking tiled** (2026-07-26): a fourth
+  parallax plane (a far ridge behind the scenery, at 0.19 vs scenery 0.45
+  and stars 0.08) and scenery tiles doubled to 512px with silhouettes that
+  differ *within* one tile. Far-layer colour is derived by receding each
+  biome's own silhouette toward its own sky, so it stays right for free
+  when a palette is re-pitched.
+
 - **You can now choose one song to learn** instead of letting the songbook
   rotate (human-set, 2026-07-26). Songbook button beside the mute toggle →
   pick a tune → it repeats and the road settles in its home biome. "Wander"

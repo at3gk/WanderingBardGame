@@ -79,13 +79,17 @@ export function createStyleTextures(scene: Phaser.Scene): void {
 }
 
 /**
- * The songbook icon: a small closed book with a ribbon, in the same white
- * that everything tintable in this game is drawn in.
+ * The songbook icon: a page of sheet music with a note on it.
  *
- * Deliberately not another note glyph. The mute toggle is already a note,
- * and two note-shaped buttons side by side would read as one control with
- * a broken half. A book says "choose what to play" without any words —
- * which matters, because the child this is for cannot read the label.
+ * Three drawings were tried. A closed book was shapeless at 22px; an open
+ * book came out as two rectangles with lines in them, which reads as a
+ * generic list menu rather than anything musical. A *page with a staff and
+ * a note* says "choose something to play" in this game's own visual
+ * language, and it cannot be confused with the mute toggle beside it, which
+ * is a bare note glyph on no background.
+ *
+ * It matters more than icon polish usually would: the child this is for
+ * cannot read the label.
  */
 export function songbookTexture(scene: Phaser.Scene): string {
   const key = 'songbook-icon';
@@ -95,24 +99,22 @@ export function songbookTexture(scene: Phaser.Scene): string {
   const H = 26;
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
 
-  // Covers: two leaves meeting at a spine, drawn as an open book seen
-  // slightly from above so it reads at 22px.
+  // The page. Tintable white like every other glyph, so it picks up the
+  // same warm cream as the mute toggle.
   g.fillStyle(0xffffff, 1);
-  g.fillRoundedRect(2, 5, 10.5, 17, 2);
-  g.fillRoundedRect(13.5, 5, 10.5, 17, 2);
-  // The gutter between them, punched back out so the two halves read as
-  // separate pages rather than one white slab.
-  g.fillStyle(0x000000, 0);
-  g.fillRect(12.2, 5, 1.6, 17);
+  g.fillRoundedRect(4, 2.5, 18, 21, 2.5);
 
-  // Page lines, one per leaf — enough to say "book", few enough to survive
-  // being drawn at icon size.
+  // Two staff lines, not five. At 22px on a phone five lines close to a
+  // millimetre apart merge into a grey smear; two say "ruled like music"
+  // and leave the note room to be the thing you actually see.
   g.fillStyle(0x2a1a2e, 1);
-  for (let i = 0; i < 3; i++) {
-    const y = 9 + i * 4;
-    g.fillRect(4.5, y, 6, 1.2);
-    g.fillRect(15.5, y, 6, 1.2);
-  }
+  g.fillRect(7, 8, 12, 1.3);
+  g.fillRect(7, 18, 12, 1.3);
+
+  // One big quarter note between them, stem up. Bold enough to survive
+  // being drawn at a third of device resolution on a phone.
+  g.fillEllipse(11, 15.5, 7, 5.2);
+  g.fillRect(13.6, 7, 1.6, 8.5);
 
   g.generateTexture(key, W, H);
   g.destroy();

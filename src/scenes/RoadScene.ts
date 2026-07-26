@@ -27,6 +27,8 @@ import {
   STAFF_LINE_GAP,
 } from '../render/engraving';
 import {
+  FAR_TILE_HEIGHT,
+  farTileTexture,
   glintTexture,
   moonTexture,
   ROAD_TILE_WIDTH,
@@ -149,6 +151,12 @@ const RIVERSIDE_GLINT_COLOR = 0x5da8c9;
 // is what turns two flat bands into a world with depth. The moon doesn't
 // move at all; it's the moon.
 const STAR_PARALLAX = 0.08;
+// The far ridge sits between the stars and the scenery, filling what was a
+// conspicuous gap in the depth range (0.08 -> 0.45). Its rate is chosen NOT
+// to divide neatly into the scenery's: two backgrounds repeating at rates
+// with no common period never line up into a visible beat, which is the
+// cheapest way to stop a tiled background looking tiled.
+const FAR_PARALLAX = 0.19;
 // Signposts at transitions (idea backlog): a small silhouette marker spawns
 // at the screen's right edge the instant a biome transition starts and
 // scrolls by at the scenery band's own parallax rate — the world announcing
@@ -259,6 +267,10 @@ export class RoadScene extends Phaser.Scene {
   private roadToIndex = 0;
   private scenery!: Phaser.GameObjects.TileSprite;
   private sceneryNext!: Phaser.GameObjects.TileSprite;
+  private far!: Phaser.GameObjects.TileSprite;
+  private farNext!: Phaser.GameObjects.TileSprite;
+  private farFromIndex = 0;
+  private farToIndex = 0;
   private sceneryFromIndex = 0;
   private sceneryToIndex = 0;
   private sceneryGlints: Phaser.GameObjects.TileSprite[] = [];
@@ -340,6 +352,9 @@ export class RoadScene extends Phaser.Scene {
 
     this.sceneryFromIndex = 0;
     this.sceneryToIndex = 0;
+    this.far = this.add.tileSprite(0, 0, this.scale.width, FAR_TILE_HEIGHT, farTileTexture(this, BIOMES[0]));
+    this.farNext = this.add.tileSprite(0, 0, this.scale.width, FAR_TILE_HEIGHT, farTileTexture(this, BIOMES[0]));
+    this.farNext.setAlpha(0);
     this.scenery = this.add.tileSprite(0, 0, this.scale.width, SCENERY_TILE_HEIGHT, sceneryTileTexture(this, BIOMES[0]));
     this.sceneryNext = this.add.tileSprite(0, 0, this.scale.width, SCENERY_TILE_HEIGHT, sceneryTileTexture(this, BIOMES[0]));
     this.sceneryNext.setAlpha(0);
@@ -1136,6 +1151,8 @@ export class RoadScene extends Phaser.Scene {
     const worldTint = RoadScene.lerpColor(0xffffff, 0x000000, 1 - shade);
     this.scenery.setTint(worldTint);
     this.sceneryNext.setTint(worldTint);
+    this.far.setTint(worldTint);
+    this.farNext.setTint(worldTint);
     this.road.setTint(worldTint);
     this.roadNext.setTint(worldTint);
     for (const signpost of this.signposts) signpost.setTint(worldTint);
@@ -1344,6 +1361,25 @@ export class RoadScene extends Phaser.Scene {
       this.sceneryToIndex = toIndex;
       this.sceneryNext.setTexture(sceneryTileTexture(this, BIOMES[toIndex]));
     }
+
+    if (fromIndex !== this.farFromIndex) {
+      this.farFromIndex = fromIndex;
+      this.far.setTexture(farTileTexture(this, BIOMES[fromIndex]));
+    }
+    if (toIndex !== this.farToIndex) {
+      this.farToIndex = toIndex;
+      this.farNext.setTexture(farTileTexture(this, BIOMES[toIndex]));
+    }
+    // The far ridge's feet sit a little above the road, so the near
+    // silhouettes overlap it and the two planes read as stacked rather than
+    // as two strips drawn side by side.
+    const farY = this.roadTopY(laneY) - FAR_TILE_HEIGHT / 2 - 18;
+    for (const layer of [this.far, this.farNext]) {
+      layer.setPosition(this.scale.width / 2, farY);
+      layer.setSize(this.scale.width, FAR_TILE_HEIGHT);
+      layer.tilePositionX += (ROAD_SCROLL_PX_PER_SEC * FAR_PARALLAX * delta) / 1000 * (this.walking ? 1 : 0);
+    }
+    this.farNext.setAlpha(ratio);
 
     const sceneryY = this.roadTopY(laneY) - SCENERY_TILE_HEIGHT / 2;
     this.scenery.setPosition(this.scale.width / 2, sceneryY);
