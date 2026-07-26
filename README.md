@@ -42,9 +42,9 @@ fifteen checks that drive a real browser against the production build and
 assert on things unit tests cannot reach: that the melody is in tune and
 naturals-only, that the letter-fading actually fades and recovers, that
 progress survives a reload, a rotation and a month away, that the layout
-holds from a 320px phone upward, and that mashing breaks nothing. Run them
-all with `node tools/verify-all.mjs` (or `quick`); see
-[`tools/README.md`](./tools/README.md).
+holds from a 320px phone upward, and that mashing breaks nothing. Run them all with
+`PLAYWRIGHT_PATH=... node tools/verify-all.mjs` (or `quick`); see
+[`tools/README.md`](./tools/README.md) for setup.
 
 ## Stack
 

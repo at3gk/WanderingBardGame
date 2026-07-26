@@ -15,12 +15,24 @@ npm run build && npm run preview &        # serves http://localhost:4173
 cd "$(mktemp -d)" && npm init -y && npm i playwright   # anywhere but the repo
 ```
 
-Then run a script with `node --experimental-...`-free plain node, from the
-directory where Playwright is installed, pointing at the script:
+Then point `PLAYWRIGHT_PATH` at that install and run the scripts **in
+place**, from the repo:
 
 ```bash
-node /path/to/repo/tools/autoplay.mjs 60
+export PLAYWRIGHT_PATH=/path/to/that/dir/node_modules/playwright
+node tools/verify-all.mjs quick
+node tools/autoplay.mjs 60
 ```
+
+Running them in place matters more than it looks. The old instructions had
+you copy the scripts next to Playwright and run the copies — and this
+session twice ran a **stale copy** of a script it had just edited, once
+letting a crashed run "prove" that nothing had changed by comparing against
+its own leftover output. Running the file you actually edited removes that
+whole class of mistake.
+
+Artefacts (`proofsheet.png`, `scenery-sheet.png`, `ui-sheet.png`, screenshots)
+are written to the working directory and are gitignored.
 
 All three launch the browser with
 `executablePath: '/opt/pw-browsers/chromium'` — the pre-installed binary in
