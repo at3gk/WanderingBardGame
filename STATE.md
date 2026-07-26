@@ -286,6 +286,15 @@ by `wc -l` before anything else ran, reverted with `git checkout`. Match
 method spans by walking braces line-by-line, and check the line delta
 against what you expected before running any test.
 
+**Mute and the keyboard now have coverage** (`tools/input-check.mjs`).
+Every other harness taps the middle of the canvas, so these two paths had
+none at all — and mute is the control a *parent* reaches for. Verified that
+muting zeroes the master gain rather than only changing the icon (the icon
+can lie; the gain cannot), that the slash appears, that pressing mute is
+never scored as a beat even though the button sits over the playfield, that
+the walk keeps earning while muted, that unmuting restores gain, and that
+the spacebar plays (19 hits, 0 misses). All good, no code changes needed.
+
 **Mashing is safe, and earns credit it hasn't earned**
 (`tools/mash-check.mjs`). Every other harness plays correctly — on the beat,
 one tap per note — which is the least likely thing a five-year-old does. At

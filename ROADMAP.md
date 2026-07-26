@@ -701,7 +701,13 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     every note. That is within DESIGN.md's scoping of the model (exposure,
     not assessment) and self-corrects through the return-on-struggle path,
     so no burst-detector was added.
-70. **Next.** Nothing queued. The open question the model cannot answer
+70. ~~**Cover the two untested input paths.**~~ Done:
+    `tools/input-check.mjs` for the mute toggle and the keyboard, neither of
+    which any harness touched. Mute genuinely silences (master gain 1 → 0,
+    read directly rather than trusting the icon), costs no beat despite
+    sitting over the playfield, and restores on a second press; the spacebar
+    plays. All green, no code changes needed.
+71. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth
