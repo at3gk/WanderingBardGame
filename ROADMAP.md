@@ -602,6 +602,10 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     access. (*Wheels on the Bus* is the obvious alternative and is
     **rejected on rights**: attributed to Verna Hills, 1939, which fails
     CLAUDE.md's CC0-only rule.)
+    Already tried and not sufficient: web *search* still works when fetches
+    are blocked, but the snippets carry titles, keys and public-domain
+    provenance — never note sequences. Don't spend another run on that
+    route; it needs a real page fetch or a human-supplied transcription.
 61. ~~**Stop the audio drifting away from the staff.**~~ Done: `AudioEngine`
     anchored the audio clock to the visual one once at `start()` and
     scheduled every later pass against that anchor, letting the difference
@@ -632,7 +636,14 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     **Next candidate if another consolidation run is due**: `createBard`
     and `createStyleTextures` (~250 lines) are the last big drawing blocks
     in the scene and would take it near 1000.
-64. **Next.** Nothing queued. The open question the model cannot answer
+64. ~~**Verify what a child comes back to after days away.**~~ Done:
+    `tools/timeaway-check.mjs`. The decay arithmetic was unit-tested but the
+    round trip through real `localStorage` with a backdated timestamp was
+    not. Practised positions hold, a mid-strength one decays and is handed a
+    band of help back, nothing is ever wiped, and a corrupt record starts
+    fresh rather than breaking. Asserts a gap can only return support, never
+    remove it, and never raises a position's peak.
+65. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth

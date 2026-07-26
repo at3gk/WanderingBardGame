@@ -258,6 +258,24 @@ by `wc -l` before anything else ran, reverted with `git checkout`. Match
 method spans by walking braces line-by-line, and check the line delta
 against what you expected before running any test.
 
+**Coming back after days away is verified end-to-end**
+(`tools/timeaway-check.mjs`). The decay arithmetic was unit-tested but the
+round trip through real `localStorage` with a real backdated timestamp was
+not — and that path fails silently and unkindly if it fails at all. Two
+sittings of practice, then a backdated record: well-practised positions
+held, a mid-strength one decayed and was handed a band of help back, no
+record was ever wiped, and a deliberately corrupted record starts the game
+fresh rather than breaking it. The check asserts a gap can only ever return
+support, never remove it, and never raises a position's `peak`.
+
+Two traps in writing it, both documented in `tools/README.md` because
+anything touching this storage will hit them: **a reload force-saves** (it
+fires `visibilitychange` → hidden, the scene's own save path, so backdating
+and then reloading writes the live state and a fresh timestamp over the
+backdate and the gap never happens), and **saves are throttled to 5s** (so
+a baseline read straight after playing is stale, which made a gap look as
+though it had *added* practice).
+
 Deviation from CLAUDE.md worth flagging: this is more than "exactly ONE
 roadmap task" — it is a model, a persistence layer, a songbook swap and a
 harness. That rule governs the scheduled autonomous runs; this was an
