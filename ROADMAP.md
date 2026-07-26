@@ -880,7 +880,16 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     Rests are dropped from the sequence: a silence is part of reading
     *rhythm*, which is the walk's job, and here it would read as the game
     having stopped responding.
-85. **Next.** Nothing queued.
+85. ~~**Make practice feel finished, and stop paying for sitting
+    still.**~~ Done. Coins accrue from the meter, which keeps whatever
+    value it had on entering free play — so they ticked up while a child sat
+    poking at a stationary staff. Coins and the step count are both counts
+    of *walking*, so they are frozen and hidden there. And reaching the end
+    of a tune now chimes and ripples up the notes just played — a moment,
+    not a score. DESIGN.md's no-fail stance cuts both ways: a game that
+    celebrates loudly has started grading quietly, so it says "that was the
+    whole song" and gets out of the way.
+86. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked task 79: both remain blocked
     (forest-song fetch still 403s everywhere; the GitHub MCP toolset still

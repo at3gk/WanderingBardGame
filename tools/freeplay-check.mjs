@@ -170,6 +170,42 @@ if (titled.text !== 'Mary Had a Little Lamb' || titled.alpha === 0) {
   fail.push('the tune being practised is not named on screen');
 }
 
+// Walk-only readouts, and coins that must not tick for sitting still.
+const readouts = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  return { coinVisible: s.coinText.visible, stepsVisible: s.distanceText.visible, coins: Math.floor(s.coins) };
+});
+console.log('walk readouts while practising:', JSON.stringify(readouts));
+if (readouts.coinVisible || readouts.stepsVisible) {
+  fail.push('steps/coins are still on screen while the road is stopped');
+}
+
+// Play the rest of the tune out, to the end and round again.
+const remaining = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  return s.freeSequence.length - s.freeIndex;
+});
+for (let i = 0; i < remaining; i++) {
+  const step = await page.evaluate(() => {
+    const s = window.game.scene.scenes[0];
+    return s.freeSequence[s.freeIndex];
+  });
+  await page.mouse.click(230, await yFor(step));
+  await page.waitForTimeout(90);
+}
+await page.waitForTimeout(500);
+const finished = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  return { index: s.freeIndex, coins: Math.floor(s.coins) };
+});
+console.log('after playing the tune to the end:', JSON.stringify(finished));
+if (finished.index !== 0) fail.push(`finishing the tune left the cursor at ${finished.index}, not back at the start`);
+// The meter keeps whatever value it had on entering, so without gating this
+// the child would be paid for sitting still.
+if (finished.coins !== readouts.coins) {
+  fail.push(`coins moved by ${finished.coins - readouts.coins} while practising`);
+}
+
 // Leave the choice as it found it, so the check is repeatable.
 await page.evaluate(() => window.game.scene.scenes[0].chooseSong(null));
 
