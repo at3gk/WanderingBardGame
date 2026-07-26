@@ -3,6 +3,26 @@
 One task per run, in order. Reprioritize/cut freely (log cuts in DESIGN.md's
 changelog) but don't skip ahead — each task assumes the previous ones landed.
 
+## Start here
+
+This file is an append-only record of every task and why it was done, which
+makes it long. You do not need to read it top to bottom.
+
+- **What to do next** is the last numbered entry (currently 66). If it says
+  "Nothing queued", promote something from the **Idea backlog** near the
+  bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
+  has lifted.
+- **Why something is the way it is**: find its numbered done-entry. They are
+  written to be read later and are referenced by number from STATE.md.
+- **Before you start**: read STATE.md's "At a glance" — it is the short
+  version of where the project stands.
+- **Before you finish**: `npm test && npm run build`, then
+  `node tools/verify-all.mjs` (or `quick`) with the preview server up. See
+  `tools/README.md`.
+
+Everything below task 12 is v0.1 history and is only worth reading if you
+are tracing a specific decision.
+
 1. **Scaffold.** Vite + Phaser 3 + TypeScript + Vitest project. `vite.config`
    base set to `/WanderingBardGame/`. Empty Phaser scene that boots to a
    blank canvas. `npm test && npm run build` green. Confirm CI/deploy
