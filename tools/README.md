@@ -370,6 +370,11 @@ Two things worth knowing came out of it:
   from 2274 taps, and only 461 oscillators were created — so a stray tap
   neither feeds the learning model nor makes a sound. A mashing child is
   not punished and does not generate noise.
+It mashes **free play** too, for 924 taps: every tap there spawns a note
+image and two tweens that clean themselves up on completion, and "on
+completion" is a promise worth checking against a child tapping far faster
+than a note takes to fade. Objects 67 → 66, tweens 2 → 2, no new encounters.
+
 - **But mashing does earn exposure credit.** Those 80 were all *hits*, with
   zero misses, because spraying taps lands on every note. The model reads
   that as familiarity and will fade letters for a child who is not looking
