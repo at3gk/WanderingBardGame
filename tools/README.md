@@ -35,7 +35,7 @@ node /path/to/repo/tools/verify-all.mjs          # everything, ~25 min
 node /path/to/repo/tools/verify-all.mjs quick    # the fast four, ~4 min
 ```
 
-There are nine checks now, several of which take minutes, and a run that has
+There are ten checks now, several of which take minutes, and a run that has
 to remember all of them will sooner or later remember only the fast ones.
 
 It runs them **one at a time on purpose.** Several Chromium instances
@@ -194,6 +194,18 @@ Two traps this fell into, both worth knowing before writing anything similar:
   be several hits out of date. The baseline and the post-gap readings must
   be taken the same way, or a stale baseline makes the gap look as though it
   *added* practice.
+
+## `ui-sheet.mjs`
+
+Bakes the shared UI glyphs — the tintable eighth note (beat markers and the
+mute toggle), the note-stamped coin, the hit line and the treble clef — into
+one image.
+
+Third of the three texture sheets. Between `proofsheet`, `scenery-sheet` and
+this, every texture the game draws is checkable in a single deterministic
+image, which is what let all three render extractions
+(`src/render/engraving.ts`, `scenery.ts`, `ui.ts`) be proved byte-for-byte
+rather than eyeballed.
 
 ## `scenery-sheet.mjs`
 

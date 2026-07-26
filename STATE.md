@@ -11,12 +11,15 @@ Run counter: 33
   ~200 bytes of `localStorage`. The core mechanic is one tap.
 - **Eleven songs**, four per biome except forest, which has three and is
   short a fourth (blocked — see *Blocked on human*).
-- **207 unit tests**; **nine headless checks** in `tools/`, run them all with
-  `node tools/verify-all.mjs` (or `quick` for the fast four). All green as
+- **207 unit tests**; **ten headless checks** in `tools/`, run them all with
+  `node tools/verify-all.mjs` (or `quick` for the fast five). All green as
   of 2026-07-26.
 - **Source layout**: `core/` pure logic, `audio/` one manifest + engine,
-  `render/` texture baking (engraving + scenery), `scenes/RoadScene.ts` the
-  one scene (1325 lines, down from 1584).
+  `render/` texture baking (engraving, scenery, ui), `scenes/RoadScene.ts`
+  the one scene (1263 lines, down from 1584). Every texture the game draws
+  is checkable in a deterministic sheet — `proofsheet`, `scenery-sheet`,
+  `ui-sheet` — which is what let all three extractions be proved
+  byte-for-byte rather than eyeballed.
 - **The one open question the project cannot answer itself** is whether the
   fade pace suits a real five-year-old. The single dial is
   `SESSION_GAIN_CAP`. Everything else that used to need a human has been
