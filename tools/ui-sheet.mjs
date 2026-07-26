@@ -34,7 +34,7 @@ const OUT = 'ui-sheet.png';
 if (existsSync(OUT)) unlinkSync(OUT);
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 500, height: 320 } });
+const page = await browser.newPage({ viewport: { width: 640, height: 320 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 await page.goto('http://localhost:4173/WanderingBardGame/', { waitUntil: 'networkidle' });
@@ -48,7 +48,8 @@ const drawn = await page.evaluate(() => {
 
   window.ui.createStyleTextures(scene);
 
-  const keys = ['note-glyph', 'coin-icon', 'hit-line', 'treble-clef'];
+  window.ui.songbookTexture(scene);
+  const keys = ['note-glyph', 'coin-icon', 'hit-line', 'treble-clef', 'songbook-icon'];
   let x = 40;
   for (const k of keys) {
     scene.add.image(x, 160, k).setOrigin(0.5, 0.5);
@@ -62,4 +63,4 @@ await page.waitForTimeout(400);
 await page.screenshot({ path: OUT });
 console.log('ui textures drawn:', drawn, 'errors:', errors.length ? errors.join(' | ') : 'none');
 await browser.close();
-process.exit(errors.length || drawn !== 4 ? 1 : 0);
+process.exit(errors.length || drawn !== 5 ? 1 : 0);

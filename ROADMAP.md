@@ -829,7 +829,21 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     song's home biome**, because the three biomes are the three registers
     and letting the scenery wander would have the world disagree with what
     the child is reading.
-81. **Next.** Nothing queued.
+81. ~~**Art pass: depth, and stop the background looking tiled.**~~ Done.
+    The world had exactly one silhouette plane between the stars and the
+    road, and its 256px tile repeated three and a half times across a
+    desktop screen — the repeat was the first thing you saw. Two changes:
+    a **far ridge** on its own plane at 0.19 (filling a conspicuous gap
+    between stars 0.08 and scenery 0.45, and drifting at a rate that does
+    not divide into the scenery's, so the two never beat together), and
+    **512px scenery tiles** whose silhouettes differ within a single tile —
+    seven village houses at irregular heights and spacings, a stand of
+    firs, two riverside camps. Far-layer colour is *derived* (recede each
+    biome's silhouette toward its own sky) rather than hand-picked per
+    biome, so it survives the next palette re-pitch. Also redrew the
+    songbook icon: a closed book was shapeless at 22px and an open book
+    read as a list menu, so it is a page of sheet music with one bold note.
+82. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked task 79: both remain blocked
     (forest-song fetch still 403s everywhere; the GitHub MCP toolset still

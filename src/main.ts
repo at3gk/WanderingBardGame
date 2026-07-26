@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { noteTexture, restTexture } from './render/engraving';
 import {
+  farTileTexture,
   glintTexture,
   moonTexture,
   roadTileTexture,
@@ -8,7 +9,7 @@ import {
   signpostTexture,
   starFieldTexture,
 } from './render/scenery';
-import { createStyleTextures } from './render/ui';
+import { createStyleTextures, songbookTexture } from './render/ui';
 import { RoadScene } from './scenes/RoadScene';
 
 const game = new Phaser.Game({
@@ -54,7 +55,8 @@ const game = new Phaser.Game({
   starFieldTexture,
   signpostTexture,
   moonTexture,
+  farTileTexture,
 };
 
 // And the shared UI glyphs, for tools/ui-sheet.mjs.
-(window as unknown as { ui: unknown }).ui = { createStyleTextures };
+(window as unknown as { ui: unknown }).ui = { createStyleTextures, songbookTexture };
