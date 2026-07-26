@@ -42,11 +42,31 @@ export function roadTileTexture(scene: Phaser.Scene, biome: Biome): string {
   const key = `roadTile-${biome.id}`;
   if (!scene.textures.exists(key)) {
     const g = scene.make.graphics({ x: 0, y: 0 }, false);
+    const W = ROAD_TILE_WIDTH;
+    const H = ROAD_TILE_HEIGHT;
+
     g.fillStyle(biome.roadBandColor, 1);
-    g.fillRect(0, 0, ROAD_TILE_WIDTH, ROAD_TILE_HEIGHT);
+    g.fillRect(0, 0, W, H);
+
+    // Verges, top and bottom. Everything added here has to be *continuous
+    // along the tile*: ROAD_TILE_WIDTH is load-bearing — the road scrolls
+    // exactly one tile per beat, which is what keeps the bard's footfalls
+    // on the music — so the tile cannot be widened, and any detail that
+    // varies across 64px repeats about fourteen times on a phone and reads
+    // as wallpaper. Edges running the full width have no period at all.
+    //
+    // The near edge catches the light and the far edge falls away into the
+    // scenery, which is what gives a flat band a top and a bottom rather
+    // than being a bar of colour.
+    g.fillStyle(recede(biome.roadDashColor, biome.sceneryAccent, 0.12), 0.55);
+    g.fillRect(0, 0, W, 2);
+    g.fillStyle(biome.sceneryColor, 0.35);
+    g.fillRect(0, H - 3, W, 3);
+
     g.fillStyle(biome.roadDashColor, 1);
-    g.fillRect(ROAD_TILE_WIDTH * 0.1, ROAD_TILE_HEIGHT * 0.4, ROAD_TILE_WIDTH * 0.3, 4);
-    g.generateTexture(key, ROAD_TILE_WIDTH, ROAD_TILE_HEIGHT);
+    g.fillRect(W * 0.1, H * 0.4, W * 0.3, 4);
+
+    g.generateTexture(key, W, H);
     g.destroy();
   }
   return key;

@@ -931,7 +931,17 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     timer, so it can never fall out of step with the legs. Deliberately
     not black: nothing else in this world is black, and a black smudge
     under a warm little figure reads as a hole in the road.
-90. **Next.** Nothing queued.
+90. ~~**Give the road a near edge and a far edge.**~~ Done: it was a
+    flat bar of colour under everything else. A lit verge along the top and
+    a darker one falling away at the bottom give it a ground plane.
+    Constraint worth knowing before touching this again: `ROAD_TILE_WIDTH`
+    is **load-bearing**, because the road scrolls exactly one tile per beat
+    and that is what keeps the bard's footfalls on the music. So the tile
+    cannot be widened to hide a repeat, and any detail that *varies* across
+    its 64px repeats about fourteen times on a phone and reads as
+    wallpaper. Edges running the full width have no period at all, which is
+    why that is what got added.
+91. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked task 79: both remain blocked
     (forest-song fetch still 403s everywhere; the GitHub MCP toolset still
