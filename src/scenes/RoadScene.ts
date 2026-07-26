@@ -6,7 +6,7 @@ import { expandSong, Song, SongBeat, songDurationMs } from '../core/song';
 import { songForBiome } from '../core/songs';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
 import { accumulateDistance } from '../core/distance';
-import { Biome, BIOMES, biomeBlendAt } from '../core/biome';
+import { Biome, BIOMES, biomeBlendAt, BIOME_TRANSITIONS, signpostDistanceAt } from '../core/biome';
 import { duskShadeAt, nightnessAt } from '../core/dusk';
 import { accumulateCoins } from '../core/coins';
 import { needsLedger, noteNameAt, staffStepAt, stemDown } from '../core/notation';
@@ -130,6 +130,16 @@ const SCENERY_PARALLAX = 0.45;
 // move at all; it's the moon.
 const STAR_FIELD_HEIGHT = 200;
 const STAR_PARALLAX = 0.08;
+// Signposts at transitions (idea backlog): a small silhouette marker spawns
+// at the screen's right edge the instant a biome transition starts and
+// scrolls by at the scenery band's own parallax rate — the world announcing
+// the next vignette. A pool of 2 is comfortably more than the 1 that's ever
+// on screen at once (transitions are 5000px apart; a signpost takes far less
+// distance than that to cross the screen at SCENERY_PARALLAX), so no
+// unbounded array is needed.
+const SIGNPOST_WIDTH = 36;
+const SIGNPOST_HEIGHT = 80;
+const SIGNPOST_POOL_SIZE = 2;
 const MOON_X_FRACTION = 0.78;
 const MOON_Y = 84;
 const MOON_RADIUS = 24;
@@ -215,6 +225,9 @@ export class RoadScene extends Phaser.Scene {
   private sceneryNext!: Phaser.GameObjects.TileSprite;
   private sceneryFromIndex = 0;
   private sceneryToIndex = 0;
+  private signposts: Phaser.GameObjects.Image[] = [];
+  private signpostSpawnDistancePx: number[] = [];
+  private nextSignpostCount = 0;
   private stars!: Phaser.GameObjects.TileSprite;
   private moon!: Phaser.GameObjects.Arc;
   private moonGlow!: Phaser.GameObjects.Arc;
@@ -276,6 +289,18 @@ export class RoadScene extends Phaser.Scene {
     this.scenery = this.add.tileSprite(0, 0, this.scale.width, SCENERY_TILE_HEIGHT, this.sceneryTileTexture(BIOMES[0]));
     this.sceneryNext = this.add.tileSprite(0, 0, this.scale.width, SCENERY_TILE_HEIGHT, this.sceneryTileTexture(BIOMES[0]));
     this.sceneryNext.setAlpha(0);
+
+    // Created here (after the scenery band, before the road) so their display-list
+    // position — not an explicit depth — paints them in front of the scenery
+    // silhouettes and behind the road/bard/UI, matching every other layer in this scene.
+    this.nextSignpostCount = 0;
+    this.signposts = Array.from({ length: SIGNPOST_POOL_SIZE }, () => {
+      const img = this.add.image(0, 0, this.signpostTexture());
+      img.setOrigin(0.5, 1);
+      img.setVisible(false);
+      return img;
+    });
+    this.signpostSpawnDistancePx = this.signposts.map(() => -Infinity);
 
     this.roadFromIndex = 0;
     this.roadToIndex = 0;
@@ -566,6 +591,32 @@ export class RoadScene extends Phaser.Scene {
     }
 
     g.generateTexture(key, SCENERY_TILE_WIDTH, SCENERY_TILE_HEIGHT);
+    g.destroy();
+    return key;
+  }
+
+  /**
+   * A small silhouette trail signpost (idea backlog): a post with two
+   * angled boards, one per direction. Same neutral silhouette color in
+   * every biome — unlike the lit windows/fireflies/water glints, it isn't
+   * a light source, so per the art direction it stays cool rather than
+   * warm. Origin is bottom-center so it can be placed with its post base
+   * on the road's top edge, same as the scenery band's own silhouettes.
+   */
+  private signpostTexture(): string {
+    const key = 'signpost';
+    if (this.textures.exists(key)) return key;
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    const W = SIGNPOST_WIDTH;
+    const H = SIGNPOST_HEIGHT;
+    const cx = W / 2;
+    g.fillStyle(0x140e1a, 1);
+    g.fillRect(cx - 3, H - 62, 6, 62);
+    g.fillRect(cx - 3, H - 62, 23, 12);
+    g.fillTriangle(cx + 20, H - 62, cx + 20, H - 50, cx + 27, H - 56);
+    g.fillRect(cx - 20, H - 46, 23, 12);
+    g.fillTriangle(cx - 20, H - 46, cx - 20, H - 34, cx - 27, H - 40);
+    g.generateTexture(key, W, H);
     g.destroy();
     return key;
   }
@@ -1162,9 +1213,11 @@ export class RoadScene extends Phaser.Scene {
     this.sceneryNext.setTint(worldTint);
     this.road.setTint(worldTint);
     this.roadNext.setTint(worldTint);
+    for (const signpost of this.signposts) signpost.setTint(worldTint);
 
     this.updateSky(delta);
     this.updateScenery(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
+    this.updateSignposts(laneY);
     this.updateRoad(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
     for (let i = 0; i < this.staffLines.length; i++) {
       this.staffLines[i].setPosition(this.scale.width / 2, this.staffY(STAFF_LINE_STEPS[i], laneY));
@@ -1349,8 +1402,7 @@ export class RoadScene extends Phaser.Scene {
       this.sceneryNext.setTexture(this.sceneryTileTexture(BIOMES[toIndex]));
     }
 
-    const roadTopY = laneY + BARD_GROUND_Y_OFFSET - ROAD_HEIGHT_BELOW_BARD / 2;
-    const sceneryY = roadTopY - SCENERY_TILE_HEIGHT / 2;
+    const sceneryY = this.roadTopY(laneY) - SCENERY_TILE_HEIGHT / 2;
     this.scenery.setPosition(this.scale.width / 2, sceneryY);
     this.scenery.setSize(this.scale.width, SCENERY_TILE_HEIGHT);
     this.sceneryNext.setPosition(this.scale.width / 2, sceneryY);
@@ -1360,6 +1412,40 @@ export class RoadScene extends Phaser.Scene {
       const scrollDelta = (ROAD_SCROLL_PX_PER_SEC * SCENERY_PARALLAX * delta) / 1000;
       this.scenery.tilePositionX += scrollDelta;
       this.sceneryNext.tilePositionX += scrollDelta;
+    }
+  }
+
+  private roadTopY(laneY: number): number {
+    return laneY + BARD_GROUND_Y_OFFSET - ROAD_HEIGHT_BELOW_BARD / 2;
+  }
+
+  /**
+   * Spawns a signpost the instant `distancePx` crosses each transition's
+   * start (per `signpostDistanceAt`, which already accounts for the loop
+   * wrapping forever), then scrolls every active one at the scenery band's
+   * own parallax rate so it reads as part of that layer. Reuses a small
+   * fixed pool rather than an unbounded array (see SIGNPOST_POOL_SIZE).
+   */
+  private updateSignposts(laneY: number): void {
+    if (BIOME_TRANSITIONS.length === 0) return;
+    while (this.distancePx >= signpostDistanceAt(this.nextSignpostCount)) {
+      const poolIdx = this.nextSignpostCount % this.signposts.length;
+      this.signpostSpawnDistancePx[poolIdx] = signpostDistanceAt(this.nextSignpostCount);
+      this.signposts[poolIdx].setVisible(true);
+      this.nextSignpostCount++;
+    }
+
+    const y = this.roadTopY(laneY);
+    for (let i = 0; i < this.signposts.length; i++) {
+      const img = this.signposts[i];
+      if (!img.visible) continue;
+      const x =
+        this.scale.width + SIGNPOST_WIDTH - SCENERY_PARALLAX * (this.distancePx - this.signpostSpawnDistancePx[i]);
+      if (x < -SIGNPOST_WIDTH) {
+        img.setVisible(false);
+        continue;
+      }
+      img.setPosition(x, y);
     }
   }
 

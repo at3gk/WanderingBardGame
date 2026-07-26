@@ -493,13 +493,35 @@ teaching is entirely presentation.
     biome's staff region so the curriculum is untouched. Frère Jacques
     keeps its authentic "din dan don" dip to the low D — exactly the
     below-the-staff reading the ledger line exists for.
+52. ~~**Signposts at transitions.**~~ Done (Run 33, scheduled): a small
+    silhouette signpost (post + two angled boards) now spawns at the
+    screen's right edge the instant `distancePx` crosses each biome
+    transition's start distance, scrolling by at the scenery band's own
+    parallax rate — the world announcing the next vignette, per the idea
+    backlog. `core/biome.ts` gained `signpostDistanceAt(occurrenceIndex)`,
+    a pure function giving the distance the nth transition fires at
+    (accounting for the loop's wrap, same cycle math as `biomeBlendAt`),
+    with its own tests. `RoadScene` reuses a fixed 2-image pool rather than
+    an unbounded array (transitions are 5000px apart; a signpost takes far
+    less than that to cross the screen at `SCENERY_PARALLAX`, so at most
+    one is ever on screen) — pre-created right after the scenery band and
+    before the road in `create()` so display-list order alone gives
+    correct paint depth, no `setDepth` needed. Same neutral silhouette
+    color in every biome (it isn't a light source, so per the art
+    direction it stays cool, not warm) and picks up the dusk tint like the
+    rest of the world layer. Verified by a screenshot with transition
+    distances temporarily shrunk (reverted after, `git diff --stat`
+    confirmed clean) — the post+boards render correctly anchored to the
+    road's top edge among the tree silhouettes. `npm test` 157 green (5
+    new), build green.
+
 ## The v0.4 arc: "learning, not just exposure" (human-set, 2026-07-26)
 
 The human's direction: *"If we can add that in where they can actually
 learn music, that's the true goal here, just thru songs that they already
 know."* DESIGN.md's rewritten Pedagogy section is the contract.
 
-52. ~~**The letter is a scaffold, and scaffolds fade.**~~ Done: a letter
+53. ~~**The letter is a scaffold, and scaffolds fade.**~~ Done: a letter
     printed in every note head forever is a crutch — a child can read the
     letters fluently and never encode the positions. `core/scaffold.ts`
     now tracks familiarity per *staff position* and fades the letter in
@@ -512,7 +534,7 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     Help returns on two misses during good play, instantly when the meter
     drops, always for the first sighting of a position in each tune, and
     partially after days away. Nothing about the model is ever displayed.
-53. ~~**Songs they already know.**~~ Done: the two method-book tunes went
+54. ~~**Songs they already know.**~~ Done: the two method-book tunes went
     out and two S-tier ones came in — *Row, Row, Row Your Boat* (village)
     and *Old MacDonald Had a Farm* (riverside), with London Bridge moved
     up to the forest register and Frère Jacques retitled *Are You
@@ -520,7 +542,7 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     Familiarity is load-bearing now, not decoration: if a child knows how
     the tune goes, the pitch is free when the letter is gone, so they are
     never stuck — which is the only reason fading is safe at all.
-54. **Next.** Nothing queued. The open question the model cannot answer
+55. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth
@@ -535,9 +557,7 @@ task at the start of a run if nothing above is actionable. Each respects
 the one-mechanic rule and the art direction (notation icons,
 warm-vs-cool palette).
 
-- **Signposts at transitions**: a small silhouette signpost scrolls by
-  with the scenery as each biome transition starts — the world
-  announcing the next vignette. Scenery-tile addition, no logic.
+- ~~**Signposts at transitions**~~ — shipped as task 53 above.
 - **Sharper mobile rendering**: check `devicePixelRatio` handling in the
   Phaser config; procedural shapes may render noticeably crisper on
   phones with `resolution`/zoom set correctly. Measure first.

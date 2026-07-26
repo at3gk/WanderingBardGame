@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 32
+Run counter: 33
 
 ## Current status
 **v0.4 — learning, not just exposure** (2026-07-26). The human sharpened
@@ -150,8 +150,26 @@ that silently samples a prefix is worse than none.
   holds a perfect meter with rests in the schedule, which is the proof
   they really are un-tappable.
 
+- **Task 52 — signposts at transitions.** Promoted from the idea backlog:
+  a small silhouette signpost now spawns at the right edge the instant a
+  biome transition starts and scrolls by at the scenery band's own
+  parallax rate, per DESIGN.md's "world is cool and quiet" rule (neutral
+  silhouette color in every biome, no warm accent — it isn't a light
+  source). `core/biome.ts` gained `signpostDistanceAt(occurrenceIndex)`
+  (pure, tested, same cycle/wrap math as `biomeBlendAt`) so RoadScene just
+  loops calling it rather than duplicating the modulo arithmetic.
+  `RoadScene` reuses a fixed 2-image pool (transitions are 5000px apart;
+  a signpost takes far less than that to cross the screen at
+  `SCENERY_PARALLAX`, so at most one is ever visible) instead of an
+  unbounded array — pre-created right after the scenery band and before
+  the road in `create()` so display-list order alone gives correct paint
+  depth, no `setDepth` needed anywhere else in the scene. Verified with a
+  screenshot (transition distances temporarily shrunk via the established
+  far-state pattern, reverted after — `git diff --stat` confirmed clean):
+  the post-and-boards render correctly anchored to the road's top edge.
+
 **Next run: nothing is queued and nothing is blocked.** Read DESIGN.md's
-Pedagogy section first, then take ROADMAP task 50's suggestions or the
+Pedagogy section first, then take ROADMAP task 53's suggestions or the
 idea backlog. Run `tools/autoplay.mjs` before and after any change to the
 schedule, the songbook or the audio — it catches what unit tests can't.
 
@@ -464,6 +482,11 @@ for Runs 29–32 and the first overnight session duplicated their own
   still blocked on human. See ROADMAP task 39's done entry for the full
   writeup. `npm test` 71 green (unchanged), build green, headless
   screenshot confirmed the strum tween with zero console/page errors.
+- Run 33 (2026-07-25, scheduled): signposts at transitions per new
+  ROADMAP task 52, promoted from the idea backlog since nothing else was
+  queued (task 38, round-2 playtest, is still blocked on human). See
+  ROADMAP task 52's done entry and Current status above for the full
+  writeup. `npm test` 157 green (5 new), build green, screenshot-verified.
 
 ## Needs human playtest
 

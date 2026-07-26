@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { biomeBlendAt, BiomeTransition } from './biome';
+import { biomeBlendAt, BiomeTransition, signpostDistanceAt } from './biome';
 
 const TWO_STAGE: BiomeTransition[] = [
   { startPx: 1000, lengthPx: 500 },
@@ -97,5 +97,30 @@ describe('biomeBlendAt cyclic wrapping (task 35 — the road loops home)', () =>
 
   it('still clamps (no wrap) when the transition list is shorter than the biome list', () => {
     expect(biomeBlendAt(100000, TWO_STAGE, 3)).toEqual({ fromIndex: 2, toIndex: 2, ratio: 0 });
+  });
+});
+
+describe('signpostDistanceAt', () => {
+  const LOOP: BiomeTransition[] = [
+    { startPx: 1000, lengthPx: 500 },
+    { startPx: 3000, lengthPx: 500 },
+    { startPx: 5000, lengthPx: 500 },
+  ];
+
+  it('returns each transition\'s own start distance within the first cycle', () => {
+    expect(signpostDistanceAt(0, LOOP)).toBe(1000);
+    expect(signpostDistanceAt(1, LOOP)).toBe(3000);
+    expect(signpostDistanceAt(2, LOOP)).toBe(5000);
+  });
+
+  it('carries the cycle length forward into the second cycle', () => {
+    // cycle length = last transition's end = 5500
+    expect(signpostDistanceAt(3, LOOP)).toBe(5500 + 1000);
+    expect(signpostDistanceAt(4, LOOP)).toBe(5500 + 3000);
+    expect(signpostDistanceAt(5, LOOP)).toBe(5500 + 5000);
+  });
+
+  it('keeps advancing at large occurrence indices', () => {
+    expect(signpostDistanceAt(3 * 100, LOOP)).toBe(5500 * 100 + 1000);
   });
 });
