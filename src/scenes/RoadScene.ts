@@ -1236,7 +1236,11 @@ export class RoadScene extends Phaser.Scene {
     const writing = this.freeSequence.length > 0 && wasCorrect;
     let noteX = Math.max(60, Math.min(this.scale.width - 40, x));
     if (writing) {
-      const leftX = 52;
+      // Clear of the bard. He stands at the hit line, and starting the
+      // phrase at the screen edge ran the first two notes straight through
+      // him — the tune being written out is the thing to look at here, and
+      // it cannot be half-hidden behind a character.
+      const leftX = this.hitLineX() + 46;
       const slot = writtenNoteSlot(writtenIndex, this.scale.width - leftX - 24);
       if (slot.line !== this.freeWrittenLine) {
         this.freeWrittenLine = slot.line;
