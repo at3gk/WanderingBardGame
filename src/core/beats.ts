@@ -3,6 +3,18 @@ export interface Beat {
   hitTimeMs: number;
 }
 
+/**
+ * How long a note takes to travel from spawn to the hit line, and how far
+ * either side of the line a tap still counts.
+ *
+ * These live here rather than in the scene because `scaffold.ts`'s reveal
+ * schedule is measured against them: a letter's lead time is "how long
+ * before the hit line does the answer appear", so the two schedules must be
+ * comparable. See `scaffold.test.ts`, "the answer always beats the tap".
+ */
+export const TRAVEL_TIME_MS = 1800;
+export const HIT_WINDOW_MS = 90;
+
 /** Milliseconds between consecutive beats at the given tempo. */
 export function beatIntervalMs(bpm: number): number {
   if (bpm <= 0) throw new Error('bpm must be positive');

@@ -67,9 +67,24 @@ The safety rule that makes it humane, and which must never be traded away:
 
 > **Fade the prompt, never the answer.**
 
-Every note reveals its letter when it is struck *and* when it is missed.
-A hidden letter is therefore always answered, and missing costs exactly
-what it cost before — a dimmed note and a little meter — never information.
+Every letter surfaces *before* its note reaches the line — even at full
+fade, the lead floor (350ms) is comfortably wider than the hit window
+(±90ms). So the answer always lands on a bright, upright note the child is
+still about to play, and missing costs exactly what it cost before — a
+dimmed note and a little meter — never information.
+
+This is stronger than the reveal-on-strike and reveal-on-miss handlers the
+code also carries, and it is what actually runs: instrumenting a real
+90-second walk found 86 letters revealed, every one of them on the
+scheduled mid-flight path, none from a strike or a miss
+(`tools/reveal-check.mjs`). The handlers are unreachable backstops. That
+matters because the weaker version is a trap — a letter that only appears
+*after* a miss appears on a note that is already dimmed, already scrolling
+away and already fading out, visible for about 400ms at declining opacity.
+The relationship between the two constants is therefore a tested contract
+(`scaffold.test.ts`, "the answer always beats the tap"), not a coincidence:
+tightening the fade to make the game harder must not quietly downgrade the
+promise.
 
 **Songs they already know are what make this safe.** If a child knows how
 *Twinkle* goes, the pitch is free even when the letter is gone; they are
