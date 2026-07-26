@@ -58,7 +58,15 @@ async function play(seconds) {
       const next = scene.markers.find((m) => m.resolved === null && m.beat.hitTimeMs > now - 40);
       return next ? next.beat.hitTimeMs - now : 50;
     });
-    if (waitMs > 2) await page.waitForTimeout(Math.min(waitMs, 400));
+    // Only tap when a note is actually due — see autoplay.mjs. Tapping at
+    // the end of every wait slice models a masher, not a player, and here
+    // that would be worse than cosmetic: this script's whole claim is about
+    // what *good* play does to the scaffold.
+    if (waitMs > 400) {
+      await page.waitForTimeout(400);
+      continue;
+    }
+    if (waitMs > 2) await page.waitForTimeout(waitMs);
     await page.mouse.click(600, 520);
   }
 }
