@@ -63,9 +63,11 @@ the walk reads as one motion.
   (`HIT_WINDOW_MS` — `src/scenes/RoadScene.ts`)
 - [ ] **Meter refill at hitGain 12** — recovery now feels responsive, not
   trivial? (`src/core/songMeter.ts`)
-- [ ] **Recomposed melodies** — do the 8-beat phrases now read as
-  intentional, cozy music? Do the three biome moods (warm / darker /
-  open-watery) come through? (`src/audio/manifest.ts`)
+- ~~**Recomposed melodies**~~ — **obsolete.** This asked about the 8-beat
+  pentatonic phrases from round 1. There are no generated phrases any more:
+  v0.3 replaced them with eleven real songs, so the question no longer
+  refers to anything that exists. What's worth judging instead is whether
+  the *songs* are recognisable and cozy at this tempo and voicing.
 - [ ] **Beat-synced walk** — do legs, ground scroll, and music finally
   read as one motion? Footfalls land on the beat? (`src/scenes/RoadScene.ts`)
 - [ ] **Stronger palettes** — do the plum → green → blue shifts now
@@ -76,20 +78,31 @@ the walk reads as one motion.
 - [ ] **Bard sprite & animation** — does the new bard (tunic, cap,
   feather, lute) read at phone size? Walk cycle natural, idle alive?
 - [ ] **Scenery bands** — do village houses / forest trees / riverside
-  camp read as places? Parallax depth visible while walking?
-- [ ] **Notation UI** — eighth-note markers legible as beats on a small
-  screen? Hit pulse satisfying? Miss dim gentle enough?
+  camp read as *places*? Parallax depth visible while walking? (That they
+  draw correctly is covered by `scenery-sheet`; this is about whether they
+  evoke anywhere.)
+- ~~**Notation UI (eighth-note markers)**~~ — **partly obsolete.** The
+  markers are no longer generic eighth-note glyphs; they are real notes at
+  real staff positions with real note values, and their legibility down to
+  a 320px phone is checked by `pillar-check` and `proofsheet`. Still worth
+  a human eye: is the hit pulse satisfying, and is the miss dim gentle
+  enough?
 - [ ] **The player's note** — on each hit you now play the melody note
   yourself (+1 octave). Volume sit right on top of the loop
   (`pluck` gain = 1.6x base in `AudioEngine.ts`)? Does a good run feel
   like *performing* rather than just timing?
 - [ ] **Night sky** — moon/stars read without stealing attention? Star
   drift too slow/fast? (`STAR_PARALLAX` — `src/scenes/RoadScene.ts`)
-- [ ] **The road loops home** — walk past Riverside Camp (~156 steps in):
-  does returning to the village feel like coming home or like a repeat?
-- [ ] **Dusk cycle** — over a long walk (~13 min per full cycle), does
-  the slow darkening read as night deepening, or go unnoticed / too
-  dark? (`DUSK_CYCLE_PX`, `DUSK_MAX_DARKEN` — `src/core/dusk.ts`)
+- [ ] **The road loops home** — walk past Riverside Camp (~156 steps,
+  about 1.6 min in): does returning to the village feel like coming home,
+  or like a repeat?
+- [ ] **Dusk cycle** — over a long walk (**~7.8 min per full cycle**;
+  deepest night about 3.9 min in — the old "~13 min" here was wrong), does
+  the slow darkening read as night deepening, or go unnoticed / too dark?
+  (`DUSK_CYCLE_PX`, `DUSK_MAX_DARKEN` — `src/core/dusk.ts`.) Legibility at
+  deepest night is no longer a question: `dusk-check` proves the notation
+  is not darkened with the world. This is purely about whether it *feels*
+  like nightfall.
 - [ ] **Strum on hit** — does the lute's kick-and-spring on every hit
   read as a strum, or too subtle/too sharp? (`BARD_STRUM_KICK_DEG`,
   `BARD_STRUM_MS` — `src/scenes/RoadScene.ts`)
