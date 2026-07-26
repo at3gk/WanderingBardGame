@@ -1,7 +1,14 @@
 import Phaser from 'phaser';
 import { AudioEngine } from '../audio/AudioEngine';
 import { AUDIO_MANIFEST } from '../audio/manifest';
-import { HIT_WINDOW_MS, isBeatMissed, isWithinHitWindow, scrollProgress, TRAVEL_TIME_MS } from '../core/beats';
+import {
+  HIT_WINDOW_MS,
+  isBeatMissed,
+  isWithinHitWindow,
+  scrollProgress,
+  TRAVEL_TIME_MS,
+  wasUnplayable,
+} from '../core/beats';
 import { expandSong, Song, SongBeat, songDurationMs } from '../core/song';
 import { songForBiome } from '../core/songs';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
@@ -1249,6 +1256,9 @@ export class RoadScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     const nowMs = this.time.now - this.startTimeMs;
+    // Where the clock stood on the previous frame, so a note that was never
+    // reachable can be told apart from one the child genuinely dropped.
+    const previousMs = nowMs - delta;
     const laneY = this.laneY();
     const hitLineX = this.hitLineX();
 
@@ -1332,7 +1342,17 @@ export class RoadScene extends Phaser.Scene {
         this.revealLetter(marker);
         // Only real notes reach here — a rest is born resolved, so it never
         // enters this branch and can never be credited to a position.
-        missedThisFrame.push({ step: marker.step, walking: wasWalking, isRest: false });
+        //
+        // A note whose entire hit window elapsed inside this one frame gap
+        // was never on screen to be played — a GC pause, a throttled tab, a
+        // stalling device. It still misses (the tune drops a note, the meter
+        // dips, and that recovers in a hit or two), but it is not evidence
+        // about what the child knows, so it is kept out of the learning
+        // model. This closes the band between the two guards already here:
+        // wider than a hidden tab, narrower than MASS_MISS_LIMIT.
+        if (!wasUnplayable(marker.beat, nowMs, previousMs, HIT_WINDOW_MS)) {
+          missedThisFrame.push({ step: marker.step, walking: wasWalking, isRest: false });
+        }
       }
 
       if (!marker.gfx) {

@@ -582,7 +582,27 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     and eighth notes still 49px apart on the narrowest phone against a
     ~24px head. Frame rate deliberately excluded: headless software GL
     says nothing about a real device.
-59. **Next.** Nothing queued. The open question the model cannot answer
+59. ~~**Check what a phone rotation does.**~~ Done: `tools/rotate-check.mjs`.
+    Rotation re-runs `create()`, and everything survives it — progress,
+    audio, the walk, and the saved scaffold. Two harness bugs made it look
+    broken first (see STATE); the game was innocent both times. One real
+    change came out of it: `wasUnplayable` keeps a note whose whole hit
+    window elapsed inside one frame gap out of the learning model. Insurance
+    for stalling devices, not a fix for an observed bug — rotation peaks at
+    a 50ms gap against a 180ms window.
+60. **Fourth forest song — blocked on network, not on design.** The forest
+    set has three songs where village and riverside have four. The
+    candidate is researched and ready: **Here We Go Round the Mulberry
+    Bush** — traditional (1700s, clearly public domain), degrees 1/2/3/5/6/7
+    only so it is naturals-only in C major, sitting G4–G5 which is exactly
+    the forest register. It was not shipped because this environment blocks
+    outbound fetches, so the transcription cannot be verified note-for-note
+    against a published source — and shipping an unverified contour is what
+    got the forest *This Old Man* rejected. Do this from a run with network
+    access. (*Wheels on the Bus* is the obvious alternative and is
+    **rejected on rights**: attributed to Verna Hills, 1939, which fails
+    CLAUDE.md's CC0-only rule.)
+61. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth
