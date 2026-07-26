@@ -322,6 +322,12 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   `chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })`,
   screenshot, and actually look at the image. Tap input can be simulated
   with `page.mouse.click` swept across beat offsets.
+- **This environment cannot reach the open internet.** Outbound fetches get
+  403 on CONNECT to every host — including `at3gk.github.io`, so the *live*
+  deployed site cannot be checked from here; the green `Test, build, deploy`
+  run on `main` is the only production signal available. Web *search* does
+  work (it goes through the model's own API), but it returns titles and
+  summaries, not page contents. Don't spend a run re-testing this.
 - **Far-state screenshots** (later biomes, dusk states, wrap points):
   temporarily sed the relevant constants down (transition distances,
   `DUSK_CYCLE_PX`, `missDrain` → 0 so the bard never stops), `npx vite
