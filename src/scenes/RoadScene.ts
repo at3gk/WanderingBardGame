@@ -10,7 +10,8 @@ import {
   wasUnplayable,
 } from '../core/beats';
 import { expandSong, Song, SongBeat, songDurationMs } from '../core/song';
-import { songForBiome } from '../core/songs';
+import { SONGS } from '../core/songs';
+import { homeBiomeOf, SongChoice, songForPass, songGridLayout } from '../core/songChoice';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
 import { accumulateDistance } from '../core/distance';
 import { BIOMES, biomeBlendAt, BIOME_TRANSITIONS, signpostDistanceAt } from '../core/biome';
@@ -37,9 +38,9 @@ import {
   STAR_FIELD_HEIGHT,
   starFieldTexture,
 } from '../render/scenery';
-import { createStyleTextures, HIT_LINE_HEIGHT } from '../render/ui';
+import { createStyleTextures, HIT_LINE_HEIGHT, songbookTexture } from '../render/ui';
 import { displaySupport, encounter, leadMsFor, ScaffoldState, supportFor } from '../core/scaffold';
-import { loadScaffold, saveScaffold } from '../core/scaffoldStorage';
+import { getSongChoice, loadScaffold, saveScaffold, setSongChoice } from '../core/scaffoldStorage';
 
 const BPM = 96;
 const MS_PER_BEAT = 60000 / BPM;
@@ -180,6 +181,25 @@ const DISTANCE_MARGIN_BOTTOM = 20;
 // is actually looking at — and it doubles as the first thing that tells a
 // new reader those shapes are notes.
 const HINT_TEXT = 'tap when a note reaches the line';
+// Songbook picker (choose one song to learn instead of letting them
+// rotate). Sits beside the mute toggle, same 44px touch target — the two
+// are the only chrome in the game and they belong together.
+const BOOK_ICON_RADIUS = 11;
+const BOOK_MARGIN_LEFT = 68;
+const PICKER_BACKDROP_COLOR = 0x120d16;
+const PICKER_BACKDROP_ALPHA = 0.93;
+const PICKER_PAD = 18;
+const PICKER_TITLE_H = 34;
+const PICKER_ROW_MIN_H = 38;
+const PICKER_ROW_MAX_W = 250;
+const PICKER_TEXT_COLOR = '#e8d9c0';
+const PICKER_TEXT_COLOR_CHOSEN = '#2a1a2e';
+const PICKER_CHOSEN_BG = 0xe8c157;
+const PICKER_ROW_BG = 0x2c2233;
+// Above everything. Notes are added to the display list as they spawn, so
+// without an explicit depth a note that appears while the picker is open
+// draws straight over the song list — which it did, first try.
+const PICKER_DEPTH = 1000;
 const HINT_Y_OFFSET = -92;
 const HINT_FADE_MS = 400;
 // Strum on hit (ROADMAP idea backlog): the visual twin of AudioEngine.pluck
@@ -249,6 +269,17 @@ export class RoadScene extends Phaser.Scene {
   private moon!: Phaser.GameObjects.Image;
   private moonGlow!: Phaser.GameObjects.Arc;
   private distancePx = 0;
+  /**
+   * The song the child is learning, or null to wander. Held at scene level
+   * (not module level like the scaffold) because unlike learning progress
+   * it is cheap to re-read from storage, and `create()` re-runs on resize.
+   */
+  private songChoice: SongChoice = null;
+  private bookIcon!: Phaser.GameObjects.Image;
+  private bookZone!: Phaser.GameObjects.Zone;
+  /** Every object making up the picker overlay, so it can be torn down as one. */
+  private pickerParts: Phaser.GameObjects.GameObject[] = [];
+  private pickerOpen = false;
   private totalNotesGenerated = 0;
   private nextPassStartTimeMs = 0;
   private currentSongId: string | null = null;
@@ -292,6 +323,12 @@ export class RoadScene extends Phaser.Scene {
     this.meter = this.meterConfig.max;
     this.distancePx = 0;
     this.markers = [];
+    // Read back the song the child last chose. `loadScaffold` runs once per
+    // page (module scope, so a resize cannot wipe progress), and it parses
+    // the choice out of the same record — so this is just picking it up.
+    this.songChoice = getSongChoice();
+    this.pickerOpen = false;
+    this.pickerParts = [];
     this.totalNotesGenerated = 0;
     this.nextPassStartTimeMs = 0;
     this.currentSongId = null;
@@ -400,13 +437,28 @@ export class RoadScene extends Phaser.Scene {
     this.muteZone = this.add.zone(muteIconX, MUTE_ICON_MARGIN_TOP, MUTE_TOUCH_TARGET_SIZE, MUTE_TOUCH_TARGET_SIZE);
     this.muteZone.setInteractive({ useHandCursor: true });
 
+    const bookX = BOOK_MARGIN_LEFT + BOOK_ICON_RADIUS;
+    this.bookIcon = this.add.image(bookX, MUTE_ICON_MARGIN_TOP, songbookTexture(this));
+    this.bookIcon.setScale((BOOK_ICON_RADIUS * 2) / 26);
+    this.bookIcon.setTint(MUTE_ICON_COLOR_ON);
+    this.bookZone = this.add.zone(bookX, MUTE_ICON_MARGIN_TOP, MUTE_TOUCH_TARGET_SIZE, MUTE_TOUCH_TARGET_SIZE);
+    this.bookZone.setInteractive({ useHandCursor: true });
+
     this.createBard();
     this.bardWasWalking = this.walking;
     this.setBardAnimState(this.bardWasWalking);
 
     this.input.on('pointerdown', (_pointer: Phaser.Input.Pointer, currentlyOver: Phaser.GameObjects.GameObject[]) => {
+      // The picker swallows every tap while it is open — a child poking at
+      // a song list must not be playing notes through it, and must not be
+      // charged misses for the ones scrolling past behind it.
+      if (this.pickerOpen) return;
       if (currentlyOver.includes(this.muteZone)) {
         this.toggleMute();
+        return;
+      }
+      if (currentlyOver.includes(this.bookZone)) {
+        this.openPicker();
         return;
       }
       this.handleInput();
@@ -776,7 +828,148 @@ export class RoadScene extends Phaser.Scene {
 
   /** The scenery biome the walk is currently in, per ROADMAP task 16 — used to pick which pattern the audio engine's next batch plays. */
   private currentBiomeId(): string {
-    return BIOMES[biomeBlendAt(this.distancePx).fromIndex].id;
+    return BIOMES[this.currentBlend().fromIndex].id;
+  }
+
+  /**
+   * Which biome the scenery is showing.
+   *
+   * Choosing a song settles the road in that song's home biome instead of
+   * cycling. The three biomes are the three registers — village around
+   * middle C, forest mid-staff, riverside its upper half — so leaving the
+   * scenery to wander while the staff stays put would have the world
+   * disagree with what the child is reading. Settling somewhere to
+   * practise one tune is also just what a bard would do.
+   */
+  private currentBlend(): { fromIndex: number; toIndex: number; ratio: number } {
+    const home = homeBiomeOf(this.songChoice);
+    if (home !== null) {
+      const idx = Math.max(0, BIOMES.findIndex((b) => b.id === home));
+      return { fromIndex: idx, toIndex: idx, ratio: 0 };
+    }
+    return biomeBlendAt(this.distancePx);
+  }
+
+  /**
+   * The songbook. A full-screen panel listing every tune plus "wander",
+   * because eleven entries plus a heading is more than fits beside the
+   * staff on a phone, and half-covering the game would leave notes
+   * scrolling past under the child's thumb.
+   *
+   * Nothing here is a menu the game waits behind: the walk is already
+   * running before this can be opened, which is the "playable in under
+   * five seconds" pillar. Opening it simply stops taps reaching the lane.
+   */
+  private openPicker(): void {
+    if (this.pickerOpen) return;
+    this.pickerOpen = true;
+
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const backdrop = this.add.rectangle(w / 2, h / 2, w, h, PICKER_BACKDROP_COLOR, PICKER_BACKDROP_ALPHA);
+    backdrop.setInteractive();
+    backdrop.setDepth(PICKER_DEPTH);
+    this.pickerParts.push(backdrop);
+
+    const heading = this.add.text(w / 2, PICKER_PAD + PICKER_TITLE_H / 2, 'choose a song', {
+      fontFamily: 'sans-serif',
+      fontSize: '15px',
+      color: PICKER_TEXT_COLOR,
+    });
+    heading.setOrigin(0.5, 0.5);
+    heading.setDepth(PICKER_DEPTH + 2);
+    this.pickerParts.push(heading);
+
+    const entries: Array<{ id: SongChoice; label: string }> = [
+      { id: null, label: 'wander (all songs)' },
+      ...SONGS.map((song) => ({ id: song.id as SongChoice, label: song.title })),
+    ];
+
+    const panelTop = PICKER_PAD + PICKER_TITLE_H;
+    const panelH = Math.max(PICKER_ROW_MIN_H, h - panelTop - PICKER_PAD);
+    const panelW = Math.max(60, w - PICKER_PAD * 2);
+    const layout = songGridLayout(entries.length, panelW, panelH, PICKER_ROW_MIN_H, PICKER_ROW_MAX_W);
+    const gridW = layout.cols * layout.cellW;
+    const originX = (w - gridW) / 2;
+
+    entries.forEach((entry, i) => {
+      const col = Math.floor(i / layout.rows);
+      const row = i % layout.rows;
+      const cx = originX + col * layout.cellW + layout.cellW / 2;
+      const cy = panelTop + row * layout.cellH + layout.cellH / 2;
+      const chosen = entry.id === this.songChoice;
+
+      const bg = this.add.rectangle(
+        cx,
+        cy,
+        layout.cellW - 8,
+        Math.max(24, layout.cellH - 6),
+        chosen ? PICKER_CHOSEN_BG : PICKER_ROW_BG,
+        1
+      );
+      bg.setDepth(PICKER_DEPTH + 1);
+      bg.setInteractive({ useHandCursor: true });
+      bg.on('pointerdown', () => {
+        this.chooseSong(entry.id);
+        this.closePicker();
+      });
+      this.pickerParts.push(bg);
+
+      const label = this.add.text(cx, cy, entry.label, {
+        fontFamily: 'sans-serif',
+        fontSize: '13px',
+        color: chosen ? PICKER_TEXT_COLOR_CHOSEN : PICKER_TEXT_COLOR,
+      });
+      label.setOrigin(0.5, 0.5);
+      label.setDepth(PICKER_DEPTH + 2);
+      this.pickerParts.push(label);
+    });
+
+    // Tapping the backdrop closes without choosing — the way out for a
+    // child who opened this by accident.
+    backdrop.on('pointerdown', () => this.closePicker());
+  }
+
+  private closePicker(): void {
+    if (!this.pickerOpen) return;
+    this.pickerOpen = false;
+    for (const part of this.pickerParts) part.destroy();
+    this.pickerParts = [];
+  }
+
+  /**
+   * Switches to a song (or back to wandering) and starts it *now*.
+   *
+   * "Now" is the whole point. Passes are queued up to a song ahead, so
+   * simply changing which song the next pass picks would leave a child who
+   * pressed a button waiting out the rest of the previous tune — up to half
+   * a minute. So everything not yet played is taken back: pending audio is
+   * cancelled, markers that have not reached the line are dropped, and the
+   * chosen song is queued from just ahead of the playhead.
+   *
+   * Notes already past the line are left where they are. They are the bar
+   * the child just played; yanking them off the staff would read as a
+   * glitch, and they scroll away on their own in half a second.
+   */
+  private chooseSong(choice: SongChoice): void {
+    if (choice === this.songChoice) return;
+    this.songChoice = choice;
+    setSongChoice(choice, scaffold);
+
+    const nowMs = this.time.now - this.startTimeMs;
+    this.audioEngine.cancelPending();
+    this.markers = this.markers.filter((m) => {
+      if (m.beat.hitTimeMs <= nowMs) return true;
+      m.gfx?.destroy();
+      return false;
+    });
+    // Far enough ahead that the first note still gets its full flight to be
+    // read, rather than appearing already at the line.
+    this.nextPassStartTimeMs = nowMs + TRAVEL_TIME_MS;
+    this.passesByBiome.clear();
+    this.currentSongId = null;
+    this.pendingAnnounce = [];
+    this.appendSongPass();
   }
 
   /**
@@ -795,7 +988,7 @@ export class RoadScene extends Phaser.Scene {
     const biomeId = this.currentBiomeId();
     const pass = this.passesByBiome.get(biomeId) ?? 0;
     this.passesByBiome.set(biomeId, pass + 1);
-    const song = songForBiome(biomeId, pass);
+    const song = songForPass(this.songChoice, biomeId, pass);
     const notes = expandSong(song, BPM, this.nextPassStartTimeMs, this.totalNotesGenerated);
     // These tunes are built of exact repeats, so the first sighting of each
     // position in a pass keeps its letter and the repeats are left to the
@@ -928,7 +1121,7 @@ export class RoadScene extends Phaser.Scene {
     }
 
     this.distancePx = accumulateDistance(this.distancePx, this.walking, delta, ROAD_SCROLL_PX_PER_SEC);
-    const blend = biomeBlendAt(this.distancePx);
+    const blend = this.currentBlend();
     // The dusk cycle darkens the world — sky, scenery, road — but never
     // the bard or the notation: warmth belongs to the bard and the music
     // (DESIGN.md art direction), so the character carries their own light

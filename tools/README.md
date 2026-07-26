@@ -315,6 +315,20 @@ notes keep arriving, so a beat can be missed purely because time passed
 between the two readings. It passed by luck once and then failed against a
 game that was perfectly fine.
 
+## `songpick-check.mjs`
+
+Choosing one song to learn, checked as a player experiences it. Unit tests
+cover which song a pass resolves to; this covers everything around the
+button.
+
+Verdict, 2026-07-26: **zero** hits and **zero** misses recorded while
+poking at the open picker for 25 taps (it must swallow input, not play
+notes through itself and not charge a child for the notes scrolling past
+behind it); the chosen tune is playing **6s** after the press rather than
+after the previous one finishes; the road settles in that song's home
+biome; only the chosen tune plays across the next 80s; the choice survives
+a reload; and "wander" restores the rotation.
+
 ## `mash-check.mjs [seconds]`
 
 What a small child actually does. Every other harness plays *correctly* —

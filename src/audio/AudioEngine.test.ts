@@ -246,3 +246,45 @@ describe('AudioEngine.chime (the coin milestone)', () => {
     expect(songFrequencies).not.toContain(activeContext.oscillators[0].frequency.value);
   });
 });
+
+describe('AudioEngine.cancelPending (choosing a song mid-walk)', () => {
+  it('stops notes that have not sounded yet', () => {
+    const engine = new AudioEngine(manifest);
+    engine.start(expandSong(SONG, BPM), 0);
+    const scheduled = activeContext.oscillators.slice();
+    expect(scheduled.length).toBe(3);
+
+    activeContext.currentTime = 0.2; // the first note is past; the rest are not
+    engine.cancelPending();
+
+    const future = scheduled.filter((o) => (o.startTimeSec as number) > 0.2);
+    expect(future.length).toBeGreaterThan(0);
+    for (const osc of future) expect(osc.stopTimeSec).toBe(0.2);
+  });
+
+  it('leaves a note that is already sounding alone — cutting it would click', () => {
+    const engine = new AudioEngine(manifest);
+    engine.start(expandSong(SONG, BPM), 0);
+    const first = activeContext.oscillators[0];
+    const originalStop = first.stopTimeSec;
+
+    activeContext.currentTime = 5; // everything is in the past
+    engine.cancelPending();
+
+    expect(first.stopTimeSec).toBe(originalStop);
+  });
+
+  it('does not retain oscillators for the life of the session', () => {
+    // The list exists only so pending notes can be taken back. A long walk
+    // schedules thousands of notes; holding them all would be a leak.
+    const engine = new AudioEngine(manifest);
+    engine.start(expandSong(SONG, BPM), 0);
+    for (let pass = 1; pass <= 20; pass++) {
+      activeContext.currentTime = pass * 10;
+      engine.schedule(expandSong(SONG, BPM, pass * 2000, pass * 3), pass * 2000);
+    }
+    activeContext.currentTime = 1000;
+    engine.cancelPending();
+    expect(engine.pendingCount).toBe(0);
+  });
+});

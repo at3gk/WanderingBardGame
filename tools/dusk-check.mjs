@@ -49,7 +49,16 @@ const sample = (distancePx) =>
     const s = window.game.scene.scenes[0];
     s.distancePx = d;
     await new Promise((r) => setTimeout(r, 900));
-    const notes = s.markers.filter((m) => m.gfx && m.resolved === null);
+    // Sample a note that is still APPROACHING the line, not merely one that
+    // is unresolved. A note in its exit ramp has had its alpha faded down by
+    // distance, so picking whichever unresolved marker came first made this
+    // check flaky: two samples could catch notes at different points in
+    // their flight and report the difference as the dusk cycle darkening the
+    // notation. Furthest-from-the-line is always at its resting alpha.
+    const now = s.time.now - s.startTimeMs;
+    const notes = s.markers
+      .filter((m) => m.gfx && m.resolved === null && m.beat.hitTimeMs > now + 400)
+      .sort((a, b) => b.beat.hitTimeMs - a.beat.hitTimeMs);
     return {
       sky: s.cameras.main.backgroundColor.color,
       // The notation: note glyph tint and alpha, the staff lines, the clef.

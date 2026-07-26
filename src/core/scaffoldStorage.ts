@@ -19,6 +19,29 @@ interface Stored {
   v: 1;
   t: number;
   p: Record<string, [number, number, number]>;
+  /** Chosen song id, or absent when wandering. See core/songChoice.ts. */
+  s?: string;
+}
+
+/**
+ * The chosen song rides in the *same* record as the scaffold rather than a
+ * second key. That is deliberate: the design's promise is one small
+ * anonymous key, and a settings key alongside it would quietly become two
+ * things to keep in sync and two things to explain. It is held here in
+ * module scope so `saveScaffold` can write it back without every caller
+ * having to know about it.
+ */
+let songChoice: string | null = null;
+
+/** The song the child chose to learn, or null to wander. Reflects the last load or set. */
+export function getSongChoice(): string | null {
+  return songChoice;
+}
+
+/** Chooses a song (or null to wander) and writes it out immediately — a choice must survive a closed tab. */
+export function setSongChoice(choice: string | null, state: ScaffoldState): void {
+  songChoice = choice;
+  saveScaffold(state, true);
 }
 
 function storage(): Storage | null {
@@ -49,6 +72,8 @@ export function loadScaffold(nowMs: number = Date.now()): ScaffoldState {
       state.positions[Number(step)] = { strength, peak, band, gained: 0 };
     }
 
+    songChoice = typeof parsed.s === 'string' ? parsed.s : null;
+
     const hoursAway = Math.max(0, (nowMs - (parsed.t ?? nowMs)) / 3_600_000);
     decayForDaysAway(state, Math.floor(hoursAway / 24));
   } catch {
@@ -70,7 +95,9 @@ export function saveScaffold(state: ScaffoldState, force = false, nowMs: number 
     for (const [step, s] of Object.entries(state.positions)) {
       p[step] = [Math.round(s.strength * 10) / 10, Math.round(s.peak * 10) / 10, s.band];
     }
-    store.setItem(KEY, JSON.stringify({ v: 1, t: nowMs, p } satisfies Stored));
+    const record: Stored = { v: 1, t: nowMs, p };
+    if (songChoice) record.s = songChoice;
+    store.setItem(KEY, JSON.stringify(record));
   } catch {
     // Quota, private browsing, partitioned storage — the game is unaffected.
   }

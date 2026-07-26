@@ -30,10 +30,17 @@ export class AudioEngine {
   private layerGains = new Map<string, GainNode>();
   private layerActive = new Map<string, boolean>();
   private startAt = 0;
+  /** Every oscillator handed a future start time, so `cancelPending` can take them back. */
+  private scheduled: Array<{ osc: OscillatorNode; whenSec: number }> = [];
   private masterGain: GainNode | null = null;
   private muted = false;
 
   constructor(private manifest: AudioManifest) {}
+
+  /** How many scheduled-but-unsounded notes are being held. Test seam for the pruning above. */
+  get pendingCount(): number {
+    return this.scheduled.length;
+  }
 
   /** True once `start` has run — the scene uses this to know whether to schedule further passes. */
   get isStarted(): boolean {
@@ -146,6 +153,11 @@ export class AudioEngine {
     // between the two clocks rather than something that creeps each time.
     this.startAt = ctx.currentTime + SCHEDULE_LEAD_SEC - nowMs / 1000;
     const minTimeMs = nowMs;
+    // Drop oscillators that have already sounded. Without this the list
+    // would grow for as long as the session lasts — a 25-minute walk
+    // schedules over eight thousand notes — and it exists only so pending
+    // ones can be taken back.
+    this.scheduled = this.scheduled.filter((e) => e.whenSec > ctx.currentTime);
     this.scheduleLayer(ctx, this.manifest.baseLoop, notes, minTimeMs);
     for (const layer of this.manifest.layers) {
       this.scheduleLayer(ctx, layer, notes, minTimeMs);
@@ -264,5 +276,35 @@ export class AudioEngine {
     osc.connect(envelope).connect(destination);
     osc.start(whenSec);
     osc.stop(whenSec + durationSec + 0.02);
+    this.scheduled.push({ osc, whenSec });
+  }
+
+  /**
+   * Silences everything scheduled but not yet sounding, and forgets notes
+   * already played.
+   *
+   * Needed because Web Audio has no "unschedule": a note handed to
+   * `osc.start(when)` is committed, and passes are queued up to a whole
+   * song ahead. Without this, choosing a song would mean hearing the
+   * previous one finish first — up to half a minute of "why isn't it
+   * playing my song yet" for a child, which is the wrong answer to a
+   * button they just pressed.
+   *
+   * Notes already sounding are left alone: cutting a note mid-ring is a
+   * click, and the one in flight belongs to the bar they just played.
+   */
+  cancelPending(): void {
+    const ctx = this.context;
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    for (const entry of this.scheduled) {
+      if (entry.whenSec <= now) continue; // already sounded, or sounding
+      try {
+        entry.osc.stop(now);
+      } catch {
+        // An oscillator can refuse a second stop() — nothing to undo.
+      }
+    }
+    this.scheduled = [];
   }
 }
