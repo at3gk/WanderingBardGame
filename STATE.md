@@ -242,6 +242,15 @@ the wrong place to judge it anyway: with no audio device the clock runs
 ~0.17% slow against a software sink. `tools/README.md` records the method
 for anyone picking it up.
 
+**25-minute soak: no degradation of any kind** (2026-07-26, the longest run
+yet — 150 samples, 2393 steps ≈ 153,000px, so **3.2 full dusk cycles and
+~9.6 biome loops**). fps is flat end to end (24/21/17/20/18 at the start,
+20/20/21/22/19 at the finish, min 15 — no downward trend), textures plateau
+at 118 once all eleven songs have been met, the marker list peaks at 70, and
+2110 of 2115 taps land. All eleven songs appear in the rotation. This is the
+scenario a short run structurally cannot test — a child who leaves the game
+running — and nothing drifts.
+
 **Long-session stability confirmed clean** (7-minute autoplay): fps holds
 17–23, textures plateau at 109 (bounded by the songbook — 85 note/rest
 textures plus scenery and UI, so not a leak), markers stay bounded, and
