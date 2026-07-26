@@ -8,8 +8,8 @@ relay verdicts in a session. The next run folds answers into code.
 
 ## If you only do one thing
 
-**Round 4, first bullet: the fade pace.** It is the only question left that
-the project genuinely cannot answer about itself, and it needs a child, not
+**Round 4, first bullet: the fade pace.** Still the only question the
+project cannot answer about itself, and it needs a child, not
 an adult.
 
 Everything else in the learning model is now checked mechanically — letters
@@ -33,6 +33,10 @@ faster than they were ready for?**
 
 A one-line answer is enough. "Felt about right", "too fast by the third
 go", or "she never got to a bare note" are all actionable.
+
+**If you have longer**, Round 5 below covers the two new ways in that
+shipped on 2026-07-26 — choosing a song, and playing the staff directly.
+Neither has ever been in front of a person.
 
 ---
 
@@ -109,6 +113,48 @@ the walk reads as one motion.
 - [ ] **Meter as staff** — do the five faint lines on the song-meter bar
   read as sheet music, or just clutter? Legible at phone size while
   walking? (`METER_STAFF_LINE_COLOR`/`_ALPHA` — `src/scenes/RoadScene.ts`)
+
+## Round 5 — the two new ways in (v0.5, 2026-07-26)
+
+These are new today and have never been in front of a person. All of it is
+mechanically verified — every position on the staff plays the right note,
+the chosen song repeats and is remembered, nothing leaks under 900 rapid
+taps — so what is left is entirely about whether it *feels* right.
+
+**Choosing a song** (the sheet-music button, beside the mute toggle):
+
+- [ ] Does a child find the button at all? It is the only way to stop the
+  songs rotating, and it is drawn rather than labelled because the player
+  cannot read. If it goes unnoticed, the icon is wrong.
+- [ ] Picking a song stops the road wandering and settles it in that
+  song's home biome. Does staying in one place read as *settling in to
+  practise*, or as the world having got stuck?
+- [ ] The chosen tune starts within a second or two rather than after the
+  current one finishes. Does the cut feel abrupt?
+
+**Free play** (the plucked-string button):
+
+- [ ] This is the big one: **does a child understand they can press the
+  notes?** The hint says "tap a line to hear it" and fades on the first
+  tap. If they sit looking at it, the hint is not doing its job.
+- [ ] Thirteen notes share the screen height, so each band is ~45px on a
+  phone and ~26px in landscape. Can a small finger actually pick the note
+  it is aiming at, or does it keep getting the neighbour?
+- [ ] Every position is labelled here, always — the opposite of the walk,
+  where letters fade. Does having both feel coherent, or contradictory?
+
+**Practice** (free play with a song chosen — a pip marks the next note):
+
+- [ ] Does the child understand that the glowing dot is where to press?
+- [ ] A wrong note sounds and simply does not move on. Is that clear
+  enough to be useful feedback, or does it read as the game ignoring them?
+  This is the deliberate design choice most likely to be wrong.
+- [ ] Finishing a tune chimes and ripples up the notes. Too little? (It is
+  deliberately not a score — but "deliberate" and "right" are different.)
+- [ ] **The real question:** is this where reading actually happens? On the
+  road, knowing the tune tells you when to tap. Here it does not tell you
+  *where the note is*. Watch whether they hunt by ear, by memory, or by
+  reading the letter — and say which.
 
 ## New since the last playtest (2026-07-26 overnight session)
 
