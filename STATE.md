@@ -6,6 +6,19 @@ Run counter: 35
 
 **At a glance** — read this, then only the sections you need.
 
+- **Session of 2026-07-26 evening (human-directed, PRs #91–#103).** Two
+  human asks: choose one song to learn instead of rotating, and find
+  another way to learn besides the walking bard. Both built, plus an art
+  pass. See DESIGN.md's "Two ways in".
+  The most useful thing that came out of it, for whoever works here next:
+  **the bugs were all in the interactions, not the features.** Each of the
+  three new surfaces worked alone. Choosing a song *from inside free play*
+  left the staff showing the previous tune and queued 26 phantom road notes
+  behind it — which then went missed and fed the learning model. Rotating
+  the phone *while practising* left the staff spread for the old screen
+  with its lowest notes off the bottom. Neither would have been found by
+  testing any one feature. Probe the seams.
+
 - **v0.5 "two ways in"** (human-directed, 2026-07-26) is the current shape.
   DESIGN.md has a new section of that name; read it before touching either
   mode. The walk is unchanged and remains the game.

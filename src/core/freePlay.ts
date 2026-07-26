@@ -16,6 +16,12 @@
  * picked is not evidence that they can read one the game picked, and
  * quietly fading letters on the strength of poking about would corrupt the
  * only signal the scaffold has.
+ *
+ * With a song chosen it becomes **practice** (see `songStepSequence` and
+ * `advanceSequence` below): the tune as a list of positions to find, one at
+ * a time, at whatever pace suits. That is the only place in the game where
+ * *reading the staff* — rather than remembering how the tune goes — is what
+ * moves you forward, which is precisely the gap the walk cannot close.
  */
 
 import { Song } from './song';
