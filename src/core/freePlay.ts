@@ -18,6 +18,9 @@
  * only signal the scaffold has.
  */
 
+import { Song } from './song';
+import { staffStepAt } from './notation';
+
 /** One ledger below middle C up to one ledger above the staff — the range the songbook draws. */
 export const FREE_PLAY_LOW_STEP = 0;
 export const FREE_PLAY_HIGH_STEP = 12;
@@ -72,4 +75,23 @@ export function freePlayStepY(step: number, staff: FreePlayStaff): number {
 export function freePlayStepAt(y: number, staff: FreePlayStaff): number {
   const raw = FREE_PLAY_LOW_STEP + (staff.bottomY - y) / staff.stepGap;
   return Math.max(FREE_PLAY_LOW_STEP, Math.min(FREE_PLAY_HIGH_STEP, Math.round(raw)));
+}
+
+/**
+ * Which staff positions a song actually uses.
+ *
+ * Free play on its own is a ladder with no suggestion of where to start.
+ * Marking the notes of the tune the child chose turns it into "here are
+ * the ones in Twinkle, try those" — a pointer rather than an instruction,
+ * which matters when the player cannot read.
+ */
+export function stepsUsedBy(song: Song | null | undefined): Set<number> {
+  const steps = new Set<number>();
+  if (!song) return steps;
+  for (const note of song.notes) {
+    if (note.rest) continue;
+    const step = staffStepAt(note.semitone);
+    if (step !== null) steps.add(step);
+  }
+  return steps;
 }

@@ -8,6 +8,8 @@ import {
   MIN_STEP_BAND,
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
+import { stepsUsedBy } from './freePlay';
+import { MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
 
 const VIEWPORTS: Array<[string, number]> = [
   ['narrow 320', 568],
@@ -72,5 +74,35 @@ describe('the free-play staff', () => {
     const staff = freePlayStaff(120, 70, 60);
     expect(staff.stepGap).toBeGreaterThanOrEqual(MIN_STEP_BAND);
     expect(freePlayStepAt(freePlayStepY(7, staff), staff)).toBe(7);
+  });
+});
+
+describe('marking the chosen song\'s notes', () => {
+  it('marks exactly the positions the tune uses', () => {
+    // Mary is C D E G — four notes, and famously no F.
+    expect([...stepsUsedBy(MARY_HAD_A_LITTLE_LAMB)].sort((a, b) => a - b)).toEqual([0, 1, 2, 4]);
+  });
+
+  it('marks nothing when wandering', () => {
+    expect(stepsUsedBy(null).size).toBe(0);
+    expect(stepsUsedBy(undefined).size).toBe(0);
+  });
+
+  it('only ever marks positions free play actually offers', () => {
+    // A song whose notes fell outside the ladder would draw pips against
+    // rows that are not there.
+    for (const song of SONGS) {
+      for (const step of stepsUsedBy(song)) {
+        expect(step, `${song.id} step ${step}`).toBeGreaterThanOrEqual(FREE_PLAY_LOW_STEP);
+        expect(step, `${song.id} step ${step}`).toBeLessThanOrEqual(FREE_PLAY_HIGH_STEP);
+      }
+    }
+  });
+
+  it('leaves plenty unmarked — the point is that it narrows the ladder', () => {
+    // If a song used every position the marking would say nothing.
+    const span = FREE_PLAY_HIGH_STEP - FREE_PLAY_LOW_STEP + 1;
+    expect(stepsUsedBy(MARY_HAD_A_LITTLE_LAMB).size).toBeLessThan(span / 2);
+    expect(stepsUsedBy(ODE_TO_JOY).size).toBeLessThan(span);
   });
 });
