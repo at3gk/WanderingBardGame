@@ -53,7 +53,7 @@ node /path/to/repo/tools/verify-all.mjs          # all 17, ~22 min
 node /path/to/repo/tools/verify-all.mjs quick    # the fast nine, ~5 min
 ```
 
-There are eighteen checks now, several of which take minutes, and a run that has
+There are nineteen checks now, several of which take minutes, and a run that has
 to remember all of them will sooner or later remember only the fast ones.
 
 It runs them **one at a time on purpose.** Several Chromium instances
@@ -338,6 +338,27 @@ move six places, and the tune being practised is named on screen.
 It asks the scene where it actually put the steps rather than recomputing
 the layout — a check that re-derives the thing it is checking will agree
 with itself no matter how wrong both are.
+
+## `practice-soak.mjs [minutes]`
+
+Drilling one tune for minutes, the way a child learning a piece would.
+
+Practice is the one path in the game that **accumulates on purpose**: every
+correct note appends to the written-out phrase, which is cleared a line at a
+time and again when the tune comes round. "Cleared" is a promise worth
+holding to over hundreds of passes rather than the six notes a functional
+check plays.
+
+Result, 2026-07-26 — **8576 notes, ~504 complete passes through Hot Cross
+Buns over eight minutes**:
+
+```
+start: {"objects":78,"tweens":9, "written":0,"parts":31,"textures":64,"fps":40}
+end:   {"objects":79,"tweens":22,"written":1,"parts":31,"textures":64,"fps":38}
+```
+
+Objects hover 77–83 as the phrase builds and clears, tweens 11–26, textures
+flat at 64, staff parts constant, frame rate steady. Nothing accumulates.
 
 ## `songpick-check.mjs`
 

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 /**
  * Runs the whole headless suite and prints one summary.
  *
- * There are eighteen scripts here now, several of which take minutes, and a
+ * There are nineteen scripts here now, several of which take minutes, and a
  * run that has to remember all of them will sooner or later remember only
  * the fast ones. This is the single command to reach for.
  *
@@ -34,6 +34,7 @@ const CHECKS = [
   { name: 'input-check', args: ['input-check.mjs'] },
   { name: 'songpick-check', args: ['songpick-check.mjs'], slow: true },
   { name: 'freeplay-check', args: ['freeplay-check.mjs'] },
+  { name: 'practice-soak', args: ['practice-soak.mjs', '4'], slow: true },
   { name: 'dusk-check', args: ['dusk-check.mjs'] },
   { name: 'coinchime-check', args: ['coinchime-check.mjs'] },
   { name: 'title-check', args: ['title-check.mjs', '130'], slow: true },
