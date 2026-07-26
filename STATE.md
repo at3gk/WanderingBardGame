@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 35
+Run counter: 36
 
 ## Current status
 
@@ -861,6 +861,27 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   The step itself succeeded (not just masked by `continue-on-error`), so
   the portable-browser-resolution fix holds outside this environment too.
   Nothing further needed here.
+- Run 36 (2026-07-26, scheduled): resolved ROADMAP task 92 (see its done
+  entry) rather than shipping game code — the previous PR (#107) had
+  already merged onto `main` by the time this run started, and the
+  designated working branch was reset onto it fresh
+  (`git checkout -B <branch> origin/main`), per this project's own
+  merged-PR-restart convention.
+  Re-checked both standing blockers (unchanged) and found `headless-checks.yml`
+  now has **19/19 green runs** since it landed — a real pattern, not the
+  single data point task 79 had. But turning that into an actual required
+  merge gate needs GitHub branch-protection configuration, and the GitHub
+  MCP toolset available here has no call that writes branch-protection
+  rules — confirmed by scanning the full tool list, same shape of gap as
+  the missing tag/ref-write call. Logged as a new Blocked on human item
+  below rather than guessed at. Also weighed and rejected adding a
+  `pull_request` trigger for pre-merge-only visibility: GitHub holds a PR
+  non-mergeable while any attached check is still running regardless of
+  whether it's required, so that would add several minutes to every merge
+  in the three-times-daily cycle for a check nobody watches live between
+  runs — a real cost to the pipeline's cadence for no real benefit here.
+  `headless-checks.yml` is unchanged. `npm test` 254 green (unchanged),
+  build green — re-confirmed as a baseline, no code touched this run.
 
 ## Needs human playtest
 
@@ -882,6 +903,22 @@ still needs a human:
   protocol is written for exactly that.
 
 ## Blocked on human
+- **Promoting `headless-checks.yml` from informational to a real merge
+  gate** (2026-07-26, Run 36). The check has gone 19/19 green since it
+  landed (task 79) — a real pattern now, not a single lucky run. But making
+  a GitHub Actions check actually block a merge requires it to be named as
+  a **required status check** in the repo's branch-protection settings for
+  `main` (GitHub Settings → Branches → Branch protection rule → "Require
+  status checks to pass before merging" → add `quick` from the "Headless
+  checks" workflow), which is a repository-admin action. The GitHub MCP
+  toolset available in this environment has no call that writes
+  branch-protection rules (only read/write calls for files, branches, PRs,
+  issues and releases were found on a full scan) — the same shape of gap as
+  the missing tag/ref-write call below. Once a human enables that setting,
+  a future run should also flip `.github/workflows/headless-checks.yml` to
+  trigger on `pull_request` (not just `push: main`) and drop
+  `continue-on-error: true`, so a real failure actually blocks auto-merge
+  instead of only reporting after the fact.
 - **A fourth forest song** (2026-07-26). Village and riverside rotate four
   tunes each; forest has three. The candidate is chosen and researched:
   **Here We Go Round the Mulberry Bush** — traditional, the tune Nancy
