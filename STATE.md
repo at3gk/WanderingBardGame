@@ -11,23 +11,31 @@ Run counter: 33
   ~200 bytes of `localStorage`. The core mechanic is one tap.
 - **Eleven songs**, four per biome except forest, which has three and is
   short a fourth (blocked — see *Blocked on human*).
-- **207 unit tests**; **15 headless checks** in `tools/`, run them all with
-  `node tools/verify-all.mjs` (or `quick` for the fast eight). All green as
-  of 2026-07-26.
+- **207 unit tests**; **15 headless checks** in `tools/`. Run them all with
+  `PLAYWRIGHT_PATH=<dir>/node_modules/playwright node tools/verify-all.mjs`
+  (or `quick` for the fast eight). All green as of 2026-07-26.
 - **Source layout**: `core/` pure logic, `audio/` one manifest + engine,
   `render/` texture baking (engraving, scenery, ui), `scenes/RoadScene.ts`
-  the one scene (1263 lines, down from 1584). Every texture the game draws
+  the one scene (1264 lines, down from 1584). Every texture the game draws
   is checkable in a deterministic sheet — `proofsheet`, `scenery-sheet`,
   `ui-sheet` — which is what let all three extractions be proved
   byte-for-byte rather than eyeballed.
-- **The one open question the project cannot answer itself** is whether the
-  fade pace suits a real five-year-old. The single dial is
-  `SESSION_GAIN_CAP`. Everything else that used to need a human has been
-  mechanised.
+- **The one *blocking* question the project cannot answer itself** is
+  whether the fade pace suits a real five-year-old. The single dial is
+  `SESSION_GAIN_CAP`. Several things that used to need a human have since
+  been mechanised (backgrounding, gesture lockdown, layout, legibility at
+  deep night) — but not all: judging *feel* still needs hands and ears
+  (is 96 BPM right for a small child, does the ±90ms window forgive a young
+  hand, is the music actually cozy), and the teaching outcome still needs a
+  child. See PLAYTEST.md.
 - **Standing lesson from the 2026-07-26 session**: when a check fails,
-  suspect the check first. Seven separate "bugs" that session turned out to
-  be in the instrument, not the game. Every harness now documents its wrong
-  versions alongside its right one.
+  suspect the check first. Around a dozen "bugs" that session turned out to
+  be in the instrument, not the game — a harness that paused its own taps, a
+  tap landing outside a rotated viewport, a comparison against a leftover
+  PNG from a crashed run, a reload that force-saved over the state being
+  tested, and the wrong AudioContext among them. Every harness now documents
+  its wrong versions alongside its right one; that write-up is the most
+  useful thing in `tools/README.md`.
 
 ### v0.4 and the session of 2026-07-26
 
