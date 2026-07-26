@@ -111,6 +111,14 @@ const METER_STAFF_LINE_THICKNESS = 1;
 // this offset has to clear the lowest note the songbook can write plus its
 // ledger line — middle C's head bottom now sits ~63px under the lane.
 const BARD_GROUND_Y_OFFSET = 178;
+// A contact shadow. Without one the bard reads as pasted on top of the road
+// rather than standing on it — the single cheapest thing that grounds a
+// character. It is a soft ellipse in the road's own darker dash colour, not
+// black: nothing else in this world is black, and a black smudge under a
+// warm little figure looks like a hole.
+const BARD_SHADOW_W = 34;
+const BARD_SHADOW_H = 8;
+const BARD_SHADOW_ALPHA = 0.32;
 // Warm colors throughout so the bard reads against all three biome skies
 // (plum/green/blue — see biome.ts); buckle/feather/strings reuse the UI
 // accent colors (coin gold, cream) so the whole screen shares one palette.
@@ -361,6 +369,7 @@ export class RoadScene extends Phaser.Scene {
   private bardUpper!: Phaser.GameObjects.Container;
   private bardLute!: Phaser.GameObjects.Image;
   private bardTweens: Phaser.Tweens.Tween[] = [];
+  private bardShadow!: Phaser.GameObjects.Ellipse;
   private bardWasWalking: boolean | null = null;
   private audioEngine = new AudioEngine(AUDIO_MANIFEST);
 
@@ -717,6 +726,8 @@ export class RoadScene extends Phaser.Scene {
     const head = this.add.image(2, -66, 'bard-head');
     this.bardUpper = this.add.container(0, 0, [torso, this.bardLute, head]);
 
+    // Added before the bard so it sits under him in the display list.
+    this.bardShadow = this.add.ellipse(0, 0, BARD_SHADOW_W, BARD_SHADOW_H, 0x000000, BARD_SHADOW_ALPHA);
     this.bard = this.add.container(0, 0, [this.bardLegLeft, this.bardLegRight, this.bardUpper]);
     this.bard.setScale(BARD_SCALE);
   }
@@ -1857,9 +1868,19 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private updateBard(hitLineX: number, laneY: number): void {
-    this.bard.setPosition(hitLineX, laneY + BARD_GROUND_Y_OFFSET);
+    const groundY = laneY + BARD_GROUND_Y_OFFSET;
+    this.bard.setPosition(hitLineX, groundY);
 
     const walking = this.walking;
+    // The shadow tightens as he rises on each step and spreads when he
+    // lands, which is what sells a walk as having weight. Derived from the
+    // upper body's own bob so it can never fall out of step with it.
+    const bob = Math.max(0, -this.bardUpper.y);
+    const lift = Math.min(1, bob / 6);
+    this.bardShadow.setPosition(hitLineX, groundY - 1);
+    this.bardShadow.setScale(1 - lift * 0.22, 1 - lift * 0.3);
+    this.bardShadow.setAlpha(BARD_SHADOW_ALPHA * (1 - lift * 0.35));
+
     if (walking !== this.bardWasWalking) {
       this.bardWasWalking = walking;
       this.setBardAnimState(walking);
