@@ -743,13 +743,32 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     music, and the arithmetic holding them back had no test; naming the
     wrong tune would actively mis-teach. Every title lands within ~50ms of
     its own pass. Three instrumentation attempts, game fine in all three.
-77. **Next.** Nothing queued. The open question the model cannot answer
-    itself is whether the fade pace suits a real five-year-old; the single
-    dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
-    sitting), not the thresholds. Ideas with teaching value: a fourth
-    support band spacing tuned by observation, more tunes in existing
-    sets, and **key signatures** — still a genuine v0.4+ *direction*
-    rather than a task, since it breaks naturals-only.
+77. **Next.** Nothing queued — and after the 2026-07-26 session that is a
+    meaningful statement rather than an empty one, so here is where to look.
+
+    **First, check the blockers.** Both items under *Blocked on human* in
+    STATE.md are genuinely actionable the moment their blocker lifts, and
+    both are worth more than anything invented from scratch:
+    a fourth forest song (needs one page fetch, or a transcription from a
+    human) and the v0.1 tag (needs push rights this environment lacks).
+
+    **Second, if a playtest answer has arrived**, fold it in. The single
+    open question the project cannot answer itself is whether the fade pace
+    suits a real five-year-old; the one dial is `SESSION_GAIN_CAP`
+    (currently 12, i.e. at most two bands per sitting), *not* the band
+    thresholds and *not* the lead times. PLAYTEST.md opens with how to ask.
+
+    **Third, the idea backlog below.** Note that the two biggest items there
+    still need a human or a device: sharper mobile rendering wants a real
+    phone to judge the fill-rate trade, and the coin chime wants an ear.
+
+    **What not to reach for.** The verification suite is comprehensive now
+    (16 checks); adding a seventeenth for its own sake is drift. So is
+    another render extraction — `createBard` is the only drawing code left
+    in the scene and it is genuinely entangled with scene state, so moving
+    it would relocate the tangle rather than remove it. **Key signatures**
+    remain a v0.4+ *direction* rather than a task, because they break
+    naturals-only, which is load-bearing for the whole letter-fading model.
 
 ## Idea backlog (pull from here when nothing is queued)
 
