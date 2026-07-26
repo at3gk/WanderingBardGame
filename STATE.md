@@ -286,6 +286,24 @@ by `wc -l` before anything else ran, reverted with `git checkout`. Match
 method spans by walking braces line-by-line, and check the line delta
 against what you expected before running any test.
 
+**Mashing is safe, and earns credit it hasn't earned**
+(`tools/mash-check.mjs`). Every other harness plays correctly — on the beat,
+one tap per note — which is the least likely thing a five-year-old does. At
+38 taps/sec for a minute the game is fine: markers and textures bounded,
+fps 36, saved record valid. Taps that hit nothing cost nothing — only 80
+encounters and 461 oscillators from 2274 taps, so a stray tap neither feeds
+the model nor makes a sound.
+
+The honest caveat: those 80 were all *hits* with zero misses, because
+spraying taps lands on every note. The model reads that as familiarity and
+will fade letters for a child who is not looking at the staff. **Left alone
+deliberately** — DESIGN.md scopes the model as a dosage schedule driven by
+exposure rather than an assessment, and the design self-corrects: letters
+faded without being learned mean the child struggles next time they play
+properly, the meter drops, and full support returns instantly. A
+burst-detector would be a new system guarding something the existing one
+already absorbs.
+
 **The moon has craters** — the last flat thing in the world. Everything
 else carries shape (gables and lit windows, conifers and fireflies, a tent
 and a campfire); the moon was a plain disc and it is the largest object in
