@@ -35,7 +35,7 @@ node /path/to/repo/tools/verify-all.mjs          # everything, ~25 min
 node /path/to/repo/tools/verify-all.mjs quick    # the fast four, ~4 min
 ```
 
-There are thirteen checks now, several of which take minutes, and a run that has
+There are fourteen checks now, several of which take minutes, and a run that has
 to remember all of them will sooner or later remember only the fast ones.
 
 It runs them **one at a time on purpose.** Several Chromium instances
@@ -158,6 +158,32 @@ hardware is orders of magnitude tighter.
 `autoplay.mjs` reports the raw clock gap as information only. If this is
 ever picked up again, measure a note against **its own** scheduled
 oscillator, captured at scheduling time — not by matching lists afterwards.
+
+## `nofail-check.mjs [seconds]`
+
+The game's central emotional promise, asserted rather than assumed.
+DESIGN.md: *"no harsh buzzers or red flashes — a missed beat just lets a
+note drop out of the tune"*, *"a miss just dims it to mauve. Nothing flashes
+red."*
+
+Every other harness plays well, or plays chaotically. None of them checks
+what the game does to a child who is simply **not managing**. So this one
+taps once to start the music and then does nothing at all for 45 seconds.
+
+Result, 2026-07-26 — giving up costs nothing but the walk:
+
+```
+meter 0   walking false   scene still active   38 notes still arriving
+missed-note tint 0x8A5A5A (mauve; red channel 138, nowhere near dominant)
+text on screen: the song title, the coin count, "1 steps" — nothing else
+oscillators 5.1/sec, i.e. the tune playing on and nothing added per miss
+```
+
+The oscillator ceiling is the interesting assertion. The tune keeps playing
+regardless of the meter — deliberately, since that is what lets a lost child
+hear where they are — so sound continues at three layers x 1.6 beats/sec.
+A buzzer on every missed note would add another ~1.6/sec and trip the
+threshold.
 
 ## `dusk-check.mjs`
 

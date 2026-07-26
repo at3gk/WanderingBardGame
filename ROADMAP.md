@@ -715,7 +715,13 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     the road/scenery tint both move while note tint, note alpha, staff
     colour and alpha, and clef tint and alpha are identical. Asserts both
     halves, so it cannot pass by the cycle having stopped.
-72. **Next.** Nothing queued. The open question the model cannot answer
+72. ~~**Assert the no-fail promise.**~~ Done: `tools/nofail-check.mjs`
+    taps once and then gives up for 45 seconds. No fail state, no red, no
+    shaming text, notes still arriving so the child can rejoin, and nothing
+    sounds on a miss (asserted as an oscillator-rate ceiling, since the tune
+    itself deliberately plays on). The kindest part of the design was the
+    least tested part of it.
+73. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth
