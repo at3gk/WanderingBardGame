@@ -8,7 +8,7 @@ import {
   MIN_STEP_BAND,
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
-import { advanceSequence, songStepSequence, stepsUsedBy } from './freePlay';
+import { advanceSequence, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
 import { ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
 
 const VIEWPORTS: Array<[string, number]> = [
@@ -147,5 +147,30 @@ describe('playing a chosen song at your own pace', () => {
   it('does nothing at all when wandering', () => {
     expect(songStepSequence(null)).toEqual([]);
     expect(advanceSequence(0, 4, [])).toBe(0);
+  });
+});
+
+describe('writing the tune out left to right', () => {
+  it('marches across the line, then starts a new one', () => {
+    // 360px of staff at 30px a note is twelve to a line.
+    const at = (i: number) => writtenNoteSlot(i, 360);
+    expect(at(0)).toMatchObject({ column: 0, line: 0, perLine: 12 });
+    expect(at(11)).toMatchObject({ column: 11, line: 0 });
+    expect(at(12)).toMatchObject({ column: 0, line: 1 });
+    expect(at(25)).toMatchObject({ column: 1, line: 2 });
+  });
+
+  it('fits fewer to a line on a narrower screen', () => {
+    expect(writtenNoteSlot(0, 240).perLine).toBeLessThan(writtenNoteSlot(0, 600).perLine);
+  });
+
+  it('always leaves room for at least one note, however cramped', () => {
+    for (const w of [0, 5, 29, 30]) {
+      expect(writtenNoteSlot(3, w).perLine, `width ${w}`).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('never returns a negative column for a nonsense index', () => {
+    expect(writtenNoteSlot(-4, 360).column).toBe(0);
   });
 });

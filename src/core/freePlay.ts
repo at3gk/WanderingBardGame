@@ -138,3 +138,27 @@ export function advanceSequence(index: number, tappedStep: number, sequence: num
   if (sequence[here] !== tappedStep) return here;
   return (here + 1) % sequence.length;
 }
+
+/**
+ * Where a correct note goes when the tune is being written out.
+ *
+ * In practice the notes the child finds are laid left to right instead of
+ * appearing wherever their finger landed, so the phrase accumulates across
+ * the staff the way it would on paper. Reading order is not obvious to a
+ * beginner — it has to be shown, and this shows it every time they play a
+ * bar.
+ *
+ * Long tunes do not fit on one screen, so it wraps like a line of sheet
+ * music: when the line is full the next note starts a fresh one. `column`
+ * is the position within the line and `line` counts how many have been
+ * filled, so the caller can clear the previous line as a new one starts.
+ */
+export function writtenNoteSlot(
+  index: number,
+  availableW: number,
+  spacing = 30
+): { column: number; line: number; perLine: number } {
+  const perLine = Math.max(1, Math.floor(availableW / spacing));
+  const i = Math.max(0, index);
+  return { column: i % perLine, line: Math.floor(i / perLine), perLine };
+}

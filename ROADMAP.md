@@ -941,7 +941,15 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     its 64px repeats about fourteen times on a phone and reads as
     wallpaper. Edges running the full width have no period at all, which is
     why that is what got added.
-91. **Next.** Nothing queued.
+91. ~~**Write the tune out, left to right.**~~ Done. In practice a
+    correct note is now laid across the staff in the order it was played,
+    so the phrase accumulates the way it would on paper instead of
+    appearing wherever the finger landed and fading. Reading order is not
+    obvious to a beginner — it has to be shown, and this shows it every
+    time they play a bar. It wraps like a line of sheet music when the
+    line fills, and clears when the tune comes round. A *wrong* note still
+    appears under the finger and fades, so the two can never be confused.
+92. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked task 79: both remain blocked
     (forest-song fetch still 403s everywhere; the GitHub MCP toolset still
