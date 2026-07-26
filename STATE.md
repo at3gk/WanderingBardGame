@@ -3,6 +3,31 @@
 Run counter: 33
 
 ## Current status
+
+**At a glance** — read this, then only the sections you need.
+
+- The game is **v0.4**: a rhythm walk where the letter inside each note
+  fades *in time* as a position is practised, across sittings, persisted in
+  ~200 bytes of `localStorage`. The core mechanic is one tap.
+- **Eleven songs**, four per biome except forest, which has three and is
+  short a fourth (blocked — see *Blocked on human*).
+- **207 unit tests**; **nine headless checks** in `tools/`, run them all with
+  `node tools/verify-all.mjs` (or `quick` for the fast four). All green as
+  of 2026-07-26.
+- **Source layout**: `core/` pure logic, `audio/` one manifest + engine,
+  `render/` texture baking (engraving + scenery), `scenes/RoadScene.ts` the
+  one scene (1325 lines, down from 1584).
+- **The one open question the project cannot answer itself** is whether the
+  fade pace suits a real five-year-old. The single dial is
+  `SESSION_GAIN_CAP`. Everything else that used to need a human has been
+  mechanised.
+- **Standing lesson from the 2026-07-26 session**: when a check fails,
+  suspect the check first. Seven separate "bugs" that session turned out to
+  be in the instrument, not the game. Every harness now documents its wrong
+  versions alongside its right one.
+
+### v0.4 and the session of 2026-07-26
+
 **v0.4 — learning, not just exposure** (2026-07-26). The human sharpened
 the goal: *"where they can actually learn music... thru songs that they
 already know."* The weakness that named: a letter printed in every note
@@ -310,6 +335,22 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   ROADMAP *task-number collisions*, since a scheduled run will happily
   claim the next number while you hold it too. Renumber yours; don't
   renumber theirs (theirs is already merged and referenced).
+- **Run the checks with one command**: `node tools/verify-all.mjs` (all
+  nine, ~13 min) or `... quick` (the fast four, ~4 min), from the directory
+  where Playwright is installed, with `npm run preview` up. It runs them
+  serially on purpose — several Chromium instances starve each other, and a
+  long run measured under that contention reported 11fps and a third of its
+  taps missing against a game that was completely fine.
+- **When a check fails, suspect the check first.** This is the single most
+  useful thing the 2026-07-26 session learned, and it learned it seven
+  times. A harness that paused tapping during a rotation; one that tapped a
+  fixed point outside a landscape viewport; one comparing a marker to the
+  wrong oscillator; one indexing oscillators as interleaved when they are
+  grouped by layer; one comparing against a leftover PNG from a crashed
+  run; one whose baseline was a stale throttled save; one measuring under
+  its own CPU contention. Every one produced a confident, specific,
+  plausible failure. None of them was the game. Before changing code to fix
+  a failing check, make the check prove it can see its own success case.
 - **Verify behaviour, not just green tests.** `tools/autoplay.mjs` plays
   the game and checks every pitch it hears; `tools/learning-check.mjs`
   plays *well and then badly* to prove the letter-fading model both fades
@@ -579,6 +620,24 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   queued (task 38, round-2 playtest, is still blocked on human). See
   ROADMAP task 52's done entry and Current status above for the full
   writeup. `npm test` 157 green (5 new), build green, screenshot-verified.
+- Interactive session (2026-07-26, overnight): the long one. Shipped as
+  PRs #57–#66, each squash-merged to `main`. In order — two verified
+  songs (*This Old Man*, *Itsy Bitsy Spider*); made `autoplay` actually
+  assert that it plays; pinned the "fade the prompt, never the answer"
+  invariant after finding the reveal-on-strike/miss handlers can never
+  fire; measured the two design pillars for the first time; checked phone
+  rotation and added `wasUnplayable`; **fixed a real audio bug** — the
+  audio clock was anchored once at `start()` so sound drifted off the
+  staff over a session, and is now re-anchored per pass; split the
+  engraving and scenery baking into `src/render/` (RoadScene 1584 →
+  1325); verified the days-away path end-to-end; and added
+  `tools/verify-all.mjs` to run the lot.
+  Tests 179 → 207. Harnesses 4 → 9, all green.
+  The through-line: almost every "bug" this session was in the *check*,
+  not the game — seven of them. The game was in better shape than the
+  instruments measuring it. Each harness now documents its wrong versions
+  next to its right one, which is the most useful thing this session
+  produced for whoever runs next.
 
 ## Needs human playtest
 
@@ -600,6 +659,24 @@ still needs a human:
   protocol is written for exactly that.
 
 ## Blocked on human
+- **A fourth forest song** (2026-07-26). Village and riverside rotate four
+  tunes each; forest has three. The candidate is chosen and researched:
+  **Here We Go Round the Mulberry Bush** — traditional, the tune Nancy
+  Dawson danced into fame in 1700s London, so clearly public domain. It
+  uses scale degrees 1/2/3/5/6/7 only, which makes it naturals-only in C
+  major, sitting G4–G5: exactly the forest register, and its lowest note
+  matches Twinkle's, so it passes the biome staff-region test.
+  What is missing is a **note-for-note transcription verified against a
+  published source**. This environment's network policy blocks outbound
+  fetches (403 on CONNECT to every host); web *search* still works but the
+  snippets carry titles, keys and provenance, never note sequences. That
+  standard is not negotiable here — a forest transposition of *This Old
+  Man* was drafted and rejected for matching the real tune in only 6 of 32
+  notes, and a wrong contour actively mis-teaches a child who knows the
+  song. Needs a run with network access, or a transcription from a human.
+  (*Wheels on the Bus* is the obvious alternative and is **rejected on
+  rights**: attributed to Verna Hills, 1939, which fails CLAUDE.md's
+  CC0-only rule.)
 - **v0.1 git tag** (Run 12): ROADMAP task 12 says "Tag this as v0.1."
   DoD verification and the ship-check PR (#13) are done and merged
   (squash commit `021410f` on `main`), but the tag itself can't be pushed

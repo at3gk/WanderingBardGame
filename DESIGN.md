@@ -327,6 +327,30 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   The session also built `tools/` — a headless harness that plays the
   game by itself and verifies the pitches it hears — so future runs can
   check their own work instead of queuing questions for a human.
+- 2026-07-26 (fourth overnight session) — **hardening, not new design.**
+  No pillar, mechanic or tone changed. Two songs joined the book (*This
+  Old Man*, *The Itsy Bitsy Spider*, both verified against published
+  sources) and one real defect was fixed: the audio clock was anchored
+  once when play began, so over a long sitting the tune drifted away from
+  the staff — it is re-anchored every song now. The rest of the session
+  went into being able to *trust* what this document claims.
+  Two claims turned out to be wrong. "Fade the prompt, never the answer"
+  was credited here to the reveal-on-strike and reveal-on-miss handlers;
+  measurement showed those can never fire, because the 350ms reveal floor
+  always beats the 90ms hit window. The real guarantee is stronger, and
+  the Pedagogy section above now says so, with a test pinning the two
+  constants together. And the design pillars — "playable in under five
+  seconds", "mobile-friendly" — had never been measured at all; they now
+  are, across six viewports.
+  Rejected this session, with reasons: a fourth **forest** song
+  (*Mulberry Bush* is chosen and fits, but no transcription could be
+  verified note-for-note without network access, and the forest *This Old
+  Man* draft was already rejected for matching the real tune in 6 of 32
+  notes — a wrong contour actively mis-teaches a child who knows the
+  song); *Wheels on the Bus* (attributed 1939, fails the CC0-only rule);
+  and a browser-side audio-sync assertion (five attempts, five different
+  answers, the instrument wrong every time — the unit tests carry it
+  instead).
 - 2026-07-25 (second overnight session) — **v0.2 direction, set by the
   human: teach kids to read music.** New Pedagogy section above; Concept
   extended. The insight that makes this a deepening rather than a pivot:
