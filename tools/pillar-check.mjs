@@ -143,6 +143,48 @@ for (const vp of VIEWPORTS) {
     fail.push(`${vp.name}: note heads close to ${Math.round(minGap)}px apart, narrower than the ~${HEAD_W}px head`);
   }
 
+  // Free play has its own layout, and it is the one that can go wrong on a
+  // short screen: the walk's staff is recomputed every frame from the lane
+  // position, while this one is laid out once from the height available.
+  // A landscape phone put middle C at y=386 on a 390px screen — clipped at
+  // the edge and impossible to tap — and nothing here would have noticed,
+  // because this file only ever looked at the road.
+  await page.mouse.click(124, 24); // the free-play toggle
+  await page.waitForTimeout(350);
+  const free = await page.evaluate(() => {
+    const s = window.game.scene.scenes[0];
+    if (!s.freeStaff) return null;
+    const ys = [];
+    for (let step = 0; step <= 12; step++) {
+      ys.push(Math.round(s.freeStaff.bottomY - step * s.freeStaff.stepGap));
+    }
+    return { gap: s.freeStaff.stepGap, ys, h: s.scale.height, mode: s.mode };
+  });
+  if (!free) {
+    fail.push(`${vp.name}: free play did not open`);
+  } else {
+    // Every offered note has to be on screen. There is no scrolling, so a
+    // note past the edge is not "overflowed", it is gone.
+    const NOTE_HALF = 14;
+    for (let i = 0; i < free.ys.length; i++) {
+      if (free.ys[i] + NOTE_HALF > free.h) {
+        fail.push(`${vp.name}: free-play step ${i} sits at y=${free.ys[i]} on a ${free.h}px screen`);
+        break;
+      }
+      if (free.ys[i] - NOTE_HALF < 0) {
+        fail.push(`${vp.name}: free-play step ${i} sits above the top edge (y=${free.ys[i]})`);
+        break;
+      }
+    }
+    // And still be big enough to aim at. During the walk the steps are 9px
+    // apart, which is the entire reason this mode has its own geometry.
+    if (free.gap < 26) {
+      fail.push(`${vp.name}: free-play step gap is ${Math.round(free.gap)}px — too small to aim at`);
+    }
+  }
+  await page.mouse.click(124, 24); // back to the road
+  await page.waitForTimeout(300);
+
   // A tap anywhere must register — the whole game is one touch target.
   await page.mouse.click(Math.round(geom.w / 2), Math.round(geom.h * 0.8));
   const tapWorked = await page.evaluate(() => window.game.scene.scenes[0].hintShown === false);
@@ -191,6 +233,8 @@ for (const vp of VIEWPORTS) {
     readyMs,
     hitLineX: Math.round(geom.hitLineX),
     runway: Math.round(geom.w - geom.hitLineX),
+    freeGap: free ? Math.round(free.gap) : null,
+    freeLowestY: free ? free.ys[0] : null,
     minNoteGap: Number.isFinite(minGap) ? Math.round(minGap) : null,
     staffTop: Math.round(geom.noteYs[12]),
     staffBottom: Math.round(geom.noteYs[-2]),

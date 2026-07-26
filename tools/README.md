@@ -540,6 +540,19 @@ the case it was written for. Confirmed visually at both 375px and the
 tightest case, 320px, on This Old Man's run of eighth-note C's — clearly
 separated, letters legible.
 
+It also enters **free play** at each viewport and checks that layout too,
+which is the one that can actually go wrong on a short screen: the walk's
+staff is recomputed every frame from the lane position, while free play's is
+laid out once from the height available. Every offered note must land on
+screen — there is no scrolling, so a note past the edge is not "overflowed",
+it is gone — and every step must stay at or above the 26px a finger needs.
+
+That is not hypothetical. A landscape phone put middle C at y=386 on a 390px
+screen, clipped and untappable, and nothing here noticed because this file
+only ever looked at the road. Mutation-checked: restoring the old behaviour
+fails with `iPhone 12 landscape: free-play step 0 sits at y=386 on a 390px
+screen`.
+
 Frame rate is deliberately **not** checked here. Headless software GL says
 nothing about a real phone; see the sharper-mobile-rendering note in
 ROADMAP, which is still waiting on a device.
