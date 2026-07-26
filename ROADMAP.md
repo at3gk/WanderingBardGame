@@ -643,7 +643,13 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     band of help back, nothing is ever wiped, and a corrupt record starts
     fresh rather than breaking. Asserts a gap can only return support, never
     remove it, and never raises a position's peak.
-65. **Next.** Nothing queued. The open question the model cannot answer
+65. ~~**One command to run the whole suite.**~~ Done:
+    `tools/verify-all.mjs` (`quick` for the fast four). Nine checks is more
+    than a run will reliably remember, and the slow ones are exactly the
+    ones that get skipped. Serial on purpose — concurrent Chromium
+    instances starve each other badly enough to fake a performance
+    regression. Full run: all nine green in ~13 minutes.
+66. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth

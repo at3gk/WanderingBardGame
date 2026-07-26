@@ -26,6 +26,23 @@ All three launch the browser with
 `executablePath: '/opt/pw-browsers/chromium'` — the pre-installed binary in
 this environment. Change it if you're running elsewhere.
 
+## `verify-all.mjs [quick]`
+
+Runs the whole suite and prints one summary. **Start here.**
+
+```bash
+node /path/to/repo/tools/verify-all.mjs          # everything, ~25 min
+node /path/to/repo/tools/verify-all.mjs quick    # the fast four, ~4 min
+```
+
+There are nine checks now, several of which take minutes, and a run that has
+to remember all of them will sooner or later remember only the fast ones.
+
+It runs them **one at a time on purpose.** Several Chromium instances
+compete badly: a seven-minute autoplay measured while two other checks were
+running reported 11fps and a third of its taps missing, against a game that
+was completely fine. Long measurements have to be taken alone.
+
 ## `autoplay.mjs [seconds]`
 
 Plays the game by itself and asserts on what happened **and what was
