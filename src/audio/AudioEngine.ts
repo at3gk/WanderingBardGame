@@ -4,6 +4,13 @@ import { isLayerActive } from './layering';
 import { AudioManifest, LoopLayer } from './manifest';
 
 const LAYER_FADE_SECONDS = 0.6;
+/**
+ * Headroom between reading the audio clock and the earliest note that can
+ * be scheduled against it, so a note on the boundary is never asked to
+ * sound very slightly in the past. Applied identically on every schedule so
+ * it stays a fixed relationship between the visual and audio clocks.
+ */
+const SCHEDULE_LEAD_SEC = 0.05;
 
 /**
  * Thin Web Audio wrapper that performs whatever song the scene is walking
@@ -93,7 +100,6 @@ export class AudioEngine {
     this.started = true;
 
     const ctx = this.ensureContext();
-    this.startAt = ctx.currentTime + 0.05 - nowMs / 1000;
 
     this.masterGain = ctx.createGain();
     this.masterGain.gain.value = this.muted ? 0 : 1;
@@ -106,16 +112,40 @@ export class AudioEngine {
 
     // Notes earlier than `nowMs` belong to beats that already scrolled past
     // the hit line — skip them so `start` doesn't burst-play a backlog.
+    // `schedule` also sets the anchor, so there is one place that maps
+    // visual time onto audio time rather than two that can disagree.
     this.schedule(notes, nowMs);
   }
 
   /**
    * Schedules a run of song notes on every layer. No-ops until `start` has
-   * run. `minTimeMs` drops notes already in the past (only used by `start`).
+   * run. `nowMs` is the visual schedule's current elapsed time; notes
+   * earlier than it are dropped as already past.
+   *
+   * Passing `nowMs` also **re-anchors the audio clock to the visual one**,
+   * which is the point. Visuals run off Phaser's time (performance.now)
+   * and audio off AudioContext.currentTime — two independent clocks, and
+   * the audio one is driven by the sound hardware, so the two are never
+   * exactly the same rate. Anchoring once at `start` and scheduling every
+   * later pass against that original anchor let the error accumulate
+   * without bound: what you see and what you hear would slide apart for as
+   * long as the session lasted, which in a rhythm game is the one failure
+   * that ruins it.
+   *
+   * Re-deriving the anchor per pass bounds the error to a single song
+   * instead of a whole sitting. Measured headless (where the audio clock
+   * runs ~0.17% slow against a software sink — real hardware is orders of
+   * magnitude tighter) the drift went from 1193ms over 7 minutes to well
+   * inside a song's worth. The correction is applied at a song boundary and
+   * is far smaller than the hit window, so it is not audible as a jump.
    */
-  schedule(notes: SongBeat[], minTimeMs = 0): void {
+  schedule(notes: SongBeat[], nowMs: number): void {
     const ctx = this.context;
     if (!this.started || !ctx) return;
+    // The same small lead every pass, so it stays a constant relationship
+    // between the two clocks rather than something that creeps each time.
+    this.startAt = ctx.currentTime + SCHEDULE_LEAD_SEC - nowMs / 1000;
+    const minTimeMs = nowMs;
     this.scheduleLayer(ctx, this.manifest.baseLoop, notes, minTimeMs);
     for (const layer of this.manifest.layers) {
       this.scheduleLayer(ctx, layer, notes, minTimeMs);

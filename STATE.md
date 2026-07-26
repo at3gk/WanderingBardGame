@@ -178,6 +178,42 @@ was considered and **rejected on rights**: it is attributed to Verna Hills,
 1939, which does not meet CLAUDE.md's CC0-only bar. Ship Mulberry Bush from
 a run with network access, or from a human-supplied transcription.
 
+**Audio no longer drifts away from the staff over a long session**
+(2026-07-26). Visuals run off Phaser's time (`performance.now`), audio off
+`AudioContext.currentTime` — the sound hardware's clock. Those are never
+exactly the same rate, and `AudioEngine` anchored them **once** at
+`start()` and scheduled every later pass against that original anchor, so
+the difference accumulated for as long as the session lasted. In a rhythm
+game, what you see and what you hear sliding apart is the one failure that
+ruins it. `schedule()` now re-derives the anchor on every pass, bounding
+the error to a single song instead of a whole sitting; `nowMs` became a
+required argument so there is one place that maps visual time onto audio
+time. Two new unit tests cover it, including one that moves the clocks
+apart by hand and asserts the correction is absorbed rather than carried.
+
+Honest limits on that: **the drift was never convincingly measured in a
+browser.** Five attempts gave five answers (17s, 1.2s, ±900ms scattered,
+−22s, −566ms) and every time the bug was in the instrument — CPU contention
+from my own concurrent checks, comparing the raw clock gap (which should
+grow and is harmless) instead of note-sounds-vs-note-seen, matching an
+early-resolved marker against the wrong oscillator, and indexing
+oscillators as interleaved when `scheduleLayer` emits one layer at a time.
+Reading the anchor straight out of a live `schedule()` gives ~7ms, agreeing
+with the unit tests. So the fix is shipped on the strength of the tested
+arithmetic, and **no browser sync assertion is wired up** — a check that has
+been wrong five times has not earned the right to fail a run. Headless is
+the wrong place to judge it anyway: with no audio device the clock runs
+~0.17% slow against a software sink. `tools/README.md` records the method
+for anyone picking it up.
+
+**Long-session stability confirmed clean** (7-minute autoplay): fps holds
+17–23, textures plateau at 109 (bounded by the songbook — 85 note/rest
+textures plus scenery and UI, so not a leak), markers stay bounded, and
+590 of 592 taps land. An earlier run showing fps 11 and 201 misses was my
+own CPU contention from running three Chromium instances at once — a
+reminder to run long measurements alone. `autoplay.mjs` now asserts the
+texture count plateaus.
+
 Deviation from CLAUDE.md worth flagging: this is more than "exactly ONE
 roadmap task" — it is a model, a persistence layer, a songbook swap and a
 harness. That rule governs the scheduled autonomous runs; this was an

@@ -1176,7 +1176,10 @@ export class RoadScene extends Phaser.Scene {
     this.totalNotesGenerated += notes.length;
     this.nextPassStartTimeMs += songDurationMs(song, BPM);
     this.announceSong(song);
-    this.audioEngine.schedule(notes);
+    // Pass the current visual time: it drops notes already past *and*
+    // re-anchors the audio clock to the visual one, so drift between the
+    // two is bounded to a single song rather than a whole sitting.
+    this.audioEngine.schedule(notes, this.time.now - this.startTimeMs);
   }
 
   private handleInput(): void {
