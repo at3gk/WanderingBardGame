@@ -859,7 +859,16 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     the reference the walk deliberately fades. And it does **not** feed the
     learning model, because a note the child picked is not evidence they
     can read one the game picked.
-83. **Next.** Nothing queued.
+83. ~~**Polish the two new surfaces.**~~ Done. Both the picker and the
+    free-play staff snapped into existence between two frames, which reads
+    as the game breaking rather than as something sliding in front; both
+    fade now (130ms and 220ms). `pickerOpen` still flips *immediately* on
+    close — the input model must never wait on a transition, or a child's
+    first tap after choosing would vanish. And free play now marks the
+    notes of the chosen tune with a warm pip: the ladder on its own gives
+    no hint where to start, and this says "here are the ones in Twinkle"
+    without an instruction nobody can read.
+84. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked task 79: both remain blocked
     (forest-song fetch still 403s everywhere; the GitHub MCP toolset still

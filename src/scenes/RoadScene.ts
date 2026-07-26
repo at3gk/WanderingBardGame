@@ -19,6 +19,7 @@ import {
   FreePlayStaff,
   freePlayStepAt,
   freePlayStepY,
+  stepsUsedBy,
 } from '../core/freePlay';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
 import { accumulateDistance } from '../core/distance';
@@ -228,6 +229,8 @@ const FREEPLAY_LINE_COLOR = 0xe8d9c0;
 const FREEPLAY_LINE_ALPHA = 0.44;
 const FREEPLAY_LEDGER_ALPHA = 0.11;
 const FREEPLAY_NOTE_MS = 900;
+const PICKER_FADE_MS = 130;
+const FREEPLAY_FADE_MS = 220;
 const HINT_Y_OFFSET = -92;
 const HINT_FADE_MS = 400;
 // Strum on hit (ROADMAP idea backlog): the visual twin of AudioEngine.pluck
@@ -986,9 +989,17 @@ export class RoadScene extends Phaser.Scene {
     const staff = freePlayStaff(this.scale.height, FREEPLAY_TOP_MARGIN, FREEPLAY_BOTTOM_MARGIN);
     this.freeStaff = staff;
 
+    // Which positions the tune the child is learning actually uses. Free
+    // play on its own is a ladder with no suggestion of where to start;
+    // marking the song's own notes turns it into "here are the ones in
+    // Twinkle, try those" without adding an instruction nobody can read.
+    // Wandering marks nothing — there is no one tune to point at.
+    const inSong = stepsUsedBy(this.songChoice ? SONGS.find((song) => song.id === this.songChoice) : null);
+
     for (let step = FREE_PLAY_LOW_STEP; step <= FREE_PLAY_HIGH_STEP; step++) {
       const y = freePlayStepY(step, staff);
       const isStaffLine = STAFF_LINE_STEPS.includes(step);
+      const used = inSong.has(step);
       const line = this.add.rectangle(
         w / 2,
         y,
@@ -999,6 +1010,15 @@ export class RoadScene extends Phaser.Scene {
       );
       line.setDepth(FREEPLAY_DEPTH);
       this.freeParts.push(line);
+
+      // A warm dot beside the notes this song uses — the same gold as the
+      // lit windows and the coin, which is this world's colour for "look
+      // here".
+      if (used) {
+        const pip = this.add.circle(30, y, 3.5, PICKER_CHOSEN_BG, 0.95);
+        pip.setDepth(FREEPLAY_DEPTH + 1);
+        this.freeParts.push(pip);
+      }
 
       // The letter, always. Nothing is being asked here, so nothing is
       // withheld — this is the reference the walk deliberately fades.
@@ -1011,9 +1031,18 @@ export class RoadScene extends Phaser.Scene {
       label.setOrigin(0.5, 0.5);
       // Letters follow the same hierarchy: the five line-notes are the
       // landmarks a reader actually navigates by.
-      label.setAlpha(isStaffLine ? 0.9 : 0.55);
+      label.setAlpha(used ? 1 : isStaffLine ? 0.9 : 0.55);
       label.setDepth(FREEPLAY_DEPTH + 1);
       this.freeParts.push(label);
+    }
+
+    // Fade the staff up, for the same reason the picker fades: a
+    // full-height ladder appearing between two frames reads as a glitch.
+    for (const part of this.freeParts) {
+      const target = part as Phaser.GameObjects.GameObject & { alpha: number };
+      const to = target.alpha;
+      target.alpha = 0;
+      this.tweens.add({ targets: target, alpha: to, duration: FREEPLAY_FADE_MS, ease: 'Quad.easeOut' });
     }
   }
 
@@ -1129,13 +1158,37 @@ export class RoadScene extends Phaser.Scene {
     // Tapping the backdrop closes without choosing — the way out for a
     // child who opened this by accident.
     backdrop.on('pointerdown', () => this.closePicker());
+
+    // Fade the whole panel up rather than snapping it on. A full-screen
+    // overlay appearing between two frames reads as the game breaking;
+    // 130ms is enough to say "this slid in front" and short enough that
+    // nobody is waiting for it.
+    for (const part of this.pickerParts) {
+      const target = part as Phaser.GameObjects.GameObject & { alpha: number };
+      const to = target.alpha;
+      target.alpha = 0;
+      this.tweens.add({ targets: target, alpha: to, duration: PICKER_FADE_MS, ease: 'Quad.easeOut' });
+    }
   }
 
   private closePicker(): void {
     if (!this.pickerOpen) return;
     this.pickerOpen = false;
-    for (const part of this.pickerParts) part.destroy();
+    // Fade out and destroy on completion. `pickerOpen` goes false straight
+    // away, so taps reach the lane again the instant the choice is made
+    // rather than after the animation — the input model must never wait on
+    // a transition.
+    const parts = this.pickerParts;
     this.pickerParts = [];
+    for (const part of parts) {
+      this.tweens.add({
+        targets: part,
+        alpha: 0,
+        duration: PICKER_FADE_MS,
+        ease: 'Quad.easeIn',
+        onComplete: () => part.destroy(),
+      });
+    }
   }
 
   /**
