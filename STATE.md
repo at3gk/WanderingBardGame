@@ -286,6 +286,15 @@ by `wc -l` before anything else ran, reverted with `git checkout`. Match
 method spans by walking braces line-by-line, and check the line delta
 against what you expected before running any test.
 
+**Deep night proven not to dim the teaching surface**
+(`tools/dusk-check.mjs`). The art direction promises the dusk cycle darkens
+the world but never the bard or the notation; nothing asserted it. At the
+deepest point of the cycle the sky moves 2759214 → 794387 and the
+road/scenery tint drops, while note tint, note alpha, staff line colour and
+alpha, and clef tint and alpha are all **byte-identical**. The check asserts
+both halves — without confirming the world actually darkened it could pass
+just because the cycle had stopped running.
+
 **Mute and the keyboard now have coverage** (`tools/input-check.mjs`).
 Every other harness taps the middle of the canvas, so these two paths had
 none at all — and mute is the control a *parent* reaches for. Verified that

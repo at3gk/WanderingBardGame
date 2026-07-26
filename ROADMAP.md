@@ -707,7 +707,15 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     read directly rather than trusting the icon), costs no beat despite
     sitting over the playfield, and restores on a second press; the spacebar
     plays. All green, no code changes needed.
-71. **Next.** Nothing queued. The open question the model cannot answer
+71. ~~**Prove deep night doesn't dim the letters.**~~ Done:
+    `tools/dusk-check.mjs`. The art direction promised the dusk cycle
+    darkens the world but never the notation, and nothing checked it — which
+    matters because the letters are the whole teaching surface and deep
+    night arrives about four minutes into any walk. At mid-cycle the sky and
+    the road/scenery tint both move while note tint, note alpha, staff
+    colour and alpha, and clef tint and alpha are identical. Asserts both
+    halves, so it cannot pass by the cycle having stopped.
+72. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth
