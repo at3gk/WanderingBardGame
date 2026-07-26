@@ -304,6 +304,50 @@ await page.waitForTimeout(700);
 await page.evaluate(() => window.game.scene.scenes[0].chooseSong(null));
 await page.waitForTimeout(300);
 
+// --- choosing "wander" from inside free play ------------------------------
+// Everything on screen at this point — pips, cursor, the written phrase,
+// the title — belongs to a song that is about to stop being chosen.
+await page.evaluate(() => window.game.scene.scenes[0].chooseSong(null));
+await page.waitForTimeout(500);
+const wandering = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  return { choice: s.songChoice, seq: s.freeSequence.length, pips: s.freePips.length,
+           cursor: !!s.freeCursor, written: s.freeWritten.length,
+           title: s.songTitleText.text, markers: s.markers.length,
+           hint: s.freeHint ? s.freeHint.text : null };
+});
+console.log('wander from inside free play:', JSON.stringify(wandering));
+if (wandering.seq || wandering.pips || wandering.cursor || wandering.written) {
+  fail.push('choosing wander left the previous song on the staff');
+}
+if (wandering.title !== '') fail.push(`the title still names "${wandering.title}" with nothing chosen`);
+if (wandering.markers !== 0) fail.push(`${wandering.markers} road notes were queued behind the staff`);
+if (wandering.hint !== 'tap a line to hear it') {
+  fail.push(`the hint still reads "${wandering.hint}" with no song to follow`);
+}
+
+// --- reloading while in free play ------------------------------------------
+// The mode is deliberately not persisted — the road is the game, and that is
+// where a fresh page should start. The *song* is persisted, though, and the
+// road has to actually be running when it comes back.
+await page.evaluate(() => window.game.scene.scenes[0].chooseSong('buns'));
+await page.waitForTimeout(400);
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+const reloaded = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  return { mode: s.mode, choice: s.songChoice, markers: s.markers.length, biome: s.currentBiomeId() };
+});
+console.log('reloaded from free play:', JSON.stringify(reloaded));
+if (reloaded.mode !== 'walk') fail.push('a reload came back into free play rather than onto the road');
+if (reloaded.choice !== 'buns') fail.push('the song choice did not survive a reload from free play');
+if (reloaded.markers === 0) fail.push('the road was not running after reloading out of free play');
+await page.evaluate(() => window.game.scene.scenes[0].chooseSong(null));
+await page.waitForTimeout(300);
+// Re-enter, since the checks below expect to be in free play.
+await page.mouse.click(124, 24);
+await page.waitForTimeout(500);
+
 // --- and back to the road -------------------------------------------------
 await page.mouse.click(124, 24);
 await page.waitForTimeout(2600);
