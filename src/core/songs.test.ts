@@ -104,4 +104,25 @@ describe('the songbook', () => {
   it('falls back to the village set for an unknown biome', () => {
     expect(songForBiome('nowhere').id).toBe('mary');
   });
+
+  it('leaves no gap in the beginner treble range — every position gets practice', () => {
+    // The learning model (core/scaffold.ts) fades a position's letter as
+    // the child meets it. A position that appears in NO song can never be
+    // learned, and one that appears in only a handful of notes would sit
+    // fully-labelled forever while its neighbours faded — a visibly patchy
+    // staff. This is the guard against a future song swap quietly opening
+    // such a hole.
+    const counts = new Map<number, number>();
+    for (const song of SONGS) {
+      for (const note of song.notes) {
+        if (note.rest) continue;
+        const step = staffStepAt(note.semitone)!;
+        counts.set(step, (counts.get(step) ?? 0) + 1);
+      }
+    }
+    // Middle C (0) up to A5 (12): one ledger below the staff to one above.
+    for (let step = 0; step <= 12; step++) {
+      expect(counts.get(step) ?? 0, `staff step ${step} never appears`).toBeGreaterThan(0);
+    }
+  });
 });

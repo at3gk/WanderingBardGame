@@ -558,9 +558,32 @@ the one-mechanic rule and the art direction (notation icons,
 warm-vs-cool palette).
 
 - ~~**Signposts at transitions**~~ — shipped as task 53 above.
-- **Sharper mobile rendering**: check `devicePixelRatio` handling in the
-  Phaser config; procedural shapes may render noticeably crisper on
-  phones with `resolution`/zoom set correctly. Measure first.
+- **Sharper mobile rendering** — *measured 2026-07-26, real finding, not
+  yet acted on.* On an iPhone 12 viewport (`devicePixelRatio` 3) the canvas
+  backing store is 390×664 — exactly the CSS size, ratio 1.0. So the game
+  renders at a **third** of device resolution and the browser upscales it.
+  Everything is softer than it could be on a phone, and the worst-affected
+  thing is the smallest thing: the letter inside a note head, which is the
+  entire teaching surface.
+
+  The recipe, if taken up: `zoom: 1 / dpr` in the `scale` config makes
+  Phaser size the backing store in device pixels while keeping the CSS size
+  correct. `this.scale.width/height` then return *device* pixels, so every
+  **proportional** layout read (`width * 0.25`, `height / 2` — most of the
+  28 usages) keeps working untouched, while every **absolute** constant
+  (`STAFF_LINE_GAP`, note texture dimensions, font sizes, margins, bard
+  scale, tile sizes) must be multiplied by dpr, and the baked textures
+  redrawn at that size.
+
+  Why it was NOT done on the night it was found: rendering at 3× costs
+  roughly 9× the fill rate, and this scene has several full-width
+  TileSprites plus a starfield. That is a genuine performance trade, and
+  Phaser's DPR-1 default is a deliberate choice rather than a bug. It
+  cannot be judged from a headless browser on a server — the honest test is
+  frame rate on a real phone. Do this one *with a device in hand*, consider
+  capping at `Math.min(dpr, 2)` for most of the sharpness at 4× rather than
+  9× the cost, and check `tools/autoplay.mjs`'s fps sample before and after
+  on that device rather than in headless (where it means nothing).
 - **Riverside water shimmer**: slow alpha pulse on the water-glint
   dashes — one tween on the scenery TileSprite's tint, if it reads.
 - **Coin chime cap**: coins currently tick silently; a very quiet chime
