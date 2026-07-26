@@ -6,6 +6,36 @@ relay verdicts in a session. The next run folds answers into code.
 
 ---
 
+## If you only do one thing
+
+**Round 4, first bullet: the fade pace.** It is the only question left that
+the project genuinely cannot answer about itself, and it needs a child, not
+an adult.
+
+Everything else in the learning model is now checked mechanically — letters
+fade with practice, come back when the child struggles, survive a reload,
+survive a month away, and always arrive before the note reaches the line
+(`node tools/verify-all.mjs`, ten checks). What no harness can judge is
+whether the *rate* suits a five-year-old.
+
+What to do: let a child play two or three separate sittings, a few minutes
+each, on different days if you can — the fade is deliberately slow within
+one sitting. Then answer one question: **were the letters disappearing
+faster than they were ready for?**
+
+- Too fast → lower `SESSION_GAIN_CAP` in `src/core/scaffold.ts` (currently
+  12, meaning at most two support bands per sitting). That is the dial.
+  Not the band thresholds, not the lead times.
+- Too slow / never noticed → raise it, but only after checking they were
+  actually getting letterless notes at all.
+- Distress on a bare note → say so loudly. That would mean the premise is
+  wrong and fading should be reverted, not tuned. See Round 4.
+
+A one-line answer is enough. "Felt about right", "too fast by the third
+go", or "she never got to a bare note" are all actionable.
+
+---
+
 ## Round 1 — 2026-07-25 (answered; folded in same session)
 
 | Question | Verdict | Action taken |
@@ -16,6 +46,15 @@ relay verdicts in a session. The next run folds answers into code.
 | Visuals/mobile | **Walk/scroll mismatch; biome shifts weak; "need better bard animation, no background features, focus on art/sprite style"** | Walk + scroll now beat-derived (1 footfall/beat, 1 tile/footfall); palettes re-pitched (plum/green/blue). Art direction → ROADMAP tasks 30–32 |
 
 ## Round 2 — open
+
+Note (2026-07-26): several of these have since been answered *mechanically*
+rather than by eye, and can be skipped unless something looks wrong —
+scenery, notation legibility and the night sky are all baked into
+deterministic sheets now (`tools/scenery-sheet.mjs`, `proofsheet.mjs`,
+`ui-sheet.mjs`), and layout is checked across nine viewports down to 320px
+(`pillar-check.mjs`). What remains genuinely subjective here is *feel*:
+the hit window, the meter refill, whether the music is cozy, and whether
+the walk reads as one motion.
 
 ### Re-judge the retuned values
 
@@ -57,6 +96,22 @@ relay verdicts in a session. The next run folds answers into code.
 - [ ] **Meter as staff** — do the five faint lines on the song-meter bar
   read as sheet music, or just clutter? Legible at phone size while
   walking? (`METER_STAFF_LINE_COLOR`/`_ALPHA` — `src/scenes/RoadScene.ts`)
+
+## New since the last playtest (2026-07-26 overnight session)
+
+Worth a glance while you are in there, though none of it is blocking:
+
+- [ ] **Two more songs** — *This Old Man* now rotates in the village and
+  *The Itsy Bitsy Spider* at the riverside, so a long walk plays four
+  tunes per biome instead of three. Do they land as songs the child
+  recognises? (Forest is still three — see STATE.md, *Blocked on human*.)
+- [ ] **Audio/visual sync over a long sitting.** The audio clock used to
+  be anchored once at the first tap, so the tune drifted away from the
+  staff the longer you played; it is re-anchored every song now. On a
+  ten-minute walk, does what you *hear* still line up with what you
+  *see*? This is the one fix this session that a person can feel.
+- [ ] **The moon** has craters now, rather than being a flat disc. Still
+  reads as moonlight and not as a face?
 
 ## Round 4 — does the fading actually suit a real child? (v0.4)
 
