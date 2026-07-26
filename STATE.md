@@ -742,23 +742,41 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   ROADMAP task 52's done entry and Current status above for the full
   writeup. `npm test` 157 green (5 new), build green, screenshot-verified.
 - Interactive session (2026-07-26, overnight): the long one. Shipped as
-  PRs #57–#66, each squash-merged to `main`. In order — two verified
-  songs (*This Old Man*, *Itsy Bitsy Spider*); made `autoplay` actually
-  assert that it plays; pinned the "fade the prompt, never the answer"
-  invariant after finding the reveal-on-strike/miss handlers can never
-  fire; measured the two design pillars for the first time; checked phone
-  rotation and added `wasUnplayable`; **fixed a real audio bug** — the
-  audio clock was anchored once at `start()` so sound drifted off the
-  staff over a session, and is now re-anchored per pass; split the
-  engraving and scenery baking into `src/render/` (RoadScene 1584 →
-  1325); verified the days-away path end-to-end; and added
-  `tools/verify-all.mjs` to run the lot.
-  Tests 179 → 207. Harnesses 4 → 9, all green.
-  The through-line: almost every "bug" this session was in the *check*,
-  not the game — seven of them. The game was in better shape than the
-  instruments measuring it. Each harness now documents its wrong versions
-  next to its right one, which is the most useful thing this session
-  produced for whoever runs next.
+  PRs #57–#84, each squash-merged to `main`, every deploy green.
+
+  **Product changes** (the parts a player can meet): two verified songs
+  (*This Old Man*, *The Itsy Bitsy Spider*); **one real bug fixed** — the
+  audio clock was anchored once at `start()` so the tune drifted off the
+  staff over a long sitting, and is re-anchored per pass now; `wasUnplayable`
+  keeps a note whose whole hit window vanished in one frame gap out of the
+  learning model; the moon got craters; and Phaser's unused second
+  AudioContext was disabled.
+
+  **Structure**: texture baking split into `render/{engraving,scenery,ui}`,
+  RoadScene 1584 → 1264, each move proved byte-identical by a deterministic
+  texture sheet.
+
+  **Verification**: 4 harnesses → 16, one runner (`verify-all`), runnable in
+  place from the repo. New ground covered — the design pillars across nine
+  viewports down to 320px, the bundle-size number, phone rotation, days
+  away, mashing, mute and the keyboard, backgrounding, the gesture lockdown,
+  legibility at deepest night, the no-fail promise, and that the song title
+  names the tune actually playing. Tests 179 → 207.
+
+  **Corrected two claims the docs were making**: "fade the prompt, never the
+  answer" was credited to reveal handlers that provably never fire (the real
+  guarantee is stronger and is now a pinned invariant), and two PLAYTEST
+  items asked about machinery replaced in v0.3.
+
+  The through-line: **around a dozen "bugs" this session were in the check,
+  not the game.** A harness that paused its own taps; one tapping outside a
+  rotated viewport; one comparing against a leftover PNG from a crashed run;
+  one whose reload force-saved over the state being tested; the wrong
+  AudioContext; an oscillator list indexed as interleaved when it is grouped
+  by layer. The game was consistently in better shape than the instruments
+  measuring it. Every harness now documents its wrong versions next to its
+  right one — that write-up is the most useful thing this session produced
+  for whoever runs next.
 
 ## Needs human playtest
 
