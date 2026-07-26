@@ -209,6 +209,28 @@ if (finished.coins !== readouts.coins) {
 // Leave the choice as it found it, so the check is repeatable.
 await page.evaluate(() => window.game.scene.scenes[0].chooseSong(null));
 
+// --- choosing a song from *inside* free play ------------------------------
+// The songbook is reachable from free play, so this is a likely path, and
+// it used to do two wrong things at once: leave the staff showing the
+// previous song's notes, and queue a pass of road notes that scrolled
+// invisibly behind the staff, went missed, drained the meter and fed the
+// learning model with misses the child never had a chance at.
+await page.evaluate(() => window.game.scene.scenes[0].chooseSong('buns'));
+await page.waitForTimeout(500);
+const switched = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  return { choice: s.songChoice, seqLen: s.freeSequence.length, pips: s.freePips.length,
+           cursor: !!s.freeCursor, markers: s.markers.length, title: s.songTitleText.text };
+});
+console.log('switched song from inside free play:', JSON.stringify(switched));
+if (!switched.seqLen || !switched.pips || !switched.cursor) {
+  fail.push('switching song in free play left the staff showing the old tune');
+}
+if (switched.markers !== 0) {
+  fail.push(`${switched.markers} road notes were queued behind the free-play staff`);
+}
+if (switched.title !== 'Hot Cross Buns') fail.push(`title still reads "${switched.title}"`);
+
 // --- and back to the road -------------------------------------------------
 await page.mouse.click(124, 24);
 await page.waitForTimeout(2600);

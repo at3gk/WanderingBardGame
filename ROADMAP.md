@@ -901,7 +901,18 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     transition now. Principled, but honestly unproven here — headless
     software GL varies 15–19fps run to run, which is wider than any effect
     this could have.
-87. **Next.** Nothing queued.
+87. ~~**Fix choosing a song from inside free play.**~~ Done — a real
+    bug, found by probing the interactions between the three surfaces
+    added this session rather than each one alone. The songbook is
+    reachable from free play, so a choice can land while no road is
+    running, and `chooseSong` assumed it never would. It did two wrong
+    things at once: left the staff showing the *previous* song's notes (no
+    new pips, no cursor, stale title), and queued a pass of road notes
+    that scrolled invisibly behind the staff, went missed, drained the
+    meter, and **fed the learning model with misses the child never had a
+    chance at** — exactly the corruption free play is designed to avoid.
+    Measured before the fix: 26 phantom markers. After: 0.
+88. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked task 79: both remain blocked
     (forest-song fetch still 403s everywhere; the GitHub MCP toolset still

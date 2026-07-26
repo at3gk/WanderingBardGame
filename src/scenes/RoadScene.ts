@@ -1334,6 +1334,21 @@ export class RoadScene extends Phaser.Scene {
     this.songChoice = choice;
     setSongChoice(choice, scaffold);
 
+    // The songbook is reachable from free play, so a choice can land while
+    // there is no road running. Rebuilding the staff is the whole job
+    // there: it re-reads the song for the pips, the practice sequence and
+    // the cursor, and renames the title.
+    //
+    // Falling through to the road path instead did two wrong things at
+    // once — it left the staff showing the *previous* song's notes, and it
+    // queued a pass of road notes that then scrolled invisibly behind the
+    // staff, went missed, drained the meter and fed the learning model
+    // with misses the child never had a chance at.
+    if (this.mode === 'play') {
+      this.buildFreeStaff();
+      return;
+    }
+
     const nowMs = this.time.now - this.startTimeMs;
     this.audioEngine.cancelPending();
     this.markers = this.markers.filter((m) => {
