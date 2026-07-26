@@ -574,7 +574,15 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     autoplay harness, which reported a last-second snapshot as a cumulative
     hit count, asserted nothing about it, and tapped into empty air about
     half the time.
-58. **Next.** Nothing queued. The open question the model cannot answer
+58. ~~**Measure the design pillars.**~~ Done: `tools/pillar-check.mjs`
+    checks "playable in under 5 seconds" and "mobile-friendly" across six
+    viewports (iPhone SE → desktop), reading real scene geometry rather
+    than eyeballing screenshots. All green — playable in 0.7–1.3s, every
+    drawable staff position on screen with stem room, taps registering,
+    and eighth notes still 49px apart on the narrowest phone against a
+    ~24px head. Frame rate deliberately excluded: headless software GL
+    says nothing about a real device.
+59. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth

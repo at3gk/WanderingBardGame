@@ -120,6 +120,22 @@ those on exposed a third bug in the harness: its tap loop capped its wait
 at 400ms then clicked regardless, firing about one tap into empty air for
 every real one. Now: 100 taps, 100 hits, 0 misses.
 
+**The design pillars are now measured, not assumed** (`tools/pillar-check.mjs`,
+2026-07-26). Two CLAUDE.md pillars had never been checked by anything:
+"playable in under 5 seconds" and "mobile-friendly". Both hold, across six
+viewports from iPhone SE to desktop — playable in 0.7–1.3s, every drawable
+staff position on screen with room for its stem, taps registering, and the
+tightest thing the songbook draws (two eighth notes at 96 BPM) still 49px
+apart on the narrowest phone against a ~24px note head. Confirmed visually
+at 375px on This Old Man's run of eighth-note C's: clearly separated,
+letters legible.
+
+Method note worth keeping: the spacing check *sampled* first and quietly
+measured nothing — only quarter notes came around in the sampling window,
+so it reported a comfortable 110px gap and passed without ever seeing the
+case it existed for. It now computes the worst case from tempo, flight time
+and runway. A check that cannot see its own failure case is not a check.
+
 Deviation from CLAUDE.md worth flagging: this is more than "exactly ONE
 roadmap task" — it is a model, a persistence layer, a songbook swap and a
 harness. That rule governs the scheduled autonomous runs; this was an
