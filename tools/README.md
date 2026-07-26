@@ -257,7 +257,7 @@ self-verifying project has to treat a failing check as a claim about the
 
 Checks the two CLAUDE.md design pillars that had never actually been
 measured — "playable in under 5 seconds, no login" and "mobile-friendly" —
-across six viewports from iPhone SE to desktop.
+across nine viewports, from a 320px phone to a wide-short desktop window.
 
 Layout is read from the scene's real geometry rather than eyeballed from a
 screenshot, so a regression fails a run instead of waiting to be noticed.
@@ -271,12 +271,15 @@ Baseline, 2026-07-26:
 
 ```
 viewport              size       ready   runway  minNoteGap
+narrow 320            320x568    701ms   240px   42px
 iPhone SE             375x667    884ms   281px   49px
 iPhone 12             390x664    764ms   293px   51px
 Pixel 5               393x727    708ms   295px   51px
 iPhone 12 landscape   664x390    721ms   498px   86px
 iPad portrait         768x1024  1290ms   576px  100px
 desktop               900x600    899ms   675px  117px
+tall narrow           360x900    653ms   270px   47px
+wide short           1440x560    842ms  1080px  188px
 ```
 
 `minNoteGap` is the tightest the songbook can draw — two eighth notes at 96
@@ -284,8 +287,9 @@ BPM — against a note head of roughly 24px. It is **computed** from tempo,
 flight time and runway, not sampled. Sampling was the first attempt and it
 quietly measured nothing: over a few seconds of play only quarter notes came
 around, so it reported a comfortable 110px and passed without ever seeing
-the case it was written for. Confirmed visually at 375px on This Old Man's
-run of eighth-note C's — clearly separated, letters legible.
+the case it was written for. Confirmed visually at both 375px and the
+tightest case, 320px, on This Old Man's run of eighth-note C's — clearly
+separated, letters legible.
 
 Frame rate is deliberately **not** checked here. Headless software GL says
 nothing about a real phone; see the sharper-mobile-rendering note in

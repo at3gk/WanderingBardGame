@@ -687,7 +687,14 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     disc and kept clear of the rim so it still reads as a *light source*
     from across the room rather than as a thing to study. Covered by
     `scenery-sheet.mjs`.
-68. **Next.** Nothing queued. The open question the model cannot answer
+68. ~~**Push the layout check to the extremes.**~~ Done: `pillar-check`
+    covers nine viewports now, adding a 320px phone (the narrowest width
+    still worth supporting), a tall-narrow 360x900 and a wide-short
+    1440x560 — the shapes a browser window takes, as opposed to devices.
+    All green. 320px is the tightest case in the whole matrix at 42px
+    between eighth-note heads against a ~24px head, and it was confirmed
+    visually as well as numerically.
+69. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth
