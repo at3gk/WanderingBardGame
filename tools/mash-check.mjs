@@ -88,6 +88,43 @@ if (out.saved) {
     if (v[0] < 0 || v[2] < 0 || v[2] > 4) fail.push(`step ${step} out of range after mashing: ${JSON.stringify(v)}`);
   }
 }
-console.log(fail.length ? 'FAIL:\n - ' + fail.join('\n - ') : 'PASS: mashing does not break anything');
+// --- and mash free play too -----------------------------------------------
+// Every tap there spawns a note image and two tweens. They clean themselves
+// up on completion, but "on completion" is a promise worth checking against
+// a child who taps far faster than a note takes to fade.
+await page.mouse.click(124, 24); // into free play
+await page.waitForTimeout(500);
+const freeBefore = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  return { objects: s.children.list.length, tweens: s.tweens.getTweens().length };
+});
+let freeTaps = 0;
+const freeDeadline = Date.now() + Math.min(30, SECONDS) * 1000;
+while (Date.now() < freeDeadline) {
+  await page.mouse.click(200 + (freeTaps % 90), 200 + (freeTaps % 260));
+  freeTaps++;
+}
+// Long enough for every note spawned during the mash to have faded out.
+await page.waitForTimeout(2200);
+const freeAfter = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  return { objects: s.children.list.length, tweens: s.tweens.getTweens().length,
+           mode: s.mode, enc: { ...window.__enc } };
+});
+console.log(`mashed free play ${freeTaps} times:`, JSON.stringify({ freeBefore, freeAfter }));
+// The staff itself is ~32 objects; a handful of in-flight notes is fine, a
+// tap's worth of leftovers per tap is not.
+if (freeAfter.objects > freeBefore.objects + 40) {
+  fail.push(`free play leaked objects: ${freeBefore.objects} -> ${freeAfter.objects} over ${freeTaps} taps`);
+}
+if (freeAfter.tweens > freeBefore.tweens + 40) {
+  fail.push(`free play leaked tweens: ${freeBefore.tweens} -> ${freeAfter.tweens}`);
+}
+if (freeAfter.enc.hit !== out.enc.hit || freeAfter.enc.miss !== out.enc.miss) {
+  fail.push('mashing free play fed the learning model');
+}
+if (freeAfter.mode !== 'play') fail.push('mashing knocked free play out of its own mode');
+
+console.log(fail.length ? 'FAIL:\n - ' + fail.join('\n - ') : 'PASS: mashing does not break anything, on the road or the staff');
 await browser.close();
 process.exit(fail.length ? 1 : 0);
