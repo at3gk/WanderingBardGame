@@ -43,6 +43,14 @@ const state = () => page.evaluate(() => {
 const fail = [];
 const muteXY = await page.evaluate(() => {
   const s = window.game.scene.scenes[0];
+  // Count beats as they are scored, so "did pressing mute cost a note?" can
+  // be answered directly. Watching the meter across the press was the first
+  // version and it is flaky: notes keep arriving, so a beat can be missed
+  // purely because time passed between the two readings. It passed by luck
+  // once and then failed on a game that was fine.
+  window.__enc = { hit: 0, miss: 0 };
+  const orig = s.recordEncounter.bind(s);
+  s.recordEncounter = (step, outcome, walking) => { window.__enc[outcome]++; return orig(step, outcome, walking); };
   return { x: Math.round(s.muteZone.x), y: Math.round(s.muteZone.y) };
 });
 
@@ -54,6 +62,7 @@ console.log('after first tap  :', JSON.stringify(playing));
 if (!playing.started) fail.push('audio never started from a tap');
 
 // Mute. Gain ramps over ~50ms, so give it a moment.
+const hitsBeforeMute = await page.evaluate(() => window.__enc.hit);
 await page.mouse.click(muteXY.x, muteXY.y);
 await page.waitForTimeout(400);
 const muted = await state();
@@ -61,8 +70,13 @@ console.log('after mute tap   :', JSON.stringify(muted));
 if (!muted.muted) fail.push('tapping the mute zone did not mute');
 if (!muted.slashVisible) fail.push('muted, but the slash through the icon is not shown');
 if (muted.masterGain !== 0) fail.push(`muted, but master gain is ${muted.masterGain} — the icon changed and the sound did not`);
-// The mute button sits over the playfield. Pressing it must not be scored.
-if (muted.meter < playing.meter) fail.push(`tapping mute cost meter (${playing.meter} -> ${muted.meter}) — it was counted as a beat`);
+// The mute button sits over the playfield. Pressing it must not be scored
+// as a beat — checked on the scoring path itself, not on the meter, which
+// moves on its own as unplayed notes go by.
+const hitsAfterMute = await page.evaluate(() => window.__enc.hit);
+if (hitsAfterMute > hitsBeforeMute) {
+  fail.push(`pressing mute registered ${hitsAfterMute - hitsBeforeMute} beat(s) — the button is being scored`);
+}
 
 // Notes keep flowing while muted; the game must not stall.
 await page.waitForTimeout(2500);

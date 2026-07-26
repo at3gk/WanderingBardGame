@@ -20,6 +20,12 @@ const game = new Phaser.Game({
     height: '100%',
   },
   backgroundColor: '#1a1621',
+  // Every sound in this game is hand-rolled Web Audio in audio/AudioEngine —
+  // nothing ever touches Phaser's sound manager. Left enabled it still
+  // creates a second AudioContext and holds it open for the whole session,
+  // which on a phone is an idle claim on the audio hardware for no reason.
+  // It also made an earlier verification script grab the wrong context.
+  audio: { noAudio: true },
   scene: [RoadScene],
 });
 
