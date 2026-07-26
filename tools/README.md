@@ -35,7 +35,7 @@ node /path/to/repo/tools/verify-all.mjs          # everything, ~25 min
 node /path/to/repo/tools/verify-all.mjs quick    # the fast four, ~4 min
 ```
 
-There are ten checks now, several of which take minutes, and a run that has
+There are eleven checks now, several of which take minutes, and a run that has
 to remember all of them will sooner or later remember only the fast ones.
 
 It runs them **one at a time on purpose.** Several Chromium instances
@@ -158,6 +158,35 @@ hardware is orders of magnitude tighter.
 `autoplay.mjs` reports the raw clock gap as information only. If this is
 ever picked up again, measure a note against **its own** scheduled
 oscillator, captured at scheduling time — not by matching lists afterwards.
+
+## `mash-check.mjs [seconds]`
+
+What a small child actually does. Every other harness plays *correctly* —
+on the beat, one tap per note — which is the least likely thing a
+five-year-old will do. This taps as fast as the browser will deliver events
+and checks nothing comes apart.
+
+Result, 2026-07-26: **2274 taps in 60s (38/sec)** and the game is fine.
+Markers bounded at 47, textures at 70, fps 36, meter full, saved record
+valid and in range.
+
+Two things worth knowing came out of it:
+
+- **Taps that hit nothing cost nothing.** Only 80 encounters were recorded
+  from 2274 taps, and only 461 oscillators were created — so a stray tap
+  neither feeds the learning model nor makes a sound. A mashing child is
+  not punished and does not generate noise.
+- **But mashing does earn exposure credit.** Those 80 were all *hits*, with
+  zero misses, because spraying taps lands on every note. The model reads
+  that as familiarity and will fade letters for a child who is not looking
+  at the staff at all.
+
+  That is left alone deliberately. DESIGN.md already scopes the model as *a
+  dosage schedule driven by exposure, not an assessment*, and the system
+  self-corrects: a child whose letters faded without being learned will
+  struggle when they next play properly, the meter drops, and full support
+  comes back instantly. Adding a burst-detector would be a new system
+  guarding against something the existing design already absorbs.
 
 ## `timeaway-check.mjs`
 

@@ -694,7 +694,14 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     All green. 320px is the tightest case in the whole matrix at 42px
     between eighth-note heads against a ~24px head, and it was confirmed
     visually as well as numerically.
-69. **Next.** Nothing queued. The open question the model cannot answer
+69. ~~**Test what a child actually does: mash.**~~ Done:
+    `tools/mash-check.mjs`, 38 taps/sec for a minute. Nothing comes apart,
+    and stray taps cost nothing — no encounter, no sound. Recorded but not
+    "fixed": mashing does earn exposure credit, since spraying taps hits
+    every note. That is within DESIGN.md's scoping of the model (exposure,
+    not assessment) and self-corrects through the return-on-struggle path,
+    so no burst-detector was added.
+70. **Next.** Nothing queued. The open question the model cannot answer
     itself is whether the fade pace suits a real five-year-old; the single
     dial for that is `SESSION_GAIN_CAP` (currently +12, i.e. two bands per
     sitting), not the thresholds. Ideas with teaching value: a fourth
