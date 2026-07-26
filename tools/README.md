@@ -35,7 +35,7 @@ node /path/to/repo/tools/verify-all.mjs          # everything, ~25 min
 node /path/to/repo/tools/verify-all.mjs quick    # the fast four, ~4 min
 ```
 
-There are twelve checks now, several of which take minutes, and a run that has
+There are thirteen checks now, several of which take minutes, and a run that has
 to remember all of them will sooner or later remember only the fast ones.
 
 It runs them **one at a time on purpose.** Several Chromium instances
@@ -158,6 +158,28 @@ hardware is orders of magnitude tighter.
 `autoplay.mjs` reports the raw clock gap as information only. If this is
 ever picked up again, measure a note against **its own** scheduled
 oscillator, captured at scheduling time — not by matching lists afterwards.
+
+## `dusk-check.mjs`
+
+DESIGN.md's art direction makes a specific promise about the slow dusk
+cycle: it darkens *the world* — sky, scenery, road — but never the bard and
+never the notation, because warmth belongs to the bard and the music, and
+the letters inside the note heads are the entire teaching surface. A child
+four minutes into a walk has to read them exactly as well as one who just
+started.
+
+That promise had been asserted nowhere. This jumps to the deepest point of
+the cycle (~24000px in, about four minutes of walking) and checks both
+halves of it — that the world genuinely darkened, and that the notation did
+not move at all:
+
+```
+cycle start (dusk)  sky 2759214  road/scenery tint 16777215  noteTint 15260096  noteAlpha 1  clefAlpha 0.5
+mid-cycle (night)   sky  794387  road/scenery tint 13092807  noteTint 15260096  noteAlpha 1  clefAlpha 0.5
+```
+
+Both halves matter. Without the first assertions a check could pass simply
+because the cycle had stopped running.
 
 ## `input-check.mjs`
 
