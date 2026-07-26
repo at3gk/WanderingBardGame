@@ -817,7 +817,19 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     passed standalone — consistent with this project's own lesson that a
     failing check is worth suspecting before the game).
 
-80. **Next.** Nothing queued.
+80. ~~**Choose one song to learn.**~~ Done (human-set): rotation is the
+    right default for a long walk and the wrong thing for learning a piece.
+    A songbook button beside the mute toggle opens a picker; choosing a tune
+    pins it, and choosing "wander" gives the rotation back. Three decisions
+    worth keeping: the picker **swallows taps** while open (a child poking a
+    song list must not be playing notes through it, nor be charged for the
+    ones scrolling past behind it); the chosen song starts **now**, which
+    needed `AudioEngine.cancelPending` since Web Audio has no unschedule and
+    passes are queued a whole song ahead; and the road **settles in that
+    song's home biome**, because the three biomes are the three registers
+    and letting the scenery wander would have the world disagree with what
+    the child is reading.
+81. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked task 79: both remain blocked
     (forest-song fetch still 403s everywhere; the GitHub MCP toolset still

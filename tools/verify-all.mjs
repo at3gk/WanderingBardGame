@@ -32,6 +32,7 @@ const CHECKS = [
   { name: 'pillar-check', args: ['pillar-check.mjs'] },
   { name: 'mash-check', args: ['mash-check.mjs', '60'] },
   { name: 'input-check', args: ['input-check.mjs'] },
+  { name: 'songpick-check', args: ['songpick-check.mjs'], slow: true },
   { name: 'dusk-check', args: ['dusk-check.mjs'] },
   { name: 'coinchime-check', args: ['coinchime-check.mjs'] },
   { name: 'title-check', args: ['title-check.mjs', '130'], slow: true },

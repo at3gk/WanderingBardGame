@@ -6,6 +6,12 @@ Run counter: 35
 
 **At a glance** — read this, then only the sections you need.
 
+- **You can now choose one song to learn** instead of letting the songbook
+  rotate (human-set, 2026-07-26). Songbook button beside the mute toggle →
+  pick a tune → it repeats and the road settles in its home biome. "Wander"
+  gives the rotation back. The choice rides in the same localStorage record
+  as the scaffold, so it is still there tomorrow.
+
 - The game is **v0.4**: a rhythm walk where the letter inside each note
   fades *in time* as a position is practised, across sittings, persisted in
   ~200 bytes of `localStorage`. The core mechanic is one tap.

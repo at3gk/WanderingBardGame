@@ -77,3 +77,44 @@ export function createStyleTextures(scene: Phaser.Scene): void {
     g.destroy();
   }
 }
+
+/**
+ * The songbook icon: a small closed book with a ribbon, in the same white
+ * that everything tintable in this game is drawn in.
+ *
+ * Deliberately not another note glyph. The mute toggle is already a note,
+ * and two note-shaped buttons side by side would read as one control with
+ * a broken half. A book says "choose what to play" without any words —
+ * which matters, because the child this is for cannot read the label.
+ */
+export function songbookTexture(scene: Phaser.Scene): string {
+  const key = 'songbook-icon';
+  if (scene.textures.exists(key)) return key;
+
+  const W = 26;
+  const H = 26;
+  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+
+  // Covers: two leaves meeting at a spine, drawn as an open book seen
+  // slightly from above so it reads at 22px.
+  g.fillStyle(0xffffff, 1);
+  g.fillRoundedRect(2, 5, 10.5, 17, 2);
+  g.fillRoundedRect(13.5, 5, 10.5, 17, 2);
+  // The gutter between them, punched back out so the two halves read as
+  // separate pages rather than one white slab.
+  g.fillStyle(0x000000, 0);
+  g.fillRect(12.2, 5, 1.6, 17);
+
+  // Page lines, one per leaf — enough to say "book", few enough to survive
+  // being drawn at icon size.
+  g.fillStyle(0x2a1a2e, 1);
+  for (let i = 0; i < 3; i++) {
+    const y = 9 + i * 4;
+    g.fillRect(4.5, y, 6, 1.2);
+    g.fillRect(15.5, y, 6, 1.2);
+  }
+
+  g.generateTexture(key, W, H);
+  g.destroy();
+  return key;
+}
