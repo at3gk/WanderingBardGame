@@ -43,11 +43,11 @@ this environment. Change it if you're running elsewhere.
 Runs the whole suite and prints one summary. **Start here.**
 
 ```bash
-node /path/to/repo/tools/verify-all.mjs          # all 16, ~22 min
-node /path/to/repo/tools/verify-all.mjs quick    # the fast eight, ~5 min
+node /path/to/repo/tools/verify-all.mjs          # all 17, ~22 min
+node /path/to/repo/tools/verify-all.mjs quick    # the fast nine, ~5 min
 ```
 
-There are sixteen checks now, several of which take minutes, and a run that has
+There are seventeen checks now, several of which take minutes, and a run that has
 to remember all of them will sooner or later remember only the fast ones.
 
 It runs them **one at a time on purpose.** Several Chromium instances
@@ -268,6 +268,20 @@ mid-cycle (night)   sky  794387  road/scenery tint 13092807  noteTint 15260096  
 
 Both halves matter. Without the first assertions a check could pass simply
 because the cycle had stopped running.
+
+## `coinchime-check.mjs`
+
+The idea backlog's coin chime ("prototype behind a screenshot/listen check
+before committing") — headless can't listen, but it can hook every
+oscillator the same way `nofail-check`/`autoplay` do and check the chime's
+distinctive voice (a fixed sine two octaves above the root, never a pitch
+drawn from the song being played) actually sounds, and exactly once per real
+25-coin milestone rather than on every note:
+
+```
+coins at end: 48.2
+chime oscillators heard: 1 (expected 1)
+```
 
 ## `input-check.mjs`
 

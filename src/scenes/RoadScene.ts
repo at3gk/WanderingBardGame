@@ -15,7 +15,7 @@ import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterCon
 import { accumulateDistance } from '../core/distance';
 import { BIOMES, biomeBlendAt, BIOME_TRANSITIONS, signpostDistanceAt } from '../core/biome';
 import { duskShadeAt, nightnessAt } from '../core/dusk';
-import { accumulateCoins } from '../core/coins';
+import { accumulateCoins, crossedCoinMilestone } from '../core/coins';
 import { noteNameAt, staffStepAt, stemDown } from '../core/notation';
 import {
   NOTE_HEAD_INSET_Y,
@@ -160,6 +160,7 @@ const MOON_X_FRACTION = 0.78;
 const MOON_Y = 84;
 const MOON_RADIUS = 24;
 const COIN_RATE_PER_SEC = 5;
+const COIN_CHIME_EVERY = 25;
 const COIN_ICON_RADIUS = 8;
 const COIN_MARGIN_TOP = 24;
 const COIN_MARGIN_RIGHT = 24;
@@ -1066,7 +1067,11 @@ export class RoadScene extends Phaser.Scene {
     this.lostSinceMs = this.walking ? null : this.lostSinceMs ?? nowMs;
 
     const meterRatio = this.meter / this.meterConfig.max;
+    const prevCoins = this.coins;
     this.coins = accumulateCoins(this.coins, meterRatio, delta, COIN_RATE_PER_SEC);
+    if (crossedCoinMilestone(prevCoins, this.coins, COIN_CHIME_EVERY)) {
+      this.audioEngine.chime();
+    }
 
     this.updateSongTitle(nowMs);
     this.updateMeterBar();
