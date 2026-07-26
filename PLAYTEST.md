@@ -58,6 +58,31 @@ relay verdicts in a session. The next run folds answers into code.
   read as sheet music, or just clutter? Legible at phone size while
   walking? (`METER_STAFF_LINE_COLOR`/`_ALPHA` — `src/scenes/RoadScene.ts`)
 
+## Round 4 — does the fading actually suit a real child? (v0.4)
+
+The one question the game cannot answer about itself. Everything else about
+the learning model is verified mechanically by `tools/learning-check.mjs`
+(letters fade with practice, come back when struggling, persist across
+sessions). What no harness can judge:
+
+- [ ] **Pace.** After 2–3 sittings, do notes lose their letters faster than
+  the child is ready for? The single dial is `SESSION_GAIN_CAP`
+  (`src/core/scaffold.ts`, currently +12 = two bands per sitting) — *not*
+  the band thresholds. Turn that down first if it's too fast.
+- [ ] **Do they notice the letter arriving?** At the faded bands it appears
+  350–950ms before the tap. Does the child's eye catch it, or is it lost
+  because they're watching the hit line? If lost, the floor (350ms) is the
+  dial to raise.
+- [ ] **Does a bare note cause distress?** It must not. The tune is one
+  they know, so the pitch should carry them. If a child freezes on a
+  letterless note, the premise is wrong and fading should be reverted.
+- [ ] **Does the pop read badly?** The letter appears by an instant
+  texture swap rather than a fade (a deliberate trade — see STATE.md — it
+  eliminated five rendering hazards). If it reads as a glitch rather than
+  as the answer arriving, that trade needs revisiting.
+- [ ] **The real prize, weeks later:** show them a note on paper. Do they
+  name it? That, and only that, tells us whether any of this worked.
+
 ## Round 3 — test with a kid (v0.2 teaching goals)
 
 The v0.2 direction is "teach kids typical musical notes" (DESIGN.md
