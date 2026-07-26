@@ -142,6 +142,24 @@ hardware is orders of magnitude tighter.
 ever picked up again, measure a note against **its own** scheduled
 oscillator, captured at scheduling time — not by matching lists afterwards.
 
+## `scenery-sheet.mjs`
+
+The scenery equivalent of `proofsheet.mjs`: bakes every world texture the
+game can draw — road band and silhouette tile for all three biomes, both
+water-glint phases, the star field and the trail signpost — into one
+labelled sheet (`scenery-sheet.png`).
+
+A live screenshot only ever shows the biome you happen to be walking
+through, so scenery changes used to be checked by temporarily shrinking the
+transition distances and rebuilding. This is deterministic instead, which
+makes a refactor of the drawing code checkable byte-for-byte — that is
+exactly what it was written for, and the sheet came out identical across
+the move to `src/render/scenery.ts`.
+
+It deletes its own output before regenerating, deliberately: see the
+`proofsheet.mjs` note above for the run where a crashed script "proved"
+nothing had changed by comparing against its own leftover file.
+
 ## `rotate-check.mjs`
 
 Rotates a phone mid-game — portrait → landscape → portrait, playing

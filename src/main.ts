@@ -1,5 +1,12 @@
 import Phaser from 'phaser';
 import { noteTexture, restTexture } from './render/engraving';
+import {
+  glintTexture,
+  roadTileTexture,
+  sceneryTileTexture,
+  signpostTexture,
+  starFieldTexture,
+} from './render/scenery';
 import { RoadScene } from './scenes/RoadScene';
 
 const game = new Phaser.Game({
@@ -28,3 +35,14 @@ const game = new Phaser.Game({
 // scene, which quietly broke the moment the engraving moved to its own
 // module — so the handle is explicit now rather than incidental.
 (window as unknown as { engraving: unknown }).engraving = { noteTexture, restTexture };
+
+// Likewise the world textures, for tools/scenery-sheet.mjs. A live
+// screenshot only ever shows the biome you happen to be walking through,
+// so the sheet bakes all three at once instead.
+(window as unknown as { scenery: unknown }).scenery = {
+  roadTileTexture,
+  sceneryTileTexture,
+  glintTexture,
+  starFieldTexture,
+  signpostTexture,
+};
