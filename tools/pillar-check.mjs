@@ -5,6 +5,10 @@ import { chromium } from 'playwright';
  * measured: "playable in under 5 seconds, no login" and "mobile-friendly:
  * touch input, small bundle".
  *
+ * Also checks the third pillar's hard number — "small bundle (<5 MB)" —
+ * measured as what a phone actually downloads to play, not as the size of
+ * dist/ on disk.
+ *
  * Layout is checked by reading the scene's real geometry at each viewport
  * rather than by eyeballing a screenshot, so a regression fails a run
  * instead of waiting for someone to notice a squashed staff. Frame rate is
@@ -41,6 +45,16 @@ for (const vp of VIEWPORTS) {
   const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  // Everything the page pulls over the wire, so the pillar is measured as a
+  // player experiences it rather than as `du -sh dist`.
+  let transferredBytes = 0;
+  page.on('response', async (res) => {
+    try {
+      const len = res.headers()['content-length'];
+      if (len) transferredBytes += Number(len);
+      else transferredBytes += (await res.body()).length;
+    } catch { /* redirects and aborted requests have no body */ }
+  });
 
   const t0 = Date.now();
   await page.goto('http://localhost:4173/WanderingBardGame/', { waitUntil: 'domcontentloaded' });
@@ -118,8 +132,15 @@ for (const vp of VIEWPORTS) {
   const tapWorked = await page.evaluate(() => window.game.scene.scenes[0].hintShown === false);
   if (!tapWorked) fail.push(`${vp.name}: a tap in the lower half did not register`);
 
+  // CLAUDE.md pillar 3: "small bundle (<5 MB)".
+  const MB = 1024 * 1024;
+  if (transferredBytes > 5 * MB) {
+    fail.push(`${vp.name}: downloaded ${(transferredBytes / MB).toFixed(2)} MB to play — pillar is under 5 MB`);
+  }
+
   rows.push({
     viewport: vp.name,
+    loadedMB: Number((transferredBytes / MB).toFixed(2)),
     size: `${geom.w}x${geom.h}`,
     canvas: `${geom.canvasW}x${geom.canvasH}`,
     dpr: geom.dpr,
