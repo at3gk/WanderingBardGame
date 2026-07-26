@@ -21,6 +21,41 @@ it. A kid who plays this game is doing a motor task they already understand
 the background. Nobody is quizzed. Nobody fails. They just walk the road
 enough times, and one day the notes have names.
 
+## Two ways in (v0.5, human-set, 2026-07-26)
+
+The road above is still the game. But the human set two directions on
+2026-07-26 — *"we need to be able to choose a single song to learn rather
+than having songs rotate"*, and *"if there's another idea besides the
+walking bard as a way to learn, go for it"* — and both are now built.
+
+**Choose a song.** Rotation is right for a long walk and wrong for learning
+a piece: repetition is the entire mechanism by which the letters come off a
+note. A songbook button pins one tune, and the road settles in that tune's
+home biome, because the three biomes *are* the three registers and letting
+the scenery wander would have the world disagree with what the child is
+reading. "Wander" gives the rotation back.
+
+**Free play, and practice.** The walk hands you notes and asks for timing.
+This document has always been honest that a tap proves timing rather than
+reading — knowing how the tune goes tells you when to tap whatever is
+written. So the second way in is the inverse: the staff spread out big and
+still, every position labelled, nothing scrolling, nothing that can be
+missed. You point at a line or a space and hear what it is.
+
+With a song chosen it becomes **practice**: that tune as a list of positions
+to find, a pip marking the next one, and a wrong note that sounds and costs
+nothing. This is the only place in the game where *reading the staff* —
+rather than remembering the melody — is what moves you forward, and it is
+therefore the only place that closes the gap the Pedagogy section admits to
+below.
+
+Two rules hold across both. Free play never feeds the learning model: a note
+the child picked is not evidence they can read one the game picked, and
+fading letters on the strength of poking about would corrupt the only signal
+the scaffold has. And finishing a tune gets a chime and a ripple, not a
+score — the no-fail stance cuts both ways, and a game that celebrates loudly
+has started grading quietly.
+
 ## The one core mechanic
 
 **Single-lane rhythm tapping.** Beat markers scroll toward a hit line at a
@@ -327,6 +362,21 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   The session also built `tools/` — a headless harness that plays the
   game by itself and verifies the pitches it hears — so future runs can
   check their own work instead of queuing questions for a human.
+- 2026-07-26 (fifth session, human-directed) — **v0.5: two ways in.** The
+  first genuinely new *design* since v0.4, and both halves were human-set:
+  pick one song to learn instead of letting the songbook rotate, and find
+  another way to learn besides the walking bard. See the new "Two ways in"
+  section above. The walk is unchanged and remains the game; free play is a
+  complement, not a replacement, and exists precisely because the walk
+  cannot ask a child to *read* — only to keep time. Also an art pass: a
+  fourth parallax plane (a far ridge) and scenery tiles doubled to 512px
+  with silhouettes that differ within a single tile, because the old 256px
+  tile repeated three and a half times across a screen and the repeat was
+  the first thing you saw.
+  Rejected on the way: making the walk itself require pitch accuracy (it
+  would turn one tap into aiming, break "playable in under five seconds",
+  and add a failure state); and celebrating a finished tune with a score or
+  stars.
 - 2026-07-26 (fourth overnight session) — **hardening, not new design.**
   No pillar, mechanic or tone changed. Two songs joined the book (*This
   Old Man*, *The Itsy Bitsy Spider*, both verified against published

@@ -6,6 +6,10 @@ Run counter: 35
 
 **At a glance** — read this, then only the sections you need.
 
+- **v0.5 "two ways in"** (human-directed, 2026-07-26) is the current shape.
+  DESIGN.md has a new section of that name; read it before touching either
+  mode. The walk is unchanged and remains the game.
+
 - **There are two ways to learn now.** The *walk* is the original: notes
   scroll, you tap in time, letters fade as positions become familiar.
   *Free play* (the lute button) is the inverse — the staff spread out big
