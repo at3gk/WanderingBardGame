@@ -61,6 +61,23 @@ could flip a band (fixed by widening hysteresis past the miss penalty) and
 that the session cap was gross rather than net (a miss now refunds
 allowance, so a wobble can't strand a position for a whole sitting).
 
+**Multi-session fading verified end-to-end** (`tools/multisession-check.mjs`,
+added after the v0.4 merge). The model's central promise is a claim about
+days, not minutes — a note should reach full fade only across *several*
+sittings, never inside one, because a scaffold must not vanish faster than
+the memory forms. Measured on the shipped build, through real localStorage
+across real page reloads:
+
+```
+after sitting 1: {"0":2,"1":2,"2":2,"3":4,"4":3,"7":4}
+after sitting 2: {"0":1,"1":1,"2":1,"3":4,"4":2,"7":3}
+after sitting 3: {"0":0,"1":0,"2":0,"3":3,"4":1,"7":3}
+```
+
+Band 4 is full help, 0 is fully faded. C4/D4/E4 take exactly three sittings;
+the rarer F4 (step 3) correctly lags far behind, so the fade follows real
+exposure rather than a clock. This is `SESSION_GAIN_CAP` doing its job.
+
 Deviation from CLAUDE.md worth flagging: this is more than "exactly ONE
 roadmap task" — it is a model, a persistence layer, a songbook swap and a
 harness. That rule governs the scheduled autonomous runs; this was an
