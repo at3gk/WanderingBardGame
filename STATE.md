@@ -1,10 +1,45 @@
 # STATE
 
-Run counter: 37
+Run counter: 38
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **Run 38 (scheduled): investigated one candidate bug, mutation-tested it
+  away, shipped nothing.** A search for this run's task turned up a
+  plausible-looking sibling of PR #125's tween leak: the songbook picker's
+  `openPicker()`/`closePicker()` (`RoadScene.ts`) add a fade tween per part
+  with no `killTweensOf` guard, same shape as the practice staff before
+  #125. It is not the same bug. Built both versions and drove the exact
+  toggle pattern that proved #125 real: with the picker's guard removed,
+  `tweens.getTweens().length` spikes to ~35 mid-mash but **drains back to
+  baseline within 1.5s of settling, every time** — no permanent growth,
+  40 toggles or otherwise. #125's leak was never about "destroy doesn't
+  kill a tween on the same target" in general; it was specifically the
+  free-play cursor's `repeat: -1` breathing tween (line ~1352, in
+  `fadeInFreeStaff`) — a tween with no natural end, so an orphaned copy
+  runs forever. The picker's fades are one-shot 130ms tweens with no
+  `repeat`; even orphaned, they finish and get pruned on schedule. Grepped
+  the rest of `RoadScene.ts` for other `repeat: -1` tweens targeting a
+  destroyable object: the bard's walk/idle/lute-sway loops are the only
+  others, and their targets (`bardLegLeft`, `bardUpper`, `bardLute`, …)
+  are never destroyed — they're stopped via `.stop()` in `bardTweens`,
+  a different and already-correct mechanism. No other instance of the
+  real bug shape exists in this file.
+  **Logging this so a future run doesn't re-open the same lead**: adding
+  `killTweensOf` to the picker anyway (it wouldn't hurt) and a fifth
+  seam-check pair to cover it were both drafted, then reverted — the
+  check would have passed trivially either way, which is exactly the
+  false-confidence CLAUDE.md warns against, and the codebase's own rule
+  against unnecessary guards applies here too. `RoadScene.ts` and
+  `tools/seam-check.mjs` are unchanged from the last commit.
+  Blockers re-checked, both unchanged: `WebFetch` on a plain Wikipedia
+  page still returns HTTP 403 (forest-song transcription still blocked),
+  and the full `mcp__github__*` tool list available this run still has
+  no tag/ref-write, release-create, or branch-protection-write call.
+  279 tests, `npm run build` green — reconfirmed as a baseline, no code
+  touched.
 
 - **Session of 2026-07-27 small hours (human-directed, PRs #115–#122):
   a polish pass, and it found three shipped bugs rather than cosmetics.**
