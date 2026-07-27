@@ -6,7 +6,7 @@ Run counter: 36
 
 **At a glance** — read this, then only the sections you need.
 
-- **Session of 2026-07-27 small hours (human-directed, PRs #115–#117):
+- **Session of 2026-07-27 small hours (human-directed, PRs #115–#122):
   a polish pass, and it found three shipped bugs rather than cosmetics.**
   The practice staff — the whole second way to learn — had been drawn at
   **alpha 0 on the live site** since its lay-in animation shipped: two
@@ -919,7 +919,7 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   `headless-checks.yml` is unchanged. `npm test` 254 green (unchanged),
   build green — re-confirmed as a baseline, no code touched this run.
 
-- **Session close, 2026-07-27 small hours (human-directed, PRs #115–#117).**
+- **Session close, 2026-07-27 small hours (human-directed, PRs #115–#122).**
   Asked for a polish pass on art, animation and the game. It found three
   bugs that were live rather than cosmetic, all of them invisible in
   landscape on a desktop-ish window and all of them passing every check:
@@ -939,8 +939,19 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   Also shipped: a fifth parallax plane (the near verge at 1.35, the first
   thing in the game that moves faster than the road) over real earth,
   because below the road there had only ever been the camera's background
-  colour — the sky. A scrim behind the practice staff. And the meter
-  handed cream back to the notation.
+  colour — the sky. A scrim behind the practice staff. The meter handed
+  cream back to the notation and took gold, and its five staff lines were
+  made to resolve as lines rather than a smear (18px bar, half-pixel
+  offsets). The bard eases in and out of walking instead of snapping every
+  limb to neutral on the frame the meter crossed its threshold.
+
+  Three new harnesses, and the reason each exists is the same: nothing had
+  ever asserted the thing it covers. `hud-check` (chrome geometry and that
+  each button does its own job), `ground-check` (the bard's real rendered
+  bounds land on a visible road at eight viewports), `bard-check` (start,
+  stop, rest and breath), `seam-check` (mute x practice, tab-away x
+  practice, rotation x the ground — all three passed first time, which is
+  why they are worth holding still).
 
   What to carry forward:
   1. **If a feature's purpose is visual, assert something visual.** The
@@ -953,6 +964,15 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
      Grep for the pattern before adding a fourth.
   3. **Run the check suite quiet.** Two Playwright suites at once fails
      `autoplay` on frame timing and reads exactly like a regression.
+  4. **A visual check is easy to write wrong and it will still pass.**
+     `bard-check` took four tries and every wrong version was green:
+     per-frame delta (frame-rate dependent), triggering the state change
+     from Node (missed the 150ms window entirely), scanning the whole
+     sample (measured an ordinary walk-cycle crossing and called it the
+     stop — that one passed against a build with the ease cut to 1ms), and
+     not holding the meter up (the bard had already stopped before the
+     sample began). Mutation-test every new check against the fault it
+     exists to catch, before believing a green.
 
 - **Session close, 2026-07-26 evening (human-directed, PRs #91–#113).**
   Shipped: the song picker (the human's one hard requirement — pick a tune
