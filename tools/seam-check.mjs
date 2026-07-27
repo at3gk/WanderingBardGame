@@ -16,6 +16,7 @@
  *   1. mute      x practice   — silence must cost nothing but sound
  *   2. tab-away  x practice   — coming back must not lose the tune
  *   3. rotation  x the ground — the newest plane must follow the screen
+ *   4. walk      x practice   — toggling between them must not accumulate
  */
 const pw = await import(`${process.env.PLAYWRIGHT_PATH}/index.js`);
 const chromium = pw.chromium ?? pw.default?.chromium;
@@ -186,8 +187,56 @@ const invisibleParts = (page) => page.evaluate(() => {
   await page.close();
 }
 
+// --- 4. walk x practice, over and over -----------------------------------
+// Entering practice adds a fade tween per staff part and a scrim tween;
+// leaving destroys the parts. Destroying a target does *not* remove a tween
+// pointing at it, so this pair leaked about half a tween per toggle — 5 at
+// the start, 19 after thirty, 44 after eighty. Objects and staff parts
+// stayed flat throughout, which is why no existing check saw it.
+{
+  const page = await browser.newPage({ viewport: { width: 390, height: 664 } });
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(e.message));
+  await page.goto('http://localhost:4173/WanderingBardGame/', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(700);
+  await page.mouse.click(195, 560);
+  await page.waitForTimeout(500);
+  await page.evaluate(() => window.game.scene.scenes[0].chooseSong('mary'));
+  await page.waitForTimeout(600);
+
+  const snap = () => page.evaluate(() => {
+    const s = window.game.scene.scenes[0];
+    return { mode: s.mode, parts: s.freeParts.length, objects: s.children.list.length,
+             tweens: s.tweens.getTweens().length, scrim: !!s.freeScrim && s.freeScrim.visible,
+             markers: s.markers.length };
+  });
+  const first = await snap();
+  const TOGGLES = 40;
+  for (let i = 0; i < TOGGLES; i++) {
+    await page.mouse.click(122, 24);
+    await page.waitForTimeout(i % 3 === 0 ? 60 : 200);
+  }
+  await page.waitForTimeout(1500);
+  let last = await snap();
+  if (last.mode !== 'walk') { await page.mouse.click(122, 24); await page.waitForTimeout(1200); last = await snap(); }
+  note(`walk x practice: ${JSON.stringify({ first, afterToggles: last, toggles: TOGGLES })}`);
+
+  if (last.mode !== 'walk') fails.push('could not get back to the road after mashing the lute button');
+  if (last.scrim) fails.push('the practice scrim was left up on the road');
+  if (last.markers === 0) fails.push('the road did not resume after mashing the lute button');
+  if (last.parts !== 0) fails.push(`${last.parts} staff parts survived onto the road`);
+  if (last.tweens > first.tweens + 10) {
+    fails.push(`tweens grew ${first.tweens} -> ${last.tweens} over ${TOGGLES} toggles — they are leaking`);
+  }
+  if (last.objects > first.objects + 10) {
+    fails.push(`objects grew ${first.objects} -> ${last.objects} over ${TOGGLES} toggles`);
+  }
+  if (errs.length) fails.push('toggle page errors: ' + errs.join(' | '));
+  await page.close();
+}
+
 await browser.close();
 console.log(fails.length
   ? 'FAIL:\n - ' + fails.join('\n - ')
-  : 'PASS: mute costs only sound, tab-away keeps the tune, and the ground follows the screen');
+  : 'PASS: mute costs only sound, tab-away keeps the tune, the ground follows the screen, and toggling modes leaks nothing');
 process.exit(fails.length ? 1 : 0);

@@ -1221,7 +1221,16 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private tearDownFreeStaff(): void {
-    for (const part of this.freeParts) part.destroy();
+    // Kill the tweens before destroying the targets. fadeInFreeStaff adds
+    // one per part on every entry, and destroying a target does not remove
+    // a tween that points at it — so toggling between the walk and practice
+    // left them behind at about half a tween per toggle: 5 at the start, 19
+    // after thirty toggles, 44 after eighty. Objects and staff parts stayed
+    // flat the whole time, which is why nothing else caught it.
+    for (const part of this.freeParts) {
+      this.tweens.killTweensOf(part);
+      part.destroy();
+    }
     this.freeParts = [];
     this.freePips = [];
     this.freeCursor = null;
@@ -1339,7 +1348,10 @@ export class RoadScene extends Phaser.Scene {
     if (this.freeSequence.length) this.freeIndex %= this.freeSequence.length;
     else this.freeIndex = 0;
     this.freePips = this.freePips.filter((p) => p.active);
-    for (const note of this.freeWritten) note.destroy();
+    for (const note of this.freeWritten) {
+      this.tweens.killTweensOf(note);
+      note.destroy();
+    }
     this.freeWritten = [];
     this.freeWrittenLine = 0;
     this.freeCursor = null;
