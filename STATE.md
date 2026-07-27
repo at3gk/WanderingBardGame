@@ -6,6 +6,26 @@ Run counter: 36
 
 **At a glance** — read this, then only the sections you need.
 
+- **Session of 2026-07-27 small hours (human-directed, PRs #115–#117):
+  a polish pass, and it found three shipped bugs rather than cosmetics.**
+  The practice staff — the whole second way to learn — had been drawn at
+  **alpha 0 on the live site** since its lay-in animation shipped: two
+  fade-ins ran back to back, the second reading the zeros the first had
+  just written and tweening 0 to 0. The songbook and lute buttons were
+  drawn *underneath* the song meter on every portrait phone, so both were
+  invisible on the devices the game is for. And the road ran off the
+  bottom of the screen in landscape, with the bard cut off at the shins.
+  All three were invisible in the one configuration a check is most
+  likely to be run in — a desktop-ish landscape window.
+
+  **The lesson worth keeping: every one of them passed the checks.** The
+  practice staff was built, positioned, laid out correctly at nine
+  viewports, and responded to taps — `freeplay-check` asserted behaviour
+  and never once asked whether anything could be *seen*. If a feature's
+  purpose is visual, assert something visual: ink, contrast, geometry
+  against real rendered bounds. Behaviour passing is not the same as the
+  thing working.
+
 - **Session of 2026-07-26 evening (human-directed, PRs #91–#112).** Two
   human asks: choose one song to learn instead of rotating, and find
   another way to learn besides the walking bard. Both built, plus an art
@@ -56,22 +76,27 @@ Run counter: 36
   song choice and the second way in; it does not change the walk.
 - **Eleven songs**, four per biome except forest, which has three and is
   short a fourth (blocked — see *Blocked on human*).
-- **258 unit tests**; **19 headless checks** in `tools/`. Run them all with
+- **279 unit tests**; **22 headless checks** in `tools/`. Run them all with
   `PLAYWRIGHT_PATH=<dir>/node_modules/playwright node tools/verify-all.mjs`
-  (or `quick` for the fast ten). All 19 green as of 2026-07-26 evening on
-  merged main. Use playwright **1.56.1**
+  (or `quick` for the fast twelve). Green as of 2026-07-27. Use playwright
+  **1.56.1**
   (`/opt/node22/lib/node_modules/playwright`) — a newer copy won't match
   the installed browser build and every check will fail for that reason
-  alone. The fast ten
+  alone. **Run the suite quiet** — two Playwright suites at once will fail
+  `autoplay` on frame timing and it looks exactly like a real regression.
+  The fast twelve
   now also run automatically after every merge to `main`
   (`.github/workflows/headless-checks.yml`), informational only — it
   doesn't gate the merge or the deploy.
 - **Source layout**: `core/` pure logic, `audio/` one manifest + engine,
   `render/` texture baking (engraving, scenery, ui), `scenes/RoadScene.ts`
-  the one scene (1979 lines — it grew by the picker and free play this
-  session and is the obvious target for the next consolidation run; the
-  three plausible extractions are the picker overlay, the free-play staff,
-  and the walk chrome). Every texture the game draws
+  the one scene (~2100 lines — the obvious target for the next
+  consolidation run; the three plausible extractions are the picker
+  overlay, the free-play staff, and the walk chrome). Layout maths keeps
+  moving *out* of it into `core/` — `hud.ts` (the top bar) and
+  `worldLayout.ts` (lane, bard, road) joined `freePlay.ts` on 2026-07-27,
+  each because a fixed pixel offset hung off a proportional anchor had
+  broken on some real screen. That pattern is worth watching for. Every texture the game draws
   is checkable in a deterministic sheet — `proofsheet`, `scenery-sheet`,
   `ui-sheet` — which is what let all three extractions be proved
   byte-for-byte rather than eyeballed.
@@ -893,6 +918,41 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   runs — a real cost to the pipeline's cadence for no real benefit here.
   `headless-checks.yml` is unchanged. `npm test` 254 green (unchanged),
   build green — re-confirmed as a baseline, no code touched this run.
+
+- **Session close, 2026-07-27 small hours (human-directed, PRs #115–#117).**
+  Asked for a polish pass on art, animation and the game. It found three
+  bugs that were live rather than cosmetic, all of them invisible in
+  landscape on a desktop-ish window and all of them passing every check:
+
+  1. **The practice staff was drawn at alpha 0** — the entire second way
+     to learn, invisible on the deployed site since its lay-in animation
+     shipped. Two fade-ins ran back to back; the second read the zeros the
+     first had just written, took them for each part's *target*, and
+     tweened 0 to 0. Both halves correct alone.
+  2. **The songbook and lute buttons were under the meter** on every
+     portrait phone. Buttons counted pixels from the left; the meter took
+     60% of the width and centred itself; nothing had asked those rules to
+     agree, and they only do on a wide screen.
+  3. **The road ran off the bottom in landscape**, 48px on a 568x320
+     screen, leaving 12 of its 60px and the bard cut off at the shins.
+
+  Also shipped: a fifth parallax plane (the near verge at 1.35, the first
+  thing in the game that moves faster than the road) over real earth,
+  because below the road there had only ever been the camera's background
+  colour — the sky. A scrim behind the practice staff. And the meter
+  handed cream back to the notation.
+
+  What to carry forward:
+  1. **If a feature's purpose is visual, assert something visual.** The
+     practice staff passed every behavioural assertion in `freeplay-check`
+     while being completely invisible. Ink, contrast, and geometry against
+     real rendered bounds are what would have caught it — and do now.
+  2. **A fixed pixel offset hung off a proportional anchor is this
+     codebase's recurring bug.** Three instances so far (free-play staff,
+     top bar, lane-to-ground). Each moved into `core/` as testable maths.
+     Grep for the pattern before adding a fourth.
+  3. **Run the check suite quiet.** Two Playwright suites at once fails
+     `autoplay` on frame timing and reads exactly like a regression.
 
 - **Session close, 2026-07-26 evening (human-directed, PRs #91–#113).**
   Shipped: the song picker (the human's one hard requirement — pick a tune
