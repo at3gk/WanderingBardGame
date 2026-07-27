@@ -6,6 +6,40 @@ relay verdicts in a session. The next run folds answers into code.
 
 ---
 
+## Round 6 — the polish pass (2026-07-27)
+
+Three things that had shipped broken were fixed this session, and all
+three had been fine in a desktop browser window and wrong on a phone.
+**Please do this round on a real phone, and turn it sideways at least
+once.** That is where every one of them lived.
+
+Worth a look, in the order they'd be noticed:
+
+- **The practice staff was invisible.** It had been drawn at alpha 0 on
+  the live site ever since its fade-in animation shipped. If you tried the
+  lute button before today and found nothing there, that was why — it is
+  worth another go now.
+- **The songbook and lute buttons were hidden under the song meter** on
+  every portrait phone. Both should now be plainly visible top-left, and
+  each should take a tap without the other stealing it.
+- **The road ran off the bottom of the screen in landscape**, with the
+  bard cut off at the shins. Turn the phone sideways: he should be whole
+  and standing on a visible road.
+- **There is ground under the road now**, with grass, ferns or reeds at
+  the verge depending on the biome, drifting past faster than the road.
+  Does it read as depth, or as a distracting stripe?
+- **The world dims while you practise.** Is the dimming enough to make the
+  lowest notes readable, and not so much that the walk feels switched off?
+- **The bard eases in and out of walking** instead of snapping. Watch him
+  when the meter empties.
+- **The meter is gold rather than cream now**, so the cream belongs to the
+  notation alone. Does the meter still read at a glance?
+
+None of these need a child — an adult with a phone can answer all of them.
+The fade-pace question below still needs a child.
+
+---
+
 ## If you only do one thing
 
 **Round 4, first bullet: the fade pace.** Still the only question the

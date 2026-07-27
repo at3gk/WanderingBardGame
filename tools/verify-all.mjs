@@ -6,12 +6,12 @@ import { fileURLToPath } from 'node:url';
 /**
  * Runs the whole headless suite and prints one summary.
  *
- * There are nineteen scripts here now, several of which take minutes, and a
+ * There are twenty-three scripts here now, several of which take minutes, and a
  * run that has to remember all of them will sooner or later remember only
  * the fast ones. This is the single command to reach for.
  *
- *   node verify-all.mjs          # all 17 (~22 min)
- *   node verify-all.mjs quick    # the fast twelve (~7 min)
+ *   node verify-all.mjs          # all 23 (~30 min)
+ *   node verify-all.mjs quick    # the fast thirteen (~8 min)
  *
  * Expects the preview server on :4173 and Playwright installed in the
  * working directory — see Setup above in README.md. Runs the checks one at
@@ -36,6 +36,7 @@ const CHECKS = [
   { name: 'freeplay-check', args: ['freeplay-check.mjs'] },
   { name: 'hud-check', args: ['hud-check.mjs'] },
   { name: 'ground-check', args: ['ground-check.mjs'] },
+  { name: 'bard-check', args: ['bard-check.mjs'] },
   { name: 'practice-soak', args: ['practice-soak.mjs', '4'], slow: true },
   { name: 'dusk-check', args: ['dusk-check.mjs'] },
   { name: 'coinchime-check', args: ['coinchime-check.mjs'] },
