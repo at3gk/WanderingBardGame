@@ -69,6 +69,45 @@ if (entered.clefVisible || entered.hitLineVisible) fail.push('the walk chrome is
 // which is the entire reason this mode has its own geometry.
 if (!(entered.gap >= 26)) fail.push(`step gap is only ${Math.round(entered.gap)}px — too small to aim at`);
 
+// The staff has to be *visible*, not merely present.
+//
+// Every assertion in this file used to be about behaviour — a tap sounds
+// the right note, the walk stops, nothing is graded — and all of them
+// passed for a build in which the entire practice staff was drawn at
+// alpha 0. It was built, positioned, laid out correctly at every viewport,
+// responded to taps, and could not be seen. Two fade-ins ran back to back:
+// the first zeroed each part's alpha and tweened it back, the second read
+// those alphas on the same frame, captured 0 as the target, and tweened
+// 0 to 0.
+//
+// A mode whose whole purpose is *reading* the staff needs one assertion
+// that the staff can be read. Sampled after the 220ms lay-in has finished.
+await page.waitForTimeout(500);
+const inked = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  const alphas = s.freeParts
+    .map((p) => (typeof p.alpha === 'number' ? p.alpha : null))
+    .filter((a) => a !== null);
+  return {
+    parts: alphas.length,
+    invisible: alphas.filter((a) => a < 0.05).length,
+    brightest: alphas.length ? Math.max(...alphas) : 0,
+    distinct: new Set(alphas.map((a) => a.toFixed(2))).size,
+  };
+});
+console.log('staff ink:', JSON.stringify(inked));
+if (inked.parts === 0) fail.push('the staff has no parts at all');
+if (inked.invisible > 0) {
+  fail.push(`${inked.invisible} of ${inked.parts} staff parts are invisible (alpha < 0.05)`);
+}
+if (inked.brightest < 0.9) {
+  fail.push(`the brightest thing on the staff is only alpha ${inked.brightest}`);
+}
+// The lay-in exists to preserve the staff's hierarchy — line-notes are
+// landmarks, the spaces between them are not. One flat alpha would mean
+// the fade had flattened what it was written to protect.
+if (inked.distinct < 2) fail.push('every staff part has the same alpha — the landmark hierarchy is gone');
+
 // --- every position sounds its own note -----------------------------------
 // Ask the scene where it actually put the steps, rather than recomputing
 // the layout here — a check that re-derives the thing it is checking will

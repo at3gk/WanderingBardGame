@@ -1005,7 +1005,7 @@ export class RoadScene extends Phaser.Scene {
       if (typeof fadeable.alpha !== 'number') continue;
       const target = fadeable.alpha;
       fadeable.setAlpha(0);
-      this.tweens.add({ targets: fadeable, alpha: target, duration: 220, ease: 'Quad.easeOut' });
+      this.tweens.add({ targets: fadeable, alpha: target, duration: FREEPLAY_FADE_MS, ease: 'Quad.easeOut' });
     }
   }
 
@@ -1204,14 +1204,17 @@ export class RoadScene extends Phaser.Scene {
     this.freeHint = hint;
     this.freeParts.push(hint);
 
-    // Fade the staff up, for the same reason the picker fades: a
-    // full-height ladder appearing between two frames reads as a glitch.
-    for (const part of this.freeParts) {
-      const target = part as Phaser.GameObjects.GameObject & { alpha: number };
-      const to = target.alpha;
-      target.alpha = 0;
-      this.tweens.add({ targets: target, alpha: to, duration: FREEPLAY_FADE_MS, ease: 'Quad.easeOut' });
-    }
+    // No fade here. Building the staff and lying it in are separate jobs,
+    // and this method has two callers that want opposite things: entering
+    // free play (fade, via fadeInFreeStaff) and a resize mid-practice
+    // (rebuild in place, no fade — the staff is already on screen, and
+    // flashing it out and back would read as a fault).
+    //
+    // They used to be one thing, and doing both was what made the entire
+    // practice staff invisible: this method ended by zeroing every alpha
+    // and tweening back, then fadeInFreeStaff ran on the very same frame,
+    // read those alphas — now 0 — captured 0 as each part's *target*, and
+    // tweened 0 to 0. The second tween won. Nothing ever appeared.
   }
 
   /** Sounds the note a tap landed on, and draws it where it was played. */
