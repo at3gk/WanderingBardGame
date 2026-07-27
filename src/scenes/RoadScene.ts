@@ -24,6 +24,7 @@ import {
   writtenNoteSlot,
   stepsUsedBy,
 } from '../core/freePlay';
+import { HUD_TOUCH_TARGET, hudLayout } from '../core/hud';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
 import { accumulateDistance } from '../core/distance';
 import { BIOMES, biomeBlendAt, BIOME_TRANSITIONS, signpostDistanceAt } from '../core/biome';
@@ -88,14 +89,14 @@ const STAFF_HALF_GAP = STAFF_LINE_GAP / 2;
 const STAFF_MIDDLE_STEP = 6;
 const STAFF_LINE_STEPS = [2, 4, 6, 8, 10];
 const STAFF_LINE_ALPHA = 0.22;
-const SONG_TITLE_Y = 52;
 const SONG_TITLE_HOLD_MS = 2600;
 // A note fades out once it's past the line and is gone before it reaches
 // the clef — on a narrow phone the lane's left end is only a few dozen
 // pixels past the hit line, and played notes used to pile over the clef.
 const EXIT_PROGRESS = 1.28;
 const METER_HEIGHT = 14;
-const METER_MARGIN_TOP = 24;
+/** Mute, songbook, lute — the whole of the game's chrome. */
+const HUD_BUTTON_COUNT = 3;
 // Meter as staff (ROADMAP idea backlog): the song meter joins the notation
 // language established in task 32 — five faint staff lines across the bar,
 // same cream tone as the beat glyphs, sitting on top of the existing
@@ -186,20 +187,21 @@ const FAR_PARALLAX = 0.19;
 // unbounded array is needed.
 const SIGNPOST_POOL_SIZE = 2;
 const MOON_X_FRACTION = 0.78;
-const MOON_Y = 84;
 const MOON_RADIUS = 24;
+/** The soft halo drawn around the moon, which is what actually collides. */
+const MOON_GLOW_PAD = 14;
+/** Half the song title's line height — enough to find its lower edge. */
+const SONG_TITLE_HALF_HEIGHT = 8;
+/** Breathing room between the moon and whatever it is avoiding. */
+const SKY_CLEARANCE = 10;
+/** Highest staff line (F5), the top of the notation. */
+const STAFF_TOP_LINE_STEP = 10;
 const COIN_RATE_PER_SEC = 5;
 const COIN_CHIME_EVERY = 25;
 const COIN_ICON_RADIUS = 8;
 const COIN_MARGIN_TOP = 24;
 const COIN_MARGIN_RIGHT = 24;
 const MUTE_ICON_RADIUS = 10;
-const MUTE_ICON_MARGIN_TOP = 24;
-const MUTE_ICON_MARGIN_LEFT = 24;
-// WCAG 2.5.5 / Apple HIG both put the minimum comfortable touch target at
-// 44 CSS px — well above the icon's own 20px visual diameter. The zone below
-// pads the *tappable* area out to that size without changing how the icon looks.
-const MUTE_TOUCH_TARGET_SIZE = 44;
 const MUTE_ICON_COLOR_ON = 0xe8d9c0;
 const MUTE_ICON_COLOR_MUTED = 0x554e63;
 const MUTE_SLASH_COLOR = 0x8a5a5a;
@@ -219,7 +221,6 @@ const FREE_HINT_TEXT_SONG = 'find the glowing note';
 // rotate). Sits beside the mute toggle, same 44px touch target — the two
 // are the only chrome in the game and they belong together.
 const BOOK_ICON_RADIUS = 11;
-const BOOK_MARGIN_LEFT = 68;
 const PICKER_BACKDROP_COLOR = 0x120d16;
 const PICKER_BACKDROP_ALPHA = 0.93;
 const PICKER_PAD = 18;
@@ -410,8 +411,8 @@ export class RoadScene extends Phaser.Scene {
     this.passesByBiome.clear();
 
     this.stars = this.add.tileSprite(0, 0, this.scale.width, STAR_FIELD_HEIGHT, starFieldTexture(this));
-    this.moonGlow = this.add.circle(0, MOON_Y, MOON_RADIUS + 14, 0xe8d9c0, 1);
-    this.moon = this.add.image(0, MOON_Y, moonTexture(this, MOON_RADIUS));
+    this.moonGlow = this.add.circle(0, 0, MOON_RADIUS + MOON_GLOW_PAD, 0xe8d9c0, 1);
+    this.moon = this.add.image(0, 0, moonTexture(this, MOON_RADIUS));
 
     this.sceneryFromIndex = 0;
     this.sceneryToIndex = 0;
@@ -471,7 +472,7 @@ export class RoadScene extends Phaser.Scene {
     this.hintText.setAlpha(0.85);
 
     this.pendingAnnounce = [];
-    this.songTitleText = this.add.text(0, SONG_TITLE_Y, '', {
+    this.songTitleText = this.add.text(0, hudLayout(this.scale.width, HUD_BUTTON_COUNT).titleY, '', {
       fontFamily: 'sans-serif',
       fontSize: '15px',
       fontStyle: 'italic',
@@ -509,24 +510,28 @@ export class RoadScene extends Phaser.Scene {
     this.muteSlash = this.add.rectangle(0, 0, 3, MUTE_ICON_RADIUS * 2 + 6, MUTE_SLASH_COLOR);
     this.muteSlash.setAngle(45);
     this.muteSlash.setVisible(false);
-    const muteIconX = MUTE_ICON_MARGIN_LEFT + MUTE_ICON_RADIUS;
-    this.muteIcon.setPosition(muteIconX, MUTE_ICON_MARGIN_TOP);
-    this.muteSlash.setPosition(muteIconX, MUTE_ICON_MARGIN_TOP);
-    this.muteZone = this.add.zone(muteIconX, MUTE_ICON_MARGIN_TOP, MUTE_TOUCH_TARGET_SIZE, MUTE_TOUCH_TARGET_SIZE);
+    // One rule for the whole bar (see core/hud.ts). The buttons used to
+    // count pixels from the left while the meter centred itself at 60%
+    // width; on a phone those two rules put the meter track straight over
+    // the songbook and lute buttons.
+    const hud = hudLayout(this.scale.width, HUD_BUTTON_COUNT);
+    const [muteIconX, bookX, luteX] = hud.iconXs;
+
+    this.muteIcon.setPosition(muteIconX, hud.iconY);
+    this.muteSlash.setPosition(muteIconX, hud.iconY);
+    this.muteZone = this.add.zone(muteIconX, hud.iconY, HUD_TOUCH_TARGET, HUD_TOUCH_TARGET);
     this.muteZone.setInteractive({ useHandCursor: true });
 
-    const bookX = BOOK_MARGIN_LEFT + BOOK_ICON_RADIUS;
-    this.bookIcon = this.add.image(bookX, MUTE_ICON_MARGIN_TOP, songbookTexture(this));
+    this.bookIcon = this.add.image(bookX, hud.iconY, songbookTexture(this));
     this.bookIcon.setScale((BOOK_ICON_RADIUS * 2) / 26);
     this.bookIcon.setTint(MUTE_ICON_COLOR_ON);
-    this.bookZone = this.add.zone(bookX, MUTE_ICON_MARGIN_TOP, MUTE_TOUCH_TARGET_SIZE, MUTE_TOUCH_TARGET_SIZE);
+    this.bookZone = this.add.zone(bookX, hud.iconY, HUD_TOUCH_TARGET, HUD_TOUCH_TARGET);
     this.bookZone.setInteractive({ useHandCursor: true });
 
-    const luteX = BOOK_MARGIN_LEFT + BOOK_ICON_RADIUS * 2 + 24;
-    this.luteIcon = this.add.image(luteX, MUTE_ICON_MARGIN_TOP, freePlayTexture(this));
+    this.luteIcon = this.add.image(luteX, hud.iconY, freePlayTexture(this));
     this.luteIcon.setScale((BOOK_ICON_RADIUS * 2) / 26);
     this.luteIcon.setTint(this.mode === 'play' ? PICKER_CHOSEN_BG : MUTE_ICON_COLOR_ON);
-    this.luteZone = this.add.zone(luteX, MUTE_ICON_MARGIN_TOP, MUTE_TOUCH_TARGET_SIZE, MUTE_TOUCH_TARGET_SIZE);
+    this.luteZone = this.add.zone(luteX, hud.iconY, HUD_TOUCH_TARGET, HUD_TOUCH_TARGET);
     this.luteZone.setInteractive({ useHandCursor: true });
 
     this.createBard();
@@ -863,7 +868,7 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private updateSongTitle(nowMs: number): void {
-    this.songTitleText.setPosition(this.scale.width / 2, SONG_TITLE_Y);
+    this.songTitleText.setPosition(this.scale.width / 2, hudLayout(this.scale.width, HUD_BUTTON_COUNT).titleY);
     while (this.pendingAnnounce.length > 0 && this.pendingAnnounce[0].atMs <= nowMs) {
       const announcement = this.pendingAnnounce.shift()!;
       this.songTitleText.setText(announcement.title);
@@ -933,10 +938,6 @@ export class RoadScene extends Phaser.Scene {
   private markerX(progress: number): number {
     const spawn = this.spawnX();
     return spawn + progress * (this.hitLineX() - spawn);
-  }
-
-  private meterTrackWidth(): number {
-    return this.scale.width * 0.6;
   }
 
   /** The scenery biome the walk is currently in, per ROADMAP task 16 — used to pick which pattern the audio engine's next batch plays. */
@@ -1818,15 +1819,46 @@ export class RoadScene extends Phaser.Scene {
    * night, the stars and moon brighten while the world darkens — the sky
    * inverts the ground's shade (ROADMAP task 36).
    */
+  /**
+   * The moon sits in whatever sky is left between the song title and the
+   * top of the staff.
+   *
+   * It used to be pinned at y=84, which put its glow straight through the
+   * title on portrait phones — "Twinkle Twinkle Little Star" overlapped it
+   * by 34px on a 320px screen. That was true before the meter moved to its
+   * own row too; the title had simply always been inside the moon's
+   * vertical span, and only landscape (where the title is far narrower
+   * than the screen) escaped it.
+   *
+   * Portrait has sky to spare, so the moon drops into the middle of the
+   * empty band. Landscape does not — there the clamp pins it just under
+   * the title, which is where it already was, so nothing moves.
+   */
+  private moonY(): number {
+    const glowRadius = MOON_RADIUS + MOON_GLOW_PAD;
+    const titleBottom = hudLayout(this.scale.width, HUD_BUTTON_COUNT).titleY + SONG_TITLE_HALF_HEIGHT;
+    const highest = titleBottom + SKY_CLEARANCE + glowRadius;
+    // Top staff line, which is as high as the notation itself ever reaches.
+    const staffTop = this.staffY(STAFF_TOP_LINE_STEP, this.laneY());
+    const lowest = staffTop - SKY_CLEARANCE - glowRadius;
+    // When the band is too short to satisfy both — landscape, where the
+    // staff is barely below the chrome — the staff wins, because a bright
+    // disc behind a note head costs contrast on the one thing the game is
+    // teaching. The title is safe there anyway: it is centred and narrow
+    // enough on a wide screen that it never reaches the moon horizontally.
+    return Math.min(Math.max(highest, (highest + lowest) / 2), lowest);
+  }
+
   private updateSky(delta: number): void {
     const nightness = nightnessAt(this.distancePx);
     this.stars.setPosition(this.scale.width / 2, STAR_FIELD_HEIGHT / 2);
     this.stars.setSize(this.scale.width, STAR_FIELD_HEIGHT);
     this.stars.setAlpha(0.75 + 0.25 * nightness);
     const moonX = this.scale.width * MOON_X_FRACTION;
-    this.moon.setPosition(moonX, MOON_Y);
+    const moonY = this.moonY();
+    this.moon.setPosition(moonX, moonY);
     this.moon.setAlpha(0.8 + 0.2 * nightness);
-    this.moonGlow.setPosition(moonX, MOON_Y);
+    this.moonGlow.setPosition(moonX, moonY);
     this.moonGlow.setAlpha(0.1 + 0.14 * nightness);
     if (this.walking) {
       this.stars.tilePositionX += (ROAD_SCROLL_PX_PER_SEC * STAR_PARALLAX * delta) / 1000;
@@ -1957,21 +1989,23 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private updateMeterBar(): void {
-    const trackWidth = this.meterTrackWidth();
-    const centerX = this.scale.width / 2;
+    const hud = hudLayout(this.scale.width, HUD_BUTTON_COUNT);
+    const trackWidth = hud.meterWidth;
+    const centerX = hud.meterCenterX;
+    const meterY = hud.meterY;
     const fillRatio = this.meter / this.meterConfig.max;
     const walking = this.walking;
 
-    this.meterTrack.setPosition(centerX, METER_MARGIN_TOP);
+    this.meterTrack.setPosition(centerX, meterY);
     this.meterTrack.setSize(trackWidth, METER_HEIGHT);
 
     this.meterFill.setSize(Math.max(0, trackWidth * fillRatio), METER_HEIGHT - 4);
     this.meterFill.setFillStyle(walking ? 0xe8d9c0 : 0x7a6f85, 1);
-    this.meterFill.setPosition(centerX - trackWidth / 2 + this.meterFill.width / 2, METER_MARGIN_TOP);
+    this.meterFill.setPosition(centerX - trackWidth / 2 + this.meterFill.width / 2, meterY);
 
     const lineCount = this.meterStaffLines.length;
     for (let i = 0; i < lineCount; i++) {
-      const y = METER_MARGIN_TOP - METER_HEIGHT / 2 + ((i + 1) * METER_HEIGHT) / (lineCount + 1);
+      const y = meterY - METER_HEIGHT / 2 + ((i + 1) * METER_HEIGHT) / (lineCount + 1);
       this.meterStaffLines[i].setPosition(centerX, y);
       this.meterStaffLines[i].setSize(trackWidth, METER_STAFF_LINE_THICKNESS);
     }
