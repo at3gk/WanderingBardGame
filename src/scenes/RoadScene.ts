@@ -25,6 +25,7 @@ import {
   stepsUsedBy,
 } from '../core/freePlay';
 import { HUD_TOUCH_TARGET, hudLayout } from '../core/hud';
+import { ROAD_HEIGHT, worldLayout } from '../core/worldLayout';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
 import { accumulateDistance } from '../core/distance';
 import { BIOMES, biomeBlendAt, BIOME_TRANSITIONS, signpostDistanceAt } from '../core/biome';
@@ -42,6 +43,8 @@ import {
 import {
   FAR_TILE_HEIGHT,
   farTileTexture,
+  nearTileTexture,
+  NEAR_TILE_HEIGHT,
   glintTexture,
   moonTexture,
   ROAD_TILE_WIDTH,
@@ -109,10 +112,6 @@ const METER_STAFF_LINE_COUNT = 5;
 const METER_STAFF_LINE_COLOR = 0xa8842f;
 const METER_STAFF_LINE_ALPHA = 0.55;
 const METER_STAFF_LINE_THICKNESS = 1;
-// Grew with the staff (tasks 42, 46): the bard walks below the notation, so
-// this offset has to clear the lowest note the songbook can write plus its
-// ledger line — middle C's head bottom now sits ~63px under the lane.
-const BARD_GROUND_Y_OFFSET = 178;
 // A contact shadow. Without one the bard reads as pasted on top of the road
 // rather than standing on it — the single cheapest thing that grounds a
 // character. It is a soft ellipse in the road's own darker dash colour, not
@@ -155,7 +154,12 @@ const BARD_WALK_ROCK_DEG = 1.6;
 const BARD_WALK_STEP_MS = MS_PER_BEAT;
 const BARD_IDLE_BREATH_MS = 1400;
 const ROAD_SCROLL_PX_PER_SEC = ROAD_TILE_WIDTH / (MS_PER_BEAT / 1000);
-const ROAD_HEIGHT_BELOW_BARD = 60;
+// The verge is nearer the camera than the road, so it has to move faster —
+// that difference is the whole depth cue. 1.35 rather than a round number
+// so the 448px near tile and the 64px road tile never settle into a shared
+// period: 448 / (64 * 1.35) is 5.19 beats, which does not line up with
+// anything else on screen.
+const NEAR_PARALLAX = 1.35;
 // Background scenery band (ROADMAP task 31): silhouette features sitting on
 // the horizon, scrolling slower than the road so the world reads as having
 // depth. One repeating tile per biome, crossfaded exactly like the road.
@@ -309,6 +313,10 @@ export class RoadScene extends Phaser.Scene {
   private scenery!: Phaser.GameObjects.TileSprite;
   private sceneryNext!: Phaser.GameObjects.TileSprite;
   private far!: Phaser.GameObjects.TileSprite;
+  private near!: Phaser.GameObjects.TileSprite;
+  private nearNext!: Phaser.GameObjects.TileSprite;
+  private nearFromIndex = 0;
+  private nearToIndex = 0;
   private farNext!: Phaser.GameObjects.TileSprite;
   private farFromIndex = 0;
   private farToIndex = 0;
@@ -442,9 +450,18 @@ export class RoadScene extends Phaser.Scene {
 
     this.roadFromIndex = 0;
     this.roadToIndex = 0;
-    this.road = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, roadTileTexture(this, BIOMES[0]));
-    this.roadNext = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, roadTileTexture(this, BIOMES[0]));
+    this.road = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT, roadTileTexture(this, BIOMES[0]));
+    this.roadNext = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT, roadTileTexture(this, BIOMES[0]));
     this.roadNext.setAlpha(0);
+
+    // After the road, so the display list paints the near band in front of
+    // it — it is the one plane closer to the camera than the road — and
+    // still behind the bard, who walks on the road rather than in the verge.
+    this.nearFromIndex = 0;
+    this.nearToIndex = 0;
+    this.near = this.add.tileSprite(0, 0, this.scale.width, NEAR_TILE_HEIGHT, nearTileTexture(this, BIOMES[0]));
+    this.nearNext = this.add.tileSprite(0, 0, this.scale.width, NEAR_TILE_HEIGHT, nearTileTexture(this, BIOMES[0]));
+    this.nearNext.setAlpha(0);
 
     this.staffLines = STAFF_LINE_STEPS.map(() =>
       this.add.rectangle(0, 0, this.scale.width, 1.5, 0xe8d9c0, STAFF_LINE_ALPHA)
@@ -846,7 +863,12 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private laneY(): number {
-    return this.scale.height / 2;
+    return worldLayout(this.scale.height).laneY;
+  }
+
+  /** The bard's feet, and the road's vertical centre (core/worldLayout). */
+  private groundY(): number {
+    return worldLayout(this.scale.height).groundY;
   }
 
   /** Y of a diatonic staff step: the staff's middle line (B4, step 6) sits on laneY; each step is half a line gap. */
@@ -1207,10 +1229,10 @@ export class RoadScene extends Phaser.Scene {
     // No fade here. Building the staff and lying it in are separate jobs,
     // and this method has two callers that want opposite things: entering
     // free play (fade, via fadeInFreeStaff) and a resize mid-practice
-    // (rebuild in place, no fade — the staff is already on screen, and
+    // (rebuild in place, no fade — the staff is already on screen and
     // flashing it out and back would read as a fault).
     //
-    // They used to be one thing, and doing both was what made the entire
+    // They used to be one thing, and doing both was what made the whole
     // practice staff invisible: this method ended by zeroing every alpha
     // and tweening back, then fadeInFreeStaff ran on the very same frame,
     // read those alphas — now 0 — captured 0 as each part's *target*, and
@@ -1639,6 +1661,8 @@ export class RoadScene extends Phaser.Scene {
     this.farNext.setTint(worldTint);
     this.road.setTint(worldTint);
     this.roadNext.setTint(worldTint);
+    this.near.setTint(worldTint);
+    this.nearNext.setTint(worldTint);
     for (const signpost of this.signposts) signpost.setTint(worldTint);
     // Glints are drawn white so they can carry the riverside's own accent,
     // dimmed by the same dusk shade as everything else in the world layer.
@@ -1648,7 +1672,7 @@ export class RoadScene extends Phaser.Scene {
     this.updateSky(delta);
     this.updateScenery(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
     this.updateSignposts(laneY);
-    this.updateRoad(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
+    this.updateRoad(delta, blend.fromIndex, blend.toIndex, blend.ratio);
     for (let i = 0; i < this.staffLines.length; i++) {
       this.staffLines[i].setPosition(this.scale.width / 2, this.staffY(STAFF_LINE_STEPS[i], laneY));
       this.staffLines[i].setSize(this.scale.width, 1.5);
@@ -1778,7 +1802,7 @@ export class RoadScene extends Phaser.Scene {
     this.updateMeterBar();
     this.updateCoinReadout();
     this.updateDistanceReadout();
-    this.updateBard(hitLineX, laneY);
+    this.updateBard(hitLineX);
     this.audioEngine.setMeterRatio(meterRatio);
   }
 
@@ -1792,7 +1816,7 @@ export class RoadScene extends Phaser.Scene {
    * change (there are more than 2 biomes now, so which pair is blending
    * changes over the course of a walk).
    */
-  private updateRoad(laneY: number, delta: number, fromIndex: number, toIndex: number, ratio: number): void {
+  private updateRoad(delta: number, fromIndex: number, toIndex: number, ratio: number): void {
     if (fromIndex !== this.roadFromIndex) {
       this.roadFromIndex = fromIndex;
       this.road.setTexture(roadTileTexture(this, BIOMES[fromIndex]));
@@ -1802,17 +1826,62 @@ export class RoadScene extends Phaser.Scene {
       this.roadNext.setTexture(roadTileTexture(this, BIOMES[toIndex]));
     }
 
-    const roadY = laneY + BARD_GROUND_Y_OFFSET;
+    const roadY = this.groundY();
     this.road.setPosition(this.scale.width / 2, roadY);
-    this.road.setSize(this.scale.width, ROAD_HEIGHT_BELOW_BARD);
+    this.road.setSize(this.scale.width, ROAD_HEIGHT);
     this.roadNext.setPosition(this.scale.width / 2, roadY);
-    this.roadNext.setSize(this.scale.width, ROAD_HEIGHT_BELOW_BARD);
+    this.roadNext.setSize(this.scale.width, ROAD_HEIGHT);
     this.roadNext.setAlpha(ratio);
     this.roadNext.setVisible(ratio > 0);
     if (this.walking) {
       const scrollDelta = (ROAD_SCROLL_PX_PER_SEC * delta) / 1000;
       this.road.tilePositionX += scrollDelta;
       this.roadNext.tilePositionX += scrollDelta;
+    }
+
+    this.updateNear(delta, fromIndex, toIndex, ratio);
+  }
+
+  /**
+   * The near band: the ground under the road and what grows at its verge.
+   *
+   * The one plane closer to the camera than the road, so it is the only
+   * thing in the scene that scrolls *faster* than the surface the bard
+   * walks on. Everything else runs at or below the road's rate (stars 0.08,
+   * far ridge 0.19, scenery 0.45, road 1.0), which is why the road never
+   * quite read as a surface going away from you.
+   *
+   * It sits flush under the road and runs to the bottom of the screen —
+   * which used to be sky, because the camera's background colour was all
+   * there was down there.
+   */
+  private updateNear(delta: number, fromIndex: number, toIndex: number, ratio: number): void {
+    if (fromIndex !== this.nearFromIndex) {
+      this.nearFromIndex = fromIndex;
+      this.near.setTexture(nearTileTexture(this, BIOMES[fromIndex]));
+    }
+    if (toIndex !== this.nearToIndex) {
+      this.nearToIndex = toIndex;
+      this.nearNext.setTexture(nearTileTexture(this, BIOMES[toIndex]));
+    }
+
+    const layout = worldLayout(this.scale.height);
+    // Tall enough to reach the bottom on any viewport, never shorter than
+    // the tile — on a tablet there is 300px of it to fill.
+    const height = Math.max(NEAR_TILE_HEIGHT, this.scale.height - layout.roadBottom + 2);
+    const y = layout.roadBottom + height / 2;
+
+    for (const band of [this.near, this.nearNext]) {
+      band.setPosition(this.scale.width / 2, y);
+      band.setSize(this.scale.width, height);
+    }
+    this.nearNext.setAlpha(ratio);
+    this.nearNext.setVisible(ratio > 0);
+
+    if (this.walking) {
+      const scrollDelta = (ROAD_SCROLL_PX_PER_SEC * NEAR_PARALLAX * delta) / 1000;
+      this.near.tilePositionX += scrollDelta;
+      this.nearNext.tilePositionX += scrollDelta;
     }
   }
 
@@ -1937,8 +2006,8 @@ export class RoadScene extends Phaser.Scene {
     }
   }
 
-  private roadTopY(laneY: number): number {
-    return laneY + BARD_GROUND_Y_OFFSET - ROAD_HEIGHT_BELOW_BARD / 2;
+  private roadTopY(_laneY: number): number {
+    return worldLayout(this.scale.height).roadTop;
   }
 
   /**
@@ -1971,8 +2040,8 @@ export class RoadScene extends Phaser.Scene {
     }
   }
 
-  private updateBard(hitLineX: number, laneY: number): void {
-    const groundY = laneY + BARD_GROUND_Y_OFFSET;
+  private updateBard(hitLineX: number): void {
+    const groundY = this.groundY();
     this.bard.setPosition(hitLineX, groundY);
 
     const walking = this.walking;

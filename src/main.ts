@@ -4,6 +4,7 @@ import {
   farTileTexture,
   glintTexture,
   moonTexture,
+  nearTileTexture,
   roadTileTexture,
   sceneryTileTexture,
   signpostTexture,
@@ -56,6 +57,7 @@ const game = new Phaser.Game({
   signpostTexture,
   moonTexture,
   farTileTexture,
+  nearTileTexture,
 };
 
 // And the shared UI glyphs, for tools/ui-sheet.mjs.

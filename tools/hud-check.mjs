@@ -63,7 +63,7 @@ for (const [name, w, h] of VIEWPORTS) {
       meter: rect(s.meterTrack, 'meter'),
       title: (() => { s.songTitleText.setText('Twinkle Twinkle Little Star'); return rect(s.songTitleText, 'title'); })(),
       moonGlow: rect(s.moonGlow, 'moon'),
-      staffTopY: s.staffY(10, s.scale.height / 2),
+      staffTopY: s.staffY(10, s.laneY()),
       coinIcon: rect(s.coinIcon, 'coin'),
       coinText: rect(s.coinText, 'coinText'),
     };
