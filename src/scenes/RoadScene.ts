@@ -98,6 +98,22 @@ const SONG_TITLE_HOLD_MS = 2600;
 // pixels past the hit line, and played notes used to pile over the clef.
 const EXIT_PROGRESS = 1.28;
 const METER_HEIGHT = 14;
+/**
+ * Gold, not cream.
+ *
+ * Cream (0xe8d9c0) is the notation's colour — note heads, letters, staff
+ * lines, the clef. The meter used to borrow it, which was survivable while
+ * the bar was 234px wide and squeezed between the buttons. Once it got a
+ * row of its own and ran 342px on a phone, a full meter became the largest
+ * and brightest thing on the screen, in exactly the colour the child is
+ * supposed to be reading. The teaching surface has to win that contest.
+ *
+ * Gold is already this world's second voice — the coin beside it, the lit
+ * windows in the village, the bard's buckle — so the meter joins something
+ * rather than introducing a colour.
+ */
+const METER_FILL_COLOR = 0xc79a3c;
+const METER_FILL_COLOR_STOPPED = 0x6b5f74;
 /** Mute, songbook, lute — the whole of the game's chrome. */
 const HUD_BUTTON_COUNT = 3;
 // Meter as staff (ROADMAP idea backlog): the song meter joins the notation
@@ -109,7 +125,7 @@ const METER_STAFF_LINE_COUNT = 5;
 // A mid-tone (not the fill's own cream) so the lines stay visible whether
 // they sit on the dark track or the bright fill — sheet-music lines read
 // the same whether the page under them is blank or inked.
-const METER_STAFF_LINE_COLOR = 0xa8842f;
+const METER_STAFF_LINE_COLOR = 0x6b4f18;
 const METER_STAFF_LINE_ALPHA = 0.55;
 const METER_STAFF_LINE_THICKNESS = 1;
 // A contact shadow. Without one the bard reads as pasted on top of the road
@@ -242,6 +258,21 @@ const PICKER_DEPTH = 1000;
 // Free play (the staff as an instrument). Its own chrome sits below the
 // picker but above the world.
 const FREEPLAY_DEPTH = 500;
+/**
+ * The world sits behind a scrim while practising. Sits just under the
+ * staff, over everything else — including the bard, who is not doing
+ * anything in this mode and otherwise competes with the notes for
+ * attention.
+ */
+const FREEPLAY_SCRIM_DEPTH = FREEPLAY_DEPTH - 1;
+const FREEPLAY_SCRIM_ALPHA = 0.62;
+/**
+ * The heads-up chrome rides above the practice scrim. The lute button is
+ * the way *back* to the walk, so dimming it by 62% would dim the exit; the
+ * song title names the tune being practised and has to stay readable. The
+ * world is what steps back in this mode, not the controls.
+ */
+const HUD_DEPTH = FREEPLAY_DEPTH + 50;
 const FREEPLAY_TOP_MARGIN = 74;
 const FREEPLAY_BOTTOM_MARGIN = 56;
 const FREEPLAY_LINE_COLOR = 0xe8d9c0;
@@ -347,6 +378,7 @@ export class RoadScene extends Phaser.Scene {
   private luteZone!: Phaser.GameObjects.Zone;
   private freeParts: Phaser.GameObjects.GameObject[] = [];
   private freeStaff: FreePlayStaff | null = null;
+  private freeScrim: Phaser.GameObjects.Rectangle | null = null;
   /** The chosen song as positions to find, and how far through it the child is. */
   private freeSequence: number[] = [];
   private freeIndex = 0;
@@ -551,6 +583,12 @@ export class RoadScene extends Phaser.Scene {
     this.luteZone = this.add.zone(luteX, hud.iconY, HUD_TOUCH_TARGET, HUD_TOUCH_TARGET);
     this.luteZone.setInteractive({ useHandCursor: true });
 
+    // One plane for the whole bar, above the practice scrim (see HUD_DEPTH).
+    for (const part of [this.muteIcon, this.muteSlash, this.bookIcon, this.luteIcon,
+                        this.coinIcon, this.coinText, this.songTitleText, this.distanceText]) {
+      part.setDepth(HUD_DEPTH);
+    }
+
     this.createBard();
     this.bardWasWalking = this.walking;
     this.setBardAnimState(this.bardWasWalking);
@@ -598,7 +636,10 @@ export class RoadScene extends Phaser.Scene {
     // startling than simply being dismissed, and it is one tap to reopen.
     this.scale.on(Phaser.Scale.Events.RESIZE, () => {
       if (this.pickerOpen) this.closePicker();
-      if (this.mode === 'play') this.buildFreeStaff(false);
+      if (this.mode === 'play') {
+        this.layoutScrim();
+        this.buildFreeStaff(false);
+      }
     });
 
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
@@ -1005,8 +1046,54 @@ export class RoadScene extends Phaser.Scene {
     this.dismissHint();
     this.luteIcon.setTint(PICKER_CHOSEN_BG);
     this.setWalkChromeVisible(false);
+    this.raiseScrim();
     this.buildFreeStaff();
     this.fadeInFreeStaff();
+  }
+
+  /**
+   * Dims the world while practising.
+   *
+   * The staff spreads over the whole screen in this mode, so its lowest
+   * steps — middle C and the two above it — lie across the road, which is
+   * the brightest band in the scene. Cream lines at 0.55 alpha over a lit
+   * road is the one place in the game where the notation is hard to read,
+   * and it is the mode whose entire purpose is reading it.
+   *
+   * Dimming rather than hiding: the walk is still there, waiting, and a
+   * child should be able to see what they are going back to. It is the
+   * same principle as the letter scaffold — fade what is not the answer.
+   */
+  private raiseScrim(): void {
+    if (!this.freeScrim) {
+      this.freeScrim = this.add.rectangle(0, 0, 10, 10, 0x120d16, 1);
+      this.freeScrim.setDepth(FREEPLAY_SCRIM_DEPTH);
+    }
+    const scrim = this.freeScrim;
+    this.layoutScrim();
+    scrim.setVisible(true);
+    scrim.setAlpha(0);
+    this.tweens.killTweensOf(scrim);
+    this.tweens.add({ targets: scrim, alpha: FREEPLAY_SCRIM_ALPHA, duration: FREEPLAY_FADE_MS, ease: 'Quad.easeOut' });
+  }
+
+  /**
+   * Sizes the scrim to the screen. Separate from raising it because a
+   * rotation mid-practice has to resize it *without* re-running the fade —
+   * the same split the staff itself needed, and for the same reason: the
+   * scrim is already on screen, and flashing it would read as a fault.
+   */
+  private layoutScrim(): void {
+    if (!this.freeScrim) return;
+    this.freeScrim.setPosition(this.scale.width / 2, this.scale.height / 2);
+    this.freeScrim.setSize(this.scale.width, this.scale.height);
+  }
+
+  /** Drops the scrim on the same frame the road comes back — see exitFreePlay. */
+  private dropScrim(): void {
+    if (!this.freeScrim) return;
+    this.tweens.killTweensOf(this.freeScrim);
+    this.freeScrim.setVisible(false);
   }
 
   /**
@@ -1035,6 +1122,7 @@ export class RoadScene extends Phaser.Scene {
     if (this.mode !== 'play') return;
     this.mode = 'walk';
     this.luteIcon.setTint(MUTE_ICON_COLOR_ON);
+    this.dropScrim();
     this.setWalkChromeVisible(true);
     this.songTitleText.setAlpha(0);
     this.tearDownFreeStaff();
@@ -2072,7 +2160,7 @@ export class RoadScene extends Phaser.Scene {
     this.meterTrack.setSize(trackWidth, METER_HEIGHT);
 
     this.meterFill.setSize(Math.max(0, trackWidth * fillRatio), METER_HEIGHT - 4);
-    this.meterFill.setFillStyle(walking ? 0xe8d9c0 : 0x7a6f85, 1);
+    this.meterFill.setFillStyle(walking ? METER_FILL_COLOR : METER_FILL_COLOR_STOPPED, 1);
     this.meterFill.setPosition(centerX - trackWidth / 2 + this.meterFill.width / 2, meterY);
 
     const lineCount = this.meterStaffLines.length;

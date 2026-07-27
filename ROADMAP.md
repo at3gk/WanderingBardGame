@@ -8,7 +8,7 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the last numbered entry (currently 96). If it says
+- **What to do next** is the last numbered entry (currently 101). If it says
   "Nothing queued", promote something from the **Idea backlog** near the
   bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
   has lifted.
@@ -1014,7 +1014,64 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     on the road, running, with the song choice intact. Locked into
     `freeplay-check` anyway. Every bug in this feature lived in a seam
     rather than a feature, so the seams are the thing worth holding still.
-96. **Next.** Nothing queued.
+96. ~~**Stop the meter being drawn over the songbook and lute buttons.**~~
+    Done. The buttons counted pixels from the left edge while the meter
+    took 60% of the width and centred itself, and nothing had ever asked
+    those rules to agree — they only do on a wide screen. On a 390px phone
+    the meter track started at x=78 with the songbook at 68-90 and the
+    lute at 103-125, both underneath it; on 320px it was worse. **The two
+    ways into everything built the previous session were invisible on the
+    devices this game is for**, and visible only in landscape. The
+    songbook and lute touch zones also overlapped each other by 9px.
+    `core/hud.ts` is now one rule for the whole bar — buttons at a pitch
+    of exactly one 44px touch target, meter on a row of its own — and the
+    meter got wider everywhere as a result (342px vs 234px on a phone).
+    Chasing it turned up an older one: the song title had always sat
+    inside the moon's vertical span, overlapping its glow by 34px on a
+    320px screen. The moon now sits in whatever sky is left between the
+    title and the top staff line. `tools/hud-check.mjs`, eight viewports.
+97. ~~**Make the practice staff visible again.**~~ Done, and it was live.
+    The staff, its letters and its pips had been drawn at **alpha 0 since
+    the lay-in animation shipped in task 95** — two fade-ins ran back to
+    back, the first zeroing every alpha and tweening it back, the second
+    reading those same alphas on the same frame, capturing 0 as each
+    part's *target*, and tweening 0 to 0. Both halves correct alone.
+    The lesson is in the check, not the fix: every assertion in
+    `freeplay-check` was about behaviour, and all of them passed against a
+    build where nothing could be seen. A mode whose whole purpose is
+    reading the staff now asserts the staff can be read — and that its
+    landmark hierarchy survives the fade, not just that ink exists.
+98. ~~**Give the world a ground, and keep it on screen in landscape.**~~
+    Done. Two problems in the same strip of pixels. The lane was
+    `height / 2` with the ground a flat 178px below it — a fixed offset on
+    a proportional anchor — so on a 568x320 landscape phone the road ran
+    48px off the bottom, leaving 12 of its 60px visible with the bard cut
+    off at the shins. `core/worldLayout.ts` works from both edges and
+    states its priority order where space runs out; it anchors on the old
+    constant so every viewport that already fitted is pixel-identical.
+    And below the road there had never been anything but the camera's
+    background colour — the sky. The near band puts real earth there with
+    verge growth per biome, and is the first plane in the game closer to
+    the camera than the road (1.35 vs the road's 1.0), which is what makes
+    the road read as a surface going away from you. `tools/ground-check.mjs`.
+99. ~~**Let the practice staff be read.**~~ Done. In practice the staff
+    spreads over the whole screen, so its lowest steps lie across the
+    road — the brightest band in the scene — and cream lines at 0.55 alpha
+    over a lit road was the one place in the game where the notation was
+    hard to read, in the mode that exists for reading it. The world now
+    sits behind a scrim while practising; the chrome does not, because the
+    lute button is the way back out and dimming the exit is not a thing to
+    do. Leaving drops it on the same frame, per the standing rule that the
+    road is the game.
+100. ~~**Give the meter back its cream.**~~ Done. Cream is the notation's
+    colour, and the meter had been borrowing it. Survivable at 234px wide
+    and squeezed between the buttons; not once task 96 gave it a full row
+    and 342px, at which point a full meter was the largest and brightest
+    thing on screen in exactly the colour the child is meant to read. It
+    is gold now — the coin, the lit windows, the buckle — so it joins
+    something rather than introducing a colour. Recorded as a standing
+    rule in DESIGN.md's art direction.
+101. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked this run (task 92): both
     remain blocked (forest-song fetch still 403s everywhere; the GitHub MCP

@@ -108,6 +108,34 @@ if (inked.brightest < 0.9) {
 // the fade had flattened what it was written to protect.
 if (inked.distinct < 2) fail.push('every staff part has the same alpha — the landmark hierarchy is gone');
 
+// The world steps back while practising, but the controls do not. The
+// staff spreads over the whole screen in this mode, so its lowest steps
+// lie across the road — the brightest band in the scene — and cream lines
+// over a lit road is the one place the notation is hard to read. The lute
+// button is also the way *back* to the walk, so it must not be dimmed
+// along with the world it sits over.
+const scrim = await page.evaluate(() => {
+  const s = window.game.scene.scenes[0];
+  const chrome = [s.muteIcon, s.bookIcon, s.luteIcon, s.songTitleText];
+  return {
+    up: !!s.freeScrim && s.freeScrim.visible,
+    alpha: s.freeScrim ? Math.round(s.freeScrim.alpha * 100) / 100 : 0,
+    covers: s.freeScrim ? { w: Math.round(s.freeScrim.width), h: Math.round(s.freeScrim.height) } : null,
+    screen: { w: s.scale.width, h: s.scale.height },
+    chromeAbove: chrome.every((c) => c.depth > (s.freeScrim ? s.freeScrim.depth : 0)),
+    staffAbove: s.freeParts.every((p) => p.depth > (s.freeScrim ? s.freeScrim.depth : 0)),
+  };
+});
+console.log('practice scrim:', JSON.stringify(scrim));
+if (!scrim.up) fail.push('the world is not dimmed while practising');
+if (scrim.alpha < 0.3) fail.push(`the scrim is only alpha ${scrim.alpha} — the road still competes with the staff`);
+if (scrim.alpha > 0.9) fail.push(`the scrim is alpha ${scrim.alpha} — the walk should still be visible behind it`);
+if (scrim.covers.w < scrim.screen.w || scrim.covers.h < scrim.screen.h) {
+  fail.push(`the scrim is ${scrim.covers.w}x${scrim.covers.h} on a ${scrim.screen.w}x${scrim.screen.h} screen`);
+}
+if (!scrim.chromeAbove) fail.push('the buttons and title are dimmed along with the world — that dims the way out');
+if (!scrim.staffAbove) fail.push('the staff is behind the scrim meant to make it readable');
+
 // --- every position sounds its own note -----------------------------------
 // Ask the scene where it actually put the steps, rather than recomputing
 // the layout here — a check that re-derives the thing it is checking will
@@ -392,12 +420,17 @@ await page.mouse.click(124, 24);
 await page.waitForTimeout(2600);
 const back = await page.evaluate(() => {
   const s = window.game.scene.scenes[0];
-  return { mode: s.mode, markers: s.markers.length, clefVisible: s.clef.visible };
+  return { mode: s.mode, markers: s.markers.length, clefVisible: s.clef.visible,
+           scrimUp: !!s.freeScrim && s.freeScrim.visible };
 });
 console.log('back on the road:', JSON.stringify(back));
 if (back.mode !== 'walk') fail.push('could not get back out of free play');
 if (back.markers === 0) fail.push('the road did not resume — no notes are coming');
 if (!back.clefVisible) fail.push('the walk chrome did not come back');
+// Leaving fades nothing: the road is the game, and a child asking for it
+// back should get it on the frame they asked. A scrim left up would dim
+// the walk itself.
+if (back.scrimUp) fail.push('the world is still dimmed after returning to the road');
 
 if (errors.length) fail.push('page errors: ' + errors.join(' | '));
 console.log(fail.length ? 'FAIL:\n - ' + fail.join('\n - ') : 'PASS: every position on the staff plays its own note, and exploring is not graded');
