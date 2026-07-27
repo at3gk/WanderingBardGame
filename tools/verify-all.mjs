@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
  * the fast ones. This is the single command to reach for.
  *
  *   node verify-all.mjs          # all 17 (~22 min)
- *   node verify-all.mjs quick    # the fast nine (~5 min)
+ *   node verify-all.mjs quick    # the fast eleven (~6 min)
  *
  * Expects the preview server on :4173 and Playwright installed in the
  * working directory — see Setup above in README.md. Runs the checks one at
@@ -34,6 +34,7 @@ const CHECKS = [
   { name: 'input-check', args: ['input-check.mjs'] },
   { name: 'songpick-check', args: ['songpick-check.mjs'], slow: true },
   { name: 'freeplay-check', args: ['freeplay-check.mjs'] },
+  { name: 'hud-check', args: ['hud-check.mjs'] },
   { name: 'practice-soak', args: ['practice-soak.mjs', '4'], slow: true },
   { name: 'dusk-check', args: ['dusk-check.mjs'] },
   { name: 'coinchime-check', args: ['coinchime-check.mjs'] },
