@@ -983,6 +983,29 @@ export class RoadScene extends Phaser.Scene {
     this.luteIcon.setTint(PICKER_CHOSEN_BG);
     this.setWalkChromeVisible(false);
     this.buildFreeStaff();
+    this.fadeInFreeStaff();
+  }
+
+  /**
+   * Lays the staff in rather than cutting to it. Each line, pip and letter
+   * rises from nothing to its own intended alpha — which differs per part,
+   * since the line-notes are landmarks and the spaces between them are
+   * not — so the hierarchy the staff is built with survives the fade.
+   *
+   * Entry only. Leaving fades nothing: the road is the game, and a child
+   * asking for it back should get it on the same frame they asked.
+   */
+  private fadeInFreeStaff(): void {
+    for (const part of this.freeParts) {
+      // freeParts is typed as bare GameObject because it is a teardown list;
+      // everything actually in it is an Alpha component (rectangle, circle,
+      // text), so narrow rather than widen the field's type.
+      const fadeable = part as Phaser.GameObjects.GameObject & { alpha: number; setAlpha(v: number): unknown };
+      if (typeof fadeable.alpha !== 'number') continue;
+      const target = fadeable.alpha;
+      fadeable.setAlpha(0);
+      this.tweens.add({ targets: fadeable, alpha: target, duration: 220, ease: 'Quad.easeOut' });
+    }
   }
 
   private exitFreePlay(): void {
