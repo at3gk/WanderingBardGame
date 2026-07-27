@@ -1101,9 +1101,32 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     got painted at half strength. The bar is 18px now, the lines carry a
     half-pixel offset so each covers exactly one row, and the alpha rose
     with the height. Five ruled lines, 2px of gold between them.
-104. **Next.** Nothing queued.
+104. ~~**Next: nothing queued → re-check blockers, fix what's found.**~~
+    Done (Run 37, scheduled). Both standing blockers re-checked exactly as
+    this task's own note asked, both unchanged: `WebFetch` still returns
+    HTTP 403 on a plain Wikipedia page (the forest-song transcription
+    still can't be verified against a published source), and the GitHub
+    MCP toolset still has no tag/ref-write or branch-protection-write call
+    (re-scanned the full list of `mcp__github__*` tools). No playtest
+    answer had arrived either.
 
-    **First, check the blockers.** Re-checked this run (task 92): both
+    With nothing queued and the idea backlog down to one phone-dependent
+    item, this run's slot went to fixing what the re-check itself turned
+    up: the root `README.md` and `.github/workflows/headless-checks.yml`
+    both still said "seventeen checks" / "the fast nine", numbers frozen
+    from when CI was first wired up (task 79). Four checks (`hud-check`,
+    `ground-check`, `bard-check`, `seam-check`) landed since then and never
+    got counted — the suite is 24 checks now, 14 in the quick set, which
+    `tools/README.md` and `verify-all.mjs`'s own `quick` comment already
+    had right. Documentation-only: corrected both stale counts to match.
+
+    No game code touched. `npm test` (279 green) and `npm run build`
+    (1.27 MB) reconfirmed as a baseline, and the full quick suite
+    (14 checks) run once end-to-end to confirm the re-check itself found
+    no regression: all 14 green, no drift.
+105. **Next.** Nothing queued.
+
+    **First, check the blockers.** Re-checked this run (task 104): both
     remain blocked (forest-song fetch still 403s everywhere; the GitHub MCP
     toolset still has no tag/ref-write *or* branch-protection-write call).
 
@@ -1120,7 +1143,7 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     left, and it still needs a real phone to judge the fill-rate trade.
 
     **What not to reach for.** The verification suite is comprehensive now
-    (17 checks); adding another for its own sake is drift. So is another
+    (24 checks); adding another for its own sake is drift. So is another
     render extraction — `createBard` is the only drawing code left in the
     scene and it is genuinely entangled with scene state, so moving it would
     relocate the tangle rather than remove it. **Key signatures** remain a

@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 36
+Run counter: 37
 
 ## Current status
 
@@ -918,6 +918,21 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   runs — a real cost to the pipeline's cadence for no real benefit here.
   `headless-checks.yml` is unchanged. `npm test` 254 green (unchanged),
   build green — re-confirmed as a baseline, no code touched this run.
+- Run 37 (2026-07-27, scheduled): resolved ROADMAP task 104 (see its done
+  entry). Both standing blockers re-checked and unchanged (forest-song
+  fetch still 403s; GitHub MCP toolset still has no tag/ref-write or
+  branch-protection-write call), no playtest answer had arrived, and the
+  idea backlog is down to one phone-dependent item — so this run fixed what
+  the re-check itself turned up instead of inventing new scope: the root
+  `README.md` and `.github/workflows/headless-checks.yml` both still
+  quoted "seventeen checks" / "the fast nine", stale since task 79 first
+  wired CI — four checks landed since (`hud-check`, `ground-check`,
+  `bard-check`, `seam-check`) and were never counted, even though
+  `tools/README.md` and `verify-all.mjs` already had the right numbers (24
+  total, 14 quick). Corrected both. No game code touched; `npm test` (279
+  green) and `npm run build` (1.27 MB) reconfirmed, and the full 14-check
+  quick suite run once end-to-end to confirm the re-check found no
+  regression: all 14 green, no drift.
 
 - **Session close, 2026-07-27 small hours (human-directed, PRs #115–#122).**
   Asked for a polish pass on art, animation and the game. It found three
