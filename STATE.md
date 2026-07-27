@@ -76,15 +76,15 @@ Run counter: 36
   song choice and the second way in; it does not change the walk.
 - **Eleven songs**, four per biome except forest, which has three and is
   short a fourth (blocked — see *Blocked on human*).
-- **279 unit tests**; **23 headless checks** in `tools/`. Run them all with
+- **279 unit tests**; **24 headless checks** in `tools/`. Run them all with
   `PLAYWRIGHT_PATH=<dir>/node_modules/playwright node tools/verify-all.mjs`
-  (or `quick` for the fast thirteen). Green as of 2026-07-27. Use playwright
+  (or `quick` for the fast fourteen). Green as of 2026-07-27. Use playwright
   **1.56.1**
   (`/opt/node22/lib/node_modules/playwright`) — a newer copy won't match
   the installed browser build and every check will fail for that reason
   alone. **Run the suite quiet** — two Playwright suites at once will fail
   `autoplay` on frame timing and it looks exactly like a real regression.
-  The fast thirteen
+  The fast fourteen
   now also run automatically after every merge to `main`
   (`.github/workflows/headless-checks.yml`), informational only — it
   doesn't gate the merge or the deploy.

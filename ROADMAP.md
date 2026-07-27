@@ -8,7 +8,7 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the last numbered entry (currently 101). If it says
+- **What to do next** is the last numbered entry (currently 103). If it says
   "Nothing queued", promote something from the **Idea backlog** near the
   bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
   has lifted.
@@ -1071,7 +1071,27 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     is gold now — the coin, the lit windows, the buckle — so it joins
     something rather than introducing a colour. Recorded as a standing
     rule in DESIGN.md's art direction.
-101. **Next.** Nothing queued.
+101. ~~**Let the bard ease in and out of walking.**~~ Done. Every state
+    change snapped every limb to neutral on the frame it happened, so
+    stopping slammed his legs shut from mid-stride and starting teleported
+    a leg out to a full 20-degree swing. The limbs ease to the next
+    cycle's opening pose over 150ms now. `bard-check` took four wrong
+    versions and every one of them passed — see its header; the working
+    assertion is time-to-traverse, which is frame-rate independent.
+102. ~~**Pin three seams that were already right.**~~ Done:
+    mute x practice (silence costs sound and nothing else), tab-away x
+    practice (the tune is where you left it), and rotation x the ground
+    (the newest plane follows the screen). All three passed first time,
+    which is the reason to write them down — every real defect of the last
+    two sessions lived in a seam, so the seams are what is worth holding
+    still. `tools/seam-check.mjs`, mutation-tested.
+
+    One false alarm worth keeping: the probe first reported a staff part
+    coming back invisible after backgrounding. It was the opening hint,
+    which is *supposed* to vanish once the child plays a note — it fades
+    and is destroyed but stays in `freeParts`, because that array is a
+    teardown list and not a display list. Suspect the check first.
+103. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked this run (task 92): both
     remain blocked (forest-song fetch still 403s everywhere; the GitHub MCP
