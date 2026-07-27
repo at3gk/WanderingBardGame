@@ -169,6 +169,12 @@ const BARD_WALK_ROCK_DEG = 1.6;
 // legs, ground, the "N steps" readout, and the music all share one clock.
 const BARD_WALK_STEP_MS = MS_PER_BEAT;
 const BARD_IDLE_BREATH_MS = 1400;
+/**
+ * How long the limbs take to ease into the next cycle's opening pose.
+ * Well under one beat (625ms at 96 BPM), so starting to walk still looks
+ * immediate — it is the jolt that is being removed, not the response.
+ */
+const BARD_SETTLE_MS = 150;
 const ROAD_SCROLL_PX_PER_SEC = ROAD_TILE_WIDTH / (MS_PER_BEAT / 1000);
 // The verge is nearer the camera than the road, so it has to move faster —
 // that difference is the whole depth cue. 1.35 rather than a round number
@@ -416,6 +422,7 @@ export class RoadScene extends Phaser.Scene {
   private bardTweens: Phaser.Tweens.Tween[] = [];
   private bardShadow!: Phaser.GameObjects.Ellipse;
   private bardWasWalking: boolean | null = null;
+  private bardAnimToken = 0;
   private audioEngine = new AudioEngine(AUDIO_MANIFEST);
 
   constructor() {
@@ -807,16 +814,62 @@ export class RoadScene extends Phaser.Scene {
    * with the stride. Idle: a slow breathing pulse plus a small lute sway,
    * so the bard never reads as frozen.
    */
+  /**
+   * Changes what the bard is doing, without the jolt.
+   *
+   * This used to snap every limb to neutral on the same frame the state
+   * changed, then start the new cycle — so stopping froze him mid-stride
+   * with his legs slamming shut, and starting teleported a leg out to a
+   * full swing before the first step. The meter empties and refills often
+   * enough that both were visible several times a minute.
+   *
+   * Now the limbs are eased to wherever the next cycle begins, and the
+   * cycle starts from there. Settling toward the *walk's* starting pose
+   * rather than toward neutral is what keeps the first stride from
+   * teleporting: the tween that follows begins at exactly the angles the
+   * settle left the legs at.
+   */
   private setBardAnimState(walking: boolean): void {
     this.bardTweens.forEach((tween) => tween.stop());
     this.bardTweens = [];
-    this.bardLegLeft.setAngle(0);
-    this.bardLegRight.setAngle(0);
-    this.bardUpper.setPosition(0, 0);
-    this.bardUpper.setAngle(0);
-    this.bardUpper.setScale(1, 1);
     this.bardLute.setAngle(BARD_LUTE_ANGLE_DEG);
 
+    // A later state change must not have its cycle started by an earlier
+    // settle finishing — the meter can cross the walking threshold twice
+    // inside one settle.
+    const token = ++this.bardAnimToken;
+    const begin = () => {
+      if (this.bardAnimToken === token) this.beginBardCycle(walking);
+    };
+
+    this.bardTweens.push(
+      this.tweens.add({
+        targets: this.bardLegLeft,
+        angle: walking ? -BARD_WALK_SWING_DEG : 0,
+        duration: BARD_SETTLE_MS,
+        ease: 'Sine.easeOut',
+      }),
+      this.tweens.add({
+        targets: this.bardLegRight,
+        angle: walking ? BARD_WALK_SWING_DEG : 0,
+        duration: BARD_SETTLE_MS,
+        ease: 'Sine.easeOut',
+      }),
+      this.tweens.add({
+        targets: this.bardUpper,
+        y: 0,
+        angle: walking ? -BARD_WALK_ROCK_DEG : 0,
+        scaleX: 1,
+        scaleY: 1,
+        duration: BARD_SETTLE_MS,
+        ease: 'Sine.easeOut',
+        onComplete: begin,
+      })
+    );
+  }
+
+  /** The steady-state loop, once the limbs have been eased into position. */
+  private beginBardCycle(walking: boolean): void {
     if (walking) {
       this.bardTweens.push(
         this.tweens.add({
