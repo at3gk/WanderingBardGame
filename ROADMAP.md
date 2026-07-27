@@ -8,7 +8,7 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the last numbered entry (currently 106). If it says
+- **What to do next** is the last numbered entry (currently 107). If it says
   "Nothing queued", promote something from the **Idea backlog** near the
   bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
   has lifted.
@@ -1182,6 +1182,73 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     which is load-bearing for the whole letter-fading model. **The picker's
     tween handling** (task 105) looked like a bug and mutation-tested clean
     — don't re-open it without a new, different repro.
+
+107. ~~**Consolidation: split the songbook picker out of RoadScene.**~~ Done
+    (Run 39, scheduled). Both standing blockers re-checked first and
+    unchanged (forest-song fetch still 403s on a plain Wikipedia page; the
+    GitHub MCP toolset still has no tag/ref-write or branch-protection-write
+    call), no playtest answer had arrived, and the idea backlog is down to
+    the one phone-dependent item — so this run picked up the consolidation
+    STATE.md had already flagged as the obvious next one:
+    `RoadScene.ts` had regrown to 2275 lines since the last extraction pass
+    (task 66), entirely from the "two ways in" session — picker overlay,
+    free-play staff, walk chrome, none of it existed when the scene was last
+    split. Moved the picker overlay to `src/scenes/picker.ts`
+    (`openPicker`/`closePicker`, the `PICKER_*` constants):
+    2275 → 2172 lines. A genuinely different extraction from the earlier
+    `render/*` ones — those are pure functions of their inputs with no game
+    state; the picker owns `pickerParts`/`pickerOpen` (has to be torn down
+    as a whole, and other input handling needs to know it's open) and reads
+    the current song choice to highlight a row, so it takes a `PickerHost`
+    interface (the slice of RoadScene it touches) plus a `chooseSong`
+    callback rather than the scene itself. `pickerParts`/`pickerOpen`
+    dropped their `private` modifier — a private class field can't satisfy
+    a plain interface type, confirmed by `tsc` before the fix. `PICKER_CHOSEN_BG`
+    is exported from the new module and re-imported by `RoadScene`, since
+    it doubles as the free-play cursor/pip color and the practice-mode lute
+    tint, not just the picker's chosen-row highlight.
+    Free-play and walk-chrome were left alone — the first still touches
+    substantial scene state (the whole staff-as-instrument mode) and the
+    second is scattered rather than a single cohesive block; either is a
+    task of its own if picked up later, not a natural continuation of this
+    one.
+    Verified behaviour-preserving rather than assumed: `npm test` 279 green
+    (unchanged), build green (bundle unchanged at 1.27 MB), and the three
+    checks that actually exercise the picker — `songpick-check` (a chosen
+    song starts promptly, repeats, settles the biome, survives a reload),
+    `freeplay-check` (switching songs from inside free play, which opens
+    the picker from a different mode), `hud-check` (the picker's touch
+    target geometry) — all still pass, plus the full 14-check quick suite
+    green with zero regressions elsewhere.
+108. **Next.** Nothing queued.
+
+    **First, check the blockers** (re-checked this run, task 107): both
+    remain blocked — forest-song fetch still 403s, GitHub MCP toolset still
+    has no tag/ref-write or branch-protection-write call.
+
+    **Second, if a playtest answer has arrived**, fold it in — see task 79
+    for the one open dial (`SESSION_GAIN_CAP`).
+
+    **Third, CI gating is still settled** (task 92) — don't re-litigate.
+
+    **Fourth, the idea backlog below** — only sharper mobile rendering is
+    left, still needs a real phone.
+
+    **Fifth, `RoadScene.ts` is 2172 lines**, down from 2275 after task 107.
+    STATE.md's own note named three candidates; the picker overlay is done.
+    The free-play staff and the walk chrome remain, but neither is a
+    natural default pick the way the picker was: free-play still touches
+    a lot of scene state (the whole staff-as-instrument mode, not a single
+    self-contained overlay), and "walk chrome" was never one cohesive
+    block to begin with. Either is legitimate future consolidation work,
+    not an automatic next task — read the actual code before claiming one.
+
+    **What not to reach for.** The verification suite is comprehensive now
+    (24 checks); adding another for its own sake is drift. `createBard` is
+    still the one drawing block genuinely entangled with scene state, not
+    worth extracting. **Key signatures** remain a v0.4+ *direction*, not a
+    task — they break naturals-only. **The picker's tween handling**
+    (task 105) mutation-tested clean — don't re-open without a new repro.
 
 ## Idea backlog (pull from here when nothing is queued)
 

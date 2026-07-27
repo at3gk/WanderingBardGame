@@ -1,10 +1,45 @@
 # STATE
 
-Run counter: 38
+Run counter: 39
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **Run 39 (scheduled): split the songbook picker out of `RoadScene.ts`.**
+  Both standing blockers re-checked first, unchanged (see Blocked on human).
+  No playtest answer had arrived, and the idea backlog is down to the one
+  phone-dependent item, so this run picked up the consolidation this file
+  had already flagged as the obvious next one: `RoadScene.ts` had regrown to
+  2275 lines since the last extraction pass (task 66) — entirely from the
+  "two ways in" session, none of which existed when the scene was last
+  split. `openPicker`/`closePicker` and the `PICKER_*` constants moved to
+  `src/scenes/picker.ts`: 2275 → 2172 lines.
+  This extraction is a different shape from the earlier `render/*` ones,
+  worth knowing before doing the other two (free-play staff, walk chrome).
+  Those modules are pure functions of their inputs with **no** game state,
+  which is exactly what let their texture sheets prove byte-identical
+  output. The picker is not: it owns `pickerParts`/`pickerOpen` (the whole
+  overlay tears down as one unit, and other input handling needs to know
+  it's open) and reads the current song choice to highlight a row. So it
+  takes a `PickerHost` interface — the slice of `RoadScene` it touches —
+  plus a `chooseSong` callback, rather than the bare scene. One real
+  friction point: `pickerParts`/`pickerOpen` had to drop `private`, because
+  a private class field cannot satisfy a plain interface type (`tsc`
+  caught this immediately, not a silent bug). `PICKER_CHOSEN_BG` is
+  exported and re-imported by `RoadScene`, since it doubles as the
+  free-play cursor/pip color and the practice-mode lute tint — it was
+  never picker-only despite the name.
+  Verified behaviour-preserving rather than assumed: `npm test` 279 green
+  (unchanged), build green (1.27 MB, unchanged), and specifically the three
+  checks that exercise the picker — `songpick-check`, `freeplay-check`
+  (choosing a song from inside free play opens the picker from a different
+  mode), `hud-check` (the picker button's touch-target geometry) — all
+  still green, plus the full 14-check quick suite with zero regressions
+  elsewhere. ROADMAP task 108 records why the other two extractions are
+  *not* automatic next tasks: free-play still touches substantial scene
+  state and isn't a clean single overlay the way the picker was, and "walk
+  chrome" was never one cohesive block to begin with.
 
 - **Run 38 (scheduled): investigated one candidate bug, mutation-tested it
   away, shipped nothing.** A search for this run's task turned up a
@@ -124,10 +159,11 @@ Run counter: 38
   (`.github/workflows/headless-checks.yml`), informational only — it
   doesn't gate the merge or the deploy.
 - **Source layout**: `core/` pure logic, `audio/` one manifest + engine,
-  `render/` texture baking (engraving, scenery, ui), `scenes/RoadScene.ts`
-  the one scene (~2100 lines — the obvious target for the next
-  consolidation run; the three plausible extractions are the picker
-  overlay, the free-play staff, and the walk chrome). Layout maths keeps
+  `render/` texture baking (engraving, scenery, ui), `scenes/picker.ts` the
+  songbook overlay (split out 2026-07-27, task 107), `scenes/RoadScene.ts`
+  the one scene (2172 lines — the free-play staff and the walk chrome are
+  the two remaining plausible extractions, neither an automatic next task;
+  see ROADMAP task 108). Layout maths keeps
   moving *out* of it into `core/` — `hud.ts` (the top bar) and
   `worldLayout.ts` (lane, bard, road) joined `freePlay.ts` on 2026-07-27,
   each because a fixed pixel offset hung off a proportional anchor had
@@ -968,6 +1004,21 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   green) and `npm run build` (1.27 MB) reconfirmed, and the full 14-check
   quick suite run once end-to-end to confirm the re-check found no
   regression: all 14 green, no drift.
+- Run 38 (2026-07-27, scheduled): resolved ROADMAP task 105 (see its done
+  entry). Investigated a candidate tween leak in the songbook picker
+  (`openPicker`/`closePicker`, same missing-`killTweensOf` shape as #125's
+  practice-staff bug) and mutation-tested it away rather than shipping a
+  speculative fix — the picker's fades are one-shot and finish on schedule
+  even orphaned, unlike #125's `repeat: -1` breathing tween. Shipped
+  nothing; `RoadScene.ts` unchanged. `npm test` 279 green, build green,
+  reconfirmed as a baseline.
+- Run 39 (2026-07-27, scheduled): resolved ROADMAP task 107 (see its done
+  entry and Current status above for the full writeup). Split the songbook
+  picker overlay into `src/scenes/picker.ts` — the consolidation this file
+  had flagged as the obvious next one, `RoadScene.ts` having regrown to
+  2275 lines since task 66. `npm test` 279 green (unchanged), build green
+  (1.27 MB, unchanged), full 14-check quick suite plus `songpick-check`
+  green with zero regressions.
 
 - **Session close, 2026-07-27 small hours (human-directed, PRs #115–#122).**
   Asked for a polish pass on art, animation and the game. It found three
