@@ -25,6 +25,7 @@ import {
   stepsUsedBy,
 } from '../core/freePlay';
 import { HUD_TOUCH_TARGET, hudLayout } from '../core/hud';
+import { ROAD_HEIGHT, worldLayout } from '../core/worldLayout';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
 import { accumulateDistance } from '../core/distance';
 import { BIOMES, biomeBlendAt, BIOME_TRANSITIONS, signpostDistanceAt } from '../core/biome';
@@ -42,6 +43,8 @@ import {
 import {
   FAR_TILE_HEIGHT,
   farTileTexture,
+  nearTileTexture,
+  NEAR_TILE_HEIGHT,
   glintTexture,
   moonTexture,
   ROAD_TILE_WIDTH,
@@ -95,6 +98,22 @@ const SONG_TITLE_HOLD_MS = 2600;
 // pixels past the hit line, and played notes used to pile over the clef.
 const EXIT_PROGRESS = 1.28;
 const METER_HEIGHT = 14;
+/**
+ * Gold, not cream.
+ *
+ * Cream (0xe8d9c0) is the notation's colour — note heads, letters, staff
+ * lines, the clef. The meter used to borrow it, which was survivable while
+ * the bar was 234px wide and squeezed between the buttons. Once it got a
+ * row of its own and ran 342px on a phone, a full meter became the largest
+ * and brightest thing on the screen, in exactly the colour the child is
+ * supposed to be reading. The teaching surface has to win that contest.
+ *
+ * Gold is already this world's second voice — the coin beside it, the lit
+ * windows in the village, the bard's buckle — so the meter joins something
+ * rather than introducing a colour.
+ */
+const METER_FILL_COLOR = 0xc79a3c;
+const METER_FILL_COLOR_STOPPED = 0x6b5f74;
 /** Mute, songbook, lute — the whole of the game's chrome. */
 const HUD_BUTTON_COUNT = 3;
 // Meter as staff (ROADMAP idea backlog): the song meter joins the notation
@@ -106,13 +125,9 @@ const METER_STAFF_LINE_COUNT = 5;
 // A mid-tone (not the fill's own cream) so the lines stay visible whether
 // they sit on the dark track or the bright fill — sheet-music lines read
 // the same whether the page under them is blank or inked.
-const METER_STAFF_LINE_COLOR = 0xa8842f;
+const METER_STAFF_LINE_COLOR = 0x6b4f18;
 const METER_STAFF_LINE_ALPHA = 0.55;
 const METER_STAFF_LINE_THICKNESS = 1;
-// Grew with the staff (tasks 42, 46): the bard walks below the notation, so
-// this offset has to clear the lowest note the songbook can write plus its
-// ledger line — middle C's head bottom now sits ~63px under the lane.
-const BARD_GROUND_Y_OFFSET = 178;
 // A contact shadow. Without one the bard reads as pasted on top of the road
 // rather than standing on it — the single cheapest thing that grounds a
 // character. It is a soft ellipse in the road's own darker dash colour, not
@@ -155,7 +170,12 @@ const BARD_WALK_ROCK_DEG = 1.6;
 const BARD_WALK_STEP_MS = MS_PER_BEAT;
 const BARD_IDLE_BREATH_MS = 1400;
 const ROAD_SCROLL_PX_PER_SEC = ROAD_TILE_WIDTH / (MS_PER_BEAT / 1000);
-const ROAD_HEIGHT_BELOW_BARD = 60;
+// The verge is nearer the camera than the road, so it has to move faster —
+// that difference is the whole depth cue. 1.35 rather than a round number
+// so the 448px near tile and the 64px road tile never settle into a shared
+// period: 448 / (64 * 1.35) is 5.19 beats, which does not line up with
+// anything else on screen.
+const NEAR_PARALLAX = 1.35;
 // Background scenery band (ROADMAP task 31): silhouette features sitting on
 // the horizon, scrolling slower than the road so the world reads as having
 // depth. One repeating tile per biome, crossfaded exactly like the road.
@@ -238,6 +258,21 @@ const PICKER_DEPTH = 1000;
 // Free play (the staff as an instrument). Its own chrome sits below the
 // picker but above the world.
 const FREEPLAY_DEPTH = 500;
+/**
+ * The world sits behind a scrim while practising. Sits just under the
+ * staff, over everything else — including the bard, who is not doing
+ * anything in this mode and otherwise competes with the notes for
+ * attention.
+ */
+const FREEPLAY_SCRIM_DEPTH = FREEPLAY_DEPTH - 1;
+const FREEPLAY_SCRIM_ALPHA = 0.62;
+/**
+ * The heads-up chrome rides above the practice scrim. The lute button is
+ * the way *back* to the walk, so dimming it by 62% would dim the exit; the
+ * song title names the tune being practised and has to stay readable. The
+ * world is what steps back in this mode, not the controls.
+ */
+const HUD_DEPTH = FREEPLAY_DEPTH + 50;
 const FREEPLAY_TOP_MARGIN = 74;
 const FREEPLAY_BOTTOM_MARGIN = 56;
 const FREEPLAY_LINE_COLOR = 0xe8d9c0;
@@ -309,6 +344,10 @@ export class RoadScene extends Phaser.Scene {
   private scenery!: Phaser.GameObjects.TileSprite;
   private sceneryNext!: Phaser.GameObjects.TileSprite;
   private far!: Phaser.GameObjects.TileSprite;
+  private near!: Phaser.GameObjects.TileSprite;
+  private nearNext!: Phaser.GameObjects.TileSprite;
+  private nearFromIndex = 0;
+  private nearToIndex = 0;
   private farNext!: Phaser.GameObjects.TileSprite;
   private farFromIndex = 0;
   private farToIndex = 0;
@@ -339,6 +378,7 @@ export class RoadScene extends Phaser.Scene {
   private luteZone!: Phaser.GameObjects.Zone;
   private freeParts: Phaser.GameObjects.GameObject[] = [];
   private freeStaff: FreePlayStaff | null = null;
+  private freeScrim: Phaser.GameObjects.Rectangle | null = null;
   /** The chosen song as positions to find, and how far through it the child is. */
   private freeSequence: number[] = [];
   private freeIndex = 0;
@@ -442,9 +482,18 @@ export class RoadScene extends Phaser.Scene {
 
     this.roadFromIndex = 0;
     this.roadToIndex = 0;
-    this.road = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, roadTileTexture(this, BIOMES[0]));
-    this.roadNext = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT_BELOW_BARD, roadTileTexture(this, BIOMES[0]));
+    this.road = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT, roadTileTexture(this, BIOMES[0]));
+    this.roadNext = this.add.tileSprite(0, 0, this.scale.width, ROAD_HEIGHT, roadTileTexture(this, BIOMES[0]));
     this.roadNext.setAlpha(0);
+
+    // After the road, so the display list paints the near band in front of
+    // it — it is the one plane closer to the camera than the road — and
+    // still behind the bard, who walks on the road rather than in the verge.
+    this.nearFromIndex = 0;
+    this.nearToIndex = 0;
+    this.near = this.add.tileSprite(0, 0, this.scale.width, NEAR_TILE_HEIGHT, nearTileTexture(this, BIOMES[0]));
+    this.nearNext = this.add.tileSprite(0, 0, this.scale.width, NEAR_TILE_HEIGHT, nearTileTexture(this, BIOMES[0]));
+    this.nearNext.setAlpha(0);
 
     this.staffLines = STAFF_LINE_STEPS.map(() =>
       this.add.rectangle(0, 0, this.scale.width, 1.5, 0xe8d9c0, STAFF_LINE_ALPHA)
@@ -534,6 +583,12 @@ export class RoadScene extends Phaser.Scene {
     this.luteZone = this.add.zone(luteX, hud.iconY, HUD_TOUCH_TARGET, HUD_TOUCH_TARGET);
     this.luteZone.setInteractive({ useHandCursor: true });
 
+    // One plane for the whole bar, above the practice scrim (see HUD_DEPTH).
+    for (const part of [this.muteIcon, this.muteSlash, this.bookIcon, this.luteIcon,
+                        this.coinIcon, this.coinText, this.songTitleText, this.distanceText]) {
+      part.setDepth(HUD_DEPTH);
+    }
+
     this.createBard();
     this.bardWasWalking = this.walking;
     this.setBardAnimState(this.bardWasWalking);
@@ -581,7 +636,10 @@ export class RoadScene extends Phaser.Scene {
     // startling than simply being dismissed, and it is one tap to reopen.
     this.scale.on(Phaser.Scale.Events.RESIZE, () => {
       if (this.pickerOpen) this.closePicker();
-      if (this.mode === 'play') this.buildFreeStaff(false);
+      if (this.mode === 'play') {
+        this.layoutScrim();
+        this.buildFreeStaff(false);
+      }
     });
 
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
@@ -846,7 +904,12 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private laneY(): number {
-    return this.scale.height / 2;
+    return worldLayout(this.scale.height).laneY;
+  }
+
+  /** The bard's feet, and the road's vertical centre (core/worldLayout). */
+  private groundY(): number {
+    return worldLayout(this.scale.height).groundY;
   }
 
   /** Y of a diatonic staff step: the staff's middle line (B4, step 6) sits on laneY; each step is half a line gap. */
@@ -983,8 +1046,54 @@ export class RoadScene extends Phaser.Scene {
     this.dismissHint();
     this.luteIcon.setTint(PICKER_CHOSEN_BG);
     this.setWalkChromeVisible(false);
+    this.raiseScrim();
     this.buildFreeStaff();
     this.fadeInFreeStaff();
+  }
+
+  /**
+   * Dims the world while practising.
+   *
+   * The staff spreads over the whole screen in this mode, so its lowest
+   * steps — middle C and the two above it — lie across the road, which is
+   * the brightest band in the scene. Cream lines at 0.55 alpha over a lit
+   * road is the one place in the game where the notation is hard to read,
+   * and it is the mode whose entire purpose is reading it.
+   *
+   * Dimming rather than hiding: the walk is still there, waiting, and a
+   * child should be able to see what they are going back to. It is the
+   * same principle as the letter scaffold — fade what is not the answer.
+   */
+  private raiseScrim(): void {
+    if (!this.freeScrim) {
+      this.freeScrim = this.add.rectangle(0, 0, 10, 10, 0x120d16, 1);
+      this.freeScrim.setDepth(FREEPLAY_SCRIM_DEPTH);
+    }
+    const scrim = this.freeScrim;
+    this.layoutScrim();
+    scrim.setVisible(true);
+    scrim.setAlpha(0);
+    this.tweens.killTweensOf(scrim);
+    this.tweens.add({ targets: scrim, alpha: FREEPLAY_SCRIM_ALPHA, duration: FREEPLAY_FADE_MS, ease: 'Quad.easeOut' });
+  }
+
+  /**
+   * Sizes the scrim to the screen. Separate from raising it because a
+   * rotation mid-practice has to resize it *without* re-running the fade —
+   * the same split the staff itself needed, and for the same reason: the
+   * scrim is already on screen, and flashing it would read as a fault.
+   */
+  private layoutScrim(): void {
+    if (!this.freeScrim) return;
+    this.freeScrim.setPosition(this.scale.width / 2, this.scale.height / 2);
+    this.freeScrim.setSize(this.scale.width, this.scale.height);
+  }
+
+  /** Drops the scrim on the same frame the road comes back — see exitFreePlay. */
+  private dropScrim(): void {
+    if (!this.freeScrim) return;
+    this.tweens.killTweensOf(this.freeScrim);
+    this.freeScrim.setVisible(false);
   }
 
   /**
@@ -1013,6 +1122,7 @@ export class RoadScene extends Phaser.Scene {
     if (this.mode !== 'play') return;
     this.mode = 'walk';
     this.luteIcon.setTint(MUTE_ICON_COLOR_ON);
+    this.dropScrim();
     this.setWalkChromeVisible(true);
     this.songTitleText.setAlpha(0);
     this.tearDownFreeStaff();
@@ -1207,10 +1317,10 @@ export class RoadScene extends Phaser.Scene {
     // No fade here. Building the staff and lying it in are separate jobs,
     // and this method has two callers that want opposite things: entering
     // free play (fade, via fadeInFreeStaff) and a resize mid-practice
-    // (rebuild in place, no fade — the staff is already on screen, and
+    // (rebuild in place, no fade — the staff is already on screen and
     // flashing it out and back would read as a fault).
     //
-    // They used to be one thing, and doing both was what made the entire
+    // They used to be one thing, and doing both was what made the whole
     // practice staff invisible: this method ended by zeroing every alpha
     // and tweening back, then fadeInFreeStaff ran on the very same frame,
     // read those alphas — now 0 — captured 0 as each part's *target*, and
@@ -1639,6 +1749,8 @@ export class RoadScene extends Phaser.Scene {
     this.farNext.setTint(worldTint);
     this.road.setTint(worldTint);
     this.roadNext.setTint(worldTint);
+    this.near.setTint(worldTint);
+    this.nearNext.setTint(worldTint);
     for (const signpost of this.signposts) signpost.setTint(worldTint);
     // Glints are drawn white so they can carry the riverside's own accent,
     // dimmed by the same dusk shade as everything else in the world layer.
@@ -1648,7 +1760,7 @@ export class RoadScene extends Phaser.Scene {
     this.updateSky(delta);
     this.updateScenery(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
     this.updateSignposts(laneY);
-    this.updateRoad(laneY, delta, blend.fromIndex, blend.toIndex, blend.ratio);
+    this.updateRoad(delta, blend.fromIndex, blend.toIndex, blend.ratio);
     for (let i = 0; i < this.staffLines.length; i++) {
       this.staffLines[i].setPosition(this.scale.width / 2, this.staffY(STAFF_LINE_STEPS[i], laneY));
       this.staffLines[i].setSize(this.scale.width, 1.5);
@@ -1778,7 +1890,7 @@ export class RoadScene extends Phaser.Scene {
     this.updateMeterBar();
     this.updateCoinReadout();
     this.updateDistanceReadout();
-    this.updateBard(hitLineX, laneY);
+    this.updateBard(hitLineX);
     this.audioEngine.setMeterRatio(meterRatio);
   }
 
@@ -1792,7 +1904,7 @@ export class RoadScene extends Phaser.Scene {
    * change (there are more than 2 biomes now, so which pair is blending
    * changes over the course of a walk).
    */
-  private updateRoad(laneY: number, delta: number, fromIndex: number, toIndex: number, ratio: number): void {
+  private updateRoad(delta: number, fromIndex: number, toIndex: number, ratio: number): void {
     if (fromIndex !== this.roadFromIndex) {
       this.roadFromIndex = fromIndex;
       this.road.setTexture(roadTileTexture(this, BIOMES[fromIndex]));
@@ -1802,17 +1914,62 @@ export class RoadScene extends Phaser.Scene {
       this.roadNext.setTexture(roadTileTexture(this, BIOMES[toIndex]));
     }
 
-    const roadY = laneY + BARD_GROUND_Y_OFFSET;
+    const roadY = this.groundY();
     this.road.setPosition(this.scale.width / 2, roadY);
-    this.road.setSize(this.scale.width, ROAD_HEIGHT_BELOW_BARD);
+    this.road.setSize(this.scale.width, ROAD_HEIGHT);
     this.roadNext.setPosition(this.scale.width / 2, roadY);
-    this.roadNext.setSize(this.scale.width, ROAD_HEIGHT_BELOW_BARD);
+    this.roadNext.setSize(this.scale.width, ROAD_HEIGHT);
     this.roadNext.setAlpha(ratio);
     this.roadNext.setVisible(ratio > 0);
     if (this.walking) {
       const scrollDelta = (ROAD_SCROLL_PX_PER_SEC * delta) / 1000;
       this.road.tilePositionX += scrollDelta;
       this.roadNext.tilePositionX += scrollDelta;
+    }
+
+    this.updateNear(delta, fromIndex, toIndex, ratio);
+  }
+
+  /**
+   * The near band: the ground under the road and what grows at its verge.
+   *
+   * The one plane closer to the camera than the road, so it is the only
+   * thing in the scene that scrolls *faster* than the surface the bard
+   * walks on. Everything else runs at or below the road's rate (stars 0.08,
+   * far ridge 0.19, scenery 0.45, road 1.0), which is why the road never
+   * quite read as a surface going away from you.
+   *
+   * It sits flush under the road and runs to the bottom of the screen —
+   * which used to be sky, because the camera's background colour was all
+   * there was down there.
+   */
+  private updateNear(delta: number, fromIndex: number, toIndex: number, ratio: number): void {
+    if (fromIndex !== this.nearFromIndex) {
+      this.nearFromIndex = fromIndex;
+      this.near.setTexture(nearTileTexture(this, BIOMES[fromIndex]));
+    }
+    if (toIndex !== this.nearToIndex) {
+      this.nearToIndex = toIndex;
+      this.nearNext.setTexture(nearTileTexture(this, BIOMES[toIndex]));
+    }
+
+    const layout = worldLayout(this.scale.height);
+    // Tall enough to reach the bottom on any viewport, never shorter than
+    // the tile — on a tablet there is 300px of it to fill.
+    const height = Math.max(NEAR_TILE_HEIGHT, this.scale.height - layout.roadBottom + 2);
+    const y = layout.roadBottom + height / 2;
+
+    for (const band of [this.near, this.nearNext]) {
+      band.setPosition(this.scale.width / 2, y);
+      band.setSize(this.scale.width, height);
+    }
+    this.nearNext.setAlpha(ratio);
+    this.nearNext.setVisible(ratio > 0);
+
+    if (this.walking) {
+      const scrollDelta = (ROAD_SCROLL_PX_PER_SEC * NEAR_PARALLAX * delta) / 1000;
+      this.near.tilePositionX += scrollDelta;
+      this.nearNext.tilePositionX += scrollDelta;
     }
   }
 
@@ -1937,8 +2094,8 @@ export class RoadScene extends Phaser.Scene {
     }
   }
 
-  private roadTopY(laneY: number): number {
-    return laneY + BARD_GROUND_Y_OFFSET - ROAD_HEIGHT_BELOW_BARD / 2;
+  private roadTopY(_laneY: number): number {
+    return worldLayout(this.scale.height).roadTop;
   }
 
   /**
@@ -1971,8 +2128,8 @@ export class RoadScene extends Phaser.Scene {
     }
   }
 
-  private updateBard(hitLineX: number, laneY: number): void {
-    const groundY = laneY + BARD_GROUND_Y_OFFSET;
+  private updateBard(hitLineX: number): void {
+    const groundY = this.groundY();
     this.bard.setPosition(hitLineX, groundY);
 
     const walking = this.walking;
@@ -2003,7 +2160,7 @@ export class RoadScene extends Phaser.Scene {
     this.meterTrack.setSize(trackWidth, METER_HEIGHT);
 
     this.meterFill.setSize(Math.max(0, trackWidth * fillRatio), METER_HEIGHT - 4);
-    this.meterFill.setFillStyle(walking ? 0xe8d9c0 : 0x7a6f85, 1);
+    this.meterFill.setFillStyle(walking ? METER_FILL_COLOR : METER_FILL_COLOR_STOPPED, 1);
     this.meterFill.setPosition(centerX - trackWidth / 2 + this.meterFill.width / 2, meterY);
 
     const lineCount = this.meterStaffLines.length;

@@ -251,6 +251,20 @@ the music.**
   needs an icon, it comes from the same songbook. Because kids are now
   learning from it, the notation is never allowed to be *wrong* — cute
   is fine, incorrect is not.
+- **Cream is the notation's, and nothing else's** (2026-07-27). Note
+  heads, letters, staff lines and the clef own `0xe8d9c0`. Anything else
+  that needs to be bright takes gold — the coin, the lit windows, the
+  bard's buckle, the song meter. This started as a real hierarchy
+  failure: once the meter got a full-width row of its own it became the
+  largest and brightest thing on screen, in exactly the colour a child is
+  meant to be reading. Whatever the teaching surface uses, the furniture
+  cannot borrow.
+- **The world has five planes, and one of them is in front of the road**
+  (2026-07-27): stars 0.08, far ridge 0.19, scenery 0.45, road 1.0, near
+  verge 1.35. Until the fifth existed nothing moved faster than the
+  surface the bard walks on, and below the road there was nothing at all —
+  the camera's background colour, which is the sky. A road has to be lying
+  on something.
 - All art is Graphics-drawn procedural shapes — flat fills, soft
   silhouettes, tiny accent lights. No image assets, no outlines, no
   gradients (the one exception: a faint radial glow is allowed around

@@ -35,7 +35,7 @@ const OUT = 'scenery-sheet.png';
 if (existsSync(OUT)) unlinkSync(OUT);
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1100, height: 1000 } });
+const page = await browser.newPage({ viewport: { width: 1320, height: 1000 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 await page.goto('http://localhost:4173/WanderingBardGame/', { waitUntil: 'networkidle' });
@@ -66,7 +66,8 @@ const rows = await page.evaluate(() => {
     scene.add.image(120, y, S.sceneryTileTexture(scene, b)).setOrigin(0, 0.5);
     scene.add.image(700, y, S.roadTileTexture(scene, b)).setOrigin(0, 0.5);
     scene.add.image(800, y, S.farTileTexture(scene, b)).setOrigin(0, 0.5).setScale(0.5);
-    drawn += 3;
+    scene.add.image(1060, y, S.nearTileTexture(scene, b)).setOrigin(0, 0.5).setScale(0.5);
+    drawn += 4;
     y += 130;
   }
   label(8, y, 'glint 0 / 1');

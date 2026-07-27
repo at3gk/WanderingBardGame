@@ -400,3 +400,101 @@ export function farTileTexture(scene: Phaser.Scene, biome: Biome): string {
   g.destroy();
   return key;
 }
+
+/**
+ * What the near ground is mixed toward instead of black — a warm, low-
+ * saturation earth. Every biome's ground shares it, which is what makes
+ * the near band read as soil under all three rather than as three
+ * differently-tinted voids.
+ */
+const EARTH_TONE = 0x2a1d16;
+
+export const NEAR_TILE_WIDTH = 448;
+export const NEAR_TILE_HEIGHT = 160;
+
+/**
+ * The near band: the ground the road is lying on, plus what grows at its
+ * edge, on the only plane closer to the camera than the road itself.
+ *
+ * Below the road there was nothing at all — the camera's background colour,
+ * which is the *sky*. On a 390x664 phone that left 124px of sky underneath
+ * the road, and 304px on a tablet: the road was not lying on anything, it
+ * was floating in the same colour as the air above it, and the bottom fifth
+ * of the screen was doing no work.
+ *
+ * Two things follow from putting a real surface there. The world gets a
+ * bottom edge, and the depth range finally has a near end — every existing
+ * plane sits at or below the road's rate (stars 0.08, far ridge 0.19,
+ * scenery 0.45, road 1.0), so nothing had ever moved *faster* than the
+ * thing the bard walks on. Grass at the verge does, and that is what sells
+ * the road as a surface receding away from you rather than a stripe.
+ *
+ * Deliberately 448 wide rather than 512: it must not share a simple period
+ * with the far ridge or the scenery, both of which are 512, or the three
+ * would line up and read as one repeat.
+ */
+export function nearTileTexture(scene: Phaser.Scene, biome: Biome): string {
+  const key = `near-${biome.id}`;
+  if (scene.textures.exists(key)) return key;
+
+  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+  const W = NEAR_TILE_WIDTH;
+  const H = NEAR_TILE_HEIGHT;
+
+  // The earth itself: the road's own colour, since it is the same ground
+  // seen from a step closer, taken down and *warmed* rather than simply
+  // darkened. Receding to black first put it at #1c141e — darker than the
+  // distant scenery silhouettes at #2f1c2a, which inverts the depth
+  // reading and makes the near band look like a hole cut in the world
+  // instead of the surface nearest the camera. Mixing toward a warm earth
+  // tone keeps it clearly under the road (#4a344c) without becoming the
+  // darkest thing in the frame, and leaves it somewhere to go when the
+  // dusk tint darkens everything later in a walk.
+  const earth = recede(biome.roadBandColor, EARTH_TONE, 0.6);
+  g.fillStyle(earth, 1);
+  g.fillRect(0, 0, W, H);
+
+  // Verge growth along the top edge. Near-black on purpose: it silhouettes
+  // against the lit road immediately above it, which is where the eye
+  // reads its shape — the same trick the scenery band uses against the sky.
+  const tuft = recede(biome.sceneryColor, 0x000000, 0.35);
+  g.fillStyle(tuft, 1);
+
+  if (biome.id === 'forest') {
+    // Ferns: broad low fans.
+    const at = [18, 74, 132, 165, 228, 291, 330, 388, 421];
+    for (let i = 0; i < at.length; i++) {
+      const x = at[i];
+      const h = 17 + ((i * 7) % 12);
+      for (let b = -2; b <= 2; b++) {
+        g.fillTriangle(x, 6, x + b * 5 - 2, 6 - h * (1 - Math.abs(b) * 0.18), x + b * 5 + 2, 6 - h * 0.4);
+      }
+    }
+  } else if (biome.id === 'riverside') {
+    // Reeds: tall, thin, leaning.
+    const at = [12, 30, 41, 96, 110, 155, 202, 216, 262, 305, 318, 364, 402, 430];
+    for (let i = 0; i < at.length; i++) {
+      const x = at[i];
+      const h = 21 + ((i * 11) % 16);
+      const lean = ((i % 3) - 1) * 4;
+      g.fillTriangle(x - 2, 8, x + 2, 8, x + lean, 8 - h);
+    }
+  } else {
+    // Grass tufts and the odd stone at the roadside.
+    const at = [22, 58, 88, 141, 176, 210, 249, 288, 322, 371, 400, 434];
+    for (let i = 0; i < at.length; i++) {
+      const x = at[i];
+      const h = 15 + ((i * 5) % 11);
+      g.fillTriangle(x - 6, 8, x + 5, 8, x - 1, 8 - h);
+      g.fillTriangle(x - 1, 8, x + 9, 8, x + 5, 8 - h * 0.72);
+    }
+    g.fillStyle(recede(biome.roadBandColor, 0x000000, 0.35), 1);
+    g.fillEllipse(120, 12, 22, 9);
+    g.fillEllipse(268, 10, 15, 7);
+    g.fillEllipse(392, 13, 26, 10);
+  }
+
+  g.generateTexture(key, W, H);
+  g.destroy();
+  return key;
+}
