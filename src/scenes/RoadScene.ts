@@ -97,7 +97,14 @@ const SONG_TITLE_HOLD_MS = 2600;
 // the clef — on a narrow phone the lane's left end is only a few dozen
 // pixels past the hit line, and played notes used to pile over the clef.
 const EXIT_PROGRESS = 1.28;
-const METER_HEIGHT = 14;
+/**
+ * 18 rather than 14 so the five staff lines inside the meter are actually
+ * five lines. At 14 they sat 2.33px apart, which is under the width the
+ * renderer needs to keep 1px strokes separate — they antialiased into each
+ * other and the "sheet music filling with light" idea read as a smear of
+ * texture. At 18 the spacing is 3px and they resolve.
+ */
+const METER_HEIGHT = 18;
 /**
  * Gold, not cream.
  *
@@ -126,7 +133,10 @@ const METER_STAFF_LINE_COUNT = 5;
 // they sit on the dark track or the bright fill — sheet-music lines read
 // the same whether the page under them is blank or inked.
 const METER_STAFF_LINE_COLOR = 0x6b4f18;
-const METER_STAFF_LINE_ALPHA = 0.55;
+// Raised with the height: the lines now sit on gold rather than cream, and
+// at 0.55 they were a 1.25:1 contrast against their own fill — present in a
+// pixel sample, invisible to a person.
+const METER_STAFF_LINE_ALPHA = 0.75;
 const METER_STAFF_LINE_THICKNESS = 1;
 // A contact shadow. Without one the bard reads as pasted on top of the road
 // rather than standing on it — the single cheapest thing that grounds a
@@ -2218,7 +2228,11 @@ export class RoadScene extends Phaser.Scene {
 
     const lineCount = this.meterStaffLines.length;
     for (let i = 0; i < lineCount; i++) {
-      const y = meterY - METER_HEIGHT / 2 + ((i + 1) * METER_HEIGHT) / (lineCount + 1);
+      // Half-pixel offset so a 1px line covers exactly one row of pixels.
+      // Centred on a whole number it straddles two, and antialiasing paints
+      // both at half strength — five 2px smudges instead of five lines,
+      // which is what made this read as corduroy rather than ruled paper.
+      const y = Math.round(meterY - METER_HEIGHT / 2 + ((i + 1) * METER_HEIGHT) / (lineCount + 1)) + 0.5;
       this.meterStaffLines[i].setPosition(centerX, y);
       this.meterStaffLines[i].setSize(trackWidth, METER_STAFF_LINE_THICKNESS);
     }

@@ -8,7 +8,7 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the last numbered entry (currently 103). If it says
+- **What to do next** is the last numbered entry (currently 104). If it says
   "Nothing queued", promote something from the **Idea backlog** near the
   bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
   has lifted.
@@ -1091,7 +1091,17 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     which is *supposed* to vanish once the child plays a note — it fades
     and is destroyed but stays in `freeParts`, because that array is a
     teardown list and not a display list. Suspect the check first.
-103. **Next.** Nothing queued.
+103. ~~**Make the meter's staff lines actually be lines.**~~ Done, and it
+    was a claim that needed making true: task 100's changelog entry said
+    the lines had been made legible against the new gold fill, and a pixel
+    sample said otherwise. Five 1px lines in a 14px bar sit 2.33px apart,
+    which is under what the renderer needs to keep them separate — they
+    antialiased into each other and read as a smear. Worse, each line was
+    centred on a whole pixel, so a 1px stroke straddled two rows and both
+    got painted at half strength. The bar is 18px now, the lines carry a
+    half-pixel offset so each covers exactly one row, and the alpha rose
+    with the height. Five ruled lines, 2px of gold between them.
+104. **Next.** Nothing queued.
 
     **First, check the blockers.** Re-checked this run (task 92): both
     remain blocked (forest-song fetch still 403s everywhere; the GitHub MCP
