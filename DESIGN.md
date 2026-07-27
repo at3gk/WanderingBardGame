@@ -429,3 +429,22 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   repetition. Rejected on the way: color-coded notes (doesn't transfer
   to real reading), quiz modes (a second mechanic and a failure state),
   rhythm values (v0.3 candidate, changes the input).
+- 2026-07-27 — Polish pass (human-directed: "smooth out the art,
+  animation, and game"). Nothing cut, nothing added to the mechanic. What
+  it actually found was three shipped bugs rather than cosmetics: the
+  practice staff drawn at alpha 0 on the live site, the songbook and lute
+  buttons drawn underneath the song meter on every portrait phone, and the
+  road running off the bottom of the screen in landscape. All three were
+  correct in a desktop-sized landscape window and wrong on a phone.
+
+  Two art-direction rules came out of it and are recorded above rather
+  than here, because they are standing rules and not history: cream
+  belongs to the notation and the furniture may not borrow it, and the
+  world has five parallax planes with one of them in front of the road.
+
+  Rejected on the way: shrinking the bard on very short screens to buy his
+  hat clearance from the lowest notes (a 28% shrink to fix a 20px overlap
+  on one orientation of one device, where notes already draw legibly over
+  him); and deleting the song meter's five staff lines when they read as
+  mush at 14px — making them legible against the new gold fill was the
+  more honest fix than dropping a deliberate idea.
