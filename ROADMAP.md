@@ -8,7 +8,7 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the last numbered entry (currently 104). If it says
+- **What to do next** is the last numbered entry (currently 106). If it says
   "Nothing queued", promote something from the **Idea backlog** near the
   bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
   has lifted.
@@ -1124,9 +1124,40 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     (1.27 MB) reconfirmed as a baseline, and the full quick suite
     (14 checks) run once end-to-end to confirm the re-check itself found
     no regression: all 14 green, no drift.
-105. **Next.** Nothing queued.
+105. ~~**Next: nothing queued → re-check blockers, investigate what's found.**~~
+    Done (Run 38, scheduled). Blockers re-checked, both unchanged (see
+    STATE.md). No playtest answer had arrived.
 
-    **First, check the blockers.** Re-checked this run (task 104): both
+    With nothing queued, this run's slot went to a candidate found by
+    searching the code for a real, small task: `RoadScene.ts`'s
+    `openPicker()`/`closePicker()` add a fade tween per part with no
+    `killTweensOf` guard — the same *shape* as PR #125's practice-staff
+    tween leak. Before shipping the obvious fix, built both versions and
+    ran #125's own mutation-test discipline against it: mash the toggle
+    (open/close faster than the 130ms fade, 40 times), then let it settle.
+    Result: `tweens.getTweens().length` spikes mid-mash but **drains back
+    to baseline every time** — no permanent leak. Re-ran the same
+    diagnostic against #125's actual bug (temporarily reverting its fix)
+    to confirm the method: that one holds elevated permanently (5 → 24 →
+    25, still climbing after 4.5s settled). The difference is `repeat: -1`
+    — #125's leak was the free-play cursor's infinite breathing tween
+    (`fadeInFreeStaff`, ~line 1352) outliving its destroyed target; the
+    picker's fades are one-shot and finish on schedule even when orphaned.
+    Grepped the file for every other `repeat: -1` tween: only the bard's
+    walk/idle/lute-sway loops, and their targets are never destroyed (they
+    stop via `.stop()` in `bardTweens`, a different and already-correct
+    mechanism) — so #125 already covers the only real instance of this bug
+    shape in the codebase. Added the guard and a fifth seam-check pair
+    anyway to see what they'd look like, then reverted both: the check
+    would have passed with or without the underlying "fix," which is
+    exactly the false-confidence a check must not provide. Shipped nothing.
+    `RoadScene.ts` and `tools/seam-check.mjs` are unchanged.
+
+    279 tests, `npm run build` green — reconfirmed as a baseline, no code
+    touched in the final diff.
+106. **Next.** Nothing queued.
+
+    **First, check the blockers.** Re-checked this run (task 105): both
     remain blocked (forest-song fetch still 403s everywhere; the GitHub MCP
     toolset still has no tag/ref-write *or* branch-protection-write call).
 
@@ -1148,7 +1179,9 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     scene and it is genuinely entangled with scene state, so moving it would
     relocate the tangle rather than remove it. **Key signatures** remain a
     v0.4+ *direction* rather than a task, because they break naturals-only,
-    which is load-bearing for the whole letter-fading model.
+    which is load-bearing for the whole letter-fading model. **The picker's
+    tween handling** (task 105) looked like a bug and mutation-tested clean
+    — don't re-open it without a new, different repro.
 
 ## Idea backlog (pull from here when nothing is queued)
 
