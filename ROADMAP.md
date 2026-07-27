@@ -8,7 +8,7 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the last numbered entry (currently 80). If it says
+- **What to do next** is the last numbered entry (currently 96). If it says
   "Nothing queued", promote something from the **Idea backlog** near the
   bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
   has lifted.
@@ -18,7 +18,9 @@ makes it long. You do not need to read it top to bottom.
   version of where the project stands.
 - **Before you finish**: `npm test && npm run build`, then
   `node tools/verify-all.mjs` (or `quick`) with the preview server up. See
-  `tools/README.md`.
+  `tools/README.md`. Point `PLAYWRIGHT_PATH` at playwright **1.56.1**
+  (`/opt/node22/lib/node_modules/playwright`); a newer copy fails every
+  check on a browser-build mismatch that looks like a real regression.
 
 Everything below task 12 is v0.1 history and is only worth reading if you
 are tracing a specific decision.

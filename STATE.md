@@ -6,7 +6,7 @@ Run counter: 36
 
 **At a glance** — read this, then only the sections you need.
 
-- **Session of 2026-07-26 evening (human-directed, PRs #91–#103).** Two
+- **Session of 2026-07-26 evening (human-directed, PRs #91–#112).** Two
   human asks: choose one song to learn instead of rotating, and find
   another way to learn besides the walking bard. Both built, plus an art
   pass. See DESIGN.md's "Two ways in".
@@ -17,7 +17,10 @@ Run counter: 36
   behind it — which then went missed and fed the learning model. Rotating
   the phone *while practising* left the staff spread for the old screen
   with its lowest notes off the bottom. Neither would have been found by
-  testing any one feature. Probe the seams.
+  testing any one feature. Probe the seams. The three seams that were
+  broken are now pinned by `freeplay-check` and `rotate-check`; the two
+  that were already right (choosing "wander" from inside free play,
+  reloading out of free play) are pinned too, so they stay right.
 
 - **v0.5 "two ways in"** (human-directed, 2026-07-26) is the current shape.
   DESIGN.md has a new section of that name; read it before touching either
@@ -47,20 +50,28 @@ Run counter: 36
   gives the rotation back. The choice rides in the same localStorage record
   as the scaffold, so it is still there tomorrow.
 
-- The game is **v0.4**: a rhythm walk where the letter inside each note
+- The game is **v0.5**: a rhythm walk where the letter inside each note
   fades *in time* as a position is practised, across sittings, persisted in
-  ~200 bytes of `localStorage`. The core mechanic is one tap.
+  ~200 bytes of `localStorage`. The core mechanic is one tap. v0.5 adds the
+  song choice and the second way in; it does not change the walk.
 - **Eleven songs**, four per biome except forest, which has three and is
   short a fourth (blocked — see *Blocked on human*).
-- **215 unit tests**; **17 headless checks** in `tools/`. Run them all with
+- **258 unit tests**; **19 headless checks** in `tools/`. Run them all with
   `PLAYWRIGHT_PATH=<dir>/node_modules/playwright node tools/verify-all.mjs`
-  (or `quick` for the fast nine). All green as of 2026-07-26. The fast nine
+  (or `quick` for the fast ten). All 19 green as of 2026-07-26 evening on
+  merged main. Use playwright **1.56.1**
+  (`/opt/node22/lib/node_modules/playwright`) — a newer copy won't match
+  the installed browser build and every check will fail for that reason
+  alone. The fast ten
   now also run automatically after every merge to `main`
   (`.github/workflows/headless-checks.yml`), informational only — it
   doesn't gate the merge or the deploy.
 - **Source layout**: `core/` pure logic, `audio/` one manifest + engine,
   `render/` texture baking (engraving, scenery, ui), `scenes/RoadScene.ts`
-  the one scene (1264 lines, down from 1584). Every texture the game draws
+  the one scene (1979 lines — it grew by the picker and free play this
+  session and is the obvious target for the next consolidation run; the
+  three plausible extractions are the picker overlay, the free-play staff,
+  and the walk chrome). Every texture the game draws
   is checkable in a deterministic sheet — `proofsheet`, `scenery-sheet`,
   `ui-sheet` — which is what let all three extractions be proved
   byte-for-byte rather than eyeballed.
@@ -882,6 +893,27 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   runs — a real cost to the pipeline's cadence for no real benefit here.
   `headless-checks.yml` is unchanged. `npm test` 254 green (unchanged),
   build green — re-confirmed as a baseline, no code touched this run.
+
+- **Session close, 2026-07-26 evening (human-directed, PRs #91–#113).**
+  Shipped: the song picker (the human's one hard requirement — pick a tune
+  and it repeats instead of the songbook rotating), free play and its
+  practice mode (the second way in), and an art pass (fourth parallax
+  plane, 512px scenery with silhouettes that vary within a tile, road
+  verges, a contact shadow under the bard). 258 tests, 19 headless checks,
+  three new harnesses (`songpick-check`, `freeplay-check`,
+  `practice-soak`), and an eight-minute drill soak (8576 notes) that
+  accumulates nothing.
+
+  What to carry forward, in order of how much it will save you:
+  1. **Probe the seams, not the features.** All three defects this session
+     were cross-surface. Every feature passed alone.
+  2. **`RoadScene.ts` is 1979 lines** and wants the next consolidation
+     run. Picker overlay, free-play staff, walk chrome — three clean
+     extractions, each provable byte-for-byte against a texture sheet.
+  3. **Playwright 1.56.1 or every check lies to you.**
+  4. The blockers did not move: the fade pace still needs a child, the
+     fourth forest song still needs a source the sandbox can fetch, the
+     v0.1 tag still needs a call the MCP toolset doesn't have.
 
 ## Needs human playtest
 
