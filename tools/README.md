@@ -49,12 +49,12 @@ any other machine without editing a path first.
 Runs the whole suite and prints one summary. **Start here.**
 
 ```bash
-node /path/to/repo/tools/verify-all.mjs          # all 17, ~22 min
-node /path/to/repo/tools/verify-all.mjs quick    # the fast nine, ~5 min
+node /path/to/repo/tools/verify-all.mjs          # all 24, ~30 min
+node /path/to/repo/tools/verify-all.mjs quick    # the fast fourteen, ~9 min
 ```
 
-There are nineteen checks now, several of which take minutes, and a run that has
-to remember all of them will sooner or later remember only the fast ones.
+There are twenty-four checks now, several of which take minutes, and a run that
+has to remember all of them will sooner or later remember only the fast ones.
 
 It runs them **one at a time on purpose.** Several Chromium instances
 compete badly: a seven-minute autoplay measured while two other checks were
@@ -614,6 +614,93 @@ remembering how that nearly passed: the comparison was made against a
 byte-for-byte while the script had actually crashed. **Delete the artefact
 before regenerating it**, or a screenshot diff will happily confirm that
 nothing changed about an image nothing rewrote.
+
+## `hud-check.mjs`
+
+Nothing in the heads-up chrome may be drawn on top of anything else, at any
+of eight viewports, and each button must do its own job and nobody else's.
+
+Written after finding that the songbook and lute buttons were drawn
+*underneath* the song meter on every portrait phone — the two ways into
+everything built the previous session, invisible on the devices the game is
+for. The buttons counted pixels from the left edge, the meter took 60% of
+the width and centred itself, and nothing had ever asked those two rules to
+agree. They only do on a wide screen, which is why it went unseen.
+
+Geometry alone is not enough, so it taps each button too: overlap-free
+boxes would still let a stray zone swallow a tap.
+
+**Its wrong version:** it first reported "tapping the mute button did not
+toggle mute" at *every* viewport, which looked like a serious regression.
+It was reading `s.muted`, which does not exist — it was comparing
+`undefined` to `undefined`. The state is `s.audioEngine.isMuted`.
+
+## `ground-check.mjs`
+
+The road is on the screen and the bard is standing on it, at eight
+viewports, measured against the bard's **real rendered bounds** — he is a
+container of a dozen parts, not a rectangle anyone declared.
+
+Written after finding the road ran off the bottom of the screen in
+landscape: on a 568x320 phone the ground landed at y=338, leaving twelve of
+the road's sixty pixels visible and the bard cut off at the shins. The lane
+was `height / 2` and the ground a flat 178px below it — a fixed offset hung
+off a proportional anchor, which is this codebase's recurring bug.
+
+The layout maths itself is unit-tested in `src/core/worldLayout.test.ts`.
+This checks the part the maths cannot.
+
+## `bard-check.mjs`
+
+The bard starts, stops and rests without a jolt, and breathes while
+stopped. Nothing here had ever looked at his limbs.
+
+**Read this one before writing any other animation check.** It took four
+tries and *every wrong version passed*:
+
+1. **Per-frame angle delta** was the obvious metric and the wrong one.
+   Frame times here swing between 16ms and 50ms, so a legitimately eased
+   150ms settle can show a 10-degree step on one slow frame —
+   indistinguishable from the snap it exists to catch. The assertion is
+   time-to-traverse now, which is frame-rate independent.
+2. **Triggering the state change from Node missed the window entirely.**
+   The settle is 150ms; a round trip plus a frame of latency meant sampling
+   began after the legs had already come to rest. It fires from inside the
+   sample now.
+3. **Scanning the whole sample measured an ordinary walk-cycle crossing** —
+   a walking leg passes through neutral twice per stride anyway — and
+   reported 131ms as "the stop". That version passed against a build with
+   the settle cut to 1ms, precisely the fault it exists to catch. The scan
+   starts at the trigger frame now.
+4. **Nothing here taps a note**, so the meter drained through the walking
+   threshold on its own and the bard was already stopped before the
+   "stopping" sample began. Each stage states the meter state it starts
+   from.
+
+Mutation-tested: settle at 150ms gives 84ms/83ms, settle at 1ms gives
+18ms/15ms and fails.
+
+## `seam-check.mjs`
+
+Pairs of features, not features. Every real defect of the last two sessions
+lived in a seam — choosing a song from inside free play, rotating the phone
+while practising, a fade-in meeting the one already inside the builder it
+called. Each surface worked perfectly alone, every time.
+
+- **mute x practice** — silence must cost sound and nothing else, including
+  progress through a tune.
+- **tab-away x practice** — the tune is where you left it, the staff is
+  still visible, taps still work.
+- **rotation x the ground** — the near band is the newest plane and the
+  only one sized from the bottom edge, so it is the likeliest to be left
+  behind.
+
+All three passed first time. That is the reason to write them down.
+
+**Its wrong version:** it reported a staff part coming back invisible after
+backgrounding. It was the opening hint, which is *supposed* to vanish once
+the child plays a note — it fades and is destroyed but stays in
+`freeParts`, because that array is a teardown list and not a display list.
 
 ## `shot.mjs [prefix] [settleMs]`
 
