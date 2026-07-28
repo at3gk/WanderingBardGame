@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ROAD_CLEARANCE_M,
+  SEAT_LOG_LENGTH_M,
   campfireLayout,
   layoutViolations,
   roadOffset,
@@ -142,6 +143,34 @@ describe('campfireLayout — invariants', () => {
           prop.footprint -
           layout.seat.footprint;
         expect(gap).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('keeps the seat log inside the seat it lies in', () => {
+    // The seat holds a felled log now, laid across the line to the fire so
+    // the bard sits astride it facing the flame. Every other check in this
+    // file measures the seat as a disc of `footprint`, so the log is only
+    // covered by them for as long as it fits inside that disc — and the ends
+    // are what leave it. Checked against the real end points rather than
+    // against the length alone, because "it fits in the disc" and "the ends
+    // are where the disc says" are two claims and only the second one is
+    // what the built camp actually depends on.
+    expect(SEAT_LOG_LENGTH_M / 2).toBeLessThanOrEqual(0.45);
+    for (const layout of layouts) {
+      const { seat, fire, heading } = layout;
+      expect(SEAT_LOG_LENGTH_M / 2).toBeLessThanOrEqual(seat.footprint);
+      // Across the facing, which is the axis the builder lays it along.
+      const across = seat.heading + Math.PI / 2;
+      for (const end of [1, -1]) {
+        const x = seat.x + Math.sin(across) * end * (SEAT_LOG_LENGTH_M / 2);
+        const z = seat.z + Math.cos(across) * end * (SEAT_LOG_LENGTH_M / 2);
+        expect(Math.abs(roadOffset(x, z, heading))).toBeGreaterThan(ROAD_CLEARANCE_M);
+        expect(Math.hypot(x - fire.x, z - fire.z)).toBeGreaterThan(layout.flameRadius);
+        for (const prop of layout.props) {
+          if (prop.kind === 'stone') continue;
+          expect(Math.hypot(x - prop.x, z - prop.z)).toBeGreaterThan(prop.footprint);
+        }
       }
     }
   });

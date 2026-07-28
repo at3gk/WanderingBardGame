@@ -872,29 +872,38 @@ export function willowGeometry(options: TreeOptions): BufferGeometry {
  * picture — and a scatter placed as a scatter clusters the way loose stone
  * actually lies, instead of speckling evenly like a texture.
  *
- * Five segments and one ring, which is ten triangles per stone. A pebble is
- * never more than a few pixels across; what it has to do is catch a
+ * Six segments and one ring, which is twelve triangles per stone. A pebble
+ * is never more than a few pixels across; what it has to do is catch a
  * slightly different band of the light than the packed earth around it, and
  * for that any faceted lump will do.
+ *
+ * The proportions are the part that took two goes. At `flatten` 0.5 a
+ * one-ring dome is a bipyramid as tall as it is wide, and a scatter of
+ * five-sided bipyramids on a road does not read as stones at all — it reads
+ * as a row of little tents, or caltrops. A stone lying on a track is three
+ * or four times wider than it is high, and it is bedded in, so the flatten
+ * comes down to a third and the whole shape is then lifted until its lower
+ * apex is under the ground and only the cap shows.
  */
 export function pebbleGeometry(seed = 41): BufferGeometry {
   const rand = mulberry32(seed);
   const parts: BufferGeometry[] = [];
   const count = 2 + Math.floor(rand() * 3);
   for (let i = 0; i < count; i++) {
-    const r = 0.05 + rand() * 0.075;
-    const stone = lumpDome(r, 5, 1, 0.5, 0.3, rand);
-    // Sunk rather than balanced: a stone sitting on top of the ground reads
-    // as dropped, and a road's stones are trodden into it.
-    translateY(stone, r * 0.16);
+    const r = 0.05 + rand() * 0.07;
+    const stone = lumpDome(r, 6, 1, 0.3, 0.3, rand);
+    translateY(stone, r * 0.26);
     const a = rand() * Math.PI * 2;
-    const d = Math.sqrt(rand()) * 0.27;
+    const d = Math.sqrt(rand()) * 0.3;
     translateXZ(stone, Math.cos(a) * d, Math.sin(a) * d);
     parts.push(stone);
   }
   const merged = mergeGeometries(parts);
   merged.computeVertexNormals();
-  paintGradient(merged, 0x827d74, 0xffffff, -0.03, 0.12);
+  // A shallow gradient over the few centimetres the stone actually occupies.
+  // Painted over a taller span the whole pebble came out at the dark end and
+  // a gravelled verge read as a scatter of holes.
+  paintGradient(merged, 0x968f84, 0xffffff, -0.01, 0.07);
   addSway(merged, 0, 1, 0);
   return merged;
 }

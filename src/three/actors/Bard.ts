@@ -872,8 +872,8 @@ export class Bard {
     this.rightLeg.rotation.x = rightSwing * legSwing + sitAmount * SIT_THIGH[1];
     // Knees apart, and not evenly. A seated figure with its knees together
     // is sitting for a photograph.
-    this.leftLeg.rotation.z = sitAmount * -0.13;
-    this.rightLeg.rotation.z = sitAmount * 0.09;
+    this.leftLeg.rotation.z = sitAmount * -0.2;
+    this.rightLeg.rotation.z = sitAmount * 0.16;
     // The knee cancels the pelvis and the thigh and then puts the shin where
     // it is wanted, which is nearly straight down with the foot drawn back
     // under the seat. Written this way round because the shin's angle is the
@@ -917,7 +917,7 @@ export class Bard {
     this.torso.rotation.x =
       Math.min(0.1, this.smoothedSpeed * 0.05) * walkAmount +
       playAmount * 0.06 +
-      sitAmount * (0.19 - SIT_PELVIS) +
+      sitAmount * (0.3 - SIT_PELVIS) +
       breathe * 0.01 * idleAmount;
     this.torso.rotation.z = Math.sin(phase - Math.PI * 0.25) * -0.035 * walkAmount;
 
@@ -927,8 +927,20 @@ export class Bard {
     // cloak rather than the torso is what keeps the trail from dragging the
     // shoulders and the head around with it.
     this.cloak.rotation.x =
-      -0.11 * walkAmount - Math.sin(phase * 2 - 0.9) * 0.035 * walkAmount + sitAmount * 0.06;
+      -0.11 * walkAmount - Math.sin(phase * 2 - 0.9) * 0.035 * walkAmount + sitAmount * 0.12;
     this.cloak.rotation.z = Math.sin(phase - 0.6) * 0.05 * walkAmount;
+    // Gathered up when he sits.
+    //
+    // This is the single thing that decides whether the seated pose reads at
+    // all, and it took a frame to see it. The cloak's hem falls to mid-thigh,
+    // which standing is exactly right; seated, the hips drop under it and the
+    // hem lands level with the seat — so from behind, which is where the
+    // resting camera is, a sitting bard and a standing bard are the same
+    // cone. Every other part of the pose was correct and none of it was
+    // visible. Lifting the hem clear of the hips puts the seat, the thighs
+    // and the knees back in the silhouette, and a cloak bunched at the waist
+    // is what happens to a cloak when its owner sits on it anyway.
+    this.cloak.position.y = SHOULDER_Y - 0.4 + sitAmount * 0.17;
 
     // --- head ----------------------------------------------------------
     // Counter-rotation is deliberately *not* complete: a head that cancels
@@ -1022,9 +1034,9 @@ export class Bard {
     // toward them, and that lean is most of what says "resting" rather than
     // "balanced there".
     this.instrumentPivot.position.set(
-      playAmount * 0.02 - slung * 0.03 - lap * 0.05,
-      SHOULDER_Y - (playAmount * 0.28 + slung * 0.12) - lap * 0.36,
-      playAmount * 0.3 - slung * 0.285 + lap * 0.2,
+      playAmount * 0.02 - slung * 0.03 - lap * 0.06,
+      SHOULDER_Y - (playAmount * 0.28 + slung * 0.12) - lap * 0.27,
+      playAmount * 0.3 - slung * 0.285,
     );
     // Thirty degrees across the back, not forty. The steeper tilt threw the
     // bowl clear of the cloak's outline with daylight showing between the
@@ -1041,9 +1053,9 @@ export class Bard {
     // past the knee so the shape crosses the figure rather than hiding
     // behind it.
     this.instrumentPivot.rotation.set(
-      this.strum * 0.07 + slung * 0.15 + playAmount * 0.18 - lap * 0.5,
-      playAmount * -0.5 + slung * 0.08 - lap * 0.35,
-      -slung * 0.52 - playAmount * 0.62 - lap * 1.35,
+      this.strum * 0.07 + slung * 0.15 + playAmount * 0.18 - lap * 0.45,
+      playAmount * -0.5 + slung * 0.08,
+      -slung * 0.52 - playAmount * 0.62 - lap * 1.46,
     );
   }
 

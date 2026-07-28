@@ -61,6 +61,24 @@ export interface PainterlyGlobals {
   uWindStrength: IUniform<number>;
   uWindDirection: IUniform<Vector3>;
   uExposure: IUniform<number>;
+  /**
+   * The hearth: one warm point source, shared by every painterly surface.
+   *
+   * There is exactly one because the whole art direction rests on there
+   * being one lighting model. The campfire is the only thing in the game
+   * that lights the world from inside it, and before this existed the bard
+   * rendered as a near-black mass at his own fire — the one frame DESIGN.md
+   * says is allowed to be genuinely warm. The alternative on offer was a
+   * warm tint faked onto the camp's own materials, which is a second
+   * lighting model wearing the first one's clothes.
+   *
+   * Strength 0 means "no fire anywhere", which is the state for the whole
+   * daylit walk, and the term costs a few instructions and no branch.
+   */
+  uHearthPosition: IUniform<Vector3>;
+  uHearthColor: IUniform<Color>;
+  uHearthStrength: IUniform<number>;
+  uHearthRadius: IUniform<number>;
 }
 
 export interface PainterlyOptions {
@@ -127,6 +145,10 @@ export function createPainterlyGlobals(): PainterlyGlobals {
     uWindStrength: { value: 1 },
     uWindDirection: { value: new Vector3(1, 0, 0.35).normalize() },
     uExposure: { value: 1 },
+    uHearthPosition: { value: new Vector3(0, 0, 0) },
+    uHearthColor: { value: new Color(0xff9a4e) },
+    uHearthStrength: { value: 0 },
+    uHearthRadius: { value: 4.2 },
   };
 }
 
@@ -297,6 +319,10 @@ uniform float uShadowDepth;
 uniform float uBandSoftness;
 uniform float uExposure;
 uniform float uOpacity;
+uniform vec3 uHearthPosition;
+uniform vec3 uHearthColor;
+uniform float uHearthStrength;
+uniform float uHearthRadius;
 
 varying vec3 vWorldPosition;
 varying vec3 vWorldNormal;
@@ -407,6 +433,24 @@ void main() {
   // slivers. Tying it to albedo keeps a rim a *highlight on a thing* instead
   // of a light source in its own right.
   color += rimColor * (0.35 + albedo * 0.65) * fresnel * uRim * (0.3 + 0.7 * sunWrap);
+
+  // --- hearth ------------------------------------------------------------
+  // Deliberately NOT banded, unlike the sun. Banding is a stylisation of
+  // hard directional light; a fire is a small, flickering, close source and
+  // its falloff is what makes a camp read as a pool of warmth rather than a
+  // spotlight. Wrapped lambert (the 0.55/0.45 remap) lets the light bend
+  // round a silhouette the way firelight actually does, so a figure sitting
+  // with his back half-turned still catches an edge of it.
+  if (uHearthStrength > 0.0) {
+    vec3 toHearth = uHearthPosition - vWorldPosition;
+    float hearthDist = length(toHearth);
+    vec3 HL = toHearth / max(hearthDist, 1e-4);
+    // Inverse-square, softened near zero so standing in the fire does not
+    // divide by nothing and blow the frame out.
+    float falloff = 1.0 / (1.0 + (hearthDist * hearthDist) / max(uHearthRadius * uHearthRadius, 1e-4));
+    float wrapped = max(dot(N, HL) * 0.55 + 0.45, 0.0);
+    color += albedo * uHearthColor * wrapped * falloff * uHearthStrength;
+  }
 
   // --- contact shading ---------------------------------------------------
   // A soft darkening toward an object's base. Fakes the occlusion where a

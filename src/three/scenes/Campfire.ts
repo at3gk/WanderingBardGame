@@ -354,6 +354,21 @@ export class Campfire {
     this.lightColor.copy(LIGHT_EMBER).lerp(LIGHT_BLAZE, flame);
     this.light.color.copy(this.lightColor);
 
+    // The same fire, told to the painterly shader.
+    //
+    // The PointLight above only reaches three's own materials, and nothing
+    // in this world uses one — so before this the bard sat at his own fire
+    // as a near-black mass, in the single frame DESIGN.md says is allowed to
+    // be genuinely warm. The shader's hearth term is a shared global, and
+    // driving it from here rather than from the road stage keeps the fire's
+    // light and the fire's flicker as one number: they cannot drift apart,
+    // and there is no second lighting model.
+    const hearth = this.globals.uHearthPosition.value;
+    this.group.getWorldPosition(hearth);
+    hearth.y += 0.35;
+    this.globals.uHearthColor.value.copy(this.lightColor);
+    this.globals.uHearthStrength.value = (0.25 + flame * 1.15) * pulse;
+
     // The pool is a shade more responsive than the light, because it is the
     // part anyone actually sees move.
     this.glowMaterial.uniforms.uStrength.value =
@@ -675,30 +690,58 @@ export class Campfire {
     lean.rotation.x = -0.22;
     group.add(lean);
 
-    const body = new Mesh(
-      this.keep(taperedBox(0.4, 0.5, 0.32, 0.82, 0.88)),
-      this.solid({ color: LEATHER_COLOR, colorVariant: 0x8f6c48, rim: 0.42 }),
-    );
+    const leather = this.solid({ color: LEATHER_COLOR, colorVariant: 0x8f6c48, rim: 0.42 });
+    const strapping = this.solid({ color: STRAP_COLOR, colorVariant: 0x7a5c40, rim: 0.35 });
+
+    // Two stacked tapers rather than one box: the lower one widens and the
+    // upper one narrows, so the pack has a belly. This is the whole reason
+    // it stopped reading as a crate. A single tapered box seen at two metres
+    // in firelight is four flat planes and a lid, and no amount of strapping
+    // on the front of it changes what the outline says.
+    const belly = new Mesh(this.keep(taperedBox(0.34, 0.2, 0.27, 1.18, 1.14)), leather);
+    belly.castShadow = true;
+    belly.receiveShadow = true;
+    lean.add(belly);
+
+    const body = new Mesh(this.keep(taperedBox(0.4, 0.3, 0.31, 0.84, 0.9)), leather);
+    body.position.y = 0.2;
     body.castShadow = true;
     body.receiveShadow = true;
     lean.add(body);
 
     const flap = new Mesh(
-      this.keep(taperedBox(0.42, 0.12, 0.34, 1, 1)),
+      this.keep(taperedBox(0.36, 0.11, 0.3, 1, 1)),
       this.solid({ color: STRAP_COLOR, colorVariant: 0x6b5340, rim: 0.35 }),
     );
-    flap.position.y = 0.44;
+    flap.position.y = 0.47;
     flap.rotation.x = 0.24;
     flap.castShadow = true;
     lean.add(flap);
 
-    const strap = new Mesh(
-      this.keep(taperedBox(0.08, 0.46, 0.06, 1, 1)),
-      this.solid({ color: STRAP_COLOR, colorVariant: 0x7a5c40, rim: 0.35 }),
+    // The bedding roll lashed across the top. Cloth against leather, round
+    // against square, and it is the shape everyone recognises as a pack that
+    // somebody walks with — the flap alone reads as a lid on a box.
+    const roll = new Mesh(
+      this.keep(bedrollGeometry(0.44, 0.17, 0.085)),
+      this.solid({ color: BLANKET_COLOR, colorVariant: 0xd0996a, rim: 0.5, grain: 0.5 }),
     );
-    strap.position.set(0.09, 0.04, 0.17);
-    strap.rotation.z = 0.12;
-    lean.add(strap);
+    roll.position.set(0, 0.52, 0.02);
+    roll.rotation.y = Math.PI / 2;
+    roll.castShadow = true;
+    lean.add(roll);
+
+    // Two straps over the flap and down the front, not one down the side.
+    // They are what tie the roll to the pack, so they have to cross it.
+    for (const sx of [-0.1, 0.11] as const) {
+      const strap = new Mesh(this.keep(taperedBox(0.055, 0.42, 0.05, 1, 1)), strapping);
+      strap.position.set(sx, 0.13, 0.15);
+      strap.rotation.z = sx > 0 ? 0.09 : -0.07;
+      lean.add(strap);
+      const over = new Mesh(this.keep(taperedBox(0.05, 0.14, 0.045, 1, 1)), strapping);
+      over.position.set(sx, 0.47, 0.09);
+      over.rotation.x = 1.1;
+      lean.add(over);
+    }
 
     return group;
   }
@@ -777,7 +820,7 @@ export class Campfire {
       grain: 0.3,
     });
 
-    const staffHeight = 0.98;
+    const staffHeight = 0.88;
     const staff = new Mesh(
       this.keep(stickGeometry(staffHeight, 0.032, 0.024, 5, rand)),
       this.solid({ color: WOOD_COLOR, colorVariant: 0x8a6b48, rim: 0.35 }),
@@ -788,21 +831,21 @@ export class Campfire {
     // The hook: a short arm off the top of the staff and a lip turned down
     // at its end. Two thin boxes, and between them they are the reason the
     // lantern is where it is instead of simply being there.
-    const arm = new Mesh(this.keep(taperedBox(0.026, 0.19, 0.026, 1, 1)), metal);
-    arm.position.set(0, staffHeight - 0.035, 0.008);
+    const arm = new Mesh(this.keep(taperedBox(0.034, 0.125, 0.03, 1, 1)), metal);
+    arm.position.set(0, staffHeight - 0.035, 0.006);
     arm.rotation.x = Math.PI / 2;
     arm.castShadow = true;
     lean.add(arm);
 
-    const hook = new Mesh(this.keep(taperedBox(0.024, 0.06, 0.024, 1, 1)), metal);
-    hook.position.set(0, staffHeight - 0.075, 0.185);
+    const hook = new Mesh(this.keep(taperedBox(0.028, 0.062, 0.028, 1, 1)), metal);
+    hook.position.set(0, staffHeight - 0.077, 0.112);
     hook.castShadow = true;
     lean.add(hook);
 
     // Everything below hangs off the hook, in its own group, so the lantern
     // can be positioned as one object rather than four coincidences.
     const lamp = new Group();
-    lamp.position.set(0, staffHeight - 0.075, 0.185);
+    lamp.position.set(0, staffHeight - 0.077, 0.112);
     lean.add(lamp);
 
     const bail = new Mesh(this.keep(taperedBox(0.075, 0.055, 0.016, 0.5, 1)), metal);
@@ -812,8 +855,8 @@ export class Campfire {
     // A roof, not a lid: it comes to a narrow ridge and overhangs the glass,
     // and the overhang is what puts a dark edge along the top of the lit
     // part instead of letting it run out into the sky.
-    const cap = new Mesh(this.keep(taperedBox(0.148, 0.07, 0.148, 0.34, 0.34)), metal);
-    cap.position.y = -0.125;
+    const cap = new Mesh(this.keep(taperedBox(0.152, 0.096, 0.152, 0.2, 0.2)), metal);
+    cap.position.y = -0.151;
     cap.castShadow = true;
     lamp.add(cap);
 
@@ -835,7 +878,7 @@ export class Campfire {
         color: LANTERN_GLASS,
         colorVariant: 0xffe0a8,
         emissive: 0xffb347,
-        emissiveStrength: 0.44,
+        emissiveStrength: 0.4,
         rim: 0.1,
         grain: 0.15,
       }),
@@ -1011,6 +1054,12 @@ export class Campfire {
     this.instanced.length = 0;
     this.emberField.dispose();
     this.group.clear();
+    // Put the hearth out. The strength is a *shared* global, so a camp that
+    // tears itself down without clearing it leaves the entire daylit world
+    // lit by a fire that is no longer there — and because the term falls off
+    // with distance, the symptom would be a warm patch following the player
+    // around the map rather than anything that looks like a bug.
+    this.globals.uHearthStrength.value = 0;
   }
 }
 

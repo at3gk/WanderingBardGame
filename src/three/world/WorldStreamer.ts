@@ -371,7 +371,7 @@ const SCATTER_KINDS: ScatterKind[] = [
     geometry: (v) => cachedGeometry(`grass:${v}`, () => grassTuftGeometry(GRASS_SEEDS[v])),
     variants: 4,
     clump: 3,
-    perSquareMetre: 2.2,
+    perSquareMetre: 2.6,
     densityKey: 'road',
     zones: [CROWN_BAND, EDGE_BAND],
     clearance: CROWN_BAND[0],
@@ -404,11 +404,14 @@ const SCATTER_KINDS: ScatterKind[] = [
     zones: [[FOOTFALL_HALF, RUT_CENTRE - RUT_HALF], STONE_BAND],
     clearance: FOOTFALL_HALF,
     spread: STONE_BAND[1],
-    scale: [0.7, 1.5],
+    scale: [0.55, 1.25],
     lodRange: CHUNK_LENGTH * 2.6,
     castShadow: false,
     material: 'solid',
-    colorOf: (p, rand) => mixColor(p.rock, p.road, 0.2 + rand() * 0.45),
+    // Pulled well toward the road's own earth. Drawn nearer the field's
+    // boulder grey the stones came out lighter than the track they lie on,
+    // and a handful of them at the bard's feet read as spilled chalk.
+    colorOf: (p, rand) => mixColor(p.rock, p.road, 0.4 + rand() * 0.45),
   },
   {
     key: 'grass',
@@ -1049,11 +1052,16 @@ export class WorldStreamer {
       const roadWear = (rx: number, rz: number, base: number): number => {
         const dust = 0.5 + 0.5 * Math.sin(rz * 0.21 + rx * 0.13 + 1.7);
         const damp = 0.5 + 0.5 * Math.sin(rz * 0.37 - rx * 0.09 + 4.1);
-        let worn = mixColor(base, dryColor, smoothstep(0.45, 1, dust) * 0.34);
+        // Kept well under a third. At 0.34 the pale end of the patches met
+        // `grassDry` closely enough that on a sunlit village rise the road
+        // and the field either side of it came to the same value, and the
+        // lane stopped reading as a lane — which is the exact failure the
+        // road colour was darkened to fix a few revisions ago.
+        let worn = mixColor(base, dryColor, smoothstep(0.45, 1, dust) * 0.19);
         // Damp earth is not the shade tone of the meadow — the meadow's
         // shade is green, and green in the middle of a track reads as moss.
         // A cool dark brown is what wet earth actually is.
-        worn = mixColor(worn, 0x36291c, smoothstep(0.5, 1, damp) * 0.26);
+        worn = mixColor(worn, 0x36291c, smoothstep(0.42, 1, damp) * 0.30);
         return worn;
       };
 
@@ -1413,11 +1421,33 @@ export class WorldStreamer {
 
     const palette = paletteFor(biomeAt(this.road, s));
     const kind = weightedPick(rand, palette.landmarks, (entry) => entry.weight).kind;
-    // A landmark tree is not a big version of a wood tree, it is a different
-    // object: two and a half times the geometry's own height puts it at
-    // twelve metres or so, which is the only thing in this world tall enough
-    // to be a destination rather than scenery.
-    const scale = kind === 'tree' ? randRange(rand, 2.0, 2.6) : randRange(rand, 0.95, 1.3);
+    // Bigger than the geometry is drawn, in every case. A landmark that
+    // measures the same as the trees around it is a tree: the first pass
+    // stood a seven-metre chapel among eight-metre broadleaves eighty metres
+    // off and it read as a farm building nobody would walk toward. Scale is
+    // the cheapest possible fix and the right one — these are single meshes
+    // seen at distance, so there is no detail to stretch.
+    const scale =
+      kind === 'tree'
+        ? randRange(rand, 2.1, 2.7)
+        : kind === 'chapel'
+          ? randRange(rand, 1.25, 1.55)
+          : randRange(rand, 1.3, 1.65);
+
+    // How the thing is turned is not decoration. A trilithon whose opening
+    // faces along the road is a pair of separate stones; turned across it,
+    // the gap of sky between the piers is the whole silhouette. A chapel
+    // square-on is a rectangle, so it gets a three-quarter turn that shows
+    // the long wall, one gable and the tower breaking the ridge. Only the
+    // standing stones are free to face anywhere, because a menhir has no
+    // front.
+    const heading = sampleRoad(this.road, s).heading;
+    const rotation =
+      kind === 'trilithon'
+        ? heading + randRange(rand, -0.3, 0.3)
+        : kind === 'chapel'
+          ? heading + (rand() < 0.5 ? Math.PI : 0) + randRange(rand, 0.45, 0.85)
+          : rand() * Math.PI * 2;
 
     return {
       kind,
@@ -1425,12 +1455,14 @@ export class WorldStreamer {
       x: ridge.x,
       y: ridge.y,
       z: ridge.z,
-      rotation: rand() * Math.PI * 2,
+      rotation,
       scale,
       variant: Math.floor(rand() * LANDMARK_VARIANTS),
-      // A tree needs more room than a chapel, because its own canopy is the
-      // thing that has to clear the wood around it.
-      radius: kind === 'tree' ? 13 : 9,
+      // Wide enough that nothing stands in front of it. Nine metres was not:
+      // the wood keeps its own trees back but says nothing about the ones
+      // fifteen metres nearer the camera, and the first chapel raised had a
+      // broadleaf planted squarely across it.
+      radius: kind === 'tree' ? 16 : 14,
     };
   }
 
@@ -1573,9 +1605,14 @@ export class WorldStreamer {
     } else {
       const options: LandmarkOptions = {
         stone: mixColor(palette.rock, palette.grassDry, 0.18),
+        // The chapel roof takes the biome's accent undiluted. Mixed a third
+        // of the way toward stone it was the right colour in the material
+        // and the wrong one in the frame: a landmark is seen through eighty
+        // metres of fog, and fog is already a mix toward grey, so anything
+        // pre-greyed arrives at the eye as slate.
         roof:
           landmark.kind === 'chapel'
-            ? mixColor(palette.accent, palette.rock, 0.3)
+            ? palette.accent
             : mixColor(palette.rock, palette.trunk, 0.4),
         seed,
       };
