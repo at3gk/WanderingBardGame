@@ -486,13 +486,21 @@ nothing had changed by comparing against its own leftover file.
 Rotates a phone mid-game — portrait → landscape → portrait, playing
 continuously throughout — and checks that coins, walk distance, the audio
 engine, the marker list and (above all) the child's saved learning progress
-survive. Rotation re-runs Phaser's `create()`, which is the path that forced
-the scaffold to module scope in the first place, so it deserves a check
-rather than an assumption.
+survive. The scaffold was hoisted to module scope, and texture baking made
+idempotent, on the assumption that rotation re-runs Phaser's `create()` —
+but every check here only proved *state survives* a resize, which it would
+either way given those defenses. **Run 40 isolated the claim itself** with
+a `Scenes.Events.CREATE` counter: across two rotations, `create()` fires
+**zero** additional times. The assumption doesn't hold in headless testing.
+The defenses stay (cheap insurance, and this can't rule out real WebGL
+context loss on an actual device behaving differently) but the check now
+asserts the count explicitly — if a future Phaser upgrade ever makes this
+fail, that is real news, not a rerun of this investigation.
 
-Verdict as of 2026-07-26: **rotation is fine.** Meter holds at 100 across
-both rotations, coins and steps rise monotonically, and no staff position
-ends weaker than it started.
+Verdict as of 2026-07-26 (state), reconfirmed 2026-07-28 (the `create()`
+claim itself): **rotation is fine.** Meter holds at 100 across both
+rotations, coins and steps rise monotonically, no staff position ends
+weaker than it started, and `create()` never re-fires.
 
 That verdict took three attempts, and the two wrong ones are the reason this
 file exists rather than a one-off script:

@@ -18,10 +18,15 @@ const chromium = pw.chromium ?? pw.default?.chromium;
 if (!chromium) throw new Error(`could not load playwright's chromium from ${pwPath}`);
 
 /**
- * Rotating a phone re-runs Phaser's create(). STATE.md already flags that
- * path as dangerous — the scaffold had to be hoisted to module scope so a
- * resize wouldn't wipe a child's progress. This checks what *else* survives
- * a rotation: progress, audio, the walk, and the marker list.
+ * The scaffold is at module scope, and texture baking is idempotent,
+ * because of a long-standing assumption that a resize re-runs Phaser's
+ * create() (main.ts uses Scale.RESIZE, so an orientation change was
+ * believed enough). That claim was never itself tested — every existing
+ * check here only proves *state survives* a resize, which it would either
+ * way given those defenses. This check isolates the claim directly, via
+ * a `Scenes.Events.CREATE` counter, then checks what else survives a
+ * rotation regardless of the answer: progress, audio, the walk, and the
+ * marker list.
  */
 const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
 const page = await browser.newPage({ viewport: { width: 390, height: 664 } });
@@ -31,6 +36,14 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + 
 
 await page.goto('http://localhost:4173/WanderingBardGame/', { waitUntil: 'networkidle' });
 await page.waitForTimeout(500);
+
+// Attached once, after the scene's own create() has already run — so any
+// count above 0 by the end means create() genuinely fired again, not that
+// the listener caught the initial boot.
+await page.evaluate(() => {
+  window.__createCount = 0;
+  window.game.scene.scenes[0].events.on(Phaser.Scenes.Events.CREATE, () => { window.__createCount++; });
+});
 
 async function play(seconds) {
   const until = Date.now() + seconds * 1000;
@@ -81,6 +94,7 @@ const landscape = await snap();
 await page.setViewportSize({ width: 390, height: 664 });
 await play(12);
 const after = await snap();
+const createReruns = await page.evaluate(() => window.__createCount);
 const scaffoldAfter = await page.evaluate(() => localStorage.getItem('wb.learn.v1'));
 const scaffoldBeforeP = JSON.parse(scaffoldBefore ?? '{"p":{}}').p ?? {};
 const scaffoldAfterP = JSON.parse(scaffoldAfter ?? '{"p":{}}').p ?? {};
@@ -90,9 +104,14 @@ console.log('in landscape    :', JSON.stringify(landscape));
 console.log('after rotating back:', JSON.stringify(after));
 console.log('scaffold before :', scaffoldBefore);
 console.log('scaffold after  :', scaffoldAfter);
+console.log('create() re-fired this many times across two rotations:', createReruns);
 
 const fail = [];
 if (errors.length) fail.push('page errors: ' + errors.join(' | '));
+// If this ever fails, the long-standing assumption (module-scoped scaffold,
+// idempotent texture baking) has flipped from harmless insurance to load-
+// bearing — worth knowing explicitly rather than relying on it silently.
+if (createReruns !== 0) fail.push(`create() re-ran ${createReruns} time(s) across two rotations — the codebase's five-place assumption that it does is real after all (see STATE.md)`);
 if (landscape.w !== 664) fail.push(`scene did not resize to landscape (w=${landscape.w})`);
 if (after.w !== 390) fail.push(`scene did not resize back to portrait (w=${after.w})`);
 if (landscape.coins < before.coins) fail.push(`coins went backwards on rotation: ${before.coins} -> ${landscape.coins}`);

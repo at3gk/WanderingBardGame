@@ -605,13 +605,15 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     ~24px head. Frame rate deliberately excluded: headless software GL
     says nothing about a real device.
 59. ~~**Check what a phone rotation does.**~~ Done: `tools/rotate-check.mjs`.
-    Rotation re-runs `create()`, and everything survives it — progress,
-    audio, the walk, and the saved scaffold. Two harness bugs made it look
-    broken first (see STATE); the game was innocent both times. One real
-    change came out of it: `wasUnplayable` keeps a note whose whole hit
-    window elapsed inside one frame gap out of the learning model. Insurance
-    for stalling devices, not a fix for an observed bug — rotation peaks at
-    a 50ms gap against a 180ms window.
+    Rotation re-runs `create()` **[corrected by task 109: it doesn't, in
+    headless testing — this entry's own claim was never itself tested]**,
+    and everything survives it — progress, audio, the walk, and the saved
+    scaffold. Two harness bugs made it look broken first (see STATE); the
+    game was innocent both times. One real change came out of it:
+    `wasUnplayable` keeps a note whose whole hit window elapsed inside one
+    frame gap out of the learning model. Insurance for stalling devices, not
+    a fix for an observed bug — rotation peaks at a 50ms gap against a
+    180ms window.
 60. **Fourth forest song — blocked on network, not on design.** The forest
     set has three songs where village and riverside have four. The
     candidate is researched and ready: **Here We Go Round the Mulberry
@@ -1220,11 +1222,54 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     the picker from a different mode), `hud-check` (the picker's touch
     target geometry) — all still pass, plus the full 14-check quick suite
     green with zero regressions elsewhere.
-108. **Next.** Nothing queued.
+108. ~~**Next: nothing queued → re-check blockers, investigate what's
+    found.**~~ Done (Run 40, scheduled). Both standing blockers re-checked,
+    unchanged: `WebFetch` still 403s on a plain Wikipedia page (re-tried
+    against the forest-song candidate directly), and the full
+    `mcp__github__*` toolset available this run still has no tag/ref-write
+    or branch-protection-write call. No playtest answer had arrived. The
+    idea backlog's two entries are both still correctly deferred (sharper
+    mobile rendering needs a real phone; solfège is a deliberate locale
+    question per DESIGN.md's "Considered and rejected"), and reading the
+    actual free-play-staff and walk-chrome code (per this task's own
+    instruction) confirmed task 107's caution was right: `buildFreeStaff`
+    alone touches `songTitleText` (shared with the walk's own announcement),
+    `songChoice`, and the fade/persistence fields, and `setWalkChromeVisible`
+    touches nine unrelated fields including the meter and coin readouts —
+    neither is a clean single-unit extraction the way the picker was, so
+    task 109 does not attempt it.
 
-    **First, check the blockers** (re-checked this run, task 107): both
-    remain blocked — forest-song fetch still 403s, GitHub MCP toolset still
-    has no tag/ref-write or branch-protection-write call.
+    What this run's slot went to instead: five places in the codebase
+    (`RoadScene.ts` ×2, `render/ui.ts`, `STATE.md`, `tools/README.md`, plus
+    task 59's own summary above) assert as flat fact that "a resize re-runs
+    Phaser's `create()`" — the reason the learning scaffold lives at module
+    scope and texture baking is idempotent. No check had ever isolated that
+    specific claim; `rotate-check.mjs` only ever proved *state survives* a
+    resize, which it would either way given those defenses. Instrumented it
+    directly with a `Phaser.Scenes.Events.CREATE` counter attached after
+    initial boot, across two rotations (plus, in a throwaway scratch script,
+    a third arbitrary resize and a direct GameObject-identity check on
+    `bardUpper`): **`create()` fires zero additional times** — same scene
+    instance, same GameObjects, throughout. The assumption does not hold in
+    headless testing.
+
+    Did not remove the defenses it produced (module-scoped scaffold, the
+    `this.textures.exists()` guards) — they cost nothing, and this headless
+    result can't rule out a real device behaving differently under actual
+    WebGL context loss, which was the original (never independently
+    tested) worry. What changed: the count is now asserted permanently in
+    `rotate-check.mjs` rather than assumed, and the five misleading
+    comments/docs are corrected to say what's actually been verified versus
+    what's still just insurance against an untested case.
+
+    `npm test` 279 green (unchanged), build green (bundle unchanged, same
+    content hash), full 14-check quick suite reconfirmed green including
+    the updated `rotate-check.mjs`.
+109. **Next.** Nothing queued.
+
+    **First, check the blockers** (re-checked task 108): both remain
+    blocked — forest-song fetch still 403s, GitHub MCP toolset still has no
+    tag/ref-write or branch-protection-write call.
 
     **Second, if a playtest answer has arrived**, fold it in — see task 79
     for the one open dial (`SESSION_GAIN_CAP`).
@@ -1234,14 +1279,11 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     **Fourth, the idea backlog below** — only sharper mobile rendering is
     left, still needs a real phone.
 
-    **Fifth, `RoadScene.ts` is 2172 lines**, down from 2275 after task 107.
-    STATE.md's own note named three candidates; the picker overlay is done.
-    The free-play staff and the walk chrome remain, but neither is a
-    natural default pick the way the picker was: free-play still touches
-    a lot of scene state (the whole staff-as-instrument mode, not a single
-    self-contained overlay), and "walk chrome" was never one cohesive
-    block to begin with. Either is legitimate future consolidation work,
-    not an automatic next task — read the actual code before claiming one.
+    **Fifth, `RoadScene.ts` is 2172 lines.** The free-play staff and the
+    walk chrome remain the only two plausible further extractions (task 108
+    read the actual code and confirmed why neither is natural: shared
+    `songTitleText`, scattered chrome fields). Legitimate work if someone
+    scopes a real first piece, not an automatic pick.
 
     **What not to reach for.** The verification suite is comprehensive now
     (24 checks); adding another for its own sake is drift. `createBard` is
@@ -1249,6 +1291,9 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     worth extracting. **Key signatures** remain a v0.4+ *direction*, not a
     task — they break naturals-only. **The picker's tween handling**
     (task 105) mutation-tested clean — don't re-open without a new repro.
+    **The "create() re-runs on resize" question** (task 108) is now a
+    checked fact, not folklore — don't re-investigate it without a reason
+    (a Phaser upgrade, a `rotate-check.mjs` failure) to suspect it changed.
 
 ## Idea backlog (pull from here when nothing is queued)
 
