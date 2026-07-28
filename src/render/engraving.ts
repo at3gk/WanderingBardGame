@@ -31,6 +31,13 @@ export const NOTE_STEM_LEN = 32;
 /** Origin that puts the note *head* (not the texture's centre) on the staff. */
 export const NOTE_ORIGIN_X = NOTE_HEAD_X / NOTE_TEX_W;
 
+// One visual language for everything the player reads or touches
+// (ROADMAP task 32): shared by the walk's markers and free play's notes, so
+// a hit, miss or upcoming note tints the same everywhere it can appear.
+export const NOTE_TINT_UPCOMING = 0xe8d9c0;
+export const NOTE_TINT_HIT = 0x7fd6a0;
+export const NOTE_TINT_MISS = 0x8a5a5a;
+
 const NOTE_LETTER_STYLE = { fontFamily: 'sans-serif', fontSize: '15px', fontStyle: 'bold', color: '#241a20' };
 // A hollow (half/whole) head shows the sky through it, so its letter is
 // drawn light instead of dark — readable either way, under any tint.
