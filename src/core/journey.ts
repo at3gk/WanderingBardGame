@@ -242,11 +242,14 @@ export function advance(state: object, deltaMetres: number, roadLengthM: number)
   // not exist, and lifetime metres are what unlock instruments. A bad road
   // should cost the player nothing and should not hand them the catalogue
   // either. This mirrors `hasArrived`, which refuses to end the day on one.
-  const limit = Number.isFinite(roadLengthM) && roadLengthM > 0 ? roadLengthM : Infinity; // TEMP-REVERT
+  if (!Number.isFinite(roadLengthM) || roadLengthM <= 0) {
+    next.dayFraction = DAWN_FRACTION;
+    return next;
+  }
 
   if (next.phase === 'walking') {
     const delta = Math.max(0, finiteOr(deltaMetres, 0));
-    const moved = Math.min(next.s + delta, limit);
+    const moved = Math.min(next.s + delta, roadLengthM);
     // The credit is floored at zero, not taken as the bare difference. A
     // stored `s` can be *longer* than the road being walked — a deploy landed
     // a shorter road under a save made this morning, which is an ordinary
