@@ -1,0 +1,508 @@
+/**
+ * The painterly material — the single art-direction anchor.
+ *
+ * Every solid surface in the world runs this shader. That is the whole
+ * point: a storybook look falls apart the moment two objects are lit by
+ * different rules, and the fastest way to make low-poly 3D read as "cheap
+ * asset pile" rather than "illustration" is to let three's default PBR
+ * response anywhere near it. So there is one lighting model here and
+ * everything obeys it.
+ *
+ * What it does, and why each part earns its cost:
+ *
+ * - **Banded diffuse.** Light is quantised into three broad bands with
+ *   soft, slightly *irregular* edges. Hard toon banding reads as cel
+ *   animation; a gradient reads as untextured 3D. The soft band edge,
+ *   broken up by world-space noise, is what reads as a brush.
+ * - **Sky-tinted shadow.** Unlit faces are not "the albedo times 0.4" —
+ *   they take a cool tint from the sky colour, warm faces take the sun.
+ *   This one substitution is most of the difference between "flat" and
+ *   "painted", and it is what makes dusk work.
+ * - **Rim light.** A fresnel edge in the sky's colour separates silhouettes
+ *   from the background without an outline pass. Cheaper than post-process
+ *   outlines and much friendlier to a phone.
+ * - **World-space breakup.** Two octaves of cheap value noise, sampled in
+ *   *world* space so it doesn't swim when objects move, applied as a small
+ *   value-and-warmth wobble. This is the "watercolour paper" grain.
+ * - **Wind.** A vertex sway driven by a per-vertex weight, so grass tips
+ *   and cloak hems move and roots and shoulders don't.
+ * - **Height fog** matched to the sky gradient, so distance dissolves into
+ *   the horizon instead of ending at a hard silhouette.
+ *
+ * Real shadow maps are included (three's own chunks) rather than faked
+ * with blob decals: the long raking shadows at dawn and dusk are load-
+ * bearing for the time-of-day mood, and a blob can't do them.
+ */
+
+import {
+  Color,
+  DoubleSide,
+  FrontSide,
+  ShaderMaterial,
+  UniformsLib,
+  UniformsUtils,
+  Vector3,
+  type IUniform,
+  type Side,
+} from 'three';
+
+/** Uniforms shared by every painterly surface in a scene. */
+export interface PainterlyGlobals {
+  uTime: IUniform<number>;
+  uSunDirection: IUniform<Vector3>;
+  uSunColor: IUniform<Color>;
+  uSkyColor: IUniform<Color>;
+  uHorizonColor: IUniform<Color>;
+  uGroundBounce: IUniform<Color>;
+  uFogColor: IUniform<Color>;
+  uFogNear: IUniform<number>;
+  uFogFar: IUniform<number>;
+  uFogHeight: IUniform<number>;
+  uWindStrength: IUniform<number>;
+  uWindDirection: IUniform<Vector3>;
+  uExposure: IUniform<number>;
+}
+
+export interface PainterlyOptions {
+  /** Base albedo. Vertex colours multiply this when `vertexColors` is on. */
+  color?: Color | number | string;
+  /** Second albedo, mixed in by the world-space breakup noise. */
+  colorVariant?: Color | number | string;
+  /** How much the breakup noise swings value. 0 disables the grain. */
+  grain?: number;
+  /** World-space frequency of the grain. Bigger = finer. */
+  grainScale?: number;
+  /** Fresnel rim strength. Foliage wants more than architecture. */
+  rim?: number;
+  /** Fresnel falloff exponent. Lower = broader rim. */
+  rimPower?: number;
+  /** Extra darkening toward the bottom of the object's own bounding box. */
+  baseShade?: number;
+  /** Local-space height over which `baseShade` fades out. */
+  baseShadeHeight?: number;
+  /** Wind sway amplitude in metres at full vertex weight. */
+  sway?: number;
+  /** Wind sway speed multiplier. */
+  swaySpeed?: number;
+  /** Read a per-vertex `aSway` attribute instead of deriving from height. */
+  swayAttribute?: boolean;
+  /** Derive sway weight from local Y over this height when no attribute. */
+  swayHeight?: number;
+  /** Use per-vertex colours. */
+  vertexColors?: boolean;
+  /** Cast/receive shadows. Off for tiny scatter meshes that can't afford it. */
+  receiveShadow?: boolean;
+  /** How dark a shadowed surface goes, 0..1. Cosy games do not use black. */
+  shadowDepth?: number;
+  /** Softening applied to the light bands. 0 = hard cel edges. */
+  bandSoftness?: number;
+  side?: Side;
+  /** Alpha-tested cutout, for billboard grass and leaves. */
+  alphaTest?: number;
+  transparent?: boolean;
+  /** Emissive lift, used by lanterns, the campfire, and song magic. */
+  emissive?: Color | number | string;
+  emissiveStrength?: number;
+  /** Flat-shade: derive the normal from screen-space derivatives. */
+  flatShading?: boolean;
+}
+
+/**
+ * Build the shared uniform block. One of these per scene; every material
+ * created against it holds the *same* uniform objects, so moving the sun
+ * is a single assignment rather than a walk over every material.
+ */
+export function createPainterlyGlobals(): PainterlyGlobals {
+  return {
+    uTime: { value: 0 },
+    uSunDirection: { value: new Vector3(0.4, 0.8, 0.45).normalize() },
+    uSunColor: { value: new Color(0xffe3b8) },
+    uSkyColor: { value: new Color(0x9fc6e8) },
+    uHorizonColor: { value: new Color(0xf2d6b8) },
+    uGroundBounce: { value: new Color(0x6b7a52) },
+    uFogColor: { value: new Color(0xd8e4ee) },
+    uFogNear: { value: 40 },
+    uFogFar: { value: 260 },
+    uFogHeight: { value: 26 },
+    uWindStrength: { value: 1 },
+    uWindDirection: { value: new Vector3(1, 0, 0.35).normalize() },
+    uExposure: { value: 1 },
+  };
+}
+
+const VERTEX = /* glsl */ `
+#include <common>
+#include <shadowmap_pars_vertex>
+
+uniform float uTime;
+uniform float uSway;
+uniform float uSwaySpeed;
+uniform float uSwayHeight;
+uniform float uWindStrength;
+uniform vec3 uWindDirection;
+
+#ifdef USE_SWAY_ATTRIBUTE
+  attribute float aSway;
+#endif
+#ifdef PAINTERLY_VERTEX_COLORS
+  attribute vec3 color;
+  varying vec3 vVertexColor;
+#endif
+
+varying vec3 vWorldPosition;
+varying vec3 vWorldNormal;
+varying float vLocalHeight;
+
+/*
+ * Cheap 3D value noise. Deliberately not simplex: this is sampled once
+ * per vertex for wind and a handful of times per fragment for grain, and
+ * on a mid phone the instruction count matters more than the isotropy.
+ */
+float hash31(vec3 p) {
+  p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+  p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+float noise31(vec3 p) {
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float n000 = hash31(i + vec3(0.0, 0.0, 0.0));
+  float n100 = hash31(i + vec3(1.0, 0.0, 0.0));
+  float n010 = hash31(i + vec3(0.0, 1.0, 0.0));
+  float n110 = hash31(i + vec3(1.0, 1.0, 0.0));
+  float n001 = hash31(i + vec3(0.0, 0.0, 1.0));
+  float n101 = hash31(i + vec3(1.0, 0.0, 1.0));
+  float n011 = hash31(i + vec3(0.0, 1.0, 1.0));
+  float n111 = hash31(i + vec3(1.0, 1.0, 1.0));
+  return mix(
+    mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
+    mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y),
+    f.z
+  );
+}
+
+void main() {
+  vec3 transformed = position;
+  vec3 objectNormal = normal;
+
+  #ifdef USE_SWAY_ATTRIBUTE
+    float swayWeight = aSway;
+  #else
+    float swayWeight = uSwayHeight > 0.0 ? clamp(position.y / uSwayHeight, 0.0, 1.0) : 0.0;
+  #endif
+
+  // The instance matrix has to be applied before the world position is
+  // known, and the wind phase has to key off the *world* position or an
+  // entire instanced field of grass sways in lockstep like a single object.
+  mat4 modelMatrixFinal = modelMatrix;
+  #ifdef USE_INSTANCING
+    modelMatrixFinal = modelMatrix * instanceMatrix;
+    objectNormal = mat3(instanceMatrix) * objectNormal;
+  #endif
+
+  vec3 worldSeed = (modelMatrixFinal * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+
+  if (uSway > 0.0 && swayWeight > 0.0) {
+    float phase = uTime * uSwaySpeed + worldSeed.x * 0.35 + worldSeed.z * 0.27;
+    // Two detuned sines plus a slow noisy gust envelope. A single sine is
+    // instantly readable as a machine; the gust is what sells "weather".
+    float gust = 0.55 + 0.45 * noise31(vec3(worldSeed.xz * 0.03, uTime * 0.08));
+    float wave = sin(phase) * 0.7 + sin(phase * 1.7 + 1.3) * 0.3;
+    float amount = uSway * uWindStrength * gust * swayWeight * swayWeight;
+    transformed += uWindDirection * (wave * amount);
+    // A little vertical dip as it leans over, so tall grass doesn't stretch.
+    transformed.y -= abs(wave) * amount * 0.25;
+  }
+
+  vLocalHeight = position.y;
+
+  vec4 worldPosition = modelMatrixFinal * vec4(transformed, 1.0);
+  vWorldPosition = worldPosition.xyz;
+  vWorldNormal = normalize(mat3(modelMatrixFinal) * normal);
+
+  #ifdef PAINTERLY_VERTEX_COLORS
+    vVertexColor = color;
+  #endif
+
+  // three's shadow chunk expects these two names.
+  vec3 transformedNormal = normalize(normalMatrix * objectNormal);
+  #include <shadowmap_vertex>
+
+  gl_Position = projectionMatrix * viewMatrix * worldPosition;
+}
+`;
+
+const FRAGMENT = /* glsl */ `
+#include <common>
+#include <packing>
+#include <lights_pars_begin>
+#include <shadowmap_pars_fragment>
+#include <shadowmask_pars_fragment>
+
+uniform vec3 uColor;
+uniform vec3 uColorVariant;
+uniform vec3 uEmissive;
+uniform float uEmissiveStrength;
+uniform vec3 uSunDirection;
+uniform vec3 uSunColor;
+uniform vec3 uSkyColor;
+uniform vec3 uHorizonColor;
+uniform vec3 uGroundBounce;
+uniform vec3 uFogColor;
+uniform float uFogNear;
+uniform float uFogFar;
+uniform float uFogHeight;
+uniform float uGrain;
+uniform float uGrainScale;
+uniform float uRim;
+uniform float uRimPower;
+uniform float uBaseShade;
+uniform float uBaseShadeHeight;
+uniform float uShadowDepth;
+uniform float uBandSoftness;
+uniform float uExposure;
+uniform float uOpacity;
+
+varying vec3 vWorldPosition;
+varying vec3 vWorldNormal;
+varying float vLocalHeight;
+#ifdef PAINTERLY_VERTEX_COLORS
+  varying vec3 vVertexColor;
+#endif
+
+float hash31f(vec3 p) {
+  p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+  p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+float noise31f(vec3 p) {
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(
+    mix(mix(hash31f(i), hash31f(i + vec3(1,0,0)), f.x),
+        mix(hash31f(i + vec3(0,1,0)), hash31f(i + vec3(1,1,0)), f.x), f.y),
+    mix(mix(hash31f(i + vec3(0,0,1)), hash31f(i + vec3(1,0,1)), f.x),
+        mix(hash31f(i + vec3(0,1,1)), hash31f(i + vec3(1,1,1)), f.x), f.y),
+    f.z
+  );
+}
+
+void main() {
+  #ifdef PAINTERLY_FLAT_SHADING
+    vec3 N = normalize(cross(dFdx(vWorldPosition), dFdy(vWorldPosition)));
+    // Screen-space derivatives give an unsigned facet normal; flip it back
+    // toward the interpolated one so back-facing quantisation doesn't
+    // invert the lighting on a silhouette.
+    N *= sign(dot(N, vWorldNormal));
+  #else
+    vec3 N = normalize(vWorldNormal);
+  #endif
+
+  vec3 V = normalize(cameraPosition - vWorldPosition);
+  vec3 L = normalize(uSunDirection);
+
+  // --- world-space grain -------------------------------------------------
+  // Sampled in world space so it belongs to the *scene*, like paper
+  // texture under the whole painting, rather than sliding around on each
+  // object as it moves.
+  float grainA = noise31f(vWorldPosition * uGrainScale);
+  float grainB = noise31f(vWorldPosition * uGrainScale * 2.7 + 11.3);
+  float grain = grainA * 0.68 + grainB * 0.32;
+
+  vec3 albedo = uColor;
+  #ifdef PAINTERLY_VERTEX_COLORS
+    albedo *= vVertexColor;
+  #endif
+  albedo = mix(albedo, albedo * uColorVariant, smoothstep(0.35, 0.75, grain) * uGrain);
+
+  // --- banded diffuse ----------------------------------------------------
+  float ndl = dot(N, L);
+  float shadowMask = getShadowMask();
+
+  // Nudging the band edges with the grain is what keeps the terminator from
+  // looking like a contour line on a map.
+  float wobble = (grain - 0.5) * 0.09;
+  float soft = max(uBandSoftness, 0.001);
+  float lit = ndl * 0.5 + 0.5 + wobble;
+
+  float band1 = smoothstep(0.46 - soft, 0.46 + soft, lit);
+  float band2 = smoothstep(0.62 - soft, 0.62 + soft, lit);
+  float band3 = smoothstep(0.86 - soft * 0.7, 0.86 + soft * 0.7, lit);
+
+  // Cast shadows only bite into the *lit* bands: a face already turned away
+  // from the sun does not get darker for also being in shadow, which is
+  // physically wrong and visually much calmer.
+  float sunAmount = (band1 * 0.42 + band2 * 0.38 + band3 * 0.20);
+  sunAmount *= mix(uShadowDepth, 1.0, shadowMask);
+
+  // Ambient is *directional*: sky from above, warm bounce from below. This
+  // is the whole trick — it gives shadowed faces colour instead of grey.
+  float skyFacing = N.y * 0.5 + 0.5;
+  vec3 ambient = mix(uGroundBounce, uSkyColor, skyFacing);
+  // Horizon warmth leaks into faces pointing sideways, which is what makes
+  // dawn and dusk read as dawn and dusk.
+  ambient = mix(ambient, uHorizonColor, (1.0 - abs(N.y)) * 0.35);
+
+  vec3 lighting = ambient + uSunColor * sunAmount * 1.35;
+
+  vec3 color = albedo * lighting;
+
+  // --- rim ---------------------------------------------------------------
+  float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), uRimPower);
+  // Rim only where the sun can plausibly wrap around, plus a constant sliver
+  // of sky light, so silhouettes never disappear into the fog.
+  float sunWrap = clamp(dot(N, L) * 0.5 + 0.75, 0.0, 1.0);
+  vec3 rimColor = mix(uSkyColor, uSunColor, 0.65);
+  color += rimColor * fresnel * uRim * (0.35 + 0.65 * sunWrap);
+
+  // --- contact shading ---------------------------------------------------
+  // A soft darkening toward an object's base. Fakes the occlusion where a
+  // trunk meets grass, which is otherwise the tell that nothing is touching.
+  if (uBaseShadeHeight > 0.0) {
+    float base = 1.0 - clamp(vLocalHeight / uBaseShadeHeight, 0.0, 1.0);
+    color *= mix(1.0, 1.0 - uBaseShade, base * base);
+  }
+
+  color += uEmissive * uEmissiveStrength;
+  color *= uExposure;
+
+  // --- fog ---------------------------------------------------------------
+  // Distance fog, thinned with altitude so hilltops stay legible while the
+  // valley floor dissolves. Tinted toward the horizon low down.
+  float depth = length(cameraPosition - vWorldPosition);
+  float distanceFog = smoothstep(uFogNear, uFogFar, depth);
+  float heightFalloff = uFogHeight > 0.0
+    ? exp(-max(vWorldPosition.y, 0.0) / uFogHeight)
+    : 1.0;
+  float fogAmount = clamp(distanceFog * mix(0.45, 1.0, heightFalloff), 0.0, 1.0);
+  vec3 fogTint = mix(uFogColor, uHorizonColor, clamp(0.55 - vWorldPosition.y * 0.02, 0.0, 0.6));
+  color = mix(color, fogTint, fogAmount);
+
+  gl_FragColor = vec4(color, uOpacity);
+
+  #ifdef PAINTERLY_ALPHATEST
+    if (gl_FragColor.a < PAINTERLY_ALPHATEST) discard;
+  #endif
+
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}
+`;
+
+/**
+ * Create a painterly material bound to a scene's shared globals.
+ *
+ * The returned material shares the global uniform *objects*, so a single
+ * write to `globals.uSunDirection.value` moves the sun for the whole world.
+ * Per-material uniforms (colour, rim, sway) are private to each instance.
+ */
+export function createPainterlyMaterial(
+  globals: PainterlyGlobals,
+  options: PainterlyOptions = {},
+): ShaderMaterial {
+  const {
+    color = 0x8fa86b,
+    colorVariant = 0xffffff,
+    grain = 0.5,
+    grainScale = 0.35,
+    rim = 0.35,
+    rimPower = 2.5,
+    baseShade = 0,
+    baseShadeHeight = 0,
+    sway = 0,
+    swaySpeed = 1.1,
+    swayAttribute = false,
+    swayHeight = 1,
+    vertexColors = false,
+    receiveShadow = true,
+    shadowDepth = 0.35,
+    bandSoftness = 0.07,
+    side = FrontSide,
+    alphaTest = 0,
+    transparent = false,
+    emissive = 0x000000,
+    emissiveStrength = 0,
+    flatShading = false,
+  } = options;
+
+  const defines: Record<string, string | number | boolean> = {};
+  if (vertexColors) defines.PAINTERLY_VERTEX_COLORS = '';
+  if (swayAttribute) defines.USE_SWAY_ATTRIBUTE = '';
+  if (flatShading) defines.PAINTERLY_FLAT_SHADING = '';
+  if (alphaTest > 0) defines.PAINTERLY_ALPHATEST = alphaTest.toFixed(4);
+
+  const material = new ShaderMaterial({
+    defines,
+    // UniformsLib.lights carries the shadow-map samplers and light structs
+    // three's chunks expect; `lights: true` is what makes the renderer
+    // actually populate them.
+    uniforms: UniformsUtils.merge([
+      UniformsLib.lights,
+      {
+        uColor: { value: new Color(color as never) },
+        uColorVariant: { value: new Color(colorVariant as never) },
+        uEmissive: { value: new Color(emissive as never) },
+        uEmissiveStrength: { value: emissiveStrength },
+        uGrain: { value: grain },
+        uGrainScale: { value: grainScale },
+        uRim: { value: rim },
+        uRimPower: { value: rimPower },
+        uBaseShade: { value: baseShade },
+        uBaseShadeHeight: { value: baseShadeHeight },
+        uShadowDepth: { value: shadowDepth },
+        uBandSoftness: { value: bandSoftness },
+        uOpacity: { value: 1 },
+        uSway: { value: sway },
+        uSwaySpeed: { value: swaySpeed },
+        uSwayHeight: { value: swayHeight },
+      },
+    ]),
+    vertexShader: VERTEX,
+    fragmentShader: FRAGMENT,
+    lights: true,
+    transparent,
+    side,
+    fog: false,
+  });
+
+  // Point the shared uniforms at the *same objects* the globals hold, after
+  // the merge (UniformsUtils.merge deep-clones, which would otherwise give
+  // every material its own private copy of the sun).
+  bindGlobals(material, globals);
+
+  material.userData.painterly = true;
+  material.userData.receivesPainterlyShadow = receiveShadow;
+  return material;
+}
+
+/** Re-point a material's shared uniforms at a globals block. */
+export function bindGlobals(material: ShaderMaterial, globals: PainterlyGlobals): void {
+  const shared = globals as unknown as Record<string, IUniform>;
+  for (const key of Object.keys(shared)) {
+    material.uniforms[key] = shared[key];
+  }
+}
+
+/**
+ * A double-sided cutout variant for billboarded foliage. Split out because
+ * getting `side` and `alphaTest` wrong on grass is the single most common
+ * way stylised foliage ends up looking like cardboard.
+ */
+export function createFoliageMaterial(
+  globals: PainterlyGlobals,
+  options: PainterlyOptions = {},
+): ShaderMaterial {
+  return createPainterlyMaterial(globals, {
+    side: DoubleSide,
+    rim: 0.55,
+    rimPower: 2.0,
+    bandSoftness: 0.12,
+    shadowDepth: 0.45,
+    baseShade: 0.35,
+    ...options,
+  });
+}
