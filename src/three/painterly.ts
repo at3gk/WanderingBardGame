@@ -108,6 +108,16 @@ export interface PainterlyOptions {
   swayHeight?: number;
   /** Use per-vertex colours. */
   vertexColors?: boolean;
+  /**
+   * Strength of the ground's own colour drift, 0 disables it.
+   *
+   * Only the terrain sets this. It turns on a pair of extra vertex
+   * attributes, `aToneLo` and `aToneHi`, which give this fragment the dark
+   * and pale ends of the ground palette it is standing on; the shader then
+   * drifts between them with world-space noise. See the note by the drift
+   * itself for why this cannot live in vertex colour.
+   */
+  groundTones?: number;
   /** Cast/receive shadows. Off for tiny scatter meshes that can't afford it. */
   receiveShadow?: boolean;
   /** How dark a shadowed surface goes, 0..1. Cosy games do not use black. */
@@ -169,6 +179,12 @@ uniform vec3 uWindDirection;
 #ifdef PAINTERLY_VERTEX_COLORS
   attribute vec3 color;
   varying vec3 vVertexColor;
+#endif
+#ifdef PAINTERLY_GROUND_TONES
+  attribute vec3 aToneLo;
+  attribute vec3 aToneHi;
+  varying vec3 vToneLo;
+  varying vec3 vToneHi;
 #endif
 /*
  * Declared unconditionally, and so is its twin in the fragment shader.
@@ -259,6 +275,10 @@ void main() {
   #ifdef PAINTERLY_VERTEX_COLORS
     vVertexColor = color;
   #endif
+  #ifdef PAINTERLY_GROUND_TONES
+    vToneLo = aToneLo;
+    vToneHi = aToneHi;
+  #endif
   #ifdef USE_INSTANCING_COLOR
     vInstanceColor = instanceColor;
   #else
@@ -331,6 +351,11 @@ varying vec3 vInstanceColor;
 #ifdef PAINTERLY_VERTEX_COLORS
   varying vec3 vVertexColor;
 #endif
+#ifdef PAINTERLY_GROUND_TONES
+  uniform float uGroundTones;
+  varying vec3 vToneLo;
+  varying vec3 vToneHi;
+#endif
 
 float hash31f(vec3 p) {
   p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
@@ -350,6 +375,36 @@ float noise31f(vec3 p) {
     f.z
   );
 }
+
+#ifdef PAINTERLY_GROUND_TONES
+/*
+ * A two-dimensional twin of the noise above, for the ground only.
+ *
+ * The ground's drift is a property of the map, not of altitude, so the
+ * third dimension buys it nothing — and it costs a great deal: a 3D lattice
+ * needs eight corners where a 2D one needs four. The terrain is most of
+ * every frame, and on a software rasteriser the difference between five 3D
+ * octaves and two 2D ones plus the grain is the difference between a frame
+ * and a timeout. That is not a hypothetical; it is what the first version
+ * of this did.
+ */
+float hash21f(vec2 p) {
+  p = fract(p * 0.3183099 + vec2(0.71, 0.113));
+  p *= 27.13;
+  return fract(p.x * p.y * (p.x + p.y));
+}
+
+float noise21f(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(
+    mix(hash21f(i), hash21f(i + vec2(1.0, 0.0)), f.x),
+    mix(hash21f(i + vec2(0.0, 1.0)), hash21f(i + vec2(1.0, 1.0)), f.x),
+    f.y
+  );
+}
+#endif
 
 void main() {
   #ifdef PAINTERLY_FLAT_SHADING
@@ -380,6 +435,51 @@ void main() {
   // Per-instance colour: one draw call covers a whole biome's worth of
   // trees in different greens. Defaults to white for non-instanced meshes.
   albedo *= vInstanceColor;
+
+  #ifdef PAINTERLY_GROUND_TONES
+    /*
+     * Where the meadow's colour drift lives, and why it is here.
+     *
+     * It used to be baked into the terrain's vertex colours, and it produced
+     * the worst artifact the world has had: hard-edged tonal wedges with
+     * dead-straight boundaries lying across the fields with no landform
+     * under them, in six frames out of ten. The cause is that the drift is
+     * built out of clamped ramps — a patch either has reached the dry tone
+     * or it has not — and a clamp has a kink in it. Sample that kink every
+     * 3.75 m along the road and every 5 to 15 m across it, interpolate
+     * linearly over the quads in between, and the kink comes out as a crease
+     * along the triangulation diagonal: a straight line, tens of metres
+     * long, that no amount of tuning the colours will remove.
+     *
+     * Evaluated per fragment the same ramps are simply smooth, and the
+     * result no longer depends on how finely the ground happens to be
+     * tessellated — which is what the art direction was asking for in the
+     * first place when it said texture comes from world-space noise.
+     *
+     * Vertex colour still carries what it is good at: the road and its
+     * shoulder, and the slow business of one biome becoming the next.
+     */
+    // Two fresh octaves at roughly 70 m and 21 m, and the paper grain the
+    // fragment had already paid for as the third.
+    float driftA = noise21f(vWorldPosition.xz * 0.0145 + 17.3);
+    float driftB = noise21f(vWorldPosition.xz * 0.0470 + 4.1);
+    float drift = driftA * 0.52 + driftB * 0.30 + grainA * 0.18;
+    /*
+     * The edges sit close in around the mean on purpose. Three octaves of
+     * value noise added together pile up near 0.5 — a standard deviation of
+     * about an eighth — so ramps running out to 0 and 1 are ramps the ground
+     * almost never reaches, and the first version of this left the meadow a
+     * flat wash. These reach their ends at roughly two deviations out, which
+     * is often enough to be a field with weather in it.
+     *
+     * Asymmetric: the pale tone comes in over a narrower range than the dark
+     * one, so bleached ground reads as patches and damp ground reads as most
+     * of the field.
+     */
+    albedo = mix(albedo, vToneLo, smoothstep(0.50, 0.27, drift) * uGroundTones * 0.72);
+    albedo = mix(albedo, vToneHi, smoothstep(0.55, 0.78, drift) * uGroundTones * 0.80);
+  #endif
+
   albedo = mix(albedo, albedo * uColorVariant, smoothstep(0.35, 0.75, grain) * uGrain);
 
   // --- banded diffuse ----------------------------------------------------
@@ -513,6 +613,7 @@ export function createPainterlyMaterial(
     swayAttribute = false,
     swayHeight = 1,
     vertexColors = false,
+    groundTones = 0,
     receiveShadow = true,
     shadowDepth = 0.35,
     bandSoftness = 0.07,
@@ -526,6 +627,7 @@ export function createPainterlyMaterial(
 
   const defines: Record<string, string | number | boolean> = {};
   if (vertexColors) defines.PAINTERLY_VERTEX_COLORS = '';
+  if (groundTones > 0) defines.PAINTERLY_GROUND_TONES = '';
   if (swayAttribute) defines.USE_SWAY_ATTRIBUTE = '';
   if (flatShading) defines.PAINTERLY_FLAT_SHADING = '';
   if (alphaTest > 0) defines.PAINTERLY_ALPHATEST = alphaTest.toFixed(4);
@@ -542,6 +644,7 @@ export function createPainterlyMaterial(
         uColorVariant: { value: new Color(colorVariant as never) },
         uEmissive: { value: new Color(emissive as never) },
         uEmissiveStrength: { value: emissiveStrength },
+        uGroundTones: { value: groundTones },
         uGrain: { value: grain },
         uGrainScale: { value: grainScale },
         uRim: { value: rim },

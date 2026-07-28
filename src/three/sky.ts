@@ -44,6 +44,16 @@ export interface SkyKey {
   exposure: number;
   /** 0 = no stars, 1 = full night sky. */
   starness: number;
+  /**
+   * Roughly what fraction of the visible sky band carries cloud.
+   *
+   * This is a key rather than a constant because the cloud sharpening used
+   * to be fixed, and fixed sharpening tuned to look right at golden hour
+   * left morning and noon with one faint smear and nothing else — the two
+   * frames that most need something in the upper half. Weather is part of
+   * the palette, so it belongs next to the colours that move with it.
+   */
+  cloudiness: number;
 }
 
 /**
@@ -69,6 +79,7 @@ export const SKY_KEYS: SkyKey[] = [
     azimuth: 1.2,
     exposure: 0.62,
     starness: 1,
+    cloudiness: 0.30,
   },
   {
     t: 0.2,
@@ -82,6 +93,7 @@ export const SKY_KEYS: SkyKey[] = [
     azimuth: 1.05,
     exposure: 0.78,
     starness: 0.35,
+    cloudiness: 0.40,
   },
   {
     t: 0.28,
@@ -95,6 +107,7 @@ export const SKY_KEYS: SkyKey[] = [
     azimuth: 0.95,
     exposure: 0.95,
     starness: 0,
+    cloudiness: 0.46,
   },
   {
     t: 0.42,
@@ -113,6 +126,7 @@ export const SKY_KEYS: SkyKey[] = [
     azimuth: 0.6,
     exposure: 1.02,
     starness: 0,
+    cloudiness: 0.42,
   },
   {
     t: 0.55,
@@ -128,6 +142,7 @@ export const SKY_KEYS: SkyKey[] = [
     azimuth: 0.0,
     exposure: 1.05,
     starness: 0,
+    cloudiness: 0.38,
   },
   {
     t: 0.7,
@@ -141,6 +156,7 @@ export const SKY_KEYS: SkyKey[] = [
     azimuth: -0.7,
     exposure: 1.0,
     starness: 0,
+    cloudiness: 0.42,
   },
   {
     t: 0.82,
@@ -154,6 +170,7 @@ export const SKY_KEYS: SkyKey[] = [
     azimuth: -1.05,
     exposure: 0.98,
     starness: 0,
+    cloudiness: 0.50,
   },
   {
     t: 0.9,
@@ -167,6 +184,7 @@ export const SKY_KEYS: SkyKey[] = [
     azimuth: -1.2,
     exposure: 0.8,
     starness: 0.45,
+    cloudiness: 0.44,
   },
 ];
 
@@ -183,6 +201,7 @@ export interface SkyState {
   sunDirection: Vector3;
   exposure: number;
   starness: number;
+  cloudiness: number;
   /** Blend label, for debug overlays and the journal. */
   label: string;
 }
@@ -226,6 +245,7 @@ export function skyStateAt(t: number): SkyState {
     ).normalize(),
     exposure: a.exposure + (b.exposure - a.exposure) * e,
     starness: a.starness + (b.starness - a.starness) * e,
+    cloudiness: a.cloudiness + (b.cloudiness - a.cloudiness) * e,
     label: e < 0.5 ? a.name : b.name,
   };
 }
@@ -279,7 +299,10 @@ uniform vec3 uZenith;
 uniform vec3 uHorizon;
 uniform vec3 uSunColor;
 uniform vec3 uSunDirection;
+uniform vec3 uFogColor;
+uniform vec3 uGroundBounce;
 uniform float uStarness;
+uniform float uCloudiness;
 uniform float uTime;
 
 varying vec3 vDirection;
@@ -328,6 +351,15 @@ void main() {
   float band = exp(-abs(height) * 7.0);
   color = mix(color, uHorizon, band * 0.55);
 
+  // Kept aside before anything is drawn into the sky, because the ridge
+  // below is built from the sky's own value in its own direction. A far
+  // landform tends toward the radiance of the air in front of it, so
+  // deriving it from this rather than from a hand-mixed constant is both
+  // the physical answer and the one that cannot go wrong at some key
+  // nobody checked: it is darker than the sky it meets by construction, at
+  // every hour, instead of by a set of numbers tuned against noon.
+  vec3 skyBase = color;
+
   // --- cloud -------------------------------------------------------------
   // Two drifting sheets of fbm, masked to the band of sky the camera can see
   // and faded out at both ends of it. Sheets rather than a single layer
@@ -340,29 +372,117 @@ void main() {
   // Drawn on the dome rather than as geometry: no mesh, no texture, no
   // bundle. The projection divides the direction by its own height, so a
   // sheet flattens toward the horizon the way a real one does.
-  float cloudBand = smoothstep(0.015, 0.14, height) * smoothstep(0.92, 0.34, height);
+  // The lower edge runs below the skyline rather than starting a few
+  // degrees above it. Cloud that stops short of the horizon leaves a clean
+  // strip of empty gradient exactly where the treeline meets the sky, and
+  // that strip is what made the treeline read as a sticker: it had nothing
+  // to sit against.
+  float cloudBand = smoothstep(-0.03, 0.05, height) * smoothstep(1.05, 0.30, height);
   if (cloudBand > 0.001) {
     vec2 plane = dir.xz / max(height + 0.16, 0.05);
     float drift = uTime * 0.004;
     float low = fbm(plane * 0.85 + vec2(drift, drift * 0.3));
     float high = fbm(plane * 2.1 + vec2(-drift * 1.7, drift * 0.9) + 31.0);
-    // Sharpened well off centre so the sky is mostly empty. Cloud that
-    // covers half the dome is overcast, and this game is not overcast.
-    float cover = smoothstep(0.52, 0.78, low * 0.72 + high * 0.28);
-    float lit = smoothstep(0.5, 0.85, low);
-    vec3 cloudColor = mix(uHorizon, vec3(1.0), 0.35 + lit * 0.5);
-    color = mix(color, cloudColor, cover * cloudBand * 0.85);
+
+    // Where the sharpening sits decides how much sky is covered, and it
+    // used to be a constant tuned against golden hour: smoothstep(0.52,
+    // 0.78, ...) on a field whose standard deviation is about 0.14 leaves
+    // roughly a tenth of the band with any cloud in it and almost none of
+    // it opaque. Morning and noon came out as one smear on empty paper.
+    // Centring the ramp on a per-key quantile instead lets the palette ask
+    // for a coverage and get it. The 0.73 and 0.43 are the noise field's
+    // own numbers, not taste: 0.73 is roughly its 1.3-sigma point and the
+    // slope carries the centre down to the median by full cloudiness.
+    float mid = 0.73 - 0.43 * uCloudiness;
+    float cover = smoothstep(mid - 0.085, mid + 0.085, low * 0.72 + high * 0.28);
+    // Squared off once more. A single smoothstep spends most of its output
+    // in the middle of the range, and a cloud that is forty per cent opaque
+    // everywhere is haze: it lowers the contrast of the whole upper frame
+    // without ever becoming a shape. Pushing the midtones toward the ends
+    // gives the same coverage as edges and gaps instead.
+    cover = cover * cover * (3.0 - 2.0 * cover);
+
+    // A cloud needs an underside or it is a sheet of paper laid on the sky.
+    // The low-frequency term stands in for "how far up the mass this pixel
+    // is": where it is small we are looking at the shaded belly, which in
+    // life is lit by whatever the ground is throwing back — so it takes
+    // uGroundBounce, the same warm return every shadowed surface in the
+    // world uses. Where it is large we are on the crown and it goes toward
+    // white. That gives the cloud a value range of its own instead of one
+    // flat tint, which is the difference between weather and wallpaper.
+    float lit = smoothstep(0.38, 0.84, low);
+    vec3 belly = mix(uHorizon, uGroundBounce, 0.50) * 0.95;
+    // The crown is the sun's colour on the horizon's, not white. It was
+    // white — ninety per cent of the way to it — and that is fine at noon
+    // and absurd at midnight, where it put brilliant white cumulus over a
+    // sleeping camp lit by one fire. A cloud is only ever as bright as the
+    // light falling on it, and at night that light is the moon, which this
+    // palette already carries as the sun colour of the night keys.
+    vec3 crown = mix(uHorizon * 1.15, uSunColor, 0.45);
+    vec3 cloudColor = mix(belly, crown, lit);
+    color = mix(color, cloudColor, cover * cloudBand);
+  }
+
+  // --- far ridge ---------------------------------------------------------
+  // The world streams out to a hundred and sixty-five metres and then
+  // simply stops, so every daylight frame had a hard straight seam where a
+  // green band met a blue one and nothing in between. Two values, front to
+  // back, when the frames that read well have four.
+  //
+  // This is the missing third: one distant landform, drawn on the dome
+  // rather than built. Geometry was the obvious answer and is the wrong
+  // one — a ring of hills far enough away to look far has to be enormous,
+  // has to stream, and would need its own fog treatment to stop reading as
+  // a wall. On the dome it is at infinity by construction, which is also
+  // exactly right: it holds still as the bard walks and swings with the
+  // camera's heading, the way a real range on the skyline does.
+  //
+  // The silhouette fills everything *below* its crest and the terrain
+  // draws over it, so it needs no knowledge of where the ground actually
+  // ends — it simply backs whatever is in front of it.
+  // The crest sits two to five degrees up. Lower than that and the terrain
+  // hides it in every frame where the road runs uphill, which is most of
+  // them; much higher and it stops being a distant range and becomes a wall
+  // around the meadow.
+  // Three explicit scales rather than one fbm call. fbm's own octaves fall
+  // off fast enough that at this amplitude the second and third are worth
+  // under a degree each, and the crest came out as one long smooth arc —
+  // which reads as a bank of cloud, not as land. The middle term is the
+  // one that does the work: ten-degree humps big enough to be summits.
+  vec2 ring = normalize(dir.xz + vec2(1e-5));
+  float ridgeHeight =
+    0.018 + vnoise(ring * 1.9 + 11.0) * 0.075 + vnoise(ring * 5.5 + 3.7) * 0.030 +
+    vnoise(ring * 13.0 + 21.0) * 0.012;
+  float ridge = smoothstep(ridgeHeight, ridgeHeight - 0.004, height);
+  if (ridge > 0.001) {
+    // Aerial perspective, in the sky's own colours rather than a grey wash:
+    // take the air in this direction, pull it toward the zenith so it goes
+    // cooler than the warm band it stands in, and drop the value. Because
+    // skyBase falls off toward the horizon of its own accord, the band
+    // also lightens toward its foot without being told to — which is how
+    // haze pools in front of a range.
+    vec3 ridgeColor = mix(skyBase, uZenith, 0.28) * 0.84;
+    // A trace of the ground's colour, because a forested skyline is
+    // blue-green and not blue.
+    ridgeColor = mix(ridgeColor, uGroundBounce, 0.10);
+    // The flank turned toward the sun keeps a little of the sun's colour,
+    // which is what stops the band being a flat cut-out.
+    vec2 sunRing = normalize(uSunDirection.xz + vec2(1e-5));
+    float facing = max(dot(ring, sunRing), 0.0);
+    ridgeColor = mix(ridgeColor, mix(ridgeColor, uSunColor, 0.22), facing * facing);
+    color = mix(color, ridgeColor, ridge);
   }
 
   // Sun: a soft disc plus a wide bloom. No hard edge — a crisp disc reads
-  // as a decal pasted on a painting.
+  // as a decal pasted on a painting. The disc goes behind the ridge and the
+  // bloom does not: light spills over a skyline, a sun does not.
   float sunDot = max(dot(dir, normalize(uSunDirection)), 0.0);
-  float disc = smoothstep(0.995, 0.9995, sunDot);
+  float disc = smoothstep(0.995, 0.9995, sunDot) * (1.0 - ridge);
   float bloom = pow(sunDot, 42.0) * 0.55 + pow(sunDot, 6.0) * 0.16;
   color += uSunColor * (disc * 0.9 + bloom);
 
   // Stars, faded in by night and by altitude so they don't sit in the fog.
-  if (uStarness > 0.001) {
+  if (uStarness > 0.001 && ridge < 0.999) {
     vec2 grid = dir.xz / max(abs(dir.y) + 0.22, 0.06) * 34.0;
     vec2 cell = floor(grid);
     float star = hash21(cell);
@@ -372,7 +492,7 @@ void main() {
       float dist = length(local);
       float twinkle = 0.65 + 0.35 * sin(uTime * 1.7 + star * 40.0);
       float point = smoothstep(0.16, 0.0, dist) * bright * twinkle;
-      color += vec3(0.85, 0.88, 1.0) * point * uStarness * smoothstep(0.02, 0.35, height);
+      color += vec3(0.85, 0.88, 1.0) * point * uStarness * smoothstep(0.02, 0.35, height) * (1.0 - ridge);
     }
   }
 
@@ -390,7 +510,10 @@ export class Sky {
     uHorizon: IUniform<Color>;
     uSunColor: IUniform<Color>;
     uSunDirection: IUniform<Vector3>;
+    uFogColor: IUniform<Color>;
+    uGroundBounce: IUniform<Color>;
     uStarness: IUniform<number>;
+    uCloudiness: IUniform<number>;
     uTime: IUniform<number>;
   };
 
@@ -400,7 +523,10 @@ export class Sky {
       uHorizon: { value: new Color(0xe4eef4) },
       uSunColor: { value: new Color(0xfff6e2) },
       uSunDirection: { value: new Vector3(0, 1, 0) },
+      uFogColor: { value: new Color(0xd6e6f0) },
+      uGroundBounce: { value: new Color(0x87945f) },
       uStarness: { value: 0 },
+      uCloudiness: { value: 0.4 },
       uTime: { value: 0 },
     };
 
@@ -426,7 +552,10 @@ export class Sky {
     this.uniforms.uHorizon.value.copy(state.horizon);
     this.uniforms.uSunColor.value.copy(state.sun);
     this.uniforms.uSunDirection.value.copy(state.sunDirection);
+    this.uniforms.uFogColor.value.copy(state.fog);
+    this.uniforms.uGroundBounce.value.copy(state.bounce);
     this.uniforms.uStarness.value = state.starness;
+    this.uniforms.uCloudiness.value = state.cloudiness;
     this.uniforms.uTime.value = timeSeconds;
   }
 

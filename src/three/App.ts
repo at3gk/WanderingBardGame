@@ -175,15 +175,34 @@ export class App {
     this.sun = new DirectionalLight(0xffffff, 1);
     this.sun.castShadow = quality.shadows;
     this.sun.shadow.mapSize.set(quality.shadowMapSize, quality.shadowMapSize);
-    // A tight ortho frustum around the player is what buys crisp shadows
-    // from a 2K map. The road only ever needs shadows near the bard.
-    const extent = 42;
+    // How far shadows reach, and what it costs.
+    //
+    // This was 42 metres, on the reasoning that a tight ortho frustum buys
+    // crisp shadows from a 2K map and the road only needs shadows near the
+    // bard. The second half of that is wrong. Forty-two metres is roughly
+    // the bard and the grass immediately around him: everything from the
+    // first row of shrubs outward — the whole treeline, every rock, the
+    // stones on the ridge road — sat on the ground without touching it, and
+    // a low-poly landscape whose mid-ground casts nothing reads as props
+    // arranged on a plane rather than as one place. Contact is what welds
+    // them together, and the mid-ground is where the eye actually goes.
+    //
+    // 110 metres covers out to about where the fog takes over. The texel
+    // goes from four centimetres to eleven, so the bard's own contact
+    // shadow is softer than it was; that is the trade and it is worth it,
+    // because a soft shadow under one character costs far less than no
+    // shadow under a hundred trees. The alternative was a second cascade,
+    // which means a second shadow-casting light — two shadow maps to
+    // sample in every painterly material, and a seam where they meet.
+    const extent = 110;
     this.sun.shadow.camera.left = -extent;
     this.sun.shadow.camera.right = extent;
     this.sun.shadow.camera.top = extent;
     this.sun.shadow.camera.bottom = -extent;
     this.sun.shadow.camera.near = 1;
-    this.sun.shadow.camera.far = 220;
+    // Deep enough that a caster near the far corner of the widened frustum
+    // is still in front of the near plane when the sun rakes in low.
+    this.sun.shadow.camera.far = 400;
     // Normal bias rather than constant bias: it scales with the surface's
     // angle to the light, which is what stops raking dawn light from
     // shadow-acneing every blade of grass.
@@ -272,7 +291,9 @@ export class App {
   /** Aim the sun at a world point, keeping its direction. */
   aimSunAt(target: Vector3): void {
     const direction = this.globals.uSunDirection.value;
-    this.sun.position.copy(target).addScaledVector(direction, 90);
+    // Far enough back that the widened shadow frustum's near plane clears
+    // the tallest thing on the road even with the sun near the horizon.
+    this.sun.position.copy(target).addScaledVector(direction, 170);
     this.sun.target.position.copy(target);
     this.sun.target.updateMatrixWorld();
   }

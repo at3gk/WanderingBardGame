@@ -753,6 +753,7 @@ export class WorldStreamer {
       rim: 0.05,
       rimPower: 3.5,
       vertexColors: true,
+      groundTones: 1,
       /**
        * Wide enough that the ground does not band at all.
        *
@@ -977,12 +978,22 @@ export class WorldStreamer {
   /**
    * One chunk of ground.
    *
-   * Vertex colours carry three things at once: the biome (blended across
-   * band boundaries so a transition is a gradual change of green rather
-   * than a seam), the road surface (blended out through the shoulder), and
-   * a per-vertex noise wobble. Doing all three in vertex colour rather than
-   * with separate meshes is what keeps the road from z-fighting the ground
-   * it is lying on, which is the classic way this goes wrong.
+   * Vertex colours carry the biome (blended across band boundaries so a
+   * transition is a gradual change of green rather than a seam) and the road
+   * surface (blended out through the shoulder). Carrying the road in vertex
+   * colour rather than in a second mesh is what keeps it from z-fighting the
+   * ground it is lying on, which is the classic way this goes wrong.
+   *
+   * What vertex colour deliberately no longer carries is the meadow's
+   * *drift* — the patchiness, the bleached ground, the damp in the ruts.
+   * Every one of those is a clamped ramp, and a clamp sampled every few
+   * metres and interpolated across quads up to fifteen metres wide came out
+   * as a crease along the mesh's triangulation, which read as a hard-edged
+   * tonal wedge lying across the field with nothing under it. It is now two
+   * extra attributes — the dark and pale ends of the ground palette here —
+   * and world-space noise in the fragment shader. What is left in vertex
+   * colour varies over a hundred metres or more, which no tessellation this
+   * mesh will ever have can turn into an edge.
    */
   private buildTerrain(index: number): Mesh {
     const s0 = index * CHUNK_LENGTH;
@@ -992,8 +1003,8 @@ export class WorldStreamer {
 
     const positions = new Float32Array(vertexCount * 3);
     const colors = new Float32Array(vertexCount * 3);
-
-    const wobble = mulberry32(subSeed(this.road.seed, `terrain:${index}`));
+    const toneLo = new Float32Array(vertexCount * 3);
+    const toneHi = new Float32Array(vertexCount * 3);
 
     for (let r = 0; r < rows; r++) {
       // Overlap the last row of one chunk with the first of the next by
@@ -1020,76 +1031,38 @@ export class WorldStreamer {
       const laneY = sample.y;
 
       /**
-       * The meadow at a point: three scales of drift plus the landform.
+       * The meadow's base tone at a point: the slow drift, plus the landform.
        *
-       * One sine at one frequency — which is what this used to be — is a
-       * gradient, and a gradient across a whole valley is indistinguishable
-       * from a flat wash once fog has been applied to it. Three octaves
-       * give patches at roughly 80 m, 25 m and 8 m, and the height term on
-       * top puts colour on the landform itself, so a rise a hundred metres
-       * off is dry and pale and the hollow beside it is deep and cool.
-       * That is the whole of what the mid-distance had to offer the eye.
+       * Everything here has to survive being sampled at the mesh's spacing
+       * and linearly interpolated between, which rules out anything with a
+       * kink in it. What is left is one sine at about a 170 m wavelength —
+       * curved so gently that a fifteen-metre quad across it is a straight
+       * line anyway — and the height term, which is what puts colour on the
+       * landform itself so a rise a hundred metres off is dry and pale and
+       * the hollow beside it is deep and cool.
+       *
+       * The height term is written as a pair of smoothsteps meeting at the
+       * lane's own height rather than as the more obvious `rise > 0 ? … : …`.
+       * Both are continuous, but the branch has a corner in it at the point
+       * where half the ground in an open frame happens to sit, and a corner
+       * is precisely what comes back as a crease. Two smoothsteps meet with
+       * zero slope on both sides, so the seam has nothing to show.
        */
       const meadowAt = (mx: number, mz: number, my: number): number => {
-        // Wavelengths of roughly 170 m and 45 m. The first pass used 500 m
-        // and 130 m, which across a single view is one smooth gradient —
-        // indistinguishable from a flat wash once the fog has had its say.
-        const broad = 0.5 + 0.5 * Math.sin(mx * 0.038 + mz * 0.027 + 2.1);
-        const patch = 0.5 + 0.5 * Math.sin(mx * 0.115 - mz * 0.148 + 0.7);
-        const fine = 0.5 + 0.5 * Math.sin(mx * 0.22 + mz * 0.19 + 5.2);
-        const t = clamp01(broad * 0.5 + patch * 0.32 + fine * 0.18);
-        // Three tones out of one noise value, not two. A meadow that only
-        // ever blends between its two mid greens has no dark in it, and
-        // without dark there is no drift to see — which is why an open
-        // field a hundred metres wide still read as one flat wash after the
-        // frequencies were fixed. The deep tone comes in only at the bottom
-        // of the range, so it reads as damp hollows rather than as dirt.
-        let color = mixColor(grassA, grassB, smoothstep(0.28, 1, t));
-        color = mixColor(color, shadeColor, smoothstep(0.3, 0, t) * 0.6);
+        const broad =
+          0.5 +
+          0.3 * Math.sin(mx * 0.038 + mz * 0.027 + 2.1) +
+          0.2 * Math.sin(mx * 0.071 - mz * 0.059 + 4.7);
+        let color = mixColor(grassA, grassB, broad);
         // Divided by a long enough span that a field which simply slopes
-        // away from the road does not come out uniformly dry. At /8 the
-        // whole of an open village hillside sat at the pale end of the
-        // palette and every other term was drowned out by it.
+        // away from the road does not come out uniformly dry, and passed
+        // through a saturating map so that a cliff and a bank differ only
+        // in degree.
         const rise = (my - laneY) / 14;
-        if (rise > 0) color = mixColor(color, dryColor, Math.min(1, rise) * 0.4);
-        else color = mixColor(color, shadeColor, Math.min(1, -rise) * 0.55);
-        // Worn, sun-bleached patches, on their own slow rhythm so they do
-        // not line up with the drift underneath them. Kept rare enough to
-        // read as patches rather than as the ground's base colour.
-        const bleach = smoothstep(0.7, 0.99, 0.5 + 0.5 * Math.sin(mx * 0.062 - mz * 0.045 + 4.3));
-        return mixColor(color, dryColor, bleach * 0.5);
-      };
-
-      /**
-       * Dust and damp on the packed earth.
-       *
-       * The carriageway is one colour with two ruts drawn on it, and one
-       * colour is what makes it read as a gradient however carefully the
-       * tone is chosen. A real track is patchy at a scale of ten or twenty
-       * metres: the crown dries out pale between showers, the low places
-       * hold water for days after. Two out-of-phase waves, one paler and one
-       * darker, are enough to break the wash — and they are cheap, because
-       * this is arithmetic on a vertex the mesh was going to place anyway.
-       *
-       * The wavelengths (about 30 m and 17 m) are set against the 3.75 m
-       * along-road vertex spacing, which is the real limit here: anything
-       * shorter than four or five samples per cycle stops being a patch and
-       * becomes a stripe at every vertex row.
-       */
-      const roadWear = (rx: number, rz: number, base: number): number => {
-        const dust = 0.5 + 0.5 * Math.sin(rz * 0.21 + rx * 0.13 + 1.7);
-        const damp = 0.5 + 0.5 * Math.sin(rz * 0.37 - rx * 0.09 + 4.1);
-        // Kept well under a third. At 0.34 the pale end of the patches met
-        // `grassDry` closely enough that on a sunlit village rise the road
-        // and the field either side of it came to the same value, and the
-        // lane stopped reading as a lane — which is the exact failure the
-        // road colour was darkened to fix a few revisions ago.
-        let worn = mixColor(base, dryColor, smoothstep(0.45, 1, dust) * 0.19);
-        // Damp earth is not the shade tone of the meadow — the meadow's
-        // shade is green, and green in the middle of a track reads as moss.
-        // A cool dark brown is what wet earth actually is.
-        worn = mixColor(worn, 0x36291c, smoothstep(0.42, 1, damp) * 0.30);
-        return worn;
+        const k = 0.5 + 0.5 * (rise / (1 + Math.abs(rise)));
+        color = mixColor(color, dryColor, smoothstep(0.5, 1, k) * 0.42);
+        color = mixColor(color, shadeColor, smoothstep(0.5, 0, k) * 0.5);
+        return color;
       };
 
       for (let c = 0; c < cols; c++) {
@@ -1104,9 +1077,11 @@ export class WorldStreamer {
         positions[i + 2] = z;
 
         const absU = Math.abs(u);
-        let color: number;
-        if (absU <= ROAD_HALF_WIDTH) {
-          color = roadWear(x, z, roadColor);
+
+        // The packed earth's own base, before the road's structure is drawn
+        // on it. Split out so the shoulder has something to blend toward.
+        const trackAt = (): number => {
+          let track = roadColor;
           // Two wheel ruts, darker and slightly sunken-looking. The road
           // reads as travelled rather than paved because of these, and
           // there is now a vertex sitting exactly on each one.
@@ -1114,27 +1089,53 @@ export class WorldStreamer {
           // giving the carriageway any structure at all in a close frame,
           // and at the old strength they were invisible under a low sun.
           const rut = Math.abs(absU - ROAD_HALF_WIDTH * 0.58);
-          if (rut < 0.42) color = mixColor(color, 0x2a1d12, 0.46 * (1 - rut / 0.42));
+          if (rut < 0.42) track = mixColor(track, 0x2a1d12, 0.46 * (1 - rut / 0.42));
           // A crown down the middle, where nothing drives and the grass
           // has not quite given up.
-          if (absU < 0.7) color = mixColor(color, shoulderColor, 0.35 * (1 - absU / 0.7));
+          if (absU < 0.7) track = mixColor(track, shoulderColor, 0.35 * (1 - absU / 0.7));
+          return track;
+        };
+
+        let color: number;
+        // The dark and pale ends the fragment shader is allowed to drift to.
+        // For the meadow they are the palette's own two outer tones; for the
+        // road they are wet earth and sun-baked dust, pulled back toward the
+        // surface's own colour so a track stays a track. The pale end is
+        // kept well short of `grassDry` — at the full tone the bleached
+        // patches met the field either side of the lane at the same value
+        // and the road stopped reading as a road.
+        let lo: number;
+        let hi: number;
+        if (absU <= ROAD_HALF_WIDTH) {
+          color = trackAt();
+          lo = mixColor(color, 0x36291c, 0.52);
+          hi = mixColor(color, dryColor, 0.3);
         } else if (absU <= SHOULDER) {
           const t = (absU - ROAD_HALF_WIDTH) / (SHOULDER - ROAD_HALF_WIDTH);
-          // The shoulder wears with the carriageway. Stopping the patches
-          // dead at the edge of the packed surface drew a line down the road
-          // wherever a dry patch happened to end there, which is a worse
-          // artifact than the flat wash the patches were added to fix.
-          color = mixColor(roadWear(x, z, shoulderColor), meadowAt(x, z, y), t * t);
+          const w = t * t;
+          const meadow = meadowAt(x, z, y);
+          const track = trackAt();
+          color = mixColor(track, meadow, w);
+          lo = mixColor(mixColor(track, 0x36291c, 0.52), shadeColor, w);
+          hi = mixColor(mixColor(track, dryColor, 0.3), dryColor, w);
         } else {
           color = meadowAt(x, z, y);
+          lo = shadeColor;
+          hi = dryColor;
         }
 
-        // A little per-vertex value noise on top of everything.
-        const lift = 0.94 + wobble() * 0.12;
         this.scratchColor.setHex(color);
-        colors[i] = Math.min(1, this.scratchColor.r * lift);
-        colors[i + 1] = Math.min(1, this.scratchColor.g * lift);
-        colors[i + 2] = Math.min(1, this.scratchColor.b * lift);
+        colors[i] = this.scratchColor.r;
+        colors[i + 1] = this.scratchColor.g;
+        colors[i + 2] = this.scratchColor.b;
+        this.scratchColor.setHex(lo);
+        toneLo[i] = this.scratchColor.r;
+        toneLo[i + 1] = this.scratchColor.g;
+        toneLo[i + 2] = this.scratchColor.b;
+        this.scratchColor.setHex(hi);
+        toneHi[i] = this.scratchColor.r;
+        toneHi[i + 1] = this.scratchColor.g;
+        toneHi[i + 2] = this.scratchColor.b;
       }
     }
 
@@ -1152,6 +1153,8 @@ export class WorldStreamer {
     const geometry = new BufferGeometry();
     geometry.setAttribute('position', new BufferAttribute(positions, 3));
     geometry.setAttribute('color', new BufferAttribute(colors, 3));
+    geometry.setAttribute('aToneLo', new BufferAttribute(toneLo, 3));
+    geometry.setAttribute('aToneHi', new BufferAttribute(toneHi, 3));
     geometry.setIndex(indices);
     geometry.computeVertexNormals();
     geometry.computeBoundingSphere();
