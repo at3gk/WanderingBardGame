@@ -55,8 +55,11 @@ import {
   InstancedBufferGeometry,
   LinearFilter,
   Mesh,
+  Object3D,
+  PerspectiveCamera,
   ShaderMaterial,
   Vector3,
+  type IUniform,
 } from 'three';
 import { TRAVEL_TIME_MS } from '../../core/beats';
 import type { Instrument } from '../../core/instruments';
@@ -179,6 +182,77 @@ const ATLAS_ROWS = 4;
 /** Cell index of the rest, past the twenty-eight pitched cells. */
 const REST_CELL = 28;
 
+/**
+ * How much of the horizon's colour the five lines take.
+ *
+ * They used to be drawn in `INK` at full strength, which made them the
+ * highest-value thing in the picture: five near-white rules crossing a dark
+ * treeline to a vanishing point, so the notation sat *on* the world rather
+ * than in it. The sky is this game's light source, so the thing a line in
+ * the air should look like is the sky it is hanging in front of.
+ *
+ * Not all the way to the horizon colour, and two thirds was too far. The top
+ * line of the staff sits at about eye height, which is where the horizon is,
+ * so the highest lines are the ones drawn against open sky — and a line
+ * carrying two thirds of the sky's own colour vanishes there. Since those are
+ * the lines the rarest and hardest-to-place notes ride, losing them costs
+ * exactly the pitches a player most needs help reading. Half keeps a cream
+ * bias strong enough to hold against a bright morning and still drops the
+ * lines out of the near-white band they used to occupy. The horizon also goes
+ * a deep blue after dark, which is the other end this has to survive.
+ *
+ * The barline does not take this tint. It is the mark that says *here*, and
+ * it is the one part of the apparatus that is allowed to be ink.
+ */
+const LINE_HORIZON_TINT = 0.5;
+
+/** Peak alpha of the five lines, at the barline. Falls away with `ribbonFade`. */
+const LINE_OPACITY = 0.55;
+
+/**
+ * Alpha of the barline, which never fades.
+ *
+ * Held below the old staff's 0.62 rather than above it. Once the lines
+ * receded the barline was the only bright vertical left in the frame and at
+ * 0.78 it stopped reading as notation and started reading as a fence post
+ * standing in the road. It does not need to shout to be the strongest mark
+ * here; it only needs to be stronger than what is around it, and now it is.
+ */
+const BAR_OPACITY = 0.6;
+
+/**
+ * Sentinel written into the fade attribute for the barline's six vertices.
+ *
+ * A second attribute would be the obvious way to tell the barline from the
+ * lines in the shader, and it was rejected for costing a buffer, an upload
+ * and a third thing to keep in step with the other two for one bit of
+ * information. Nothing interpolates across the boundary — the barline is its
+ * own pair of triangles and every one of its vertices carries this value —
+ * so the shader can simply threshold it.
+ */
+const BARLINE_FADE = 2;
+
+/**
+ * How far apart two note heads have to be on screen, measured centre to
+ * centre in head widths.
+ *
+ * Below about one the heads are visibly one blob and their letters collide,
+ * and the letter is how a player reads the pitch — so this is a pedagogy
+ * number wearing a composition number's clothes. It is not larger because
+ * every tenth above the overlap point is paid for by moving a note away from
+ * where its beat actually falls, and that is a worse lie than a tight bar.
+ */
+const SPACING_MIN_HEADS = 1.25;
+
+/** Furthest a note may be pushed back along the lane to clear its neighbour. */
+const SPACING_MAX_PUSH_M = 0.85;
+
+/** Candidate pushes tried per note. Six is well inside the noise of one head. */
+const SPACING_STEPS = 6;
+
+/** Seconds for a note's spacing push to settle. Short: this must not read as drag. */
+const SPACING_SETTLE_S = 0.18;
+
 const MOTION_INDEX: Record<Instrument['noteMotion'], number> = {
   drift: 0,
   spiral: 1,
@@ -196,6 +270,14 @@ interface LiveNote {
   state: 'travelling' | 'struck' | 'softened';
   /** Busk-clock time the state was entered. */
   changedMs: number;
+  /**
+   * Metres this note is currently held back along the lane to keep its head
+   * clear of the one in front. Damped rather than applied outright: when the
+   * note ahead retires there is nothing left to clear and the target drops to
+   * zero, and a glyph that jumped half a metre at that moment would read as a
+   * glitch in the one part of the frame the player is reading.
+   */
+  push: number;
 }
 
 export interface SongNotesOptions {
@@ -205,6 +287,14 @@ export interface SongNotesOptions {
 
 /** Where the road is, `ahead` metres in front of the bard. */
 export type RoadSampler = (ahead: number, out: Vector3) => void;
+
+/** A note head on the image plane at unit depth. See `projectHead`. */
+interface ScreenHead {
+  u: number;
+  v: number;
+  /** Half a head width, in the same units as `u` and `v`. */
+  r: number;
+}
 
 export class SongNotes {
   readonly group = new Group();
@@ -250,7 +340,23 @@ export class SongNotes {
   private ribbonHeading = Number.NaN;
 
   private readonly scratch = new Vector3();
+  private readonly scratchSpacing = new Vector3();
+  private readonly scratchView = new Vector3();
+  private readonly candidateHead: ScreenHead = { u: 0, v: 0, r: 0 };
+  private readonly placedHead: ScreenHead = { u: 0, v: 0, r: 0 };
   private nowMs = 0;
+  /** Seconds since the last `update`. Only the spacing damping needs it. */
+  private frameDt = 0;
+  private lastNowMs = Number.NaN;
+
+  /**
+   * Last camera this drew for, kept so the glyph spacing can be measured in
+   * screen space. It is one frame stale — `update` runs before the render
+   * that would refresh it — which is invisible at the speeds a busking camera
+   * moves and much cheaper than threading a camera through the whole stage.
+   */
+  private camera: PerspectiveCamera | null = null;
+  private horizonSought = false;
 
   constructor(options: SongNotesOptions = {}) {
     const density = clamp(options.particleDensity ?? 1, 0.25, 1);
@@ -280,12 +386,20 @@ export class SongNotes {
     this.staffMaterial = new ShaderMaterial({
       uniforms: {
         uColor: { value: new Color(INK) },
-        // The staff is a guide the eye follows, not furniture — but 0.42 was
-        // below the threshold at which a one-pixel line survives being drawn
-        // against grass, and five lines that are only *sometimes* there are
-        // worse than four. This is as faint as the pitch axis can be and
-        // still be counted.
-        uOpacity: { value: 0.62 },
+        // Replaced by the scene's own shared horizon colour the first time
+        // this draws; see `adoptHorizon`. The literal is the daylight value
+        // from `createPainterlyGlobals`, so a staff that never finds the
+        // world's uniforms is wrong at dusk rather than wrong always.
+        uHorizon: { value: new Color(0xf2d6b8) } as IUniform<Color>,
+        // The staff is a guide the eye follows, not furniture. 0.62 in ink
+        // made it the highest-contrast thing in the frame; the pitch axis
+        // still has to be countable, so what pays for the drop is the
+        // horizon tint above and the much steeper distance fade in
+        // `ribbonFade` — the lines are now at their strongest exactly where
+        // the player is looking and nowhere else.
+        uOpacity: { value: LINE_OPACITY },
+        uBarOpacity: { value: BAR_OPACITY },
+        uLineTint: { value: LINE_HORIZON_TINT },
       },
       vertexShader: STAFF_VERTEX,
       fragmentShader: STAFF_FRAGMENT,
@@ -297,6 +411,19 @@ export class SongNotes {
     this.staff.frustumCulled = false;
     this.staff.renderOrder = 8;
     this.staff.name = 'song-staff';
+    // The staff is the first thing in this group to draw, which makes its
+    // hook the cheapest place to pick up the two things the apparatus needs
+    // from outside and is not handed: the scene's shared sky colour, and the
+    // camera the spacing is judged against.
+    this.staff.onBeforeRender = (_renderer, scene, camera) => {
+      if (!this.horizonSought) {
+        this.horizonSought = true;
+        this.adoptHorizon(scene);
+      }
+      if ((camera as PerspectiveCamera).isPerspectiveCamera) {
+        this.camera = camera as PerspectiveCamera;
+      }
+    };
     this.group.add(this.staff);
 
     // --- the glyphs -----------------------------------------------------
@@ -442,6 +569,11 @@ export class SongNotes {
   setActive(active: boolean): void {
     this.group.visible = active;
     if (!active) this.live.clear();
+    // A busk can begin before any of the world's chunks have been built, so
+    // the search for the shared sky colour is retried at the start of each
+    // one rather than made a constructor-time question with one answer.
+    if (active) this.horizonSought = false;
+    this.lastNowMs = Number.NaN;
   }
 
   get active(): boolean {
@@ -455,6 +587,10 @@ export class SongNotes {
    * game feel "off" without anyone being able to say why.
    */
   update(nowMs: number): void {
+    this.frameDt = Number.isFinite(this.lastNowMs)
+      ? Math.max(0, Math.min(0.25, (nowMs - this.lastNowMs) / 1000))
+      : 0;
+    this.lastNowMs = nowMs;
     this.nowMs = nowMs;
     if (!this.group.visible) return;
 
@@ -506,13 +642,22 @@ export class SongNotes {
     const pale = this.aPale.array as Float32Array;
 
     let i = 0;
+    // The head of the note in front, in the screen-space metric `projectHead`
+    // works in. `live` is in beat order, so "in front" is simply the previous
+    // one round this loop, and only the note further from the barline ever
+    // gives ground.
+    let haveAhead = false;
+
     for (const note of this.live.values()) {
       if (i >= MAX_GLYPHS) break;
 
       const progress = 1 - (note.hitTimeMs - nowMs) / TRAVEL_TIME_MS;
-      this.pointAt(aheadAt(progress), this.scratch);
-
       const step = note.step ?? 6;
+      const nominal = aheadAt(progress);
+      const wanted = haveAhead ? this.spacingPush(nominal, step) : 0;
+      note.push += (wanted - note.push) * (1 - Math.exp(-this.frameDt / SPACING_SETTLE_S));
+      this.pointAt(nominal + note.push, this.scratch);
+
       let y = this.scratch.y + STEP_ZERO_Y + step * STEP_M;
 
       let a = 1;
@@ -553,6 +698,11 @@ export class SongNotes {
       alpha[i] = clamp(a, 0, 1);
       pale[i] = paleness;
       i++;
+
+      // Measured at the head's own size, not at `scaleMul`: a struck note
+      // blooms to nearly twice its width on its way out, and letting that
+      // shove the next note down the road would turn every hit into a lurch.
+      haveAhead = this.projectHead(this.scratch.x, y, this.scratch.z, this.placedHead);
     }
 
     // Everything past the live notes is collapsed rather than left holding
@@ -626,6 +776,112 @@ export class SongNotes {
     this.sparkSize.needsUpdate = true;
     this.sparkLife.needsUpdate = true;
     this.sparkKind.needsUpdate = true;
+  }
+
+  /**
+   * How far back along the lane this note has to sit to clear the one in
+   * front of it.
+   *
+   * Notation is spaced by *time* and read in *space*, and down a road seen
+   * almost end-on those two come apart badly: two quavers a fifth of a second
+   * apart are half a metre apart in the world and a third of a note head
+   * apart on screen, so their heads merge and their letters overlap. A player
+   * cannot read a pitch off a blob. So the further note gives ground until
+   * the pair separates.
+   *
+   * Back and not forward. Forward would put a note over the barline before
+   * its beat, which is a lie about the one thing this apparatus exists to
+   * tell the truth about. Backward only makes a note appear to travel a
+   * little faster for a moment, and the push tapers to nothing over the last
+   * metre so the strike itself always happens exactly where the mark is.
+   */
+  private spacingPush(nominal: number, step: number): number {
+    if (!this.camera) return 0;
+    // Nothing may be pushed past the end of the drawn staff, and nothing may
+    // be pushed at all near the barline.
+    const room = Math.min(SPACING_MAX_PUSH_M, SPAWN_AHEAD_M + 0.4 - nominal);
+    const limit = room * smoothstep(HIT_AHEAD_M + 0.1, HIT_AHEAD_M + 1.0, nominal);
+    if (limit <= 0.01) return 0;
+
+    let best = 0;
+    let bestSeparation = this.separationAt(nominal, step);
+    for (let n = 1; n <= SPACING_STEPS && bestSeparation < SPACING_MIN_HEADS; n++) {
+      const push = (limit * n) / SPACING_STEPS;
+      const separation = this.separationAt(nominal + push, step);
+      // Keep the best rather than the last. Pushing back usually separates,
+      // but the lane bends and the staff climbs, and on a hard bend a note
+      // can pass *behind* the one in front on its way out; taking the best
+      // candidate means the search cannot make a frame worse than it found it.
+      if (separation <= bestSeparation) continue;
+      bestSeparation = separation;
+      best = push;
+    }
+    return best;
+  }
+
+  /** Centre-to-centre distance to the head in front, in head widths. */
+  private separationAt(ahead: number, step: number): number {
+    this.pointAt(ahead, this.scratchSpacing);
+    const y = this.scratchSpacing.y + STEP_ZERO_Y + step * STEP_M;
+    const on = this.projectHead(
+      this.scratchSpacing.x,
+      y,
+      this.scratchSpacing.z,
+      this.candidateHead,
+    );
+    if (!on) return Infinity;
+    const du = this.candidateHead.u - this.placedHead.u;
+    const dv = this.candidateHead.v - this.placedHead.v;
+    return Math.hypot(du, dv) / Math.max(this.candidateHead.r + this.placedHead.r, 1e-4);
+  }
+
+  /**
+   * Where a note head lands on the image plane, and how big it is there.
+   *
+   * The plane is at unit depth in view space, which is the one screen metric
+   * that needs no projection matrix and no viewport: dividing view x and y by
+   * depth gives a space whose two axes have the *same* scale in pixels
+   * whatever the aspect, because a perspective camera's horizontal half angle
+   * is its vertical one times the aspect and the frame is wider by exactly
+   * that factor. Comparing a distance in this space against a head's own
+   * half-width in it therefore answers "how many head widths apart on screen"
+   * on a phone and a desktop alike.
+   */
+  private projectHead(x: number, y: number, z: number, out: ScreenHead): boolean {
+    const camera = this.camera;
+    if (!camera) return false;
+    this.scratchView.set(x, y, z).applyMatrix4(camera.matrixWorldInverse);
+    const depth = -this.scratchView.z;
+    if (depth < 0.05) return false;
+    out.u = this.scratchView.x / depth;
+    out.v = this.scratchView.y / depth;
+    out.r = HEAD_HALF_WIDTH_M / depth;
+    return true;
+  }
+
+  /**
+   * Take the scene's own horizon colour, by reference.
+   *
+   * The staff has to be lit by the same sky as everything else — one lighting
+   * model, no exceptions — and a copy would be a second one, wrong by a whole
+   * time of day within a minute of walking. `createPainterlyMaterial` marks
+   * every surface it builds and hands them all the *same* uniform object, so
+   * finding any one of them and binding to what it is already reading keeps
+   * the staff on the world's clock for the cost of one traversal per busk.
+   */
+  private adoptHorizon(scene: Object3D): void {
+    let found: IUniform<Color> | undefined;
+    scene.traverse((object) => {
+      if (found) return;
+      const material = (object as Mesh).material;
+      const candidates = Array.isArray(material) ? material : [material];
+      for (const candidate of candidates) {
+        if (!candidate?.userData?.painterly) continue;
+        const uniform = (candidate as ShaderMaterial).uniforms?.uHorizonColor;
+        if (uniform) found = uniform as IUniform<Color>;
+      }
+    });
+    if (found) this.staffMaterial.uniforms.uHorizon = found;
   }
 
   /** World point `ahead` metres along the road from the anchor. */
@@ -707,12 +963,13 @@ export class SongNotes {
     const high = STEP_ZERO_Y + (LINE_STEPS[LINE_STEPS.length - 1] + 0.35) * STEP_M;
     const tangentX = Math.sin(this.heading) * right;
     const tangentZ = Math.cos(this.heading) * right;
-    v = pushVertex(position, fade, v, a.x - tangentX, a.y + low, a.z - tangentZ, 1);
-    v = pushVertex(position, fade, v, a.x + tangentX, a.y + low, a.z + tangentZ, 1);
-    v = pushVertex(position, fade, v, a.x + tangentX, a.y + high, a.z + tangentZ, 1);
-    v = pushVertex(position, fade, v, a.x - tangentX, a.y + low, a.z - tangentZ, 1);
-    v = pushVertex(position, fade, v, a.x + tangentX, a.y + high, a.z + tangentZ, 1);
-    pushVertex(position, fade, v, a.x - tangentX, a.y + high, a.z - tangentZ, 1);
+    const mark = BARLINE_FADE;
+    v = pushVertex(position, fade, v, a.x - tangentX, a.y + low, a.z - tangentZ, mark);
+    v = pushVertex(position, fade, v, a.x + tangentX, a.y + low, a.z + tangentZ, mark);
+    v = pushVertex(position, fade, v, a.x + tangentX, a.y + high, a.z + tangentZ, mark);
+    v = pushVertex(position, fade, v, a.x - tangentX, a.y + low, a.z - tangentZ, mark);
+    v = pushVertex(position, fade, v, a.x + tangentX, a.y + high, a.z + tangentZ, mark);
+    pushVertex(position, fade, v, a.x - tangentX, a.y + high, a.z - tangentZ, mark);
 
     this.staffPosition.needsUpdate = true;
     this.staffFade.needsUpdate = true;
@@ -735,6 +992,13 @@ function glyphWorldSize(): number {
 
 const HEAD_RX = 28;
 const HEAD_RY = 21;
+
+/**
+ * Half the width of a note head in metres — what the screen-space spacing
+ * clamp measures distances in. Derived from the atlas rather than written
+ * down, so redrawing the head cannot silently move the threshold.
+ */
+const HEAD_HALF_WIDTH_M = (glyphWorldSize() * HEAD_RX) / ATLAS_CELL_PX;
 
 /**
  * Draw every glyph the songbook can ask for, once, onto one canvas.
@@ -850,6 +1114,7 @@ function makeLive(beat: SongBeat): LiveNote {
     cell: step === null ? REST_CELL : cellFor(step),
     state: 'travelling',
     changedMs: 0,
+    push: 0,
   };
 }
 
@@ -895,9 +1160,26 @@ function aheadAt(progress: number): number {
   return HIT_AHEAD_M - PAST_DRIFT_M * (1 - Math.exp(-(progress - 1) * 4));
 }
 
-/** Strongest where the notes are struck, dissolving into the distance. */
+/**
+ * Strongest where the notes are struck, dissolving into the distance.
+ *
+ * `t` runs from the tail behind the bard to the far end of the staff, and the
+ * barline stands at about 0.18 of it, so "full at 0.2, dissolving from there"
+ * puts the strongest part of the line exactly under the mark that says
+ * *here*. That is the whole shape of this curve: the eye is asked to read one
+ * place, and the further a stretch of line is from that place the less of it
+ * there is to look at.
+ *
+ * It does not fall to nothing, because the far half of the staff is where the
+ * notes the player has not yet played are travelling and pitch is unreadable
+ * with no line under the head. A quarter of the strength is enough to say
+ * which line a note is riding without the far end ruling across the treeline.
+ */
 function ribbonFade(t: number): number {
-  return smoothstep(1, 0.55, t) * smoothstep(0, 0.06, t);
+  const near = smoothstep(0, 0.06, t);
+  const end = smoothstep(1, 0.9, t);
+  const away = 0.26 + 0.74 * smoothstep(0.92, 0.2, t);
+  return near * end * away;
 }
 
 function smoothstep(edge0: number, edge1: number, x: number): number {
@@ -926,13 +1208,19 @@ void main() {
 
 const STAFF_FRAGMENT = /* glsl */ `
 uniform vec3 uColor;
+uniform vec3 uHorizon;
 uniform float uOpacity;
+uniform float uBarOpacity;
+uniform float uLineTint;
 varying float vFade;
 
 void main() {
-  float a = vFade * uOpacity;
+  float bar = step(1.5, vFade);
+  float fade = min(vFade, 1.0);
+  vec3 line = mix(uColor, uHorizon, uLineTint);
+  float a = fade * mix(uOpacity, uBarOpacity, bar);
   if (a < 0.002) discard;
-  gl_FragColor = vec4(uColor, a);
+  gl_FragColor = vec4(mix(line, uColor, bar), a);
 }
 `;
 

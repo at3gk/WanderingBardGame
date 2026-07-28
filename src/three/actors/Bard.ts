@@ -958,14 +958,28 @@ export class Bard {
     // what the shorter skirt raised its top by, which pins the collar where it
     // sits standing and lifts only the hem. A cloak gathered at the waist is
     // what happens to a cloak when its owner sits on it anyway.
-    const skirt = 1 - sitAmount * 0.5;
-    this.cloak.scale.y = skirt;
+    //
+    // The radius comes in with it. Scaling only the height doubles the flare
+    // per unit of drop, and a cone that keeps its full hem radius over half
+    // its length is not a cloak, it is a lampshade — which is what the first
+    // attempt at this looked like.
+    const skirt = 1 - sitAmount * 0.52;
+    const gather = 1 - sitAmount * 0.16;
+    this.cloak.scale.set(gather, skirt, gather);
     this.cloak.position.y = SHOULDER_Y - 0.4 + CLOAK_TOP * (1 - skirt);
 
     // --- head ----------------------------------------------------------
     // Counter-rotation is deliberately *not* complete: a head that cancels
     // the shoulders exactly looks gyroscopic. Two-thirds reads as human.
-    this.headPivot.rotation.y = -this.torso.rotation.y * 0.66;
+    // Seated, the head also turns. Every camera in the game sits behind the
+    // bard and off to his right — walking, busking and resting all do, see
+    // `CameraRig`'s `side` — so a head left pointing straight down the
+    // heading presents the top of a hat brim and nothing else, and a hat brim
+    // seen from above is a disc. Turning it a quarter round toward that
+    // camera brings the nose, the jaw and the lit side of the face into the
+    // frame while he is still, by any reasonable reading, looking at his own
+    // hands and the fire beyond them.
+    this.headPivot.rotation.y = -this.torso.rotation.y * 0.66 + sitAmount * 0.52;
     this.headPivot.rotation.x =
       -this.torso.rotation.x * 0.5 +
       Math.sin(bobPhase + 0.6) * 0.02 * walkAmount +
@@ -1006,9 +1020,22 @@ export class Bard {
     // a swinging shoulder traces a shallow arc inward at the front of the
     // step and outward at the back.
     const armCross = Math.sin(armPhase) * 0.09 * walkAmount;
+    // Seated, the arms go *back*, not forward, and out rather than in.
+    //
+    // Forward was the obvious reading of "hands in the lap" and it was wrong
+    // twice over. There are no elbows on this figure, so an arm is a rigid
+    // forty-three centimetres; the seated torso already leans its shoulders
+    // out over the knees, so an arm swung forward from there does not reach
+    // the lap, it dangles past the shins. And the resting camera looks in from
+    // the bard's right, so those two dangling arms hung directly across the
+    // instrument — the lute was posed correctly, projected a hundred and fifty
+    // pixels wide, and was invisible anyway because an arm was drawn over the
+    // middle of it. Swung back and spread, the hands land beside the hips on
+    // the log, which is both where a sitting person puts them and clear of
+    // everything in the lap.
     this.leftArm.rotation.x =
-      Math.sin(armPhase + Math.PI) * armSwing * slung - carryPose * playAmount - 0.1 - lap * 0.62;
-    this.leftArm.rotation.z = 0.11 + playAmount * 0.32 - armCross + lap * 0.3;
+      Math.sin(armPhase + Math.PI) * armSwing * slung - carryPose * playAmount - 0.1 + lap * 0.45;
+    this.leftArm.rotation.z = 0.11 + playAmount * 0.32 - armCross - lap * 0.15;
 
     // The right hand strums. The kick from `pluck` is what makes a note
     // land visually at the same instant it lands audibly.
@@ -1017,10 +1044,10 @@ export class Bard {
       Math.sin(armPhase) * armSwing * slung -
       carryPose * playAmount -
       this.strum * 0.5 +
-      strumMotion -
-      lap * 0.58;
+      strumMotion +
+      lap * 0.45;
     this.rightArm.rotation.z =
-      -0.11 - playAmount * 0.28 - this.strum * 0.16 - armCross - lap * 0.26;
+      -0.11 - playAmount * 0.28 - this.strum * 0.16 - armCross + lap * 0.15;
 
     // --- instrument ----------------------------------------------------
     // Two poses, blended rather than switched. Slung it rides across the
@@ -1054,9 +1081,9 @@ export class Bard {
     // toward them, and that lean is most of what says "resting" rather than
     // "balanced there".
     this.instrumentPivot.position.set(
-      playAmount * 0.02 - slung * 0.03 - lap * 0.06,
-      SHOULDER_Y - (playAmount * 0.28 + slung * 0.12) - lap * 0.27,
-      playAmount * 0.3 - slung * 0.285,
+      playAmount * 0.02 - slung * 0.03 + lap * 0.045,
+      SHOULDER_Y - (playAmount * 0.28 + slung * 0.12) - lap * 0.219,
+      playAmount * 0.3 - slung * 0.285 + lap * 0.187,
     );
     // Thirty degrees across the back, not forty. The steeper tilt threw the
     // bowl clear of the cloak's outline with daylight showing between the
@@ -1066,16 +1093,32 @@ export class Bard {
     // worth seeing. The x tilt leans the foot further off the back than the
     // neck, so the bowl stands proud of the flaring cloak while the pegbox
     // stays in near the shoulder.
-    // The lap's z is nearly a quarter turn, which lays the length across the
-    // body with the neck a little high on the right — the same hand that
-    // holds the neck when playing still holds it here. The x term rolls the
-    // soundboard up toward the bard's chest, the y term angles the neck out
-    // past the knee so the shape crosses the figure rather than hiding
-    // behind it.
+    // In the lap the three angles are solved rather than dialled, because the
+    // thing that decides whether a lute reads as a lute is the length of its
+    // neck on screen, and that is a question about the camera. The resting
+    // camera stands behind the bard and off to his right, looking back along
+    // roughly a hundred and twenty degrees from his heading. A neck laid
+    // straight out to the right — which is what a quarter turn of roll alone
+    // gives, and what this used to do — points within thirty degrees of that
+    // view axis and collapses to a brown blob the size of a fist. So the neck
+    // is aimed forward and right instead, twenty-two degrees off his heading
+    // and rising twelve, which is square to the camera and lays the whole
+    // length of the instrument across the frame.
+    //
+    // The shallow rise is the part that took finding. Steeper, and the neck
+    // goes up behind the near edge of the cloak — this camera is on that side,
+    // and flooding the instrument with a flat colour to find out where it had
+    // gone showed the whole neck swallowed. Flat, and it runs behind the near
+    // knee instead. Twelve degrees threads between the two: it starts on the
+    // far thigh, passes over the near one, and ends beyond both of them out in
+    // the pool of firelight on the ground, which is the one place on this side
+    // of the frame where the shape has something to be seen against. These
+    // three numbers are the Euler angles that put it there once the seated
+    // torso's own forward lean is paid back.
     this.instrumentPivot.rotation.set(
-      this.strum * 0.07 + slung * 0.15 + playAmount * 0.18 - lap * 0.45,
-      playAmount * -0.5 + slung * 0.08,
-      -slung * 0.52 - playAmount * 0.62 - lap * 1.46,
+      this.strum * 0.07 + slung * 0.15 + playAmount * 0.18 + lap * 0.54,
+      playAmount * -0.5 + slung * 0.08 - lap * 0.889,
+      -slung * 0.52 - playAmount * 0.62 - lap * 0.62,
     );
   }
 

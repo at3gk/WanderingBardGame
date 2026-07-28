@@ -86,8 +86,37 @@ interface MoodFraming {
  * forward line rather than beside it: the offset in tangent space is
  * `side * lead / (distance * (distance + lead))`, divided by `tan(fov/2) *
  * aspect` to land in NDC. So shortening the lead shrinks it and it has to be
- * paid back in side. Every framing here is aimed at roughly 0.3 of a half
- * frame — clearly out of the middle, nowhere near the edge.
+ * paid back in side.
+ *
+ * That arithmetic is only half the story, though, and the missing half is
+ * what `side` used to get wrong. `side` does not slide the subject across a
+ * fixed frame; it swings the *camera* around him, and the road swings with
+ * it. The road's vanishing point lands at `-atan(side / (distance + lead))`
+ * from the camera's axis and the subject at `atan(side / distance)` minus the
+ * same term — opposite sides of centre, and the vanishing point moves nearly
+ * three times as fast. Walking's old `side` of 2.4 put the subject at 0.63 of
+ * the frame and the vanishing point at 0.23: the strongest leading line in
+ * the picture ran from the subject to the far edge, pointing away from him.
+ * On a portrait phone it was worse than lopsided — the vanishing point was
+ * off the left edge entirely, so the road simply left the frame and the whole
+ * left half was empty rut.
+ *
+ * So the walking and vista framings now aim at about half the old offset.
+ * That puts the subject a little right of centre with the road converging
+ * inside the frame and sweeping up past his shoulder, which is the leading
+ * line doing its job. It also grows him: the true camera-to-subject range
+ * falls with `side`, so walking reads him at 0.41 of frame height rather than
+ * 0.37 for nothing.
+ *
+ * Note what is *not* done here. The alternative was to flip the sign of
+ * `side` with the road's curvature so the subject always sits on the inside
+ * of the bend. It composes beautifully and it cannot be had: `WorldStreamer`
+ * places every skyline landmark by scoring candidates against the camera's
+ * axis, and its `LANDMARK_VIEW_BIAS` is one constant precisely because that
+ * axis sits at a fixed angle to the road on every stretch of every road. A
+ * `side` that changed sign would make the bias indeterminate and landmarks
+ * would drift to whichever edge the last bend chose, with nothing failing
+ * loudly.
  */
 const FRAMINGS: Record<CameraMood, MoodFraming> = {
   // Close enough that the bard is unmistakably the subject, high enough to
@@ -99,7 +128,10 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     height: 2.05,
     lookHeight: 1.15,
     lead: 2.4,
-    side: 2.4,
+    // Was 2.4. `WorldStreamer.LANDMARK_VIEW_BIAS` is measured from this
+    // number and this framing — it is the one the player is in while a
+    // landmark is being approached — so the two move together or not at all.
+    side: 1.2,
     fov: 42,
     positionSmoothing: 0.55,
     targetSmoothing: 0.85,
@@ -147,7 +179,11 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     // chest here or the long lead drops him onto the bottom edge of the frame.
     lookHeight: 1.6,
     lead: 6.0,
-    side: 3.2,
+    // Was 3.2. A little more than walking's, because a vista is the one shot
+    // where the figure is meant to be small in the land and so has to be
+    // firmly out of the middle to be found at all; the long lead dilutes it
+    // anyway, so 1.5 here reads about as far off-centre as 1.2 does walking.
+    side: 1.5,
     fov: 38,
     positionSmoothing: 1.2,
     targetSmoothing: 1.4,

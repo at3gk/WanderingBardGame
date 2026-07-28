@@ -205,20 +205,47 @@ export class Traveller {
       const head = add(boxPart(0.185, 0.19, 0.18, 0.86), crown, 0, 0.67, 0.01);
       const face = add(boxPart(0.1, 0.09, 0.05, 0.95), skin, 0, 0.73, 0.085);
       this.headPivot.add(head, face);
-      this.body.add(stone, torso, lap, neck, this.headPivot);
+      // The staff. Everything else about this figure is horizontal — a low
+      // wide triangle is the whole idea — and a shape made only of horizontals
+      // has nothing that reads at distance except its width, which is the one
+      // measurement that changes with the camera. One long vertical leaning
+      // past the head fixes that, and it costs twelve triangles. It reaches a
+      // third of her own height above her: level with the head it would only
+      // have thickened the head, which is the mistake this is the fix for.
+      // It leans *in*, over her shoulder, not out. Tilted the other way it
+      // stood clear of the figure and read as a fence post that happened to be
+      // behind an old woman rather than as something she is holding.
+      const staff = add(boxPart(0.05, 1.06, 0.05, 0.84), carried, 0.33, 0, 0.05);
+      staff.rotation.z = 0.19;
+      this.body.add(stone, torso, lap, neck, staff, this.headPivot);
       // Leaning forward toward whatever she is listening to.
       this.body.rotation.x = 0.12;
     } else {
-      const tall = kind === 'child' ? 0.66 : 1;
+      // The child is six tenths of an adult, not two thirds. At 0.66 the head
+      // came out at three quarters of adult height, and three quarters of a
+      // grown person standing next to a grown person is a short adult. The
+      // head does not scale with this — it is set flat below — so shrinking
+      // the body is also what makes the head read as a child's head.
+      const tall = kind === 'child' ? 0.6 : 1;
       const hip = 0.42 * tall;
       const shoulder = 0.82 * tall;
-      const legGeo = boxPart(0.11 * tall, hip, 0.12 * tall, 0.85);
+      // Narrower legs, set further apart. They used to be two 0.11 boxes four
+      // centimetres apart, which at any distance the camera holds closes up
+      // into one block, and a figure with one block for a base has no base:
+      // the whole thing reads as a slab standing on the ground. Eight and a
+      // half centimetres of daylight between them is what buys the legs back.
+      const legGeo = boxPart(0.085 * tall, hip, 0.115 * tall, 0.9);
       this.body.add(
-        add(legGeo, under, -0.075 * tall, 0, 0),
-        add(legGeo, under, 0.075 * tall, 0, 0),
+        add(legGeo, under, -0.088 * tall, 0, 0),
+        add(legGeo, under, 0.088 * tall, 0, 0),
       );
+      // Narrow at the waist and broad at the shoulders, and narrower at the
+      // waist than the legs are wide. That last part is the point: it puts a
+      // notch in the outline at the hip, which is the only thing that tells
+      // you where a torso ends and a pair of legs begins once the figure is
+      // forty pixels tall and every part of it is the same value.
       const torso = add(
-        boxPart(0.25 * tall, shoulder - hip + 0.08 * tall, 0.17 * tall, 1.18, 1.05),
+        boxPart(0.19 * tall, shoulder - hip + 0.1 * tall, 0.15 * tall, 1.52, 1.24),
         cloth,
         0,
         hip,
@@ -252,12 +279,35 @@ export class Traveller {
       this.body.add(this.headPivot);
 
       if (kind === 'walker') {
-        // A tall pack standing above the shoulders. It is the only thing
-        // that breaks this outline, so it is deliberately oversized.
-        const pack = add(boxPart(0.28, 0.46, 0.2, 0.86), carried, 0, hip + 0.1, -0.16);
+        // A tall pack, and a bedroll lashed across the top of it that stands
+        // clear above the head.
+        //
+        // The pack alone was the previous answer and it did nothing, for two
+        // reasons that only show up in a frame. It topped out level with the
+        // head rather than above it, so it added width to the head instead of
+        // height to the figure; and it sits behind the shoulders, while every
+        // moment in the game that puts a traveller on screen has them turned
+        // to face the bard — so the camera, which is behind the bard, was
+        // looking at the one side of this figure the pack cannot be seen from.
+        // A roll standing proud of the head reads from every side there is.
+        const pack = add(boxPart(0.26, 0.5, 0.19, 0.9), carried, 0, hip + 0.14, -0.15);
         pack.rotation.x = -0.06;
-        const roll = add(boxPart(0.3, 0.11, 0.16, 1), under, 0, hip + 0.56, -0.17);
+        const roll = add(boxPart(0.36, 0.13, 0.15, 1), under, 0, hip + 0.72, -0.12);
+        roll.rotation.z = 0.13;
         this.body.add(pack, roll);
+      }
+
+      if (kind === 'child') {
+        // A satchel slung across, hanging well outside the body box, and the
+        // strap that explains it. This is the only part of the child that
+        // leaves the silhouette, and it is deliberately too big for the
+        // wearer: a bag the right size for a child is, at this distance, a
+        // slightly wider hip.
+        const satchel = add(boxPart(0.17, 0.15, 0.11, 0.92), carried, 0.155, hip - 0.02, 0.03);
+        satchel.rotation.z = -0.1;
+        const strap = add(boxPart(0.04, 0.42, 0.025, 1), crown, 0.02, shoulder + 0.02, 0.05);
+        strap.rotation.z = 0.36;
+        this.body.add(satchel, strap);
       }
 
       if (kind === 'pedlar') {
@@ -283,10 +333,25 @@ export class Traveller {
           disc.castShadow = true;
           cart.add(disc);
         }
-        // The shaft the pedlar holds, running forward to the near hand.
-        const shaft = add(boxPart(0.045, 0.62, 0.045, 1), under, -0.19, 0.36, 0.26);
-        shaft.rotation.x = Math.PI / 2 - 0.3;
-        cart.add(shaft);
+        // Two shafts and the cross grip between them, running forward out of
+        // the tray to the pedlar's hand.
+        //
+        // One shaft was there before and it was tucked inside the cart's own
+        // footprint, where it did nothing an outline could see. Handles are
+        // the only part of a barrow that leaves the box the barrow is, and at
+        // the size these figures occupy the outline is the object: a tray on
+        // wheels beside a man is a crate, a tray on wheels with two poles
+        // running forward to a grip is unmistakably being pulled.
+        const shaftGeo = boxPart(0.04, 0.5, 0.04, 1);
+        for (const side of [-1, 1]) {
+          const shaft = add(shaftGeo, under, side * 0.15, 0.38, 0.22);
+          shaft.rotation.x = Math.PI / 2 - 0.22;
+          cart.add(shaft);
+        }
+        cart.add(add(boxPart(0.34, 0.04, 0.045, 1), under, 0, 0.49, 0.71));
+        // The cart toes in toward its owner, which brings the grip to his hand
+        // instead of leaving it pointing off into the field.
+        cart.rotation.y = -0.26;
         this.body.add(cart);
       }
     }

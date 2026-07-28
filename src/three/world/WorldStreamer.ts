@@ -604,11 +604,11 @@ const LANDMARK_APPROACH_M = 220;
 /**
  * Where the camera is actually pointing, relative to the lane.
  *
- * Measured, not derived, and it is the single most surprising number in this
- * file: the camera's axis sits nineteen degrees to the *left* of the road's
- * heading, and does so on every stretch of every road — because `CameraRig`
- * stands the camera a couple of metres to one side of the bard and aims it
- * at a point that leads him, and neither of those flips sign with the bend.
+ * It tracks the rig, and it is the single most surprising number in this
+ * file: the camera's axis sits to the *left* of the road's heading, and does
+ * so on every stretch of every road — because `CameraRig` stands the camera
+ * to one side of the bard and aims it at a point that leads him, and neither
+ * of those flips sign with the bend.
  *
  * The consequence is that the frame is not centred on the lane. Of the
  * thirty-four degrees the camera shows either side of its axis, the road
@@ -617,8 +617,30 @@ const LANDMARK_APPROACH_M = 220;
  * to answer — is the country beside the road. So landmarks go on the left,
  * every time. That reads as a rule with no reason behind it right up until
  * you put one on the right and watch it never once appear in a frame.
+ *
+ * Being a property of the rig, it has to be retuned whenever the rig's
+ * walking framing changes — that is the framing the player is in on the
+ * approach, and `LANDMARK_APPROACH_M` below is where the test stands. The
+ * rig's own arithmetic puts its axis at `-atan(side / (distance + lead))`,
+ * which is -0.186 at walking's current 1.2 / 4.0 / 2.4 and was -0.359 at the
+ * old side of 2.4.
+ *
+ * This sits a little to the left of that axis rather than on it, and the
+ * reason is worth writing down because the number will not survive being
+ * "corrected" to the formula. The search below is coarse — two sides, four
+ * metre steps, nine metre steps along — so it does not return the centre of
+ * the admitted window, it returns whichever of a handful of candidate hills
+ * scores highest inside it. Move the window by a few hundredths and nothing
+ * happens; move it far enough to admit or drop a candidate and the landmark
+ * jumps across the frame. Measured on shots 03 and 10, anything from -0.24 to
+ * -0.33 picks the same sites and puts them on the skyline near the road's
+ * convergence; -0.19 picks different ones and pushes them to the left edge.
+ * So this is the middle of the plateau, not the answer to a sum.
+ *
+ * Nothing fails loudly when it drifts out of step — the landmarks simply stop
+ * appearing in frames — so it is checked by shooting the approach.
  */
-const LANDMARK_VIEW_BIAS = -0.33;
+const LANDMARK_VIEW_BIAS = -0.26;
 /** How far off that axis a landmark may sit, seen from the approach. */
 const LANDMARK_MAX_OFF_AXIS = 0.28;
 /** Distinct base shapes per landmark kind. */
