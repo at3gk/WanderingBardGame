@@ -215,11 +215,21 @@ export function boxPart(
  * cloak reads as a robe and, more importantly, swallows the legs — and the
  * legs are the only part of the figure that says "walking" at a glance.
  */
+/**
+ * Where the cloak's shoulder line sits above the mesh's own origin.
+ *
+ * Named because the sitting pose has to scale the skirt about that line and
+ * cannot do it by eye: shortening the skirt moves the collar unless the mesh
+ * is slid down by the same amount, and the collar riding up over the head is
+ * the exact failure the shortening exists to fix.
+ */
+const CLOAK_TOP = 0.46;
+
 function cloakGeometry(): BufferGeometry {
   const panels = 11;
   const topRadius = 0.155;
   const bottomRadius = 0.33;
-  const top = 0.46;
+  const top = CLOAK_TOP;
   // Six centimetres shorter than it was. The legs are the only part of the
   // figure that says "walking" at a glance and the old hem left them two
   // boot-stumps poking out from under a bell.
@@ -932,15 +942,25 @@ export class Bard {
     // Gathered up when he sits.
     //
     // This is the single thing that decides whether the seated pose reads at
-    // all, and it took a frame to see it. The cloak's hem falls to mid-thigh,
-    // which standing is exactly right; seated, the hips drop under it and the
-    // hem lands level with the seat — so from behind, which is where the
-    // resting camera is, a sitting bard and a standing bard are the same
-    // cone. Every other part of the pose was correct and none of it was
-    // visible. Lifting the hem clear of the hips puts the seat, the thighs
-    // and the knees back in the silhouette, and a cloak bunched at the waist
-    // is what happens to a cloak when its owner sits on it anyway.
-    this.cloak.position.y = SHOULDER_Y - 0.4 + sitAmount * 0.17;
+    // all. The cloak's hem falls to mid-thigh, which standing is exactly
+    // right; seated, the hips drop under it and the hem lands level with the
+    // seat — so from behind, which is where the resting camera is, a sitting
+    // bard and a standing bard are the same cone.
+    //
+    // Sliding the whole mesh up was the obvious fix and it was the wrong one.
+    // It moved the collar too, and the collar is already at the jaw: seventeen
+    // centimetres higher it closed over the back of the head and took the
+    // hair, the nape and the neck with it, which is where "a red cone with a
+    // hat and no head" came from. The hem meanwhile only rose by the same
+    // seventeen centimetres and still swallowed the lap.
+    //
+    // So the skirt is *shortened* instead, and the mesh slid down by exactly
+    // what the shorter skirt raised its top by, which pins the collar where it
+    // sits standing and lifts only the hem. A cloak gathered at the waist is
+    // what happens to a cloak when its owner sits on it anyway.
+    const skirt = 1 - sitAmount * 0.5;
+    this.cloak.scale.y = skirt;
+    this.cloak.position.y = SHOULDER_Y - 0.4 + CLOAK_TOP * (1 - skirt);
 
     // --- head ----------------------------------------------------------
     // Counter-rotation is deliberately *not* complete: a head that cancels

@@ -51,13 +51,25 @@ for (const shot of SHOTS) {
     }
   });
 
-  await page.goto(BASE_URL, { waitUntil: 'load' });
+  // Navigation gets a long budget for the same reason the handle wait does:
+  // a cold SwiftShader start compiles every shader on the main thread and
+  // Playwright's 30 s default fires during it, throwing out of the loop
+  // rather than reporting a problem for the shot.
+  await page.goto(BASE_URL, { waitUntil: 'load', timeout: 90000 });
 
   // Wait for the debug handle rather than a fixed timeout: a fixed sleep is
   // either too short on a cold SwiftShader start (blank frame, false
   // "regression") or wastefully long on every other run.
   const ready = await page
-    .waitForFunction(() => window.bard?.pose !== undefined, null, { timeout: 20000 })
+    // Sixty seconds, not twenty. Under SwiftShader — no GPU, a software
+    // vertex pipeline, and a world that is currently a few hundred thousand
+    // triangles with per-vertex wind noise on most of them — first paint has
+    // been measured at twelve seconds at pixel ratio 1 and twenty-one at
+    // ratio 2. A twenty-second budget turned that into "the game never
+    // booted", which is indistinguishable from a real break and cost a round
+    // of chasing one. This is the harness being slow, not the game: the same
+    // build boots promptly on hardware with a GPU.
+    .waitForFunction(() => window.bard?.pose !== undefined, null, { timeout: 60000 })
     .then(() => true)
     .catch(() => false);
   if (!ready) {

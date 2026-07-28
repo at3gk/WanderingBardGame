@@ -125,18 +125,28 @@ const SHOULDER = 2.9;
  *
  * Past the verge a power curve takes over, which is what lets this stay
  * dense where the player looks and still reach the horizon.
+ *
+ * It has to be sorted, and it was not. When the carriageway was narrowed
+ * from 2.3 m to 1.7 m the two named offsets moved and the hand-placed ones
+ * around them did not, which left the list running 1.85, 1.70, 2.90, 3.55,
+ * 2.90 — two strips of ground folded back on themselves. A folded quad has a
+ * normal pointing anywhere at all, so each fold came out as a hairline of
+ * wrongly-lit ground running from the bard's feet to the vanishing point:
+ * dead straight, crossing most of the frame, and with no landform under it.
+ * Anything added here has to keep the order.
  */
 const NEAR_OFFSETS = [
   0,
   0.6,
   // the wheel ruts
   ROAD_HALF_WIDTH * 0.55,
-  1.85,
+  1.3,
   // the edge of the packed surface, and the worn shoulder beyond it
   ROAD_HALF_WIDTH,
-  2.9,
-  3.55,
+  2.1,
+  2.5,
   SHOULDER,
+  3.7,
   5.3,
   7.0,
   9.5,
