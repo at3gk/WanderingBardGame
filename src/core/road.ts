@@ -133,19 +133,46 @@ const CURVE_GAIN = 0.4;
 const HEADING_EPSILON_M = 0.5;
 
 // Landform. Three long bands at different orientations; see `hills`.
+/*
+ * Relief, retuned 2026-07-28 after a frame-by-frame critique found the land
+ * reading as a plate: no midground, nowhere for the eye to go, and a "vista"
+ * framing indistinguishable from an ordinary one.
+ *
+ * The obvious fix was rejected. The critique proposed 22 m of along-road
+ * amplitude at a 180 m wavelength, which is a peak gradient of 2*pi*22/180 —
+ * about 77%, a cliff rather than a country lane. An earlier attempt at
+ * 9 m / 165 m already reached 30% and was caught by the roughness test
+ * below before anyone saw it. Along-road amplitude is the one number here
+ * that has to stay modest, because the lane follows the landform and the
+ * player walks it.
+ *
+ * So the relief is bought *across* the road instead, where it costs the
+ * gradient almost nothing: a cross-road ridge only tilts the lane through
+ * the centreline's own drift (about 0.19 m of X per metre of Z), so 15 m of
+ * cross amplitude adds roughly 8% to the walk while putting a genuine ridge
+ * across the view. The diagonal term is raised with it — it is what stops
+ * the two axis-aligned bands reading as corduroy.
+ */
 const HILL_ALONG_M = 9;
 const HILL_ALONG_WAVELENGTH_M = 330;
-const HILL_ACROSS_M = 9;
-const HILL_ACROSS_WAVELENGTH_M = 190;
-const HILL_DIAGONAL_M = 4;
-const HILL_DIAGONAL_WAVELENGTH_M = 130;
+const HILL_ACROSS_M = 15;
+const HILL_ACROSS_WAVELENGTH_M = 205;
+const HILL_DIAGONAL_M = 5;
+const HILL_DIAGONAL_WAVELENGTH_M = 165;
 
 // Surface texture, deliberately an order of magnitude smaller than the
 // landform. This is the part the road corridor erases.
-const BUMP_A_M = 1.2;
-const BUMP_A_WAVELENGTH_M = 60;
-const BUMP_B_M = 0.8;
-const BUMP_B_WAVELENGTH_M = 37;
+// Raised with the landform above, and for the same reason. Taller ridges
+// with the same fine detail on them read as smooth modelled shapes rather
+// than as ground; the hummocks are what a hillside is actually made of at
+// the scale the camera sees. This is also the term the roughness test
+// below is really about — it asks whether the wild ground carries detail
+// the graded corridor does not, and raising the ridges alone had narrowed
+// that margin to almost nothing.
+const BUMP_A_M = 2.1;
+const BUMP_A_WAVELENGTH_M = 52;
+const BUMP_B_M = 1.4;
+const BUMP_B_WAVELENGTH_M = 31;
 
 /** Half-width of the flat carriageway plus its verges. */
 export const CORRIDOR_HALF_WIDTH_M = 4.5;

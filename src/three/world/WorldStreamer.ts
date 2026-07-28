@@ -894,9 +894,21 @@ export class WorldStreamer {
       // up at the bard's knee.
       this.scratchScale.set(scale, scale * randRange(rand, 0.85, 1.15), scale);
       const variant = variants === 1 ? 0 : Math.floor(rand() * variants);
+      const color = kind.colorOf(palette, rand);
+      // Tested last, after every draw this instance was going to make, so a
+      // clearing removes plants without moving the ones around it. Skipping
+      // earlier would leave the random stream short and reshuffle the whole
+      // chunk the moment a camp appeared.
+      //
+      // Only the kinds that cast shadows are cleared. That is not a
+      // coincidence dressed up as a rule: a thing big enough to be worth
+      // giving a shadow map is a thing big enough to stand in front of a
+      // campfire, and grass and flowers growing up to the stone ring are
+      // exactly what a camp in a meadow should look like.
+      if (kind.castShadow && this.inClearing(x, z)) continue;
       buckets[variant].push({
         matrix: new Matrix4().compose(this.scratchPos, this.scratchQuat, this.scratchScale),
-        color: kind.colorOf(palette, rand),
+        color,
       });
     }
 
@@ -987,6 +999,8 @@ export class WorldStreamer {
             ? 0.35 + rand() * 0.5
             : 0.3 + rand() * 0.7;
       const color = mixColor(canopyTint, 0xffffff, shade);
+      // Last, after every draw, for the reason given in `buildScatter`.
+      if (this.inClearing(x, z)) continue;
       const list = buckets.get(key);
       if (list) list.push({ matrix, color });
       else buckets.set(key, [{ matrix, color }]);

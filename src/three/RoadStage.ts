@@ -814,6 +814,13 @@ export class RoadStage implements Stage {
     });
     this.campfire.group.position.copy(anchor);
     this.scene.add(this.campfire.group);
+    // Clear the scrub off the camp. Centred on the *fire*, not the anchor —
+    // the layout's extent is measured from the fire and the fire sits six
+    // metres or so off the road point this group is placed at. The margin
+    // past that extent is what stops a shrub standing just outside the ring
+    // and still landing between the resting camera and the flame.
+    const { fire, extent } = this.campfire.layout;
+    this.world.addClearing(anchor.x + fire.x, anchor.z + fire.z, extent + 1.2);
     this.syncSubject();
 
     const coins = Math.floor(this.journey.coins);
@@ -830,6 +837,7 @@ export class RoadStage implements Stage {
     this.scene.remove(this.campfire.group);
     this.campfire.dispose();
     this.campfire = null;
+    this.world.clearClearings();
   }
 
   // --- idle --------------------------------------------------------------

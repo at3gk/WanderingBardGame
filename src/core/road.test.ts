@@ -521,7 +521,14 @@ describe('the road is the same road', () => {
   // one only asks whether it is the *same* road, and a deliberate change to
   // the generator is expected to update it in the same commit.
   //
-  // Updated 2026-07-28, and this is what that looks like in practice: the
+  // Updated twice on 2026-07-28. The second time: a frame-by-frame critique
+  // found the land reading as a plate with no midground, so the cross-road
+  // hills went from 9 m to 15 m and the surface hummocks roughly doubled.
+  // The along-road amplitude was deliberately NOT raised — see the note on
+  // the constants — and the roughness test above caught two attempts that
+  // did raise it before either reached a screenshot.
+  //
+  // The first time, and this is what that looks like in practice: the
   // 3D world went in and the land it was built on was too flat to see. The
   // corridor falloff came in from 30 m to 18 m and the cross-road hills
   // shortened from a 520 m wavelength to 190 m, so the ground now rises
@@ -542,17 +549,16 @@ describe('the road is the same road', () => {
     ]);
     expect(pinned.stops.map((s) => [s.s, s.kind, s.id, s.seed])).toEqual([
       [142.85020551178604, 'busk', '2026-07-28/busk/0', 3514572248],
-      [265.69037710572394, 'crossroads', '2026-07-28/crossroads/0', 2011306936],
+      [210, 'vista', '2026-07-28/vista/0', 1387528194],
+      [281.4769762288116, 'encounter', '2026-07-28/encounter/0', 1699331970],
       [366.0124420421198, 'busk', '2026-07-28/busk/1', 3531349067],
-      [455.91862007700763, 'encounter', '2026-07-28/encounter/0', 1699331970],
+      [494.9035118538423, 'encounter', '2026-07-28/encounter/1', 1716109813],
       [587.2728376183659, 'busk', '2026-07-28/busk/2', 3548126910],
-      [660, 'vista', '2026-07-28/vista/0', 1387528194],
-      [724.5253312206793, 'encounter', '2026-07-28/encounter/1', 1716109813],
+      [660, 'vista', '2026-07-28/vista/1', 1404306037],
+      [723.2728187798986, 'encounter', '2026-07-28/encounter/2', 1665776300],
       [788.2052101427689, 'busk', '2026-07-28/busk/3', 3564904737],
-      [863.2276280095585, 'encounter', '2026-07-28/encounter/2', 1665776300],
+      [910.0974212703767, 'encounter', '2026-07-28/encounter/3', 1682554143],
       [1011.3831164082512, 'busk', '2026-07-28/busk/4', 3581682580],
-      [1095, 'vista', '2026-07-28/vista/1', 1404306037],
-      [1217.996444929624, 'encounter', '2026-07-28/encounter/3', 1682554143],
       [1320, 'campfire', '2026-07-28/campfire/0', 4175580662],
     ]);
   });
@@ -564,13 +570,13 @@ describe('the road is the same road', () => {
       const p = sampleRoad(pinned, s);
       return [p.x, p.y, p.heading];
     })).toEqual([
-      [19.981959401363778, 1.615352085313393, -0.00029478312836629775],
-      [11.213712036576762, -0.6321100925675527, -0.11911369426792423],
-      [7.949019031112194, -7.513568597158217, 0.06080879867127515],
-      [-6.453527006656186, -6.6785960421754025, -0.2522464440326799],
+      [19.981959401363778, -0.5369609510896687, -0.00029478312836629775],
+      [11.213712036576762, -1.6283862908394964, -0.11911369426792423],
+      [7.949019031112194, -9.873596482697042, 0.06080879867127515],
+      [-6.453527006656186, -9.099596530541028, -0.2522464440326799],
     ]);
     expect([[0, 0], [40, 250], [-120, 900], [12, 1500]].map(([x, z]) => terrainHeight(pinned, x, z))).toEqual([
-      1.124348035254383, -6.451825475068858, 4.013869869235326, -7.429550936568811,
+      -1.4152063112379198, -9.307262736356128, 3.5418769765363303, -9.977719550029818,
     ]);
   });
 });

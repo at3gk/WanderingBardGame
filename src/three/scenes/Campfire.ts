@@ -688,7 +688,12 @@ export class Campfire {
         color: LANTERN_GLASS,
         colorVariant: LANTERN_GLASS,
         emissive: 0xffb347,
-        emissiveStrength: 0.7,
+        // Down from 0.7. At night the pane blew out to flat yellow with no
+        // shading left on it, so it read as a small bright quad floating
+        // beside a bare post rather than as a light inside a lantern — and it
+        // was the second brightest thing in the one frame that belongs
+        // entirely to the fire.
+        emissiveStrength: 0.32,
         rim: 0.1,
       }),
     );
