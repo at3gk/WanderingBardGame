@@ -246,7 +246,21 @@ export class App {
   resize(): void {
     const width = this.host.clientWidth || window.innerWidth;
     const height = this.host.clientHeight || window.innerHeight;
-    this.renderer.setSize(width, height, false);
+    // `updateStyle` left at its default of true, and this matters far more
+    // than it looks. setSize's third argument suppresses three writing
+    // canvas.style.width/height, which is only correct if CSS sizes the
+    // canvas instead — and index.html's stylesheet only sets `display:
+    // block` on it. With the style never written, the canvas lays out at
+    // its *drawing buffer* size, which is CSS size times the device pixel
+    // ratio. On any phone or retina display that is a canvas twice the
+    // width and height of the viewport, of which the player sees the
+    // top-left quarter.
+    //
+    // It went unnoticed for a while because it is invisible at ratio 1 —
+    // the desktop shader check never saw it, and the screenshot tool, which
+    // shoots at ratio 2, was quietly cropping every frame it took. A whole
+    // round of art critique was made against quarter-frames as a result.
+    this.renderer.setSize(width, height);
     const stage = this.stage;
     if (stage) {
       stage.camera.aspect = width / Math.max(1, height);

@@ -111,14 +111,27 @@ const ARRIVE_RADIUS = 4;
 const BASE_BPM = 92;
 
 /**
- * How many times through the tune a busk lasts.
+ * Roughly how long a busk should last, in milliseconds.
  *
- * Two. One is over before the crowd has decided anything, and three is long
- * enough that the road starts feeling far away. The busk ends by itself
- * because there is no fail state to end it and no button worth adding: the
- * bard finishes the tune, pockets what came in, and walks on.
+ * A busk is a whole number of passes through the tune — stopping mid-phrase
+ * would be the one ugly edit in a game with no cuts in it — so this is a
+ * floor rather than a length: the songbook's tunes run from about fifteen
+ * seconds to about half a minute at walking tempo, and this sends the short
+ * ones round twice and the long ones round once.
+ *
+ * Half a minute is the number that matters and it was chosen against the
+ * warmth curve rather than by feel: at four hundredths of the remaining
+ * headroom per note, thirty seconds of quarter notes is about forty notes,
+ * which is where the crowd reaches the top of its range. A busk much
+ * shorter than that could never fill a square; much longer and the road —
+ * which is the thing the game is actually about — is out of sight for too
+ * long. The busk ends by itself because there is no fail state to end it
+ * and no button worth adding.
  */
-const BUSK_PASSES = 2;
+const MIN_BUSK_MS = 30_000;
+/** However short the tune, and however long. */
+const MIN_BUSK_PASSES = 1;
+const MAX_BUSK_PASSES = 3;
 
 /** Quiet beat after the last note before the bard picks the case up. */
 const BUSK_TAIL_MS = 1400;
@@ -200,8 +213,16 @@ export class RoadStage implements Stage {
   private buskEndMs = 0;
   /** Simulation-clock fallback for the busk, used before audio exists. */
   private buskSimMs = 0;
-  /** Audio-clock time of busk-clock zero, or -1 when there is no audio yet. */
-  private buskAnchorSec = -1;
+  /**
+   * Audio-clock time of busk-clock zero, or NaN when there is no audio yet.
+   *
+   * NaN rather than a negative sentinel, which is what this was first and
+   * which was wrong: a busk that started before the audio did anchors at
+   * `currentTime - elapsed`, and on a context a second old that is a
+   * perfectly ordinary *negative* number. With -1 as the sentinel the busk
+   * silently stayed on the simulation clock for the rest of the tune.
+   */
+  private buskAnchorSec = Number.NaN;
   private creditedCoins = 0;
   private creditedDelight = 0;
   private busksToday = 0;
@@ -428,20 +449,39 @@ export class RoadStage implements Stage {
     }
   }
 
+  /**
+   * Move the whole stage to a phase, or leave it exactly as it was.
+   *
+   * The phase graph is a star around `walking`, so anything that is not a
+   * legal move from here is a legal move from there. Routing through the hub
+   * rather than refusing keeps the postcard tool — which poses the game from
+   * a standing start — able to ask for any phase it likes.
+   *
+   * There is one move even that cannot make: `resting` has no successors,
+   * because a day ends once and the way to the next one is a new day, not a
+   * transition. So the journey is advanced into a *local* value first and
+   * the scene only follows if the machine actually agreed. The alternative,
+   * which this file did first, tore the camp down and left the journey
+   * sitting in `resting` — the scene and the state machine disagreeing about
+   * what was happening, which is the exact failure the header's "it owns no
+   * rules" is meant to prevent.
+   */
   setPhase(phase: Phase): void {
     const previous = this.journey.phase;
     if (previous === phase) return;
 
-    // The phase graph is a star around `walking`, so anything that is not a
-    // legal move from here is a legal move from there. Routing through the
-    // hub rather than refusing keeps the postcard tool — which poses the
-    // game from a standing start — able to ask for any phase it likes.
-    if (!canEnter(this.journey, phase)) this.journey = enterPhase(this.journey, 'walking');
+    let next = this.journey;
+    if (!canEnter(next, phase)) next = enterPhase(next, 'walking');
+    next = enterPhase(next, phase);
+    if (next.phase !== phase) return;
 
+    // The new state is committed before the old phase is torn down, because
+    // tearing a busk down banks the last fraction of a coin into the journey
+    // and committing afterwards would throw that write away.
+    this.journey = next;
     if (previous === 'busking') this.closeBusk();
     if (previous === 'resting') this.strikeCamp();
 
-    this.journey = enterPhase(this.journey, phase);
     this.rig.setMood(PHASE_TO_MOOD[phase], 1.6);
     this.walking = phase === 'walking';
     this.holdSec = 0;
@@ -532,8 +572,12 @@ export class RoadStage implements Stage {
     this.buskBeatsPerBar = song.beatsPerBar;
 
     const passLength = songDurationMs(song, this.buskBpm);
+    const passes = Math.max(
+      MIN_BUSK_PASSES,
+      Math.min(MAX_BUSK_PASSES, Math.ceil(MIN_BUSK_MS / Math.max(1, passLength))),
+    );
     this.beats = [];
-    for (let pass = 0; pass < BUSK_PASSES; pass++) {
+    for (let pass = 0; pass < passes; pass++) {
       this.beats.push(
         ...expandSong(song, this.buskBpm, passLength * pass, song.notes.length * pass),
       );
@@ -543,7 +587,7 @@ export class RoadStage implements Stage {
     this.creditedCoins = 0;
     this.creditedDelight = 0;
     this.buskSimMs = 0;
-    this.buskAnchorSec = this.ctx ? this.ctx.currentTime + 0.2 : -1;
+    this.buskAnchorSec = this.ctx ? this.ctx.currentTime + 0.2 : Number.NaN;
     this.buskEndMs = this.beats[this.beats.length - 1].hitTimeMs + lateWindowMs() + BUSK_TAIL_MS;
 
     this.notes.setInstrument(instrument);
@@ -620,7 +664,7 @@ export class RoadStage implements Stage {
   }
 
   private buskNowMs(): number {
-    if (this.ctx && this.buskAnchorSec >= 0) {
+    if (this.ctx && Number.isFinite(this.buskAnchorSec)) {
       return (this.ctx.currentTime - this.buskAnchorSec) * 1000;
     }
     return this.buskSimMs;
@@ -851,7 +895,7 @@ export class RoadStage implements Stage {
     this.ambience?.setScene({ biomeId: biome, dayFraction: this.shownDayFraction, weather });
     this.ambience?.update(ctx.currentTime);
 
-    if (!this.performance || this.buskAnchorSec < 0) return;
+    if (!this.performance || !Number.isFinite(this.buskAnchorSec)) return;
 
     const barSec = (beatIntervalMs(this.buskBpm) * this.buskBeatsPerBar) / 1000;
     const update = updateAdaptive(this.adaptive, {

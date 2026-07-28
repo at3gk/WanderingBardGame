@@ -58,7 +58,7 @@ export interface HudChrome {
   coins: HudBox;
   /** The instrument in hand. Bottom leading corner, and likewise. */
   instrument: HudBox;
-  /** The journal card: what the road just said. Bottom centre, above the row. */
+  /** The journal card: what the road just said. Top centre, under the purse row. */
   journal: HudBox;
 }
 
@@ -152,9 +152,15 @@ export function hudChrome(viewport: HudViewport): HudChrome {
   };
 
   const journalWidth = Math.min(JOURNAL_MAX_WIDTH, innerWidth);
-  // The card sits above the instrument row rather than beside it. Beside
-  // works on a desk and fails on a phone, and a card that changes corner
-  // with the viewport reads as two different pieces of chrome.
+  // The card hangs under the purse row, in the sky.
+  //
+  // It was at the bottom first, which is where a game usually puts its
+  // narration, and on a phone held sideways that put a 92px card straight
+  // over the bard during a busk — the one moment the player has to be able
+  // to see him. Every framing this game uses keeps the figure low and the
+  // top of the frame empty, so up here the card never covers anything, and
+  // sitting *below* the purse row rather than beside it means it can be
+  // full width without ever colliding with the coins.
   const availableForJournal = Math.max(0, innerHeight - rowHeight - gutter);
   const journalHeight = Math.min(
     availableForJournal,
@@ -162,7 +168,7 @@ export function hudChrome(viewport: HudViewport): HudChrome {
   );
   const journal: HudBox = {
     left: innerLeft + (innerWidth - journalWidth) / 2,
-    top: instrument.top - gutter - journalHeight,
+    top: coins.top + rowHeight + gutter,
     width: journalWidth,
     height: journalHeight,
   };

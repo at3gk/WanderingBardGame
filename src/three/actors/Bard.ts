@@ -384,27 +384,36 @@ function instrumentGeometry(kind: string): BufferGeometry {
     translate(rim, 0, 0.035, 0);
     parts.push(rim);
   } else {
-    // Bowl, waist, shoulders, neck, pegbox. Lute, harp, hurdy-gurdy and
-    // bells all read acceptably from this: what the eye picks up is the
+    // Bowl, belly, waist, shoulders, neck, pegbox. Lute, harp, hurdy-gurdy
+    // and bells all read acceptably from this: what the eye picks up is the
     // teardrop-under-a-stick, not which of them it is.
     //
-    // The bowl is nearly as deep as it is wide. A lute worn on the back
-    // presents its soundboard square to whoever is behind, so a body modelled
-    // as a flat plate is seen face-on exactly when it matters, and a flat
-    // plate on the end of a shaft is a spade. Depth is what makes it read as
-    // a body with a back to it instead.
-    const bowl = boxPart(0.145, 0.075, 0.1, 1.45, 1.24);
+    // Slung, this is seen from directly behind with its soundboard square to
+    // the camera, so the body's *outline* is doing all the work and two
+    // things decide whether that outline is a lute or a garden tool. The
+    // widest ring sits low, a third of the way up rather than at the top; and
+    // two rings are spent on a long taper into the neck rather than one short
+    // abrupt step. Widest-at-the-top with an abrupt step is a mallet, which
+    // is what the first version was.
+    //
+    // The body is also nearly as deep as it is wide. A plate presented
+    // face-on has no volume at all, and a flat plate on the end of a shaft is
+    // a spade whatever its outline.
+    const bowl = boxPart(0.128, 0.055, 0.086, 1.53, 1.34);
     parts.push(bowl);
-    const waist = boxPart(0.21, 0.09, 0.124, 0.8, 0.9);
-    translate(waist, 0, 0.075, 0);
+    const belly = boxPart(0.196, 0.07, 0.115, 1.07, 1.08);
+    translate(belly, 0, 0.055, 0);
+    parts.push(belly);
+    const waist = boxPart(0.21, 0.075, 0.124, 0.74, 0.81);
+    translate(waist, 0, 0.125, 0);
     parts.push(waist);
-    const shoulders = boxPart(0.168, 0.06, 0.112, 0.47, 0.55);
-    translate(shoulders, 0, 0.165, 0);
+    const shoulders = boxPart(0.155, 0.075, 0.1, 0.4, 0.5);
+    translate(shoulders, 0, 0.2, 0);
     parts.push(shoulders);
     // Long, thin, and a touch tapered. This one part is most of why the
     // shape reads as an instrument at all.
-    const neck = boxPart(0.042, 0.33, 0.036, 0.82);
-    translate(neck, 0, 0.225, 0);
+    const neck = boxPart(0.042, 0.31, 0.036, 0.82);
+    translate(neck, 0, 0.245, 0);
     parts.push(neck);
     // The pegbox is angled back off the neck in a real lute. Faking that
     // with a wider, shallower block is enough at this size and costs nothing.
@@ -889,36 +898,37 @@ export class Bard {
     // chest runs. Hanging it the other way was the first version and looked
     // like the strap belonged to something else.
     //
-    // Slung, it sits low and close: the body at the small of the back, the
-    // pegbox clearing the shoulder just under the hat brim. It used to hang
-    // 0.30 m off the spine at a 41-degree tilt, which swung the body clear
-    // of the figure's outline entirely — from the side it was a bag being
-    // carried, not an instrument being worn.
-    // The slung z has to clear the cloak by a little and no more, and the
-    // cloak flares as it falls: its back surface is about 0.29 m off the
-    // spine where the bowl sits and 0.33 m at the hem. Too near and the bowl
-    // is *inside* the cloth, showing through it as a ghost — the cloak is
-    // double-sided. Too far and it hangs off the back like a knapsack.
+    // Slung, the depth is bounded on both sides and the window is narrow.
+    // The cloak flares as it falls — its back surface is about 0.29 m off
+    // the spine where the bowl sits and 0.33 m at the hem — so any nearer
+    // and the bowl is *inside* the cloth, showing through it as a ghost
+    // because the cloak is double-sided; any further and it stands off the
+    // back like a knapsack. An earlier pass hung it 0.30 m out at a
+    // 41-degree tilt, which swung the bowl clear of the figure's outline
+    // altogether: from the side it read as a bag being carried rather than
+    // an instrument being worn.
+    //
+    // Played, it has to come well clear in front instead. The chest reaches
+    // z 0.10 and the instrument is 0.12 deep, so anything nearer than about
+    // 0.26 buries the bowl in the ribs — 0.22 did, and brought the neck up
+    // through the jaw with it.
     this.instrumentPivot.position.set(
-      playAmount * 0.06 - slung * 0.03,
-      SHOULDER_Y - 0.09 - slung * 0.03,
-      playAmount * 0.22 - slung * 0.285,
+      playAmount * 0.02 - slung * 0.03,
+      SHOULDER_Y - (playAmount * 0.28 + slung * 0.12),
+      playAmount * 0.3 - slung * 0.285,
     );
-    // Slung, it is tipped so its foot leans further off the back than its
-    // neck does. The cloak flares as it falls, so an instrument hung
-    // parallel to the spine has its body inside the cloth and its edges
-    // stitching through it a few triangles at a time.
-    // Thirty degrees, not forty. The steeper tilt threw the bowl clear of the
-    // cloak's outline with daylight showing between the two, and a shape that
-    // hangs outside a character's silhouette reads as luggage. This angle
-    // keeps the bowl against the small of the back and lets only the neck and
-    // pegbox break the outline, which is the part worth seeing. The x tilt
-    // leans the foot further off the back than the neck, so the bowl stands
-    // proud of the flaring cloak while the pegbox stays near the shoulder.
+    // Thirty degrees across the back, not forty. The steeper tilt threw the
+    // bowl clear of the cloak's outline with daylight showing between the
+    // two, and a shape that hangs outside a character's silhouette reads as
+    // luggage; this angle keeps the bowl against the small of the back and
+    // lets only the neck and pegbox break the outline, which is the part
+    // worth seeing. The x tilt leans the foot further off the back than the
+    // neck, so the bowl stands proud of the flaring cloak while the pegbox
+    // stays in near the shoulder.
     this.instrumentPivot.rotation.set(
-      this.strum * 0.07 + slung * 0.15,
-      playAmount * -0.4 + slung * 0.08,
-      -slung * 0.52 - playAmount * 0.5,
+      this.strum * 0.07 + slung * 0.15 + playAmount * 0.18,
+      playAmount * -0.5 + slung * 0.08,
+      -slung * 0.52 - playAmount * 0.62,
     );
   }
 

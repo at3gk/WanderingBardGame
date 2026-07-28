@@ -71,7 +71,7 @@ import type { SongBeat } from '../../core/song';
  * the notes stop reading as a staff and start reading as scattered signs;
  * smaller and the letters are unreadable at the far end.
  */
-const STEP_M = 0.13;
+const STEP_M = 0.145;
 
 /**
  * World height of staff step 0 — middle C — above the bard's feet.
@@ -83,7 +83,7 @@ const STEP_M = 0.13;
  * nothing to belong to. Down here the staff crosses the road and the grass,
  * the bard's hat overlaps its middle line, and the tune is plainly his.
  */
-const STEP_ZERO_Y = 0.62;
+const STEP_ZERO_Y = 0.45;
 
 /** The five printed lines of the treble staff: E4 G4 B4 D5 F5. */
 const LINE_STEPS = [2, 4, 6, 8, 10];
@@ -98,7 +98,7 @@ const LINE_STEPS = [2, 4, 6, 8, 10];
 const HIT_AHEAD_M = 1.05;
 
 /** How far up the road a note appears. Travel time is fixed, so this is also its speed. */
-const SPAWN_AHEAD_M = 9.5;
+const SPAWN_AHEAD_M = 8.5;
 
 /** How far *behind* the hit line the staff is drawn, so it does not stop dead at it. */
 const TAIL_BEHIND_M = 1.1;
@@ -531,10 +531,14 @@ export class SongNotes {
     const weight = judgement === 'perfect' ? 1 : judgement === 'good' ? 0.82 : 0.6;
     const now = this.nowMs / 1000;
 
-    this.emit(x, y, z, now, 0, 0.42 * weight, STRIKE_MS / 1000);
+    // Sizes are in metres and were set by looking at frames rather than by
+    // taste: the first pass used sparks a third this size, and at the four
+    // or five metres the busking camera sits from the barline they were two
+    // or three pixels each and the hit read as nothing happening at all.
+    this.emit(x, y, z, now, 0, 0.68 * weight, STRIKE_MS / 1000);
     const count = Math.round(this.sparksPerHit * weight);
     for (let n = 0; n < count; n++) {
-      this.emit(x, y, z, now, 1, 0.075 + Math.random() * 0.05, 0.7 + Math.random() * 0.5);
+      this.emit(x, y, z, now, 1, 0.13 + Math.random() * 0.09, 0.9 + Math.random() * 0.6);
     }
   }
 
@@ -674,8 +678,8 @@ function glyphWorldSize(): number {
   return (STEP_M * 2 * 0.92 * ATLAS_CELL_PX) / headPx;
 }
 
-const HEAD_RX = 26;
-const HEAD_RY = 19;
+const HEAD_RX = 28;
+const HEAD_RY = 21;
 
 /**
  * Draw every glyph the songbook can ask for, once, onto one canvas.
@@ -729,13 +733,13 @@ function drawNote(ctx: CanvasRenderingContext2D, cell: number): void {
   if (ledger) {
     // Wider than the head on both sides, as engraved. A ledger that stops
     // at the head reads as a smudge.
-    ctx.fillRect(-HEAD_RX - 12, -2.5, (HEAD_RX + 12) * 2, 5);
+    ctx.fillRect(-HEAD_RX - 12, -2.75, (HEAD_RX + 12) * 2, 5.5);
   }
 
   // Stem first so the head covers where the two meet; a stem drawn over the
   // head leaves a visible seam at this size.
   const stemX = down ? -(HEAD_RX - 3) : HEAD_RX - 3;
-  ctx.fillRect(stemX - 2.4, down ? 0 : -46, 4.8, 46);
+  ctx.fillRect(stemX - 2.6, down ? 0 : -36, 5.2, 36);
 
   ctx.save();
   // Engraved note heads lean; an upright ellipse reads as a dot.
@@ -750,7 +754,7 @@ function drawNote(ctx: CanvasRenderingContext2D, cell: number): void {
   // the head and the letter differently from one sample.
   ctx.globalCompositeOperation = 'lighter';
   ctx.fillStyle = 'rgb(0,255,0)';
-  ctx.font = 'bold 30px Georgia, "Times New Roman", serif';
+  ctx.font = 'bold 33px Georgia, "Times New Roman", serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   // Optical centre, not geometric: capital letters in most serif faces sit
@@ -961,7 +965,7 @@ void main() {
   if (aKind < 0.5) {
     // The bloom: no travel, just a soft swell where the note was struck.
     size *= 0.45 + t * 1.7;
-    vAlpha = alive * (1.0 - t) * (1.0 - t) * 0.85;
+    vAlpha = alive * (1.0 - t) * (1.0 - t);
   } else {
     float ang = aSeed.x * 6.2831853;
     float rise = aSeed.y;

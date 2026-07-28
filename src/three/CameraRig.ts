@@ -119,17 +119,19 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     targetSmoothing: 1.0,
     drift: 0.11,
   },
-  // Right in on the fire, low, wide-ish. This is the one moment the game
-  // asks you to stop moving, so the camera stops too. Sitting costs him
-  // about a third of his standing height, so this one has to come in closer
-  // than the others just to hold level with them.
+  // In on the fire, low, wide-ish. This is the one moment the game asks you
+  // to stop moving, so the camera stops too — and it has to hold two things
+  // at once, the bard and the fire he is sitting at. The first pass came in
+  // to 3.2 m with 2.2 m of side, which read him at nearly half the frame
+  // height and pushed him against the right edge with the fire alone in the
+  // middle: two subjects, neither of them framed.
   resting: {
-    distance: 3.2,
-    height: 1.5,
-    lookHeight: 0.8,
-    lead: 1.0,
-    side: 2.2,
-    fov: 40,
+    distance: 3.8,
+    height: 1.6,
+    lookHeight: 0.85,
+    lead: 1.4,
+    side: 2.1,
+    fov: 43,
     positionSmoothing: 1.1,
     targetSmoothing: 1.3,
     drift: 0.14,
@@ -141,7 +143,9 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
   vista: {
     distance: 7.5,
     height: 3.6,
-    lookHeight: 1.8,
+    // Low for the distance: the look target has to sit *below* the bard's
+    // chest here or the long lead drops him onto the bottom edge of the frame.
+    lookHeight: 1.6,
     lead: 6.0,
     side: 3.2,
     fov: 38,
@@ -243,6 +247,12 @@ export class CameraRig {
    */
   private fovWiden = 1;
 
+  /**
+   * Multiplier on every framing's `side`, set from the screen's aspect.
+   * 1 on anything 16:9 or wider. See `applyAspect`.
+   */
+  private sideNarrow = 1;
+
   private readonly scratchGoal = new Vector3();
   private readonly scratchTarget = new Vector3();
 
@@ -303,10 +313,11 @@ export class CameraRig {
     const cos = Math.cos(this.heading);
 
     // Goal position: back along the heading, up, and a little to the side.
+    const side = framing.side * this.sideNarrow;
     this.scratchGoal.set(
-      subject.position.x - sin * framing.distance + cos * framing.side,
+      subject.position.x - sin * framing.distance + cos * side,
       subject.position.y + framing.height,
-      subject.position.z - cos * framing.distance - sin * framing.side,
+      subject.position.z - cos * framing.distance - sin * side,
     );
 
     // Goal look target: ahead of the subject along its *own* heading, not
@@ -427,6 +438,16 @@ export class CameraRig {
     this.camera.aspect = aspect;
     const reference = 16 / 9;
     this.fovWiden = aspect < reference ? MathUtils.clamp(reference / aspect, 1, 1.28) : 1;
+    // A metre of `side` is worth about three times as much screen offset on
+    // a portrait phone as on a 16:9 desktop, because the horizontal half
+    // angle is `tan(fov/2) * aspect` and the aspect has collapsed. Left
+    // alone, the framing that reads as pleasantly off-centre on a desktop
+    // walks the bard into the right-hand edge on a phone the moment the road
+    // bends. The square root rather than the full ratio on purpose: full
+    // compensation puts the camera directly behind him, and a portrait frame
+    // still wants him out of the middle, just not by as many metres.
+    this.sideNarrow =
+      aspect < reference ? MathUtils.clamp(Math.sqrt(aspect / reference), 0.6, 1) : 1;
     // Before the first update there is nothing to ease from, and a rotate
     // or a first paint should not be watched zooming into place.
     if (!this.initialised) this.camera.fov = this.goalFov(this.blendedFraming().fov);

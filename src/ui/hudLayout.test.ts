@@ -77,6 +77,17 @@ describe('hudChrome', () => {
     }
   });
 
+  it('keeps the card clear of the figure, who is always low in frame', () => {
+    // Every camera framing puts the bard in the lower half and leaves the
+    // top of the frame to the sky. A card in the bottom half covers him,
+    // and during a busk that is the one thing it must not do.
+    for (const { name, viewport } of SCREENS) {
+      const chrome = hudChrome(viewport);
+      const bottom = chrome.journal.top + chrome.journal.height;
+      expect(bottom, name).toBeLessThan(viewport.height * 0.5);
+    }
+  });
+
   it('leaves the middle of the screen empty', () => {
     // The whole point of the chrome is that it is not a dashboard. A box
     // that reaches the centre of a 16:9 screen is covering the scenery,
@@ -115,6 +126,7 @@ describe('hudChrome', () => {
     const plain = hudChrome({ width: 390, height: 844 });
     const notched = hudChrome({ width: 390, height: 844, insets: { top: 47, bottom: 34 } });
     expect(notched.coins.top - plain.coins.top).toBeCloseTo(47, 6);
+    expect(notched.journal.top - plain.journal.top).toBeCloseTo(47, 6);
     expect(plain.instrument.top - notched.instrument.top).toBeCloseTo(34, 6);
     // A top-only inset must not move the bottom row, and vice versa.
     const topOnly = hudChrome({ width: 390, height: 844, insets: { top: 47 } });

@@ -42,10 +42,30 @@ const DEFAULT_HOLD_SEC = 7.5;
 const BOOK_FACE =
   "'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif";
 
-/** Parchment and ink. Both are the game's own colours, not new ones. */
+/** Ink. Cream, the game's notation colour, at two strengths. */
 const INK = '#f0e2c6';
 const INK_SOFT = 'rgba(240, 226, 198, 0.72)';
-const PARCHMENT = 'rgba(38, 30, 34, 0.62)';
+
+/**
+ * What sits behind a journal line.
+ *
+ * A soft radial smudge rather than a panel. The first version was a
+ * rounded rectangle with a border and a backdrop blur, and against a bright
+ * dawn sky it read as a grey dialog box dropped on top of a painting — the
+ * one hard edge in a frame that has none.
+ *
+ * The radii are the whole trick and they are easy to get wrong: a
+ * radial-gradient is *clipped* by its element, so an ellipse wider than the
+ * box has its sides cut off at whatever opacity it had reached there, and
+ * the result is a rectangle again. Just under half the width and half the
+ * height put the transparent stop right on every edge, so there is nothing
+ * to clip and no edge to see.
+ */
+const JOURNAL_WASH =
+  'radial-gradient(49% 50% at 50% 50%,' +
+  ' rgba(28, 21, 26, 0.55) 0%,' +
+  ' rgba(28, 21, 26, 0.34) 46%,' +
+  ' rgba(28, 21, 26, 0) 100%)';
 
 export type HudMode = 'walking' | 'busking' | 'encounter' | 'resting';
 
@@ -144,24 +164,23 @@ export class Hud {
       display: 'flex',
       alignItems: 'center',
       boxSizing: 'border-box',
-      background: PARCHMENT,
-      // Uneven radii, and a fraction of a degree off square. A rectangle
-      // reads as a dialog box; this reads as a page somebody tore.
-      borderRadius: '14px 4px 12px 5px',
-      border: '1px solid rgba(240, 226, 198, 0.16)',
-      boxShadow: '0 6px 22px rgba(16, 11, 14, 0.4)',
-      backdropFilter: 'blur(2px)',
-      WebkitBackdropFilter: 'blur(2px)',
+      justifyContent: 'center',
+      background: JOURNAL_WASH,
+      // A fraction of a degree off square, so the line sits on the page the
+      // way handwriting does rather than the way a caption does.
       transform: 'rotate(-0.35deg)',
       opacity: '0',
       transition: 'opacity 700ms ease',
     });
     this.journalLine = element('p', {
       margin: '0',
-      padding: '0 20px',
+      padding: '0 24px',
       fontStyle: 'italic',
       lineHeight: '1.5',
-      textShadow: '0 1px 2px rgba(20, 14, 18, 0.6)',
+      textAlign: 'center',
+      // Two shadows: a tight one for edge contrast and a wide soft one that
+      // does the work when the line falls over a bright sky.
+      textShadow: '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 14px rgba(20, 14, 18, 0.7)',
     });
     this.journalBox.appendChild(this.journalLine);
     this.root.appendChild(this.journalBox);

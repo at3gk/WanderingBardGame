@@ -116,6 +116,33 @@ for (const shot of SHOTS) {
     return { ok: true, mean: Math.round(mean), stdDev: Math.round(stdDev * 10) / 10 };
   });
 
+  // Is the canvas the size of the viewport?
+  //
+  // Checked on every shot because getting this wrong does not look like a
+  // bug — it looks like a composition problem. The canvas once laid out at
+  // its drawing-buffer size, so at deviceScaleFactor 2 it was twice the
+  // viewport in each axis and every screenshot here was the top-left
+  // quarter of the real frame, upscaled. It reads as "the horizon is too
+  // low and the character is missing", and a round of art direction was
+  // spent on those symptoms before anyone measured the element.
+  const fit = await page.evaluate(() => {
+    const host = document.getElementById('game');
+    const canvas = host?.querySelector('canvas');
+    if (!host || !canvas) return null;
+    return {
+      hostW: host.clientWidth,
+      hostH: host.clientHeight,
+      canvasW: canvas.clientWidth,
+      canvasH: canvas.clientHeight,
+    };
+  });
+  if (fit && (Math.abs(fit.canvasW - fit.hostW) > 2 || Math.abs(fit.canvasH - fit.hostH) > 2)) {
+    problems.push(
+      `${shot.name}: canvas ${fit.canvasW}x${fit.canvasH} does not fit host ` +
+        `${fit.hostW}x${fit.hostH} — the frame is being cropped`,
+    );
+  }
+
   if (!drew.ok) {
     problems.push(`${shot.name}: could not read the frame back (${drew.reason})`);
   } else if (drew.stdDev < 3) {
