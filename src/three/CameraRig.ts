@@ -196,7 +196,15 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     height: 2.05,
     lookHeight: 1.2,
     lead: 2.0,
-    side: 2.4,
+    // Was 2.4, and had to come down with walking's whether or not the two
+    // are the same shot. An encounter arrives during a walk and the mood
+    // eases over a second and a half; leaving this one at the old offset
+    // meant the road slid back out to the left edge every time the bard met
+    // somebody, which is a worse fault than the lopsided frame it came from —
+    // it is a lopsided frame you can watch the camera arrive at. A little
+    // above walking's, because the traveller stands off the road and the
+    // wider angle is what keeps both of them in shot.
+    side: 1.6,
     fov: 44,
     positionSmoothing: 0.7,
     targetSmoothing: 0.9,

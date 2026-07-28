@@ -979,7 +979,7 @@ export class Bard {
     // camera brings the nose, the jaw and the lit side of the face into the
     // frame while he is still, by any reasonable reading, looking at his own
     // hands and the fire beyond them.
-    this.headPivot.rotation.y = -this.torso.rotation.y * 0.66 + sitAmount * 0.52;
+    this.headPivot.rotation.y = -this.torso.rotation.y * 0.66 + sitAmount * 0.7;
     this.headPivot.rotation.x =
       -this.torso.rotation.x * 0.5 +
       Math.sin(bobPhase + 0.6) * 0.02 * walkAmount +

@@ -786,7 +786,14 @@ export class RoadStage implements Stage {
     // centreline stands directly behind his hat and is not in the picture at
     // all — which was the first tuning, and it wasted the whole point of
     // putting somebody there. Two metres of clear air is the minimum.
-    this.stand(person, randRange(rand, -0.78, -0.55), randRange(rand, 3.4, 4.4), 1);
+    // Widened after a frame showed the traveller's shoulder touching the
+    // bard's. The bands were independent, so the unlucky corner — the
+    // shallowest angle at the nearest distance — left only about 1.78 m of
+    // lateral clearance, and because the camera is behind and to the right, a
+    // figure ahead-and-left at that clearance projects almost onto him. Both
+    // ends move rather than one: pushing the distance alone would have put
+    // the shallow-angle case further away without separating it.
+    this.stand(person, randRange(rand, -0.95, -0.7), randRange(rand, 4.2, 5.2), 1);
   }
 
   // --- meetings and camp -------------------------------------------------
