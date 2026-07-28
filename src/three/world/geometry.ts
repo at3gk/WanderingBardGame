@@ -753,7 +753,11 @@ export function willowGeometry(options: TreeOptions): BufferGeometry {
   // A rounded cap, not the flat plate this had at first. At 0.5 flatten the
   // canopy read as a dinner plate balanced on a pole; a willow's crown is a
   // dome that the fronds fall off the edge of.
-  const cap = lumpDome(1.6 + rand() * 0.4, 7, 3, 0.74, 0.16, rand);
+  // Narrower than the ring the fronds hang on, so the curtain falls from the
+  // dome's *edge* rather than from somewhere inside it. Overhanging cap plus
+  // gappy curtain is precisely the elephant: a wide pale body with legs
+  // underneath.
+  const cap = lumpDome(1.42 + rand() * 0.22, 7, 3, 0.74, 0.16, rand);
   translateY(cap, trunkH + 0.75);
   parts.push(paint(cap, options.canopyColor, 0.13, rand));
 
@@ -774,11 +778,19 @@ export function willowGeometry(options: TreeOptions): BufferGeometry {
   for (let f = 0; f < fronds; f++) {
     const ring = f % 2;
     const a = (f / fronds) * Math.PI * 2 + rand() * 0.14;
-    const r = (ring === 0 ? 1.45 : 0.95) + rand() * 0.45;
+    // The radius is nearly fixed per ring now. It used to wander by 0.45 m,
+    // which sounds like pleasant variation and is in fact what opened the
+    // gaps: strips at different radii no longer overlap their neighbours,
+    // and the curtain came apart into separate straps.
+    const r = (ring === 0 ? 1.5 : 1.0) + rand() * 0.12;
     // Hanging further, so the curtain finishes near the grass instead of
     // half a tree's height above it. A skirt that stops short is a valance.
     const drop = (ring === 0 ? 2.2 : 1.85) + rand() * 0.7;
-    const w = 0.15 + rand() * 0.07;
+    // Sized to the gap it has to fill, like the campfire's stones: twenty-
+    // four strips round a ring of this radius sit about 0.4 m apart, so a
+    // strip 0.53 m across overlaps its neighbours by a quarter and the ring
+    // closes whichever way the tree is turned.
+    const w = (ring === 0 ? 0.265 : 0.175) + rand() * 0.03;
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r;
     const sx = -Math.sin(a);
@@ -786,16 +798,27 @@ export function willowGeometry(options: TreeOptions): BufferGeometry {
     const top = trunkH + (ring === 0 ? 0.85 : 1.15);
     // A tapering strip that also draws slightly inward as it falls, so the
     // curtain hangs rather than flaring out like a lampshade.
-    const tipX = x * 0.9;
-    const tipZ = z * 0.9;
+    // Drawn well inward as it falls. With the curtain closed and the strips
+    // hanging vertically the tree stopped being an elephant and became a
+    // grain silo — a flat-topped cylinder. A willow's skirt is a bell: widest
+    // a third of the way down and gathering in toward the trunk at the hem.
+    // The overlap survives the taper because the strips narrow more slowly
+    // than the ring they sit on does.
+    const tipX = x * 0.66;
+    const tipZ = z * 0.66;
     const tlx = x + sx * w;
     const tlz = z + sz * w;
     const trx = x - sx * w;
     const trz = z - sz * w;
-    const blx = tipX + sx * w * 0.3;
-    const blz = tipZ + sz * w * 0.3;
-    const brx = tipX - sx * w * 0.3;
-    const brz = tipZ - sz * w * 0.3;
+    // The taper stops at two thirds rather than a third. A strip that
+    // narrows almost to a point leaves a triangle of daylight between it and
+    // its neighbour for the whole lower half of the curtain, which is the
+    // part of the tree nearest the ground and so the part that decides
+    // whether it has a skirt or legs.
+    const blx = tipX + sx * w * 0.66;
+    const blz = tipZ + sz * w * 0.66;
+    const brx = tipX - sx * w * 0.66;
+    const brz = tipZ - sz * w * 0.66;
     parts.push(
       paint(
         fromPositions([

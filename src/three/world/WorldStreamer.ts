@@ -205,7 +205,25 @@ const VERGE = {
 
 interface ScatterKind {
   key: string;
-  geometry: () => BufferGeometry;
+  /**
+   * The shapes this kind draws from. More than one entry costs one draw call
+   * per shape per chunk and buys the difference between a meadow and a
+   * stamp: a field built from a single tuft repeated to the horizon reads as
+   * a texture of identical shark fins, which is exactly what this one did.
+   */
+  geometry: (variant: number) => BufferGeometry;
+  /** How many distinct shapes `geometry` can build. */
+  variants?: number;
+  /**
+   * Average number of instances per clump, or 0 for an even spread.
+   *
+   * Plants do not distribute themselves by rejection sampling. An even
+   * spread is the other half of why the meadow read as wallpaper — every
+   * tuft the same distance from its neighbours is a pattern, and the eye
+   * finds patterns instantly. Clumps of a few leave bare ground between
+   * them, and bare ground is what makes the clumps read as plants.
+   */
+  clump?: number;
   /** Instances per square metre at density 1. */
   perSquareMetre: number;
   /** Which palette density multiplier applies. */
@@ -228,10 +246,18 @@ interface ScatterKind {
   colorOf: (palette: BiomePalette, rand: Rand) => number;
 }
 
+/** Seeds for the four grass silhouettes and the four ferns. Arbitrary primes. */
+const GRASS_SEEDS = [7, 11, 19, 23];
+const FERN_SEEDS = [9, 13, 29, 37];
+
 const SCATTER_KINDS: ScatterKind[] = [
   {
     key: 'grass',
-    geometry: () => cachedGeometry('grass', () => grassTuftGeometry(7)),
+    // Four seeds, four silhouettes. The seeds are arbitrary primes; what
+    // matters is only that they differ.
+    geometry: (v) => cachedGeometry(`grass:${v}`, () => grassTuftGeometry(GRASS_SEEDS[v])),
+    variants: 4,
+    clump: 4,
     // Twice the old figure, and biased hard toward the road so most of it
     // lands where the camera is. Grass at 0.75 tufts per square metre is not
     // a lawn, it is a scattering of individual plants on bare earth, and
@@ -249,7 +275,15 @@ const SCATTER_KINDS: ScatterKind[] = [
     clearance: VERGE.grass,
     edgeBias: 1.9,
     scale: [0.8, 1.25],
-    lodRange: 100,
+    // This LOD is quantised to whole chunks — the test is
+    // `|chunk - centre| * CHUNK_LENGTH > lodRange` — so any value from 60 to
+    // 119 means exactly the same thing: the chunk the bard is in and the one
+    // either side. It was briefly set to 55 to thin the far field and that
+    // dropped it to the centre chunk *alone*, which took all the grass out of
+    // the foreground whenever the bard stood near a chunk boundary. Stated as
+    // a multiple of the chunk length so the relationship survives a change to
+    // either number.
+    lodRange: CHUNK_LENGTH * 1.6,
     castShadow: false,
     material: 'foliage',
     // Drawn from the same two greens the ground drifts between, pulled a
@@ -261,7 +295,9 @@ const SCATTER_KINDS: ScatterKind[] = [
   },
   {
     key: 'fern',
-    geometry: () => cachedGeometry('fern', () => fernGeometry(9)),
+    geometry: (v) => cachedGeometry(`fern:${v}`, () => fernGeometry(FERN_SEEDS[v])),
+    variants: 4,
+    clump: 3,
     perSquareMetre: 0.1,
     densityKey: 'fern',
     spread: 30,
@@ -278,6 +314,7 @@ const SCATTER_KINDS: ScatterKind[] = [
   {
     key: 'flower',
     geometry: () => cachedGeometry('flower', () => flowerGeometry(13)),
+    clump: 3,
     perSquareMetre: 0.07,
     densityKey: 'flower',
     spread: 20,
@@ -391,7 +428,6 @@ export class WorldStreamer {
   private readonly trunkMaterials = new Map<string, ShaderMaterial>();
 
   /** Scratch objects; the chunk builder runs on a walking player's frame. */
-  private readonly scratchMatrix = new Matrix4();
   private readonly scratchPos = new Vector3();
   private readonly scratchQuat = new Quaternion();
   private readonly scratchScale = new Vector3();
@@ -399,6 +435,21 @@ export class WorldStreamer {
   private readonly upAxis = new Vector3(0, 1, 0);
 
   private lastCentre = Number.NaN;
+
+  /**
+   * Patches of ground the scatter keeps out of.
+   *
+   * The camp is the only thing that asks for one, and it has to ask, because
+   * the streamer places shrubs from 5.9 m off the centreline outward and the
+   * layout puts the fire between 5.8 and 7.4 m out — so a camp is pitched
+   * *in the bushes* by construction. What that looked like was worse than it
+   * sounds: at the resting framing a single waist-high shrub stood between
+   * the camera and the flame, and the day's emotional anchor was a dark green
+   * lump with one triangle of fire showing over the top. Nobody pitches a
+   * camp in a thicket, and the rule that the warmest light in a frame comes
+   * from the fire cannot survive an occluder.
+   */
+  private readonly clearings: Array<{ x: number; z: number; radius: number }> = [];
 
   constructor(
     road: DailyRoad,
@@ -515,6 +566,45 @@ export class WorldStreamer {
     return material;
   }
 
+  /**
+   * Ask for a patch of ground to be left bare of scatter, and rebuild.
+   *
+   * Rebuilding everything currently loaded is the whole cost, and it is the
+   * right call: a clearing is asked for once a day, when the camp is made,
+   * and the chunk it falls in has certainly already been built by then.
+   * Filtering the existing instance buffers in place would mean tracking
+   * which instance is where, which is bookkeeping for a case that happens
+   * once. `lastCentre` is cleared so the very next `update` refills.
+   */
+  addClearing(x: number, z: number, radius: number): void {
+    this.clearings.push({ x, z, radius });
+    for (const [index, chunk] of this.chunks) {
+      this.disposeChunk(chunk);
+      this.chunks.delete(index);
+    }
+    this.lastCentre = Number.NaN;
+  }
+
+  /** Give the ground back, when the camp is struck. */
+  clearClearings(): void {
+    if (this.clearings.length === 0) return;
+    this.clearings.length = 0;
+    for (const [index, chunk] of this.chunks) {
+      this.disposeChunk(chunk);
+      this.chunks.delete(index);
+    }
+    this.lastCentre = Number.NaN;
+  }
+
+  private inClearing(x: number, z: number): boolean {
+    for (const c of this.clearings) {
+      const dx = x - c.x;
+      const dz = z - c.z;
+      if (dx * dx + dz * dz < c.radius * c.radius) return true;
+    }
+    return false;
+  }
+
   /** Stream chunks so the window is centred on the bard's distance `s`. */
   update(s: number): void {
     const centre = Math.floor(s / CHUNK_LENGTH);
@@ -552,8 +642,7 @@ export class WorldStreamer {
 
     for (const kind of SCATTER_KINDS) {
       if (distanceM > kind.lodRange) continue;
-      const mesh = this.buildScatter(index, kind);
-      if (mesh) {
+      for (const mesh of this.buildScatter(index, kind)) {
         group.add(mesh);
         meshes.push(mesh);
       }
@@ -735,7 +824,15 @@ export class WorldStreamer {
     return t * t * (3 - 2 * t) * 0.5;
   }
 
-  private buildScatter(index: number, kind: ScatterKind): InstancedMesh | null {
+  /**
+   * One kind of scatter for one chunk, as one instanced mesh per silhouette.
+   *
+   * Placements are drawn first, in a single stream, and only then bucketed by
+   * silhouette — the same shape `buildTrees` uses. Drawing per bucket instead
+   * would make the *positions* depend on how many shapes a kind happens to
+   * have, so adding a fifth grass would move every tuft in the world.
+   */
+  private buildScatter(index: number, kind: ScatterKind): InstancedMesh[] {
     const s0 = index * CHUNK_LENGTH;
     const rand = mulberry32(subSeed(this.road.seed, `scatter:${kind.key}:${index}`));
     const palette = paletteFor(biomeAt(this.road, s0 + CHUNK_LENGTH / 2));
@@ -745,21 +842,41 @@ export class WorldStreamer {
       0,
       Math.round(area * kind.perSquareMetre * palette.density[kind.densityKey] * this.density),
     );
-    if (count === 0) return null;
+    if (count === 0) return [];
 
-    const geometry = kind.geometry();
-    const material = kind.material === 'foliage' ? this.foliageMaterial : this.solidMaterial;
-    const mesh = new InstancedMesh(geometry, material, count);
-    mesh.castShadow = this.castShadows && kind.castShadow;
-    mesh.receiveShadow = false;
-    mesh.name = `${kind.key}-${index}`;
-
+    const variants = Math.max(1, kind.variants ?? 1);
     const bias = kind.edgeBias ?? 1;
+    const clump = kind.clump ?? 0;
+    const buckets: Array<Array<{ matrix: Matrix4; color: number }>> = [];
+    for (let v = 0; v < variants; v++) buckets.push([]);
+
+    // Clump state: where the current group is centred and how many are left
+    // in it. A clump is a handful of plants sharing one patch of ground, so
+    // members are jittered around the centre rather than re-drawn from the
+    // whole band.
+    let clumpS = 0;
+    let clumpU = 0;
+    let remaining = 0;
+
     for (let i = 0; i < count; i++) {
-      const s = s0 + rand() * CHUNK_LENGTH;
-      const side = rand() < 0.5 ? -1 : 1;
-      const t = bias === 1 ? rand() : Math.pow(rand(), bias);
-      const u = side * (kind.clearance + t * (kind.spread - kind.clearance));
+      if (remaining <= 0) {
+        clumpS = s0 + rand() * CHUNK_LENGTH;
+        const side = rand() < 0.5 ? -1 : 1;
+        const t = bias === 1 ? rand() : Math.pow(rand(), bias);
+        clumpU = side * (kind.clearance + t * (kind.spread - kind.clearance));
+        remaining = clump > 0 ? 1 + Math.floor(rand() * clump * 1.5) : 1;
+      }
+      remaining--;
+
+      // The clump radius grows with the plant: a patch of grass is a metre
+      // across, a stand of ferns two.
+      const spreadIn = clump > 0 ? 0.55 + clump * 0.22 : 0;
+      const s = clumpS + (clump > 0 ? randRange(rand, -spreadIn, spreadIn) : 0);
+      let u = clumpU + (clump > 0 ? randRange(rand, -spreadIn, spreadIn) : 0);
+      // The jitter can push a member back over the verge it was placed
+      // outside of, which is how a tuft ends up growing in the wheel rut.
+      if (Math.abs(u) < kind.clearance) u = Math.sign(u || 1) * kind.clearance;
+
       const sample = sampleRoad(this.road, s);
       const nx = Math.cos(sample.heading);
       const nz = -Math.sin(sample.heading);
@@ -776,15 +893,32 @@ export class WorldStreamer {
       // geometry was drawn to be, which is how the ankle-high tufts ended
       // up at the bard's knee.
       this.scratchScale.set(scale, scale * randRange(rand, 0.85, 1.15), scale);
-      this.scratchMatrix.compose(this.scratchPos, this.scratchQuat, this.scratchScale);
-      mesh.setMatrixAt(i, this.scratchMatrix);
-      mesh.setColorAt(i, this.scratchColor.setHex(kind.colorOf(palette, rand)));
+      const variant = variants === 1 ? 0 : Math.floor(rand() * variants);
+      buckets[variant].push({
+        matrix: new Matrix4().compose(this.scratchPos, this.scratchQuat, this.scratchScale),
+        color: kind.colorOf(palette, rand),
+      });
     }
 
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    mesh.computeBoundingSphere();
-    return mesh;
+    const material = kind.material === 'foliage' ? this.foliageMaterial : this.solidMaterial;
+    const meshes: InstancedMesh[] = [];
+    for (let v = 0; v < variants; v++) {
+      const list = buckets[v];
+      if (list.length === 0) continue;
+      const mesh = new InstancedMesh(kind.geometry(v), material, list.length);
+      mesh.castShadow = this.castShadows && kind.castShadow;
+      mesh.receiveShadow = false;
+      mesh.name = `${kind.key}-${index}`;
+      for (let i = 0; i < list.length; i++) {
+        mesh.setMatrixAt(i, list[i].matrix);
+        mesh.setColorAt(i, this.scratchColor.setHex(list[i].color));
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      mesh.computeBoundingSphere();
+      meshes.push(mesh);
+    }
+    return meshes;
   }
 
   /**

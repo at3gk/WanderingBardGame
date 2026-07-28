@@ -81,10 +81,12 @@ const PALETTES: Record<TravellerKind, TravellerPalette> = {
     cloth: 0x5a6270,
     under: 0x424a58,
     skin: 0xc7a488,
-    // The hood, a shade off the shawl. Age is carried by the seated,
-    // rounded posture rather than by white hair, which as a hood colour was
-    // simply the brightest thing in the frame.
-    crown: 0x9a958a,
+    // The hood, only a shade off the shawl. Age is carried by the seated,
+    // rounded posture rather than by white hair. It has been down twice: at
+    // 0xd8d3c8 as hair and at 0x9a958a as a hood it was still the lightest
+    // value on that side of the frame, which turned a dark seated figure
+    // with a pale top into a lamp rather than a person.
+    crown: 0x6e6a61,
     carried: 0x6a6a63,
   },
   child: {

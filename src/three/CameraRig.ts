@@ -168,6 +168,24 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
   },
 };
 
+/**
+ * How much of the narrow-screen widening is handed back to the sky rather
+ * than to the ground. See `widenRise`, which is where the number is argued.
+ */
+const WIDEN_RISE_SHARE = 0.25;
+
+/**
+ * Ceiling on the narrow-screen FOV widening, in tangent space.
+ *
+ * Was 1.28. Every degree of vertical FOV bought here is spent on sky above
+ * and road below, and on the two aspect ratios that reach the clamp — phone
+ * portrait and tablet — those are the two regions of this picture carrying
+ * the least information. 1.14 still buys back a useful margin at the sides,
+ * which is what the widening is for, without turning the frame into a
+ * letterbox of scenery with a strip of world in it.
+ */
+const FOV_WIDEN_MAX = 1.14;
+
 /** Blend two framings. Used while a mood transition is in flight. */
 function blendFraming(a: MoodFraming, b: MoodFraming, t: number): MoodFraming {
   const mix = (x: number, y: number) => x + (y - x) * t;
@@ -388,22 +406,35 @@ export class CameraRig {
    *
    * `applyAspect` buys back the width a phone crops away by opening the
    * vertical FOV, and that added angle arrives split evenly above and below
-   * the view axis. The half below is worthless: it is more of the road
-   * surface the bard is already standing on, and on a 9:19.5 portrait frame
-   * it was over half the picture — the bard ended up a small figure floating
-   * in a field of dirt.
+   * the view axis. Neither half is worth much: below is more of the road
+   * surface the bard is already standing on, above is more empty sky.
    *
-   * Tilting the camera up by exactly the angle the widening added puts the
-   * bottom edge back where the unwidened framing had it and hands the whole
-   * gain to the sky, which is what the widening was for. It is done by
-   * moving the *look target*, not by adding a pitch offset, so it damps with
-   * everything else and cannot fight the target smoothing.
+   * This used to tilt up by *exactly* the angle the widening added, which
+   * put the bottom edge back where the unwidened framing had it and handed
+   * the entire gain to the sky. The arithmetic of what that did is worth
+   * writing down, because it is not visible in the code: the horizon sits at
+   * `(1 - tan(d)/tan(halfFov)) / 2` of the way down the frame, where `d` is
+   * how far the camera is pitched below horizontal. On a desktop 16:9 that
+   * is 0.32 — a third sky, two thirds land, which is the composition every
+   * framing here was tuned for. Full compensation dropped `d` from eight
+   * degrees to under three and pushed the horizon to 0.45, so a portrait
+   * phone — the framing most players see first — was very nearly half empty
+   * sky with everything of interest squeezed into a band at the skyline.
+   *
+   * A quarter share, with the widening itself pulled back to 1.14, lands the
+   * horizon at 0.35 on both phone portrait and tablet: still a little more
+   * sky than the desktop framing, which is right for a tall frame, and
+   * nowhere near half of it. The bottom edge picks up about two degrees more
+   * road, which is a price worth paying and much the smaller of the two.
+   *
+   * It is done by moving the *look target*, not by adding a pitch offset, so
+   * it damps with everything else and cannot fight the target smoothing.
    */
   private widenRise(framing: MoodFraming): number {
     if (this.fovWiden <= 1) return 0;
     const half = MathUtils.degToRad(framing.fov) * 0.5;
     const widened = Math.atan(Math.tan(half) * this.fovWiden);
-    return Math.tan(widened - half) * (framing.distance + framing.lead);
+    return Math.tan(widened - half) * (framing.distance + framing.lead) * WIDEN_RISE_SHARE;
   }
 
   /** A framing's vertical FOV after the narrow-screen widening. */
@@ -430,14 +461,15 @@ export class CameraRig {
    * doubling the view — and clamped hard. Preserving the desktop width on a
    * 9:19.5 phone would need a vertical FOV over 120 degrees, which fixes the
    * cropping by making the bard forty pixels tall and bending every straight
-   * edge in the world. 1.28 buys back a useful margin at the sides and still
-   * leaves him readable, which is the trade this game wants.
+   * edge in the world. See `FOV_WIDEN_MAX` for where the ceiling sits and
+   * why it came down.
    */
   applyAspect(width: number, height: number): void {
     const aspect = width / Math.max(1, height);
     this.camera.aspect = aspect;
     const reference = 16 / 9;
-    this.fovWiden = aspect < reference ? MathUtils.clamp(reference / aspect, 1, 1.28) : 1;
+    this.fovWiden =
+      aspect < reference ? MathUtils.clamp(reference / aspect, 1, FOV_WIDEN_MAX) : 1;
     // A metre of `side` is worth about three times as much screen offset on
     // a portrait phone as on a 16:9 desktop, because the horizontal half
     // angle is `tan(fov/2) * aspect` and the aspect has collapsed. Left

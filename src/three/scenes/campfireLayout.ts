@@ -156,12 +156,25 @@ const SIDES = [-1, 1] as const;
  * make the camp stop being a pure function of its seed the day someone
  * changed a radius.
  *
- * The slot assignment is not arbitrary. The bedroll takes 0 because that is
- * both the quietest corner of the camp and the only placement that can
- * satisfy "away from the road" unconditionally. The seat takes ±π, which
- * puts the bard between the road and the fire — so the resting camera,
- * which sits behind the bard, looks across them into the light rather than
- * at their back with the fire out of frame.
+ * The slot assignment is not arbitrary. The seat takes ±π, which puts the
+ * bard between the road and the fire — so the resting camera, which sits
+ * behind the bard, looks across them into the light rather than at their
+ * back with the fire out of frame.
+ *
+ * That framing decides everything else, and it is why the bedroll is *not*
+ * at bearing 0. Bearing 0 is the far side of the fire on exactly the axis
+ * the resting camera is looking along, so anything standing there is behind
+ * the flame in plan and *on top of* it on screen — and the bedroll is the
+ * bulkiest thing in the camp. The first version put it there and the
+ * campfire scene, which is the day's emotional anchor, showed a dark green
+ * lump with one triangle of flame poking over the top and an orange splat
+ * leaking round the side. DESIGN.md's rule that the warmest light in any
+ * frame comes from the music or the fire cannot survive an occluder.
+ *
+ * So bearing 0 goes to the firewood, which is the flattest thing here and
+ * reads well as a dark silhouette against the light, and the bedroll moves
+ * one slot round — still comfortably on the far side of the fire from the
+ * road, which is the invariant that matters, but out of the sightline.
  */
 interface Slot {
   bearing: number;
@@ -170,9 +183,14 @@ interface Slot {
   footprint: number;
 }
 
-const BEDROLL: Slot = { bearing: 0, jitter: 0.2, radius: [2.3, 2.65], footprint: 0.8 };
-const PACK: Slot = { bearing: 1.15, jitter: 0.2, radius: [1.85, 2.1], footprint: 0.34 };
-const FIREWOOD: Slot = { bearing: 2.2, jitter: 0.2, radius: [2.0, 2.28], footprint: 0.42 };
+const FIREWOOD: Slot = { bearing: 0, jitter: 0.2, radius: [2.0, 2.28], footprint: 0.42 };
+/**
+ * Tighter jitter than its neighbours. It is the biggest disc in the camp and
+ * the slot either side of it has to stay clear, so it is the one placement
+ * that cannot afford a fifth of a radian of slop.
+ */
+const BEDROLL: Slot = { bearing: 1.05, jitter: 0.12, radius: [2.3, 2.65], footprint: 0.8 };
+const PACK: Slot = { bearing: 2.2, jitter: 0.2, radius: [1.85, 2.1], footprint: 0.34 };
 const LANTERN: Slot = { bearing: -2.2, jitter: 0.2, radius: [2.15, 2.45], footprint: 0.28 };
 const SEAT: Slot = { bearing: Math.PI, jitter: 0.2, radius: [1.95, 2.15], footprint: 0.45 };
 /** Radius is measured out from the stone ring; see `campfireLayout`. */

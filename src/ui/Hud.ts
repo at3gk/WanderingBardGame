@@ -60,12 +60,25 @@ const INK_SOFT = 'rgba(240, 226, 198, 0.72)';
  * the result is a rectangle again. Just under half the width and half the
  * height put the transparent stop right on every edge, so there is nothing
  * to clip and no edge to see.
+ *
+ * What it is *made of* is the second half of the problem and it was wrong
+ * for longer. It was a fixed rgba(28, 21, 26) — a neutral grey-purple, and
+ * the only neutral grey in a game whose standing rule is that shadows are
+ * never grey. Floating in a pink dusk sky it read as a smear on the lens.
+ * So the wash now takes its hue from the sky the card is sitting in (see
+ * `setTone`) and its peak alpha has come down from 0.55 to 0.34, with the
+ * two-layer text shadow underneath doing more of the contrast work. The card
+ * should read as the sky going quiet behind the words, not as a panel.
  */
-const JOURNAL_WASH =
-  'radial-gradient(49% 50% at 50% 50%,' +
-  ' rgba(28, 21, 26, 0.55) 0%,' +
-  ' rgba(28, 21, 26, 0.34) 46%,' +
-  ' rgba(28, 21, 26, 0) 100%)';
+function journalWash(r: number, g: number, b: number): string {
+  const stop = (alpha: number) => `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  return (
+    `radial-gradient(49% 50% at 50% 50%, ${stop(0.34)} 0%, ${stop(0.2)} 46%, ${stop(0)} 100%)`
+  );
+}
+
+/** Before the sky has said anything: a warm dusk, not a grey. */
+const JOURNAL_WASH = journalWash(34, 22, 24);
 
 export type HudMode = 'walking' | 'busking' | 'encounter' | 'resting';
 
@@ -88,6 +101,8 @@ export class Hud {
   private coinsAttention = 0;
   private instrumentAttention = 0;
   private journalHold = 0;
+  /** Last sky colour the wash was built from, quantised. See `setTone`. */
+  private toneKey = -1;
 
   private readonly onResize = () => this.resize();
 
@@ -223,6 +238,31 @@ export class Hud {
     this.journalLine.textContent = line;
     this.journalHold = Math.max(0.5, holdSec);
     this.journalBox.style.opacity = '1';
+  }
+
+  /**
+   * Tell the card what colour the sky is.
+   *
+   * Takes the world's current horizon colour, in 0..1 channels, and darkens
+   * it hard to make the wash. Darkening rather than tinting a fixed grey:
+   * the card has to read as *this* sky at a lower brightness, so at dusk it
+   * is a deep plum and at noon a cool slate, and it never becomes the one
+   * neutral in the frame.
+   *
+   * The string is only rebuilt when the colour has actually moved a step,
+   * because assigning `style.background` is a style recalculation and the
+   * sky moves by a hundredth of a channel per frame.
+   */
+  setTone(r: number, g: number, b: number): void {
+    const quantise = (v: number) => Math.max(0, Math.min(60, Math.round(v * 60)));
+    const key = (quantise(r) << 16) | (quantise(g) << 8) | quantise(b);
+    if (key === this.toneKey) return;
+    this.toneKey = key;
+    this.journalBox.style.background = journalWash(
+      quantise(r) + 8,
+      quantise(g) + 6,
+      quantise(b) + 8,
+    );
   }
 
   /** Take the card down early, when the moment it described has passed. */

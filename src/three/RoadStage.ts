@@ -770,7 +770,12 @@ export class RoadStage implements Stage {
       subSeed(this.currentStop ? this.currentStop.seed : this.road.seed, 'meeting'),
     );
     const person = this.people[Math.floor(rand() * this.people.length)];
-    this.stand(person, randRange(rand, -0.42, -0.2), randRange(rand, 3.6, 4.6), 1);
+    // Well out to the bard's left. The encounter camera sits behind him and
+    // off to the *right*, so a figure only a fifth of a radian off the road's
+    // centreline stands directly behind his hat and is not in the picture at
+    // all — which was the first tuning, and it wasted the whole point of
+    // putting somebody there. Two metres of clear air is the minimum.
+    this.stand(person, randRange(rand, -0.78, -0.55), randRange(rand, 3.4, 4.4), 1);
   }
 
   // --- meetings and camp -------------------------------------------------
@@ -1070,6 +1075,10 @@ export class RoadStage implements Stage {
     const state = skyStateAt(this.shownDayFraction);
     applyTimeOfDay(this.app.globals, state, this.app.sun);
     this.sky.apply(state, this.app.globals.uTime.value);
+    // The journal card takes its wash from the sky it is floating in. It is
+    // the only piece of DOM in the game that overlaps the world, and a fixed
+    // neutral behind it was the one grey in a game that does not use grey.
+    this.hud.setTone(state.horizon.r, state.horizon.g, state.horizon.b);
 
     // Wind gusts on a slow cycle, shared by grass, trees and the cloak.
     const t = this.app.globals.uTime.value;
