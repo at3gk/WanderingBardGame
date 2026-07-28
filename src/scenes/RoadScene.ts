@@ -323,10 +323,15 @@ interface BeatMarker {
 }
 
 /**
- * The learning record outlives the scene. `create()` re-runs on a resize
- * (main.ts uses Scale.RESIZE, so an orientation change is enough), and
- * resetting a child's progress because they turned the phone would be a
- * silent, invisible bug — so this is loaded once per page, not per scene.
+ * The learning record outlives the scene. This was built on the assumption
+ * that `create()` re-runs on a resize (main.ts uses Scale.RESIZE, so an
+ * orientation change was believed enough) — `tools/rotate-check.mjs` now
+ * verifies that assumption directly and it does not hold in headless
+ * testing (`create()` fires exactly once). Kept at module scope anyway:
+ * it costs nothing, and this can't rule out a real device behaving
+ * differently under actual WebGL context loss. Resetting a child's
+ * progress because they turned the phone would be a silent, invisible
+ * bug either way.
  */
 const scaffold: ScaffoldState = loadScaffold();
 
@@ -369,7 +374,10 @@ export class RoadScene extends Phaser.Scene {
   /**
    * The song the child is learning, or null to wander. Held at scene level
    * (not module level like the scaffold) because unlike learning progress
-   * it is cheap to re-read from storage, and `create()` re-runs on resize.
+   * it is cheap to re-read from storage — kept that way even though
+   * `tools/rotate-check.mjs` no longer supports the "create() re-runs on
+   * resize" premise this was written under (see the scaffold's own
+   * comment above `scaffold`).
    */
   private songChoice: SongChoice = null;
   private bookIcon!: Phaser.GameObjects.Image;

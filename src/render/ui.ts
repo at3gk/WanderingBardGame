@@ -20,7 +20,9 @@ export const HIT_LINE_HEIGHT = 120;
 
 /**
  * Bakes all four, once per texture-manager lifetime. Safe to call again —
- * the scene does, on every `create()`, which a resize re-runs.
+ * guarded for the case `create()` re-runs on a resize, though
+ * `tools/rotate-check.mjs` now verifies that doesn't actually happen in
+ * headless testing. Kept idempotent regardless; it costs nothing.
  */
 export function createStyleTextures(scene: Phaser.Scene): void {
   if (!scene.textures.exists('note-glyph')) {

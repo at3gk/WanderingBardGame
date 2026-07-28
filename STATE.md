@@ -1,10 +1,39 @@
 # STATE
 
-Run counter: 39
+Run counter: 40
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **Run 40 (scheduled): a five-place assumption turned out to be
+  untested, and doesn't hold.** Both blockers re-checked, unchanged (see
+  Blocked on human); no playtest answer; idea backlog still correctly
+  deferred. Read the free-play-staff and walk-chrome code (ROADMAP task
+  108's own instruction before claiming either as a next extraction) and
+  confirmed task 107's caution was right — `buildFreeStaff` shares
+  `songTitleText` with the walk mode, and `setWalkChromeVisible` touches
+  nine unrelated fields (meter, coins, distance) — so neither is a clean
+  single-unit extraction and this run didn't attempt one.
+  Instead: `RoadScene.ts` (×2), `render/ui.ts`, this file, `tools/README.md`,
+  and ROADMAP task 59's own summary all assert flatly that "a resize
+  re-runs Phaser's `create()`" — the reason the learning scaffold sits at
+  module scope and texture baking is idempotent. No check had ever isolated
+  that specific claim: `rotate-check.mjs` only ever proved state *survives*
+  a resize, which it would either way given those defenses. Attached a
+  `Phaser.Scenes.Events.CREATE` counter after boot and drove two rotations
+  (plus, in a scratch script, a third arbitrary resize and a direct
+  GameObject-identity check on `bardUpper`): **`create()` fires zero
+  additional times** — same scene instance, same GameObjects throughout.
+  The assumption does not hold, at least in headless Chromium with WebGL.
+  Did not remove the defenses (module-scoped scaffold, `textures.exists()`
+  guards) — cheap insurance, and this can't rule out a real device behaving
+  differently under actual WebGL context loss, which was the original,
+  never-independently-tested worry. What changed: `rotate-check.mjs` now
+  asserts the count permanently instead of assuming it, and the five
+  misleading comments/docs say what's verified versus what's still just
+  insurance. `npm test` 279 green (unchanged), build green (bundle
+  byte-identical), full 14-check quick suite green.
 
 - **Run 39 (scheduled): split the songbook picker out of `RoadScene.ts`.**
   Both standing blockers re-checked first, unchanged (see Blocked on human).
