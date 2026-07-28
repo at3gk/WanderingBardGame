@@ -81,13 +81,17 @@ export const DEFAULT_BARD_COLORS: BardColors = {
   cloak: 0xa8452f,
   cloakLining: 0xd98a5c,
   trousers: 0x4a5a6b,
-  boots: 0x4e3a2c,
+  // Leather, not bark. The boots and the instrument strap share this, and
+  // both sit in shadow most of the day: at 0x4e3a2c they crushed to flat
+  // black, which turned the feet into two holes under the cloak and drew the
+  // strap across the chest as a hard ink line.
+  boots: 0x6b4a33,
   hat: 0x8c3d33,
   hatBand: 0xe0b463,
   // Not near-black. Under a hat brim that casts a real shadow, a very dark
   // hair colour crushes to a flat black rectangle and the back of the head
   // reads as a hole cut through the character.
-  hair: 0x593b2b,
+  hair: 0x6b4632,
 };
 
 /**
@@ -167,7 +171,10 @@ function cloakGeometry(): BufferGeometry {
   const topRadius = 0.155;
   const bottomRadius = 0.33;
   const top = 0.46;
-  const bottom = -0.16;
+  // Six centimetres shorter than it was. The legs are the only part of the
+  // figure that says "walking" at a glance and the old hem left them two
+  // boot-stumps poking out from under a bell.
+  const bottom = -0.1;
   const verts: number[] = [];
   // Wide enough to read as a cloak from behind — which is the angle the
   // walking camera holds — and open enough at the front that the hands and
@@ -179,9 +186,13 @@ function cloakGeometry(): BufferGeometry {
   for (let i = 0; i < panels; i++) {
     const a0 = start + (i / panels) * arc;
     const a1 = start + ((i + 1) / panels) * arc;
-    // Ragged hem: each panel hangs to a slightly different length.
-    const drop0 = bottom - (i % 3) * 0.03;
-    const drop1 = bottom - ((i + 1) % 3) * 0.03;
+    // Ragged hem: each panel hangs to a slightly different length. A sine
+    // rather than `i % 3`, which put its deepest panel dead on the centre
+    // back — with the two neighbours stepping up either side the hem came to
+    // a point and the cloak read as a kite tail.
+    const ragged = (n: number) => Math.sin(n * 2.39 + 0.7) * 0.021;
+    const drop0 = bottom + ragged(i);
+    const drop1 = bottom + ragged(i + 1);
     // The front edges are pulled in and lifted so the cloak falls open off
     // the shoulders instead of ending in two flat vertical planks.
     const edge0 = Math.min(1, (i + 0.5) / 2.2, (panels - i - 0.5) / 2.2);
@@ -204,21 +215,33 @@ function cloakGeometry(): BufferGeometry {
     verts.push(...t0, ...b1, ...b0, ...t0, ...t1, ...b1);
   }
 
-  // A collar: a short, nearly upright band around the top of the arc.
-  // Without it the cloak appears to start halfway down the back with
-  // nothing holding it on. It has to stay close to vertical — the first
-  // attempt flared it out to a third again its radius and, because upward-
-  // facing surfaces take the sky's full light under this lighting model, it
-  // came back a bright salmon ring and read as a clown's ruff.
-  const collarTop = top + 0.055;
+  // A collar: a short, nearly upright band around the top of the arc,
+  // standing up into a low hood at the centre back. Without it the cloak
+  // appears to start halfway down the back with nothing holding it on. It
+  // has to stay close to vertical — the first attempt flared it out to a
+  // third again its radius and, because upward-facing surfaces take the
+  // sky's full light under this lighting model, it came back a bright salmon
+  // ring and read as a clown's ruff.
+  //
+  // The rise at the back is small on purpose. `baseShade` darkens this
+  // geometry toward its hem, so the collar is the brightest cloth on the
+  // figure whatever else happens to it; at 0.085 it stopped being a collar
+  // and became a pale bib covering the neck and both shoulders — the ruff
+  // again, by another route. Three centimetres reads as a turned-up collar
+  // and nothing more, and the black notch it was meant to fill is dealt
+  // with where it actually comes from, in the head's shadow depth.
+  const collarBase = top + 0.055;
   for (let i = 0; i < panels; i++) {
     const a0 = start + (i / panels) * arc;
     const a1 = start + ((i + 1) / panels) * arc;
+    // Peaks at the centre back (-PI/2) and falls away to nothing by the
+    // shoulders, so the front of the collar is unchanged.
+    const rise = (a: number) => 0.03 * Math.pow(Math.max(0, -Math.sin(a)), 1.5);
     const r = topRadius * 1.07;
     const c0 = [Math.cos(a0) * topRadius, top, Math.sin(a0) * topRadius];
     const c1 = [Math.cos(a1) * topRadius, top, Math.sin(a1) * topRadius];
-    const u0 = [Math.cos(a0) * r, collarTop, Math.sin(a0) * r];
-    const u1 = [Math.cos(a1) * r, collarTop, Math.sin(a1) * r];
+    const u0 = [Math.cos(a0) * r, collarBase + rise(a0), Math.sin(a0) * r];
+    const u1 = [Math.cos(a1) * r, collarBase + rise(a1), Math.sin(a1) * r];
     verts.push(...c0, ...u1, ...u0, ...c0, ...c1, ...u1);
   }
 
@@ -245,9 +268,13 @@ function cloakGeometry(): BufferGeometry {
  */
 function hatGeometry(): BufferGeometry {
   const segments = 11;
-  const brim = 0.3;
+  const brim = 0.315;
   const crownRadius = 0.155;
-  const crownTop = 0.155;
+  // Shorter than it was by three centimetres. At 0.155 the crown was over
+  // half a head tall with near-parallel sides and read as a bowler; the
+  // charm of this hat is all in the brim, so the crown's job is to be a
+  // small soft lump that lets the brim be the shape you remember.
+  const crownTop = 0.125;
   const verts: number[] = [];
   for (let i = 0; i < segments; i++) {
     const a0 = (i / segments) * Math.PI * 2;
@@ -321,39 +348,78 @@ function hatBandGeometry(): BufferGeometry {
 /**
  * The instrument. One shape, recoloured and reproportioned per instrument,
  * because six modelled instruments is six times the geometry for something
- * held at chest height and seen mostly in silhouette.
+ * carried on the bard's back and seen mostly in silhouette.
+ *
+ * Silhouette is the whole job here, and the previous proportions failed it
+ * badly: a body 0.28 tall and 0.14 deep under a neck only 0.32 long is, at
+ * any distance the camera actually holds, a mallet. From the side it read as
+ * a handbag on a strap. What makes a lute a lute at forty pixels is one
+ * ratio — a *short* body under a *long thin* neck — so the body is now a
+ * third of the length and the neck two thirds, and the body is flattened in
+ * depth so it lies against the bard's back instead of bulging off it.
+ *
+ * Built with its base at local zero and translated so the finished shape is
+ * centred on its own middle; the carrying pivot then only has to rotate it,
+ * and a drum and a lute of different lengths hang from the same pivot
+ * without each needing its own offset.
  */
 function instrumentGeometry(kind: string): BufferGeometry {
   const parts: BufferGeometry[] = [];
   const isDrum = kind === 'drum' || kind === 'bodhran';
   const isFlute = kind === 'flute' || kind === 'reedflute' || kind === 'pipe';
+  let length: number;
 
   if (isFlute) {
-    const body = boxPart(0.05, 0.62, 0.05, 0.9);
-    parts.push(body);
+    length = 0.66;
+    parts.push(boxPart(0.046, length, 0.046, 0.88));
+    // A mouthpiece block, so the pipe has an end and a direction rather than
+    // reading as a dropped stick.
+    const lip = boxPart(0.062, 0.075, 0.062, 0.9);
+    translate(lip, 0, length - 0.075, 0);
+    parts.push(lip);
   } else if (isDrum) {
-    const body = boxPart(0.36, 0.11, 0.36, 1);
-    parts.push(body);
+    length = 0.34;
+    parts.push(boxPart(0.34, 0.1, 0.34, 1));
+    const rim = boxPart(0.36, 0.03, 0.36, 1);
+    translate(rim, 0, 0.035, 0);
+    parts.push(rim);
   } else {
-    // A waisted body and a neck: lute, harp, hurdy-gurdy and bells all read
-    // acceptably from this at the distance the camera holds. Sized to sit
-    // *inside* the figure's silhouette when slung. The first pass made it
-    // half again this big on the theory that a bigger instrument reads
-    // better; it read as a suitcase carried at arm's length.
-    const lower = boxPart(0.21, 0.13, 0.13, 1.16, 1.1);
-    parts.push(lower);
-    const upper = boxPart(0.244, 0.15, 0.143, 0.52, 0.6);
-    translate(upper, 0, 0.13, 0);
-    parts.push(upper);
-    const neck = boxPart(0.05, 0.32, 0.042, 0.86);
-    translate(neck, 0, 0.26, 0);
+    // Bowl, waist, shoulders, neck, pegbox. Lute, harp, hurdy-gurdy and
+    // bells all read acceptably from this: what the eye picks up is the
+    // teardrop-under-a-stick, not which of them it is.
+    //
+    // The bowl is nearly as deep as it is wide. A lute worn on the back
+    // presents its soundboard square to whoever is behind, so a body modelled
+    // as a flat plate is seen face-on exactly when it matters, and a flat
+    // plate on the end of a shaft is a spade. Depth is what makes it read as
+    // a body with a back to it instead.
+    const bowl = boxPart(0.145, 0.075, 0.1, 1.45, 1.24);
+    parts.push(bowl);
+    const waist = boxPart(0.21, 0.09, 0.124, 0.8, 0.9);
+    translate(waist, 0, 0.075, 0);
+    parts.push(waist);
+    const shoulders = boxPart(0.168, 0.06, 0.112, 0.47, 0.55);
+    translate(shoulders, 0, 0.165, 0);
+    parts.push(shoulders);
+    // Long, thin, and a touch tapered. This one part is most of why the
+    // shape reads as an instrument at all.
+    const neck = boxPart(0.042, 0.33, 0.036, 0.82);
+    translate(neck, 0, 0.225, 0);
     parts.push(neck);
-    const head = boxPart(0.085, 0.09, 0.042, 0.75);
-    translate(head, 0, 0.56, 0);
-    parts.push(head);
+    // The pegbox is angled back off the neck in a real lute. Faking that
+    // with a wider, shallower block is enough at this size and costs nothing.
+    const pegbox = boxPart(0.068, 0.085, 0.031, 0.8);
+    translate(pegbox, 0, 0.535, -0.011);
+    parts.push(pegbox);
+    // Kept to 0.62 rather than the 0.72 of the first attempt. Length is set
+    // by where the bowl lands, not by the instrument: slung, the bowl has to
+    // sit high enough up the back that the cloak has not yet flared past it,
+    // or it hangs clear of the cloth with daylight showing between the two.
+    length = 0.62;
   }
 
   const merged = concat(parts);
+  translate(merged, 0, -length / 2, 0);
   merged.computeVertexNormals();
   return merged;
 }
@@ -429,7 +495,7 @@ export class Bard {
      * rather than a decision. The cloak and the hat brim, which do move,
      * declare it explicitly and ship the attribute to go with it.
      */
-    const solid = (color: number, rim = 0.5) =>
+    const solid = (color: number, rim = 0.5, shadowDepth = 0.45) =>
       this.track(
         createPainterlyMaterial(globals, {
           color,
@@ -442,9 +508,25 @@ export class Bard {
           flatShading: true,
           swayAttribute: false,
           sway: 0,
-          shadowDepth: 0.45,
+          shadowDepth,
         }),
       );
+
+    /**
+     * Anything that lives under the hat brim.
+     *
+     * The brim casts a real shadow and the head is the only part of the
+     * figure permanently inside one, so at the general 0.45 the whole band
+     * between brim and collar went to near-black and read, from directly
+     * behind, as a hole punched through the neck. Lifting the shadow floor
+     * for these parts alone keeps that band as warm shade. It is the same
+     * lighting model — `shadowDepth` is how deep a material lets its own
+     * shadows go, and the doc on it says as much: cosy games do not use
+     * black. Painting the hair lighter was tried first and only produced a
+     * marginally lighter hole, because the problem was the shadow, not the
+     * albedo.
+     */
+    const underBrim = (color: number, rim = 0.5) => solid(color, rim, 0.72);
 
     // --- legs ----------------------------------------------------------
     // Pivots sit at the hip so a rotation swings the leg rather than
@@ -454,7 +536,7 @@ export class Bard {
     // The boot narrows toward the ankle so the trouser covers its top rim.
     // Left wider, the rim reads as a pale collar of sky-lit sock, which at
     // walking distance is the only thing you notice about the feet.
-    const bootGeo = boxPart(0.15, 0.13, 0.235, 0.76, 0.66);
+    const bootGeo = boxPart(0.135, 0.115, 0.185, 0.76, 0.66);
     for (const [side, pivot] of [
       [-1, this.leftLeg],
       [1, this.rightLeg],
@@ -540,30 +622,39 @@ export class Bard {
       hand.position.y = -0.43;
       hand.castShadow = false;
       pivot.add(arm, hand);
-      pivot.position.set(side * 0.18, SHOULDER_Y, 0);
+      // Slightly narrower and set forward. The cloak's radius grows as it
+      // falls, so an arm hanging at a fixed 0.18 started outside the cloth at
+      // the shoulder and passed through it at the elbow, stitching a bright
+      // sliver of sleeve down the cloak on both sides. Forward of the
+      // shoulder line the arm hangs in the cloak's front opening instead.
+      pivot.position.set(side * 0.172, SHOULDER_Y, 0.035);
       this.torso.add(pivot);
     }
 
     // --- head ----------------------------------------------------------
-    const head = new Mesh(boxPart(0.25, HEAD_HEIGHT, 0.225, 0.94), solid(colors.skin, 0.55));
+    const head = new Mesh(boxPart(0.25, HEAD_HEIGHT, 0.225, 0.94), underBrim(colors.skin, 0.55));
     head.position.y = HEAD_Y;
     head.castShadow = true;
     // A nose. Four hundred bytes of geometry that does more for the
     // three-quarter read than anything else on the figure, because it is
     // the only thing that tells you which way the head is facing once the
     // hat brim has put the face in shadow.
-    const nose = new Mesh(boxPart(0.05, 0.055, 0.05, 0.7), solid(colors.skin, 0.6));
+    const nose = new Mesh(boxPart(0.05, 0.055, 0.05, 0.7), underBrim(colors.skin, 0.6));
     nose.position.set(0, HEAD_Y + 0.11, 0.108);
     nose.castShadow = false;
     // Hair sits low at the back so it shows under the brim; without it the
     // gap between hat and collar reads as a bare tan column, which from
     // behind — the angle the walking camera holds — is most of what you see
     // of the head.
-    const hair = new Mesh(boxPart(0.255, 0.115, 0.235, 1.02), solid(colors.hair, 0.4));
+    const hair = new Mesh(boxPart(0.255, 0.115, 0.235, 1.02), underBrim(colors.hair, 0.4));
     hair.position.set(0, HEAD_Y + 0.145, -0.012);
     hair.castShadow = false;
-    const nape = new Mesh(boxPart(0.235, 0.185, 0.075, 1.04, 1.1), solid(colors.hair, 0.35));
-    nape.position.set(0, HEAD_Y + 0.02, -0.108);
+    // The nape reaches down to the collar. It is the surface the player
+    // actually looks at for most of the game — the back of a head under a
+    // hat — so it gets the height to fill the gap and a rim term to give the
+    // shape an edge in the shade.
+    const nape = new Mesh(boxPart(0.235, 0.235, 0.078, 1.04, 1.1), underBrim(colors.hair, 0.6));
+    nape.position.set(0, HEAD_Y - 0.03, -0.108);
     nape.castShadow = false;
     const hatMaterial = this.track(
       createPainterlyMaterial(globals, {
@@ -639,9 +730,9 @@ export class Bard {
     );
     const mesh = new Mesh(instrumentGeometry(id), material);
     mesh.castShadow = true;
-    // The pivot handles carrying angle and slinging; the mesh only has to
-    // hang from its own middle, so the two can be animated independently.
-    mesh.position.y = -0.24;
+    // The pivot handles carrying angle and slinging; the geometry is already
+    // centred on its own middle, so the two can be animated independently
+    // and a drum can replace a lute without the pose changing.
     this.instrumentPivot.add(mesh);
     this.instrumentMesh = mesh;
   }
@@ -749,7 +840,13 @@ export class Bard {
       // Looking down at the hands while playing, less so as the crowd warms
       // and the bard starts performing to them instead of to the strings.
       playAmount * (0.2 - this.warmth * 0.22);
-    this.headPivot.rotation.z = Math.sin(this.elapsed * 0.7) * 0.02 * idleAmount;
+    // The head tips very slightly against the hips' weight shift, a beat
+    // behind it. Small enough to be invisible frame by frame; what it does is
+    // stop the hat — the biggest, most readable shape on the figure — from
+    // travelling as if it were bolted to a rail.
+    this.headPivot.rotation.z =
+      Math.sin(this.elapsed * 0.7) * 0.02 * idleAmount -
+      Math.sin(phase - Math.PI * 0.6) * 0.035 * walkAmount;
 
     // --- arms ----------------------------------------------------------
     const armSwing = 0.52 * walkAmount;
@@ -761,9 +858,15 @@ export class Bard {
     // The left hand stays on the instrument's neck at all times; it only
     // swings when the instrument is slung and the bard is walking.
     const slung = 1 - playAmount;
+    // Arms swing slightly *across* the body as well as along it, in time with
+    // the shoulder rotation. A pendulum in one plane is the other half of the
+    // wind-up-toy read that the phase lag above fixes half of; a real arm on
+    // a swinging shoulder traces a shallow arc inward at the front of the
+    // step and outward at the back.
+    const armCross = Math.sin(armPhase) * 0.09 * walkAmount;
     this.leftArm.rotation.x =
       Math.sin(armPhase + Math.PI) * armSwing * slung - carryPose * playAmount - 0.1;
-    this.leftArm.rotation.z = 0.11 + playAmount * 0.32;
+    this.leftArm.rotation.z = 0.11 + playAmount * 0.32 - armCross;
 
     // The right hand strums. The kick from `pluck` is what makes a note
     // land visually at the same instant it lands audibly.
@@ -773,7 +876,7 @@ export class Bard {
       carryPose * playAmount -
       this.strum * 0.5 +
       strumMotion;
-    this.rightArm.rotation.z = -0.11 - playAmount * 0.28 - this.strum * 0.16;
+    this.rightArm.rotation.z = -0.11 - playAmount * 0.28 - this.strum * 0.16 - armCross;
 
     // --- instrument ----------------------------------------------------
     // Two poses, blended rather than switched. Slung it rides across the
@@ -785,19 +888,37 @@ export class Bard {
     // the neck rises past his right shoulder — the way the strap across his
     // chest runs. Hanging it the other way was the first version and looked
     // like the strap belonged to something else.
+    //
+    // Slung, it sits low and close: the body at the small of the back, the
+    // pegbox clearing the shoulder just under the hat brim. It used to hang
+    // 0.30 m off the spine at a 41-degree tilt, which swung the body clear
+    // of the figure's outline entirely — from the side it was a bag being
+    // carried, not an instrument being worn.
+    // The slung z has to clear the cloak by a little and no more, and the
+    // cloak flares as it falls: its back surface is about 0.29 m off the
+    // spine where the bowl sits and 0.33 m at the hem. Too near and the bowl
+    // is *inside* the cloth, showing through it as a ghost — the cloak is
+    // double-sided. Too far and it hangs off the back like a knapsack.
     this.instrumentPivot.position.set(
       playAmount * 0.06 - slung * 0.03,
-      SHOULDER_Y - 0.09 - slung * 0.06,
-      playAmount * 0.22 - slung * 0.3,
+      SHOULDER_Y - 0.09 - slung * 0.03,
+      playAmount * 0.22 - slung * 0.285,
     );
     // Slung, it is tipped so its foot leans further off the back than its
-    // neck does. The cloak flares as it falls, so a instrument hung
+    // neck does. The cloak flares as it falls, so an instrument hung
     // parallel to the spine has its body inside the cloth and its edges
     // stitching through it a few triangles at a time.
+    // Thirty degrees, not forty. The steeper tilt threw the bowl clear of the
+    // cloak's outline with daylight showing between the two, and a shape that
+    // hangs outside a character's silhouette reads as luggage. This angle
+    // keeps the bowl against the small of the back and lets only the neck and
+    // pegbox break the outline, which is the part worth seeing. The x tilt
+    // leans the foot further off the back than the neck, so the bowl stands
+    // proud of the flaring cloak while the pegbox stays near the shoulder.
     this.instrumentPivot.rotation.set(
-      this.strum * 0.07 + slung * 0.3,
-      playAmount * -0.4 + slung * 0.18,
-      -slung * 0.72 - playAmount * 0.5,
+      this.strum * 0.07 + slung * 0.15,
+      playAmount * -0.4 + slung * 0.08,
+      -slung * 0.52 - playAmount * 0.5,
     );
   }
 

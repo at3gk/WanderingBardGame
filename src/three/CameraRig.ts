@@ -64,18 +64,30 @@ interface MoodFraming {
  * whether it is breaking something deliberate.
  */
 /**
- * How much of the frame the bard fills is set by `distance` and `fov`
- * together, and it is the number that decides whether this is a game about
- * a person or a game about some scenery. He is roughly 1.4 m tall; the
- * frame is 2 * distance * tan(fov/2) metres high where he stands, so
- * walking's 4.6 m and 50 degrees put him at about a third of frame height.
- * The previous framing sat at 5.9 m and read him at a quarter — small
- * enough that against busy grass he disappeared entirely.
+ * Two numbers decide whether this is a game about a person or a game about
+ * some scenery, and both are worth stating as arithmetic rather than taste.
  *
- * `side` reads as a much smaller screen offset than its value suggests,
- * because the look target sits on the subject's own forward line: the
- * offset in tangent space is side * lead / (distance * (distance + lead)),
- * so shortening the lead shrinks it and it has to be paid back in side.
+ * **How tall he reads.** The bard is about 1.4 m. The frame is
+ * `2 * range * tan(fov/2)` metres high where he stands, `range` being the
+ * true camera-to-bard distance — `sqrt(distance² + side² + (height - 0.7)²)`,
+ * not `distance`, which is why raising `side` quietly shrinks him. Walking's
+ * 4.0 m / 2.4 m / 42 degrees puts him at 0.37 of frame height. The previous
+ * numbers (4.6 m, 1.5 m, 50 degrees) read 0.29, and 0.29 against busy grass
+ * is a figure you have to go looking for.
+ *
+ * Note the trade in the FOV rather than the distance. Closing the distance
+ * to get the same size would have put the camera on his heels, lost the road
+ * ahead, and pushed the near scatter into the lens; a narrower FOV buys the
+ * height back, compresses the land behind him — which suits the storybook
+ * look — and stops straight edges bending at the frame corners.
+ *
+ * **How far off-centre.** `side` reads as a much smaller screen offset than
+ * its value suggests, because the look target sits on the subject's own
+ * forward line rather than beside it: the offset in tangent space is
+ * `side * lead / (distance * (distance + lead))`, divided by `tan(fov/2) *
+ * aspect` to land in NDC. So shortening the lead shrinks it and it has to be
+ * paid back in side. Every framing here is aimed at roughly 0.3 of a half
+ * frame — clearly out of the middle, nowhere near the edge.
  */
 const FRAMINGS: Record<CameraMood, MoodFraming> = {
   // Close enough that the bard is unmistakably the subject, high enough to
@@ -83,12 +95,12 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
   // walk is seeing what is coming, so the lead still carries the frame
   // forward — just not so far that it pushes him into the bottom edge.
   walking: {
-    distance: 4.6,
-    height: 2.2,
-    lookHeight: 1.2,
-    lead: 3.0,
-    side: 1.5,
-    fov: 50,
+    distance: 4.0,
+    height: 2.05,
+    lookHeight: 1.15,
+    lead: 2.4,
+    side: 2.4,
+    fov: 42,
     positionSmoothing: 0.55,
     targetSmoothing: 0.85,
     drift: 0.06,
@@ -97,25 +109,27 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
   // three-quarter view rather than seen from behind — you want to see the
   // playing, and you want room in frame for whoever stopped to listen.
   busking: {
-    distance: 4.5,
-    height: 1.95,
-    lookHeight: 1.15,
-    lead: 1.1,
-    side: 3.0,
-    fov: 46,
+    distance: 3.9,
+    height: 1.9,
+    lookHeight: 1.1,
+    lead: 1.6,
+    side: 2.7,
+    fov: 43,
     positionSmoothing: 0.75,
     targetSmoothing: 1.0,
     drift: 0.11,
   },
   // Right in on the fire, low, wide-ish. This is the one moment the game
-  // asks you to stop moving, so the camera stops too.
+  // asks you to stop moving, so the camera stops too. Sitting costs him
+  // about a third of his standing height, so this one has to come in closer
+  // than the others just to hold level with them.
   resting: {
-    distance: 3.9,
-    height: 1.7,
-    lookHeight: 0.85,
-    lead: 0.5,
+    distance: 3.2,
+    height: 1.5,
+    lookHeight: 0.8,
+    lead: 1.0,
     side: 2.2,
-    fov: 44,
+    fov: 40,
     positionSmoothing: 1.1,
     targetSmoothing: 1.3,
     drift: 0.14,
@@ -125,12 +139,12 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
   // small here on purpose, but he is kept well off-centre so he still reads
   // as the figure in the landscape rather than a speck in the middle of it.
   vista: {
-    distance: 8.5,
-    height: 4.2,
-    lookHeight: 1.9,
-    lead: 7.0,
-    side: 2.6,
-    fov: 40,
+    distance: 7.5,
+    height: 3.6,
+    lookHeight: 1.8,
+    lead: 6.0,
+    side: 3.2,
+    fov: 38,
     positionSmoothing: 1.2,
     targetSmoothing: 1.4,
     drift: 0.1,
@@ -138,12 +152,12 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
   // Slightly further back than walking and led less, so the thing you have
   // met shares the frame instead of sliding out of it.
   encounter: {
-    distance: 5.0,
-    height: 2.15,
+    distance: 4.3,
+    height: 2.05,
     lookHeight: 1.2,
-    lead: 1.9,
-    side: 2.3,
-    fov: 48,
+    lead: 2.0,
+    side: 2.4,
+    fov: 44,
     positionSmoothing: 0.7,
     targetSmoothing: 0.9,
     drift: 0.09,
@@ -302,7 +316,7 @@ export class CameraRig {
     const subjectCos = Math.cos(subject.heading);
     this.scratchTarget.set(
       subject.position.x + subjectSin * framing.lead,
-      subject.position.y + framing.lookHeight,
+      subject.position.y + framing.lookHeight + this.widenRise(framing),
       subject.position.z + subjectCos * framing.lead,
     );
 
@@ -356,6 +370,29 @@ export class CameraRig {
       this.camera.fov = damp(this.camera.fov, goalFov, framing.positionSmoothing, dt);
       this.camera.updateProjectionMatrix();
     }
+  }
+
+  /**
+   * How far to lift the look target to pay for the narrow-screen widening.
+   *
+   * `applyAspect` buys back the width a phone crops away by opening the
+   * vertical FOV, and that added angle arrives split evenly above and below
+   * the view axis. The half below is worthless: it is more of the road
+   * surface the bard is already standing on, and on a 9:19.5 portrait frame
+   * it was over half the picture — the bard ended up a small figure floating
+   * in a field of dirt.
+   *
+   * Tilting the camera up by exactly the angle the widening added puts the
+   * bottom edge back where the unwidened framing had it and hands the whole
+   * gain to the sky, which is what the widening was for. It is done by
+   * moving the *look target*, not by adding a pitch offset, so it damps with
+   * everything else and cannot fight the target smoothing.
+   */
+  private widenRise(framing: MoodFraming): number {
+    if (this.fovWiden <= 1) return 0;
+    const half = MathUtils.degToRad(framing.fov) * 0.5;
+    const widened = Math.atan(Math.tan(half) * this.fovWiden);
+    return Math.tan(widened - half) * (framing.distance + framing.lead);
   }
 
   /** A framing's vertical FOV after the narrow-screen widening. */

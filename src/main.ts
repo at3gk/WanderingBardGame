@@ -33,7 +33,11 @@ function fail(message: string, detail?: unknown): void {
 
 try {
   const app = new App(host);
-  const stage = new RoadStage(app);
+  // The heads-up chrome lives inside the game element rather than loose in
+  // the body, so it inherits the touch and selection rules index.html sets
+  // there — a HUD that could be text-selected would turn a mistimed tap
+  // into a highlight instead of a note.
+  const stage = new RoadStage(app, { hudHost: host });
   app.setStage(stage);
   app.start();
 
@@ -47,7 +51,8 @@ try {
   (window as unknown as { bard: unknown }).bard = {
     app,
     stage,
-    pose: (options: { s?: number; dayFraction?: number; phase?: Phase }) => stage.pose(options),
+    pose: (options: { s?: number; dayFraction?: number; phase?: Phase | 'vista' }) =>
+      stage.pose(options),
     describe: () => stage.describe(),
   };
 } catch (error) {
