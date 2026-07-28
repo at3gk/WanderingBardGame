@@ -59,16 +59,23 @@ import {
 import {
   advance,
   canEnter,
+  chooseInstrument,
   createJourney,
   earn,
   enterPhase,
   loadJourney,
   recordEntry,
   saveJourney,
+  unlockInstrument,
   type JourneyState,
   type Phase,
 } from '../core/journey';
-import { instrumentById, unlockedInstruments, type Instrument } from '../core/instruments';
+import {
+  instrumentById,
+  isInstrumentId,
+  unlockedInstruments,
+  type Instrument,
+} from '../core/instruments';
 import { beatIntervalMs } from '../core/beats';
 import { expandSong, songDurationMs, type SongBeat } from '../core/song';
 import { songForBiome } from '../core/songs';
@@ -337,9 +344,13 @@ export class RoadStage implements Stage {
     this.hud = new Hud(options.hudHost ?? document.body);
     this.hud.setCoins(this.journey.coins);
     this.hud.setInstrument(this.instrument().name);
+    this.hud.onInstrumentChosen((id) => this.takeOut(id));
     this.hud.setMode(this.journey.phase === 'resting' ? 'resting' : 'walking');
     if (this.journey.phase === 'resting') this.makeCamp();
     this.collectIdle();
+    // After the camp, which is where an unlock is named and where the case
+    // therefore gains its entries.
+    this.refreshCase();
 
     app.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
     window.addEventListener('keydown', this.onKeyDown);
@@ -823,13 +834,104 @@ export class RoadStage implements Stage {
     this.world.addClearing(anchor.x + fire.x, anchor.z + fire.z, extent + 1.2);
     this.syncSubject();
 
+    // What the day turned up is named here, and only here.
+    //
+    // The alternative was to announce an instrument the moment its threshold
+    // was crossed, and that moment is always a bad one: thresholds are
+    // lifetime totals, so they are crossed mid-tune, mid-hill, or three
+    // seconds after a stranger has finished talking. The fire is the one
+    // place in the day the game already stops and accounts for itself, and a
+    // thing you found is exactly what belongs in that accounting.
+    const found = this.noteUnlocks();
+    for (const instrument of found) {
+      this.journey = recordEntry(this.journey, {
+        kind: 'unlock',
+        line: `${instrument.name}. ${instrument.character}`,
+      });
+    }
+    if (found.length > 0) this.refreshCase();
+
     const coins = Math.floor(this.journey.coins);
-    this.hud.say(
+    // The empty-purse line used to read "Nothing in the case tonight", which
+    // was fine until the case could also gain an instrument: "nothing in the
+    // case tonight, and a Reed Flute travels with you" is a sentence
+    // disagreeing with itself. Naming the coins instead costs nothing and
+    // makes both halves true at once.
+    const camp =
       coins > 0
-        ? `Camp, and ${coins} coins in the case. The road will still be there in the morning.`
-        : 'Camp. Nothing in the case tonight, and the fire does not mind.',
-      14,
+        ? `Camp, and ${coins} coins in the case.`
+        : 'Camp, and not a coin earned today, which the fire does not mind.';
+    const tail =
+      found.length > 0 ? describeFound(found) : 'The road will still be there in the morning.';
+    this.hud.say(`${camp} ${tail}`, 14);
+  }
+
+  /**
+   * Which instruments the player has earned but has not been told about.
+   *
+   * `unlockedInstruments()` derives the answer from lifetime totals every
+   * time it is asked, so an earned instrument is *playable* the instant the
+   * total crosses; `journey.unlockedInstruments` is the separate, narrower
+   * question of which ones have been named to the player, and it is the list
+   * `chooseInstrument` will let them pick from. Keeping them apart is what
+   * lets the campfire be the moment of finding rather than a report of
+   * something that already quietly happened.
+   *
+   * Appending is this file's job rather than the journey's, because the
+   * journey deliberately does not import the instrument catalogue — see its
+   * header. It is idempotent, so a camp entered twice names nothing twice.
+   *
+   * A save made before any of this existed has only the lute in its list and
+   * may have thousands of lifetime metres behind it. Such a player is told
+   * about several instruments at one fire, which is a slightly crowded line
+   * and the honest one: they did earn them all.
+   */
+  private noteUnlocks(): Instrument[] {
+    const found = unlockedInstruments(this.journey).filter(
+      (instrument) => !this.journey.unlockedInstruments.includes(instrument.id),
     );
+    for (const instrument of found) {
+      this.journey = unlockInstrument(this.journey, instrument.id);
+    }
+    return found;
+  }
+
+  /** Hand the HUD the contents of the case, and which one is in hand. */
+  private refreshCase(): void {
+    this.hud.setCase(
+      this.journey.unlockedInstruments
+        .filter(isInstrumentId)
+        .map((id) => ({ id, name: instrumentById(id).name })),
+      this.journey.instrumentId,
+    );
+  }
+
+  /**
+   * Take an instrument out of the case.
+   *
+   * Refused during a busk, and refused twice over: the HUD stops taking taps
+   * on the corner in that mode as well. `tempoFeel` is baked into every beat
+   * time when the busk is built, so swapping voices mid-tune would leave the
+   * staff flying at one tempo and the music sounding at another for the rest
+   * of the pass — which is the one kind of wrongness a game about reading
+   * notation cannot afford.
+   *
+   * The save is forced rather than throttled. This is a deliberate choice the
+   * player made about their own bard, and it is the sort of thing that must
+   * survive the tab being closed a second later.
+   */
+  private takeOut(id: string): void {
+    if (this.performance) return;
+    const before = this.journey.instrumentId;
+    this.journey = chooseInstrument(this.journey, id);
+    if (this.journey.instrumentId === before) return;
+
+    const instrument = this.instrument();
+    this.bard.setInstrument(instrument);
+    this.notes.setInstrument(instrument);
+    this.hud.setInstrument(instrument.name);
+    this.refreshCase();
+    saveJourney(this.journey, true);
   }
 
   private strikeCamp(): void {
@@ -1192,6 +1294,37 @@ export class RoadStage implements Stage {
     this.shown.length = 0;
     this.sky.dispose();
   }
+}
+
+/**
+ * The half-sentence the campfire adds when the day turned something up.
+ *
+ * One line, no fanfare, and phrased so it can be read as a fact about the
+ * evening rather than as an award: the instrument is simply travelling with
+ * you now. It deliberately does not quote the instrument's `character` — that
+ * belongs in the journal entry, where a player who wants to know what a
+ * hurdy-gurdy is like can find it, and not in a card the player is reading
+ * while looking at a fire.
+ *
+ * The article is computed rather than written into the names because the six
+ * shipped instruments all begin with a consonant and the seventh might not,
+ * and "a Ocarina" is the sort of seam that makes a hand-written line stop
+ * reading as one.
+ */
+function describeFound(found: Instrument[]): string {
+  const names = found.map((instrument) => `${article(instrument.name)} ${instrument.name}`);
+  const list =
+    names.length === 1
+      ? names[0]
+      : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  const subject = list.charAt(0).toUpperCase() + list.slice(1);
+  return names.length === 1
+    ? `${subject} travels with you from tonight. Take it out whenever you like.`
+    : `${subject} travel with you from tonight. Take them out whenever you like.`;
+}
+
+function article(name: string): string {
+  return /^[aeiou]/i.test(name) ? 'an' : 'a';
 }
 
 function smoothstep(edge0: number, edge1: number, x: number): number {

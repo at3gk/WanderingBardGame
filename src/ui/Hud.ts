@@ -23,7 +23,7 @@
  */
 
 import type { HudBox, HudChrome, SafeAreaInsets } from './hudLayout';
-import { hudChrome } from './hudLayout';
+import { hudChrome, instrumentCaseBox } from './hudLayout';
 
 /** Where the chrome rests when nothing has happened for a while. */
 const IDLE_OPACITY = 0.36;
@@ -31,6 +31,23 @@ const IDLE_OPACITY = 0.36;
 const ATTENTION_SEC = 3.5;
 /** How long a journal line stays up if nobody replaces it. */
 const DEFAULT_HOLD_SEC = 7.5;
+/**
+ * How long an open case waits before shutting itself again.
+ *
+ * There is no scrim behind it and no close control, on purpose: a full-screen
+ * catcher would have to swallow a tap to dismiss, and in this game a swallowed
+ * tap is a missed note or a vista you asked to leave and did not. So the case
+ * closes on a choice, on the corner being tapped again, on the phase changing,
+ * and otherwise on its own after a while — which is also what an actual case
+ * left open on the roadside would not do, but is the closest a screen gets.
+ */
+const CASE_HOLD_SEC = 7;
+
+/** What the case can hold: an instrument's id and what it is called. */
+export interface CaseEntry {
+  id: string;
+  name: string;
+}
 
 /**
  * The face stack.
@@ -89,6 +106,8 @@ export class Hud {
   private readonly coinsValue: HTMLSpanElement;
   private readonly instrumentBox: HTMLDivElement;
   private readonly instrumentName: HTMLSpanElement;
+  private readonly caseCatch: SVGSVGElement;
+  private readonly caseBox: HTMLDivElement;
   private readonly journalBox: HTMLDivElement;
   private readonly journalLine: HTMLParagraphElement;
 
@@ -96,6 +115,13 @@ export class Hud {
   private coins = -1;
   private instrument = '';
   private mode: HudMode = 'walking';
+
+  /** Everything the bard could take out, the one in hand included. */
+  private caseEntries: CaseEntry[] = [];
+  private heldId = '';
+  private caseOpen = false;
+  private caseHold = 0;
+  private chosen: ((id: string) => void) | null = null;
 
   /** Seconds of brightness left on each piece. */
   private coinsAttention = 0;
@@ -155,11 +181,47 @@ export class Hud {
     this.coinsBox.appendChild(this.coinsValue);
     this.root.appendChild(this.coinsBox);
 
-    // --- what is in your hands -------------------------------------------
+    // --- what is in your hands, and what else is in the case ---------------
+    //
+    // The corner is a readout until there is more than one instrument in the
+    // case, and then it is also the handle that opens it. That is the whole
+    // interface: this game has no menus and does not want one, so choosing an
+    // instrument is the same gesture as reading which one you are holding.
+    //
+    // It is the only thing on the screen that takes a tap away from the game.
+    // The rule everywhere else is that the whole window belongs to the road,
+    // and carving 164 by 44 out of the bottom corner is a real cost — a vista
+    // dismissed by tapping there does not dismiss. It is the smallest area
+    // that can hold the name that has to be there anyway, and the corner
+    // stops taking taps entirely during a busk, which is the moment where a
+    // swallowed tap is a missed note rather than a second attempt.
+    this.caseBox = element('div', {
+      position: 'absolute',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'flex-end',
+      boxSizing: 'border-box',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      pointerEvents: 'none',
+      // The journal's wash, not one of its own. A second wash was tried with
+      // its ellipse pushed out sideways so the shorter rows had ink under
+      // them, and it made the mistake that function's header warns about: an
+      // ellipse wider than its box is clipped at the box's edge, so the case
+      // gained a hard vertical border down one side — the only straight edge
+      // in a frame that has none. One wash, and the text shadows carry the
+      // rows that fall outside it, exactly as they do in the card.
+      background: JOURNAL_WASH,
+      opacity: '0',
+      transition: 'opacity 320ms ease',
+    });
+    this.root.appendChild(this.caseBox);
+
     this.instrumentBox = element('div', {
       position: 'absolute',
       display: 'flex',
       alignItems: 'center',
+      gap: '8px',
       transition: 'opacity 900ms ease',
       textShadow: '0 1px 3px rgba(20, 14, 18, 0.75)',
     });
@@ -171,6 +233,13 @@ export class Hud {
       textOverflow: 'ellipsis',
     });
     this.instrumentBox.appendChild(this.instrumentName);
+    this.caseCatch = caseMark();
+    this.caseCatch.style.display = 'none';
+    this.instrumentBox.appendChild(this.caseCatch);
+    this.instrumentBox.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      this.setCaseOpen(!this.caseOpen);
+    });
     this.root.appendChild(this.instrumentBox);
 
     // --- the journal ------------------------------------------------------
@@ -225,6 +294,31 @@ export class Hud {
   }
 
   /**
+   * What is in the case, and which one is in the bard's hands.
+   *
+   * The open case lists everything *except* the one being held, because the
+   * one being held is already named in the corner directly beneath it. A list
+   * that repeated it would need a tick or a highlight to say which row was
+   * the current one, and this way the question does not come up: the corner
+   * is what you have out, the rows above are what else you could.
+   */
+  setCase(entries: readonly CaseEntry[], heldId: string): void {
+    this.caseEntries = Array.isArray(entries)
+      ? entries.filter((e) => e && typeof e.id === 'string' && typeof e.name === 'string')
+      : [];
+    this.heldId = typeof heldId === 'string' ? heldId : '';
+    this.buildCase();
+    if (this.caseRows().length === 0) this.setCaseOpen(false);
+    this.layoutCase();
+    this.applyPickable();
+  }
+
+  /** Called with an instrument id when the player takes one out of the case. */
+  onInstrumentChosen(handler: (id: string) => void): void {
+    this.chosen = handler;
+  }
+
+  /**
    * Put a line in the journal.
    *
    * The line is written by whoever knows what happened —
@@ -258,11 +352,9 @@ export class Hud {
     const key = (quantise(r) << 16) | (quantise(g) << 8) | quantise(b);
     if (key === this.toneKey) return;
     this.toneKey = key;
-    this.journalBox.style.background = journalWash(
-      quantise(r) + 8,
-      quantise(g) + 6,
-      quantise(b) + 8,
-    );
+    const wash = journalWash(quantise(r) + 8, quantise(g) + 6, quantise(b) + 8);
+    this.journalBox.style.background = wash;
+    this.caseBox.style.background = wash;
   }
 
   /** Take the card down early, when the moment it described has passed. */
@@ -281,6 +373,11 @@ export class Hud {
   setMode(mode: HudMode): void {
     if (mode === this.mode) return;
     this.mode = mode;
+    // Whatever else changes, the case shuts. Starting a tune with the case
+    // open would leave a column of names over the road for as long as the
+    // timer had left, and it is the wrong moment to be choosing anyway.
+    this.setCaseOpen(false);
+    this.applyPickable();
     this.applyOpacity();
   }
 
@@ -294,6 +391,11 @@ export class Hud {
     if (this.journalHold > 0) {
       this.journalHold -= step;
       if (this.journalHold <= 0) this.journalBox.style.opacity = '0';
+    }
+
+    if (this.caseHold > 0) {
+      this.caseHold -= step;
+      if (this.caseHold <= 0) this.setCaseOpen(false);
     }
   }
 
@@ -311,7 +413,9 @@ export class Hud {
     const scale = this.chrome.compact ? 0.88 : 1;
     this.coinsBox.style.fontSize = `${Math.round(20 * scale)}px`;
     this.instrumentBox.style.fontSize = `${Math.round(15 * scale)}px`;
+    this.caseBox.style.fontSize = `${Math.round(15 * scale)}px`;
     this.journalLine.style.fontSize = `${Math.round(17 * scale)}px`;
+    this.layoutCase();
     this.applyOpacity();
   }
 
@@ -319,6 +423,89 @@ export class Hud {
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('orientationchange', this.onResize);
     this.root.remove();
+  }
+
+  /** What the open case would list: everything bar the one already in hand. */
+  private caseRows(): CaseEntry[] {
+    return this.caseEntries.filter((entry) => entry.id !== this.heldId);
+  }
+
+  private buildCase(): void {
+    this.caseBox.replaceChildren();
+    for (const entry of this.caseRows()) {
+      const row = element('div', {
+        display: 'flex',
+        alignItems: 'center',
+        flex: '0 0 auto',
+        boxSizing: 'border-box',
+        // Flush with the corner label below rather than indented from it.
+        // The case and the name in hand are one column read from the bottom
+        // up, and an indent turns them into a heading and a submenu.
+        padding: '0',
+        fontStyle: 'italic',
+        color: INK_SOFT,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        cursor: 'pointer',
+        textShadow: '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 12px rgba(20, 14, 18, 0.7)',
+      });
+      row.textContent = entry.name;
+      // pointerdown rather than click, to match the game's own input: a tap
+      // that has to wait for pointerup before anything moves feels like the
+      // interface is thinking about it.
+      row.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        this.setCaseOpen(false);
+        this.chosen?.(entry.id);
+      });
+      this.caseBox.appendChild(row);
+    }
+    this.layoutCase();
+  }
+
+  /**
+   * Size and place the case.
+   *
+   * The row height comes from the layout rather than from the type, so a row
+   * is exactly as tall as the instrument corner it grew out of — which is a
+   * touch target by construction, and which keeps the stack reading as one
+   * ruled column rather than as text that happens to be listed.
+   */
+  private layoutCase(): void {
+    const rows = this.caseBox.children;
+    place(this.caseBox, instrumentCaseBox(this.chrome, rows.length));
+    const height = this.chrome.instrument.height;
+    for (const row of Array.from(rows)) {
+      (row as HTMLElement).style.height = `${height}px`;
+    }
+  }
+
+  /** Whether the corner is a handle at the moment, or only a readout. */
+  private pickable(): boolean {
+    if (this.caseRows().length === 0) return false;
+    return this.mode === 'walking' || this.mode === 'resting';
+  }
+
+  private applyPickable(): void {
+    const handle = this.pickable();
+    this.instrumentBox.style.pointerEvents = handle ? 'auto' : 'none';
+    this.instrumentBox.style.cursor = handle ? 'pointer' : 'default';
+    this.caseCatch.style.display = handle ? 'block' : 'none';
+  }
+
+  private setCaseOpen(open: boolean): void {
+    const next = open && this.pickable();
+    if (next === this.caseOpen) return;
+    this.caseOpen = next;
+    this.caseHold = next ? CASE_HOLD_SEC : 0;
+    this.caseBox.style.opacity = next ? '1' : '0';
+    this.caseBox.style.pointerEvents = next ? 'auto' : 'none';
+    // Bring the corner up with the case: the label and the rows above it are
+    // one object while it is open, and a handle at idle opacity with a lit
+    // stack over it reads as two.
+    this.instrumentAttention = next ? Math.max(this.instrumentAttention, CASE_HOLD_SEC) : 0;
+    this.applyOpacity();
   }
 
   private applyOpacity(): void {
@@ -381,6 +568,35 @@ function coinMark(): SVGSVGElement {
 
   svg.appendChild(rim);
   svg.appendChild(face);
+  return svg;
+}
+
+/**
+ * The catch on the case.
+ *
+ * Two short strokes leaning up toward each other, drawn slightly off true and
+ * with unequal arms so it reads as a mark made with a pen rather than as a
+ * disclosure triangle out of a settings screen. It is the only affordance the
+ * interface has, and it appears only while the case has something in it and
+ * the moment allows opening it — so its presence is the whole message.
+ */
+function caseMark(): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 14 10');
+  svg.setAttribute('width', '12');
+  svg.setAttribute('height', '9');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.style.flex = '0 0 auto';
+  svg.style.opacity = '0.65';
+
+  const stroke = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  stroke.setAttribute('d', 'M1.8 7.4 L6.9 2.4 L12.3 6.9');
+  stroke.setAttribute('fill', 'none');
+  stroke.setAttribute('stroke', '#f0e2c6');
+  stroke.setAttribute('stroke-width', '1.5');
+  stroke.setAttribute('stroke-linecap', 'round');
+  stroke.setAttribute('stroke-linejoin', 'round');
+  svg.appendChild(stroke);
   return svg;
 }
 
