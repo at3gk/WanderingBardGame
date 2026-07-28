@@ -100,7 +100,12 @@ export const SKY_KEYS: SkyKey[] = [
     t: 0.42,
     name: 'morning',
     zenith: 0x8dc0e8,
-    horizon: 0xdceaf2,
+    // Was 0xdceaf2, which is within a few per cent of white. A near-white
+    // horizon key does two bad things at once: it leaves the lower sky with
+    // no colour to differ from the cloud in it, and — because this same
+    // value is the world's sideways ambient — it lifts every vertical
+    // surface in the frame until there is no dark left to compose with.
+    horizon: 0xbfd4e6,
     sun: 0xfff0d0,
     bounce: 0x7d8a5c,
     fog: 0xcfe0ec,
@@ -113,7 +118,9 @@ export const SKY_KEYS: SkyKey[] = [
     t: 0.55,
     name: 'high day',
     zenith: 0x86bde6,
-    horizon: 0xe4eef4,
+    // See the note on morning. Noon is the frame with the least colour in it
+    // and the most to lose from a white horizon.
+    horizon: 0xc8d8e4,
     sun: 0xfff6e2,
     bounce: 0x87945f,
     fog: 0xd6e6f0,
@@ -283,18 +290,69 @@ float hash21(vec2 p) {
   return fract(p.x * p.y);
 }
 
+/** Value noise on the dome's own coordinates. Two octaves is enough for cloud. */
+float vnoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(
+    mix(hash21(i), hash21(i + vec2(1.0, 0.0)), f.x),
+    mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x),
+    f.y
+  );
+}
+
+float fbm(vec2 p) {
+  return vnoise(p) * 0.55 + vnoise(p * 2.3 + 7.1) * 0.3 + vnoise(p * 4.7 + 19.3) * 0.15;
+}
+
 void main() {
   vec3 dir = normalize(vDirection);
   float height = dir.y;
 
-  // Gradient. pow() rather than a linear ramp so the warm horizon band
-  // stays a *band* instead of washing halfway up the sky.
+  // Gradient.
+  //
+  // The edges here are the whole reason the sky used to be blank paper. The
+  // ramp ran smoothstep(0.44, 0.92, t), and t is 0.5 at the horizon: it did
+  // not reach the halfway point of that ramp until about seventeen degrees
+  // of elevation, which is above the top of a forty-two-degree frame pitched
+  // slightly down. The camera therefore never saw the zenith colour at all,
+  // and every daylight frame had a third to a half of its area filled with
+  // undifferentiated horizon wash. Bringing the ramp into 0.50..0.66 puts
+  // the blue where the camera is actually looking. The pow() is kept: it is
+  // what stops the warm horizon band washing halfway up the sky.
   float t = pow(clamp(height * 0.5 + 0.5, 0.0, 1.0), 0.9);
-  vec3 color = mix(uHorizon, uZenith, smoothstep(0.44, 0.92, t));
+  vec3 color = mix(uHorizon, uZenith, smoothstep(0.50, 0.66, t));
 
   // A tighter band of extra horizon warmth just above the skyline.
   float band = exp(-abs(height) * 7.0);
   color = mix(color, uHorizon, band * 0.55);
+
+  // --- cloud -------------------------------------------------------------
+  // Two drifting sheets of fbm, masked to the band of sky the camera can see
+  // and faded out at both ends of it. Sheets rather than a single layer
+  // because one layer of noise reads as marble; two at different scales and
+  // speeds read as weather. They are tinted between the horizon colour and
+  // white, so they take the time of day for free — pink at dusk, near-white
+  // at noon — which is the same trick the whole world's lighting uses and
+  // costs nothing beyond the uniforms already here.
+  //
+  // Drawn on the dome rather than as geometry: no mesh, no texture, no
+  // bundle. The projection divides the direction by its own height, so a
+  // sheet flattens toward the horizon the way a real one does.
+  float cloudBand = smoothstep(0.015, 0.14, height) * smoothstep(0.92, 0.34, height);
+  if (cloudBand > 0.001) {
+    vec2 plane = dir.xz / max(height + 0.16, 0.05);
+    float drift = uTime * 0.004;
+    float low = fbm(plane * 0.85 + vec2(drift, drift * 0.3));
+    float high = fbm(plane * 2.1 + vec2(-drift * 1.7, drift * 0.9) + 31.0);
+    // Sharpened well off centre so the sky is mostly empty. Cloud that
+    // covers half the dome is overcast, and this game is not overcast.
+    float cover = smoothstep(0.52, 0.78, low * 0.72 + high * 0.28);
+    float lit = smoothstep(0.5, 0.85, low);
+    vec3 cloudColor = mix(uHorizon, vec3(1.0), 0.35 + lit * 0.5);
+    color = mix(color, cloudColor, cover * cloudBand * 0.85);
+  }
 
   // Sun: a soft disc plus a wide bloom. No hard edge — a crisp disc reads
   // as a decal pasted on a painting.

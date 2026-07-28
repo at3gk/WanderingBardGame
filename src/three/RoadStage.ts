@@ -39,12 +39,13 @@ import { CameraRig, type CameraMood } from './CameraRig';
 import { Sky, applyTimeOfDay, skyStateAt } from './sky';
 import { WorldStreamer } from './world/WorldStreamer';
 import { Bard } from './actors/Bard';
+import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
 import { Campfire } from './scenes/Campfire';
 import { ParticleField, fallingLeaves, fireflies, seedFluff, sunDust } from './fx/Particles';
 import { SongNotes } from './fx/SongNotes';
 import { BIOME_PALETTES, DEFAULT_PALETTE } from './world/palette';
 import { Hud } from '../ui/Hud';
-import { dailySeed, dayKey } from '../core/rng';
+import { dailySeed, dayKey, mulberry32, randRange, subSeed } from '../core/rng';
 import {
   biomeAt,
   generateRoad,
@@ -183,6 +184,14 @@ export class RoadStage implements Stage {
   private readonly sky = new Sky();
   private readonly world: WorldStreamer;
   private readonly bard: Bard;
+  /**
+   * The people on the road. One of each silhouette, built once and moved
+   * around, because a busk needs three or four of them for six seconds and
+   * building figures at the moment the music starts is the one place in the
+   * frame budget where a hitch would actually be heard.
+   */
+  private readonly people: Traveller[] = [];
+  private readonly shown: Traveller[] = [];
   private readonly actors = new Group();
   private readonly notes: SongNotes;
   private readonly hud: Hud;
@@ -296,6 +305,13 @@ export class RoadStage implements Stage {
     this.bard.setInstrument(this.instrument());
     this.bard.setPose('walking', 0);
 
+    for (let i = 0; i < TRAVELLER_KINDS.length; i++) {
+      const person = new Traveller(app.globals, TRAVELLER_KINDS[i], this.road.seed + i * 17);
+      person.group.visible = false;
+      this.people.push(person);
+      this.actors.add(person.group);
+    }
+
     this.notes = new SongNotes({ particleDensity: app.quality.particleDensity });
     this.scene.add(this.notes.group);
     this.notes.setInstrument(this.instrument());
@@ -381,6 +397,7 @@ export class RoadStage implements Stage {
     const travelled = this.journey.s - before;
     this.syncSubject();
     this.bard.update(dt, travelled);
+    for (const person of this.shown) person.update(dt);
 
     if (this.holdSec > 0) {
       this.holdSec -= dt;
@@ -481,6 +498,7 @@ export class RoadStage implements Stage {
     this.journey = next;
     if (previous === 'busking') this.closeBusk();
     if (previous === 'resting') this.strikeCamp();
+    this.disperse();
 
     this.rig.setMood(PHASE_TO_MOOD[phase], 1.6);
     this.walking = phase === 'walking';
@@ -491,8 +509,14 @@ export class RoadStage implements Stage {
     );
     this.hud.setMode(phase === 'waking' ? 'walking' : phase);
 
-    if (phase === 'busking') this.startBusk();
-    if (phase === 'encounter') this.startEncounter();
+    if (phase === 'busking') {
+      this.startBusk();
+      this.gatherListeners();
+    }
+    if (phase === 'encounter') {
+      this.startEncounter();
+      this.placeMeeting();
+    }
     if (phase === 'resting') this.makeCamp();
     if (phase === 'walking') this.hud.clearSay();
   }
@@ -668,6 +692,85 @@ export class RoadStage implements Stage {
       return (this.ctx.currentTime - this.buskAnchorSec) * 1000;
     }
     return this.buskSimMs;
+  }
+
+  // --- the people on the road ---------------------------------------------
+
+  /**
+   * Stand somebody on the ground near the bard.
+   *
+   * `bearing` is measured from the bard's own forward direction and `radius`
+   * in metres, so a caller describes an arrangement the way you would
+   * describe it out loud — "one at four metres, half a turn to the left" —
+   * rather than in world coordinates that stop meaning anything the moment
+   * the road bends.
+   */
+  private stand(person: Traveller, bearing: number, radius: number, attention: number): void {
+    const angle = this.subject.heading + bearing;
+    const x = this.subject.position.x + Math.sin(angle) * radius;
+    const z = this.subject.position.z + Math.cos(angle) * radius;
+    person.group.position.set(x, terrainHeight(this.road, x, z), z);
+    // Facing back down their own bearing, which is the bard.
+    person.setHeading(angle + Math.PI);
+    person.setAttention(attention);
+    person.group.visible = true;
+    this.shown.push(person);
+  }
+
+  /** Everybody goes on their way. Called on every phase change. */
+  private disperse(): void {
+    for (const person of this.shown) person.group.visible = false;
+    this.shown.length = 0;
+  }
+
+  /**
+   * Who stopped to listen.
+   *
+   * Placed in a loose arc in front of the bard rather than a ring around
+   * him: the busking camera sits behind and to his right, so anyone directly
+   * behind would be a shoulder in the lens and anyone directly ahead would
+   * stand in the staff. The bearings below keep the road's centreline — where
+   * the notation runs — clear, and they are deliberately uneven, because
+   * evenly-spaced listeners read as a chorus line.
+   *
+   * The arrangement is seeded from the stop, so the same square draws the
+   * same crowd for every player on the same day. That matters more than it
+   * sounds: the road is shared, and a crowd that differed between two people
+   * standing in the same place would be the one thing in the day that did.
+   */
+  private gatherListeners(): void {
+    const rand = mulberry32(
+      subSeed(this.currentStop ? this.currentStop.seed : this.road.seed, 'busk/listeners'),
+    );
+    const order = this.people.map((_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    const count = 2 + Math.floor(rand() * 3);
+    // Left of the road first: that is the side of the frame the camera's own
+    // offset leaves empty, and filling it is what turns a busk from a figure
+    // in a field into a scene.
+    const slots = [-0.62, 0.72, -1.15, 1.25];
+    for (let i = 0; i < count; i++) {
+      const bearing = slots[i] + randRange(rand, -0.14, 0.14);
+      this.stand(this.people[order[i]], bearing, randRange(rand, 3.2, 5.0), 1);
+    }
+  }
+
+  /**
+   * Somebody met at a crossroads.
+   *
+   * One figure, standing a little further up the road than the bard has got
+   * to and turned back toward him, so the frame reads as two people who have
+   * just stopped walking rather than as a person and a bystander.
+   */
+  private placeMeeting(): void {
+    const rand = mulberry32(
+      subSeed(this.currentStop ? this.currentStop.seed : this.road.seed, 'meeting'),
+    );
+    const person = this.people[Math.floor(rand() * this.people.length)];
+    this.stand(person, randRange(rand, -0.42, -0.2), randRange(rand, 3.6, 4.6), 1);
   }
 
   // --- meetings and camp -------------------------------------------------
@@ -1067,6 +1170,9 @@ export class RoadStage implements Stage {
     void this.ctx?.close().catch(() => undefined);
     this.world.dispose();
     this.bard.dispose();
+    for (const person of this.people) person.dispose();
+    this.people.length = 0;
+    this.shown.length = 0;
     this.sky.dispose();
   }
 }

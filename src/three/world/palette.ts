@@ -88,8 +88,15 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     grassVariant: 0xd2ce84,
     grassShade: 0x66803e,
     grassDry: 0xe3d69c,
-    road: 0xc0a67c,
-    roadShoulder: 0xb4ab77,
+    // Darkened from 0xc0a67c / 0xb4ab77. Against `grassDry` 0xe3d69c — which
+    // is what a sunlit village rise comes up to — the old road was about a
+    // fifth of a stop darker than the field it crossed, so on golden ground
+    // the path stopped being a path and the only cue left was the ruts. A
+    // road has to hold a value break against every ground tone in its own
+    // biome; that is a bigger claim on this colour than being the right
+    // colour for dust.
+    road: 0xa88a63,
+    roadShoulder: 0x9c9468,
     rock: 0xbcb39d,
     trunk: 0x9d7b60,
     canopy: 0x84a44f,
@@ -141,12 +148,19 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     grassVariant: 0xaac292,
     grassShade: 0x477165,
     grassDry: 0xccd2ac,
-    road: 0xa89a80,
-    roadShoulder: 0x8fa184,
+    // Same problem as village, milder: 0xa89a80 against a `grassDry` of
+    // 0xccd2ac is not enough of a break to survive fog at thirty metres.
+    road: 0x907f68,
+    roadShoulder: 0x7c8a72,
     rock: 0xa2a8ae,
     trunk: 0x847266,
-    canopy: 0x6c9a76,
-    canopyVariant: 0x9ac093,
+    // Darkened from 0x6c9a76 / 0x9ac093. The willows were the palest foliage
+    // anywhere in the game, which put the brightest object in a wide frame
+    // out on the horizon where nothing worth looking at was happening. A
+    // riverside canopy should be cool and slightly sombre — it is the biome
+    // whose whole character is that its accent is cooler than its greens.
+    canopy: 0x568170,
+    canopyVariant: 0x7aa87f,
     accent: 0x5fa6c8,
     accentAlt: 0xe4e8d2,
     trees: [

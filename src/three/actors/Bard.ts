@@ -109,8 +109,15 @@ const HEAD_Y = 0.97;
 const HEAD_HEIGHT = 0.28;
 const HAT_Y = HEAD_Y + HEAD_HEIGHT - 0.06;
 
-/** A tapered box. Most of the bard is one of these. */
-function boxPart(
+/**
+ * A tapered box. Most of the bard is one of these.
+ *
+ * Exported because the travellers are built from the same primitive. Two
+ * figure builders that disagree about how a limb is made would read as two
+ * different games standing next to each other, and the whole point of the
+ * people on the road is that they belong to the bard's world.
+ */
+export function boxPart(
   width: number,
   height: number,
   depth: number,

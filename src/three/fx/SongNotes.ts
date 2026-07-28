@@ -66,24 +66,37 @@ import type { SongBeat } from '../../core/song';
 
 /**
  * One diatonic step, in metres. Two steps make a staff space, so the staff
- * itself (E4 to F5) is eight steps and a bit under a metre tall — about the
- * height of the bard's chest to a little over his hat. Bigger than that and
- * the notes stop reading as a staff and start reading as scattered signs;
- * smaller and the letters are unreadable at the far end.
+ * itself (E4 to F5) is eight steps — a metre and a half, from about the
+ * bard's knee to a little above his hat.
+ *
+ * It was 0.145 and that was too small to read, for a reason that is worth
+ * writing down because it is not obvious from the number: the staff is seen
+ * almost end-on. The pitch axis is vertical and the time axis runs away from
+ * the camera, so perspective is already compressing the *time* axis into
+ * nothing near the far end while leaving pitch alone — and at 0.145 the five
+ * lines subtended so little angle that they converged into two or three
+ * hairlines within four metres. Reading which line a note sits on is the
+ * entire pedagogical premise of this game, so the pitch axis has to be given
+ * enough room that it survives that convergence. This is paid for by
+ * shortening the run (`SPAWN_AHEAD_M`) rather than by moving the camera.
  */
-const STEP_M = 0.145;
+const STEP_M = 0.2;
 
 /**
  * World height of staff step 0 — middle C — above the bard's feet.
  *
- * Chosen so the whole staff sits *below the busking camera's eye line*
- * (1.95 m, see `CameraRig`). The first tuning put it at head height and the
- * result was notation floating in the sky above the horizon, which read as
- * signposts rather than as music: the notes had no ground behind them and
- * nothing to belong to. Down here the staff crosses the road and the grass,
- * the bard's hat overlaps its middle line, and the tune is plainly his.
+ * Set so the **middle line sits at 1.32 m**, the top of the bard's hat. That
+ * is the number that matters, not this one: the staff has to be pinned to
+ * the figure, because notation floating clear above the horizon reads as
+ * signposts rather than as music — it has no ground behind it and nothing to
+ * belong to. With the middle line on his hat the lower half crosses the road
+ * and the grass and the tune is plainly his, and only the top line (F5, the
+ * rarest note in the songbook) climbs past the camera's eye.
+ *
+ * It fell from 0.45 when `STEP_M` grew; keeping it would have lifted the
+ * whole staff a metre into the sky.
  */
-const STEP_ZERO_Y = 0.45;
+const STEP_ZERO_Y = 0.12;
 
 /** The five printed lines of the treble staff: E4 G4 B4 D5 F5. */
 const LINE_STEPS = [2, 4, 6, 8, 10];
@@ -97,8 +110,20 @@ const LINE_STEPS = [2, 4, 6, 8, 10];
  */
 const HIT_AHEAD_M = 1.05;
 
-/** How far up the road a note appears. Travel time is fixed, so this is also its speed. */
-const SPAWN_AHEAD_M = 8.5;
+/**
+ * How far up the road a note appears. Travel time is fixed, so this is also
+ * its speed.
+ *
+ * Shortened from 8.5 along with the staff's growth. The two numbers are one
+ * decision: what matters is the *ratio* of the staff's height to the length
+ * of road it is stretched over, because that ratio is what decides whether
+ * the five lines are still five lines at the far end. Six metres and a
+ * metre-and-a-half staff is about two and a half times the old figure, which
+ * is the difference between "which line is that" being answerable and not.
+ * The notes travel more slowly for it, which is no loss in a game where
+ * nothing can be failed.
+ */
+const SPAWN_AHEAD_M = 6.0;
 
 /** How far *behind* the hit line the staff is drawn, so it does not stop dead at it. */
 const TAIL_BEHIND_M = 1.1;
@@ -129,6 +154,16 @@ const MAX_GLYPHS = 28;
 
 /** Cream. Reserved for notation everywhere in this game, and used here for the letters. */
 const INK = 0xf0e2c6;
+
+/**
+ * How far the note head is darkened from the instrument's own colour.
+ *
+ * A multiplier rather than a fixed dark brown so the six instruments still
+ * differ from each other in hue — a bell's head is a cold dark blue-grey and
+ * a drum's a warm near-black — while all of them are dark enough that the
+ * cream letter reads. See `setInstrument`.
+ */
+const HEAD_INK = 0.3;
 
 /**
  * What a softened note fades toward: the paper, not a warning colour.
@@ -245,9 +280,12 @@ export class SongNotes {
     this.staffMaterial = new ShaderMaterial({
       uniforms: {
         uColor: { value: new Color(INK) },
-        // Faint. The staff is a guide the eye follows, not furniture; at
-        // full strength it fights the land it is drawn against.
-        uOpacity: { value: 0.42 },
+        // The staff is a guide the eye follows, not furniture — but 0.42 was
+        // below the threshold at which a one-pixel line survives being drawn
+        // against grass, and five lines that are only *sometimes* there are
+        // worse than four. This is as faint as the pitch axis can be and
+        // still be counted.
+        uOpacity: { value: 0.62 },
       },
       vertexShader: STAFF_VERTEX,
       fragmentShader: STAFF_FRAGMENT,
@@ -281,7 +319,7 @@ export class SongNotes {
       uniforms: {
         uAtlas: { value: this.atlas },
         uCellSize: { value: [1 / ATLAS_COLS, 1 / ATLAS_ROWS] },
-        uColor: { value: new Color(0xc98a4b) },
+        uColor: { value: new Color(0xc98a4b).multiplyScalar(HEAD_INK) },
         uInk: { value: new Color(INK) },
         uPale: { value: new Color(PALE) },
         uSize: { value: glyphWorldSize() },
@@ -340,9 +378,23 @@ export class SongNotes {
     this.group.add(this.sparks);
   }
 
-  /** Colour and burst behaviour follow whatever is in the bard's hands. */
+  /**
+   * Colour and burst behaviour follow whatever is in the bard's hands.
+   *
+   * The *head* takes a heavily darkened version of the instrument's colour
+   * rather than the colour itself. At full strength a lute's rust head sat on
+   * a rust sunset with almost no contrast, and the note — the one thing in
+   * the frame the player has to read — disappeared into the sky behind it. A
+   * dark head carrying the cream letter holds against sky, road and grass
+   * alike, which is the pairing engraved music has used for five hundred
+   * years for exactly this reason. The instrument's own colour is not lost:
+   * it is what the strike blooms in, where it has a black sky of its own to
+   * sit against and nothing to be confused with.
+   */
   setInstrument(instrument: Instrument): void {
-    (this.glyphMaterial.uniforms.uColor.value as Color).setHex(instrument.color);
+    (this.glyphMaterial.uniforms.uColor.value as Color).setHex(instrument.color).multiplyScalar(
+      HEAD_INK,
+    );
     (this.sparkMaterial.uniforms.uColor.value as Color).setHex(instrument.color);
     (this.sparkMaterial.uniforms.uAccent.value as Color).setHex(instrument.accent);
     this.sparkMaterial.uniforms.uMotion.value = MOTION_INDEX[instrument.noteMotion] ?? 0;
@@ -647,7 +699,10 @@ export class SongNotes {
     // music, which is why it is a barline and not a glowing target — the
     // player reads "here" from notation they already understand.
     this.pointAt(HIT_AHEAD_M, a);
-    const right = STEP_M * 0.09;
+    // Weight. A barline is the mark that says *here*, and at a ninth of a
+    // step it was thinner than the lines it crosses — the one place in the
+    // frame that has to be unambiguous was the faintest thing in it.
+    const right = STEP_M * 0.24;
     const low = STEP_ZERO_Y + (LINE_STEPS[0] - 0.35) * STEP_M;
     const high = STEP_ZERO_Y + (LINE_STEPS[LINE_STEPS.length - 1] + 0.35) * STEP_M;
     const tangentX = Math.sin(this.heading) * right;

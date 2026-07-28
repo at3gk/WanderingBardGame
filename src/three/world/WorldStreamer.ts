@@ -424,7 +424,28 @@ export class WorldStreamer {
       rim: 0.05,
       rimPower: 3.5,
       vertexColors: true,
-      bandSoftness: 0.13,
+      /**
+       * Wide enough that the ground does not band at all.
+       *
+       * This was 0.13 and it produced the worst artifact in the game: three
+       * soft-edged slabs the size of buildings lying across the fields, which
+       * read as broken shadow maps. The cause is that the banding is a
+       * *screen-space* effect being applied to a surface whose normal varies
+       * over hundreds of metres — the band edges are only 0.07 wide in `lit`,
+       * but on a near-flat plane 0.07 of `lit` is a hundred metres of ground,
+       * so an edge meant to read as a brush stroke spreads into a stripe
+       * across the whole frame.
+       *
+       * The fix is per-material rather than in the shader, because the
+       * banding is right everywhere else: a tree trunk or a rock crosses the
+       * same 0.07 within a few centimetres and gets exactly the crisp toon
+       * terminator it is meant to. Only the ground is big and flat enough to
+       * be a problem, so only the ground gets a softness wide enough to
+       * collapse the three bands into the smooth ramp they are approximating.
+       * Cast shadows are untouched by this — they multiply `sunAmount` after
+       * the bands — so the long raking dawn shadows still land.
+       */
+      bandSoftness: 0.45,
       shadowDepth: 0.42,
     });
 

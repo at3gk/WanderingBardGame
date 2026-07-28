@@ -740,7 +740,13 @@ export function broadleafGeometry(options: TreeOptions): BufferGeometry {
 export function willowGeometry(options: TreeOptions): BufferGeometry {
   const rand = mulberry32(options.seed ?? 13);
   const parts: BufferGeometry[] = [];
-  const trunkH = 2.2 + rand() * 1.0;
+  // Shorter than it was by about a metre. A pale wide canopy on a long clear
+  // trunk, seen at sixty metres with daylight between the fronds, read
+  // unmistakably as an elephant — a flat-topped body on four dangling legs.
+  // Half of that fix is here: bring the crown down so the curtain starts
+  // near the height of the surrounding scrub instead of standing clear above
+  // it. The other half is the frond count below.
+  const trunkH = 1.6 + rand() * 0.6;
 
   parts.push(paint(taperedCylinder(0.17, 0.33, trunkH, 5, rand), options.trunkColor, 0.14, rand));
 
@@ -754,13 +760,25 @@ export function willowGeometry(options: TreeOptions): BufferGeometry {
   // Two rings of them. One ring leaves gaps you can see the trunk through,
   // and a curtain with gaps in it is a set of separate hanging strips —
   // which is exactly what it looked like.
-  const fronds = 22;
+  //
+  // Forty-eight, not twenty-two, and each half as wide. The arithmetic is
+  // the whole argument: the outer ring is nine metres round, so eleven
+  // strips 0.6 m wide left a quarter of a metre of daylight between each
+  // pair — and at any distance over forty metres those gaps stop reading as
+  // texture and start reading as *legs*. Twenty-four strips 0.35 m wide
+  // close the curtain with a little overlap, which is what makes the shape
+  // one continuous skirt rather than a set of straps. Ninety-six extra
+  // triangles on a tree that appears a handful of times per band is not a
+  // cost worth thinking about.
+  const fronds = 48;
   for (let f = 0; f < fronds; f++) {
     const ring = f % 2;
-    const a = (f / fronds) * Math.PI * 2 + rand() * 0.25;
+    const a = (f / fronds) * Math.PI * 2 + rand() * 0.14;
     const r = (ring === 0 ? 1.45 : 0.95) + rand() * 0.45;
-    const drop = (ring === 0 ? 2.0 : 1.4) + rand() * 0.9;
-    const w = 0.3 + rand() * 0.12;
+    // Hanging further, so the curtain finishes near the grass instead of
+    // half a tree's height above it. A skirt that stops short is a valance.
+    const drop = (ring === 0 ? 2.2 : 1.85) + rand() * 0.7;
+    const w = 0.15 + rand() * 0.07;
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r;
     const sx = -Math.sin(a);
