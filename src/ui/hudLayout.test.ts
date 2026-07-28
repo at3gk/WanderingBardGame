@@ -3,8 +3,10 @@ import {
   COMPACT_EDGE,
   HUD_TOUCH_TARGET,
   JOURNAL_MAX_WIDTH,
+  JOURNAL_SKY_FRACTION,
   contains,
   hudChrome,
+  instrumentCaseBox,
   isTouchable,
   overlaps,
   type HudBox,
@@ -28,6 +30,9 @@ const SCREENS: Array<{ name: string; viewport: HudViewport }> = [
     name: 'phone landscape',
     viewport: { width: 844, height: 390, insets: { left: 47, right: 47, bottom: 21 } },
   },
+  // The same screen without a notch, because that is the viewport the
+  // postcard tool shoots shot 09 at and the one the collision was found in.
+  { name: 'phone landscape, no notch', viewport: { width: 844, height: 390 } },
 ];
 
 function boxes(chrome: ReturnType<typeof hudChrome>): Array<[string, HudBox]> {
@@ -77,15 +82,41 @@ describe('hudChrome', () => {
     }
   });
 
-  it('keeps the card clear of the figure, who is always low in frame', () => {
-    // Every camera framing puts the bard in the lower half and leaves the
-    // top of the frame to the sky. A card in the bottom half covers him,
-    // and during a busk that is the one thing it must not do.
+  it('keeps the card inside the band of sky the world never draws in', () => {
+    // This used to say "the top half", which every screen passed and which
+    // was not the constraint. The bard is in the lower half, but during a
+    // busk the *staff* climbs well above him, and on a phone in landscape
+    // the card was landing on the top note while comfortably clearing the
+    // figure. The sky band is the real budget; half the screen was never it.
     for (const { name, viewport } of SCREENS) {
       const chrome = hudChrome(viewport);
       const bottom = chrome.journal.top + chrome.journal.height;
-      expect(bottom, name).toBeLessThan(viewport.height * 0.5);
+      expect(bottom, name).toBeLessThanOrEqual(viewport.height * JOURNAL_SKY_FRACTION + 0.001);
     }
+  });
+
+  it('leaves the card tall enough to hold the line it is for', () => {
+    // The sky band is a ceiling, and a ceiling on its own can be satisfied by
+    // squashing the card flat against it — which is what the first attempt at
+    // the landscape fix did, and a 37px card clips its second line without
+    // reporting anything. Two lines of the card's own type is 45px; 56 is
+    // that with the wash's breathing room around it.
+    for (const { name, viewport } of SCREENS) {
+      expect(hudChrome(viewport).journal.height, name).toBeGreaterThanOrEqual(56);
+    }
+  });
+
+  it('hangs the card under the purse where there is sky for it, and beside it where there is not', () => {
+    // Both placements are correct; which one a screen gets is the whole
+    // decision, so it is asserted rather than left to fall out of the maths.
+    const tall = hudChrome({ width: 390, height: 844, insets: { top: 47, bottom: 34 } });
+    expect(tall.journal.top).toBeGreaterThanOrEqual(tall.coins.top + tall.coins.height);
+    expect(tall.journal.width).toBe(tall.safe.width - tall.gutter * 2);
+
+    const short = hudChrome({ width: 844, height: 390 });
+    expect(short.journal.top).toBeCloseTo(short.coins.top, 6);
+    // Sharing the row means giving up the width the purse is standing in.
+    expect(short.journal.left + short.journal.width).toBeLessThanOrEqual(short.coins.left);
   });
 
   it('leaves the middle of the screen empty', () => {
@@ -152,6 +183,47 @@ describe('hudChrome', () => {
       }
       expect(chrome.gutter).toBeGreaterThanOrEqual(0);
     }
+  });
+
+  it('opens the case out of the instrument corner, with fair rows', () => {
+    // Five is the most the case can ever hold: six instruments, less the one
+    // already in the bard's hands.
+    for (const { name, viewport } of SCREENS) {
+      const chrome = hudChrome(viewport);
+      const box = instrumentCaseBox(chrome, 5);
+      expect(contains(chrome.safe, box), `case on ${name}`).toBe(true);
+      expect(box.left, `case left on ${name}`).toBe(chrome.instrument.left);
+      expect(box.top + box.height, `case foot on ${name}`).toBeCloseTo(chrome.instrument.top, 6);
+      // Every row a thumb's width and a thumb's height, on every screen the
+      // game is meant to be played on. Whole rows, and at least two of them —
+      // a phone in landscape only has room for four of the five and scrolls
+      // the rest, which is fine; showing one and a fraction would not be.
+      expect(box.height % chrome.instrument.height, `whole rows on ${name}`).toBeCloseTo(0, 6);
+      expect(chrome.instrument.height, `row on ${name}`).toBeGreaterThanOrEqual(HUD_TOUCH_TARGET);
+      expect(box.height / chrome.instrument.height, `rows on ${name}`).toBeGreaterThanOrEqual(2);
+      expect(box.width, `case width on ${name}`).toBeGreaterThanOrEqual(HUD_TOUCH_TARGET);
+      expect(overlaps(box, chrome.journal), `case and card on ${name}`).toBe(false);
+      expect(overlaps(box, chrome.coins), `case and purse on ${name}`).toBe(false);
+    }
+  });
+
+  it('gives the case no height at all when there is nothing to take out', () => {
+    const chrome = hudChrome({ width: 1600, height: 900 });
+    for (const count of [0, -3, Number.NaN]) {
+      const box = instrumentCaseBox(chrome, count);
+      expect(box.height, String(count)).toBe(0);
+      expect(box.top, String(count)).toBe(chrome.instrument.top);
+    }
+  });
+
+  it('clamps the case to the room above rather than running off the screen', () => {
+    // A phone in landscape with a long case is the case that bites: five
+    // rows is 220px in a frame 390 tall. It must still start inside the
+    // safe rectangle, however many rows are asked for.
+    const chrome = hudChrome({ width: 844, height: 390 });
+    const box = instrumentCaseBox(chrome, 40);
+    expect(contains(chrome.safe, box)).toBe(true);
+    expect(box.top).toBeGreaterThanOrEqual(chrome.safe.top + chrome.gutter - 0.001);
   });
 
   it('never asks for a touch target taller than the screen', () => {
