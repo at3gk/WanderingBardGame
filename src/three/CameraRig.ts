@@ -63,15 +63,31 @@ interface MoodFraming {
  * — the notes say what each one is *for* so a later change can tell
  * whether it is breaking something deliberate.
  */
+/**
+ * How much of the frame the bard fills is set by `distance` and `fov`
+ * together, and it is the number that decides whether this is a game about
+ * a person or a game about some scenery. He is roughly 1.4 m tall; the
+ * frame is 2 * distance * tan(fov/2) metres high where he stands, so
+ * walking's 4.6 m and 50 degrees put him at about a third of frame height.
+ * The previous framing sat at 5.9 m and read him at a quarter — small
+ * enough that against busy grass he disappeared entirely.
+ *
+ * `side` reads as a much smaller screen offset than its value suggests,
+ * because the look target sits on the subject's own forward line: the
+ * offset in tangent space is side * lead / (distance * (distance + lead)),
+ * so shortening the lead shrinks it and it has to be paid back in side.
+ */
 const FRAMINGS: Record<CameraMood, MoodFraming> = {
-  // Back and high enough to show the road ahead and the land it crosses.
-  // The whole appeal of the walk is seeing what is coming.
+  // Close enough that the bard is unmistakably the subject, high enough to
+  // show the road ahead and the land it crosses. The whole appeal of the
+  // walk is seeing what is coming, so the lead still carries the frame
+  // forward — just not so far that it pushes him into the bottom edge.
   walking: {
-    distance: 5.9,
-    height: 2.7,
-    lookHeight: 1.25,
-    lead: 4.4,
-    side: 0.8,
+    distance: 4.6,
+    height: 2.2,
+    lookHeight: 1.2,
+    lead: 3.0,
+    side: 1.5,
     fov: 50,
     positionSmoothing: 0.55,
     targetSmoothing: 0.85,
@@ -81,11 +97,11 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
   // three-quarter view rather than seen from behind — you want to see the
   // playing, and you want room in frame for whoever stopped to listen.
   busking: {
-    distance: 5.0,
-    height: 2.1,
-    lookHeight: 1.35,
-    lead: 1.2,
-    side: 2.6,
+    distance: 4.5,
+    height: 1.95,
+    lookHeight: 1.15,
+    lead: 1.1,
+    side: 3.0,
     fov: 46,
     positionSmoothing: 0.75,
     targetSmoothing: 1.0,
@@ -94,37 +110,39 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
   // Right in on the fire, low, wide-ish. This is the one moment the game
   // asks you to stop moving, so the camera stops too.
   resting: {
-    distance: 4.2,
-    height: 1.9,
-    lookHeight: 0.9,
-    lead: 0.4,
-    side: 1.6,
+    distance: 3.9,
+    height: 1.7,
+    lookHeight: 0.85,
+    lead: 0.5,
+    side: 2.2,
     fov: 44,
     positionSmoothing: 1.1,
     targetSmoothing: 1.3,
     drift: 0.14,
   },
   // Pulled back and up to hand the landscape the frame. Narrower FOV
-  // compresses the distance and makes the hills read as bigger.
+  // compresses the distance and makes the hills read as bigger. The bard is
+  // small here on purpose, but he is kept well off-centre so he still reads
+  // as the figure in the landscape rather than a speck in the middle of it.
   vista: {
-    distance: 10.5,
-    height: 5.4,
-    lookHeight: 2.2,
-    lead: 9.0,
-    side: 1.4,
+    distance: 8.5,
+    height: 4.2,
+    lookHeight: 1.9,
+    lead: 7.0,
+    side: 2.6,
     fov: 40,
     positionSmoothing: 1.2,
     targetSmoothing: 1.4,
     drift: 0.1,
   },
-  // Slightly closer than walking and led less, so the thing you have met
-  // holds the centre of frame instead of sliding out of it.
+  // Slightly further back than walking and led less, so the thing you have
+  // met shares the frame instead of sliding out of it.
   encounter: {
-    distance: 6.0,
-    height: 2.6,
-    lookHeight: 1.4,
-    lead: 2.4,
-    side: 1.8,
+    distance: 5.0,
+    height: 2.15,
+    lookHeight: 1.2,
+    lead: 1.9,
+    side: 2.3,
     fov: 48,
     positionSmoothing: 0.7,
     targetSmoothing: 0.9,
@@ -204,6 +222,12 @@ export class CameraRig {
    * smoothly rather than popping it.
    */
   private groundLift = 0;
+
+  /**
+   * Multiplier on the *tangent* of the half vertical FOV, set from the
+   * screen's aspect. 1 on anything 16:9 or wider. See `applyAspect`.
+   */
+  private fovWiden = 1;
 
   private readonly scratchGoal = new Vector3();
   private readonly scratchTarget = new Vector3();
@@ -327,10 +351,18 @@ export class CameraRig {
     );
     this.camera.lookAt(this.target);
 
-    if (Math.abs(this.camera.fov - framing.fov) > 0.01) {
-      this.camera.fov = damp(this.camera.fov, framing.fov, framing.positionSmoothing, dt);
+    const goalFov = this.goalFov(framing.fov);
+    if (Math.abs(this.camera.fov - goalFov) > 0.01) {
+      this.camera.fov = damp(this.camera.fov, goalFov, framing.positionSmoothing, dt);
       this.camera.updateProjectionMatrix();
     }
+  }
+
+  /** A framing's vertical FOV after the narrow-screen widening. */
+  private goalFov(base: number): number {
+    if (this.fovWiden <= 1) return base;
+    const half = MathUtils.degToRad(base) * 0.5;
+    return MathUtils.radToDeg(Math.atan(Math.tan(half) * this.fovWiden)) * 2;
   }
 
   /**
@@ -338,19 +370,29 @@ export class CameraRig {
    *
    * A phone in portrait is a tall keyhole; keeping the horizontal FOV of a
    * desktop framing would crop the road away at the sides. Vertical FOV is
-   * raised as the aspect narrows so roughly the same *width* of world stays
-   * in frame — the same reason the existing 2D game had a layout module.
+   * raised as the aspect narrows so more *width* of world stays in frame.
+   *
+   * This used to be done by scaling `filmGauge`, which did nothing at all:
+   * three's `updateProjectionMatrix` derives the frustum from `fov` and
+   * `aspect` alone and only consults the film gauge to interpret a non-zero
+   * `filmOffset`. Every phone has been playing with the desktop horizontal
+   * FOV cropped down to its own width since the rig was written.
+   *
+   * The widening is applied in *tangent* space — doubling the angle is not
+   * doubling the view — and clamped hard. Preserving the desktop width on a
+   * 9:19.5 phone would need a vertical FOV over 120 degrees, which fixes the
+   * cropping by making the bard forty pixels tall and bending every straight
+   * edge in the world. 1.28 buys back a useful margin at the sides and still
+   * leaves him readable, which is the trade this game wants.
    */
   applyAspect(width: number, height: number): void {
     const aspect = width / Math.max(1, height);
     this.camera.aspect = aspect;
     const reference = 16 / 9;
-    if (aspect < reference) {
-      const scale = MathUtils.clamp(reference / aspect, 1, 1.75);
-      this.camera.filmGauge = 35 * scale;
-    } else {
-      this.camera.filmGauge = 35;
-    }
+    this.fovWiden = aspect < reference ? MathUtils.clamp(reference / aspect, 1, 1.28) : 1;
+    // Before the first update there is nothing to ease from, and a rotate
+    // or a first paint should not be watched zooming into place.
+    if (!this.initialised) this.camera.fov = this.goalFov(this.blendedFraming().fov);
     this.camera.updateProjectionMatrix();
   }
 

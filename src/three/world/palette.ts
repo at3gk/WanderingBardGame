@@ -9,10 +9,18 @@
  *
  * The palettes are built around one idea: each biome is a **narrow hue
  * family with one dissenting accent**. Village is a spread of warm yellow-
- * greens with a single cool slate for roofs; forest is deep blue-greens
- * with one warm bracken; riverside is grey-greens with one bright water
- * blue. A biome that uses six unrelated hues reads as a texture pack. A
- * biome that uses one reads as flat. One dissenter is the whole trick.
+ * greens with a terracotta dissenter; forest is deep blue-greens with one
+ * warm bracken; riverside is cool grey-greens with one bright water blue. A
+ * biome that uses six unrelated hues reads as a texture pack. A biome that
+ * uses one reads as flat. One dissenter is the whole trick.
+ *
+ * The second idea is that the three biomes have to be different *places*,
+ * not the same place in three tints. So they disagree about more than hue:
+ * village is open and sparse and full of flowers, forest is closed and
+ * three times as dense and has fallen timber in it, riverside is flat and
+ * reeded. Density and species mix carry as much of that as colour does — a
+ * player who cannot tell where they are from a silhouette at eighty metres
+ * is not really travelling.
  *
  * Every colour here is an *albedo* — the colour the surface would be under
  * neutral light. The sun, sky tint and fog are applied by the painterly
@@ -24,9 +32,18 @@ export type TreeKind = 'conifer' | 'broadleaf' | 'willow';
 
 export interface BiomePalette {
   id: string;
-  /** The two greens the ground blends between via world-space noise. */
+  /**
+   * The four ground tones. `grass` and `grassVariant` are the pair the
+   * meadow drifts between; `grassShade` is what hollows fall to and
+   * `grassDry` is what rises and worn patches come up to. Four is the
+   * minimum that gives the mid-distance any landform at all — with two, a
+   * hillside a hundred metres off is a single flat wash and the eye has
+   * nowhere to land.
+   */
   grass: number;
   grassVariant: number;
+  grassShade: number;
+  grassDry: number;
   /** Packed earth of the road itself, and its worn shoulder. */
   road: number;
   roadShoulder: number;
@@ -40,13 +57,20 @@ export interface BiomePalette {
   accentAlt: number;
   /** Which tree silhouettes belong here, and in what proportion. */
   trees: Array<{ kind: TreeKind; weight: number }>;
-  /** Scatter densities, relative. Tuned per biome so they feel different. */
+  /**
+   * Scatter densities, relative. Tuned per biome so they feel different.
+   * A zero means the kind is absent here, and `WorldStreamer` skips the
+   * draw call entirely rather than issuing an empty one.
+   */
   density: {
     grass: number;
     tree: number;
     rock: number;
     flower: number;
     fern: number;
+    shrub: number;
+    reed: number;
+    log: number;
   };
   /** How hilly. Multiplies the terrain amplitude within this band. */
   relief: number;
@@ -55,71 +79,82 @@ export interface BiomePalette {
 export const BIOME_PALETTES: Record<string, BiomePalette> = {
   // Open, cultivated, gentle. The lightest and most golden of the three —
   // this is where the road feels most walked-on, and the wide sightlines
-  // are what make the first stretch of a day feel like setting out.
+  // are what make the first stretch of a day feel like setting out. Almost
+  // all broadleaf, hardly any undergrowth, and more flowers than anywhere
+  // else, so the ground reads as pasture rather than as wilderness.
   village: {
     id: 'village',
-    grass: 0x9cae63,
-    grassVariant: 0xc4bd6e,
-    road: 0xb39a72,
-    roadShoulder: 0xa8a06a,
-    rock: 0x9c9384,
-    trunk: 0x7a5a41,
-    canopy: 0x7f9d55,
-    canopyVariant: 0xa8bb64,
-    accent: 0xd98f6a,
-    accentAlt: 0xe8c98a,
+    grass: 0x9ab157,
+    grassVariant: 0xd2ce84,
+    grassShade: 0x66803e,
+    grassDry: 0xe3d69c,
+    road: 0xc0a67c,
+    roadShoulder: 0xb4ab77,
+    rock: 0xbcb39d,
+    trunk: 0x9d7b60,
+    canopy: 0x84a44f,
+    canopyVariant: 0xb2c46a,
+    accent: 0xe07a5f,
+    accentAlt: 0xf2cf8a,
     trees: [
-      { kind: 'broadleaf', weight: 8 },
+      { kind: 'broadleaf', weight: 9 },
       { kind: 'conifer', weight: 1 },
     ],
-    density: { grass: 1.0, tree: 0.5, rock: 0.35, flower: 1.2, fern: 0.2 },
-    relief: 0.75,
+    density: { grass: 1.1, tree: 0.45, rock: 0.3, flower: 2.4, fern: 0.1, shrub: 0.9, reed: 0, log: 0 },
+    relief: 0.7,
   },
 
-  // Close, deep, cool. The densest scatter and the tallest trees, so the
-  // sky comes through in patches — which is what makes the shafts of light
-  // through the canopy the memorable thing about this stretch.
+  // Close, deep, cool. Three times the tree density of anywhere else and
+  // the tallest species, so the sky comes through in patches — which is
+  // what makes the shafts of light through the canopy the memorable thing
+  // about this stretch. The floor is bracken and fallen timber, not lawn.
   forest: {
     id: 'forest',
-    grass: 0x5c7b4c,
-    grassVariant: 0x74914f,
-    road: 0x8a7256,
-    roadShoulder: 0x6e7b4d,
-    rock: 0x7d8079,
-    trunk: 0x5c4433,
-    canopy: 0x3f6b45,
-    canopyVariant: 0x568044,
-    accent: 0xb0713f,
-    accentAlt: 0xcfa15c,
+    grass: 0x466c42,
+    grassVariant: 0x718f50,
+    grassShade: 0x274434,
+    grassDry: 0x96995a,
+    road: 0x7d6a52,
+    roadShoulder: 0x5f6f47,
+    rock: 0x8b9490,
+    trunk: 0x6d5a4a,
+    canopy: 0x2f5c3f,
+    canopyVariant: 0x4c7f47,
+    accent: 0xc4763a,
+    accentAlt: 0xd9b06a,
     trees: [
-      { kind: 'conifer', weight: 6 },
-      { kind: 'broadleaf', weight: 4 },
+      { kind: 'conifer', weight: 7 },
+      { kind: 'broadleaf', weight: 3 },
     ],
-    density: { grass: 0.85, tree: 2.6, rock: 0.7, flower: 0.45, fern: 1.6 },
-    relief: 1.15,
+    density: { grass: 0.75, tree: 3.0, rock: 0.8, flower: 0.35, fern: 2.4, shrub: 0.45, reed: 0, log: 1.3 },
+    relief: 1.25,
   },
 
-  // Low, wet, and open to the sky. Least tree cover, most flat ground, and
-  // the only biome whose accent is cooler than its greens — which is what
-  // makes arriving here at golden hour worth walking to.
+  // Low, wet, and open to the sky. Least relief, most grass, and the only
+  // biome whose accent is cooler than its greens — which is what makes
+  // arriving here at golden hour worth walking to. The reeds are the tell:
+  // a bank of verticals at the roadside says water is near without a drop
+  // of it having to be drawn.
   riverside: {
     id: 'riverside',
-    grass: 0x7d9a70,
-    grassVariant: 0x9db183,
-    road: 0xa08f76,
-    roadShoulder: 0x8a9a76,
-    rock: 0x8d9298,
-    trunk: 0x6b5a48,
-    canopy: 0x6f9068,
-    canopyVariant: 0x8fae74,
-    accent: 0x6fa8c4,
-    accentAlt: 0xd8dfc9,
+    grass: 0x76a07d,
+    grassVariant: 0xaac292,
+    grassShade: 0x477165,
+    grassDry: 0xccd2ac,
+    road: 0xa89a80,
+    roadShoulder: 0x8fa184,
+    rock: 0xa2a8ae,
+    trunk: 0x847266,
+    canopy: 0x6c9a76,
+    canopyVariant: 0x9ac093,
+    accent: 0x5fa6c8,
+    accentAlt: 0xe4e8d2,
     trees: [
       { kind: 'willow', weight: 7 },
       { kind: 'broadleaf', weight: 3 },
     ],
-    density: { grass: 1.3, tree: 0.8, rock: 0.5, flower: 0.7, fern: 0.9 },
-    relief: 0.5,
+    density: { grass: 1.45, tree: 0.9, rock: 0.45, flower: 0.8, fern: 0.6, shrub: 0.5, reed: 0.9, log: 0.2 },
+    relief: 0.45,
   },
 };
 

@@ -8,6 +8,14 @@
  * driven walk can be *phase-locked to the music*, which a baked clip
  * cannot; and the entire character costs a few kilobytes.
  *
+ * Proportions are the first thing to get right and the easiest to get
+ * wrong. The figure is roughly five heads tall rather than the seven and a
+ * half of an adult human, and the hat is deliberately wider than the
+ * shoulders. Low-poly characters that use real proportions read as
+ * mannequins: with no face and no cloth simulation, the head and the hat
+ * are the only things carrying the character, so they have to be big enough
+ * to survive being forty pixels tall on a phone.
+ *
  * The animation principles that actually matter here, in rough order of how
  * much each contributes to the character reading as alive:
  *
@@ -28,6 +36,11 @@
  * to the same gusts as the grass — which is both cheaper than a cloth
  * solver and more *coherent*, because the world's wind and the cloak's wind
  * are then literally the same number.
+ *
+ * Local +Z is forward, matching the road's heading convention (a heading of
+ * h maps local +Z to (sin h, cos h)). Everything that has a front and a
+ * back — the cloak's opening, the hat's dip, the slung instrument — depends
+ * on that, so it is stated here once rather than rediscovered per part.
  */
 
 import {
@@ -38,7 +51,6 @@ import {
   Object3D,
   type ShaderMaterial,
 } from 'three';
-import { addSway } from '../world/geometry';
 import { createFoliageMaterial, createPainterlyMaterial, type PainterlyGlobals } from '../painterly';
 import type { Instrument } from '../../core/instruments';
 
@@ -72,10 +84,28 @@ export const DEFAULT_BARD_COLORS: BardColors = {
   boots: 0x4e3a2c,
   hat: 0x8c3d33,
   hatBand: 0xe0b463,
-  hair: 0x3d2a22,
+  // Not near-black. Under a hat brim that casts a real shadow, a very dark
+  // hair colour crushes to a flat black rectangle and the back of the head
+  // reads as a hole cut through the character.
+  hair: 0x593b2b,
 };
 
-/** A tapered box. Every part of the bard is one of these. */
+/**
+ * The figure's skeleton, as plain numbers, in metres above the ground.
+ *
+ * Collected here rather than sprinkled through the constructor because
+ * proportion is the thing most likely to be adjusted, and adjusting it by
+ * hunting for magic numbers across a hundred lines is how a character ends
+ * up with its hat floating above its head.
+ */
+const HIP_Y = 0.48;
+const SHOULDER_Y = 0.9;
+const CHEST_TOP = 0.98;
+const HEAD_Y = 0.97;
+const HEAD_HEIGHT = 0.28;
+const HAT_Y = HEAD_Y + HEAD_HEIGHT - 0.06;
+
+/** A tapered box. Most of the bard is one of these. */
 function boxPart(
   width: number,
   height: number,
@@ -121,33 +151,75 @@ function boxPart(
 /**
  * The cloak: a tapered skirt of quads hanging from the shoulders, split
  * into panels so the wind can move each one differently.
+ *
+ * The arc is centred on **-Z, the bard's back**. The previous version
+ * centred it on +Z, which wrapped the cloak around the front of the figure
+ * and turned him into a traffic cone with a hat: no face, no arms, no
+ * legs, no instrument, from every angle the camera actually uses. A cloak
+ * that hides the character is worse than no cloak.
+ *
+ * The hem stops around mid-thigh rather than at the ankle. A floor-length
+ * cloak reads as a robe and, more importantly, swallows the legs — and the
+ * legs are the only part of the figure that says "walking" at a glance.
  */
 function cloakGeometry(): BufferGeometry {
-  const panels = 9;
-  const topRadius = 0.19;
-  const bottomRadius = 0.38;
-  const top = 0.62;
-  const bottom = -0.28;
+  const panels = 11;
+  const topRadius = 0.155;
+  const bottomRadius = 0.33;
+  const top = 0.46;
+  const bottom = -0.16;
   const verts: number[] = [];
-  // Only the back three-quarters — a full cone would bury the instrument
-  // and the hands, which are the two things the player needs to see.
-  const arc = Math.PI * 1.55;
-  const start = Math.PI * 0.5 - arc / 2;
+  // Wide enough to read as a cloak from behind — which is the angle the
+  // walking camera holds — and open enough at the front that the hands and
+  // the instrument are never buried.
+  const arc = Math.PI * 1.22;
+  const back = -Math.PI * 0.5;
+  const start = back - arc / 2;
 
   for (let i = 0; i < panels; i++) {
     const a0 = start + (i / panels) * arc;
     const a1 = start + ((i + 1) / panels) * arc;
     // Ragged hem: each panel hangs to a slightly different length.
-    const drop0 = bottom - (i % 3) * 0.035;
-    const drop1 = bottom - ((i + 1) % 3) * 0.035;
+    const drop0 = bottom - (i % 3) * 0.03;
+    const drop1 = bottom - ((i + 1) % 3) * 0.03;
+    // The front edges are pulled in and lifted so the cloak falls open off
+    // the shoulders instead of ending in two flat vertical planks.
+    const edge0 = Math.min(1, (i + 0.5) / 2.2, (panels - i - 0.5) / 2.2);
+    const edge1 = Math.min(1, (i + 1.5) / 2.2, (panels - i - 1.5) / 2.2);
+    const r0 = topRadius + (bottomRadius - topRadius) * (0.35 + 0.65 * edge0);
+    const r1 = topRadius + (bottomRadius - topRadius) * (0.35 + 0.65 * edge1);
     const t0 = [Math.cos(a0) * topRadius, top, Math.sin(a0) * topRadius];
     const t1 = [Math.cos(a1) * topRadius, top, Math.sin(a1) * topRadius];
-    const b0 = [Math.cos(a0) * bottomRadius, drop0, Math.sin(a0) * bottomRadius];
-    const b1 = [Math.cos(a1) * bottomRadius, drop1, Math.sin(a1) * bottomRadius];
-    verts.push(...t0, ...b0, ...b1, ...t0, ...b1, ...t1);
-    // Double-sided by hand rather than with DoubleSide, so the lining can
-    // be a different colour from the outside without a second material.
+    const b0 = [Math.cos(a0) * r0, drop0 + (1 - edge0) * 0.14, Math.sin(a0) * r0];
+    const b1 = [Math.cos(a1) * r1, drop1 + (1 - edge1) * 0.14, Math.sin(a1) * r1];
+    // One sheet, not two, and wound so its normals point *away* from the
+    // body. Both of those were wrong before. The material here is
+    // `createFoliageMaterial`, which is already `DoubleSide`, so the second
+    // set of reversed triangles the old code pushed on top bought nothing —
+    // `colorVariant` is a per-fragment grain mix, not a per-side lining
+    // colour — and two coincident sheets under a double-sided material just
+    // fight for the depth test. Meanwhile the winding that survived that
+    // fight faced inward, so the cloak was lit as though the sky were
+    // underneath it and came out a flat pale salmon instead of rust.
     verts.push(...t0, ...b1, ...b0, ...t0, ...t1, ...b1);
+  }
+
+  // A collar: a short, nearly upright band around the top of the arc.
+  // Without it the cloak appears to start halfway down the back with
+  // nothing holding it on. It has to stay close to vertical — the first
+  // attempt flared it out to a third again its radius and, because upward-
+  // facing surfaces take the sky's full light under this lighting model, it
+  // came back a bright salmon ring and read as a clown's ruff.
+  const collarTop = top + 0.055;
+  for (let i = 0; i < panels; i++) {
+    const a0 = start + (i / panels) * arc;
+    const a1 = start + ((i + 1) / panels) * arc;
+    const r = topRadius * 1.07;
+    const c0 = [Math.cos(a0) * topRadius, top, Math.sin(a0) * topRadius];
+    const c1 = [Math.cos(a1) * topRadius, top, Math.sin(a1) * topRadius];
+    const u0 = [Math.cos(a0) * r, collarTop, Math.sin(a0) * r];
+    const u1 = [Math.cos(a1) * r, collarTop, Math.sin(a1) * r];
+    verts.push(...c0, ...u1, ...u0, ...c0, ...c1, ...u1);
   }
 
   const geometry = new BufferGeometry();
@@ -164,47 +236,85 @@ function cloakGeometry(): BufferGeometry {
   return geometry;
 }
 
-/** A wide-brimmed, slightly crumpled hat. */
+/**
+ * A wide-brimmed, slightly crumpled hat.
+ *
+ * The brim is wider than the shoulders and the crown is short. The earlier
+ * proportions — narrow brim, tall straight crown — read as a stovepipe,
+ * and a stovepipe is a different character entirely.
+ */
 function hatGeometry(): BufferGeometry {
-  const segments = 9;
-  const brim = 0.27;
-  const crownRadius = 0.135;
-  const crownTop = 0.2;
+  const segments = 11;
+  const brim = 0.3;
+  const crownRadius = 0.155;
+  const crownTop = 0.155;
   const verts: number[] = [];
   for (let i = 0; i < segments; i++) {
     const a0 = (i / segments) * Math.PI * 2;
     const a1 = ((i + 1) / segments) * Math.PI * 2;
     // The brim dips at the front and lifts at the back; a flat disc reads
-    // as a lampshade.
-    const dip0 = Math.cos(a0) * 0.035 - 0.02;
-    const dip1 = Math.cos(a1) * 0.035 - 0.02;
-    const r0 = brim * (0.9 + Math.abs(Math.sin(a0)) * 0.18);
-    const r1 = brim * (0.9 + Math.abs(Math.sin(a1)) * 0.18);
+    // as a lampshade. The dip is deep enough to shade the face, which is
+    // what makes the hat look worn rather than balanced on top.
+    const dip = (a: number) => Math.sin(a) * 0.06 - 0.045;
+    const rim = (a: number) => brim * (0.86 + Math.abs(Math.cos(a)) * 0.22);
     const c0 = [Math.cos(a0) * crownRadius, 0, Math.sin(a0) * crownRadius];
     const c1 = [Math.cos(a1) * crownRadius, 0, Math.sin(a1) * crownRadius];
-    const e0 = [Math.cos(a0) * r0, dip0, Math.sin(a0) * r0];
-    const e1 = [Math.cos(a1) * r1, dip1, Math.sin(a1) * r1];
+    const e0 = [Math.cos(a0) * rim(a0), dip(a0), Math.sin(a0) * rim(a0)];
+    const e1 = [Math.cos(a1) * rim(a1), dip(a1), Math.sin(a1) * rim(a1)];
     verts.push(...c0, ...e0, ...e1, ...c0, ...e1, ...c1);
     verts.push(...c0, ...e1, ...e0, ...c0, ...c1, ...e1);
 
-    const k0 = [Math.cos(a0) * crownRadius * 0.72, crownTop, Math.sin(a0) * crownRadius * 0.72];
-    const k1 = [Math.cos(a1) * crownRadius * 0.72, crownTop, Math.sin(a1) * crownRadius * 0.72];
+    // The crown leans back a little and tapers, so it has a direction.
+    const k = crownRadius * 0.74;
+    const k0 = [Math.cos(a0) * k, crownTop, Math.sin(a0) * k - 0.03];
+    const k1 = [Math.cos(a1) * k, crownTop, Math.sin(a1) * k - 0.03];
     verts.push(...c0, ...k0, ...k1, ...c0, ...k1, ...c1);
   }
   // Cap the crown.
   for (let i = 0; i < segments; i++) {
     const a0 = (i / segments) * Math.PI * 2;
     const a1 = ((i + 1) / segments) * Math.PI * 2;
+    const k = crownRadius * 0.74;
     verts.push(
-      0, crownTop, 0,
-      Math.cos(a0) * crownRadius * 0.72, crownTop, Math.sin(a0) * crownRadius * 0.72,
-      Math.cos(a1) * crownRadius * 0.72, crownTop, Math.sin(a1) * crownRadius * 0.72,
+      0, crownTop, -0.03,
+      Math.cos(a0) * k, crownTop, Math.sin(a0) * k - 0.03,
+      Math.cos(a1) * k, crownTop, Math.sin(a1) * k - 0.03,
     );
   }
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
   geometry.computeVertexNormals();
-  addSway(geometry, 0, 1, 0);
+  // The brim is the one part of the figure light enough to move in wind.
+  // Weighting it by radius rather than height means the tips flutter and
+  // the crown stays put.
+  const position = geometry.attributes.position as BufferAttribute;
+  const sway = new Float32Array(position.count);
+  for (let i = 0; i < position.count; i++) {
+    const r = Math.hypot(position.getX(i), position.getZ(i));
+    const above = position.getY(i) > crownTop * 0.4 ? 0 : 1;
+    sway[i] = above * Math.min(1, Math.max(0, (r - crownRadius) / (brim - crownRadius)));
+  }
+  geometry.setAttribute('aSway', new BufferAttribute(sway, 1));
+  return geometry;
+}
+
+/** The band around the base of the crown. Breaks up the hat's one big mass. */
+function hatBandGeometry(): BufferGeometry {
+  const segments = 11;
+  const radius = 0.163;
+  const verts: number[] = [];
+  for (let i = 0; i < segments; i++) {
+    const a0 = (i / segments) * Math.PI * 2;
+    const a1 = ((i + 1) / segments) * Math.PI * 2;
+    const p0 = [Math.cos(a0) * radius, 0.004, Math.sin(a0) * radius];
+    const p1 = [Math.cos(a1) * radius, 0.004, Math.sin(a1) * radius];
+    const q0 = [Math.cos(a0) * radius * 0.97, 0.048, Math.sin(a0) * radius * 0.97];
+    const q1 = [Math.cos(a1) * radius * 0.97, 0.048, Math.sin(a1) * radius * 0.97];
+    verts.push(...p0, ...q0, ...q1, ...p0, ...q1, ...p1);
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+  geometry.computeVertexNormals();
   return geometry;
 }
 
@@ -222,24 +332,29 @@ function instrumentGeometry(kind: string): BufferGeometry {
     const body = boxPart(0.05, 0.62, 0.05, 0.9);
     parts.push(body);
   } else if (isDrum) {
-    const body = boxPart(0.34, 0.1, 0.34, 1);
+    const body = boxPart(0.36, 0.11, 0.36, 1);
     parts.push(body);
   } else {
-    // A rounded body and a neck: lute, harp, hurdy-gurdy and bells all read
-    // acceptably from this at the distance the camera holds.
-    const body = boxPart(0.3, 0.26, 0.16, 0.62, 0.7);
-    parts.push(body);
-    const neck = boxPart(0.06, 0.44, 0.05, 0.85);
-    translate(neck, 0, 0.24, 0);
+    // A waisted body and a neck: lute, harp, hurdy-gurdy and bells all read
+    // acceptably from this at the distance the camera holds. Sized to sit
+    // *inside* the figure's silhouette when slung. The first pass made it
+    // half again this big on the theory that a bigger instrument reads
+    // better; it read as a suitcase carried at arm's length.
+    const lower = boxPart(0.21, 0.13, 0.13, 1.16, 1.1);
+    parts.push(lower);
+    const upper = boxPart(0.244, 0.15, 0.143, 0.52, 0.6);
+    translate(upper, 0, 0.13, 0);
+    parts.push(upper);
+    const neck = boxPart(0.05, 0.32, 0.042, 0.86);
+    translate(neck, 0, 0.26, 0);
     parts.push(neck);
-    const head = boxPart(0.09, 0.1, 0.05, 0.7);
-    translate(head, 0, 0.66, 0);
+    const head = boxPart(0.085, 0.09, 0.042, 0.75);
+    translate(head, 0, 0.56, 0);
     parts.push(head);
   }
 
   const merged = concat(parts);
   merged.computeVertexNormals();
-  addSway(merged, 0, 1, 0);
   return merged;
 }
 
@@ -278,6 +393,10 @@ export class Bard {
   private readonly rightLeg = new Group();
   private readonly instrumentPivot = new Group();
   private instrumentMesh: Mesh | null = null;
+  /** Ankles, so the foot can stay flatter than the leg it hangs off. */
+  private readonly boots: Mesh[] = [];
+  /** The cloak mesh, so the walk can trail it without moving the torso. */
+  private readonly cloak: Mesh;
 
   private readonly materials: ShaderMaterial[] = [];
   private readonly globals: PainterlyGlobals;
@@ -301,6 +420,15 @@ export class Bard {
     this.globals = globals;
     this.group.name = 'bard';
 
+    /**
+     * A rigid body part. `swayAttribute` is off and no `aSway` attribute is
+     * built: these are boots and bones, not foliage, and nothing about them
+     * should move in the wind. It used to be on, which worked only because
+     * an absent vertex attribute reads as zero — true in practice, but a
+     * shader compiled to read an attribute nobody supplies is a coincidence
+     * rather than a decision. The cloak and the hat brim, which do move,
+     * declare it explicitly and ship the attribute to go with it.
+     */
     const solid = (color: number, rim = 0.5) =>
       this.track(
         createPainterlyMaterial(globals, {
@@ -312,7 +440,7 @@ export class Bard {
           rimPower: 2.1,
           bandSoftness: 0.09,
           flatShading: true,
-          swayAttribute: true,
+          swayAttribute: false,
           sway: 0,
           shadowDepth: 0.45,
         }),
@@ -322,34 +450,53 @@ export class Bard {
     // Pivots sit at the hip so a rotation swings the leg rather than
     // sliding it. This is the one thing that has to be right or the walk
     // is unfixable downstream.
-    const legGeo = boxPart(0.115, 0.46, 0.13, 0.85);
-    const bootGeo = boxPart(0.14, 0.12, 0.2, 0.9);
+    const legGeo = boxPart(0.12, 0.4, 0.135, 0.82);
+    // The boot narrows toward the ankle so the trouser covers its top rim.
+    // Left wider, the rim reads as a pale collar of sky-lit sock, which at
+    // walking distance is the only thing you notice about the feet.
+    const bootGeo = boxPart(0.15, 0.13, 0.235, 0.76, 0.66);
     for (const [side, pivot] of [
       [-1, this.leftLeg],
       [1, this.rightLeg],
     ] as const) {
       const thigh = new Mesh(legGeo, solid(colors.trousers, 0.35));
-      thigh.position.y = -0.46;
+      thigh.position.y = -0.4;
       thigh.castShadow = true;
       const boot = new Mesh(bootGeo, solid(colors.boots, 0.3));
-      boot.position.y = -0.55;
-      boot.position.z = 0.02;
+      boot.position.set(0, -0.48, -0.04);
       boot.castShadow = true;
       pivot.add(thigh, boot);
-      pivot.position.set(side * 0.075, 0.5, 0);
+      pivot.position.set(side * 0.082, HIP_Y, 0);
+      this.boots.push(boot);
       this.hips.add(pivot);
     }
 
     // --- torso ---------------------------------------------------------
-    const torsoMesh = new Mesh(boxPart(0.3, 0.44, 0.19, 1.12, 1.05), solid(colors.tunic, 0.45));
-    torsoMesh.position.y = 0.5;
+    // Tapered outward: narrow at the waist, broad at the shoulders. A box
+    // of constant width reads as a crate no matter what is on top of it.
+    const torsoMesh = new Mesh(
+      boxPart(0.27, CHEST_TOP - HIP_Y, 0.185, 1.28, 1.08),
+      solid(colors.tunic, 0.45),
+    );
+    torsoMesh.position.y = HIP_Y;
     torsoMesh.castShadow = true;
     this.torso.add(torsoMesh);
 
-    const beltMesh = new Mesh(boxPart(0.31, 0.06, 0.2, 1), solid(colors.hatBand, 0.6));
-    beltMesh.position.y = 0.5;
+    const beltMesh = new Mesh(boxPart(0.285, 0.055, 0.2, 1), solid(colors.hatBand, 0.6));
+    beltMesh.position.y = HIP_Y + 0.01;
     beltMesh.castShadow = false;
     this.torso.add(beltMesh);
+
+    // The instrument's strap. It costs twelve triangles and it is the whole
+    // explanation for why a lute is riding on the bard's back — without it
+    // the instrument looks stuck on rather than carried. Leather, not the
+    // belt's gold: in the belt colour it was a bright plank across the chest
+    // and pulled more attention than the face.
+    const strap = new Mesh(boxPart(0.042, 0.48, 0.028, 1), solid(colors.boots, 0.45));
+    strap.position.set(-0.1, HIP_Y + 0.07, 0.094);
+    strap.rotation.z = -0.42;
+    strap.castShadow = false;
+    this.torso.add(strap);
 
     // --- cloak ---------------------------------------------------------
     // Its own material with a real sway value, so the world's wind moves it.
@@ -370,47 +517,86 @@ export class Bard {
         shadowDepth: 0.4,
       }),
     );
-    const cloak = new Mesh(cloakGeometry(), cloakMaterial);
-    cloak.position.y = 0.42;
-    cloak.castShadow = true;
-    this.torso.add(cloak);
+    this.cloak = new Mesh(cloakGeometry(), cloakMaterial);
+    // High enough that the collar tucks under the jaw. Two centimetres
+    // lower and a strip of sky-lit shoulder shows between the hat brim and
+    // the cloak, which from behind reads as a gap straight through the
+    // character.
+    this.cloak.position.y = SHOULDER_Y - 0.4;
+    this.cloak.castShadow = true;
+    this.torso.add(this.cloak);
 
     // --- arms ----------------------------------------------------------
-    const armGeo = boxPart(0.09, 0.4, 0.1, 0.85);
-    const handGeo = boxPart(0.09, 0.09, 0.1, 0.9);
+    const armGeo = boxPart(0.085, 0.36, 0.095, 0.85);
+    const handGeo = boxPart(0.095, 0.095, 0.1, 0.9);
     for (const [side, pivot] of [
       [-1, this.leftArm],
       [1, this.rightArm],
     ] as const) {
       const arm = new Mesh(armGeo, solid(colors.tunic, 0.45));
-      arm.position.y = -0.4;
+      arm.position.y = -0.36;
       arm.castShadow = true;
       const hand = new Mesh(handGeo, solid(colors.skin, 0.55));
-      hand.position.y = -0.46;
+      hand.position.y = -0.43;
       hand.castShadow = false;
       pivot.add(arm, hand);
-      pivot.position.set(side * 0.19, 0.9, 0);
+      pivot.position.set(side * 0.18, SHOULDER_Y, 0);
       this.torso.add(pivot);
     }
 
     // --- head ----------------------------------------------------------
-    const head = new Mesh(boxPart(0.2, 0.21, 0.19, 0.95), solid(colors.skin, 0.55));
-    head.position.y = 0.94;
+    const head = new Mesh(boxPart(0.25, HEAD_HEIGHT, 0.225, 0.94), solid(colors.skin, 0.55));
+    head.position.y = HEAD_Y;
     head.castShadow = true;
-    const hair = new Mesh(boxPart(0.215, 0.09, 0.2, 1), solid(colors.hair, 0.4));
-    hair.position.y = 1.06;
+    // A nose. Four hundred bytes of geometry that does more for the
+    // three-quarter read than anything else on the figure, because it is
+    // the only thing that tells you which way the head is facing once the
+    // hat brim has put the face in shadow.
+    const nose = new Mesh(boxPart(0.05, 0.055, 0.05, 0.7), solid(colors.skin, 0.6));
+    nose.position.set(0, HEAD_Y + 0.11, 0.108);
+    nose.castShadow = false;
+    // Hair sits low at the back so it shows under the brim; without it the
+    // gap between hat and collar reads as a bare tan column, which from
+    // behind — the angle the walking camera holds — is most of what you see
+    // of the head.
+    const hair = new Mesh(boxPart(0.255, 0.115, 0.235, 1.02), solid(colors.hair, 0.4));
+    hair.position.set(0, HEAD_Y + 0.145, -0.012);
     hair.castShadow = false;
-    const hat = new Mesh(hatGeometry(), solid(colors.hat, 0.6));
-    hat.position.y = 1.15;
+    const nape = new Mesh(boxPart(0.235, 0.185, 0.075, 1.04, 1.1), solid(colors.hair, 0.35));
+    nape.position.set(0, HEAD_Y + 0.02, -0.108);
+    nape.castShadow = false;
+    const hatMaterial = this.track(
+      createPainterlyMaterial(globals, {
+        color: colors.hat,
+        colorVariant: 0xffe0c0,
+        grain: 0.3,
+        grainScale: 1.8,
+        rim: 0.6,
+        rimPower: 2.1,
+        bandSoftness: 0.09,
+        flatShading: true,
+        // The brim carries a real sway weight, so it lifts on the same gusts
+        // that move the grass. Small: a hat that flapped would pull the eye.
+        swayAttribute: true,
+        sway: 0.022,
+        swaySpeed: 1.5,
+        shadowDepth: 0.45,
+      }),
+    );
+    const hat = new Mesh(hatGeometry(), hatMaterial);
+    hat.position.y = HAT_Y;
     // Worn at an angle. Nothing about a bard should be square to the world.
-    hat.rotation.z = 0.15;
-    hat.rotation.x = -0.08;
+    hat.rotation.z = 0.13;
+    hat.rotation.x = -0.07;
     hat.castShadow = true;
-    this.headPivot.add(head, hair, hat);
+    const band = new Mesh(hatBandGeometry(), solid(colors.hatBand, 0.5));
+    band.position.copy(hat.position);
+    band.rotation.copy(hat.rotation);
+    band.castShadow = false;
+    this.headPivot.add(head, nose, hair, nape, hat, band);
     this.torso.add(this.headPivot);
 
     // --- instrument ----------------------------------------------------
-    this.instrumentPivot.position.set(0.02, 0.6, 0.17);
     this.torso.add(this.instrumentPivot);
     this.setInstrument(null);
 
@@ -428,6 +614,13 @@ export class Bard {
     if (this.instrumentMesh) {
       this.instrumentPivot.remove(this.instrumentMesh);
       this.instrumentMesh.geometry.dispose();
+      // The outgoing material has to leave the tracking list as well as be
+      // disposed. Left in, every instrument swap in a session accumulated a
+      // compiled shader program that nothing would free until the bard did.
+      const stale = this.instrumentMesh.material as ShaderMaterial;
+      const at = this.materials.indexOf(stale);
+      if (at >= 0) this.materials.splice(at, 1);
+      stale.dispose();
       this.instrumentMesh = null;
     }
     const id = instrument?.id ?? 'lute';
@@ -440,16 +633,15 @@ export class Bard {
         rim: 0.32,
         rimPower: 2.0,
         flatShading: true,
-        swayAttribute: true,
+        swayAttribute: false,
         sway: 0,
       }),
     );
     const mesh = new Mesh(instrumentGeometry(id), material);
     mesh.castShadow = true;
-    // Carried across the body at an angle, the way anyone actually holds a
-    // lute — square-on it reads as a shield.
-    mesh.rotation.z = -0.5;
-    mesh.rotation.x = 0.22;
+    // The pivot handles carrying angle and slinging; the mesh only has to
+    // hang from its own middle, so the two can be animated independently.
+    mesh.position.y = -0.24;
     this.instrumentPivot.add(mesh);
     this.instrumentMesh = mesh;
   }
@@ -489,9 +681,9 @@ export class Bard {
     this.speed = dt > 0 ? distanceDelta / dt : 0;
     this.smoothedSpeed += (this.speed - this.smoothedSpeed) * Math.min(1, dt * 8);
 
-    // One stride per 0.78 m. Tuned against the figure's leg length: too
+    // One stride per 0.72 m. Tuned against the figure's leg length: too
     // long and it moonwalks, too short and it scurries.
-    this.stride += distanceDelta * (Math.PI / 0.78);
+    this.stride += distanceDelta * (Math.PI / 0.72);
 
     const walkAmount = this.blendWeight('walking') * Math.min(1, this.smoothedSpeed / 1.4);
     const playAmount = this.blendWeight('playing');
@@ -502,33 +694,50 @@ export class Bard {
     const breathe = Math.sin(this.elapsed * 1.5);
 
     // --- legs ----------------------------------------------------------
-    const legSwing = 0.62 * walkAmount;
-    this.leftLeg.rotation.x = Math.sin(phase) * legSwing + sitAmount * -1.25;
-    this.rightLeg.rotation.x = Math.sin(phase + Math.PI) * legSwing + sitAmount * -1.05;
+    const legSwing = 0.72 * walkAmount;
+    const leftSwing = Math.sin(phase);
+    const rightSwing = Math.sin(phase + Math.PI);
+    this.leftLeg.rotation.x = leftSwing * legSwing + sitAmount * -1.25;
+    this.rightLeg.rotation.x = rightSwing * legSwing + sitAmount * -1.05;
     // A knee-ish bend on the forward swing, faked by lifting the pivot.
-    this.leftLeg.position.y = 0.5 + Math.max(0, Math.sin(phase)) * 0.03 * walkAmount;
-    this.rightLeg.position.y = 0.5 + Math.max(0, Math.sin(phase + Math.PI)) * 0.03 * walkAmount;
+    this.leftLeg.position.y = HIP_Y + Math.max(0, leftSwing) * 0.03 * walkAmount;
+    this.rightLeg.position.y = HIP_Y + Math.max(0, rightSwing) * 0.03 * walkAmount;
+    // The ankle keeps the boot flatter than the leg, and rolls the toe down
+    // on the back half of the step. Rigid feet swinging with the shin is
+    // the tell that gives away a jointless character faster than anything
+    // else at the size this figure is actually seen.
+    this.boots[0].rotation.x = -leftSwing * legSwing * 0.55 - Math.min(0, leftSwing) * 0.3;
+    this.boots[1].rotation.x = -rightSwing * legSwing * 0.55 - Math.min(0, rightSwing) * 0.3;
 
     // --- body bob ------------------------------------------------------
     // Twice step frequency, and skewed: the rise is quicker than the fall.
     const bobPhase = phase * 2;
     const skewed = Math.sin(bobPhase) - 0.22 * Math.sin(bobPhase * 2);
     this.hips.position.y =
-      skewed * 0.035 * walkAmount + breathe * 0.008 * idleAmount - sitAmount * 0.42;
+      skewed * 0.038 * walkAmount + breathe * 0.008 * idleAmount - sitAmount * 0.42;
     // Weight shifts side to side, a quarter-phase behind the bob.
-    this.hips.position.x = Math.sin(phase - Math.PI * 0.25) * 0.022 * walkAmount;
-    this.hips.rotation.z = Math.sin(phase - Math.PI * 0.25) * 0.05 * walkAmount;
+    this.hips.position.x = Math.sin(phase - Math.PI * 0.25) * 0.024 * walkAmount;
+    this.hips.rotation.z = Math.sin(phase - Math.PI * 0.25) * 0.055 * walkAmount;
 
     // --- torso ---------------------------------------------------------
     // Counter-rotates against the hips, and leans into the direction of
     // travel proportionally to speed.
-    this.torso.rotation.y = Math.sin(phase) * 0.14 * walkAmount;
+    this.torso.rotation.y = Math.sin(phase) * 0.16 * walkAmount;
     this.torso.rotation.x =
       Math.min(0.1, this.smoothedSpeed * 0.05) * walkAmount +
       playAmount * 0.06 +
       sitAmount * 0.16 +
       breathe * 0.01 * idleAmount;
-    this.torso.rotation.z = Math.sin(phase - Math.PI * 0.25) * -0.03 * walkAmount;
+    this.torso.rotation.z = Math.sin(phase - Math.PI * 0.25) * -0.035 * walkAmount;
+
+    // --- cloak ---------------------------------------------------------
+    // Trails behind while walking and lags the stride, on top of whatever
+    // the wind is already doing to the hem in the shader. Rotating the
+    // cloak rather than the torso is what keeps the trail from dragging the
+    // shoulders and the head around with it.
+    this.cloak.rotation.x =
+      -0.11 * walkAmount - Math.sin(phase * 2 - 0.9) * 0.035 * walkAmount + sitAmount * 0.06;
+    this.cloak.rotation.z = Math.sin(phase - 0.6) * 0.05 * walkAmount;
 
     // --- head ----------------------------------------------------------
     // Counter-rotation is deliberately *not* complete: a head that cancels
@@ -543,7 +752,7 @@ export class Bard {
     this.headPivot.rotation.z = Math.sin(this.elapsed * 0.7) * 0.02 * idleAmount;
 
     // --- arms ----------------------------------------------------------
-    const armSwing = 0.46 * walkAmount;
+    const armSwing = 0.52 * walkAmount;
     // Arms lag the legs slightly. The lag is small but it is the difference
     // between a walk and a wind-up toy.
     const armPhase = phase - 0.22;
@@ -553,8 +762,8 @@ export class Bard {
     // swings when the instrument is slung and the bard is walking.
     const slung = 1 - playAmount;
     this.leftArm.rotation.x =
-      Math.sin(armPhase + Math.PI) * armSwing * slung - carryPose * playAmount - 0.15;
-    this.leftArm.rotation.z = 0.12 + playAmount * 0.32;
+      Math.sin(armPhase + Math.PI) * armSwing * slung - carryPose * playAmount - 0.1;
+    this.leftArm.rotation.z = 0.11 + playAmount * 0.32;
 
     // The right hand strums. The kick from `pluck` is what makes a note
     // land visually at the same instant it lands audibly.
@@ -564,21 +773,32 @@ export class Bard {
       carryPose * playAmount -
       this.strum * 0.5 +
       strumMotion;
-    this.rightArm.rotation.z = -0.12 - playAmount * 0.28 - this.strum * 0.16;
+    this.rightArm.rotation.z = -0.11 - playAmount * 0.28 - this.strum * 0.16;
 
     // --- instrument ----------------------------------------------------
-    // Brought up across the body while playing, dropped to the hip while
-    // walking. Blending the position rather than snapping is what stops the
-    // instrument teleporting when a busk starts.
+    // Two poses, blended rather than switched. Slung it rides across the
+    // *back*, outside the cloak, where it is the one thing that identifies
+    // the character from the angle the walking camera actually holds.
+    // Brought round to the chest to play.
+    //
+    // The slung tilt is negative so the body hangs on the bard's left and
+    // the neck rises past his right shoulder — the way the strap across his
+    // chest runs. Hanging it the other way was the first version and looked
+    // like the strap belonged to something else.
     this.instrumentPivot.position.set(
-      0.02 + playAmount * 0.02,
-      0.6 - slung * 0.14,
-      0.17 + playAmount * 0.05,
+      playAmount * 0.06 - slung * 0.03,
+      SHOULDER_Y - 0.09 - slung * 0.06,
+      playAmount * 0.22 - slung * 0.3,
     );
-    this.instrumentPivot.rotation.z = slung * 0.55;
-    this.instrumentPivot.rotation.y = playAmount * -0.35 + slung * 0.2;
-    // Resonance: the instrument shivers a little on each pluck.
-    this.instrumentPivot.rotation.x = this.strum * 0.07;
+    // Slung, it is tipped so its foot leans further off the back than its
+    // neck does. The cloak flares as it falls, so a instrument hung
+    // parallel to the spine has its body inside the cloth and its edges
+    // stitching through it a few triangles at a time.
+    this.instrumentPivot.rotation.set(
+      this.strum * 0.07 + slung * 0.3,
+      playAmount * -0.4 + slung * 0.18,
+      -slung * 0.72 - playAmount * 0.5,
+    );
   }
 
   /** How much a pose contributes right now, accounting for the blend. */

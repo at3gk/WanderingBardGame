@@ -1,10 +1,82 @@
 # STATE
 
-Run counter: 40
+Run counter: 41
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **Run 41 (interactive, human-directed): the road goes into three
+  dimensions.** A human set a new direction — build the wandering road as a
+  low-poly 3D painterly game in Three.js, with a shared daily road, busking,
+  instrument unlocks, variable-reward encounters, idle busking and a
+  campfire. DESIGN.md carries the full write-up and the changelog entry
+  naming what was cut. This entry records what a future run needs to know.
+
+  **What was kept.** All of `core/`. It is pure TypeScript with no renderer
+  in it, so this was a rebuild of the presentation and not of the game. The
+  no-fail stance, the no-grading stance and the pedagogy are unchanged and
+  still constrain everything.
+
+  **What replaced Phaser.** `src/three/` — one painterly ShaderMaterial that
+  every solid surface uses, a sky dome that *is* the light source, a chunked
+  terrain ribbon in road space, GPU-instanced scatter, a procedurally-built
+  bard with a hand-driven walk, a damped camera rig, GPU-resident particles.
+  `src/core/` gained road, encounters, instruments, idle, performance and
+  journey; `src/audio/` gained instrument voices, generated ambience and
+  adaptive layers.
+
+  **The Phaser files are still in the tree and are dead.** `src/scenes/` and
+  `src/render/` are unreferenced — nothing imports them, so vite drops them
+  from the bundle and they cost nothing at runtime — but they should go. This
+  session tried and the sandbox denied the deletion; it was left rather than
+  worked around. Deleting them also means retiring or rewriting the
+  Playwright checks in `tools/` that drive the old Phaser game, most of which
+  now assert against a game that no longer boots. They are informational only
+  (`headless-checks.yml` is `continue-on-error`), so nothing is red because of
+  it — but a future run should not trust them.
+
+  **Three rendering bugs worth remembering, because none was findable by
+  reading the code.**
+  1. `USE_INSTANCING_COLOR` is injected by three into the *vertex* shader
+     prefix only. A fragment shader guarding its matching varying on the same
+     define simply has no declaration; both stages compile clean, and every
+     per-instance colour in the game is silently dropped. Both varyings are
+     unconditional now.
+  2. A rim light added flat rather than scaled by albedo turns grass white:
+     blades are thin and seen edge-on, so fresnel sits near 1 across the whole
+     blade rather than at its edge.
+  3. Ambient applied at the full value of the sky colour lights a surface as
+     brightly as the sky itself. The lighting model now names its exposure in
+     two constants, with about three stops between sun and shade.
+
+  The general lesson, and the reason `tools/postcard.mjs` exists: **look at
+  the frames.** All three survived type-checking, unit tests and a careful
+  reading of the shader. The first screenshot found all three in a minute.
+
+  **`tools/postcard.mjs`** poses the game through `window.bard.pose({s,
+  dayFraction, phase})` and shoots ten framings including two phone aspect
+  ratios. `tools/shader-check.mjs` fails a run if a frame is black or tonally
+  flat, or if the time-of-day palette is inert. Both need `PLAYWRIGHT_PATH`
+  and a served build; `tools/browser.mjs` now centralises the launch and
+  probes for the pre-installed Chromium, because the ad-hoc Playwright install
+  and the pre-installed browser do not always agree on a build number.
+
+  **A process note that cost real time.** Committing while sub-agents were
+  still editing the same working tree captured `src/core/journey.ts` in the
+  middle of a mutation test — a deliberately-broken guard marked
+  `// TEMP-REVERT` went into a commit and had to be undone in the next one.
+  Grep for that marker convention before committing mid-session.
+
+  **The pinned-day road test moved on purpose.** `road.test.ts` pins seed
+  20260728 exactly, so that an accidental change to the generator cannot
+  silently hand every player a different road. The 3D world needed visible
+  landform, so the corridor grading came in from 30 m to 18 m and the
+  cross-road hills from a 520 m wavelength to 190 m; the pins were
+  regenerated in the same commit, which is what that test asks for. An
+  intermediate attempt also shortened the *along*-road hills to 165 m and
+  turned the lane into a 30% climb — the existing roughness test caught that
+  before it was ever seen, which is exactly what it was written for.
 
 - **Run 40 (scheduled): a five-place assumption turned out to be
   untested, and doesn't hold.** Both blockers re-checked, unchanged (see

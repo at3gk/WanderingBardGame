@@ -8,10 +8,41 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the last numbered entry (currently 107). If it says
-  "Nothing queued", promote something from the **Idea backlog** near the
-  bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
-  has lifted.
+- **What to do next** is the **v0.6 queue** immediately below. It supersedes
+  the numbered entries: a human reset the direction on 2026-07-28 and the
+  game is now a 3D one (DESIGN.md, "The road in three dimensions"). The
+  numbered entries below remain the record of how the 2D game was built and
+  are still worth reading for *why* something is the way it is — several of
+  their conclusions (the no-fail stance, the notation rules, the mobile
+  layout lessons) carry straight over.
+
+## v0.6 queue — the 3D road
+
+Ordered. One per run, as always.
+
+1. **Delete the dead Phaser layer.** `src/scenes/` and `src/render/` are
+   unreferenced and tree-shaken out of the bundle, but they are still in the
+   tree and still type-check, which makes them look live. Removing them means
+   also retiring the `tools/*.mjs` checks that drive the old game — most of
+   them now assert against a scene that never boots. Keep `browser.mjs`,
+   `shader-check.mjs`, `postcard.mjs`, and anything that tests pure logic.
+2. **Make the headless checks match the 3D game.** Rewrite the survivors
+   against `window.bard`, and put `shader-check` into
+   `headless-checks.yml`. A black frame is the one failure that unit tests
+   structurally cannot see, and it should block rather than inform.
+3. **A first-run welcome that is not a menu.** The pillar is "playable in
+   under five seconds, no login" and the game currently opens straight into
+   the walk, which is right. What is missing is any indication that tapping
+   does anything. Diegetic, one line, fades.
+4. **Weather.** `audio/ambience.ts` already accepts `'clear' | 'breezy' |
+   'overcast' | 'rain'` and the encounter table has weather moments in it;
+   nothing drives either. A weather state derived from the daily seed would
+   make two systems that already exist start paying for themselves.
+5. **The journal as a real artefact.** Entries are being recorded; they want
+   a place to be read that feels like a worn book rather than a list.
+6. **Performance pass on a real phone.** The quality tiers are inferred from
+   a capability probe that has never been checked against actual hardware.
+   Needs a human with a mid-range Android.
 - **Why something is the way it is**: find its numbered done-entry. They are
   written to be read later and are referenced by number from STATE.md.
 - **Before you start**: read STATE.md's "At a glance" — it is the short
