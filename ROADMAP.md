@@ -1265,9 +1265,48 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     `npm test` 279 green (unchanged), build green (bundle unchanged, same
     content hash), full 14-check quick suite reconfirmed green including
     the updated `rotate-check.mjs`.
-109. **Next.** Nothing queued.
+109. ~~**Consolidation: split the free-play staff out of RoadScene.**~~ Done
+    (Run 41, scheduled). Both blockers re-checked first (unchanged — see
+    Blocked on human), no playtest answer had arrived, and the idea
+    backlog held only the phone-dependent item, so this run took up the
+    "legitimate work if someone scopes a real first piece" this task's own
+    previous entry (108) left open. The free-play staff (scrim, ladder,
+    cursor, written-phrase tracking, `playFreeNote`) moved to
+    `src/scenes/freePlayOverlay.ts`, the same shape of split as the picker
+    (task 107): a `FreePlayOverlayHost` interface is the exact slice of
+    `RoadScene` the module reads and writes, including `songTitleText`
+    (shared with the walk mode, exactly the entanglement task 108 flagged)
+    and three small callbacks (`hitLineX`, `noteOriginY`, `strumLute`) for
+    the handful of things that are genuinely the scene's own layout/
+    animation rather than the staff's. `enterFreePlay`/`exitFreePlay`
+    stayed on `RoadScene` as the mode-toggle orchestration, same as the
+    picker's `openPicker`/`closePicker` wrappers.
+    Two small shared-constant moves came out of scoping this correctly:
+    `STAFF_LINE_STEPS` (the treble staff's five line positions) to
+    `core/notation.ts`, and `NOTE_TINT_UPCOMING/HIT/MISS` to
+    `render/engraving.ts` — both were RoadScene-local consts used by *both*
+    the walk's markers and free play's notes, so leaving them in RoadScene
+    would have forced a circular import between the two scene modules.
+    `RoadScene.ts` 2172 → 1838 lines; new module 414 lines.
+    Caught by the verification, not by reading: a transcription slip while
+    moving `playFreeNote`'s fade-out tween (`delay: 220` misread as
+    `ease: 'Quad.easeIn'` off a truncated file read) — the exact class of
+    mistake this file's own "when a check fails, suspect the check first"
+    lesson is really about in reverse: a *refactor* claiming
+    behaviour-preservation needs the same suspicion applied to itself.
+    Re-reading the untruncated original caught it before any check ran.
+    Verified behaviour-preserving, not assumed: `npm test` 279 green
+    (unchanged — no unit tests cover scene modules, same as the picker),
+    build green (1266.81 KB vs 1267.23 KB, module boundary only), the full
+    14-check quick suite green, plus `songpick-check`, `rotate-check` and
+    `seam-check` (normally quick-mode-skipped, run explicitly since this
+    touches the picker/free-play/rotation seams directly) all green — the
+    same specific area (practice staff visibility) that shipped invisible
+    to production once before (PRs #115–#122), so this run erred toward
+    over-verifying rather than under.
+110. **Next.** Nothing queued.
 
-    **First, check the blockers** (re-checked task 108): both remain
+    **First, check the blockers** (re-checked task 109): both remain
     blocked — forest-song fetch still 403s, GitHub MCP toolset still has no
     tag/ref-write or branch-protection-write call.
 
@@ -1279,11 +1318,14 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     **Fourth, the idea backlog below** — only sharper mobile rendering is
     left, still needs a real phone.
 
-    **Fifth, `RoadScene.ts` is 2172 lines.** The free-play staff and the
-    walk chrome remain the only two plausible further extractions (task 108
-    read the actual code and confirmed why neither is natural: shared
-    `songTitleText`, scattered chrome fields). Legitimate work if someone
-    scopes a real first piece, not an automatic pick.
+    **Fifth, `RoadScene.ts` is 1838 lines**, down from 2172 after task 109's
+    split. **Walk chrome** is the one remaining plausible extraction, and
+    task 108 already found why it isn't a clean single-unit one the way the
+    picker and free-play staff were: `setWalkChromeVisible` alone touches
+    nine unrelated fields (staff lines, meter, clef, hit line, coins,
+    distance) with no shared sub-grouping. Legitimate work if someone scopes
+    a real first piece (e.g. just the meter bar, or just the staff/clef),
+    not an automatic pick.
 
     **What not to reach for.** The verification suite is comprehensive now
     (24 checks); adding another for its own sake is drift. `createBard` is

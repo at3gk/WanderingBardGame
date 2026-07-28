@@ -1,10 +1,43 @@
 # STATE
 
-Run counter: 40
+Run counter: 41
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **Run 41 (scheduled): split the free-play staff out of `RoadScene.ts`,**
+  per new ROADMAP task 109 — the "legitimate work if someone scopes a real
+  first piece" that task 108 left open rather than attempting. Both
+  blockers re-checked first (network fetch still 403s, GitHub MCP toolset
+  still has no tag/ref-write or branch-protection-write call), no playtest
+  answer had arrived, idea backlog held only the phone-dependent item.
+  `src/scenes/freePlayOverlay.ts` (new, 414 lines) now owns the scrim, the
+  ladder of lines/pips/labels, the cursor, the written-phrase tracking and
+  `playFreeNote` — same `Host`-interface shape as the picker split (task
+  107): `FreePlayOverlayHost` is the exact slice of `RoadScene` it reads
+  and writes, including `songTitleText` (shared with the walk mode — the
+  specific entanglement task 108 flagged) and three callbacks
+  (`hitLineX`, `noteOriginY`, `strumLute`) for what's genuinely the
+  scene's own layout/animation. `enterFreePlay`/`exitFreePlay` stay on
+  `RoadScene` as mode-toggle orchestration. `RoadScene.ts` 2172 → 1838
+  lines. Two constants moved out to break a would-be circular import
+  between the two scene modules: `STAFF_LINE_STEPS` to `core/notation.ts`,
+  `NOTE_TINT_UPCOMING/HIT/MISS` to `render/engraving.ts` (both were
+  RoadScene-local but shared by the walk's markers and free play's notes).
+  **Verification caught a real transcription error before it shipped**: an
+  earlier truncated file read led this run to write the wrong tween option
+  on `playFreeNote`'s fade-out (`ease: 'Quad.easeIn'` instead of the
+  actual `delay: 220`) into the new module; re-reading the untruncated
+  original caught it before any check ran. Given this exact area (the
+  practice staff) shipped invisible to production once before (PRs
+  #115–#122), verification ran wider than the minimum: `npm test` 279
+  green (unchanged — no unit tests cover scene modules, same precedent as
+  the picker), build green (1266.81 KB vs 1267.23 KB, module-boundary-only
+  difference), the full 14-check quick suite green, plus `songpick-check`,
+  `rotate-check` and `seam-check` (normally skipped in quick mode) run
+  explicitly since they exercise the picker/free-play/rotation seams this
+  change touches directly — all green, no regressions.
 
 - **Run 40 (scheduled): a five-place assumption turned out to be
   untested, and doesn't hold.** Both blockers re-checked, unchanged (see
@@ -1048,6 +1081,24 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   2275 lines since task 66. `npm test` 279 green (unchanged), build green
   (1.27 MB, unchanged), full 14-check quick suite plus `songpick-check`
   green with zero regressions.
+- Run 40 (2026-07-28, scheduled): resolved ROADMAP task 108 (see its done
+  entry and Current status above). Tested the "a resize re-runs `create()`"
+  assumption five pieces of documentation asserted flatly and found it does
+  not hold in headless Chromium: zero additional `CREATE` events across two
+  rotations, same scene instance and GameObjects throughout. Kept the
+  defenses it produced (cheap insurance against a real device behaving
+  differently) but corrected the docs and pinned the count as an assertion
+  in `rotate-check.mjs`. `npm test` 279 green (unchanged), build green,
+  full 14-check quick suite green.
+- Run 41 (2026-07-28, scheduled): resolved ROADMAP task 109 (see its done
+  entry and Current status above for the full writeup). Split the
+  free-play staff out of `RoadScene.ts` into `src/scenes/freePlayOverlay.ts`
+  — the "real first piece" task 108 left as legitimate-but-unscoped work.
+  `RoadScene.ts` 2172 → 1838 lines. `npm test` 279 green (unchanged), build
+  green (1266.81 KB vs 1267.23 KB), full 14-check quick suite plus
+  `songpick-check`, `rotate-check` and `seam-check` green with zero
+  regressions. Caught and fixed one transcription slip (a tween option
+  misread off a truncated file read) before it ever reached a check.
 
 - **Session close, 2026-07-27 small hours (human-directed, PRs #115–#122).**
   Asked for a polish pass on art, animation and the game. It found three
