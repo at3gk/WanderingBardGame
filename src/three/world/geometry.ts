@@ -858,7 +858,251 @@ export function willowGeometry(options: TreeOptions): BufferGeometry {
   return merged;
 }
 
+// --- the road surface --------------------------------------------------
+
+/**
+ * A few small stones, half-buried, spread over about half a metre.
+ *
+ * One instance is a *scatter* of stones rather than a single pebble, and
+ * that is the whole economy of it. The carriageway is the surface nearest
+ * the camera at every moment of the game, so it is also the easiest place
+ * in the world to spend a phone's whole triangle budget on things a metre
+ * across. Three stones in one instance costs one matrix and thirty
+ * triangles where three instances would cost three matrices for the same
+ * picture — and a scatter placed as a scatter clusters the way loose stone
+ * actually lies, instead of speckling evenly like a texture.
+ *
+ * Five segments and one ring, which is ten triangles per stone. A pebble is
+ * never more than a few pixels across; what it has to do is catch a
+ * slightly different band of the light than the packed earth around it, and
+ * for that any faceted lump will do.
+ */
+export function pebbleGeometry(seed = 41): BufferGeometry {
+  const rand = mulberry32(seed);
+  const parts: BufferGeometry[] = [];
+  const count = 2 + Math.floor(rand() * 3);
+  for (let i = 0; i < count; i++) {
+    const r = 0.05 + rand() * 0.075;
+    const stone = lumpDome(r, 5, 1, 0.5, 0.3, rand);
+    // Sunk rather than balanced: a stone sitting on top of the ground reads
+    // as dropped, and a road's stones are trodden into it.
+    translateY(stone, r * 0.16);
+    const a = rand() * Math.PI * 2;
+    const d = Math.sqrt(rand()) * 0.27;
+    translateXZ(stone, Math.cos(a) * d, Math.sin(a) * d);
+    parts.push(stone);
+  }
+  const merged = mergeGeometries(parts);
+  merged.computeVertexNormals();
+  paintGradient(merged, 0x827d74, 0xffffff, -0.03, 0.12);
+  addSway(merged, 0, 1, 0);
+  return merged;
+}
+
+// --- landmarks ---------------------------------------------------------
+
+export interface LandmarkOptions {
+  /** Dressed or weathered stone: walls, menhirs, lintels. */
+  stone: number;
+  /** The one part allowed to dissent — a tiled roof, a mossed capstone. */
+  roof: number;
+  seed?: number;
+}
+
+/**
+ * A standing stone with two or three companions.
+ *
+ * Everything about this shape is aimed at one job: being recognisable as a
+ * made thing when it is a dark mark eighty metres away on a ridge. So it is
+ * a single vertical far taller than anything else on that skyline, leaning
+ * a few degrees off true — a perfectly upright slab reads as a rendering
+ * primitive, and the lean is the cheapest available signal that somebody
+ * put it there a long time ago and the ground has moved since.
+ *
+ * The companions are not decoration. One vertical alone is ambiguous at
+ * distance (a dead tree, a post); a tall one with low ones around it is
+ * unmistakably a group, and a group is a place.
+ */
+export function standingStoneGeometry(options: LandmarkOptions): BufferGeometry {
+  const rand = mulberry32(options.seed ?? 101);
+  const parts: BufferGeometry[] = [];
+
+  const raise = (height: number, width: number, lean: number): BufferGeometry => {
+    const slab = taperedCylinder(width * (0.55 + rand() * 0.2), width, height, 5, rand);
+    // Flattened in Z so the pentagon becomes a slab. A stone with a round
+    // plan reads as a pillar, which is architecture; a slab reads as
+    // something split off a hillside, which is what a menhir is.
+    scaleXZ(slab, 1, 0.42 + rand() * 0.14);
+    shearX(slab, lean);
+    rotateY(slab, rand() * Math.PI * 2);
+    return slab;
+  };
+
+  const height = 5.0 + rand() * 2.6;
+  parts.push(paint(raise(height, 0.62 + rand() * 0.26, (rand() - 0.5) * 0.17), options.stone, 0.13, rand));
+
+  const companions = 2 + Math.floor(rand() * 2);
+  for (let i = 0; i < companions; i++) {
+    const a = (i / companions) * Math.PI * 2 + rand() * 1.2;
+    const d = 2.4 + rand() * 1.9;
+    const stone = raise(1.3 + rand() * 1.5, 0.42 + rand() * 0.2, (rand() - 0.5) * 0.3);
+    translateXZ(stone, Math.cos(a) * d, Math.sin(a) * d);
+    parts.push(paint(stone, options.stone, 0.15, rand));
+  }
+
+  const merged = mergeGeometries(parts);
+  merged.computeVertexNormals();
+  addSway(merged, 0, 1, 0);
+  return merged;
+}
+
+/**
+ * A trilithon: two uprights carrying a lintel, with a hole of sky through
+ * the middle.
+ *
+ * The hole is the entire point and the only reason this exists alongside the
+ * standing stone. Every other silhouette in this game is solid, so the eye
+ * has never once been asked to read *through* something — and a gap of bright
+ * sky enclosed by dark stone is the most legible shape available at any
+ * distance, which is why real gateways have looked like this for five
+ * thousand years.
+ */
+export function trilithonGeometry(options: LandmarkOptions): BufferGeometry {
+  const rand = mulberry32(options.seed ?? 103);
+  const parts: BufferGeometry[] = [];
+  const height = 4.1 + rand() * 1.5;
+  const gap = 1.5 + rand() * 0.7;
+  const pierW = 0.72 + rand() * 0.24;
+  const depth = 0.66 + rand() * 0.2;
+
+  for (const side of [-1, 1]) {
+    // The two uprights differ in height by up to a third of a metre, and the
+    // lintel sits on the lower of them. Matched piers read as a goalpost.
+    const h = height * (side < 0 ? 1 : 0.94 + rand() * 0.1);
+    const pier = box(pierW, h, depth);
+    shearX(pier, (rand() - 0.5) * 0.06);
+    translateXZ(pier, side * (gap * 0.5 + pierW * 0.5), 0);
+    parts.push(paint(pier, options.stone, 0.12, rand));
+  }
+
+  const span = gap + pierW * 2.1;
+  const lintel = box(span, 0.62 + rand() * 0.18, depth * 1.12);
+  translateY(lintel, height * 0.9);
+  parts.push(paint(lintel, options.roof, 0.1, rand));
+
+  // A block that came down at some point, lying where it fell.
+  const fallen = box(1.1 + rand() * 0.5, 0.42, depth);
+  rotateY(fallen, rand() * Math.PI);
+  translateXZ(fallen, (rand() - 0.5) * 1.4, gap * 0.9 + rand() * 1.4);
+  parts.push(paint(fallen, options.stone, 0.14, rand));
+
+  const merged = mergeGeometries(parts);
+  merged.computeVertexNormals();
+  addSway(merged, 0, 1, 0);
+  return merged;
+}
+
+/**
+ * A wayside chapel: a small nave under a pitched roof, with a bell gable at
+ * the west end.
+ *
+ * This is the one landmark that is unambiguously *inhabited*, which is why
+ * the village band leans on it. The bell gable does all the identifying
+ * work — a box under a pitched roof is a barn, and it is the narrow tower
+ * breaking the ridge line at one end that says somebody comes here.
+ *
+ * The roof is the only part painted from the biome's accent rather than its
+ * stone. One dissenting colour in a silhouette is enough to tell the eye
+ * this is not another rock, and it lands in the frame the same way the
+ * bard's cloak does.
+ */
+export function chapelGeometry(options: LandmarkOptions): BufferGeometry {
+  const rand = mulberry32(options.seed ?? 107);
+  const parts: BufferGeometry[] = [];
+
+  const length = 4.8 + rand() * 1.4;
+  const width = 3.1 + rand() * 0.6;
+  const wallH = 2.7 + rand() * 0.5;
+  const rise = 1.5 + rand() * 0.5;
+
+  parts.push(paint(box(length, wallH, width), options.stone, 0.09, rand));
+  // The eaves overhang by a little. Flush walls and roof read as one solid
+  // block; the overhang is what puts a line of shadow under the roof and
+  // separates the two.
+  parts.push(paint(gableRoof(length * 1.06, width * 0.58, rise, wallH), options.roof, 0.1, rand));
+
+  const towerW = 1.05 + rand() * 0.2;
+  const towerH = wallH + rise + 1.5 + rand() * 0.8;
+  const tower = box(towerW, towerH, towerW);
+  translateXZ(tower, -(length * 0.5 - towerW * 0.4), 0);
+  parts.push(paint(tower, options.stone, 0.09, rand));
+
+  const cap = pyramid(towerW * 0.62, 0.95 + rand() * 0.35, towerH);
+  translateXZ(cap, -(length * 0.5 - towerW * 0.4), 0);
+  parts.push(paint(cap, options.roof, 0.1, rand));
+
+  const merged = mergeGeometries(parts);
+  merged.computeVertexNormals();
+  addSway(merged, 0, 1, 0);
+  return merged;
+}
+
 // --- primitives --------------------------------------------------------
+
+/**
+ * An axis-aligned box, base on y = 0, centred in X and Z.
+ *
+ * Written out rather than taken from three's BoxGeometry because that one
+ * arrives indexed and centred on its own origin, and both would have to be
+ * undone before it could be merged with anything else here.
+ */
+function box(w: number, h: number, d: number): BufferGeometry {
+  const x = w * 0.5;
+  const z = d * 0.5;
+  const quad = (
+    ax: number, ay: number, az: number,
+    bx: number, by: number, bz: number,
+    cx: number, cy: number, cz: number,
+    dx: number, dy: number, dz: number,
+  ): number[] => [ax, ay, az, bx, by, bz, cx, cy, cz, ax, ay, az, cx, cy, cz, dx, dy, dz];
+
+  return fromPositions([
+    ...quad(x, 0, z, x, 0, -z, x, h, -z, x, h, z),
+    ...quad(-x, 0, -z, -x, 0, z, -x, h, z, -x, h, -z),
+    ...quad(-x, 0, z, x, 0, z, x, h, z, -x, h, z),
+    ...quad(x, 0, -z, -x, 0, -z, -x, h, -z, x, h, -z),
+    ...quad(-x, h, -z, -x, h, z, x, h, z, x, h, -z),
+    ...quad(-x, 0, -z, x, 0, -z, x, 0, z, -x, 0, z),
+  ]);
+}
+
+/** A gable roof: ridge along X, eaves at ±halfWidth, springing from `baseY`. */
+function gableRoof(length: number, halfWidth: number, rise: number, baseY: number): BufferGeometry {
+  const l = length * 0.5;
+  const top = baseY + rise;
+  return fromPositions([
+    // the two slopes
+    -l, baseY, halfWidth, l, baseY, halfWidth, l, top, 0,
+    -l, baseY, halfWidth, l, top, 0, -l, top, 0,
+    l, baseY, -halfWidth, -l, baseY, -halfWidth, -l, top, 0,
+    l, baseY, -halfWidth, -l, top, 0, l, top, 0,
+    // the gable ends
+    l, baseY, halfWidth, l, baseY, -halfWidth, l, top, 0,
+    -l, baseY, -halfWidth, -l, baseY, halfWidth, -l, top, 0,
+  ]);
+}
+
+/** A square pyramid, base at `baseY`, apex `height` above it. */
+function pyramid(halfWidth: number, height: number, baseY: number): BufferGeometry {
+  const w = halfWidth;
+  const top = baseY + height;
+  return fromPositions([
+    -w, baseY, w, w, baseY, w, 0, top, 0,
+    w, baseY, w, w, baseY, -w, 0, top, 0,
+    w, baseY, -w, -w, baseY, -w, 0, top, 0,
+    -w, baseY, -w, -w, baseY, w, 0, top, 0,
+  ]);
+}
 
 function taperedCylinder(
   topRadius: number,
@@ -917,6 +1161,31 @@ function translateXZ(geometry: BufferGeometry, dx: number, dz: number): void {
   for (let i = 0; i < position.count; i++) {
     position.setX(i, position.getX(i) + dx);
     position.setZ(i, position.getZ(i) + dz);
+  }
+}
+
+/**
+ * Scale in the horizontal plane only. Both factors are positive at every
+ * call site here, which is what keeps this from flipping any winding — a
+ * negative factor would mirror the shape and turn every face inside out.
+ */
+function scaleXZ(geometry: BufferGeometry, sx: number, sz: number): void {
+  const position = geometry.attributes.position as BufferAttribute;
+  for (let i = 0; i < position.count; i++) {
+    position.setX(i, position.getX(i) * sx);
+    position.setZ(i, position.getZ(i) * sz);
+  }
+}
+
+/**
+ * Lean a shape over: displace X in proportion to height, leaving the base
+ * where it stands. A shear has determinant 1, so unlike a mirror it is safe
+ * to apply after the winding has been decided.
+ */
+function shearX(geometry: BufferGeometry, slope: number): void {
+  const position = geometry.attributes.position as BufferAttribute;
+  for (let i = 0; i < position.count; i++) {
+    position.setX(i, position.getX(i) + position.getY(i) * slope);
   }
 }
 
@@ -979,8 +1248,12 @@ export const GEOMETRY_BUILDERS = {
   flowerGeometry,
   reedClumpGeometry,
   rockGeometry,
+  pebbleGeometry,
   shrubGeometry,
   fallenLogGeometry,
+  standingStoneGeometry,
+  trilithonGeometry,
+  chapelGeometry,
   coniferGeometry,
   broadleafGeometry,
   willowGeometry,

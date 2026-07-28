@@ -109,6 +109,48 @@ const HEAD_Y = 0.97;
 const HEAD_HEIGHT = 0.28;
 const HAT_Y = HEAD_Y + HEAD_HEIGHT - 0.06;
 
+/** Hip to knee, and knee to ankle. They sum to the old one-piece leg. */
+const THIGH_LEN = 0.22;
+const SHIN_LEN = 0.18;
+
+/**
+ * How far the seated bard's boots reach below his own origin.
+ *
+ * This is the whole contract between the sitting pose and whatever the bard
+ * is sitting on. The pose puts the **group origin at the seat surface** —
+ * hips a little above it, thighs forward, shins dropped past it — so a caller
+ * that wants the bard seated has to stand him on top of the seat, and a seat
+ * this tall is the only one his legs reach the ground from.
+ *
+ * The number is not free. With the thighs horizontal the seat height is
+ * whatever the shin and boot are, less the height of the hip joint above the
+ * cushion, and this figure has short legs for its height on purpose. Raising
+ * it means sloping the thighs down, which is a different, more hunched pose.
+ *
+ * `Campfire` builds its seat log to this height. The two feet land within a
+ * centimetre or two of each other rather than exactly level, because the
+ * pose is deliberately asymmetric and nobody sits with their feet squared.
+ */
+export const SITTING_SEAT_HEIGHT_M = 0.2;
+
+/**
+ * The seated pose, as the numbers it is actually made of.
+ *
+ * Each pair is left then right. Two things are being solved at once here:
+ * the thighs have to come up to roughly horizontal and the shins have to
+ * hang back under the seat, and the shin's angle is measured *in the world*,
+ * not at the knee — a knee angle alone would swing the feet wherever the
+ * thigh happened to be pointing. So the knee below is derived: it is
+ * whatever cancels the hip and the pelvis and leaves the shin where it is
+ * wanted.
+ */
+const SIT_HIP_DROP = 0.42;
+/** The pelvis rocks back; nobody sits square. Rotates the legs with it. */
+const SIT_PELVIS = -0.1;
+const SIT_THIGH: [number, number] = [-1.48, -1.36];
+/** Shin angle off vertical, positive tucking the foot back under the seat. */
+const SIT_SHIN: [number, number] = [0.02, 0.28];
+
 /**
  * A tapered box. Most of the bard is one of these.
  *
@@ -473,6 +515,8 @@ export class Bard {
   private readonly rightArm = new Group();
   private readonly leftLeg = new Group();
   private readonly rightLeg = new Group();
+  /** Knees, in the same left-then-right order as `boots`. */
+  private readonly knees: Group[] = [];
   private readonly instrumentPivot = new Group();
   private instrumentMesh: Mesh | null = null;
   /** Ankles, so the foot can stay flatter than the leg it hangs off. */
@@ -548,7 +592,17 @@ export class Bard {
     // Pivots sit at the hip so a rotation swings the leg rather than
     // sliding it. This is the one thing that has to be right or the walk
     // is unfixable downstream.
-    const legGeo = boxPart(0.12, 0.4, 0.135, 0.82);
+    // The leg is two pieces with a knee between them. It used to be one
+    // rigid 0.4 m box, which is enough for a walk — a swing from the hip and
+    // a roll at the ankle read as walking at this size — but there is no way
+    // to sit on anything with a straight leg: the thigh has to come forward
+    // and the shin has to drop away from it, and those are two rotations.
+    //
+    // The split is placed and tapered so that with the knee at zero the two
+    // halves occupy exactly the volume the single box did. That is the point:
+    // the walk was tuned against that silhouette and this must not disturb it.
+    const thighGeo = boxPart(0.11, THIGH_LEN, 0.124, 0.892);
+    const shinGeo = boxPart(0.12, SHIN_LEN, 0.135, 0.919);
     // The boot narrows toward the ankle so the trouser covers its top rim.
     // Left wider, the rim reads as a pale collar of sky-lit sock, which at
     // walking distance is the only thing you notice about the feet.
@@ -557,15 +611,25 @@ export class Bard {
       [-1, this.leftLeg],
       [1, this.rightLeg],
     ] as const) {
-      const thigh = new Mesh(legGeo, solid(colors.trousers, 0.35));
-      thigh.position.y = -0.4;
+      const thigh = new Mesh(thighGeo, solid(colors.trousers, 0.35));
+      thigh.position.y = -THIGH_LEN;
       thigh.castShadow = true;
+      pivot.add(thigh);
+
+      const knee = new Group();
+      knee.position.y = -THIGH_LEN;
+      const shin = new Mesh(shinGeo, solid(colors.trousers, 0.35));
+      shin.position.y = -SHIN_LEN;
+      shin.castShadow = true;
       const boot = new Mesh(bootGeo, solid(colors.boots, 0.3));
-      boot.position.set(0, -0.48, -0.04);
+      boot.position.set(0, -0.26, -0.04);
       boot.castShadow = true;
-      pivot.add(thigh, boot);
+      knee.add(shin, boot);
+      pivot.add(knee);
+
       pivot.position.set(side * 0.082, HIP_Y, 0);
       this.boots.push(boot);
+      this.knees.push(knee);
       this.hips.add(pivot);
     }
 
@@ -804,36 +868,56 @@ export class Bard {
     const legSwing = 0.72 * walkAmount;
     const leftSwing = Math.sin(phase);
     const rightSwing = Math.sin(phase + Math.PI);
-    this.leftLeg.rotation.x = leftSwing * legSwing + sitAmount * -1.25;
-    this.rightLeg.rotation.x = rightSwing * legSwing + sitAmount * -1.05;
+    this.leftLeg.rotation.x = leftSwing * legSwing + sitAmount * SIT_THIGH[0];
+    this.rightLeg.rotation.x = rightSwing * legSwing + sitAmount * SIT_THIGH[1];
+    // Knees apart, and not evenly. A seated figure with its knees together
+    // is sitting for a photograph.
+    this.leftLeg.rotation.z = sitAmount * -0.13;
+    this.rightLeg.rotation.z = sitAmount * 0.09;
+    // The knee cancels the pelvis and the thigh and then puts the shin where
+    // it is wanted, which is nearly straight down with the foot drawn back
+    // under the seat. Written this way round because the shin's angle is the
+    // thing being composed; the joint angle is only how it is reached.
+    for (let i = 0; i < this.knees.length; i++) {
+      this.knees[i].rotation.x = sitAmount * (SIT_SHIN[i] - SIT_PELVIS - SIT_THIGH[i]);
+    }
     // A knee-ish bend on the forward swing, faked by lifting the pivot.
     this.leftLeg.position.y = HIP_Y + Math.max(0, leftSwing) * 0.03 * walkAmount;
     this.rightLeg.position.y = HIP_Y + Math.max(0, rightSwing) * 0.03 * walkAmount;
     // The ankle keeps the boot flatter than the leg, and rolls the toe down
     // on the back half of the step. Rigid feet swinging with the shin is
     // the tell that gives away a jointless character faster than anything
-    // else at the size this figure is actually seen.
-    this.boots[0].rotation.x = -leftSwing * legSwing * 0.55 - Math.min(0, leftSwing) * 0.3;
-    this.boots[1].rotation.x = -rightSwing * legSwing * 0.55 - Math.min(0, rightSwing) * 0.3;
+    // else at the size this figure is actually seen. Seated, it does the
+    // same job standing still: the sole comes back to level under a shin
+    // that is leaning, so the boot sits flat on the ground instead of
+    // resting on its heel.
+    this.boots[0].rotation.x =
+      -leftSwing * legSwing * 0.55 - Math.min(0, leftSwing) * 0.3 - sitAmount * SIT_SHIN[0];
+    this.boots[1].rotation.x =
+      -rightSwing * legSwing * 0.55 - Math.min(0, rightSwing) * 0.3 - sitAmount * SIT_SHIN[1];
 
     // --- body bob ------------------------------------------------------
     // Twice step frequency, and skewed: the rise is quicker than the fall.
     const bobPhase = phase * 2;
     const skewed = Math.sin(bobPhase) - 0.22 * Math.sin(bobPhase * 2);
     this.hips.position.y =
-      skewed * 0.038 * walkAmount + breathe * 0.008 * idleAmount - sitAmount * 0.42;
+      skewed * 0.038 * walkAmount + breathe * 0.008 * idleAmount - sitAmount * SIT_HIP_DROP;
     // Weight shifts side to side, a quarter-phase behind the bob.
     this.hips.position.x = Math.sin(phase - Math.PI * 0.25) * 0.024 * walkAmount;
     this.hips.rotation.z = Math.sin(phase - Math.PI * 0.25) * 0.055 * walkAmount;
+    this.hips.rotation.x = sitAmount * SIT_PELVIS;
 
     // --- torso ---------------------------------------------------------
     // Counter-rotates against the hips, and leans into the direction of
     // travel proportionally to speed.
     this.torso.rotation.y = Math.sin(phase) * 0.16 * walkAmount;
+    // Seated, the lean has to pay back the pelvis first: the hips rocked
+    // back by SIT_PELVIS and the torso rides on them, so the number here is
+    // that debt plus the lean toward the fire that is actually wanted.
     this.torso.rotation.x =
       Math.min(0.1, this.smoothedSpeed * 0.05) * walkAmount +
       playAmount * 0.06 +
-      sitAmount * 0.16 +
+      sitAmount * (0.19 - SIT_PELVIS) +
       breathe * 0.01 * idleAmount;
     this.torso.rotation.z = Math.sin(phase - Math.PI * 0.25) * -0.035 * walkAmount;
 
@@ -855,7 +939,11 @@ export class Bard {
       Math.sin(bobPhase + 0.6) * 0.02 * walkAmount +
       // Looking down at the hands while playing, less so as the crowd warms
       // and the bard starts performing to them instead of to the strings.
-      playAmount * (0.2 - this.warmth * 0.22);
+      playAmount * (0.2 - this.warmth * 0.22) +
+      // Seated, the counter-rotation above would tip the face at the sky.
+      // This puts it back level and a little down, which is where a person
+      // sitting at a fire looks: at the fire.
+      sitAmount * 0.17;
     // The head tips very slightly against the hips' weight shift, a beat
     // behind it. Small enough to be invisible frame by frame; what it does is
     // stop the hat — the biggest, most readable shape on the figure — from
@@ -873,7 +961,13 @@ export class Bard {
 
     // The left hand stays on the instrument's neck at all times; it only
     // swings when the instrument is slung and the bard is walking.
-    const slung = 1 - playAmount;
+    //
+    // Three carries, not two: across the back on the road, round to the
+    // chest to play, and down across the lap at the fire. They are weights
+    // rather than a switch, so a bard who sits down mid-song moves the
+    // instrument there instead of teleporting it.
+    const lap = sitAmount;
+    const slung = Math.max(0, 1 - playAmount - lap);
     // Arms swing slightly *across* the body as well as along it, in time with
     // the shoulder rotation. A pendulum in one plane is the other half of the
     // wind-up-toy read that the phase lag above fixes half of; a real arm on
@@ -881,8 +975,8 @@ export class Bard {
     // step and outward at the back.
     const armCross = Math.sin(armPhase) * 0.09 * walkAmount;
     this.leftArm.rotation.x =
-      Math.sin(armPhase + Math.PI) * armSwing * slung - carryPose * playAmount - 0.1;
-    this.leftArm.rotation.z = 0.11 + playAmount * 0.32 - armCross;
+      Math.sin(armPhase + Math.PI) * armSwing * slung - carryPose * playAmount - 0.1 - lap * 0.62;
+    this.leftArm.rotation.z = 0.11 + playAmount * 0.32 - armCross + lap * 0.3;
 
     // The right hand strums. The kick from `pluck` is what makes a note
     // land visually at the same instant it lands audibly.
@@ -891,8 +985,10 @@ export class Bard {
       Math.sin(armPhase) * armSwing * slung -
       carryPose * playAmount -
       this.strum * 0.5 +
-      strumMotion;
-    this.rightArm.rotation.z = -0.11 - playAmount * 0.28 - this.strum * 0.16 - armCross;
+      strumMotion -
+      lap * 0.58;
+    this.rightArm.rotation.z =
+      -0.11 - playAmount * 0.28 - this.strum * 0.16 - armCross - lap * 0.26;
 
     // --- instrument ----------------------------------------------------
     // Two poses, blended rather than switched. Slung it rides across the
@@ -919,10 +1015,16 @@ export class Bard {
     // z 0.10 and the instrument is 0.12 deep, so anything nearer than about
     // 0.26 buries the bowl in the ribs — 0.22 did, and brought the neck up
     // through the jaw with it.
+    //
+    // In the lap it comes down to just above the thighs and forward of them,
+    // which in this frame is the hip line and a hand's width out. It is not
+    // level: an instrument resting across someone's legs leans its face up
+    // toward them, and that lean is most of what says "resting" rather than
+    // "balanced there".
     this.instrumentPivot.position.set(
-      playAmount * 0.02 - slung * 0.03,
-      SHOULDER_Y - (playAmount * 0.28 + slung * 0.12),
-      playAmount * 0.3 - slung * 0.285,
+      playAmount * 0.02 - slung * 0.03 - lap * 0.05,
+      SHOULDER_Y - (playAmount * 0.28 + slung * 0.12) - lap * 0.36,
+      playAmount * 0.3 - slung * 0.285 + lap * 0.2,
     );
     // Thirty degrees across the back, not forty. The steeper tilt threw the
     // bowl clear of the cloak's outline with daylight showing between the
@@ -932,10 +1034,16 @@ export class Bard {
     // worth seeing. The x tilt leans the foot further off the back than the
     // neck, so the bowl stands proud of the flaring cloak while the pegbox
     // stays in near the shoulder.
+    // The lap's z is nearly a quarter turn, which lays the length across the
+    // body with the neck a little high on the right — the same hand that
+    // holds the neck when playing still holds it here. The x term rolls the
+    // soundboard up toward the bard's chest, the y term angles the neck out
+    // past the knee so the shape crosses the figure rather than hiding
+    // behind it.
     this.instrumentPivot.rotation.set(
-      this.strum * 0.07 + slung * 0.15 + playAmount * 0.18,
-      playAmount * -0.5 + slung * 0.08,
-      -slung * 0.52 - playAmount * 0.62,
+      this.strum * 0.07 + slung * 0.15 + playAmount * 0.18 - lap * 0.5,
+      playAmount * -0.5 + slung * 0.08 - lap * 0.35,
+      -slung * 0.52 - playAmount * 0.62 - lap * 1.35,
     );
   }
 

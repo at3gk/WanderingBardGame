@@ -47,16 +47,21 @@ import { mulberry32, randRange, subSeed, weightedPick, type Rand } from '../../c
 import { createFoliageMaterial, createPainterlyMaterial, type PainterlyGlobals } from '../painterly';
 import {
   cachedGeometry,
+  chapelGeometry,
   fallenLogGeometry,
   fernGeometry,
   flowerGeometry,
   grassTuftGeometry,
+  pebbleGeometry,
   reedClumpGeometry,
   rockGeometry,
   shrubGeometry,
+  standingStoneGeometry,
   treeGeometry,
+  trilithonGeometry,
+  type LandmarkOptions,
 } from './geometry';
-import { mixColor, paletteFor, type BiomePalette } from './palette';
+import { mixColor, paletteFor, type BiomePalette, type LandmarkKind } from './palette';
 
 /**
  * The road's world Z.
@@ -166,6 +171,10 @@ function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
+function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v;
+}
+
 /**
  * The per-channel ratio `a / b`, as a colour.
  *
@@ -189,6 +198,30 @@ function channelRatio(a: number, b: number): number {
     return Math.max(0, Math.min(255, Math.round((((a >> shift) & 0xff) / denominator) * 255)));
   };
   return (channel(16) << 16) | (channel(8) << 8) | channel(0);
+}
+
+/**
+ * Choose one of a kind's allowed bands, weighted by how wide it is, so a
+ * band twice as wide gets twice the plants and the density figure means the
+ * same thing in every band.
+ *
+ * The single-band case returns without drawing at all. That is deliberate:
+ * every kind that existed before bands did takes this path, so their random
+ * streams are untouched and the meadow does not reshuffle itself the day
+ * the road gains a crown.
+ */
+function pickZone(
+  rand: Rand,
+  zones: Array<[number, number]>,
+  totalWidth: number,
+): [number, number] {
+  if (zones.length === 1) return zones[0];
+  let remaining = rand() * totalWidth;
+  for (const zone of zones) {
+    remaining -= zone[1] - zone[0];
+    if (remaining <= 0) return zone;
+  }
+  return zones[zones.length - 1];
 }
 
 function smoothstep(edge0: number, edge1: number, v: number): number {
@@ -216,6 +249,43 @@ const VERGE = {
   log: ROAD_HALF_WIDTH + 4.6,
   tree: ROAD_HALF_WIDTH + 5.5,
 };
+
+/**
+ * Where the wheels have been.
+ *
+ * The terrain shader darkens a rut centred on `ROAD_HALF_WIDTH * 0.58`, and
+ * these two numbers are the same rut expressed as a keep-out band. Nothing
+ * grows in a wheel rut and nothing loose stays in one, so anything the
+ * scatter puts there reads as the bard wading rather than walking.
+ */
+const RUT_CENTRE = ROAD_HALF_WIDTH * 0.58;
+const RUT_HALF = 0.42;
+/**
+ * Where the bard's boots fall.
+ *
+ * He walks the centreline exactly — `RoadStage` puts him on `sampleRoad`'s
+ * own `x` with no lateral offset — so the middle of the crown is the one
+ * strip of road that must stay bare however much the rest of it gains.
+ */
+const FOOTFALL_HALF = 0.29;
+
+/**
+ * The carriageway, as the bands that are left once the ruts and the bard's
+ * own feet are taken out of it.
+ *
+ * The crown band is only a quarter of a metre wide per side, which sounds
+ * like nothing until you remember that this is the surface two metres from
+ * the camera at all times: at a portrait field of view a strip that narrow
+ * still crosses a good fraction of the frame. It is also exactly where
+ * grass survives on a real cart track, between the wheels and beside the
+ * walker, which is the whole reason a worn lane reads as worn rather than
+ * as a trench dug through a field.
+ */
+const CROWN_BAND: [number, number] = [FOOTFALL_HALF, RUT_CENTRE - RUT_HALF];
+/** The outer lip of the packed surface, out to where the meadow takes over. */
+const EDGE_BAND: [number, number] = [RUT_CENTRE + RUT_HALF, VERGE.grass];
+/** Loose stone spills a little further onto the shoulder than grass does. */
+const STONE_BAND: [number, number] = [RUT_CENTRE + RUT_HALF, SHOULDER - 0.35];
 
 interface ScatterKind {
   key: string;
@@ -247,6 +317,20 @@ interface ScatterKind {
   /** Minimum distance from the road centreline. */
   clearance: number;
   /**
+   * Allowed bands of `|u|`, when the kind lives somewhere more complicated
+   * than "everything past a clearance".
+   *
+   * Only the carriageway kinds need this, and they need it badly: their
+   * ground is two thin strips with a wheel rut between them, and a single
+   * `clearance..spread` range cannot describe a hole in the middle. A clump
+   * picks one band and stays inside it, so a tuft that was placed on the
+   * crown can never wander into the rut.
+   *
+   * Defaults to the single band `clearance..spread`, which is what every
+   * other kind means.
+   */
+  zones?: Array<[number, number]>;
+  /**
    * Exponent on the lateral placement. 1 is uniform across the band; above
    * 1 crowds the kind against its clearance, which is how a hedgerow ends
    * up following the road instead of speckling the field.
@@ -263,8 +347,69 @@ interface ScatterKind {
 /** Seeds for the four grass silhouettes and the four ferns. Arbitrary primes. */
 const GRASS_SEEDS = [7, 11, 19, 23];
 const FERN_SEEDS = [9, 13, 29, 37];
+const PEBBLE_SEEDS = [41, 53, 67];
 
 const SCATTER_KINDS: ScatterKind[] = [
+  /**
+   * Grass surviving on the road: the crown between the ruts, and the lip at
+   * the outer edge of the packed surface.
+   *
+   * Small — a third to two thirds of the meadow tuft's size, so ankle-high
+   * becomes a few centimetres. It is not a lawn breaking through, it is the
+   * stuff that gets trodden back down every few days, and at that scale it
+   * reads as texture on the road rather than as the road being reclaimed.
+   *
+   * The arithmetic, because this is the surface nearest the camera and the
+   * easiest place in the world to waste a phone's budget: the two bands are
+   * about 0.72 m wide per side, so 60 m of chunk offers 86 m² and 2.2 per
+   * square metre is under 200 instances of a fifteen-triangle tuft. Five
+   * chunks carry it, which is 14 000 triangles — against the 300 000 the
+   * meadow grass alone already spends on the three chunks nearest the bard.
+   */
+  {
+    key: 'roadgrass',
+    geometry: (v) => cachedGeometry(`grass:${v}`, () => grassTuftGeometry(GRASS_SEEDS[v])),
+    variants: 4,
+    clump: 3,
+    perSquareMetre: 2.2,
+    densityKey: 'road',
+    zones: [CROWN_BAND, EDGE_BAND],
+    clearance: CROWN_BAND[0],
+    spread: EDGE_BAND[1],
+    scale: [0.32, 0.6],
+    lodRange: CHUNK_LENGTH * 2.6,
+    castShadow: false,
+    material: 'foliage',
+    // Drier and paler than the meadow it borders. Road grass lives on
+    // packed earth in full sun with cart wheels either side of it; drawn
+    // from the same greens as the field, it read as a strip of lawn laid
+    // down the middle of the track.
+    colorOf: (p, rand) =>
+      mixColor(mixColor(p.grass, p.grassVariant, 0.4 + rand() * 0.6), p.grassDry, 0.2 + rand() * 0.3),
+  },
+  /**
+   * Loose stone, on the crown and spilling onto the shoulder.
+   *
+   * The one kind here whose job is *value* rather than shape: a scatter of
+   * small hard lumps is the only thing that gives a low sun something to
+   * break on, and without it the carriageway is a gradient however many
+   * tones are painted into it.
+   */
+  {
+    key: 'roadstone',
+    geometry: (v) => cachedGeometry(`pebble:${v}`, () => pebbleGeometry(PEBBLE_SEEDS[v])),
+    variants: 3,
+    perSquareMetre: 0.5,
+    densityKey: 'road',
+    zones: [[FOOTFALL_HALF, RUT_CENTRE - RUT_HALF], STONE_BAND],
+    clearance: FOOTFALL_HALF,
+    spread: STONE_BAND[1],
+    scale: [0.7, 1.5],
+    lodRange: CHUNK_LENGTH * 2.6,
+    castShadow: false,
+    material: 'solid',
+    colorOf: (p, rand) => mixColor(p.rock, p.road, 0.2 + rand() * 0.45),
+  },
   {
     key: 'grass',
     // Four seeds, four silhouettes. The seeds are arbitrary primes; what
@@ -410,10 +555,93 @@ const TREE_KINDS = ['conifer', 'broadleaf', 'willow'] as const;
 /** Distinct base shapes per species. Four is enough to stop a wood repeating. */
 const TREE_VARIANTS = 4;
 
+/**
+ * Landmarks: the one thing in the world placed for the walk.
+ *
+ * Everything else here is scattered — it is where it is because the ground
+ * under it said so. A landmark is chosen instead, from the road's own seed,
+ * so that every player walking today's road passes the same chapel on the
+ * same hill; and it is placed on a ridge, because a landmark not silhouetted
+ * against sky is just another prop on a plain and gives the walk nothing to
+ * be going toward.
+ *
+ * Roughly one every three hundred metres, which on a 1200–1800 m road is
+ * four to six in a day. More often and they stop being events; less often
+ * and most of the walk has an empty skyline, which is what it had before.
+ */
+const LANDMARK_SPACING_M = 300;
+/**
+ * How far off the road a landmark may stand.
+ *
+ * The near limit keeps it out of the bard's own frame — at thirty metres a
+ * chapel is beside him rather than ahead of him, and the point of the thing
+ * is to be somewhere he has not got to yet. The far limit is set by the fog,
+ * which starts at forty metres and is thick by two hundred and sixty: past a
+ * hundred a chapel is a pale smudge rather than a place.
+ */
+const LANDMARK_NEAR_M = 38;
+const LANDMARK_FAR_M = 98;
+/** Distinct base shapes per landmark kind. */
+const LANDMARK_VARIANTS = 3;
+
+interface Landmark {
+  kind: LandmarkKind;
+  /** Nominal distance along the road. Decides which chunk builds it. */
+  s: number;
+  x: number;
+  y: number;
+  z: number;
+  rotation: number;
+  scale: number;
+  variant: number;
+  /** Ground kept clear of trees and shrubs, so the thing keeps its sky. */
+  radius: number;
+}
+
+/**
+ * Ground a landmark has claimed.
+ *
+ * Shares the shape of `inClearing` but not its list, because the two are
+ * asking different questions: a camp clearing appears once, at dusk, and
+ * rebuilds the world when it does, whereas a landmark's clearing is a
+ * property of the seed and is known before its chunk is ever built.
+ */
+function insideLandmark(landmarks: Landmark[], x: number, z: number): boolean {
+  for (const landmark of landmarks) {
+    const dx = x - landmark.x;
+    const dz = z - landmark.z;
+    if (dx * dx + dz * dz < landmark.radius * landmark.radius) return true;
+  }
+  return false;
+}
+
 interface Chunk {
   index: number;
   group: Group;
   meshes: Array<Mesh | InstancedMesh>;
+  /**
+   * Which scatter kinds this chunk was built with, one bit each.
+   *
+   * A chunk is born seven chunks ahead of the bard — four hundred metres —
+   * where every kind is out of LOD range, and until this existed it kept
+   * that emptiness for the rest of its life. The effect was that the meadow
+   * had grass in it for the first two chunks of a walk and never again:
+   * everything the player ever walked through had been built at four hundred
+   * metres and carried nothing but trees. It survived this long because the
+   * screenshot tool jumps the bard by hundreds of metres at a time, which
+   * happens to rebuild the chunks around him at the right detail, so posed
+   * frames looked right and play did not.
+   */
+  detail: number;
+}
+
+/** Which kinds are in range at this distance, as a bit per kind. */
+function detailAt(distanceM: number): number {
+  let detail = 0;
+  for (let i = 0; i < SCATTER_KINDS.length; i++) {
+    if (distanceM <= SCATTER_KINDS[i].lodRange) detail |= 1 << i;
+  }
+  return detail;
 }
 
 export interface WorldStreamerOptions {
@@ -464,6 +692,12 @@ export class WorldStreamer {
    * from the fire cannot survive an occluder.
    */
   private readonly clearings: Array<{ x: number; z: number; radius: number }> = [];
+
+  /** Resolved landmarks by slot; null means "this stretch has no brow". */
+  private readonly landmarkSlots = new Map<number, Landmark | null>();
+
+  /** Chunks waiting to be rebuilt at a higher level of detail. */
+  private readonly pending: number[] = [];
 
   constructor(
     road: DailyRoad,
@@ -622,23 +856,52 @@ export class WorldStreamer {
   /** Stream chunks so the window is centred on the bard's distance `s`. */
   update(s: number): void {
     const centre = Math.floor(s / CHUNK_LENGTH);
-    if (centre === this.lastCentre) return;
-    this.lastCentre = centre;
+    if (centre !== this.lastCentre) {
+      this.lastCentre = centre;
 
-    const first = centre - this.behind;
-    const last = centre + this.ahead;
+      const first = centre - this.behind;
+      const last = centre + this.ahead;
 
-    for (const [index, chunk] of this.chunks) {
-      if (index < first || index > last) {
-        this.disposeChunk(chunk);
-        this.chunks.delete(index);
+      for (const [index, chunk] of this.chunks) {
+        if (index < first || index > last) {
+          this.disposeChunk(chunk);
+          this.chunks.delete(index);
+        }
       }
+
+      for (let i = first; i <= last; i++) {
+        if (i < 0) continue;
+        if (i * CHUNK_LENGTH > this.road.lengthM + CHUNK_LENGTH) continue;
+        if (!this.chunks.has(i)) this.chunks.set(i, this.buildChunk(i, centre));
+      }
+
+      // Anything that has come close enough to deserve more than it was born
+      // with. Only gains are queued: a chunk falling behind keeps whatever
+      // detail it has, because throwing detail away costs exactly as much as
+      // building it and buys nothing the player is looking at.
+      this.pending.length = 0;
+      for (const [index, chunk] of this.chunks) {
+        const wanted = detailAt(Math.abs(index - centre) * CHUNK_LENGTH);
+        if ((wanted & ~chunk.detail) !== 0) this.pending.push(index);
+      }
+      this.pending.sort((a, b) => Math.abs(a - centre) - Math.abs(b - centre));
     }
 
-    for (let i = first; i <= last; i++) {
-      if (i < 0) continue;
-      if (i * CHUNK_LENGTH > this.road.lengthM + CHUNK_LENGTH) continue;
-      if (!this.chunks.has(i)) this.chunks.set(i, this.buildChunk(i, centre));
+    // One per frame, nearest first. Crossing a chunk boundary can promote
+    // three chunks at once, and building three chunks of meadow grass in the
+    // same frame is a visible stall on a phone; spread over three frames it
+    // is three ordinary chunk builds, which the walk already does.
+    this.promoteOne(centre);
+  }
+
+  private promoteOne(centre: number): void {
+    while (this.pending.length > 0) {
+      const index = this.pending.shift() as number;
+      const chunk = this.chunks.get(index);
+      if (!chunk) continue;
+      this.disposeChunk(chunk);
+      this.chunks.set(index, this.buildChunk(index, centre));
+      return;
     }
   }
 
@@ -654,21 +917,31 @@ export class WorldStreamer {
     const distanceChunks = Math.abs(index - centreIndex);
     const distanceM = distanceChunks * CHUNK_LENGTH;
 
+    // Resolved once and handed down, because every scatter kind and the
+    // trees all have to keep out of the same patches of ground.
+    const landmarks = this.landmarksNear(index);
+
     for (const kind of SCATTER_KINDS) {
       if (distanceM > kind.lodRange) continue;
-      for (const mesh of this.buildScatter(index, kind)) {
+      for (const mesh of this.buildScatter(index, kind, landmarks)) {
         group.add(mesh);
         meshes.push(mesh);
       }
     }
 
-    for (const treeMesh of this.buildTrees(index)) {
+    for (const treeMesh of this.buildTrees(index, landmarks)) {
       group.add(treeMesh);
       meshes.push(treeMesh);
     }
 
+    for (const landmark of this.landmarksInChunk(index)) {
+      const mesh = this.raiseLandmark(landmark);
+      group.add(mesh);
+      meshes.push(mesh);
+    }
+
     this.group.add(group);
-    return { index, group, meshes };
+    return { index, group, meshes, detail: detailAt(distanceM) };
   }
 
   /**
@@ -757,6 +1030,33 @@ export class WorldStreamer {
         return mixColor(color, dryColor, bleach * 0.5);
       };
 
+      /**
+       * Dust and damp on the packed earth.
+       *
+       * The carriageway is one colour with two ruts drawn on it, and one
+       * colour is what makes it read as a gradient however carefully the
+       * tone is chosen. A real track is patchy at a scale of ten or twenty
+       * metres: the crown dries out pale between showers, the low places
+       * hold water for days after. Two out-of-phase waves, one paler and one
+       * darker, are enough to break the wash — and they are cheap, because
+       * this is arithmetic on a vertex the mesh was going to place anyway.
+       *
+       * The wavelengths (about 30 m and 17 m) are set against the 3.75 m
+       * along-road vertex spacing, which is the real limit here: anything
+       * shorter than four or five samples per cycle stops being a patch and
+       * becomes a stripe at every vertex row.
+       */
+      const roadWear = (rx: number, rz: number, base: number): number => {
+        const dust = 0.5 + 0.5 * Math.sin(rz * 0.21 + rx * 0.13 + 1.7);
+        const damp = 0.5 + 0.5 * Math.sin(rz * 0.37 - rx * 0.09 + 4.1);
+        let worn = mixColor(base, dryColor, smoothstep(0.45, 1, dust) * 0.34);
+        // Damp earth is not the shade tone of the meadow — the meadow's
+        // shade is green, and green in the middle of a track reads as moss.
+        // A cool dark brown is what wet earth actually is.
+        worn = mixColor(worn, 0x36291c, smoothstep(0.5, 1, damp) * 0.26);
+        return worn;
+      };
+
       for (let c = 0; c < cols; c++) {
         const u = ACROSS_OFFSETS[c];
         const x = sample.x + nx * u;
@@ -771,7 +1071,7 @@ export class WorldStreamer {
         const absU = Math.abs(u);
         let color: number;
         if (absU <= ROAD_HALF_WIDTH) {
-          color = roadColor;
+          color = roadWear(x, z, roadColor);
           // Two wheel ruts, darker and slightly sunken-looking. The road
           // reads as travelled rather than paved because of these, and
           // there is now a vertex sitting exactly on each one.
@@ -785,7 +1085,11 @@ export class WorldStreamer {
           if (absU < 0.7) color = mixColor(color, shoulderColor, 0.35 * (1 - absU / 0.7));
         } else if (absU <= SHOULDER) {
           const t = (absU - ROAD_HALF_WIDTH) / (SHOULDER - ROAD_HALF_WIDTH);
-          color = mixColor(shoulderColor, meadowAt(x, z, y), t * t);
+          // The shoulder wears with the carriageway. Stopping the patches
+          // dead at the edge of the packed surface drew a line down the road
+          // wherever a dry patch happened to end there, which is a worse
+          // artifact than the flat wash the patches were added to fix.
+          color = mixColor(roadWear(x, z, shoulderColor), meadowAt(x, z, y), t * t);
         } else {
           color = meadowAt(x, z, y);
         }
@@ -849,12 +1153,20 @@ export class WorldStreamer {
    * would make the *positions* depend on how many shapes a kind happens to
    * have, so adding a fifth grass would move every tuft in the world.
    */
-  private buildScatter(index: number, kind: ScatterKind): InstancedMesh[] {
+  private buildScatter(
+    index: number,
+    kind: ScatterKind,
+    landmarks: Landmark[],
+  ): InstancedMesh[] {
     const s0 = index * CHUNK_LENGTH;
     const rand = mulberry32(subSeed(this.road.seed, `scatter:${kind.key}:${index}`));
     const palette = paletteFor(biomeAt(this.road, s0 + CHUNK_LENGTH / 2));
 
-    const area = CHUNK_LENGTH * (kind.spread * 2 - kind.clearance * 2);
+    const zones = kind.zones ?? [[kind.clearance, kind.spread] as [number, number]];
+    let bandWidth = 0;
+    for (const zone of zones) bandWidth += zone[1] - zone[0];
+
+    const area = CHUNK_LENGTH * bandWidth * 2;
     const count = Math.max(
       0,
       Math.round(area * kind.perSquareMetre * palette.density[kind.densityKey] * this.density),
@@ -867,20 +1179,23 @@ export class WorldStreamer {
     const buckets: Array<Array<{ matrix: Matrix4; color: number }>> = [];
     for (let v = 0; v < variants; v++) buckets.push([]);
 
-    // Clump state: where the current group is centred and how many are left
-    // in it. A clump is a handful of plants sharing one patch of ground, so
-    // members are jittered around the centre rather than re-drawn from the
-    // whole band.
+    // Clump state: where the current group is centred, which side and which
+    // band it belongs to, and how many are left in it. A clump is a handful
+    // of plants sharing one patch of ground, so members are jittered around
+    // the centre rather than re-drawn from the whole band.
     let clumpS = 0;
-    let clumpU = 0;
+    let clumpMagnitude = 0;
+    let clumpSide = 1;
+    let clumpZone = zones[0];
     let remaining = 0;
 
     for (let i = 0; i < count; i++) {
       if (remaining <= 0) {
         clumpS = s0 + rand() * CHUNK_LENGTH;
-        const side = rand() < 0.5 ? -1 : 1;
+        clumpSide = rand() < 0.5 ? -1 : 1;
+        clumpZone = pickZone(rand, zones, bandWidth);
         const t = bias === 1 ? rand() : Math.pow(rand(), bias);
-        clumpU = side * (kind.clearance + t * (kind.spread - kind.clearance));
+        clumpMagnitude = clumpZone[0] + t * (clumpZone[1] - clumpZone[0]);
         remaining = clump > 0 ? 1 + Math.floor(rand() * clump * 1.5) : 1;
       }
       remaining--;
@@ -888,11 +1203,24 @@ export class WorldStreamer {
       // The clump radius grows with the plant: a patch of grass is a metre
       // across, a stand of ferns two.
       const spreadIn = clump > 0 ? 0.55 + clump * 0.22 : 0;
+      // Sideways, a clump can never be wider than the band it grows in. Let
+      // it be, and every member lands on one edge or the other and the band
+      // fills with two lines instead of a patch — which is what the crown of
+      // the road did on the first attempt, since a metre-wide clump does not
+      // fit in a quarter-metre strip. The meadow bands are tens of metres
+      // across and never reach this.
+      const lateral = Math.min(spreadIn, (clumpZone[1] - clumpZone[0]) * 0.5);
       const s = clumpS + (clump > 0 ? randRange(rand, -spreadIn, spreadIn) : 0);
-      let u = clumpU + (clump > 0 ? randRange(rand, -spreadIn, spreadIn) : 0);
-      // The jitter can push a member back over the verge it was placed
-      // outside of, which is how a tuft ends up growing in the wheel rut.
-      if (Math.abs(u) < kind.clearance) u = Math.sign(u || 1) * kind.clearance;
+      // Held inside the band it was drawn from, rather than merely pushed
+      // off the centreline. That is how a tuft used to end up growing in a
+      // wheel rut: the jitter is free to leave the band, so the only
+      // correction that works is one the band itself defines.
+      const magnitude = clamp(
+        clumpMagnitude + (clump > 0 ? randRange(rand, -lateral, lateral) : 0),
+        clumpZone[0],
+        clumpZone[1],
+      );
+      const u = clumpSide * magnitude;
 
       const sample = sampleRoad(this.road, s);
       const nx = Math.cos(sample.heading);
@@ -922,7 +1250,7 @@ export class WorldStreamer {
       // giving a shadow map is a thing big enough to stand in front of a
       // campfire, and grass and flowers growing up to the stone ring are
       // exactly what a camp in a meadow should look like.
-      if (kind.castShadow && this.inClearing(x, z)) continue;
+      if (kind.castShadow && (this.inClearing(x, z) || insideLandmark(landmarks, x, z))) continue;
       buckets[variant].push({
         matrix: new Matrix4().compose(this.scratchPos, this.scratchQuat, this.scratchScale),
         color,
@@ -957,7 +1285,7 @@ export class WorldStreamer {
    * per chunk, so a band boundary produces a genuinely mixed wood for a
    * stretch instead of a line where oaks stop and pines start.
    */
-  private buildTrees(index: number): InstancedMesh[] {
+  private buildTrees(index: number, landmarks: Landmark[]): InstancedMesh[] {
     const s0 = index * CHUNK_LENGTH;
     const rand = mulberry32(subSeed(this.road.seed, `trees:${index}`));
     const palette = paletteFor(biomeAt(this.road, s0 + CHUNK_LENGTH / 2));
@@ -1017,7 +1345,7 @@ export class WorldStreamer {
             : 0.3 + rand() * 0.7;
       const color = mixColor(canopyTint, 0xffffff, shade);
       // Last, after every draw, for the reason given in `buildScatter`.
-      if (this.inClearing(x, z)) continue;
+      if (this.inClearing(x, z) || insideLandmark(landmarks, x, z)) continue;
       const list = buckets.get(key);
       if (list) list.push({ matrix, color });
       else buckets.set(key, [{ matrix, color }]);
@@ -1051,6 +1379,231 @@ export class WorldStreamer {
       meshes.push(mesh);
     }
     return meshes;
+  }
+
+  /**
+   * The landmark for one slot, or null if this stretch does not get one.
+   *
+   * Memoised, and it has to be: three chunks either side of a landmark ask
+   * about it while deciding where their trees may stand, and the answer
+   * involves a couple of hundred terrain samples. Memoising also makes the
+   * null answer cheap, which matters because most slots on a flat road
+   * return one.
+   */
+  private landmarkSlot(slot: number): Landmark | null {
+    const cached = this.landmarkSlots.get(slot);
+    if (cached !== undefined) return cached;
+    const found = this.chooseLandmark(slot);
+    this.landmarkSlots.set(slot, found);
+    return found;
+  }
+
+  private chooseLandmark(slot: number): Landmark | null {
+    // Nothing in the first hundred and forty metres — the opening frame of
+    // the day is the road and the bard, and it should stay that — and
+    // nothing on top of the campfire at the far end.
+    const from = Math.max(140, slot * LANDMARK_SPACING_M + 40);
+    const to = Math.min(this.road.lengthM - 90, (slot + 1) * LANDMARK_SPACING_M - 40);
+    if (to <= from) return null;
+
+    const rand = mulberry32(subSeed(this.road.seed, `landmark:${slot}`));
+    const s = this.findCrest(from, to);
+    const ridge = this.findRidge(s);
+    if (!ridge) return null;
+
+    const palette = paletteFor(biomeAt(this.road, s));
+    const kind = weightedPick(rand, palette.landmarks, (entry) => entry.weight).kind;
+    // A landmark tree is not a big version of a wood tree, it is a different
+    // object: two and a half times the geometry's own height puts it at
+    // twelve metres or so, which is the only thing in this world tall enough
+    // to be a destination rather than scenery.
+    const scale = kind === 'tree' ? randRange(rand, 2.0, 2.6) : randRange(rand, 0.95, 1.3);
+
+    return {
+      kind,
+      s,
+      x: ridge.x,
+      y: ridge.y,
+      z: ridge.z,
+      rotation: rand() * Math.PI * 2,
+      scale,
+      variant: Math.floor(rand() * LANDMARK_VARIANTS),
+      // A tree needs more room than a chapel, because its own canopy is the
+      // thing that has to clear the wood around it.
+      radius: kind === 'tree' ? 13 : 9,
+    };
+  }
+
+  /**
+   * The brow of the road between `from` and `to`, or null if there isn't
+   * one worth walking toward.
+   *
+   * This is the second answer to "where is the high ground". The first — the
+   * highest ground in a band either side of the road — measured out to be
+   * *below* the lane at every point of every road tried, which sounds like a
+   * bug and is in fact geometry. The cross-road relief has a two-hundred
+   * metre wavelength and the centreline never leaves ±38 m of the axis, so
+   * the road spends the whole day inside a fifth of one wave of it: whether
+   * the land beside the road rises or falls is decided once per seed and
+   * then holds for twelve hundred metres. On this seed it falls, and it
+   * falls on both sides, because x = 0 happens to sit near a crest of that
+   * wave.
+   *
+   * The high ground near a road that follows the landform is therefore the
+   * road's own summits, and that is a better place for a landmark anyway:
+   * something standing beside the brow you are climbing toward, with the
+   * lane running out of sight underneath it, is the composition the whole
+   * feature was asked for.
+   *
+   * There is deliberately no minimum on how much of a brow it has to be.
+   * The first version demanded three and a half metres of rise over the
+   * approach and got two landmarks on a twelve-hundred-metre road, which is
+   * not "one every few hundred metres", it is one twice a day. It was also
+   * asking the wrong question: the horizon sits at eye level, so *anything*
+   * whose top clears 2.4 m above the ground the player is standing on is
+   * already drawn against sky — which is exactly why the ordinary roadside
+   * trees in every frame of this game are silhouetted. What the rise buys is
+   * not visibility but composition, the lane running out of sight underneath
+   * the thing, and taking the highest road in a two-hundred-metre window
+   * gets as much of that as the landform has to give.
+   */
+  private findCrest(from: number, to: number): number {
+    let crestS = from;
+    let crestY = -Infinity;
+    for (let s = from; s <= to; s += 12) {
+      const y = sampleRoad(this.road, s).y;
+      if (y > crestY) {
+        crestY = y;
+        crestS = s;
+      }
+    }
+    return crestS;
+  }
+
+  /**
+   * Where to stand the landmark, given the brow it belongs to.
+   *
+   * Off to one side, on whatever ground within reach is highest, and a
+   * little *past* the summit rather than on it — the far slope is what puts
+   * sky behind the base instead of more hillside, and the road disappearing
+   * over the brow in front of it is what makes the two read as one place.
+   *
+   * The distance term in the score keeps this from marching to the far limit
+   * every time: ground a hundred metres out is often a metre higher, but a
+   * chapel out there is a smudge in fog that starts at forty metres, so a
+   * nearer stand wins unless the far one is properly taller.
+   */
+  private findRidge(s: number): { x: number; y: number; z: number } | null {
+    let best: { x: number; y: number; z: number } | null = null;
+    let bestScore = -Infinity;
+
+    for (let ds = -10; ds <= 34; ds += 11) {
+      const sample = sampleRoad(this.road, s + ds);
+      const nx = Math.cos(sample.heading);
+      const nz = -Math.sin(sample.heading);
+      for (let side = -1; side <= 1; side += 2) {
+        for (let d = LANDMARK_NEAR_M; d <= LANDMARK_FAR_M; d += 4) {
+          const u = side * d;
+          const x = sample.x + nx * u;
+          const z = roadZ(sample) + nz * u;
+          const y = terrainHeight(this.road, x, z);
+          const score = y - d * 0.02;
+          if (score > bestScore) {
+            bestScore = score;
+            best = { x, y, z };
+          }
+        }
+      }
+    }
+
+    return best;
+  }
+
+  /** Landmarks whose nominal `s` falls in this chunk, so it builds them. */
+  private landmarksInChunk(index: number): Landmark[] {
+    const s0 = index * CHUNK_LENGTH;
+    // A slot's brow never leaves the slot's own three hundred metres, so at
+    // most two slots can reach into a sixty-metre chunk.
+    const first = Math.floor(s0 / LANDMARK_SPACING_M);
+    const last = Math.floor((s0 + CHUNK_LENGTH) / LANDMARK_SPACING_M);
+    const found: Landmark[] = [];
+    for (let slot = first; slot <= last; slot++) {
+      const landmark = this.landmarkSlot(slot);
+      // Hosting is decided by the brow's own `s`, before the lateral search
+      // moves the thing sideways and up to thirty metres along. That is what
+      // makes "exactly one chunk builds this" true wherever it ends up.
+      if (landmark && Math.floor(landmark.s / CHUNK_LENGTH) === index) found.push(landmark);
+    }
+    return found;
+  }
+
+  /** Landmarks close enough to this chunk to be claiming ground in it. */
+  private landmarksNear(index: number): Landmark[] {
+    const found: Landmark[] = [];
+    for (let i = index - 2; i <= index + 2; i++) {
+      if (i < 0) continue;
+      for (const landmark of this.landmarksInChunk(i)) found.push(landmark);
+    }
+    return found;
+  }
+
+  private raiseLandmark(landmark: Landmark): Mesh {
+    const palette = paletteFor(biomeAt(this.road, landmark.s));
+    const seed = 400 + landmark.variant * 131;
+    let geometry: BufferGeometry;
+    let material: ShaderMaterial;
+
+    if (landmark.kind === 'tree') {
+      // The band's own dominant species, so the lone tree on the ridge is
+      // recognisably the same tree as the wood it stands apart from.
+      const species = palette.trees[0].kind;
+      geometry = cachedGeometry(`landmark:tree:${palette.id}:${species}:${landmark.variant}`, () =>
+        treeGeometry(species, {
+          trunkColor: palette.trunk,
+          // Baked at the darker end of the canopy range rather than the
+          // lighter one the instanced woods use. Those get their spread from
+          // a per-instance tint; a single mesh has no instance colour, so
+          // baking the light end would put the palest foliage in the frame on
+          // the horizon — the exact mistake the riverside willows made.
+          canopyColor: mixColor(palette.canopy, palette.canopyVariant, 0.4),
+          seed,
+        }),
+      );
+      material = this.treeMaterial(species);
+    } else {
+      const options: LandmarkOptions = {
+        stone: mixColor(palette.rock, palette.grassDry, 0.18),
+        roof:
+          landmark.kind === 'chapel'
+            ? mixColor(palette.accent, palette.rock, 0.3)
+            : mixColor(palette.rock, palette.trunk, 0.4),
+        seed,
+      };
+      const build =
+        landmark.kind === 'chapel'
+          ? chapelGeometry
+          : landmark.kind === 'trilithon'
+            ? trilithonGeometry
+            : standingStoneGeometry;
+      // The palette is in the key because the colours are baked in, exactly
+      // as they are for trees.
+      geometry = cachedGeometry(
+        `landmark:${landmark.kind}:${palette.id}:${landmark.variant}`,
+        () => build(options),
+      );
+      material = this.solidMaterial;
+    }
+
+    const mesh = new Mesh(geometry, material);
+    // Sunk a little, so a base cut square across a sloping ridge does not
+    // show daylight under one corner.
+    mesh.position.set(landmark.x, landmark.y - 0.25 * landmark.scale, landmark.z);
+    mesh.rotation.y = landmark.rotation;
+    mesh.scale.setScalar(landmark.scale);
+    mesh.castShadow = this.castShadows;
+    mesh.receiveShadow = this.castShadows;
+    mesh.name = `landmark-${landmark.kind}`;
+    return mesh;
   }
 
   private disposeChunk(chunk: Chunk): void {

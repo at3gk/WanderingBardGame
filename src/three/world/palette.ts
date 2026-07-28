@@ -30,6 +30,19 @@
 
 export type TreeKind = 'conifer' | 'broadleaf' | 'willow';
 
+/**
+ * What stands on the skyline here.
+ *
+ * A landmark is the one thing in this world placed for the walk rather than
+ * for the ground it sits on: it exists so that the road ahead has something
+ * to be going toward. Which kinds a band may draw from is therefore a
+ * statement about what sort of country this is — the village has chapels
+ * because people live there, the forest has stones because whoever raised
+ * them is long gone, and the riverside has both plus the one lone tree that
+ * would be unremarkable anywhere with a wood in it.
+ */
+export type LandmarkKind = 'stones' | 'trilithon' | 'chapel' | 'tree';
+
 export interface BiomePalette {
   id: string;
   /**
@@ -57,6 +70,8 @@ export interface BiomePalette {
   accentAlt: number;
   /** Which tree silhouettes belong here, and in what proportion. */
   trees: Array<{ kind: TreeKind; weight: number }>;
+  /** Which landmarks may be raised on a ridge in this band. */
+  landmarks: Array<{ kind: LandmarkKind; weight: number }>;
   /**
    * Scatter densities, relative. Tuned per biome so they feel different.
    * A zero means the kind is absent here, and `WorldStreamer` skips the
@@ -71,6 +86,13 @@ export interface BiomePalette {
     shrub: number;
     reed: number;
     log: number;
+    /**
+     * Loose stone and surviving grass on the carriageway itself. Its own
+     * key rather than sharing `rock`, because how stony a *field* is and
+     * how stony a *road* is are unrelated questions — the village has
+     * almost no boulders in its pasture and a thoroughly gravelled lane.
+     */
+    road: number;
   };
   /** How hilly. Multiplies the terrain amplitude within this band. */
   relief: number;
@@ -107,7 +129,12 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
       { kind: 'broadleaf', weight: 9 },
       { kind: 'conifer', weight: 1 },
     ],
-    density: { grass: 1.1, tree: 0.45, rock: 0.3, flower: 2.4, fern: 0.1, shrub: 0.9, reed: 0, log: 0 },
+    landmarks: [
+      { kind: 'chapel', weight: 5 },
+      { kind: 'tree', weight: 4 },
+      { kind: 'stones', weight: 2 },
+    ],
+    density: { grass: 1.1, tree: 0.45, rock: 0.3, flower: 2.4, fern: 0.1, shrub: 0.9, reed: 0, log: 0, road: 1 },
     relief: 0.7,
   },
 
@@ -133,7 +160,12 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
       { kind: 'conifer', weight: 7 },
       { kind: 'broadleaf', weight: 3 },
     ],
-    density: { grass: 0.75, tree: 3.0, rock: 0.8, flower: 0.35, fern: 2.4, shrub: 0.45, reed: 0, log: 1.3 },
+    landmarks: [
+      { kind: 'stones', weight: 5 },
+      { kind: 'trilithon', weight: 4 },
+      { kind: 'chapel', weight: 1 },
+    ],
+    density: { grass: 0.75, tree: 3.0, rock: 0.8, flower: 0.35, fern: 2.4, shrub: 0.45, reed: 0, log: 1.3, road: 0.8 },
     relief: 1.25,
   },
 
@@ -167,7 +199,13 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
       { kind: 'willow', weight: 7 },
       { kind: 'broadleaf', weight: 3 },
     ],
-    density: { grass: 1.45, tree: 0.9, rock: 0.45, flower: 0.8, fern: 0.6, shrub: 0.5, reed: 0.9, log: 0.2 },
+    landmarks: [
+      { kind: 'tree', weight: 5 },
+      { kind: 'trilithon', weight: 3 },
+      { kind: 'stones', weight: 2 },
+      { kind: 'chapel', weight: 2 },
+    ],
+    density: { grass: 1.45, tree: 0.9, rock: 0.45, flower: 0.8, fern: 0.6, shrub: 0.5, reed: 0.9, log: 0.2, road: 1.15 },
     relief: 0.45,
   },
 };

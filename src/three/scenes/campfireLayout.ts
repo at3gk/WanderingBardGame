@@ -193,6 +193,20 @@ const BEDROLL: Slot = { bearing: 1.05, jitter: 0.12, radius: [2.3, 2.65], footpr
 const PACK: Slot = { bearing: 2.2, jitter: 0.2, radius: [1.85, 2.1], footprint: 0.34 };
 const LANTERN: Slot = { bearing: -2.2, jitter: 0.2, radius: [2.15, 2.45], footprint: 0.28 };
 const SEAT: Slot = { bearing: Math.PI, jitter: 0.2, radius: [1.95, 2.15], footprint: 0.45 };
+
+/**
+ * How long the log at the seat is.
+ *
+ * The seat stopped being a bare patch of ground the day the bard learned to
+ * sit down: there is a felled log there now, laid across the sightline to
+ * the fire, and he sits astride it. `Campfire` builds it, but the length
+ * belongs here, because length is a claim about ground — the log lies within
+ * the seat's own footprint disc and everything that keeps props off the road,
+ * out of the fire and clear of each other is stated in terms of that disc.
+ * Grow this past twice `SEAT.footprint` and the ends start reaching into
+ * ground no test is watching.
+ */
+export const SEAT_LOG_LENGTH_M = 0.86;
 /** Radius is measured out from the stone ring; see `campfireLayout`. */
 const INSTRUMENT: Slot = { bearing: -1.1, jitter: 0.18, radius: [0.85, 0.95], footprint: 0.26 };
 
@@ -507,6 +521,12 @@ export function layoutViolations(layout: CampfireLayout): string[] {
     campSide * roadOffset(bedroll.x, bedroll.z, heading) <= campSide * fireOffset
   ) {
     problems.push('bedroll is not on the far side of the fire from the road');
+  }
+
+  // The seat log lies inside the seat's disc, so every check above already
+  // covers it — but only for as long as that stays true.
+  if (SEAT_LOG_LENGTH_M / 2 > seat.footprint) {
+    problems.push('the seat log is longer than the seat it lies in');
   }
 
   for (let i = 0; i < layout.logs.length; i++) {

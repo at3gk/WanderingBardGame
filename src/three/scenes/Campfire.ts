@@ -63,7 +63,13 @@ import { ParticleField, embers } from '../fx/Particles';
 import { rockGeometry } from '../world/geometry';
 import { DEFAULT_PALETTE, type BiomePalette } from '../world/palette';
 import { mulberry32, randRange, subSeed, type Rand } from '../../core/rng';
-import { campfireLayout, type CampfireLayout, type PropPlacement } from './campfireLayout';
+import {
+  SEAT_LOG_LENGTH_M,
+  campfireLayout,
+  type CampfireLayout,
+  type PropPlacement,
+} from './campfireLayout';
+import { SITTING_SEAT_HEIGHT_M } from '../actors/Bard';
 
 export interface CampfireOptions {
   /** Road heading at the stop. The camp is laid out relative to it. */
@@ -192,6 +198,9 @@ export class Campfire {
   private readonly emberOrigin = new Vector3();
   private readonly lightColor = new Color();
 
+  /** Top of the seat log, in the camp's frame. What `seat` hands out. */
+  private readonly seatSurfaceY: number;
+
   private burn: number;
   private burnTarget: number;
   /** The flame's smoothed bulk. Drives the light; see `update`. */
@@ -223,6 +232,9 @@ export class Campfire {
     this.buildLaidFire(rand);
     this.buildFlame();
     this.buildCamp(rand, groundHeightAt, fireY);
+    this.seatSurfaceY =
+      groundHeightAt(this.layout.seat.x, this.layout.seat.z) + SITTING_SEAT_HEIGHT_M;
+    this.buildSeatLog(rand, groundHeightAt);
 
     this.light = new PointLight(LIGHT_BLAZE.getHex(), 0, 16, 1.7);
     this.light.castShadow = false;
@@ -242,10 +254,19 @@ export class Campfire {
     this.applyBurn(0);
   }
 
-  /** Where the bard should sit, in the camp's own frame, and which way to face. */
+  /**
+   * Where the bard should sit, in the camp's own frame, and which way to face.
+   *
+   * `y` is the top of the seat log, not the ground: the sitting pose is built
+   * around its origin being the seat surface (see `SITTING_SEAT_HEIGHT_M`),
+   * so a caller that stands the bard here gets him sitting on the log rather
+   * than standing through it. It also follows the terrain, which the old
+   * flat zero did not — a camp on a slope had the bard at the road's height
+   * and the fire at its own.
+   */
   get seat(): { x: number; y: number; z: number; heading: number } {
     const { seat } = this.layout;
-    return { x: seat.x, y: 0, z: seat.z, heading: seat.heading };
+    return { x: seat.x, y: this.seatSurfaceY, z: seat.z, heading: seat.heading };
   }
 
   /** 0 leaves glowing coals, 1 is a full blaze. Faded, never cut. */
@@ -553,6 +574,68 @@ export class Campfire {
     }
   }
 
+  /**
+   * The log the bard sits on.
+   *
+   * Somebody dragged this here, which is the whole reason it is worth its
+   * triangles: a bard sitting on bare ground reads as a bard who has fallen
+   * over, and the first thing anyone does at a camp is find something to sit
+   * on. It lies *across* the line to the fire so he sits astride it facing
+   * the flame, and it is sunk a couple of centimetres into the grass — a log
+   * resting exactly on a surface reads as dropped, the same note the ring
+   * stones are set for.
+   *
+   * Its height is not a matter of taste. `SITTING_SEAT_HEIGHT_M` is how far
+   * the seated pose's boots reach below his origin, so the top of this log
+   * has to be exactly that, or the bard is perched above it or shin-deep in
+   * it. Length comes from the layout, which owns how much ground the seat is
+   * allowed.
+   */
+  private buildSeatLog(rand: Rand, groundHeightAt: (x: number, z: number) => number): void {
+    const { seat } = this.layout;
+    const group = new Group();
+    group.name = 'campfire-seat-log';
+    const groundY = groundHeightAt(seat.x, seat.z);
+    group.position.set(seat.x, groundY, seat.z);
+    group.rotation.y = seat.heading + Math.PI / 2;
+    this.group.add(group);
+
+    const sink = 0.03;
+    const radius = (SITTING_SEAT_HEIGHT_M + sink) / 2;
+    const log = new Mesh(
+      this.keep(stickGeometry(1, 0.5, 0.44, 7, rand)),
+      this.solid({
+        color: WOOD_COLOR,
+        colorVariant: 0x8a6b48,
+        grain: 0.5,
+        grainScale: 1.4,
+        rim: 0.3,
+        baseShade: 0.2,
+        baseShadeHeight: 0.5,
+      }),
+    );
+    log.castShadow = true;
+    log.receiveShadow = true;
+    // Laid along the group's +Z the same way the fire's sticks are, and
+    // backed off half its length so the seat is its middle rather than one
+    // end — the layout's footprint is a disc about that middle.
+    log.rotation.set(Math.PI / 2, 0, 0, 'YXZ');
+    log.position.set(0, radius - sink, -SEAT_LOG_LENGTH_M / 2);
+    log.scale.set(radius * 2, SEAT_LOG_LENGTH_M, radius * 2);
+    group.add(log);
+
+    // One stub of a branch left on, at the end away from the fire. It is the
+    // difference between a log and a cylinder, and it costs nothing.
+    const stub = new Mesh(
+      this.keep(stickGeometry(0.22, 0.05, 0.035, 5, rand)),
+      this.solid({ color: WOOD_CHAR, colorVariant: WOOD_COLOR, grain: 0.6, rim: 0.3 }),
+    );
+    stub.position.set(0, radius - sink, SEAT_LOG_LENGTH_M / 2 - 0.08);
+    stub.rotation.set(0.9, 0.6, 0, 'YXZ');
+    stub.castShadow = true;
+    group.add(stub);
+  }
+
   private buildBedroll(): Object3D {
     const group = new Group();
     group.name = 'campfire-bedroll';
@@ -656,49 +739,121 @@ export class Campfire {
     return group;
   }
 
+  /**
+   * The camp lantern: a staff driven into the ground, a hook, and a lantern
+   * hanging off it.
+   *
+   * The version before this one was a bare post with a bright cube stuck to
+   * the side of a slightly larger dark cube. At night the glass was the only
+   * part that carried, so what the frame actually showed was a small glowing
+   * quad floating beside a stick — a stray primitive in the one picture the
+   * whole day is walking toward.
+   *
+   * What fixes that is not more brightness, it is a housing. The glass is
+   * now narrower than both the cap above it and the base below it, so the
+   * lit part is framed by dark metal on every side and reads as a light
+   * *inside* something. The cap is a real little roof with a peak, which is
+   * the silhouette that says lantern at a distance where none of the rest
+   * survives. And it hangs from a hook by a bail, because a lantern balanced
+   * on top of a pole is a streetlamp.
+   *
+   * The staff is shorter than it was, and the lantern hangs low on it. At
+   * 1.24 m with the light at the very top it was a spire standing over a
+   * camp whose next tallest thing is knee-high, and the eye went to it
+   * instead of to the fire.
+   */
   private buildLantern(rand: Rand): Object3D {
     const group = new Group();
     group.name = 'campfire-lantern';
     const lean = new Group();
     // Driven into the ground at an angle so the lantern hangs clear of it.
-    lean.rotation.x = 0.26;
+    lean.rotation.x = 0.24;
     group.add(lean);
 
-    const pole = new Mesh(
-      this.keep(stickGeometry(1.24, 0.028, 0.042, 5, rand)),
+    const metal = this.solid({
+      color: LANTERN_METAL,
+      colorVariant: 0x6d6053,
+      rim: 0.5,
+      grain: 0.3,
+    });
+
+    const staffHeight = 0.98;
+    const staff = new Mesh(
+      this.keep(stickGeometry(staffHeight, 0.032, 0.024, 5, rand)),
       this.solid({ color: WOOD_COLOR, colorVariant: 0x8a6b48, rim: 0.35 }),
     );
-    pole.castShadow = true;
-    lean.add(pole);
+    staff.castShadow = true;
+    lean.add(staff);
 
-    const cage = new Mesh(
-      this.keep(taperedBox(0.15, 0.2, 0.15, 0.72, 0.72)),
-      this.solid({ color: LANTERN_METAL, colorVariant: 0x6d6053, rim: 0.55 }),
-    );
-    cage.position.set(0, 1.02, 0.13);
-    cage.castShadow = true;
-    lean.add(cage);
+    // The hook: a short arm off the top of the staff and a lip turned down
+    // at its end. Two thin boxes, and between them they are the reason the
+    // lantern is where it is instead of simply being there.
+    const arm = new Mesh(this.keep(taperedBox(0.026, 0.19, 0.026, 1, 1)), metal);
+    arm.position.set(0, staffHeight - 0.035, 0.008);
+    arm.rotation.x = Math.PI / 2;
+    arm.castShadow = true;
+    lean.add(arm);
 
-    // The glass is emissive but carries no light of its own — one point
-    // light is the budget, and a lantern that lit the camp would compete
-    // with the fire for the thing the fire is here to do.
+    const hook = new Mesh(this.keep(taperedBox(0.024, 0.06, 0.024, 1, 1)), metal);
+    hook.position.set(0, staffHeight - 0.075, 0.185);
+    hook.castShadow = true;
+    lean.add(hook);
+
+    // Everything below hangs off the hook, in its own group, so the lantern
+    // can be positioned as one object rather than four coincidences.
+    const lamp = new Group();
+    lamp.position.set(0, staffHeight - 0.075, 0.185);
+    lean.add(lamp);
+
+    const bail = new Mesh(this.keep(taperedBox(0.075, 0.055, 0.016, 0.5, 1)), metal);
+    bail.position.y = -0.055;
+    lamp.add(bail);
+
+    // A roof, not a lid: it comes to a narrow ridge and overhangs the glass,
+    // and the overhang is what puts a dark edge along the top of the lit
+    // part instead of letting it run out into the sky.
+    const cap = new Mesh(this.keep(taperedBox(0.148, 0.07, 0.148, 0.34, 0.34)), metal);
+    cap.position.y = -0.125;
+    cap.castShadow = true;
+    lamp.add(cap);
+
+    const base = new Mesh(this.keep(taperedBox(0.13, 0.042, 0.13, 0.86, 0.86)), metal);
+    base.position.y = -0.27;
+    base.castShadow = true;
+    lamp.add(base);
+
+    // The glass carries no light of its own — one point light is the budget,
+    // and a lantern that lit the camp would compete with the fire for the
+    // thing the fire is here to do. What it has instead is the emissive
+    // term, kept low: the failure this replaces was a pane blown out to flat
+    // yellow with no shading left on it. Framed by metal it can afford a
+    // little more than the 0.32 it was cut to, because the frame is now
+    // doing the work that dimming it was doing before.
     const glass = new Mesh(
-      this.keep(taperedBox(0.11, 0.12, 0.11, 1, 1)),
+      this.keep(taperedBox(0.096, 0.105, 0.096, 1, 1)),
       this.solid({
         color: LANTERN_GLASS,
-        colorVariant: LANTERN_GLASS,
+        colorVariant: 0xffe0a8,
         emissive: 0xffb347,
-        // Down from 0.7. At night the pane blew out to flat yellow with no
-        // shading left on it, so it read as a small bright quad floating
-        // beside a bare post rather than as a light inside a lantern — and it
-        // was the second brightest thing in the one frame that belongs
-        // entirely to the fire.
-        emissiveStrength: 0.32,
+        emissiveStrength: 0.44,
         rim: 0.1,
+        grain: 0.15,
       }),
     );
-    glass.position.set(0, 1.06, 0.13);
-    lean.add(glass);
+    glass.position.y = -0.228;
+    lamp.add(glass);
+
+    // Two uprights at the corners nearest the camera-ish side, so the glass
+    // is broken by something vertical rather than reading as one lit slab.
+    const postGeo = this.keep(taperedBox(0.016, 0.105, 0.016, 1, 1));
+    for (const sx of [-1, 1] as const) {
+      const upright = new Mesh(postGeo, metal);
+      upright.position.set(sx * 0.052, -0.228, 0.052);
+      lamp.add(upright);
+      const back = new Mesh(postGeo, metal);
+      back.position.set(sx * 0.052, -0.228, -0.052);
+      lamp.add(back);
+    }
 
     return group;
   }
