@@ -128,7 +128,12 @@ export const SKY_KEYS: SkyKey[] = [
     // surface in the frame until there is no dark left to compose with.
     horizon: 0xbfd4e6,
     sun: 0xfff0d0,
-    bounce: 0x7d8a5c,
+    // Darkened from 0x7d8a5c. This value is the light coming back UP off the
+    // ground into every downward-facing surface, so a bright one lifts the
+    // shadow side of every tuft, every canopy underside and every rut back
+    // to roughly the tone of the lit side — which is most of why the noon
+    // and morning frames had no value range to compose with.
+    bounce: 0x5d6a44,
     fog: 0xcfe0ec,
     elevation: 0.62,
     azimuth: 0.6,
@@ -144,7 +149,9 @@ export const SKY_KEYS: SkyKey[] = [
     // and the most to lose from a white horizon.
     horizon: 0xc8d8e4,
     sun: 0xfff6e2,
-    bounce: 0x87945f,
+    // See the note on morning; noon has the least colour to lose and the
+    // most flattening to undo.
+    bounce: 0x66703f,
     fog: 0xd6e6f0,
     elevation: 1.05,
     azimuth: 0.0,

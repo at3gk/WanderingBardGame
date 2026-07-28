@@ -1193,7 +1193,49 @@ export class WorldStreamer {
     geometry.setAttribute('aToneLo', new BufferAttribute(toneLo, 3));
     geometry.setAttribute('aToneHi', new BufferAttribute(toneHi, 3));
     geometry.setIndex(indices);
-    geometry.computeVertexNormals();
+
+    /*
+     * Normals from the landform, not from the mesh.
+     *
+     * `computeVertexNormals` averages the faces meeting at a vertex, so the
+     * normal it produces depends on how far apart the ribbon's columns
+     * happen to be. This ribbon's columns are deliberately non-uniform —
+     * hand-placed near the road, a power curve beyond it — so the averaging
+     * is lopsided exactly where the spacing changes fastest, and it tilts a
+     * strip of ground along the verge by a degree or two. A degree or two is
+     * nothing on a rock and everything on a surface lit by a low sun across
+     * sixty metres: it came out as a hard-edged tonal wedge running from the
+     * bard's feet to the vanishing point, in eight frames out of ten.
+     *
+     * That wedge was declared fixed twice, because both earlier diagnoses
+     * were of real defects that were also there (clamped ramps baked into
+     * vertex colour; an unsorted offset list folding two strips back on
+     * themselves). It survived both, and the evidence that it was never a
+     * shadow was available the whole time: it does not move when the sun
+     * moves ninety degrees, and it persists with the shadow map disabled.
+     *
+     * Sampling `terrainHeight` by central difference makes the normal a
+     * property of the ground itself. Same answer at any mesh density, so the
+     * whole class of defect goes rather than this instance of it. The cost
+     * is four extra height samples per vertex at chunk build, which is
+     * nothing next to the scatter placement already happening alongside.
+     */
+    const normals = new Float32Array(vertexCount * 3);
+    const eps = 1;
+    for (let i = 0; i < vertexCount; i++) {
+      const x = positions[i * 3];
+      const z = positions[i * 3 + 2];
+      // Gradient of the height field. The normal is (-dh/dx, 1, -dh/dz),
+      // normalised — the standard result for a heightfield, and the reason
+      // a flat plain gives exactly (0, 1, 0) however the ribbon is cut.
+      const dhdx = (terrainHeight(this.road, x + eps, z) - terrainHeight(this.road, x - eps, z)) / (2 * eps);
+      const dhdz = (terrainHeight(this.road, x, z + eps) - terrainHeight(this.road, x, z - eps)) / (2 * eps);
+      const inv = 1 / Math.sqrt(dhdx * dhdx + 1 + dhdz * dhdz);
+      normals[i * 3] = -dhdx * inv;
+      normals[i * 3 + 1] = inv;
+      normals[i * 3 + 2] = -dhdz * inv;
+    }
+    geometry.setAttribute('normal', new BufferAttribute(normals, 3));
     geometry.computeBoundingSphere();
 
     const mesh = new Mesh(geometry, this.terrainMaterial);

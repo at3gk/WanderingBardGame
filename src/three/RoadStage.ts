@@ -335,7 +335,14 @@ export class RoadStage implements Stage {
     // quarter of the way to the horizon and reaching full strength at it,
     // which flattened every distant hill into the sky and took all the
     // depth cues with it. It starts well out now and never fully closes.
-    app.globals.uFogNear.value = app.quality.viewDistance * 0.55;
+    // 1.1 rather than 0.55. Aerial perspective is supposed to separate the
+    // distance from the middle distance; starting it barely half way to the
+    // horizon fogged the mid-ground toward the sky before it could hold a
+    // tone of its own, and the four plain daylight frames ended up with a
+    // total value range of about 1.3:1 from near grass to far ridge. There
+    // is nothing to compose with in 1.3:1. The far ridge silhouettes now
+    // supply the distance layer, so the fog no longer has to.
+    app.globals.uFogNear.value = app.quality.viewDistance * 1.1;
     app.globals.uFogFar.value = app.quality.viewDistance * 2.4;
 
     this.world.update(this.journey.s);
