@@ -9,10 +9,18 @@
  * than like someone turned a brightness slider down.
  *
  * The dome itself is a single inverted sphere with a vertical gradient, a
- * soft sun bloom, a band of horizon warmth, and — after dark — stars that
- * fade in by altitude. No cubemap, no HDR load: the whole sky is a few
- * hundred bytes of shader and it can be any colour we want at any moment,
- * which a baked cubemap cannot.
+ * soft sun bloom, a band of horizon warmth, drifting cloud, two bands of
+ * distant land, and — after dark — stars that fade in by altitude. No
+ * cubemap, no HDR load: the whole sky is a few hundred bytes of shader and
+ * it can be any colour we want at any moment, which a baked cubemap cannot.
+ *
+ * The land on the dome is the odd one in that list and worth naming here.
+ * The world only streams out to a hundred and sixty-five metres, so without
+ * it every daylight frame ended in a straight seam between a green band and
+ * a blue one — two values front to back, where a frame that reads has four.
+ * Drawing the distance here rather than building it means it is at infinity
+ * for free: it holds still as the bard walks and turns with the camera,
+ * which is exactly what a range on the skyline does.
  */
 
 import {
@@ -329,6 +337,46 @@ float fbm(vec2 p) {
   return vnoise(p) * 0.55 + vnoise(p * 2.3 + 7.1) * 0.3 + vnoise(p * 4.7 + 19.3) * 0.15;
 }
 
+/**
+ * Coverage of one band of distant land: 1 below its crest, 0 above.
+ *
+ * The heading arrives as a point on the unit circle rather than as an
+ * angle, and that is what keeps the noise seamless. Sampling by atan2 puts
+ * a discontinuity due south, and the range tears itself in half every time
+ * the camera swings past it.
+ *
+ * The three scales are written out rather than left to fbm because fbm's
+ * octaves fall away too fast at this amplitude — the second and third were
+ * worth well under a degree each and the crest came out as one long smooth
+ * arc, which reads as a bank of cloud rather than as land. The middle term
+ * is the one that does the work: ten-degree humps big enough to be summits.
+ */
+float ridgeMask(vec2 ring, float height, float base, float amp, float seed) {
+  float crest = base
+    + vnoise(ring * 1.9 + seed) * amp
+    + vnoise(ring * 5.5 + seed * 1.7) * amp * 0.40
+    + vnoise(ring * 13.0 + seed * 2.9) * amp * 0.16;
+  return smoothstep(crest, crest - 0.004, height);
+}
+
+/**
+ * Aerial perspective for a band of distant land, in the sky's own colours
+ * rather than a grey wash. base is the sky's value in this direction, so
+ * the band is darker than the air it meets by construction at every hour,
+ * instead of by a set of constants tuned against one of them. cool pulls
+ * it toward the zenith, away from the warm band it stands in; land is
+ * the trace of the ground's own colour that keeps a forested skyline
+ * blue-green and not blue.
+ */
+vec3 ridgeTint(vec3 base, vec2 ring, float cool, float value, float land) {
+  vec3 tinted = mix(mix(base, uZenith, cool) * value, uGroundBounce, land);
+  // The flank turned toward the sun keeps a little of the sun's colour,
+  // which is what stops the band being a flat cut-out.
+  vec2 sunRing = normalize(uSunDirection.xz + vec2(1e-5));
+  float facing = max(dot(ring, sunRing), 0.0);
+  return mix(tinted, mix(tinted, uSunColor, 0.22), facing * facing);
+}
+
 void main() {
   vec3 dir = normalize(vDirection);
   float height = dir.y;
@@ -423,55 +471,44 @@ void main() {
     color = mix(color, cloudColor, cover * cloudBand);
   }
 
-  // --- far ridge ---------------------------------------------------------
+  // --- distance ----------------------------------------------------------
   // The world streams out to a hundred and sixty-five metres and then
   // simply stops, so every daylight frame had a hard straight seam where a
   // green band met a blue one and nothing in between. Two values, front to
   // back, when the frames that read well have four.
   //
-  // This is the missing third: one distant landform, drawn on the dome
-  // rather than built. Geometry was the obvious answer and is the wrong
-  // one — a ring of hills far enough away to look far has to be enormous,
-  // has to stream, and would need its own fog treatment to stop reading as
-  // a wall. On the dome it is at infinity by construction, which is also
+  // This is the missing distance: bands of land drawn on the dome rather
+  // than built. Geometry was the obvious answer and is the wrong one — a
+  // ring of hills far enough away to look far has to be enormous, has to
+  // stream, and would need its own fog treatment to stop reading as a
+  // wall. On the dome it is at infinity by construction, which is also
   // exactly right: it holds still as the bard walks and swings with the
   // camera's heading, the way a real range on the skyline does.
   //
-  // The silhouette fills everything *below* its crest and the terrain
-  // draws over it, so it needs no knowledge of where the ground actually
-  // ends — it simply backs whatever is in front of it.
-  // The crest sits two to five degrees up. Lower than that and the terrain
-  // hides it in every frame where the road runs uphill, which is most of
-  // them; much higher and it stops being a distant range and becomes a wall
-  // around the meadow.
-  // Three explicit scales rather than one fbm call. fbm's own octaves fall
-  // off fast enough that at this amplitude the second and third are worth
-  // under a degree each, and the crest came out as one long smooth arc —
-  // which reads as a bank of cloud, not as land. The middle term is the
-  // one that does the work: ten-degree humps big enough to be summits.
+  // Each band fills everything *below* its crest and the terrain draws
+  // over it, so neither needs to know where the ground actually ends. They
+  // simply back whatever stands in front of them.
+  //
+  // Two bands rather than one. One was enough to break the green-meets-blue
+  // seam and not enough to make the distance feel deep: it arrived as a
+  // single flat value and the eye read it as a smear of haze. A second,
+  // nearer, lower and darker band is what turns it into a recession — the
+  // near range reads as land because the far one behind it is paler, and
+  // the far one reads as far because there is something in front of it.
+  // The far crest sits about five degrees up and the near one about two.
+  // Lower than that and the terrain hides them in every frame where the
+  // road runs uphill, which is most of them; much higher and they stop
+  // being distance and become a wall around the meadow.
   vec2 ring = normalize(dir.xz + vec2(1e-5));
-  float ridgeHeight =
-    0.018 + vnoise(ring * 1.9 + 11.0) * 0.075 + vnoise(ring * 5.5 + 3.7) * 0.030 +
-    vnoise(ring * 13.0 + 21.0) * 0.012;
-  float ridge = smoothstep(ridgeHeight, ridgeHeight - 0.004, height);
-  if (ridge > 0.001) {
-    // Aerial perspective, in the sky's own colours rather than a grey wash:
-    // take the air in this direction, pull it toward the zenith so it goes
-    // cooler than the warm band it stands in, and drop the value. Because
-    // skyBase falls off toward the horizon of its own accord, the band
-    // also lightens toward its foot without being told to — which is how
-    // haze pools in front of a range.
-    vec3 ridgeColor = mix(skyBase, uZenith, 0.28) * 0.84;
-    // A trace of the ground's colour, because a forested skyline is
-    // blue-green and not blue.
-    ridgeColor = mix(ridgeColor, uGroundBounce, 0.10);
-    // The flank turned toward the sun keeps a little of the sun's colour,
-    // which is what stops the band being a flat cut-out.
-    vec2 sunRing = normalize(uSunDirection.xz + vec2(1e-5));
-    float facing = max(dot(ring, sunRing), 0.0);
-    ridgeColor = mix(ridgeColor, mix(ridgeColor, uSunColor, 0.22), facing * facing);
-    color = mix(color, ridgeColor, ridge);
+  float farRidge = ridgeMask(ring, height, 0.026, 0.075, 11.0);
+  float nearRidge = ridgeMask(ring, height, 0.004, 0.040, 47.0);
+  if (farRidge > 0.001) {
+    color = mix(color, ridgeTint(skyBase, ring, 0.32, 0.79, 0.10), farRidge);
   }
+  if (nearRidge > 0.001) {
+    color = mix(color, ridgeTint(skyBase, ring, 0.36, 0.64, 0.20), nearRidge);
+  }
+  float ridge = max(farRidge, nearRidge);
 
   // Sun: a soft disc plus a wide bloom. No hard edge — a crisp disc reads
   // as a decal pasted on a painting. The disc goes behind the ridge and the

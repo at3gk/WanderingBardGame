@@ -116,6 +116,36 @@ for (const shot of SHOTS) {
     return { ok: true, mean: Math.round(mean), stdDev: Math.round(stdDev * 10) / 10 };
   });
 
+  // Is the page's own animation loop actually running?
+  //
+  // The pixel check above renders explicitly before reading back, which
+  // proves the *scene* can draw and says nothing about whether the page is
+  // drawing it. Those come apart in practice: while agents are editing, the
+  // dev server fires an HMR reload every few seconds and a shot taken inside
+  // one is pure background colour — yet the explicit render succeeds and the
+  // tool reported "10 postcards, no problems" over a set of blank images.
+  //
+  // three's own frame counter settles the question. If it has not advanced
+  // across a gap, whatever the screenshot caught is not a frame of the game.
+  const alive = await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const renderer = window.bard?.app?.renderer;
+        if (!renderer) return resolve({ ok: false, reason: 'no renderer' });
+        const before = renderer.info.render.frame;
+        setTimeout(() => {
+          const after = renderer.info.render.frame;
+          resolve({ ok: after > before, before, after });
+        }, 350);
+      }),
+  );
+  if (!alive.ok) {
+    problems.push(
+      `${shot.name}: the render loop is not advancing (${alive.reason ?? `frame stuck at ${alive.after}`})` +
+        ' — the shot is not a live frame',
+    );
+  }
+
   // Is the canvas the size of the viewport?
   //
   // Checked on every shot because getting this wrong does not look like a

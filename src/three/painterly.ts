@@ -420,6 +420,16 @@ void main() {
   vec3 V = normalize(cameraPosition - vWorldPosition);
   vec3 L = normalize(uSunDirection);
 
+  /*
+   * How high the sun is, 0 at the horizon and 1 by mid-morning.
+   *
+   * Two things in this shader are only honest under a high sun, and both of
+   * them turn black when it drops. This is the single term they are driven
+   * from, so that they fade together and the world darkens along one axis
+   * rather than three.
+   */
+  float sunHeight = smoothstep(-0.05, 0.32, uSunDirection.y);
+
   // --- world-space grain -------------------------------------------------
   // Sampled in world space so it belongs to the *scene*, like paper
   // texture under the whole painting, rather than sliding around on each
@@ -555,10 +565,44 @@ void main() {
   // --- contact shading ---------------------------------------------------
   // A soft darkening toward an object's base. Fakes the occlusion where a
   // trunk meets grass, which is otherwise the tell that nothing is touching.
+  //
+  // Faded out as the sun drops. Contact shading is an occlusion of the sun,
+  // and under a low sun there is nothing much to occlude: the same figure
+  // that reads as a tuft standing in grass at noon reads as a scorch mark at
+  // dusk, because it is subtracting a third of a value that has already
+  // fallen to almost nothing. Keeping a fifth of it at night stops the base
+  // of every blade lifting off the ground it is standing in.
   if (uBaseShadeHeight > 0.0) {
     float base = 1.0 - clamp(vLocalHeight / uBaseShadeHeight, 0.0, 1.0);
-    color *= mix(1.0, 1.0 - uBaseShade, base * base);
+    color *= mix(1.0, 1.0 - uBaseShade * mix(0.2, 1.0, sunHeight), base * base);
   }
+
+  /*
+   * --- sky floor ---------------------------------------------------------
+   *
+   * The one place the ambient stops being a plain multiplier, and the reason
+   * is the standing rule that a shadow is coloured and never grey.
+   *
+   * A blade of grass is a thin double-sided sliver with a near-horizontal
+   * normal. Under a low sun its diffuse term is nothing, so all it has left
+   * is ambient times a dark green albedo — and a dark green albedo is about
+   * two per cent reflectance in the red, so the product is not a dark green,
+   * it is black. Mid-ground grass at golden hour was coming out as flecks of
+   * soot. What is missing physically is that thin foliage does not only
+   * reflect the sky, it transmits and scatters it, and what it scatters is
+   * much closer to the colour of the light than to the colour of the leaf.
+   *
+   * So: a floor in the colour of the light arriving here, carrying part of
+   * the surface's own hue so that grass at dusk goes deep blue-green rather
+   * than mauve, and gated hard on how dark the fragment already is. The gate
+   * is what keeps this out of the rest of the picture — by a fifth of a stop
+   * up from black the term is already half gone, so noon keeps its contrast
+   * and a night scene keeps its darks, which at night are dark because the
+   * sky itself is dark and the floor comes down with it.
+   */
+  vec3 hue = albedo / max(max(albedo.r, max(albedo.g, albedo.b)), 0.001);
+  vec3 floorLight = ambient * mix(vec3(1.0), hue, 0.6) * 0.5;
+  color += floorLight * exp(-dot(color, vec3(0.30, 0.59, 0.11)) * 14.0);
 
   color += uEmissive * uEmissiveStrength;
   color *= uExposure;
