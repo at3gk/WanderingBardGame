@@ -87,10 +87,24 @@ const HALF_WIDTH = 165;
  * which is most of why the meadow used to have nothing in it at any scale.
  */
 const ALONG_SAMPLES = 17;
-/** Half-width of the packed road surface, metres. */
-export const ROAD_HALF_WIDTH = 2.3;
+/**
+ * Half-width of the packed road surface, metres.
+ *
+ * Narrowed from 2.3 m after a phone-portrait frame showed the road as a
+ * featureless tan expanse filling the lower half of the picture. Some of
+ * that is unavoidable perspective — a camera 2.4 m up and 4 m back sees the
+ * ground a couple of metres in front of it, and at a portrait field of view
+ * that is a strip barely a metre wide, so whatever is underfoot fills the
+ * bottom of the frame whatever its width.
+ *
+ * The fix is therefore not only to narrow it but to make sure the thing
+ * underfoot has something *in* it. A 3.4 m cart track with grass reaching
+ * the ruts reads as a path worn by use; a 4.6 m one with a bare shoulder
+ * either side reads as a beach, which is the note the frame earned.
+ */
+export const ROAD_HALF_WIDTH = 1.7;
 /** Where the worn shoulder finishes blending back into grass. */
-const SHOULDER = 4.2;
+const SHOULDER = 2.9;
 
 /**
  * Lateral sample offsets, precomputed once.
@@ -761,8 +775,11 @@ export class WorldStreamer {
           // Two wheel ruts, darker and slightly sunken-looking. The road
           // reads as travelled rather than paved because of these, and
           // there is now a vertex sitting exactly on each one.
-          const rut = Math.abs(absU - ROAD_HALF_WIDTH * 0.55);
-          if (rut < 0.5) color = mixColor(color, 0x2a1d12, 0.3 * (1 - rut / 0.5));
+          // Deepened along with the narrowing. The ruts are the only thing
+          // giving the carriageway any structure at all in a close frame,
+          // and at the old strength they were invisible under a low sun.
+          const rut = Math.abs(absU - ROAD_HALF_WIDTH * 0.58);
+          if (rut < 0.42) color = mixColor(color, 0x2a1d12, 0.46 * (1 - rut / 0.42));
           // A crown down the middle, where nothing drives and the grass
           // has not quite given up.
           if (absU < 0.7) color = mixColor(color, shoulderColor, 0.35 * (1 - absU / 0.7));

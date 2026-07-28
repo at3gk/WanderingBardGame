@@ -6,6 +6,33 @@ Run counter: 41
 
 **At a glance** — read this, then only the sections you need.
 
+- **Where v0.6 actually stands, and what is still wrong.** A harsh
+  frame-by-frame critique of ten posed screenshots returned **not shippable
+  next to A Short Hike**, and named three structural absences rather than a
+  polish gap. Two and a half are now closed: there are travellers in the
+  world and an audience at a busk (there was literally nobody before); the
+  staff is legible, with dark note heads carrying cream letters at a pitch
+  spacing that survives the end-on view; the sky's zenith arrives inside the
+  visible frame band and carries cloud. The land has a midground again.
+
+  **Still wrong, in the order a next run should take them:**
+  1. The road is bare. Narrowing it to a 3.4 m cart track and deepening the
+     ruts helped, but the carriageway has no scatter on it at all — no
+     pebbles, no tufts in the rut, no puddles. On a phone in portrait it is
+     still the largest single area in the frame.
+  2. The bard stands upright at his own campfire. `resting` calls
+     `setPose('sitting')` and the pose does not look like sitting.
+  3. The camp lantern reads as a bright quad beside a bare post.
+  4. The busk caption still collides with the top note on phone landscape
+     (844x390). Moving it means a considered change to `hudLayout.ts`, which
+     its own test constrains — the top slot exists to keep the card off the
+     bard mid-busk.
+  5. No landmarks on the skyline. Now that ridges exist, a standing stone or
+     a chapel placed deliberately on one would give the walk something to
+     walk toward. This was correctly deferred until the terrain could hold it.
+  6. No instrument picker, and `journey.unlockedInstruments` is never
+     appended to — an earned instrument is playable but not choosable.
+
 - **Run 41 (interactive, human-directed): the road goes into three
   dimensions.** A human set a new direction — build the wandering road as a
   low-poly 3D painterly game in Three.js, with a shared daily road, busking,
