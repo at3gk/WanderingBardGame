@@ -1515,10 +1515,17 @@ export class WorldStreamer {
   /**
    * Where to stand the landmark, given the brow it belongs to.
    *
-   * Off to one side, on whatever ground within reach is highest, and a
-   * little *past* the summit rather than on it — the far slope is what puts
-   * sky behind the base instead of more hillside, and the road disappearing
-   * over the brow in front of it is what makes the two read as one place.
+   * Off to one side, on the highest ground within reach, and on the *near*
+   * side of the summit.
+   *
+   * The first version put it thirty metres past, reasoning that the far
+   * slope would put sky behind the base. It does — and it also puts the brow
+   * itself between the landmark and everyone approaching, so a five-metre
+   * trilithon standing forty metres beyond the crest was invisible from a
+   * hundred metres back and then appeared, fully formed, as the bard came
+   * over the top. A landmark that cannot be seen from the approach is not a
+   * landmark. Sky behind it was never in doubt anyway: the horizon sits at
+   * eye level, so anything on the summit clears it by its own height.
    *
    * The distance term in the score keeps this from marching to the far limit
    * every time: ground a hundred metres out is often a metre higher, but a
@@ -1529,7 +1536,7 @@ export class WorldStreamer {
     let best: { x: number; y: number; z: number } | null = null;
     let bestScore = -Infinity;
 
-    for (let ds = -10; ds <= 34; ds += 11) {
+    for (let ds = -30; ds <= 6; ds += 9) {
       const sample = sampleRoad(this.road, s + ds);
       const nx = Math.cos(sample.heading);
       const nz = -Math.sin(sample.heading);
