@@ -1049,10 +1049,15 @@ export class WorldStreamer {
        * zero slope on both sides, so the seam has nothing to show.
        */
       const meadowAt = (mx: number, mz: number, my: number): number => {
+        // Centred well below halfway on purpose: `grassVariant` is the pale
+        // end of the pair and the drift in the shader reaches for a paler
+        // tone still, so a meadow that sits at the midpoint of these two
+        // comes out as straw everywhere and the road loses its value break
+        // against the field it crosses.
         const broad =
-          0.5 +
-          0.3 * Math.sin(mx * 0.038 + mz * 0.027 + 2.1) +
-          0.2 * Math.sin(mx * 0.071 - mz * 0.059 + 4.7);
+          0.3 +
+          0.22 * Math.sin(mx * 0.038 + mz * 0.027 + 2.1) +
+          0.15 * Math.sin(mx * 0.071 - mz * 0.059 + 4.7);
         let color = mixColor(grassA, grassB, broad);
         // Divided by a long enough span that a field which simply slopes
         // away from the road does not come out uniformly dry, and passed

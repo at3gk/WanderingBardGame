@@ -487,7 +487,7 @@ void main() {
      * of the field.
      */
     albedo = mix(albedo, vToneLo, smoothstep(0.50, 0.27, drift) * uGroundTones * 0.72);
-    albedo = mix(albedo, vToneHi, smoothstep(0.55, 0.78, drift) * uGroundTones * 0.80);
+    albedo = mix(albedo, vToneHi, smoothstep(0.56, 0.82, drift) * uGroundTones * 0.62);
   #endif
 
   albedo = mix(albedo, albedo * uColorVariant, smoothstep(0.35, 0.75, grain) * uGrain);
@@ -601,8 +601,8 @@ void main() {
    * sky itself is dark and the floor comes down with it.
    */
   vec3 hue = albedo / max(max(albedo.r, max(albedo.g, albedo.b)), 0.001);
-  vec3 floorLight = ambient * mix(vec3(1.0), hue, 0.6) * 0.5;
-  color += floorLight * exp(-dot(color, vec3(0.30, 0.59, 0.11)) * 14.0);
+  vec3 floorLight = ambient * mix(vec3(1.0), hue, 0.5) * 0.28;
+  color += floorLight * exp(-dot(color, vec3(0.30, 0.59, 0.11)) * 22.0);
 
   color += uEmissive * uEmissiveStrength;
   color *= uExposure;
