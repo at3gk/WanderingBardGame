@@ -148,6 +148,18 @@ uniform vec3 uWindDirection;
   attribute vec3 color;
   varying vec3 vVertexColor;
 #endif
+/*
+ * Declared unconditionally, and so is its twin in the fragment shader.
+ *
+ * The obvious version guards both with an ifdef on USE_INSTANCING_COLOR — and
+ * it silently loses every per-instance colour in the game, because three
+ * injects that define into the *vertex* prefix only. The vertex shader
+ * dutifully wrote the varying, the fragment shader had no declaration to
+ * read it back, both compiled without a warning, and every tree in the
+ * world came out white. One interpolator is a very cheap price for that
+ * class of bug never recurring.
+ */
+varying vec3 vInstanceColor;
 
 varying vec3 vWorldPosition;
 varying vec3 vWorldNormal;
@@ -225,6 +237,11 @@ void main() {
   #ifdef PAINTERLY_VERTEX_COLORS
     vVertexColor = color;
   #endif
+  #ifdef USE_INSTANCING_COLOR
+    vInstanceColor = instanceColor;
+  #else
+    vInstanceColor = vec3(1.0);
+  #endif
 
   // three's shadow chunk expects these two names.
   vec3 transformedNormal = normalize(normalMatrix * objectNormal);
@@ -236,6 +253,22 @@ void main() {
 
 const FRAGMENT = /* glsl */ `
 #include <common>
+
+/*
+ * The two numbers that set the whole world's exposure.
+ *
+ * They are compile-time constants rather than uniforms on purpose: they are
+ * a property of the *lighting model*, not of a moment in the day, and having
+ * them adjustable per-material was an invitation for one object to quietly
+ * disagree with the rest of the scene about how bright the sun is.
+ *
+ * Roughly: a fully-lit surface reaches about 1.25 and a fully-shadowed one
+ * about 0.13, so there are just over three stops between light and shade —
+ * which is about right for an overcast-to-sunny storybook look and leaves
+ * the ACES curve something to do at the top end.
+ */
+#define AMBIENT_STRENGTH 0.42
+#define SUN_STRENGTH 0.92
 #include <packing>
 #include <lights_pars_begin>
 #include <shadowmap_pars_fragment>
@@ -268,6 +301,7 @@ uniform float uOpacity;
 varying vec3 vWorldPosition;
 varying vec3 vWorldNormal;
 varying float vLocalHeight;
+varying vec3 vInstanceColor;
 #ifdef PAINTERLY_VERTEX_COLORS
   varying vec3 vVertexColor;
 #endif
@@ -317,6 +351,9 @@ void main() {
   #ifdef PAINTERLY_VERTEX_COLORS
     albedo *= vVertexColor;
   #endif
+  // Per-instance colour: one draw call covers a whole biome's worth of
+  // trees in different greens. Defaults to white for non-instanced meshes.
+  albedo *= vInstanceColor;
   albedo = mix(albedo, albedo * uColorVariant, smoothstep(0.35, 0.75, grain) * uGrain);
 
   // --- banded diffuse ----------------------------------------------------
@@ -341,13 +378,20 @@ void main() {
 
   // Ambient is *directional*: sky from above, warm bounce from below. This
   // is the whole trick — it gives shadowed faces colour instead of grey.
+  //
+  // It is scaled well below 1. The sky and horizon uniforms are *display*
+  // colours — what you see when you look at the sky — and a surface lit by
+  // the full value of them is a surface as bright as the sky itself. The
+  // first version added them at full strength on top of a sun term and the
+  // entire world came out as white paper.
   float skyFacing = N.y * 0.5 + 0.5;
   vec3 ambient = mix(uGroundBounce, uSkyColor, skyFacing);
   // Horizon warmth leaks into faces pointing sideways, which is what makes
   // dawn and dusk read as dawn and dusk.
   ambient = mix(ambient, uHorizonColor, (1.0 - abs(N.y)) * 0.35);
+  ambient *= AMBIENT_STRENGTH;
 
-  vec3 lighting = ambient + uSunColor * sunAmount * 1.35;
+  vec3 lighting = ambient + uSunColor * sunAmount * SUN_STRENGTH;
 
   vec3 color = albedo * lighting;
 
@@ -357,7 +401,12 @@ void main() {
   // of sky light, so silhouettes never disappear into the fog.
   float sunWrap = clamp(dot(N, L) * 0.5 + 0.75, 0.0, 1.0);
   vec3 rimColor = mix(uSkyColor, uSunColor, 0.65);
-  color += rimColor * fresnel * uRim * (0.35 + 0.65 * sunWrap);
+  // Scaled by the surface's own albedo rather than added flat. A flat
+  // additive rim is what turned a field of grass — thin blades, seen almost
+  // edge-on, so fresnel is ~1 across the whole blade — into a field of white
+  // slivers. Tying it to albedo keeps a rim a *highlight on a thing* instead
+  // of a light source in its own right.
+  color += rimColor * (0.35 + albedo * 0.65) * fresnel * uRim * (0.3 + 0.7 * sunWrap);
 
   // --- contact shading ---------------------------------------------------
   // A soft darkening toward an object's base. Fakes the occlusion where a
@@ -378,7 +427,9 @@ void main() {
   float heightFalloff = uFogHeight > 0.0
     ? exp(-max(vWorldPosition.y, 0.0) / uFogHeight)
     : 1.0;
-  float fogAmount = clamp(distanceFog * mix(0.45, 1.0, heightFalloff), 0.0, 1.0);
+  // Capped below 1: a silhouette that dissolves *completely* into the sky
+  // reads as a draw-distance failure rather than as distance.
+  float fogAmount = clamp(distanceFog * mix(0.45, 1.0, heightFalloff), 0.0, 0.82);
   vec3 fogTint = mix(uFogColor, uHorizonColor, clamp(0.55 - vWorldPosition.y * 0.02, 0.0, 0.6));
   color = mix(color, fogTint, fogAmount);
 
@@ -409,7 +460,7 @@ export function createPainterlyMaterial(
     colorVariant = 0xffffff,
     grain = 0.5,
     grainScale = 0.35,
-    rim = 0.35,
+    rim = 0.2,
     rimPower = 2.5,
     baseShade = 0,
     baseShadeHeight = 0,
@@ -498,8 +549,12 @@ export function createFoliageMaterial(
 ): ShaderMaterial {
   return createPainterlyMaterial(globals, {
     side: DoubleSide,
-    rim: 0.55,
-    rimPower: 2.0,
+    // Foliage gets *less* rim than solid geometry, not more. Leaves and
+    // blades are thin and mostly seen close to edge-on, so their fresnel
+    // term sits near 1 over almost the whole surface — the same rim figure
+    // that reads as a delicate edge on a rock reads as a light bulb here.
+    rim: 0.16,
+    rimPower: 2.4,
     bandSoftness: 0.12,
     shadowDepth: 0.45,
     baseShade: 0.35,
