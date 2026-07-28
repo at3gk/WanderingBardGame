@@ -61,6 +61,7 @@ import {
   raiseScrim as raiseScrimOverlay,
   tearDownFreeStaff as tearDownFreeStaffOverlay,
 } from './freePlayOverlay';
+import { createMeterBar, layoutMeterBar, setMeterBarVisible } from './meterBar';
 
 const BPM = 96;
 const MS_PER_BEAT = 60000 / BPM;
@@ -97,47 +98,11 @@ const SONG_TITLE_HOLD_MS = 2600;
 // the clef — on a narrow phone the lane's left end is only a few dozen
 // pixels past the hit line, and played notes used to pile over the clef.
 const EXIT_PROGRESS = 1.28;
-/**
- * 18 rather than 14 so the five staff lines inside the meter are actually
- * five lines. At 14 they sat 2.33px apart, which is under the width the
- * renderer needs to keep 1px strokes separate — they antialiased into each
- * other and the "sheet music filling with light" idea read as a smear of
- * texture. At 18 the spacing is 3px and they resolve.
- */
-const METER_HEIGHT = 18;
-/**
- * Gold, not cream.
- *
- * Cream (0xe8d9c0) is the notation's colour — note heads, letters, staff
- * lines, the clef. The meter used to borrow it, which was survivable while
- * the bar was 234px wide and squeezed between the buttons. Once it got a
- * row of its own and ran 342px on a phone, a full meter became the largest
- * and brightest thing on the screen, in exactly the colour the child is
- * supposed to be reading. The teaching surface has to win that contest.
- *
- * Gold is already this world's second voice — the coin beside it, the lit
- * windows in the village, the bard's buckle — so the meter joins something
- * rather than introducing a colour.
- */
-const METER_FILL_COLOR = 0xc79a3c;
-const METER_FILL_COLOR_STOPPED = 0x6b5f74;
 /** Mute, songbook, lute — the whole of the game's chrome. */
 const HUD_BUTTON_COUNT = 3;
-// Meter as staff (ROADMAP idea backlog): the song meter joins the notation
-// language established in task 32 — five faint staff lines across the bar,
-// same cream tone as the beat glyphs, sitting on top of the existing
-// track/fill so the meter reads as sheet music filling with light rather
-// than a plain progress bar.
-const METER_STAFF_LINE_COUNT = 5;
-// A mid-tone (not the fill's own cream) so the lines stay visible whether
-// they sit on the dark track or the bright fill — sheet-music lines read
-// the same whether the page under them is blank or inked.
-const METER_STAFF_LINE_COLOR = 0x6b4f18;
-// Raised with the height: the lines now sit on gold rather than cream, and
-// at 0.55 they were a 1.25:1 contrast against their own fill — present in a
-// pixel sample, invisible to a person.
-const METER_STAFF_LINE_ALPHA = 0.75;
-const METER_STAFF_LINE_THICKNESS = 1;
+// The meter's own constants (METER_HEIGHT, METER_FILL_COLOR*, METER_STAFF_LINE_*)
+// live in ./meterBar alongside the three GameObjects and functions that use
+// them (ROADMAP task 111) — see that module's header for why it split out.
 // A contact shadow. Without one the bard reads as pasted on top of the road
 // rather than standing on it — the single cheapest thing that grounds a
 // character. It is a soft ellipse in the road's own darker dash colour, not
@@ -317,9 +282,17 @@ export class RoadScene extends Phaser.Scene {
   private flash!: Phaser.GameObjects.Rectangle;
   private meterConfig: SongMeterConfig = DEFAULT_SONG_METER_CONFIG;
   private meter = DEFAULT_SONG_METER_CONFIG.max;
-  private meterTrack!: Phaser.GameObjects.Rectangle;
-  private meterFill!: Phaser.GameObjects.Rectangle;
-  private meterStaffLines: Phaser.GameObjects.Rectangle[] = [];
+  /**
+   * The song meter's three parts. Not `private` — `./meterBar`'s functions
+   * read and write these directly via the `MeterBarHost` interface (a
+   * private class field can't satisfy a plain interface type, same reason
+   * as `pickerParts`/`freeParts` below), and `tools/hud-check.mjs` also
+   * reaches `meterTrack` directly to check the chrome doesn't overlap
+   * itself.
+   */
+  meterTrack!: Phaser.GameObjects.Rectangle;
+  meterFill!: Phaser.GameObjects.Rectangle;
+  meterStaffLines: Phaser.GameObjects.Rectangle[] = [];
   private staffLines: Phaser.GameObjects.Rectangle[] = [];
   private clef!: Phaser.GameObjects.Image;
   private road!: Phaser.GameObjects.TileSprite;
@@ -537,11 +510,7 @@ export class RoadScene extends Phaser.Scene {
     this.songTitleText.setAlpha(0);
     this.appendSongPass();
 
-    this.meterTrack = this.add.rectangle(0, 0, 0, METER_HEIGHT, 0x2c2536, 0.9);
-    this.meterFill = this.add.rectangle(0, 0, 0, METER_HEIGHT - 4, 0xe8d9c0, 1);
-    this.meterStaffLines = Array.from({ length: METER_STAFF_LINE_COUNT }, () =>
-      this.add.rectangle(0, 0, 0, METER_STAFF_LINE_THICKNESS, METER_STAFF_LINE_COLOR, METER_STAFF_LINE_ALPHA)
-    );
+    createMeterBar(this);
 
     this.coins = 0;
     this.coinIcon = this.add.image(0, 0, 'coin-icon');
@@ -1133,12 +1102,10 @@ export class RoadScene extends Phaser.Scene {
    */
   private setWalkChromeVisible(visible: boolean): void {
     for (const line of this.staffLines) line.setVisible(visible);
-    for (const line of this.meterStaffLines) line.setVisible(visible);
     this.clef.setVisible(visible);
     this.hitLine.setVisible(visible);
     this.flash.setVisible(visible);
-    this.meterTrack.setVisible(visible);
-    this.meterFill.setVisible(visible);
+    setMeterBarVisible(this, visible);
     // Steps and coins are both counts of walking. Leaving them on screen
     // while the road is stopped invites a child to wonder why they are not
     // going up.
@@ -1788,29 +1755,7 @@ export class RoadScene extends Phaser.Scene {
 
   private updateMeterBar(): void {
     const hud = hudLayout(this.scale.width, HUD_BUTTON_COUNT);
-    const trackWidth = hud.meterWidth;
-    const centerX = hud.meterCenterX;
-    const meterY = hud.meterY;
-    const fillRatio = this.meter / this.meterConfig.max;
-    const walking = this.walking;
-
-    this.meterTrack.setPosition(centerX, meterY);
-    this.meterTrack.setSize(trackWidth, METER_HEIGHT);
-
-    this.meterFill.setSize(Math.max(0, trackWidth * fillRatio), METER_HEIGHT - 4);
-    this.meterFill.setFillStyle(walking ? METER_FILL_COLOR : METER_FILL_COLOR_STOPPED, 1);
-    this.meterFill.setPosition(centerX - trackWidth / 2 + this.meterFill.width / 2, meterY);
-
-    const lineCount = this.meterStaffLines.length;
-    for (let i = 0; i < lineCount; i++) {
-      // Half-pixel offset so a 1px line covers exactly one row of pixels.
-      // Centred on a whole number it straddles two, and antialiasing paints
-      // both at half strength — five 2px smudges instead of five lines,
-      // which is what made this read as corduroy rather than ruled paper.
-      const y = Math.round(meterY - METER_HEIGHT / 2 + ((i + 1) * METER_HEIGHT) / (lineCount + 1)) + 0.5;
-      this.meterStaffLines[i].setPosition(centerX, y);
-      this.meterStaffLines[i].setSize(trackWidth, METER_STAFF_LINE_THICKNESS);
-    }
+    layoutMeterBar(this, hud.meterCenterX, hud.meterY, hud.meterWidth, this.meter / this.meterConfig.max, this.walking);
   }
 
   /** Coin count readout — a display of song-meter performance, not an interactive system (ROADMAP task 11). */

@@ -1,11 +1,46 @@
 # STATE
 
-Run counter: 41
+Run counter: 42
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
 
+- **Run 42 (scheduled): split the song meter out of `RoadScene.ts`,** per
+  new ROADMAP task 111 — the "just the meter bar" first cut task 110's own
+  note left open once task 108 had ruled out `setWalkChromeVisible` as a
+  whole (nine unrelated fields, no shared sub-grouping). Both blockers
+  re-checked first (unchanged — see Blocked on human), no playtest answer
+  had arrived, idea backlog still down to the one phone-dependent item.
+  `src/scenes/meterBar.ts` (new, 125 lines) now owns the three meter
+  GameObjects (`meterTrack`, `meterFill`, `meterStaffLines`) and their
+  constants (`METER_HEIGHT`, `METER_FILL_COLOR*`, `METER_STAFF_LINE_*` —
+  grepped first and confirmed all seven were meter-only, none shared with
+  another file), plus three functions: `createMeterBar` (called once from
+  `create()`), `layoutMeterBar` (the per-frame resize/reposition, replacing
+  the inline block that used to live in `updateMeterBar`), and
+  `setMeterBarVisible` (called from `setWalkChromeVisible` in place of the
+  three inline `setVisible` calls). Same `Host`-interface shape as the
+  picker and free-play splits: `MeterBarHost` is the exact slice of
+  RoadScene the module reads and writes. One deliberate difference from
+  those two precedents, explained in the module's own header — the three
+  fields stay plain (non-`private`) fields on RoadScene rather than a
+  returned handle, both for the same reason the picker/free-play fields
+  did (a private class field can't satisfy a plain interface type) and
+  because `tools/hud-check.mjs` already reaches `scene.meterTrack` directly
+  to check the chrome doesn't overlap itself — a handle would have meant
+  touching a passing check for no behavioural reason. `RoadScene.ts` 1838
+  → 1783 lines.
+  Verified behaviour-preserving rather than assumed: `npm test` 279 green
+  (unchanged — no unit tests cover scene modules, same precedent as the
+  other two splits), `npm run build` green (1266.84 KB vs 1266.81 KB
+  before, a module-boundary-only difference), and the full 14-check quick
+  suite green — including `hud-check`, which reads `meterTrack`'s rect
+  directly at 8 viewports, and `autoplay`/`mash-check`/`seam-check`, which
+  exercise `layoutMeterBar` and `setMeterBarVisible` every frame and across
+  every mode toggle. `node_modules` was missing at the start of this run
+  (a fresh checkout); `npm install` (54 packages, 0 vulnerabilities) was
+  needed before `npm test`/`npm run build` would run at all.
 - **Run 41 (scheduled): split the free-play staff out of `RoadScene.ts`,**
   per new ROADMAP task 109 — the "legitimate work if someone scopes a real
   first piece" that task 108 left open rather than attempting. Both

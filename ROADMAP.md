@@ -8,7 +8,7 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the last numbered entry (currently 107). If it says
+- **What to do next** is the last numbered entry (currently 112). If it says
   "Nothing queued", promote something from the **Idea backlog** near the
   bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
   has lifted.
@@ -1336,6 +1336,76 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     **The "create() re-runs on resize" question** (task 108) is now a
     checked fact, not folklore — don't re-investigate it without a reason
     (a Phaser upgrade, a `rotate-check.mjs` failure) to suspect it changed.
+111. ~~**Consolidation: split the song meter out of RoadScene.**~~ Done
+    (Run 42, scheduled). Both blockers re-checked first (unchanged — see
+    Blocked on human), no playtest answer had arrived, and the idea
+    backlog held only the phone-dependent item, so this run took up the
+    "just the meter bar" first cut task 110's own entry named as
+    legitimate work once task 108 had already ruled out
+    `setWalkChromeVisible` as a whole (nine unrelated fields, no shared
+    sub-grouping). The three meter GameObjects (`meterTrack`, `meterFill`,
+    `meterStaffLines`) and their constants moved to
+    `src/scenes/meterBar.ts` — the same `Host`-interface shape as tasks
+    107 and 109: `MeterBarHost` is the exact slice of RoadScene the module
+    reads and writes, via `createMeterBar` (build, called once from
+    `create()`), `layoutMeterBar` (the per-frame resize/reposition,
+    replacing the inline block that used to live in `updateMeterBar`) and
+    `setMeterBarVisible` (called from `setWalkChromeVisible` in place of
+    three inline `setVisible` calls). `RoadScene.ts` 1838 → 1783 lines;
+    new module 125 lines.
+    One deliberate departure from the picker/free-play shape, recorded in
+    the new module's own header: the three fields stay plain fields on
+    RoadScene rather than a returned handle. Both precedents dropped
+    `private` for the same reason (a private class field can't satisfy a
+    plain interface type) — here there was a second reason to keep them as
+    scene fields rather than hiding them behind a handle:
+    `tools/hud-check.mjs` already reaches `scene.meterTrack` directly to
+    check the HUD chrome doesn't overlap itself, and a handle would have
+    meant touching a passing check for no behavioural gain.
+    Grepped every one of the meter's seven constants (`METER_HEIGHT`,
+    `METER_FILL_COLOR`, `METER_FILL_COLOR_STOPPED`,
+    `METER_STAFF_LINE_COUNT/COLOR/ALPHA/THICKNESS`) before moving any of
+    them — all seven were meter-local, none shared with another file
+    (`core/hud.ts`'s `HUD_METER_HEIGHT` is a different constant despite the
+    similar name, confirmed by grep rather than assumed).
+    Verified behaviour-preserving rather than assumed: `npm test` 279
+    green (unchanged — no unit tests cover scene modules, same precedent as
+    the other two splits), build green (1266.84 KB vs 1266.81 KB, a
+    module-boundary-only difference), and the full 14-check quick suite
+    green — including `hud-check`, which reads `meterTrack`'s rect directly
+    at 8 viewports, and `autoplay`/`mash-check`/`seam-check`, which
+    exercise the meter's per-frame layout and mode-toggle visibility
+    continuously.
+112. **Next.** Nothing queued.
+
+    **First, check the blockers** (re-checked task 111): both remain
+    blocked — forest-song fetch still 403s, GitHub MCP toolset still has no
+    tag/ref-write or branch-protection-write call.
+
+    **Second, if a playtest answer has arrived**, fold it in — see task 79
+    for the one open dial (`SESSION_GAIN_CAP`).
+
+    **Third, CI gating is still settled** (task 92) — don't re-litigate.
+
+    **Fourth, the idea backlog below** — only sharper mobile rendering is
+    left, still needs a real phone.
+
+    **Fifth, `RoadScene.ts` is 1783 lines**, down from 1838 after task
+    111's split. What remains of `setWalkChromeVisible` is the staff
+    lines, the clef, the hit line/flash, and the coin/distance readouts —
+    still not one cohesive block (task 108's original finding stands), but
+    each is small enough now that a future run could take just one of them
+    the same way task 111 took the meter, if a reason turns up to keep
+    shrinking the scene — not an automatic pick on its own. `createBard`
+    remains the one drawing block genuinely entangled with scene state.
+
+    **What not to reach for.** The verification suite is comprehensive now
+    (24 checks); adding another for its own sake is drift. **Key
+    signatures** remain a v0.4+ *direction*, not a task — they break
+    naturals-only. **The picker's tween handling** (task 105)
+    mutation-tested clean — don't re-open without a new repro. **The
+    "create() re-runs on resize" question** (task 108) is a checked fact —
+    don't re-investigate without a reason to suspect it changed.
 
 ## Idea backlog (pull from here when nothing is queued)
 
