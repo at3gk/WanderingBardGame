@@ -578,12 +578,39 @@ const LANDMARK_SPACING_M = 300;
  *
  * The near limit keeps it out of the bard's own frame — at thirty metres a
  * chapel is beside him rather than ahead of him, and the point of the thing
- * is to be somewhere he has not got to yet. The far limit is set by the fog,
- * which starts at forty metres and is thick by two hundred and sixty: past a
- * hundred a chapel is a pale smudge rather than a place.
+ * is to be somewhere he has not got to yet.
+ *
+ * The far limit is about the field of view, not the fog. The camera sees 34
+ * degrees either side of the road; something a hundred metres out to the
+ * side has already left the frame by the time the bard is a hundred metres
+ * short of it, so it is only ever glimpsed at extreme range and then gone.
+ * Sixty-eight metres holds a landmark in shot for the whole approach, which
+ * is the entire point of putting one there.
  */
-const LANDMARK_NEAR_M = 38;
-const LANDMARK_FAR_M = 98;
+const LANDMARK_NEAR_M = 34;
+const LANDMARK_FAR_M = 60;
+/** Where the sight-line test stands: far enough back to be the first sight of it. */
+const LANDMARK_APPROACH_M = 220;
+/**
+ * Where the camera is actually pointing, relative to the lane.
+ *
+ * Measured, not derived, and it is the single most surprising number in this
+ * file: the camera's axis sits nineteen degrees to the *left* of the road's
+ * heading, and does so on every stretch of every road — because `CameraRig`
+ * stands the camera a couple of metres to one side of the bard and aims it
+ * at a point that leads him, and neither of those flips sign with the bend.
+ *
+ * The consequence is that the frame is not centred on the lane. Of the
+ * thirty-four degrees the camera shows either side of its axis, the road
+ * ahead occupies the right-hand part, and the *left* of the picture — the
+ * part with nothing in it, which is exactly the complaint a landmark exists
+ * to answer — is the country beside the road. So landmarks go on the left,
+ * every time. That reads as a rule with no reason behind it right up until
+ * you put one on the right and watch it never once appear in a frame.
+ */
+const LANDMARK_VIEW_BIAS = -0.33;
+/** How far off that axis a landmark may sit, seen from the approach. */
+const LANDMARK_MAX_OFF_AXIS = 0.28;
 /** Distinct base shapes per landmark kind. */
 const LANDMARK_VARIANTS = 3;
 
@@ -1527,12 +1554,25 @@ export class WorldStreamer {
    * landmark. Sky behind it was never in doubt anyway: the horizon sits at
    * eye level, so anything on the summit clears it by its own height.
    *
-   * The distance term in the score keeps this from marching to the far limit
-   * every time: ground a hundred metres out is often a metre higher, but a
-   * chapel out there is a smudge in fog that starts at forty metres, so a
-   * nearer stand wins unless the far one is properly taller.
+   * The distance term in the score has to be *strong*, and that took a
+   * measurement to believe. At two centimetres per metre it was worth 1.2 m
+   * of height across the whole band, and the landform swings further than
+   * that over sixty metres — so the search marched to the far limit almost
+   * every time.
+   *
+   * The sight-line test is the other half of the same lesson, and it is the
+   * one that is easy to leave out. A landmark is not placed relative to the
+   * road, it is placed relative to *the view down the road*, and those two
+   * are not the same thing — see `LANDMARK_VIEW_BIAS`. The first trilithon
+   * raised here was a perfectly good arch on a perfectly good ridge that
+   * never once appeared in a frame. So every candidate is checked from a
+   * point two hundred and twenty metres back, against the camera's axis
+   * there rather than the road's, and ground that fails is not a landmark
+   * site on this road however high it is.
    */
   private findRidge(s: number): { x: number; y: number; z: number } | null {
+    const view = sampleRoad(this.road, s - LANDMARK_APPROACH_M);
+    const viewZ = roadZ(view);
     let best: { x: number; y: number; z: number } | null = null;
     let bestScore = -Infinity;
 
@@ -1545,8 +1585,11 @@ export class WorldStreamer {
           const u = side * d;
           const x = sample.x + nx * u;
           const z = roadZ(sample) + nz * u;
+          const offAxis =
+            Math.atan2(x - view.x, z - viewZ) - view.heading - LANDMARK_VIEW_BIAS;
+          if (Math.abs(offAxis) > LANDMARK_MAX_OFF_AXIS) continue;
           const y = terrainHeight(this.road, x, z);
-          const score = y - d * 0.02;
+          const score = y - d * 0.05;
           if (score > bestScore) {
             bestScore = score;
             best = { x, y, z };
