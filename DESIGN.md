@@ -56,6 +56,95 @@ the scaffold has. And finishing a tune gets a chime and a ripple, not a
 score — the no-fail stance cuts both ways, and a game that celebrates loudly
 has started grading quietly.
 
+## The road in three dimensions (v0.6, human-set, 2026-07-28)
+
+A human set a new direction on 2026-07-28: build the wandering road as a
+low-poly 3D world with painterly, storybook stylisation — *A Short Hike*'s
+readability with *Spiritfarer*'s warmth — in Three.js, browser-first. Along
+with it came the scope that road should carry: a procedural **daily road**
+shared by every player, **busking** as the performance mechanic, **instrument
+unlocks** with distinct voices and identities, **variable-reward encounters**,
+**idle busking**, and a **campfire** as the day's anchor.
+
+This is the largest change the project has taken, and it is worth being
+precise about what it does and does not throw away.
+
+**What is kept.** The whole brain. `beats`, `song`, `songs`, `songMeter`,
+`notation`, `scaffold`, `biome`, `coins`, `distance` are pure TypeScript with
+no rendering in them, and they carry forty runs of tuning and 279 tests. They
+are the reason this is a rebuild of the *presentation* rather than a new
+game. The no-fail stance, the no-grading stance, the retrieval-without-
+examination pedagogy, and the rule that the notation is never allowed to be
+musically wrong all survive intact and still constrain everything below.
+
+**What is replaced.** Phaser, and every 2D drawing routine that depended on
+it. A parallax stack of five planes is the correct answer to "how do you
+suggest depth in 2D" and the wrong answer to "how do you build a world you
+walk through".
+
+**What changes about the mechanic.** The single lane becomes a single lane
+*in the world*: notes travel toward the bard along the road rather than down
+a screen. The input is unchanged — one tap, no combos, no difficulty select —
+and the windows get **wider**, not narrower, because "rhythm-lite" is the
+brief and because a forgiving window is what lets a player look at the
+scenery. Missing is still free.
+
+**The one thing that must not drift.** The walk is the game. Encounters,
+instruments, idle progress and the campfire are all *readouts of the walk*,
+in exactly the way scenery and coins were readouts of the tune in v0.1. The
+moment any of them becomes a system the player manages instead of a thing
+that happens to them, this document has been broken.
+
+### Art direction, restated for 3D
+
+The v0.2 rule — *the world is cool and quiet; warmth belongs to the bard and
+the music* — was written for flat fills on a dusk-coloured 2D road, and it
+does not survive contact with a sun. It is replaced, not deleted; the intent
+behind it (warmth is earned, not ambient) carries forward as the rule that
+**the warmest light in any frame comes from the music or the fire**.
+
+The standing rules for the 3D world:
+
+- **One lighting model, no exceptions.** Every solid surface runs the same
+  painterly shader. The fastest way to make low-poly 3D read as an asset pile
+  rather than an illustration is to let two objects be lit by different rules.
+- **Shadows are coloured, never grey.** Unlit faces take a cool tint from the
+  sky and a warm bounce from the ground. This single substitution is most of
+  the difference between "flat" and "painted", and it is what makes dusk work.
+- **Silhouette before detail.** Readability at a glance beats polygon count
+  everywhere. A fresnel rim in the sky's colour separates shapes from the
+  background; there is no outline pass, because outlines read as comic-book
+  rather than painting and cost a phone a full-screen pass.
+- **The sky is the light source.** Sky, horizon, sun, fog and bounce are one
+  palette moved by one call. Nothing in the world is allowed to pick its own
+  light colour.
+- **Texture comes from noise in world space, not from image maps.** Assets
+  stay procedural (the CC0-or-procedural rule is unchanged, and it is also
+  what keeps the bundle a fraction of the 5 MB pillar).
+- **Cream is still the notation's**, and the furniture still may not borrow
+  it. That rule was a real hierarchy failure once and it is not repealed by
+  a change of renderer.
+- **Nothing flashes, nothing shakes.** Feedback is gentle: a hit blooms, a
+  miss softens. There is nothing in this game that should shake a camera.
+
+### Definition of done for v0.6
+
+- Opens directly into the walk, playable within 5 seconds, no login, no menu.
+- The road is procedurally generated from the UTC day and is *provably* the
+  same for every player on that day, covered by tests.
+- Busking works end to end: approach a spot, perform with rhythm-lite input,
+  earn coins and delight, leave. No fail state anywhere.
+- At least six instruments, each audibly and visibly distinct, unlocking on a
+  pacing that is generous rather than grindy.
+- Encounters along the road with a reward distribution that is mostly small
+  and occasionally lovely.
+- Idle busking accrues while away, tapers honestly, caps, and never punishes.
+- A campfire rest scene anchors the end of the day.
+- Time of day advances with distance, not wall clock, so the light is
+  narratively meaningful.
+- Runs smoothly in a browser on a mid-range phone; bundle well under 5 MB.
+- `npm test` and `npm run build` green; deploys via the existing CI.
+
 ## The one core mechanic
 
 **Single-lane rhythm tapping.** Beat markers scroll toward a hit line at a
@@ -234,7 +323,7 @@ drop out of the tune, which is disappointing in a "the song lost its
 harmony" way, not a "you lost" way. The game should feel like it wants you
 to relax, not perform.
 
-## Art direction (adopted 2026-07-25, tasks 30–32)
+## Art direction, 2D era (adopted 2026-07-25, tasks 30–32; superseded for the world by v0.6 above, and kept because its notation and hierarchy rules still bind)
 
 One rule: **the world is cool and quiet; warmth belongs to the bard and
 the music.**
@@ -448,3 +537,20 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   him); and deleting the song meter's five staff lines when they read as
   mush at 14px — making them legible against the new gold fill was the
   more honest fix than dropping a deliberate idea.
+
+- 2026-07-28 — **v0.6, the road in three dimensions** (human-set). The game
+  moves from Phaser 2D to Three.js low-poly 3D with a painterly storybook
+  look, and gains a shared daily road, busking, instrument unlocks,
+  variable-reward encounters, idle busking, and a campfire. Written up in
+  full in its own section above.
+
+  **Cut, and logged here as CLAUDE.md requires:** the five-plane parallax
+  stack (answered a 2D question), every Phaser-drawn procedural texture in
+  `render/`, and the flat-fill no-gradients rule for the *world* (the
+  notation keeps it). The 2D art-direction section is retained rather than
+  deleted because its notation rules — cream belongs to the staff, the
+  notation may never be musically wrong — still bind in 3D.
+
+  **Not cut, and deliberately so:** the entire `core/` brain, the no-fail
+  stance, the no-grading stance, and the pedagogy. A renderer swap is not a
+  licence to redesign the game underneath it.

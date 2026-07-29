@@ -8,10 +8,14 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the last numbered entry (currently 113). If it says
-  "Nothing queued", promote something from the **Idea backlog** near the
-  bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
-  has lifted.
+- **What to do next** is the **v0.6 queue** immediately below. It supersedes
+  the numbered entries: a human reset the direction on 2026-07-28 and the
+  game is now a 3D one (DESIGN.md, "The road in three dimensions"). Entries
+  up to 113 remain the record of how the 2D game was built and are still
+  worth reading for *why* something is the way it is — several of their
+  conclusions (the no-fail stance, the notation rules, the mobile layout
+  lessons) carry straight over. Tasks 109-113 in particular split the Phaser
+  `RoadScene` into modules that v0.6 no longer loads.
 - **Why something is the way it is**: find its numbered done-entry. They are
   written to be read later and are referenced by number from STATE.md.
 - **Before you start**: read STATE.md's "At a glance" — it is the short

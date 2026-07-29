@@ -44,6 +44,16 @@
          sized to exactly fill it. */
       #game canvas {
         display: block;
+        /* Belt and braces against the canvas laying out at its drawing-buffer
+           size. three writes an inline width/height in CSS pixels on every
+           setSize (see App.resize, which relies on that), and an inline style
+           beats this rule — so in normal operation these two lines do
+           nothing. They exist because when the inline style was *not* being
+           written, the canvas silently laid out at devicePixelRatio times the
+           viewport and every phone user saw the top-left quarter of the game.
+           A bug that severe should need two independent mistakes, not one. */
+        width: 100%;
+        height: 100%;
       }
     </style>
   </head>

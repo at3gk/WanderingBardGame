@@ -1,64 +1,63 @@
-import Phaser from 'phaser';
-import { noteTexture, restTexture } from './render/engraving';
-import {
-  farTileTexture,
-  glintTexture,
-  moonTexture,
-  nearTileTexture,
-  roadTileTexture,
-  sceneryTileTexture,
-  signpostTexture,
-  starFieldTexture,
-} from './render/scenery';
-import { createStyleTextures, songbookTexture } from './render/ui';
-import { RoadScene } from './scenes/RoadScene';
+/**
+ * Boot.
+ *
+ * Deliberately tiny. It creates the app, puts the road on it, starts the
+ * loop, and exposes a handle for the headless checks. Everything that could
+ * plausibly go wrong at start-up — no WebGL, a shader that will not compile,
+ * storage that throws — is caught here and turned into something a player
+ * can read, because a blank dark-plum page is indistinguishable from a
+ * broken deploy.
+ */
 
-const game = new Phaser.Game({
-  type: Phaser.AUTO,
-  parent: 'game',
-  scale: {
-    mode: Phaser.Scale.RESIZE,
-    width: '100%',
-    height: '100%',
-  },
-  backgroundColor: '#1a1621',
-  // Every sound in this game is hand-rolled Web Audio in audio/AudioEngine —
-  // nothing ever touches Phaser's sound manager. Left enabled it still
-  // creates a second AudioContext and holds it open for the whole session,
-  // which on a phone is an idle claim on the audio hardware for no reason.
-  // It also made an earlier verification script grab the wrong context.
-  audio: { noAudio: true },
-  scene: [RoadScene],
-});
+import { App } from './three/App';
+import { RoadStage } from './three/RoadStage';
+import type { Phase } from './core/journey';
 
-// Handle for headless verification (STATE.md, "Process notes for future
-// runs"): the automated checks drive a real browser and need to reach the
-// live scene to assert on gameplay state and to bake proof sheets of the
-// notation. Phaser keeps no global registry of its own, and a read-only
-// handle costs nothing at runtime.
-(window as unknown as { game: Phaser.Game }).game = game;
+const host = document.getElementById('game');
+if (!host) throw new Error('no #game host element');
 
-// The engraving functions, for the same reason. tools/proofsheet.mjs bakes
-// every note-value x staff-position the songbook can produce and checks
-// them in one grid; it has to call the *same* code the game calls, or the
-// proof sheet stops being proof. It used to reach a private method on the
-// scene, which quietly broke the moment the engraving moved to its own
-// module — so the handle is explicit now rather than incidental.
-(window as unknown as { engraving: unknown }).engraving = { noteTexture, restTexture };
+function fail(message: string, detail?: unknown): void {
+  // No framework and no styling system: this has to work in exactly the
+  // circumstances where the rest of the game does not.
+  const box = document.createElement('div');
+  box.setAttribute(
+    'style',
+    'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;' +
+      'padding:2rem;color:#e8d9c0;background:#1a1621;font:16px/1.6 system-ui,sans-serif;' +
+      'text-align:center;',
+  );
+  box.textContent = message;
+  document.body.appendChild(box);
+  if (detail) console.error(detail);
+}
 
-// Likewise the world textures, for tools/scenery-sheet.mjs. A live
-// screenshot only ever shows the biome you happen to be walking through,
-// so the sheet bakes all three at once instead.
-(window as unknown as { scenery: unknown }).scenery = {
-  roadTileTexture,
-  sceneryTileTexture,
-  glintTexture,
-  starFieldTexture,
-  signpostTexture,
-  moonTexture,
-  farTileTexture,
-  nearTileTexture,
-};
+try {
+  const app = new App(host);
+  // The heads-up chrome lives inside the game element rather than loose in
+  // the body, so it inherits the touch and selection rules index.html sets
+  // there — a HUD that could be text-selected would turn a mistimed tap
+  // into a highlight instead of a note.
+  const stage = new RoadStage(app, { hudHost: host });
+  app.setStage(stage);
+  app.start();
 
-// And the shared UI glyphs, for tools/ui-sheet.mjs.
-(window as unknown as { ui: unknown }).ui = { createStyleTextures, songbookTexture };
+  /**
+   * The handle the headless checks drive the game through — the only global
+   * the game defines. `pose` in particular is what lets
+   * `tools/postcard.mjs` stand the bard somewhere specific at a specific
+   * hour and photograph it: a critic reviewing the art cannot play, so the
+   * game has to be able to hold a pose.
+   */
+  (window as unknown as { bard: unknown }).bard = {
+    app,
+    stage,
+    pose: (options: { s?: number; dayFraction?: number; phase?: Phase | 'vista' }) =>
+      stage.pose(options),
+    describe: () => stage.describe(),
+  };
+} catch (error) {
+  fail(
+    'The road will not open in this browser. It needs WebGL 2 — a different browser, or turning hardware acceleration back on, usually does it.',
+    error,
+  );
+}

@@ -6,6 +6,116 @@ Run counter: 43
 
 **At a glance** — read this, then only the sections you need.
 
+- **A note on runs 41-43, which landed on main while v0.6 was in flight.**
+  They split `RoadScene.ts` into `freePlayOverlay`, `meterBar` and
+  `readouts` — good work on the 2D game, and it is now dead code, because
+  v0.6 boots a Three.js stage and nothing imports any of it. The files are
+  kept rather than deleted so the history stays readable and so nothing is
+  thrown away that a future run might want to consult, but they are not the
+  game any more. Deleting `src/scenes/` and `src/render/` together with the
+  Phaser dependency and the `tools/` checks that drive them is the first
+  item on the v0.6 queue in ROADMAP.md.
+
+- **Where v0.6 actually stands, and what is still wrong.** A harsh
+  frame-by-frame critique of ten posed screenshots returned **not shippable
+  next to A Short Hike**, and named three structural absences rather than a
+  polish gap. Two and a half are now closed: there are travellers in the
+  world and an audience at a busk (there was literally nobody before); the
+  staff is legible, with dark note heads carrying cream letters at a pitch
+  spacing that survives the end-on view; the sky's zenith arrives inside the
+  visible frame band and carries cloud. The land has a midground again.
+
+  **Still wrong, in the order a next run should take them:**
+  1. The road is bare. Narrowing it to a 3.4 m cart track and deepening the
+     ruts helped, but the carriageway has no scatter on it at all — no
+     pebbles, no tufts in the rut, no puddles. On a phone in portrait it is
+     still the largest single area in the frame.
+  2. The bard stands upright at his own campfire. `resting` calls
+     `setPose('sitting')` and the pose does not look like sitting.
+  3. The camp lantern reads as a bright quad beside a bare post.
+  4. The busk caption still collides with the top note on phone landscape
+     (844x390). Moving it means a considered change to `hudLayout.ts`, which
+     its own test constrains — the top slot exists to keep the card off the
+     bard mid-busk.
+  5. No landmarks on the skyline. Now that ridges exist, a standing stone or
+     a chapel placed deliberately on one would give the walk something to
+     walk toward. This was correctly deferred until the terrain could hold it.
+  6. No instrument picker, and `journey.unlockedInstruments` is never
+     appended to — an earned instrument is playable but not choosable.
+
+- **v0.6, the road in three dimensions (interactive, human-directed, landed
+  after run 43).** A human set a new direction — build the wandering road as a
+  low-poly 3D painterly game in Three.js, with a shared daily road, busking,
+  instrument unlocks, variable-reward encounters, idle busking and a
+  campfire. DESIGN.md carries the full write-up and the changelog entry
+  naming what was cut. This entry records what a future run needs to know.
+
+  **What was kept.** All of `core/`. It is pure TypeScript with no renderer
+  in it, so this was a rebuild of the presentation and not of the game. The
+  no-fail stance, the no-grading stance and the pedagogy are unchanged and
+  still constrain everything.
+
+  **What replaced Phaser.** `src/three/` — one painterly ShaderMaterial that
+  every solid surface uses, a sky dome that *is* the light source, a chunked
+  terrain ribbon in road space, GPU-instanced scatter, a procedurally-built
+  bard with a hand-driven walk, a damped camera rig, GPU-resident particles.
+  `src/core/` gained road, encounters, instruments, idle, performance and
+  journey; `src/audio/` gained instrument voices, generated ambience and
+  adaptive layers.
+
+  **The Phaser files are still in the tree and are dead.** `src/scenes/` and
+  `src/render/` are unreferenced — nothing imports them, so vite drops them
+  from the bundle and they cost nothing at runtime — but they should go. This
+  session tried and the sandbox denied the deletion; it was left rather than
+  worked around. Deleting them also means retiring or rewriting the
+  Playwright checks in `tools/` that drive the old Phaser game, most of which
+  now assert against a game that no longer boots. They are informational only
+  (`headless-checks.yml` is `continue-on-error`), so nothing is red because of
+  it — but a future run should not trust them.
+
+  **Three rendering bugs worth remembering, because none was findable by
+  reading the code.**
+  1. `USE_INSTANCING_COLOR` is injected by three into the *vertex* shader
+     prefix only. A fragment shader guarding its matching varying on the same
+     define simply has no declaration; both stages compile clean, and every
+     per-instance colour in the game is silently dropped. Both varyings are
+     unconditional now.
+  2. A rim light added flat rather than scaled by albedo turns grass white:
+     blades are thin and seen edge-on, so fresnel sits near 1 across the whole
+     blade rather than at its edge.
+  3. Ambient applied at the full value of the sky colour lights a surface as
+     brightly as the sky itself. The lighting model now names its exposure in
+     two constants, with about three stops between sun and shade.
+
+  The general lesson, and the reason `tools/postcard.mjs` exists: **look at
+  the frames.** All three survived type-checking, unit tests and a careful
+  reading of the shader. The first screenshot found all three in a minute.
+
+  **`tools/postcard.mjs`** poses the game through `window.bard.pose({s,
+  dayFraction, phase})` and shoots ten framings including two phone aspect
+  ratios. `tools/shader-check.mjs` fails a run if a frame is black or tonally
+  flat, or if the time-of-day palette is inert. Both need `PLAYWRIGHT_PATH`
+  and a served build; `tools/browser.mjs` now centralises the launch and
+  probes for the pre-installed Chromium, because the ad-hoc Playwright install
+  and the pre-installed browser do not always agree on a build number.
+
+  **A process note that cost real time.** Committing while sub-agents were
+  still editing the same working tree captured `src/core/journey.ts` in the
+  middle of a mutation test — a deliberately-broken guard marked
+  `// TEMP-REVERT` went into a commit and had to be undone in the next one.
+  Grep for that marker convention before committing mid-session.
+
+  **The pinned-day road test moved on purpose.** `road.test.ts` pins seed
+  20260728 exactly, so that an accidental change to the generator cannot
+  silently hand every player a different road. The 3D world needed visible
+  landform, so the corridor grading came in from 30 m to 18 m and the
+  cross-road hills from a 520 m wavelength to 190 m; the pins were
+  regenerated in the same commit, which is what that test asks for. An
+  intermediate attempt also shortened the *along*-road hills to 165 m and
+  turned the lane into a 30% climb — the existing roughness test caught that
+  before it was ever seen, which is exactly what it was written for.
+
+
 - **Run 43 (scheduled): split the coin/distance readouts out of
   `RoadScene.ts`,** per new ROADMAP task 112 — the next piece task 112's own
   "nothing queued" note (as task 111 left it) had already named as a
