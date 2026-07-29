@@ -6,10 +6,29 @@
 // used to be found by a human looking at the game; now it is found here,
 // in about four seconds, before anything is pushed.
 //
-// It also renders the smoke stage at four times of day and reports the
-// average pixel colour of each, which is a cheap, objective check that the
+// It also renders the game at four times of day and reports the average
+// pixel colour of each, which is a cheap, objective check that the
 // time-of-day palette is actually moving the world's light and not just
 // the sky dome.
+//
+// **The clock is driven through `pose({dayFraction})`, and that matters.**
+// This check spent its whole life reporting "time-of-day is inert:
+// luminance range 3" — a number STATE.md recorded as a real rendering
+// defect and queued as a thing to go and fix. It was not one. The clock was
+// driven through `stage.setTimeOfDay(t)`, guarded by
+// `if (handle?.stage?.setTimeOfDay)`. `window.bard.stage` is a `RoadStage`,
+// which has no such method — only `SmokeStage` ever did — so the guard was
+// false every time, the time never moved, and the four "samples" were four
+// photographs of the same frame. Four identical frames have a luminance
+// range of ~0, so the check failed, and it failed in the exact shape of the
+// bug it was written to find. The postcards showed dawn, noon and golden
+// hour looking obviously different the whole time.
+//
+// Two lessons, both already in tools/README.md and both worth restating
+// where the mistake actually was: a failing check is a claim about the
+// check first, and an optional-chained guard around the one call a check
+// exists to make will turn "the hook is gone" into "the game is broken".
+// Hence `poseAt` below throws instead of shrugging.
 import { BASE_URL, launch } from './browser.mjs';
 
 const base = BASE_URL;
@@ -89,6 +108,36 @@ async function sample(label) {
   return { label, bytes: shot.length, ...(stats ?? {}) };
 }
 
+/**
+ * Move the world's clock, and fail the run if the hook to do so is missing.
+ *
+ * No optional chaining, no shrug: if `pose` stops existing or throws, the
+ * samples that follow are meaningless and the check must say *that* rather
+ * than quietly measure four copies of one frame.
+ *
+ * **`phase: 'vista'` is load-bearing, not a framing preference.** The
+ * journey's `dayFraction` is *derived from `s`* (`core/journey.ts` — the day
+ * advances with distance walked, never with wall time) and is recomputed on
+ * every advance. Pose a time of day while the bard is `walking` and the
+ * derived value overwrites it inside about a second, which is less than the
+ * settle this check needs before it reads pixels: asking for midnight at
+ * s=620 got back the midday that s=620 actually implies. `'vista'` sets
+ * `walking = false`, so `s` holds, nothing recomputes, and the posed time
+ * survives the settle. Same place, four times of day — one variable moving,
+ * which is the only way the resulting number means anything.
+ */
+async function poseAt(time) {
+  const outcome = await page.evaluate((dayFraction) => {
+    const handle = window.bard;
+    if (typeof handle?.pose !== 'function') {
+      return `window.bard.pose is not a function (got ${typeof handle?.pose})`;
+    }
+    handle.pose({ s: 620, dayFraction, phase: 'vista' });
+    return null;
+  }, time);
+  if (outcome) throw new Error(`cannot drive the clock: ${outcome}`);
+}
+
 const results = [];
 for (const [label, t] of [
   ['dawn', 0.28],
@@ -96,11 +145,10 @@ for (const [label, t] of [
   ['golden', 0.82],
   ['night', 0.02],
 ]) {
-  await page.evaluate((time) => {
-    const handle = window.bard;
-    if (handle?.stage?.setTimeOfDay) handle.stage.setTimeOfDay(time);
-  }, t);
-  await page.waitForTimeout(500);
+  await poseAt(t);
+  // The sky and the lighting uniforms cross-fade, so a frame read
+  // immediately after a pose catches the palette mid-move.
+  await page.waitForTimeout(900);
   results.push(await sample(label));
 }
 

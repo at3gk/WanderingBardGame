@@ -231,30 +231,72 @@ function bladeGeometry(
   height: number,
   lean: number,
   width: number,
+  curl = 0,
 ): BufferGeometry {
   const dx = Math.cos(angle);
   const dz = Math.sin(angle);
   const sx = -Math.sin(angle);
   const sz = Math.cos(angle);
 
-  const midY = height * 0.5;
-  const midOut = lean * height * 0.24;
+  /*
+   * The blade ARCHES. This is the whole difference between grass and a
+   * caltrop, and it was wrong here for a long time in a way the arithmetic
+   * makes obvious once it is written down.
+   *
+   * A blade leaning to `tipOut` at its tip, with its waist at half its
+   * height, is *straight* when `midOut` is half of `tipOut`. Below that it is
+   * concave — it stays near the vertical and then hooks outward at the end,
+   * which is the silhouette of a claw. Above it, it is convex: it leaves the
+   * root already bending and flattens as it goes, which is the silhouette of
+   * a grass blade with its own weight on it.
+   *
+   * `midOut` was `0.24 * lean * height` against a `tipOut` of
+   * `lean * height` — well under the straight-line 0.5, so every blade in
+   * the game was concave, and a tuft of five of them fanned radially read as
+   * a spike-star sitting on the ground rather than as a plant. It is now
+   * comfortably over the line, and the waist is a little higher up the blade
+   * so the bend reads as a bend rather than as a kink.
+   *
+   * `fernGeometry` immediately below has carried the same lesson in its
+   * doc comment ("a frond that rises, widens and then droops has volume")
+   * since it was written. Grass simply never had it applied.
+   */
+  const midY = height * 0.56;
   const tipOut = lean * height;
-  // Half the base width at the bend, so the blade tapers steadily from root
-  // to tip. At 0.7 the upper triangle was nearly as wide as the lower quad
-  // and every blade read as an arrowhead on a stick.
-  const midW = width * 0.48;
+  const midOut = tipOut * 0.72;
+  /*
+   * Sideways sweep, so the blades of one tuft are not five copies of the
+   * same curve rotated. Applied along the blade's own side vector and
+   * strongest at the tip, which turns a flat fan into something that reads
+   * as a handful of grass with a direction to it.
+   *
+   * Scaled against `tipOut` rather than against `width`, which matters: a
+   * curl measured in blade-widths is a fixed number of centimetres, and on a
+   * short blade with little lean that is a larger sideways move than the
+   * blade makes outward — the sweep then dominates the arch and the tuft
+   * twists. Proportional to the lean, it stays a minority component of the
+   * blade's travel at every size, so the arch above always reads first.
+   */
+  const midCurl = curl * tipOut * 0.13;
+  const tipCurl = curl * tipOut * 0.32;
+  // Wider at the waist than it used to be (0.48). The upper triangle is the
+  // part that carries the tip, and a waist at half the base width leaves it
+  // a needle; at 0.62 the blade still tapers cleanly but its point is broad
+  // enough to read as a tip rather than as a spine. Going past ~0.7 is the
+  // other failure the old comment here warned about — the blade turns into
+  // an arrowhead on a stick.
+  const midW = width * 0.62;
 
   const blx = cx + sx * width;
   const blz = cz + sz * width;
   const brx = cx - sx * width;
   const brz = cz - sz * width;
-  const mlx = cx + dx * midOut + sx * midW;
-  const mlz = cz + dz * midOut + sz * midW;
-  const mrx = cx + dx * midOut - sx * midW;
-  const mrz = cz + dz * midOut - sz * midW;
-  const tx = cx + dx * tipOut;
-  const tz = cz + dz * tipOut;
+  const mlx = cx + dx * midOut + sx * (midW + midCurl);
+  const mlz = cz + dz * midOut + sz * (midW + midCurl);
+  const mrx = cx + dx * midOut - sx * (midW - midCurl);
+  const mrz = cz + dz * midOut - sz * (midW - midCurl);
+  const tx = cx + dx * tipOut + sx * tipCurl;
+  const tz = cz + dz * tipOut + sz * tipCurl;
 
   // Wound so the face normal points along `angle` — outward from the tuft's
   // centre, the direction the blade is leaning and therefore the direction
@@ -284,13 +326,42 @@ export function grassTuftGeometry(seed = 7): BufferGeometry {
   const bladeCount = 5;
   let tallest = 0.2;
 
+  /*
+   * One prevailing direction per tuft, with the blades spread inside a wedge
+   * around it rather than around the whole circle.
+   *
+   * Five blades at even 72° spacing over a full turn is a radial star, and a
+   * radial star is what the meadow read as: every tuft had a blade pointing
+   * at the camera, and the near foreground came out as a scattering of
+   * asterisks. Real grass has weight and weather in it — a clump leans
+   * somewhere. Confining the fan to a wedge gives the tuft a front and a
+   * back, so it reads as a handful of grass, and it also means neighbouring
+   * tufts (which get their own random heading from the instance rotation)
+   * disagree with each other instead of all being the same rosette.
+   */
+  const prevailing = rand() * Math.PI * 2;
+  // About sixty to ninety degrees of fan. Wider than this and the wedge stops
+  // being a wedge: at 2.2 rad, plus the per-blade jitter and the sideways
+  // curl, the tips of one tuft spanned 163° — near enough a half-circle that
+  // it read as the rosette this is meant to replace. The variety between
+  // tufts comes from `prevailing` and from each instance's own rotation, not
+  // from opening this angle up.
+  const wedge = 1.0 + rand() * 0.5;
+
   for (let b = 0; b < bladeCount; b++) {
-    const angle = (b / bladeCount) * Math.PI * 2 + rand() * 1.1;
+    // -0.5 .. +0.5 across the fan, so the wedge is centred on `prevailing`.
+    const spread = b / (bladeCount - 1) - 0.5;
+    const angle = prevailing + spread * wedge + (rand() - 0.5) * 0.36;
     // Ankle-to-shin on a 1.8 m bard: 0.17–0.28 m here, and 0.14–0.37 m once
     // the instance scale has had its way. Earlier passes at 0.36 m put the
     // tips at the bard's knee and the meadow read as an uncut hayfield.
     const height = 0.17 + rand() * 0.11;
-    const lean = 0.24 + rand() * 0.32;
+    // Pulled in from 0.24–0.56. Combined with the arch in `bladeGeometry`,
+    // the old range threw tips almost as far sideways as the blade was tall,
+    // which is what splayed the tuft flat against the ground. Standing the
+    // blades up is most of what makes a tuft read as growing rather than as
+    // something dropped there.
+    const lean = 0.16 + rand() * 0.24;
     // Wide enough to survive being one or two pixels across at twenty
     // metres. A narrower blade aliases into a dotted line, which is what
     // made the meadow read as stubble rather than as grass.
@@ -309,6 +380,7 @@ export function grassTuftGeometry(seed = 7): BufferGeometry {
         height,
         lean,
         width,
+        (rand() - 0.5) * 2,
       ),
     );
   }
