@@ -1,20 +1,40 @@
 # STATE
 
-Run counter: 43
+Run counter: 44
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
 
-- **A note on runs 41-43, which landed on main while v0.6 was in flight.**
-  They split `RoadScene.ts` into `freePlayOverlay`, `meterBar` and
-  `readouts` — good work on the 2D game, and it is now dead code, because
-  v0.6 boots a Three.js stage and nothing imports any of it. The files are
-  kept rather than deleted so the history stays readable and so nothing is
-  thrown away that a future run might want to consult, but they are not the
-  game any more. Deleting `src/scenes/` and `src/render/` together with the
-  Phaser dependency and the `tools/` checks that drive them is the first
-  item on the v0.6 queue in ROADMAP.md.
+- **Run 44 deleted the dead 2D/Phaser code.** `src/scenes/` (the
+  `RoadScene`/`picker`/`meterBar`/`freePlayOverlay`/`readouts` modules from
+  runs 39-43), `src/render/` (`engraving`/`scenery`/`ui`), and the orphaned
+  `src/audio/AudioEngine.ts` (+ its test) — none of it was imported from
+  `src/three/` or `src/main.ts`, confirmed by grep before deleting. The
+  `phaser` dependency is gone from `package.json`/`package-lock.json`;
+  production bundle dropped 1266 KB → 686 KB. The 24 Playwright checks in
+  `tools/` that drove the old scene through `window.game.scene.scenes[0]`
+  (a global that stopped existing the moment v0.6 landed) are deleted too —
+  `verify-all.mjs` now runs the one check that still matches the live game,
+  `shader-check`. `postcard.mjs`/`shot.mjs`/`browser.mjs` are unaffected
+  (they always drove `window.bard`, the Three.js game's own handle).
+  `tools/README.md`, root `README.md` (Stack section still said Phaser),
+  and `.github/workflows/headless-checks.yml` (still said "the fast
+  fourteen") are updated to match. `npm test` 745 green (762 minus
+  `AudioEngine.test.ts`'s 17), `npm run build` green.
+
+  Wiring `shader-check` into `verify-all` for the first time since v0.6
+  immediately found something real: **FAIL, time-of-day is inert
+  (luminance range 3)** across dawn/day/golden/night samples. Not a
+  regression from this run — no rendering code was touched — and not new
+  information either: `tools/README.md`'s own description of the check
+  already named exactly this failure mode as what it looks for, and the
+  "still wrong" list below already had "the upper sky does little work at
+  noon" in its critique notes. This is that finding, now pinned to a
+  number a future run can check against instead of an adjective. Added as
+  item 7 below. `headless-checks.yml` stays `continue-on-error: true` so
+  this red doesn't block anything, per the existing blocked-on-human note
+  about promoting it to a real gate.
 
 - **Where v0.6 actually stands, and what is still wrong.** A harsh
   frame-by-frame critique of ten posed screenshots returned **not shippable
@@ -42,6 +62,13 @@ Run counter: 43
      walk toward. This was correctly deferred until the terrain could hold it.
   6. No instrument picker, and `journey.unlockedInstruments` is never
      appended to — an earned instrument is playable but not choosable.
+  7. Time-of-day lighting is nearly inert: `shader-check.mjs` measures
+     average frame luminance at dawn/day/golden/night and gets a range of
+     3 (Run 44) — the palette moves the sky dome's colour but barely the
+     light falling on anything else. Ties together two items already
+     named in the critique notes below ("the near ground is dark by
+     albedo rather than by shadow", "the upper sky does little work at
+     noon") into one measured, re-checkable number.
 
 - **v0.6, the road in three dimensions (interactive, human-directed, landed
   after run 43).** A human set a new direction — build the wandering road as a
@@ -63,15 +90,11 @@ Run counter: 43
   journey; `src/audio/` gained instrument voices, generated ambience and
   adaptive layers.
 
-  **The Phaser files are still in the tree and are dead.** `src/scenes/` and
-  `src/render/` are unreferenced — nothing imports them, so vite drops them
-  from the bundle and they cost nothing at runtime — but they should go. This
-  session tried and the sandbox denied the deletion; it was left rather than
-  worked around. Deleting them also means retiring or rewriting the
-  Playwright checks in `tools/` that drive the old Phaser game, most of which
-  now assert against a game that no longer boots. They are informational only
-  (`headless-checks.yml` is `continue-on-error`), so nothing is red because of
-  it — but a future run should not trust them.
+  **The Phaser files and their checks are gone (Run 44).** `src/scenes/`,
+  `src/render/`, `src/audio/AudioEngine.ts` and the 24 `tools/` Playwright
+  checks that drove `window.game` (Phaser's global, which stopped existing
+  the moment v0.6 landed) are all deleted — see the Run 44 note in "At a
+  glance" above for the detail and what it turned up.
 
   **Three rendering bugs worth remembering, because none was findable by
   reading the code.**
@@ -1358,6 +1381,13 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   4. The blockers did not move: the fade pace still needs a child, the
      fourth forest song still needs a source the sandbox can fetch, the
      v0.1 tag still needs a call the MCP toolset doesn't have.
+
+- Run 44 (2026-07-29, scheduled): deleted the dead 2D/Phaser code — see
+  the Run 44 note in "At a glance" above for the full detail (files
+  removed, bundle size, the 24 dead checks, and what wiring `shader-check`
+  into `verify-all.mjs` for the first time turned up). `npm test` 745
+  green, `npm run build` green, bundle 686 KB. No feature work; this was
+  the first item STATE.md had flagged as next after the v0.6 merge.
 
 ## Needs human playtest
 

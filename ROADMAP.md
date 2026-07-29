@@ -8,20 +8,21 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the **v0.6 queue** immediately below. It supersedes
-  the numbered entries: a human reset the direction on 2026-07-28 and the
-  game is now a 3D one (DESIGN.md, "The road in three dimensions"). Entries
-  up to 113 remain the record of how the 2D game was built and are still
-  worth reading for *why* something is the way it is — several of their
-  conclusions (the no-fail stance, the notation rules, the mobile layout
-  lessons) carry straight over. Tasks 109-113 in particular split the Phaser
-  `RoadScene` into modules that v0.6 no longer loads.
+- **What to do next** is the **v0.6 queue**, task 115 onward, right below
+  this list. It supersedes the numbered entries below: a human reset the
+  direction on 2026-07-28 and the game is now a 3D one (DESIGN.md, "The
+  road in three dimensions"). Entries up to 113 remain the record of how
+  the 2D game was built and are still worth reading for *why* something is
+  the way it is — several of their conclusions (the no-fail stance, the
+  notation rules, the mobile layout lessons) carry straight over. Tasks
+  109-113 split the Phaser `RoadScene` into modules; task 114 deleted that
+  whole 2D presentation layer once v0.6 made it dead code.
 - **Why something is the way it is**: find its numbered done-entry. They are
   written to be read later and are referenced by number from STATE.md.
 - **Before you start**: read STATE.md's "At a glance" — it is the short
   version of where the project stands.
 - **Before you finish**: `npm test && npm run build`, then
-  `node tools/verify-all.mjs` (or `quick`) with the preview server up. See
+  `node tools/verify-all.mjs` with the preview server up. See
   `tools/README.md`. Point `PLAYWRIGHT_PATH` at playwright **1.56.1**
   (`/opt/node22/lib/node_modules/playwright`); a newer copy fails every
   check on a browser-build mismatch that looks like a real regression.
@@ -1452,6 +1453,47 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     mutation-tested clean — don't re-open without a new repro. **The
     "create() re-runs on resize" question** (task 108) is a checked fact —
     don't re-investigate without a reason to suspect it changed.
+
+114. ~~**Delete the dead 2D/Phaser presentation layer.**~~ Done (Run 44,
+    2026-07-29). v0.6 (below) replaced Phaser with Three.js and left
+    `src/scenes/`, `src/render/` and `src/audio/AudioEngine.ts` unreferenced
+    dead weight, plus 24 `tools/` Playwright checks driving a `window.game`
+    global that no longer exists. All deleted; `phaser` dropped from
+    `package.json` (bundle 1266 KB → 686 KB); `verify-all.mjs` now runs the
+    one check that matches the live game (`shader-check`); docs
+    (`tools/README.md`, root `README.md`, `headless-checks.yml`) updated to
+    match. See STATE.md's Run 44 note for the full detail, including what
+    wiring `shader-check` in for the first time found. This was the item
+    STATE.md had flagged as "first on the v0.6 queue" since the v0.6 merge.
+
+## The v0.6 queue: "the road in three dimensions" (human-set, 2026-07-28)
+
+Seeded from the harsh frame-by-frame critique in STATE.md's "At a glance"
+("Still wrong, in the order a next run should take them") — read that
+section before picking one up, since it has the reasoning each item here
+is a one-line pointer to. Take them roughly in order; reprioritize freely
+if a bug turns up that matters more.
+
+115. **Scatter on the road.** The carriageway is bare — no pebbles, no
+    tufts in the rut, no puddles — and on a phone in portrait it's the
+    largest single area in the frame.
+116. **Fix the campfire sitting pose.** `resting` calls `setPose('sitting')`
+    and the bard stands upright anyway.
+117. **The camp lantern.** Reads as a bright quad beside a bare post, not a
+    light source.
+118. **Busk caption vs. top note collision** on phone landscape (844x390).
+    Needs a considered change to `hudLayout.ts` — its own test constrains
+    the top slot, which exists to keep the card off the bard mid-busk.
+119. **Skyline landmarks.** A standing stone or a chapel placed on a ridge,
+    now that ridges exist, to give the walk something to walk toward.
+120. **Instrument picker.** `journey.unlockedInstruments` is never appended
+    to — an earned instrument is playable but not choosable.
+121. **Time-of-day lighting.** `shader-check.mjs` measures a luminance range
+    of 3 across dawn/day/golden/night (task 114) — the sky dome's colour
+    moves but the light on everything else barely does. Ties together two
+    threads from the critique notes: the near ground reading dark by
+    albedo rather than by shadow, and the upper sky doing little work at
+    noon.
 
 ## Idea backlog (pull from here when nothing is queued)
 

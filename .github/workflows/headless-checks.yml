@@ -2,11 +2,16 @@ name: Headless checks
 
 # Informational only: runs after a merge to main, alongside (not blocking)
 # the deploy workflow. Not a required PR check — ci.yml's `npm test` and
-# `npm run build` are what gate merges. This exists because the (now 24)
+# `npm run build` are what gate merges. This exists because the
 # Playwright-driven checks in tools/ (see tools/README.md) previously only
 # ran when an autonomous session remembered to run them locally, which is
 # the kind of thing that quietly stops happening. `continue-on-error` keeps
 # a red run here from ever affecting anything else.
+#
+# v0.6 rebuilt the game's presentation in Three.js and deleted the 24
+# Phaser-era checks along with it (STATE.md); the suite is down to one
+# (`shader-check`) until more get written against the new game, so there is
+# currently no separate "quick" subset.
 on:
   push:
     branches: [main]
@@ -38,5 +43,5 @@ jobs:
         run: |
           mkdir -p /tmp/pw && cd /tmp/pw && npm init -y && npm i playwright
           npx playwright install --with-deps chromium
-      - name: Run the fast fourteen checks
-        run: PLAYWRIGHT_PATH=/tmp/pw/node_modules/playwright node tools/verify-all.mjs quick
+      - name: Run the headless checks
+        run: PLAYWRIGHT_PATH=/tmp/pw/node_modules/playwright node tools/verify-all.mjs
