@@ -138,7 +138,21 @@ export const SKY_KEYS: SkyKey[] = [
     // to roughly the tone of the lit side — which is most of why the noon
     // and morning frames had no value range to compose with.
     bounce: 0x5d6a44,
-    fog: 0xcfe0ec,
+    /*
+     * Down from 0xcfe0ec, which was brighter than the sky it stands in
+     * front of.
+     *
+     * The fog colour is the value distance tends toward, so it decides where
+     * the far ground sits in the frame's order. At 0.72 against a horizon of
+     * 0.64 the answer was: above it. The hazed band at a hundred and fifty
+     * metres came out as the brightest thing in the picture — brighter than
+     * the sky, brighter than the ridge behind it — and a landscape whose
+     * middle distance out-glows its own sky reads as a bank of fog rolling
+     * in rather than as depth. Distance is *paler and lower in contrast*
+     * than what is in front of it and *darker* than the air behind it, and
+     * there is only one number that puts it there.
+     */
+    fog: 0xa7b5bf,
     /*
      * Down from 0.62 rad and round from 0.6, and this is the change that
      * gives the morning frame a landscape instead of a lawn.
@@ -176,7 +190,9 @@ export const SKY_KEYS: SkyKey[] = [
     // See the note on morning; noon has the least colour to lose and the
     // most flattening to undo.
     bounce: 0x66703f,
-    fog: 0xd6e6f0,
+    // Same correction as morning; noon had the brightest fog of the day and
+    // the palest sky to lose it against.
+    fog: 0xadbac2,
     // Sixty degrees was the worst case of the problem described under
     // morning: at that height a flat field and a hillside differ by almost
     // nothing and a shadow is a puddle under its own caster. Forty is still
@@ -194,7 +210,7 @@ export const SKY_KEYS: SkyKey[] = [
     horizon: 0xf3dcbc,
     sun: 0xffe2ac,
     bounce: 0x8b8452,
-    fog: 0xdfd8c8,
+    fog: 0xbcb6a8,
     // Same correction, mirrored: the afternoon sun has crossed over, so it
     // goes further round rather than back.
     elevation: 0.34,

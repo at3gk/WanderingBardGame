@@ -35,6 +35,23 @@ const SHOTS = [
   { name: '10-tablet', s: 700, day: 0.7, phase: 'walking', viewport: [1024, 768] },
 ];
 
+/**
+ * Device pixel ratio for the shots.
+ *
+ * One, not two, and that is a change forced by the world getting heavier.
+ * This box renders in software: doubling the ratio quadruples the pixels,
+ * and once the world reached a few hundred thousand triangles a 3200x1800
+ * frame stopped finishing inside Playwright's screenshot deadline — every
+ * shot, every time. One agent hit it and quietly worked around it with a
+ * private shooter, which meant the next one hit it too.
+ *
+ * Set BARD_DSF=2 on a machine with a GPU; the shots are crisper and the
+ * cost is nothing there. A critic judging composition, value and silhouette
+ * does not need the extra pixels, which is why the default gives them up
+ * rather than the deadline.
+ */
+const DSF = Number(process.env.BARD_DSF ?? 1);
+
 const browser = await launch();
 const problems = [];
 const written = [];
@@ -42,7 +59,7 @@ const written = [];
 for (const shot of SHOTS) {
   if (only && !shot.name.includes(only)) continue;
   const [width, height] = shot.viewport;
-  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 });
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: DSF });
   page.on('pageerror', (e) => problems.push(`${shot.name}: pageerror: ${e.message}`));
   page.on('console', (m) => {
     if (m.type() === 'error') problems.push(`${shot.name}: console: ${m.text()}`);
@@ -88,7 +105,9 @@ for (const shot of SHOTS) {
   await page.waitForTimeout(1800);
 
   const path = `${outDir}/${shot.name}.png`;
-  await page.screenshot({ path });
+  // Generous, for the same reason as the navigation budget: a software
+  // rasteriser takes seconds per frame and the default 30 s fires mid-shot.
+  await page.screenshot({ path, timeout: 120000 });
   written.push(path);
 
   // Did anything actually draw?
