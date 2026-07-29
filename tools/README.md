@@ -73,9 +73,10 @@ Runs the automated pass/fail suite and prints one summary. **Start here.**
 node tools/verify-all.mjs
 ```
 
-Currently one check (`shader-check`) — see the note on history above for
-why this list is short. New automated checks against the Three.js game
-belong here as they're written.
+Two checks (`shader-check`, `frame-quality`) — see the note on history above
+for why this list is short. New automated checks against the Three.js game
+belong here as they're written. `node tools/verify-all.mjs quick` skips the
+ones marked slow.
 
 ## `shader-check.mjs`
 
@@ -88,6 +89,41 @@ objective check that the time-of-day palette actually moves the world's
 light rather than just the sky dome.
 
 Prints `PASS` / `FAIL` and exits non-zero on failure.
+
+## `frame-quality.mjs [only]`
+
+Turns the three complaints every art critique of this game has returned into
+numbers, sampled from the real renderer at six fixed poses (four times of day
+plus both phone aspect ratios):
+
+- **valueStops** — the frame's usable value range, as log2 of the ratio
+  between the 90th and 10th percentile of *linear* luminance. Under about a
+  stop there is nothing to compose with and the frame reads as one grey mass
+  when you squint, which is what "flat" means.
+- **hueSpread** — saturation-weighted circular spread of hue, 0..1. Near zero
+  means every pixel that carries colour carries the *same* colour.
+- **modalShare** — the largest fraction of the frame inside one coarse colour
+  bucket, i.e. how much of it is a single uninterrupted area.
+
+Prints a table and `PASS`/`FAIL`. The thresholds are **floors set well under
+what the game currently measures**, so this reports a regression rather than
+litigating taste — `postcard.mjs` is still the tool for judging whether a
+frame is any good.
+
+Two things this check learned the hard way, both worth knowing before you
+trust a number out of it:
+
+**`hueSpread` is not "higher is better".** A global floor failed exactly two
+frames — golden hour and the golden-hour busk — which are the two frames
+every critique has named as the best in the set. A low sun washing a whole
+landscape in one warm hue is not a fault; it is what golden hour is. The
+floor is therefore per-pose and only the plain daylight frames carry one.
+
+**It is a whole-frame measure.** A blue sky over a green field over a brown
+road scores as varied even when the land, which is most of what the player
+looks at, is one hue. Noon measures 0.28 while still reading green-on-green
+underfoot. It catches a palette collapsing; it does not certify that a
+frame's colour is working.
 
 ## `postcard.mjs [outDir] [only]`
 

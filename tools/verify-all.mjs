@@ -21,13 +21,22 @@ import { fileURLToPath } from 'node:url';
  * human/agent to look at) rather than a pass/fail regression check, so it
  * is not wired in here — run it directly. New checks against the Three.js
  * game belong in this list as they're written.
+ *
+ * `frame-quality.mjs` joined it in Run 45: it measures the value range, hue
+ * spread and largest flat area of six posed frames, which are the three
+ * things successive art critiques kept reporting as adjectives.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
 const quick = process.argv[2] === 'quick';
 
 /** `slow` scripts are skipped in quick mode. */
-const CHECKS = [{ name: 'shader-check', args: ['shader-check.mjs'] }];
+const CHECKS = [
+  { name: 'shader-check', args: ['shader-check.mjs'] },
+  // Boots the game once per pose at two aspect ratios, so it is the slower
+  // of the two by some margin.
+  { name: 'frame-quality', args: ['frame-quality.mjs'], slow: true },
+];
 
 function run(check) {
   return new Promise((resolve) => {
