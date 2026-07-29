@@ -174,12 +174,33 @@ export const SKY_KEYS: SkyKey[] = [
      * was to keep the sun where it was and fake the modelling with a
      * gradient, which is a second lighting model wearing the first's
      * clothes.
+     *
+     * Twenty-two degrees, and a later round tried to go lower and put it
+     * back. The argument for lower was that the modelling a low sun buys
+     * goes as the derivative of the sine, so it keeps paying as the sun
+     * drops. It does — on a slope. The near ground of these frames is flat
+     * for the first ten metres, which is nearly half the picture, and
+     * measured against the same ten postcards the drop to 0.31 moved every
+     * one of them down or nowhere and darkened the lot. What the near
+     * ground is missing is a caster standing in it, not a lower sun, and
+     * that turned out to be a harder problem than an angle.
      */
     elevation: 0.38,
     azimuth: 0.92,
     exposure: 1.02,
     starness: 0,
-    cloudiness: 0.42,
+        /*
+     * Up from the mid-thirties and forties. The three daylight keys are the
+     * three whose upper half a critic kept describing as a band of frame
+     * doing no work, and they were the three with the least cloud in them —
+     * a sky asked for a third covered, over a noise field that spends most
+     * of its range in the middle, gives a couple of smears near the
+     * horizon and clean paper above. Cloudiness is a quantile here, so
+     * these numbers are honest fractions of the visible band: rather over
+     * half, which is a fair English morning and gives the top of the frame
+     * something with an underside in it.
+     */
+    cloudiness: 0.56,
   },
   {
     t: 0.55,
@@ -195,15 +216,33 @@ export const SKY_KEYS: SkyKey[] = [
     // Same correction as morning; noon had the brightest fog of the day and
     // the palest sky to lose it against.
     fog: 0xb8c6ce,
-    // Sixty degrees was the worst case of the problem described under
-    // morning: at that height a flat field and a hillside differ by almost
-    // nothing and a shadow is a puddle under its own caster. Forty is still
-    // the top of the day and leaves the frame something to be modelled by.
+    /*
+     * Sixty degrees was the worst case of the problem described under
+     * morning: at that height a flat field and a hillside differ by almost
+     * nothing and a shadow is a puddle under its own caster. Forty was
+     * better and still not enough — measured, the noon frame's foreground
+     * carried half the cross-frame variation of the golden one.
+     *
+     * Twenty-nine degrees, and the azimuth stays where it is. The azimuth
+     * is the lever one would rather pull, because a sun off to the side
+     * throws its shadows across the road instead of hiding them behind
+     * their own casters — but this key is the top of the day, the sun
+     * crosses the meridian here, and the arc runs 0.95 at dawn through this
+     * to -1.05 at golden hour. Swinging it back east at noon to buy a
+     * better frame would have the sun reverse direction in the middle of
+     * the afternoon, which is a thing a player watching a full day cycle
+     * would see. So the height carries it alone.
+     *
+     * Held at forty degrees. Twenty-nine was tried, alone and alongside a
+     * meadow that casts its own shadows, and measured worse both times for
+     * the reason set out under morning.
+     */
     elevation: 0.70,
     azimuth: 0.34,
     exposure: 1.05,
     starness: 0,
-    cloudiness: 0.38,
+        // See the note under morning.
+    cloudiness: 0.52,
   },
   {
     t: 0.7,
@@ -214,12 +253,14 @@ export const SKY_KEYS: SkyKey[] = [
     bounce: 0x8b8452,
     fog: 0xc8c2b3,
     // Same correction, mirrored: the afternoon sun has crossed over, so it
-    // goes further round rather than back.
+    // goes further round rather than back. Tried at 0.27 and put back; see
+    // the note under morning.
     elevation: 0.34,
     azimuth: -0.92,
     exposure: 1.0,
     starness: 0,
-    cloudiness: 0.42,
+        // See the note under morning.
+    cloudiness: 0.54,
   },
   {
     t: 0.82,
