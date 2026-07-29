@@ -54,9 +54,24 @@ Run counter: 45
   something a whole-frame histogram can see. Do not use those six numbers as
   evidence that a *shape* change worked — shoot the frames and look.
 
-  **Next, in order.** Item 8 below (the ground has no light value) is the
-  highest-leverage thing left and is a palette/lighting decision rather than
-  a geometry one. After that, items 2/3/4/6.
+  **Next, in order.** Items 8-14 below are new in Run 45, from a six-lens
+  critique of ten posed frames where each lens judged one thing only (value,
+  silhouette, colour, composition, mobile framing, emotional read). All six
+  returned **not shippable next to A Short Hike**, and unusually for a
+  critique they came back with pixel measurements and `file:line`
+  attribution, so they are recorded here in that form rather than paraphrased.
+
+  Take them in this order, because 8, 9 and 10 are probably **one bug**:
+  the world is lit by a multiply, and a multiply cannot put a colour back
+  into an albedo that no longer contains it. Fixing the additive term
+  (`floorLight`, currently gated to nothing) may move all three at once.
+  Then 11, then 12/13/14, which are independent.
+
+  **A note on how to use a critique like that one.** Two of its highest-damage
+  findings this round were about *shape* — needle blade tips and radial ferns
+  — and both were invisible to every automated check the project has,
+  including the new one. The frames are still the only instrument that sees
+  silhouette. Shoot them and look.
 
 - **Run 44 deleted the dead 2D/Phaser code.** `src/scenes/` (the
   `RoadScene`/`picker`/`meterBar`/`freePlayOverlay`/`readouts` modules from
@@ -152,6 +167,64 @@ Run counter: 45
      contradict it. Also flagged: at dusk the land collapses to a 23-level
      range and the largest boulder renders its top and its front within one
      value level of each other.
+
+  9. **Every shadow is the same hue as its own lit side.** Measured: in the
+     golden-vista frame, shadowed grass is H36 S0.73 against lit grass at H36
+     S0.67 — a pure value multiply, no hue shift at all — and the golden-hour
+     frames contain *zero* cool pixels below the skyline. DESIGN.md's stated
+     rule ("shadows are always the complement of the sun") is therefore not
+     actually happening in the render.
+
+     The cause is arithmetic and worth knowing before anyone re-tunes the
+     palette: `painterly.ts` does `color = albedo * lighting`, and the warm
+     albedos in `palette.ts` have almost no blue left in them (village grass
+     `0x839749` has B=0x49), so *multiplying* by a blue zenith cannot produce
+     a cool shadow — the blue is already gone. A cool shadow has to be
+     **added**, not multiplied. The additive term that would do it already
+     exists (`floorLight`, around `painterly.ts:656`) but is gated by
+     `exp(-luma * 22.0)`, which at the measured shadow luma of ~0.24 is
+     effectively zero. This is very likely the same root cause as item 8.
+
+  10. **The haze cancels to dead neutral grey instead of reading as air.**
+      The daylight fog keys in `sky.ts` are near-neutral (morning `0xb2c1cc`
+      S0.13, high day `0xb8c6ce` S0.11, afternoon `0xc8c2b3` S0.09), and
+      `painterly.ts` mixes up to 60% of that into warm olive terrain. A
+      low-saturation cool mixed 60/40 into a saturated warm lands on grey —
+      the complements cancel. Suggested: commit the daylight fog to a hue at
+      S~0.25-0.35 (e.g. morning `0x9fb8d2`).
+
+  11. **No biome contains both a warm and a cool albedo.** Every member of
+      village and forest is in the same warm-olive family, which is the real
+      reason the land reads monochrome even where `frame-quality` scores the
+      whole frame as varied. Suggested: re-hue `rock` to a blue-slate
+      (`0x8f9aa6`) so scattered stones become the cool notes A Short Hike
+      uses, and make one accent per biome a cool complement rather than
+      shipping two warms.
+
+  12. **The chapel — the one thing worth walking toward — is fogged to
+      near-invisibility.** `RoadStage.ts:355-356` sets `uFogNear` ≈ 20 m and
+      `uFogFar` ≈ 242 m, so a landmark at 150 m sits at ~0.72 fog blend and
+      ends up within a few percent of the sky, less visible than a random
+      tree. Not a landmark-placement problem — a fog problem. Suggested:
+      clamp fog on landmark meshes to ~0.55 so they always hold a value step
+      against the sky, or pull `LANDMARK_SPACING_M`/`NEAR_M`/`FAR_M`
+      (`WorldStreamer.ts:610,625-626`) in.
+
+  13. **Bare road plus empty sky own ~60% of every walking frame**, and on
+      tall aspects the widened FOV is spent on exactly those two dead zones
+      (`CameraRig.ts:262-274`, `WIDEN_RISE_SHARE`/`FOV_WIDEN_MAX`). The
+      critique was explicit that the answer is *not* more scatter: bias the
+      widening toward the mid-band, and give the road surface events — a
+      milestone, standing water in a rut, a branch across it.
+
+  14. **The songboard, not the bard, is the subject of a busk frame**, and on
+      phone landscape it collides with the bard and clips a listener.
+      `SongNotes.ts:509-517` already halved it once; it should be sized to
+      the live note span rather than drawn full-width, kept off the vanishing
+      point, and its lateral offset should scale with `camera.aspect`
+      (`SongNotes.ts:1041-1046`, clamped at 0.1 today). Listener bearings in
+      `RoadStage.gatherListeners` (`RoadStage.ts:769-787`) should reject
+      slots that project inside the board.
 
   1. The road is bare. Narrowing it to a 3.4 m cart track and deepening the
      ruts helped, and pebble/road-grass scatter and skyline landmarks have
