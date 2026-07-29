@@ -4,52 +4,30 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * Runs the whole headless suite and prints one summary.
- *
- * There are twenty-four scripts here now, several of which take minutes, and a
- * run that has to remember all of them will sooner or later remember only
- * the fast ones. This is the single command to reach for.
- *
- *   node verify-all.mjs          # all 24 (~30 min)
- *   node verify-all.mjs quick    # the fast fourteen (~9 min)
+ * Runs the headless suite and prints one summary.
  *
  * Expects the preview server on :4173 and Playwright installed in the
  * working directory — see Setup above in README.md. Runs the checks one at
  * a time on purpose: several Chromium instances at once starve each other,
  * and a long run measured under that contention reported 11fps and a third
  * of its taps missing against a game that was fine.
+ *
+ * The suite is small right now: v0.6 rebuilt the game's presentation in
+ * Three.js (STATE.md), and every check that drove the old Phaser scene
+ * through `window.game.scene.scenes[0]` went with it — that global no
+ * longer exists. `shader-check.mjs` is the one survivor, driving the
+ * current game through its `window.bard` handle. `postcard.mjs` is a
+ * companion visual-QA tool (poses the bard and writes screenshots for a
+ * human/agent to look at) rather than a pass/fail regression check, so it
+ * is not wired in here — run it directly. New checks against the Three.js
+ * game belong in this list as they're written.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
 const quick = process.argv[2] === 'quick';
 
 /** `slow` scripts are skipped in quick mode. */
-const CHECKS = [
-  { name: 'proofsheet', args: ['proofsheet.mjs'] },
-  { name: 'scenery-sheet', args: ['scenery-sheet.mjs'] },
-  { name: 'ui-sheet', args: ['ui-sheet.mjs'] },
-  { name: 'autoplay', args: ['autoplay.mjs', '70'] },
-  { name: 'pillar-check', args: ['pillar-check.mjs'] },
-  { name: 'mash-check', args: ['mash-check.mjs', '60'] },
-  { name: 'input-check', args: ['input-check.mjs'] },
-  { name: 'songpick-check', args: ['songpick-check.mjs'], slow: true },
-  { name: 'freeplay-check', args: ['freeplay-check.mjs'] },
-  { name: 'hud-check', args: ['hud-check.mjs'] },
-  { name: 'ground-check', args: ['ground-check.mjs'] },
-  { name: 'bard-check', args: ['bard-check.mjs'] },
-  { name: 'seam-check', args: ['seam-check.mjs'] },
-  { name: 'practice-soak', args: ['practice-soak.mjs', '4'], slow: true },
-  { name: 'dusk-check', args: ['dusk-check.mjs'] },
-  { name: 'coinchime-check', args: ['coinchime-check.mjs'] },
-  { name: 'title-check', args: ['title-check.mjs', '130'], slow: true },
-  { name: 'nofail-check', args: ['nofail-check.mjs', '45'], slow: true },
-  { name: 'backgrounding-check', args: ['backgrounding-check.mjs'], slow: true },
-  { name: 'reveal-check', args: ['reveal-check.mjs', '90'], slow: true },
-  { name: 'rotate-check', args: ['rotate-check.mjs'], slow: true },
-  { name: 'learning-check', args: ['learning-check.mjs'], slow: true },
-  { name: 'multisession-check', args: ['multisession-check.mjs'], slow: true },
-  { name: 'timeaway-check', args: ['timeaway-check.mjs'], slow: true },
-];
+const CHECKS = [{ name: 'shader-check', args: ['shader-check.mjs'] }];
 
 function run(check) {
   return new Promise((resolve) => {

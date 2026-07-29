@@ -37,18 +37,16 @@ npm run build    # type-check + production build (must stay green to deploy)
 npm run preview  # serve the production build locally
 ```
 
-Beyond the unit tests there is a headless harness in [`tools/`](./tools) —
-twenty-four checks that drive a real browser against the production build
-and assert on things unit tests cannot reach: that the melody is in tune and
-naturals-only, that the letter-fading actually fades and recovers, that
-progress survives a reload, a rotation and a month away, that the layout
-holds from a 320px phone upward, and that mashing breaks nothing. Run them all with
-`PLAYWRIGHT_PATH=... node tools/verify-all.mjs` (or `quick` for the fast
-fourteen); see [`tools/README.md`](./tools/README.md) for setup.
+Beyond the unit tests there is a headless harness in [`tools/`](./tools)
+that drives a real browser against the production build to assert on
+things unit tests cannot reach, and a visual-QA tool (`postcard.mjs`) that
+poses the game and bakes screenshots for review. Run the automated checks
+with `PLAYWRIGHT_PATH=... node tools/verify-all.mjs`; see
+[`tools/README.md`](./tools/README.md) for setup.
 
 ## Stack
 
-Phaser 3 + TypeScript + Vite. No login, no build step beyond the above, no
+Three.js + TypeScript + Vite. No login, no build step beyond the above, no
 paid services. Audio is procedural Web Audio, defined in
 [`src/audio/manifest.ts`](./src/audio/manifest.ts).
 
@@ -59,10 +57,10 @@ A red build does not deploy — the last good version stays live. Day-to-day
 development happens on short-lived `claude/dev` branches merged to `main`
 via PR once CI is green.
 
-After each merge, the fast fourteen of the [`tools/`](./tools) headless
-checks also run in CI (`.github/workflows/headless-checks.yml`). This is
-informational only — it doesn't gate the merge or the deploy — since it
-exercises a real browser and heavier setup than the PR gate needs.
+After each merge, the [`tools/`](./tools) headless checks also run in CI
+(`.github/workflows/headless-checks.yml`). This is informational only — it
+doesn't gate the merge or the deploy — since it exercises a real browser
+and heavier setup than the PR gate needs.
 
 ## Project docs
 
