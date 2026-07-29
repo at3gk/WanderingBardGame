@@ -617,7 +617,15 @@ void main() {
     : 1.0;
   // Capped below 1: a silhouette that dissolves *completely* into the sky
   // reads as a draw-distance failure rather than as distance.
-  float fogAmount = clamp(distanceFog * mix(0.45, 1.0, heightFalloff), 0.0, 0.82);
+  //
+  // Raised from 0.82 once the sky dome grew its own bands of distant land.
+  // The cap exists so that the furthest thing drawn does not vanish and
+  // leave a hole; with a ridge standing behind it there is no hole to leave,
+  // and the last tenth is worth having. It is the only term in the frame
+  // that separates a hundred and sixty metres from twenty: the surfaces at
+  // both ends are the same albedo under the same sun, so whatever value
+  // range those two bands end up with, this is where it comes from.
+  float fogAmount = clamp(distanceFog * mix(0.45, 1.0, heightFalloff), 0.0, 0.90);
   vec3 fogTint = mix(uFogColor, uHorizonColor, clamp(0.55 - vWorldPosition.y * 0.02, 0.0, 0.6));
   color = mix(color, fogTint, fogAmount);
 

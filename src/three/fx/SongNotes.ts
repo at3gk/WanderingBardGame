@@ -1,15 +1,39 @@
 /**
- * The busking visual: a staff laid down the road, and real notes riding it
- * toward the bard.
+ * The busking visual: a stave standing in the world beside the bard, and
+ * real notes riding it toward a barline.
  *
  * This is the picture the whole game is for, so it is worth saying exactly
- * what it is and what it refuses to be. It is **not** a note highway pasted
- * over the top of a 3D scene. Five staff lines run away from the bard along
- * the road he is standing on, at head height, curving with it; the notes of
- * the tune travel down that staff and are struck as they reach him. The
- * staff is in the world — the light falls past it, the hill it crosses
- * hides its far end — because a rhythm strip stuck to the glass would make
- * the scenery a backdrop, and the scenery is the point.
+ * what it is and what it refuses to be.
+ *
+ * For a long time the staff was five ribbons laid **down the road**, running
+ * from the bard to a vanishing point. The argument for it was that a rhythm
+ * strip stuck to the glass would make the scenery a backdrop and the scenery
+ * is the point. The argument was right and the drawing was wrong, and it took
+ * a while to see why, so: five near-parallel lines converging over a
+ * landscape are not read as a stave. They are read as **cable**. The eye has
+ * a very old rule that says parallel lines shrinking toward a vanishing point
+ * are a long thing going away, and no amount of tinting or fading talks it
+ * out of that — a fainter wire is still a wire. The busking frame was a
+ * cosy sunset with telegraph poles strung across it, and it is the frame this
+ * game is most likely to be seen in.
+ *
+ * So the staff is now **face-on and short**: a flat card standing upright in
+ * the world, a metre or so ahead of the bard and off to the camera's left,
+ * yawed to face the camera so the five lines are five parallel rules and the
+ * pitch axis is true world up. Notes enter at the right-hand end and travel
+ * left to a barline, which is the direction written music runs and the
+ * direction every scrolling display of it has run since. It is still *in* the
+ * world — it stands at a place, it is depth-tested against the hill and the
+ * trees, it takes the sky's own colour — but it no longer pretends to be
+ * three-dimensional in its long axis, because that pretence is what turned
+ * notation into scenery.
+ *
+ * Two things fell out of the change rather than being designed in, and both
+ * are worth keeping. Perspective no longer eats the time axis, so two notes a
+ * beat apart are two notes a beat apart on screen and the screen-space
+ * spacing search that used to hold them apart could go. And the staff no
+ * longer crosses the treeline, the road, the listeners or the bard, so the
+ * silhouette the frame is built on is left alone.
  *
  * The notation is real and stays real. A glyph sits at its **true staff
  * step** (`core/notation.ts` owns that mapping and this file does not
@@ -68,89 +92,93 @@ import type { Judgement } from '../../core/performance';
 import type { SongBeat } from '../../core/song';
 
 /**
- * One diatonic step, in metres. Two steps make a staff space, so the staff
- * itself (E4 to F5) is eight steps — a metre and a half, from about the
- * bard's knee to a little above his hat.
+ * One diatonic step, in metres. Two steps make a staff space, so the printed
+ * staff (E4 to F5) is eight steps — a little over a metre, from the bard's
+ * waist to a head above his hat.
  *
- * It was 0.145 and that was too small to read, for a reason that is worth
- * writing down because it is not obvious from the number: the staff is seen
- * almost end-on. The pitch axis is vertical and the time axis runs away from
- * the camera, so perspective is already compressing the *time* axis into
- * nothing near the far end while leaving pitch alone — and at 0.145 the five
- * lines subtended so little angle that they converged into two or three
- * hairlines within four metres. Reading which line a note sits on is the
- * entire pedagogical premise of this game, so the pitch axis has to be given
- * enough room that it survives that convergence. This is paid for by
- * shortening the run (`SPAWN_AHEAD_M`) rather than by moving the camera.
+ * It was 0.2 when the staff ran down the road, and the extra height was
+ * paying for something that no longer happens: seen almost end-on, the five
+ * lines converged into two or three hairlines within a few metres, and the
+ * pitch axis had to be given enough room to survive that. Face-on there is
+ * nothing to survive, and 0.2 made a stave that filled a third of the frame.
+ * Below about 0.13 the letters inside the heads stop being legible on a
+ * phone, so this is nearer the floor than the ceiling.
  */
-const STEP_M = 0.2;
-
-/**
- * World height of staff step 0 — middle C — above the bard's feet.
- *
- * Set so the **middle line sits at 1.32 m**, the top of the bard's hat. That
- * is the number that matters, not this one: the staff has to be pinned to
- * the figure, because notation floating clear above the horizon reads as
- * signposts rather than as music — it has no ground behind it and nothing to
- * belong to. With the middle line on his hat the lower half crosses the road
- * and the grass and the tune is plainly his, and only the top line (F5, the
- * rarest note in the songbook) climbs past the camera's eye.
- *
- * It fell from 0.45 when `STEP_M` grew; keeping it would have lifted the
- * whole staff a metre into the sky.
- */
-const STEP_ZERO_Y = 0.12;
+const STEP_M = 0.15;
 
 /** The five printed lines of the treble staff: E4 G4 B4 D5 F5. */
 const LINE_STEPS = [2, 4, 6, 8, 10];
 
-/**
- * Where a note is struck, in metres ahead of the bard.
- *
- * Not zero. A note resolved exactly on him would be inside his hat from the
- * busking camera, and the moment of the strike is the one thing in the frame
- * that has to be unambiguous.
- */
-const HIT_AHEAD_M = 1.05;
+/** B4, the middle line — the step the whole stave is hung from. */
+const MIDDLE_STEP = 6;
 
 /**
- * How far up the road a note appears. Travel time is fixed, so this is also
- * its speed.
+ * Height of the middle line above the road, in metres.
  *
- * Shortened from 8.5 along with the staff's growth. The two numbers are one
- * decision: what matters is the *ratio* of the staff's height to the length
- * of road it is stretched over, because that ratio is what decides whether
- * the five lines are still five lines at the far end. Six metres and a
- * metre-and-a-half staff is about two and a half times the old figure, which
- * is the difference between "which line is that" being answerable and not.
- * The notes travel more slowly for it, which is no loss in a game where
- * nothing can be failed.
+ * The top of the bard's hat. The stave has to be pinned to the figure: hung
+ * higher it floats clear of the horizon with nothing behind it and reads as
+ * a signpost, hung lower it crosses the road surface and the near grass eats
+ * the bottom line. At his hat the stave sits against the far land, which is
+ * the quietest part of this game's pictures and the easiest thing in the
+ * world to read cream lines against.
  */
-const SPAWN_AHEAD_M = 6.0;
+const MIDDLE_LINE_Y = 1.32;
 
-/** How far *behind* the hit line the staff is drawn, so it does not stop dead at it. */
-const TAIL_BEHIND_M = 1.1;
+/**
+ * Where the stave stands, in metres along the road ahead of the bard.
+ *
+ * Far enough that the bard's own body never crosses it, near enough that the
+ * road under it is the road he is standing on. It is placed off the road
+ * sideways as well — see `BAR_LEFT_M`.
+ */
+const ANCHOR_AHEAD_M = 1.5;
+
+/**
+ * How far to the camera's left of that point the barline stands, in metres
+ * at full size.
+ *
+ * This is the number that keeps the stave off the bard. He sits right of
+ * centre in both busking framings, so the stave is given the left of the
+ * frame — which in this game is where the road runs away and there is least
+ * going on. Measured to the *barline* rather than to the middle of the stave
+ * because the barline is the mark the eye goes to, and it is the mark that
+ * wants a clear background.
+ */
+const BAR_LEFT_M = 2.6;
+
+/**
+ * The length of the run, from where a note appears to the barline, in metres
+ * at full size. Travel time is fixed, so this is also the note's speed.
+ *
+ * At the busking camera this is a little under forty per cent of the frame's
+ * width, which leaves the right of the frame to the bard. Notes at the
+ * songbook's slowest tempo land about a beat and a half apart on it, which
+ * is roughly three note heads — engraved spacing, near enough, and arrived at
+ * by picking a length the frame could afford rather than by choosing it.
+ */
+const RUN_M = 2.9;
+
+/** How far the staff is drawn past the barline, so it does not stop dead at it. */
+const TAIL_M = 0.4;
 
 /**
  * How far a note drifts past the barline before it comes to rest.
  *
  * It has to be a small number and there has to be a number at all. The first
  * version simply kept the note travelling at its own speed once the beat had
- * gone, which is what a scrolling 2D chart does and which is catastrophic in
- * three dimensions: within half a second the glyph had passed the bard, then
- * the camera, and a missed note filled the screen. So a note eases to a stop
- * just past the line and fades from there — it went by, it did not charge.
+ * gone, which is what a scrolling 2D chart does and which was catastrophic
+ * when the run pointed at the camera: within half a second the glyph had
+ * passed the bard, then the camera, and a missed note filled the screen.
+ * Across the frame it is only untidy rather than ruinous, but a note that
+ * went by should look like it went by, not like it charged off the edge.
  */
-const PAST_DRIFT_M = 0.55;
+const PAST_DRIFT_M = 0.3;
 
 /** How long a note stays visible after its window has closed, drifting past. */
 const PAST_MS = 620;
 
 /** How long a struck note's bloom lasts. */
 const STRIKE_MS = 420;
-
-/** Segments along the staff ribbons. Enough that the road's curve is smooth. */
-const RIBBON_SEGMENTS = 26;
 
 /** Instances reserved for glyphs. A bar of eighths at this travel time needs ten. */
 const MAX_GLYPHS = 28;
@@ -183,40 +211,45 @@ const ATLAS_ROWS = 4;
 const REST_CELL = 28;
 
 /**
+ * Half-thickness of a staff line, in diatonic steps.
+ *
+ * Engraving puts a staff line at about an eighth of a staff space, and a
+ * space is two steps, so an eighth of a space is 0.125 steps across and this
+ * is half of it. Writing it as a fraction of the step rather than in metres
+ * is what keeps the stave looking engraved when it is scaled down for a
+ * narrow screen.
+ */
+const LINE_HALF_STEPS = 0.062;
+
+/** Half-thickness of the barline, same units. A thin barline is thicker than a rule. */
+const BAR_HALF_STEPS = 0.16;
+
+/**
  * How much of the horizon's colour the five lines take.
  *
  * They used to be drawn in `INK` at full strength, which made them the
- * highest-value thing in the picture: five near-white rules crossing a dark
- * treeline to a vanishing point, so the notation sat *on* the world rather
- * than in it. The sky is this game's light source, so the thing a line in
- * the air should look like is the sky it is hanging in front of.
- *
- * Not all the way to the horizon colour, and two thirds was too far. The top
- * line of the staff sits at about eye height, which is where the horizon is,
- * so the highest lines are the ones drawn against open sky — and a line
- * carrying two thirds of the sky's own colour vanishes there. Since those are
- * the lines the rarest and hardest-to-place notes ride, losing them costs
- * exactly the pitches a player most needs help reading. Half keeps a cream
- * bias strong enough to hold against a bright morning and still drops the
- * lines out of the near-white band they used to occupy. The horizon also goes
- * a deep blue after dark, which is the other end this has to survive.
+ * highest-value thing in the picture. The sky is this game's light source, so
+ * the thing a line in the air should look like is the sky it is hanging in
+ * front of. Half keeps a cream bias strong enough to hold against a bright
+ * morning and still drops the lines out of the near-white band they used to
+ * occupy; the horizon also goes a deep blue after dark, which is the other
+ * end this has to survive.
  *
  * The barline does not take this tint. It is the mark that says *here*, and
  * it is the one part of the apparatus that is allowed to be ink.
  */
 const LINE_HORIZON_TINT = 0.5;
 
-/** Peak alpha of the five lines, at the barline. Falls away with `ribbonFade`. */
-const LINE_OPACITY = 0.55;
+/** Peak alpha of the five lines, at the barline. Falls away with the run. */
+const LINE_OPACITY = 0.6;
 
 /**
  * Alpha of the barline, which never fades.
  *
- * Held below the old staff's 0.62 rather than above it. Once the lines
- * receded the barline was the only bright vertical left in the frame and at
- * 0.78 it stopped reading as notation and started reading as a fence post
- * standing in the road. It does not need to shout to be the strongest mark
- * here; it only needs to be stronger than what is around it, and now it is.
+ * Held below the old staff's 0.62 rather than above it. It does not need to
+ * shout to be the strongest mark here; it only needs to be stronger than what
+ * is around it, and now that it is a short upright between five short rules
+ * rather than a post standing in a road, it is.
  */
 const BAR_OPACITY = 0.6;
 
@@ -233,25 +266,24 @@ const BAR_OPACITY = 0.6;
 const BARLINE_FADE = 2;
 
 /**
- * How far apart two note heads have to be on screen, measured centre to
- * centre in head widths.
+ * Width of the frame, in metres, at the depth the stave stands, on the
+ * screen this was sized for: the busking camera on a 16:9 desktop.
  *
- * Below about one the heads are visibly one blob and their letters collide,
- * and the letter is how a player reads the pitch — so this is a pedagogy
- * number wearing a composition number's clothes. It is not larger because
- * every tenth above the overlap point is paid for by moving a note away from
- * where its beat actually falls, and that is a worse lie than a tight bar.
+ * Everything above is quoted "at full size", and this is what full size
+ * means. See `cardScale`.
  */
-const SPACING_MIN_HEADS = 1.25;
+const REFERENCE_FRAME_WIDTH_M = 7.6;
 
-/** Furthest a note may be pushed back along the lane to clear its neighbour. */
-const SPACING_MAX_PUSH_M = 0.85;
-
-/** Candidate pushes tried per note. Six is well inside the noise of one head. */
-const SPACING_STEPS = 6;
-
-/** Seconds for a note's spacing push to settle. Short: this must not read as drag. */
-const SPACING_SETTLE_S = 0.18;
+/**
+ * Floor on that scale.
+ *
+ * A phone held upright is under a third of the reference width, and a stave
+ * shrunk to match would put the letters below the size a child can read. So
+ * the stave is allowed to take a larger share of a narrow frame than it takes
+ * of a wide one, which is the right trade — on a small screen the notation is
+ * most of what you are looking at anyway.
+ */
+const CARD_SCALE_MIN = 0.52;
 
 const MOTION_INDEX: Record<Instrument['noteMotion'], number> = {
   drift: 0,
@@ -270,14 +302,6 @@ interface LiveNote {
   state: 'travelling' | 'struck' | 'softened';
   /** Busk-clock time the state was entered. */
   changedMs: number;
-  /**
-   * Metres this note is currently held back along the lane to keep its head
-   * clear of the one in front. Damped rather than applied outright: when the
-   * note ahead retires there is nothing left to clear and the target drops to
-   * zero, and a glyph that jumped half a metre at that moment would read as a
-   * glitch in the one part of the frame the player is reading.
-   */
-  push: number;
 }
 
 export interface SongNotesOptions {
@@ -287,14 +311,6 @@ export interface SongNotesOptions {
 
 /** Where the road is, `ahead` metres in front of the bard. */
 export type RoadSampler = (ahead: number, out: Vector3) => void;
-
-/** A note head on the image plane at unit depth. See `projectHead`. */
-interface ScreenHead {
-  u: number;
-  v: number;
-  /** Half a head width, in the same units as `u` and `v`. */
-  r: number;
-}
 
 export class SongNotes {
   readonly group = new Group();
@@ -335,25 +351,22 @@ export class SongNotes {
   private readonly origin = new Vector3();
   private heading = 0;
   private sampler: RoadSampler | null = null;
-  /** Rebuilt only when the anchor really moves; a busking bard stands still. */
-  private ribbonAnchor = new Vector3(Number.NaN, Number.NaN, Number.NaN);
-  private ribbonHeading = Number.NaN;
+
+  /** Where the barline stands. Everything on the card is measured from it. */
+  private readonly anchor = new Vector3();
+  /** The card's long axis: the camera's right, flattened into the ground plane. */
+  private readonly right = new Vector3(1, 0, 0);
+  /** Uniform shrink applied to the whole card on a narrow screen. */
+  private scale = 1;
 
   private readonly scratch = new Vector3();
-  private readonly scratchSpacing = new Vector3();
-  private readonly scratchView = new Vector3();
-  private readonly candidateHead: ScreenHead = { u: 0, v: 0, r: 0 };
-  private readonly placedHead: ScreenHead = { u: 0, v: 0, r: 0 };
   private nowMs = 0;
-  /** Seconds since the last `update`. Only the spacing damping needs it. */
-  private frameDt = 0;
-  private lastNowMs = Number.NaN;
 
   /**
-   * Last camera this drew for, kept so the glyph spacing can be measured in
-   * screen space. It is one frame stale — `update` runs before the render
-   * that would refresh it — which is invisible at the speeds a busking camera
-   * moves and much cheaper than threading a camera through the whole stage.
+   * Last camera this drew for, kept so the card can be turned to face it.
+   * It is one frame stale — `update` runs before the render that would
+   * refresh it — which is invisible at the speeds a busking camera moves and
+   * much cheaper than threading a camera through the whole stage.
    */
   private camera: PerspectiveCamera | null = null;
   private horizonSought = false;
@@ -373,8 +386,12 @@ export class SongNotes {
     this.atlas = buildGlyphAtlas();
 
     // --- the staff ------------------------------------------------------
-    // Five lines plus the barline standing at the hit point.
-    const ribbonVerts = (LINE_STEPS.length * RIBBON_SEGMENTS + 1) * 6;
+    // Five lines plus the barline. Each is one quad: the card is flat, so
+    // there is no curve to follow and nothing to subdivide for. What used to
+    // need twenty-six segments a line to ride the road now needs one, and
+    // the whole buffer is small enough to rewrite every frame — which it has
+    // to be, because the card turns with the camera.
+    const ribbonVerts = (LINE_STEPS.length + 1) * 6;
     const staffGeometry = new BufferGeometry();
     this.staffPosition = new BufferAttribute(new Float32Array(ribbonVerts * 3), 3);
     this.staffFade = new BufferAttribute(new Float32Array(ribbonVerts), 1);
@@ -391,12 +408,6 @@ export class SongNotes {
         // from `createPainterlyGlobals`, so a staff that never finds the
         // world's uniforms is wrong at dusk rather than wrong always.
         uHorizon: { value: new Color(0xf2d6b8) } as IUniform<Color>,
-        // The staff is a guide the eye follows, not furniture. 0.62 in ink
-        // made it the highest-contrast thing in the frame; the pitch axis
-        // still has to be countable, so what pays for the drop is the
-        // horizon tint above and the much steeper distance fade in
-        // `ribbonFade` — the lines are now at their strongest exactly where
-        // the player is looking and nowhere else.
         uOpacity: { value: LINE_OPACITY },
         uBarOpacity: { value: BAR_OPACITY },
         uLineTint: { value: LINE_HORIZON_TINT },
@@ -414,7 +425,7 @@ export class SongNotes {
     // The staff is the first thing in this group to draw, which makes its
     // hook the cheapest place to pick up the two things the apparatus needs
     // from outside and is not handed: the scene's shared sky colour, and the
-    // camera the spacing is judged against.
+    // camera the card is turned toward.
     this.staff.onBeforeRender = (_renderer, scene, camera) => {
       if (!this.horizonSought) {
         this.horizonSought = true;
@@ -528,12 +539,13 @@ export class SongNotes {
   }
 
   /**
-   * Where the staff starts and which way it runs.
+   * Where the bard is and which way he faces.
    *
-   * `sampler` is how the staff follows the road instead of shooting off
-   * across a field on a bend: the caller knows the road and answers where it
-   * is `ahead` metres on. Without one the staff runs dead straight along the
-   * heading, which is right for a bard standing anywhere but a curve.
+   * `sampler` is how the stave stands on the road rather than in whatever the
+   * heading happens to point at on a bend: the caller knows the road and
+   * answers where it is `ahead` metres on. Without one the point is taken
+   * dead straight along the heading, which is right for a bard standing
+   * anywhere but a curve.
    */
   setAnchor(origin: Vector3, heading: number, sampler: RoadSampler | null = null): void {
     this.origin.copy(origin);
@@ -573,7 +585,6 @@ export class SongNotes {
     // the search for the shared sky colour is retried at the start of each
     // one rather than made a constructor-time question with one answer.
     if (active) this.horizonSought = false;
-    this.lastNowMs = Number.NaN;
   }
 
   get active(): boolean {
@@ -587,14 +598,11 @@ export class SongNotes {
    * game feel "off" without anyone being able to say why.
    */
   update(nowMs: number): void {
-    this.frameDt = Number.isFinite(this.lastNowMs)
-      ? Math.max(0, Math.min(0.25, (nowMs - this.lastNowMs) / 1000))
-      : 0;
-    this.lastNowMs = nowMs;
     this.nowMs = nowMs;
     if (!this.group.visible) return;
 
-    this.rebuildRibbonIfMoved();
+    this.placeCard();
+    this.buildStaff();
     this.harvest(nowMs);
     this.writeGlyphs(nowMs);
     this.sparkMaterial.uniforms.uNow.value = nowMs / 1000;
@@ -611,6 +619,53 @@ export class SongNotes {
   }
 
   // --- internals ---------------------------------------------------------
+
+  /**
+   * Stand the card up: where its barline is, which way it lies, how big.
+   *
+   * The long axis is the camera's right *flattened into the ground plane*
+   * rather than the camera's true right. Full billboarding would roll the
+   * stave whenever the camera pitched or drifted, and a stave that is not
+   * level is a stave whose pitch axis is not up — which is the one thing a
+   * child is being asked to read off it.
+   */
+  private placeCard(): void {
+    this.pointAt(ANCHOR_AHEAD_M, this.anchor);
+
+    const camera = this.camera;
+    this.scratch.set(Math.sin(this.heading), 0, Math.cos(this.heading));
+    if (camera) {
+      const dx = this.anchor.x - camera.position.x;
+      const dz = this.anchor.z - camera.position.z;
+      if (dx * dx + dz * dz > 1e-4) this.scratch.set(dx, 0, dz);
+    }
+    this.scratch.normalize();
+    // right = forward cross up, for a right-handed world with +Y up.
+    this.right.set(-this.scratch.z, 0, this.scratch.x);
+
+    this.scale = camera ? this.cardScale(camera) : 1;
+    this.anchor.addScaledVector(this.right, -BAR_LEFT_M * this.scale);
+    this.glyphMaterial.uniforms.uSize.value = glyphWorldSize() * this.scale;
+  }
+
+  /**
+   * How much to shrink the whole card for this screen.
+   *
+   * The stave is written in world metres because it stands in the world, but
+   * what has to stay constant is the share of the *frame* it takes: the run
+   * has to fit beside the bard on a phone held sideways and on a desktop
+   * alike, and a note head has to stay big enough to read the letter out of.
+   * So the frame's width is measured in metres at the depth the card stands
+   * at, and the card is scaled by how that compares with the screen it was
+   * tuned on. Wider frames do not grow it — past the reference width the
+   * stave is already as large as the picture wants it.
+   */
+  private cardScale(camera: PerspectiveCamera): number {
+    const depth = camera.position.distanceTo(this.anchor);
+    const halfV = (camera.fov * Math.PI) / 360;
+    const frameWidth = 2 * depth * Math.tan(halfV) * camera.aspect;
+    return clamp(frameWidth / REFERENCE_FRAME_WIDTH_M, CARD_SCALE_MIN, 1);
+  }
 
   /** Bring newly-visible beats into `live`, and retire the ones that are done. */
   private harvest(nowMs: number): void {
@@ -642,30 +697,21 @@ export class SongNotes {
     const pale = this.aPale.array as Float32Array;
 
     let i = 0;
-    // The head of the note in front, in the screen-space metric `projectHead`
-    // works in. `live` is in beat order, so "in front" is simply the previous
-    // one round this loop, and only the note further from the barline ever
-    // gives ground.
-    let haveAhead = false;
-
     for (const note of this.live.values()) {
       if (i >= MAX_GLYPHS) break;
 
       const progress = 1 - (note.hitTimeMs - nowMs) / TRAVEL_TIME_MS;
-      const step = note.step ?? 6;
-      const nominal = aheadAt(progress);
-      const wanted = haveAhead ? this.spacingPush(nominal, step) : 0;
-      note.push += (wanted - note.push) * (1 - Math.exp(-this.frameDt / SPACING_SETTLE_S));
-      this.pointAt(nominal + note.push, this.scratch);
+      const step = note.step ?? MIDDLE_STEP;
+      const u = runAt(progress) * this.scale;
 
-      let y = this.scratch.y + STEP_ZERO_Y + step * STEP_M;
+      let y = this.stepY(step);
 
       let a = 1;
       let scaleMul = 1;
       let paleness = 0;
 
-      // Fade in over the first two metres of travel so a note arrives
-      // rather than appears.
+      // Fade in over the first stretch of the run so a note arrives rather
+      // than appears.
       a *= smoothstep(0, 0.14, progress);
 
       if (note.state === 'struck') {
@@ -680,7 +726,7 @@ export class SongNotes {
         paleness = smoothstep(0, 0.35, t);
         a *= 1 - t * t;
         // Sinks a little as it goes past, the way a dropped note feels.
-        y -= t * t * 0.22;
+        y -= t * t * 0.22 * this.scale;
       } else if (nowMs > note.hitTimeMs) {
         a *= 1 - clamp((nowMs - note.hitTimeMs) / PAST_MS, 0, 1);
       }
@@ -688,9 +734,9 @@ export class SongNotes {
       const col = note.cell % ATLAS_COLS;
       const row = Math.floor(note.cell / ATLAS_COLS);
 
-      pos[i * 3] = this.scratch.x;
+      pos[i * 3] = this.anchor.x + this.right.x * u;
       pos[i * 3 + 1] = y;
-      pos[i * 3 + 2] = this.scratch.z;
+      pos[i * 3 + 2] = this.anchor.z + this.right.z * u;
       cell[i * 2] = col / ATLAS_COLS;
       // Row 0 of the canvas is the *top*, and texture V runs the other way.
       cell[i * 2 + 1] = 1 - (row + 1) / ATLAS_ROWS;
@@ -698,11 +744,6 @@ export class SongNotes {
       alpha[i] = clamp(a, 0, 1);
       pale[i] = paleness;
       i++;
-
-      // Measured at the head's own size, not at `scaleMul`: a struck note
-      // blooms to nearly twice its width on its way out, and letting that
-      // shove the next note down the road would turn every hit into a lurch.
-      haveAhead = this.projectHead(this.scratch.x, y, this.scratch.z, this.placedHead);
     }
 
     // Everything past the live notes is collapsed rather than left holding
@@ -720,12 +761,12 @@ export class SongNotes {
   }
 
   private burst(note: LiveNote, judgement: Judgement): void {
-    const step = note.step ?? 6;
+    const step = note.step ?? MIDDLE_STEP;
     const progress = 1 - (note.hitTimeMs - this.nowMs) / TRAVEL_TIME_MS;
-    this.pointAt(aheadAt(progress), this.scratch);
-    const x = this.scratch.x;
-    const y = this.scratch.y + STEP_ZERO_Y + step * STEP_M;
-    const z = this.scratch.z;
+    const u = runAt(progress) * this.scale;
+    const x = this.anchor.x + this.right.x * u;
+    const y = this.stepY(step);
+    const z = this.anchor.z + this.right.z * u;
 
     // A dead-centre note is worth a bigger bloom than one caught in the
     // tail. This is the only place in the game that grades anything, and it
@@ -737,10 +778,11 @@ export class SongNotes {
     // taste: the first pass used sparks a third this size, and at the four
     // or five metres the busking camera sits from the barline they were two
     // or three pixels each and the hit read as nothing happening at all.
-    this.emit(x, y, z, now, 0, 0.68 * weight, STRIKE_MS / 1000);
+    const size = this.scale;
+    this.emit(x, y, z, now, 0, 0.52 * weight * size, STRIKE_MS / 1000);
     const count = Math.round(this.sparksPerHit * weight);
     for (let n = 0; n < count; n++) {
-      this.emit(x, y, z, now, 1, 0.13 + Math.random() * 0.09, 0.9 + Math.random() * 0.6);
+      this.emit(x, y, z, now, 1, (0.1 + Math.random() * 0.07) * size, 0.9 + Math.random() * 0.6);
     }
   }
 
@@ -778,85 +820,9 @@ export class SongNotes {
     this.sparkKind.needsUpdate = true;
   }
 
-  /**
-   * How far back along the lane this note has to sit to clear the one in
-   * front of it.
-   *
-   * Notation is spaced by *time* and read in *space*, and down a road seen
-   * almost end-on those two come apart badly: two quavers a fifth of a second
-   * apart are half a metre apart in the world and a third of a note head
-   * apart on screen, so their heads merge and their letters overlap. A player
-   * cannot read a pitch off a blob. So the further note gives ground until
-   * the pair separates.
-   *
-   * Back and not forward. Forward would put a note over the barline before
-   * its beat, which is a lie about the one thing this apparatus exists to
-   * tell the truth about. Backward only makes a note appear to travel a
-   * little faster for a moment, and the push tapers to nothing over the last
-   * metre so the strike itself always happens exactly where the mark is.
-   */
-  private spacingPush(nominal: number, step: number): number {
-    if (!this.camera) return 0;
-    // Nothing may be pushed past the end of the drawn staff, and nothing may
-    // be pushed at all near the barline.
-    const room = Math.min(SPACING_MAX_PUSH_M, SPAWN_AHEAD_M + 0.4 - nominal);
-    const limit = room * smoothstep(HIT_AHEAD_M + 0.1, HIT_AHEAD_M + 1.0, nominal);
-    if (limit <= 0.01) return 0;
-
-    let best = 0;
-    let bestSeparation = this.separationAt(nominal, step);
-    for (let n = 1; n <= SPACING_STEPS && bestSeparation < SPACING_MIN_HEADS; n++) {
-      const push = (limit * n) / SPACING_STEPS;
-      const separation = this.separationAt(nominal + push, step);
-      // Keep the best rather than the last. Pushing back usually separates,
-      // but the lane bends and the staff climbs, and on a hard bend a note
-      // can pass *behind* the one in front on its way out; taking the best
-      // candidate means the search cannot make a frame worse than it found it.
-      if (separation <= bestSeparation) continue;
-      bestSeparation = separation;
-      best = push;
-    }
-    return best;
-  }
-
-  /** Centre-to-centre distance to the head in front, in head widths. */
-  private separationAt(ahead: number, step: number): number {
-    this.pointAt(ahead, this.scratchSpacing);
-    const y = this.scratchSpacing.y + STEP_ZERO_Y + step * STEP_M;
-    const on = this.projectHead(
-      this.scratchSpacing.x,
-      y,
-      this.scratchSpacing.z,
-      this.candidateHead,
-    );
-    if (!on) return Infinity;
-    const du = this.candidateHead.u - this.placedHead.u;
-    const dv = this.candidateHead.v - this.placedHead.v;
-    return Math.hypot(du, dv) / Math.max(this.candidateHead.r + this.placedHead.r, 1e-4);
-  }
-
-  /**
-   * Where a note head lands on the image plane, and how big it is there.
-   *
-   * The plane is at unit depth in view space, which is the one screen metric
-   * that needs no projection matrix and no viewport: dividing view x and y by
-   * depth gives a space whose two axes have the *same* scale in pixels
-   * whatever the aspect, because a perspective camera's horizontal half angle
-   * is its vertical one times the aspect and the frame is wider by exactly
-   * that factor. Comparing a distance in this space against a head's own
-   * half-width in it therefore answers "how many head widths apart on screen"
-   * on a phone and a desktop alike.
-   */
-  private projectHead(x: number, y: number, z: number, out: ScreenHead): boolean {
-    const camera = this.camera;
-    if (!camera) return false;
-    this.scratchView.set(x, y, z).applyMatrix4(camera.matrixWorldInverse);
-    const depth = -this.scratchView.z;
-    if (depth < 0.05) return false;
-    out.u = this.scratchView.x / depth;
-    out.v = this.scratchView.y / depth;
-    out.r = HEAD_HALF_WIDTH_M / depth;
-    return true;
+  /** World height of a diatonic step on the card. */
+  private stepY(step: number): number {
+    return this.anchor.y + MIDDLE_LINE_Y + (step - MIDDLE_STEP) * STEP_M * this.scale;
   }
 
   /**
@@ -884,7 +850,7 @@ export class SongNotes {
     if (found) this.staffMaterial.uniforms.uHorizon = found;
   }
 
-  /** World point `ahead` metres along the road from the anchor. */
+  /** World point `ahead` metres along the road from the bard. */
   private pointAt(ahead: number, out: Vector3): void {
     if (this.sampler) {
       this.sampler(ahead, out);
@@ -897,79 +863,62 @@ export class SongNotes {
     );
   }
 
-  private rebuildRibbonIfMoved(): void {
-    if (
-      this.ribbonAnchor.distanceToSquared(this.origin) < 0.0025 &&
-      Math.abs(this.ribbonHeading - this.heading) < 0.01
-    ) {
-      return;
-    }
-    this.ribbonAnchor.copy(this.origin);
-    this.ribbonHeading = this.heading;
-    this.buildRibbon();
-  }
-
   /**
-   * Lay the five lines out along the road.
+   * Lay the five lines and the barline out across the card.
    *
-   * Each line is a thin vertical strip so it reads as a drawn line from the
-   * busking camera, which sits off to one side and a little above. A flat
-   * ribbon would vanish edge-on the moment the camera came down to eye
-   * level, which is exactly where this camera goes.
+   * Each line is a flat quad in the card's plane, and the card faces the
+   * camera, so there is no edge-on case to defend against and one quad a line
+   * is enough. The fade along the run is done in the fragment shader from a
+   * parameter carried on the vertices rather than by subdividing until the
+   * gradient is smooth, which is what the old road-borne ribbon had to do.
    */
-  private buildRibbon(): void {
+  private buildStaff(): void {
     const position = this.staffPosition.array as Float32Array;
     const fade = this.staffFade.array as Float32Array;
-    const half = STEP_M * 0.075;
-    const start = HIT_AHEAD_M - TAIL_BEHIND_M;
-    const span = SPAWN_AHEAD_M - start;
+    const s = this.scale;
+    const half = STEP_M * LINE_HALF_STEPS * s;
+    const uStart = -TAIL_M * s;
+    const uEnd = RUN_M * s;
 
-    const a = new Vector3();
-    const b = new Vector3();
+    const ax = this.anchor.x + this.right.x * uStart;
+    const az = this.anchor.z + this.right.z * uStart;
+    const bx = this.anchor.x + this.right.x * uEnd;
+    const bz = this.anchor.z + this.right.z * uEnd;
+
     let v = 0;
-
     for (const step of LINE_STEPS) {
-      const lift = STEP_ZERO_Y + step * STEP_M;
-      for (let s = 0; s < RIBBON_SEGMENTS; s++) {
-        const t0 = s / RIBBON_SEGMENTS;
-        const t1 = (s + 1) / RIBBON_SEGMENTS;
-        this.pointAt(start + span * t0, a);
-        this.pointAt(start + span * t1, b);
-        const f0 = ribbonFade(t0);
-        const f1 = ribbonFade(t1);
-
-        // Two triangles, written out rather than indexed: the buffer is
-        // rewritten whole whenever the bard moves and an index buffer would
-        // only add a second thing to keep in step with it.
-        v = pushVertex(position, fade, v, a.x, a.y + lift - half, a.z, f0);
-        v = pushVertex(position, fade, v, b.x, b.y + lift - half, b.z, f1);
-        v = pushVertex(position, fade, v, b.x, b.y + lift + half, b.z, f1);
-        v = pushVertex(position, fade, v, a.x, a.y + lift - half, a.z, f0);
-        v = pushVertex(position, fade, v, b.x, b.y + lift + half, b.z, f1);
-        v = pushVertex(position, fade, v, a.x, a.y + lift + half, a.z, f0);
-      }
+      const y = this.stepY(step);
+      // Two triangles, written out rather than indexed: the buffer is
+      // rewritten whole every frame and an index buffer would only add a
+      // second thing to keep in step with it.
+      v = pushVertex(position, fade, v, ax, y - half, az, 0);
+      v = pushVertex(position, fade, v, bx, y - half, bz, 1);
+      v = pushVertex(position, fade, v, bx, y + half, bz, 1);
+      v = pushVertex(position, fade, v, ax, y - half, az, 0);
+      v = pushVertex(position, fade, v, bx, y + half, bz, 1);
+      v = pushVertex(position, fade, v, ax, y + half, az, 0);
     }
 
-    // The barline: a single upright stroke across the staff, standing where
-    // the notes are struck. It is the same mark a bar ends with in written
-    // music, which is why it is a barline and not a glowing target — the
-    // player reads "here" from notation they already understand.
-    this.pointAt(HIT_AHEAD_M, a);
-    // Weight. A barline is the mark that says *here*, and at a ninth of a
-    // step it was thinner than the lines it crosses — the one place in the
-    // frame that has to be unambiguous was the faintest thing in it.
-    const right = STEP_M * 0.24;
-    const low = STEP_ZERO_Y + (LINE_STEPS[0] - 0.35) * STEP_M;
-    const high = STEP_ZERO_Y + (LINE_STEPS[LINE_STEPS.length - 1] + 0.35) * STEP_M;
-    const tangentX = Math.sin(this.heading) * right;
-    const tangentZ = Math.cos(this.heading) * right;
+    // The barline: a single upright stroke across the five lines, standing
+    // where the notes are struck. It is the same mark a bar ends with in
+    // written music, which is why it is a barline and not a glowing target —
+    // the player reads "here" from notation they already understand. It stops
+    // at the outer lines, as engraved; running it past them was an attempt to
+    // make it more visible that only made it less like notation.
+    const barHalf = STEP_M * BAR_HALF_STEPS * s;
+    const low = this.stepY(LINE_STEPS[0]) - half;
+    const high = this.stepY(LINE_STEPS[LINE_STEPS.length - 1]) + half;
+    const lx = this.anchor.x - this.right.x * barHalf;
+    const lz = this.anchor.z - this.right.z * barHalf;
+    const rx = this.anchor.x + this.right.x * barHalf;
+    const rz = this.anchor.z + this.right.z * barHalf;
     const mark = BARLINE_FADE;
-    v = pushVertex(position, fade, v, a.x - tangentX, a.y + low, a.z - tangentZ, mark);
-    v = pushVertex(position, fade, v, a.x + tangentX, a.y + low, a.z + tangentZ, mark);
-    v = pushVertex(position, fade, v, a.x + tangentX, a.y + high, a.z + tangentZ, mark);
-    v = pushVertex(position, fade, v, a.x - tangentX, a.y + low, a.z - tangentZ, mark);
-    v = pushVertex(position, fade, v, a.x + tangentX, a.y + high, a.z + tangentZ, mark);
-    pushVertex(position, fade, v, a.x - tangentX, a.y + high, a.z - tangentZ, mark);
+    v = pushVertex(position, fade, v, lx, low, lz, mark);
+    v = pushVertex(position, fade, v, rx, low, rz, mark);
+    v = pushVertex(position, fade, v, rx, high, rz, mark);
+    v = pushVertex(position, fade, v, lx, low, lz, mark);
+    v = pushVertex(position, fade, v, rx, high, rz, mark);
+    pushVertex(position, fade, v, lx, high, lz, mark);
 
     this.staffPosition.needsUpdate = true;
     this.staffFade.needsUpdate = true;
@@ -992,13 +941,6 @@ function glyphWorldSize(): number {
 
 const HEAD_RX = 28;
 const HEAD_RY = 21;
-
-/**
- * Half the width of a note head in metres — what the screen-space spacing
- * clamp measures distances in. Derived from the atlas rather than written
- * down, so redrawing the head cannot silently move the threshold.
- */
-const HEAD_HALF_WIDTH_M = (glyphWorldSize() * HEAD_RX) / ATLAS_CELL_PX;
 
 /**
  * Draw every glyph the songbook can ask for, once, onto one canvas.
@@ -1114,7 +1056,6 @@ function makeLive(beat: SongBeat): LiveNote {
     cell: step === null ? REST_CELL : cellFor(step),
     state: 'travelling',
     changedMs: 0,
-    push: 0,
   };
 }
 
@@ -1154,32 +1095,13 @@ function pushVertex(
   return v + 1;
 }
 
-/** Where a note sits, in metres ahead of the bard, at a given travel progress. */
-function aheadAt(progress: number): number {
-  if (progress <= 1) return SPAWN_AHEAD_M + (HIT_AHEAD_M - SPAWN_AHEAD_M) * progress;
-  return HIT_AHEAD_M - PAST_DRIFT_M * (1 - Math.exp(-(progress - 1) * 4));
-}
-
 /**
- * Strongest where the notes are struck, dissolving into the distance.
- *
- * `t` runs from the tail behind the bard to the far end of the staff, and the
- * barline stands at about 0.18 of it, so "full at 0.2, dissolving from there"
- * puts the strongest part of the line exactly under the mark that says
- * *here*. That is the whole shape of this curve: the eye is asked to read one
- * place, and the further a stretch of line is from that place the less of it
- * there is to look at.
- *
- * It does not fall to nothing, because the far half of the staff is where the
- * notes the player has not yet played are travelling and pitch is unreadable
- * with no line under the head. A quarter of the strength is enough to say
- * which line a note is riding without the far end ruling across the treeline.
+ * Where a note sits along the card, in metres right of the barline, at a
+ * given travel progress.
  */
-function ribbonFade(t: number): number {
-  const near = smoothstep(0, 0.06, t);
-  const end = smoothstep(1, 0.9, t);
-  const away = 0.26 + 0.74 * smoothstep(0.92, 0.2, t);
-  return near * end * away;
+function runAt(progress: number): number {
+  if (progress <= 1) return RUN_M * (1 - progress);
+  return -PAST_DRIFT_M * (1 - Math.exp(-(progress - 1) * 4));
 }
 
 function smoothstep(edge0: number, edge1: number, x: number): number {
@@ -1206,6 +1128,16 @@ void main() {
 }
 `;
 
+/**
+ * The five lines are strongest at the barline and dissolve toward the far end
+ * of the run, and they end rather than stopping: both ends are taken to zero
+ * over a short distance so the stave reads as a torn strip of manuscript
+ * hanging in the air rather than as five rules that were cut off.
+ *
+ * It does not fall to nothing before the far end, because that is where the
+ * notes the player has not yet played are travelling and pitch is unreadable
+ * with no line under the head.
+ */
 const STAFF_FRAGMENT = /* glsl */ `
 uniform vec3 uColor;
 uniform vec3 uHorizon;
@@ -1216,7 +1148,10 @@ varying float vFade;
 
 void main() {
   float bar = step(1.5, vFade);
-  float fade = min(vFade, 1.0);
+  float t = min(vFade, 1.0);
+  float ends = smoothstep(0.0, 0.05, t) * smoothstep(1.0, 0.92, t);
+  float away = 0.42 + 0.58 * smoothstep(0.95, 0.12, t);
+  float fade = mix(ends * away, 1.0, bar);
   vec3 line = mix(uColor, uHorizon, uLineTint);
   float a = fade * mix(uOpacity, uBarOpacity, bar);
   if (a < 0.002) discard;

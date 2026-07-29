@@ -81,8 +81,21 @@ function roadZ(sample: RoadSample): number {
 
 /** Metres of road per chunk. */
 const CHUNK_LENGTH = 60;
-/** Half-width of the terrain ribbon, metres. */
-const HALF_WIDTH = 165;
+/**
+ * Half-width of the terrain ribbon, metres — and, since the ribbon is the
+ * furthest built thing in the world, how far the ground reaches before the
+ * sky dome takes over.
+ *
+ * Exported because the aerial perspective has to be stated against it. Fog
+ * range was previously set as a multiple of the quality tier's view
+ * distance, and both settings it has had put the near plane at or beyond
+ * this number: at 0.55x it was 165 m and at 1.1x it was 330, so on the
+ * high tier the world had *no* aerial perspective at all — smoothstep's
+ * lower edge sat exactly where the geometry ran out. Air is a property of
+ * the place, not of the machine drawing it.
+ */
+export const TERRAIN_REACH = 165;
+const HALF_WIDTH = TERRAIN_REACH;
 /**
  * Samples along the road within a chunk.
  *

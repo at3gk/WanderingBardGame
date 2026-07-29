@@ -135,8 +135,28 @@ export const SKY_KEYS: SkyKey[] = [
     // and morning frames had no value range to compose with.
     bounce: 0x5d6a44,
     fog: 0xcfe0ec,
-    elevation: 0.62,
-    azimuth: 0.6,
+    /*
+     * Down from 0.62 rad and round from 0.6, and this is the change that
+     * gives the morning frame a landscape instead of a lawn.
+     *
+     * At thirty-five degrees with the sun a little behind the shoulder,
+     * every cast shadow in the world falls away from the camera and hides
+     * behind the thing that cast it, and the ground — which is near enough
+     * flat over the whole of the middle distance — takes the same `ndl`
+     * everywhere. The field therefore had no modelling of any kind: no
+     * shadows across it, no difference between a rise and a hollow, one
+     * value from the bard's boots to the treeline. Twenty-two degrees and
+     * more to the side puts the shadows across the road where they can be
+     * seen, and gives a slope tilted toward or away from the sun something
+     * to differ by.
+     *
+     * Twenty-two degrees is still plainly morning. The alternative on offer
+     * was to keep the sun where it was and fake the modelling with a
+     * gradient, which is a second lighting model wearing the first's
+     * clothes.
+     */
+    elevation: 0.38,
+    azimuth: 0.92,
     exposure: 1.02,
     starness: 0,
     cloudiness: 0.42,
@@ -153,8 +173,12 @@ export const SKY_KEYS: SkyKey[] = [
     // most flattening to undo.
     bounce: 0x66703f,
     fog: 0xd6e6f0,
-    elevation: 1.05,
-    azimuth: 0.0,
+    // Sixty degrees was the worst case of the problem described under
+    // morning: at that height a flat field and a hillside differ by almost
+    // nothing and a shadow is a puddle under its own caster. Forty is still
+    // the top of the day and leaves the frame something to be modelled by.
+    elevation: 0.70,
+    azimuth: 0.34,
     exposure: 1.05,
     starness: 0,
     cloudiness: 0.38,
@@ -167,8 +191,10 @@ export const SKY_KEYS: SkyKey[] = [
     sun: 0xffe2ac,
     bounce: 0x8b8452,
     fog: 0xdfd8c8,
-    elevation: 0.5,
-    azimuth: -0.7,
+    // Same correction, mirrored: the afternoon sun has crossed over, so it
+    // goes further round rather than back.
+    elevation: 0.34,
+    azimuth: -0.92,
     exposure: 1.0,
     starness: 0,
     cloudiness: 0.42,

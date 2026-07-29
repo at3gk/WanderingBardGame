@@ -37,7 +37,7 @@ import { Group, Scene, Vector3 } from 'three';
 import type { App, Stage } from './App';
 import { CameraRig, type CameraMood } from './CameraRig';
 import { Sky, applyTimeOfDay, skyStateAt } from './sky';
-import { WorldStreamer } from './world/WorldStreamer';
+import { TERRAIN_REACH, WorldStreamer } from './world/WorldStreamer';
 import { Bard } from './actors/Bard';
 import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
 import { Campfire } from './scenes/Campfire';
@@ -328,22 +328,32 @@ export class RoadStage implements Stage {
     this.rig = new CameraRig();
     this.rig.setMood(PHASE_TO_MOOD[this.journey.phase], 0);
 
-    // Fog is pushed out past the terrain ribbon's own reach on high tier
-    // and pulled in on low, which is both a performance lever and — since
-    // the fog colour is the sky's — a legitimate mood one.
-    // Aerial perspective, not weather. The first tuning had fog starting a
-    // quarter of the way to the horizon and reaching full strength at it,
-    // which flattened every distant hill into the sky and took all the
-    // depth cues with it. It starts well out now and never fully closes.
-    // 1.1 rather than 0.55. Aerial perspective is supposed to separate the
-    // distance from the middle distance; starting it barely half way to the
-    // horizon fogged the mid-ground toward the sky before it could hold a
-    // tone of its own, and the four plain daylight frames ended up with a
-    // total value range of about 1.3:1 from near grass to far ridge. There
-    // is nothing to compose with in 1.3:1. The far ridge silhouettes now
-    // supply the distance layer, so the fog no longer has to.
-    app.globals.uFogNear.value = app.quality.viewDistance * 1.1;
-    app.globals.uFogFar.value = app.quality.viewDistance * 2.4;
+    // Aerial perspective, stated against the ground's own reach rather than
+    // against the quality tier.
+    //
+    // This has been tuned twice by moving a multiplier on `viewDistance`,
+    // once to 0.55 and once to 1.1, and neither did anything, because the
+    // terrain ribbon only reaches 165 m: at 0.55 the near plane landed on
+    // the last metre of ground and at 1.1 it landed a hundred and sixty-five
+    // metres past it. Both settings meant the same thing — smoothstep's
+    // lower edge at or beyond the furthest fragment, so `distanceFog` was
+    // zero on every surface in the world. The four plain daylight frames
+    // therefore had no distance term of any kind, which is most of why they
+    // measured a total value range of about 1.3:1 from near grass to far
+    // ridge. There is nothing to compose with in 1.3:1.
+    //
+    // The two ends are solved for, not chosen: the sixty-metre treeline is
+    // to keep nearly all of its own tone (about a twelfth veiled) and the
+    // hundred-and-sixty-metre edge of the ribbon is to be mostly air (about
+    // three quarters), and there is exactly one pair of smoothstep edges
+    // that does both. It comes out at twenty metres and two hundred and
+    // forty. That shape — nothing near, a little at the treeline, a great
+    // deal at the limit — is the shape aerial perspective actually has, and
+    // it is the only term in a plain daylight frame that tells the near
+    // ground from the far: both are the same green under the same sun, so
+    // the entire value range between them is made here.
+    app.globals.uFogNear.value = TERRAIN_REACH * 0.12;
+    app.globals.uFogFar.value = TERRAIN_REACH * 1.47;
 
     this.world.update(this.journey.s);
     this.syncSubject();

@@ -107,9 +107,17 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
   village: {
     id: 'village',
     grass: 0x9ab157,
-    grassVariant: 0xd2ce84,
+    // The pale ends of the ground pulled down about a third of a stop, from
+    // 0xd2ce84 and 0xe3d69c. Measured off a frame, the old dry tone was the
+    // single brightest surface anywhere in the world — brighter than rock,
+    // brighter than the road, 0.67 against a sky of 0.63 — so a sunlit rise
+    // in the middle distance was the lightest thing in the picture and the
+    // sky above it was not. Ground is never the lightest thing in a
+    // landscape; that place belongs to the sky, and everything that reaches
+    // up to meet it costs the frame a band it could have composed with.
+    grassVariant: 0xc2bf7a,
     grassShade: 0x66803e,
-    grassDry: 0xe3d69c,
+    grassDry: 0xd0c48f,
     // Darkened from 0xc0a67c / 0xb4ab77. Against `grassDry` 0xe3d69c — which
     // is what a sunlit village rise comes up to — the old road was about a
     // fifth of a stop darker than the field it crossed, so on golden ground
@@ -121,8 +129,15 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     roadShoulder: 0x9c9468,
     rock: 0xbcb39d,
     trunk: 0x9d7b60,
-    canopy: 0x84a44f,
-    canopyVariant: 0xb2c46a,
+    // Was 0x84a44f / 0xb2c46a, and the variant was the fault. It measured
+    // 0.50 against a grass of 0.39, so the pale end of the canopy — which is
+    // where the broadleaf bias in `buildTrees` puts most of the trees — was
+    // *lighter* than the field the trees stand in. A wood that is lighter
+    // than its own meadow cannot separate from it at any distance, and the
+    // treeline is the one edge in a landscape that has to hold. Both ends now
+    // sit below the grass: canopy at about 0.44 of it and the variant at 0.69.
+    canopy: 0x627b39,
+    canopyVariant: 0x87944f,
     accent: 0xe07a5f,
     accentAlt: 0xf2cf8a,
     trees: [
@@ -145,15 +160,17 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
   forest: {
     id: 'forest',
     grass: 0x466c42,
-    grassVariant: 0x718f50,
+    grassVariant: 0x68844a,
     grassShade: 0x274434,
-    grassDry: 0x96995a,
+    grassDry: 0x878a51,
     road: 0x7d6a52,
     roadShoulder: 0x5f6f47,
     rock: 0x8b9490,
     trunk: 0x6d5a4a,
-    canopy: 0x2f5c3f,
-    canopyVariant: 0x4c7f47,
+    // Same correction as village, at forest's own scale: 0x4c7f47 measured
+    // 0.17 against a grass of 0.12.
+    canopy: 0x274e35,
+    canopyVariant: 0x386034,
     accent: 0xc4763a,
     accentAlt: 0xd9b06a,
     trees: [
@@ -178,22 +195,24 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
   riverside: {
     id: 'riverside',
     grass: 0x76a07d,
-    grassVariant: 0xaac292,
+    grassVariant: 0x9bb185,
     grassShade: 0x477165,
-    grassDry: 0xccd2ac,
+    grassDry: 0xb6bb99,
     // Same problem as village, milder: 0xa89a80 against a `grassDry` of
     // 0xccd2ac is not enough of a break to survive fog at thirty metres.
     road: 0x907f68,
     roadShoulder: 0x7c8a72,
     rock: 0xa2a8ae,
     trunk: 0x847266,
-    // Darkened from 0x6c9a76 / 0x9ac093. The willows were the palest foliage
-    // anywhere in the game, which put the brightest object in a wide frame
-    // out on the horizon where nothing worth looking at was happening. A
-    // riverside canopy should be cool and slightly sombre — it is the biome
-    // whose whole character is that its accent is cooler than its greens.
-    canopy: 0x568170,
-    canopyVariant: 0x7aa87f,
+    // Darkened twice: from 0x6c9a76 / 0x9ac093 because the willows were the
+    // palest foliage in the game and put the brightest object in a wide frame
+    // out on the horizon, and again from 0x568170 / 0x7aa87f for the reason
+    // given under village — the variant still measured above the grass. A
+    // riverside canopy should be cool and slightly sombre anyway; it is the
+    // biome whose whole character is that its accent is cooler than its
+    // greens.
+    canopy: 0x436659,
+    canopyVariant: 0x5d8161,
     accent: 0x5fa6c8,
     accentAlt: 0xe4e8d2,
     trees: [
