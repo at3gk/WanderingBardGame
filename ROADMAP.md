@@ -8,7 +8,7 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the last numbered entry (currently 112). If it says
+- **What to do next** is the last numbered entry (currently 113). If it says
   "Nothing queued", promote something from the **Idea backlog** near the
   bottom, or pick up a **Blocked on human** item in STATE.md if its blocker
   has lifted.
@@ -1376,9 +1376,46 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     at 8 viewports, and `autoplay`/`mash-check`/`seam-check`, which
     exercise the meter's per-frame layout and mode-toggle visibility
     continuously.
-112. **Next.** Nothing queued.
+112. ~~**Consolidation: split the coin/distance readouts out of RoadScene.**~~
+    Done (Run 43, scheduled). Both blockers re-checked first (unchanged —
+    see Blocked on human), no playtest answer had arrived, and the idea
+    backlog still held only the phone-dependent item, so this run took the
+    next piece task 112's own "nothing queued" note had already named as a
+    candidate: of the four things left in `setWalkChromeVisible` (staff
+    lines, clef, hit line/flash, coin/distance readouts), the coin/distance
+    pair was the cleanest cut — `updateCoinReadout`/`updateDistanceReadout`
+    were already two small self-contained private methods touching only
+    their own two GameObjects, unlike the staff lines/clef/hit line/flash,
+    which are interleaved with `laneY`/`hitLineX`/`beatPhase` in the same
+    per-frame block as the note markers.
+    `src/scenes/readouts.ts` (new, 75 lines) now owns `coinIcon`, `coinText`,
+    `distanceText` and their five margin/radius constants, via
+    `createReadouts` (called once from `create()`), `layoutReadouts` (the
+    per-frame text/position update, replacing the two removed methods) and
+    `setReadoutsVisible` (called from `setWalkChromeVisible`). Same
+    `Host`-interface shape as the picker/free-play/meter splits:
+    `ReadoutsHost` is the exact slice of RoadScene the module reads and
+    writes. `coins`, `distancePx`, `coinIcon`, `coinText` and `distanceText`
+    all dropped `private` for the same two reasons as the meter's fields —
+    a private class field can't satisfy a plain interface type, and
+    `tools/hud-check.mjs`, `tools/freeplay-check.mjs` and five other checks
+    already reach several of them directly. `RoadScene.ts` 1783 → 1747
+    lines.
+    Verified behaviour-preserving rather than assumed: `npm test` 279 green
+    (unchanged — no unit tests cover scene modules, same precedent as the
+    other three splits), `npm run build` green (1266.76 KB vs 1266.84 KB, a
+    module-boundary-only difference), and the full 14-check quick suite
+    green — including `hud-check` (reads `coinIcon`/`coinText` rects
+    directly) and `freeplay-check` (reads `coinText.visible`,
+    `distanceText.visible` and `coins` directly to confirm free play doesn't
+    feed the coin/step counters). `node_modules` was missing at the start of
+    this run (fresh checkout); `npm install` (54 packages, 0 vulnerabilities)
+    was needed first. Playwright for the check suite was installed fresh
+    into the scratchpad (`npm i playwright@1.56.1`, matching the pinned
+    version) since it is deliberately kept out of `package.json`.
+113. **Next.** Nothing queued.
 
-    **First, check the blockers** (re-checked task 111): both remain
+    **First, check the blockers** (re-checked task 112): both remain
     blocked — forest-song fetch still 403s, GitHub MCP toolset still has no
     tag/ref-write or branch-protection-write call.
 
@@ -1390,14 +1427,19 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     **Fourth, the idea backlog below** — only sharper mobile rendering is
     left, still needs a real phone.
 
-    **Fifth, `RoadScene.ts` is 1783 lines**, down from 1838 after task
-    111's split. What remains of `setWalkChromeVisible` is the staff
-    lines, the clef, the hit line/flash, and the coin/distance readouts —
-    still not one cohesive block (task 108's original finding stands), but
-    each is small enough now that a future run could take just one of them
-    the same way task 111 took the meter, if a reason turns up to keep
-    shrinking the scene — not an automatic pick on its own. `createBard`
-    remains the one drawing block genuinely entangled with scene state.
+    **Fifth, `RoadScene.ts` is 1747 lines**, down from 1783 after task 112's
+    split. What remains of `setWalkChromeVisible` is the staff lines, the
+    clef, and the hit line/flash — all three still interleaved with
+    `laneY`/`hitLineX`/`beatPhase` in the same per-frame block as the note
+    markers (task 108's original finding stands: not a clean single-unit
+    extraction the way the meter and the coin/distance readouts were).
+    `createBard` remains the one drawing block genuinely entangled with
+    scene state. Four small extractions in a row (tasks 107, 109, 111, 112)
+    is a real pattern worth naming: the next one should have an actual
+    reason (a bug, a new feature that needs the room, or the scene crossing
+    some further threshold) rather than being picked by default just
+    because it's there — see CLAUDE.md's drift-control note, which applies
+    to over-refactoring as much as to over-adding.
 
     **What not to reach for.** The verification suite is comprehensive now
     (24 checks); adding another for its own sake is drift. **Key

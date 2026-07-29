@@ -1,11 +1,49 @@
 # STATE
 
-Run counter: 42
+Run counter: 43
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
 
+- **Run 43 (scheduled): split the coin/distance readouts out of
+  `RoadScene.ts`,** per new ROADMAP task 112 — the next piece task 112's own
+  "nothing queued" note (as task 111 left it) had already named as a
+  candidate once task 111 took the meter out. Both blockers re-checked
+  first (unchanged — see Blocked on human), no playtest answer had arrived,
+  idea backlog still down to the one phone-dependent item.
+  Of the four things left in `setWalkChromeVisible` (staff lines, clef, hit
+  line/flash, coin/distance readouts), the coin/distance pair was the
+  cleanest cut: `updateCoinReadout`/`updateDistanceReadout` were already two
+  small self-contained private methods touching only their own two
+  GameObjects, unlike the other three, which are interleaved with
+  `laneY`/`hitLineX`/`beatPhase` in the same per-frame block as the note
+  markers. `src/scenes/readouts.ts` (new, 75 lines) now owns `coinIcon`,
+  `coinText`, `distanceText` and their five margin/radius constants, via
+  `createReadouts` (called once from `create()`), `layoutReadouts` (the
+  per-frame update, replacing the two removed methods) and
+  `setReadoutsVisible` (called from `setWalkChromeVisible`). Same
+  `Host`-interface shape as the picker/free-play/meter splits.
+  `coins`, `distancePx`, `coinIcon`, `coinText` and `distanceText` all
+  dropped `private` — a private class field can't satisfy a plain interface
+  type, and `tools/hud-check.mjs`, `tools/freeplay-check.mjs` and five other
+  checks already reach several of them directly. `RoadScene.ts` 1783 → 1747
+  lines.
+  Verified behaviour-preserving rather than assumed: `npm test` 279 green
+  (unchanged — no unit tests cover scene modules, same precedent as the
+  other three splits), `npm run build` green (1266.76 KB vs 1266.84 KB, a
+  module-boundary-only difference), and the full 14-check quick suite
+  green — including `hud-check` (reads `coinIcon`/`coinText` rects directly)
+  and `freeplay-check` (reads `coinText.visible`, `distanceText.visible` and
+  `coins` directly). `node_modules` was missing at the start of this run
+  (fresh checkout); `npm install` (54 packages, 0 vulnerabilities) was
+  needed first, and Playwright for the check suite was installed fresh into
+  the scratchpad (`npm i playwright@1.56.1`, matching the pinned version)
+  since it stays out of `package.json` on purpose.
+  **Flagged for whoever runs next**: this is the fourth small RoadScene
+  extraction in a row (tasks 107, 109, 111, 112). ROADMAP task 113 asks the
+  next run not to pick a fifth one by default — see its entry for the
+  reasoning.
 - **Run 42 (scheduled): split the song meter out of `RoadScene.ts`,** per
   new ROADMAP task 111 — the "just the meter bar" first cut task 110's own
   note left open once task 108 had ruled out `setWalkChromeVisible` as a

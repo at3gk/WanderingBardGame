@@ -62,6 +62,7 @@ import {
   tearDownFreeStaff as tearDownFreeStaffOverlay,
 } from './freePlayOverlay';
 import { createMeterBar, layoutMeterBar, setMeterBarVisible } from './meterBar';
+import { createReadouts, layoutReadouts, setReadoutsVisible } from './readouts';
 
 const BPM = 96;
 const MS_PER_BEAT = 60000 / BPM;
@@ -199,15 +200,14 @@ const SKY_CLEARANCE = 10;
 const STAFF_TOP_LINE_STEP = 10;
 const COIN_RATE_PER_SEC = 5;
 const COIN_CHIME_EVERY = 25;
-const COIN_ICON_RADIUS = 8;
-const COIN_MARGIN_TOP = 24;
-const COIN_MARGIN_RIGHT = 24;
+// The readouts' own margin/radius constants (COIN_ICON_RADIUS,
+// COIN_MARGIN_TOP/RIGHT, DISTANCE_MARGIN_LEFT/BOTTOM) live in ./readouts
+// alongside the two GameObjects and functions that use them (ROADMAP task
+// 112) — see that module's header for why it split out.
 const MUTE_ICON_RADIUS = 10;
 const MUTE_ICON_COLOR_ON = 0xe8d9c0;
 const MUTE_ICON_COLOR_MUTED = 0x554e63;
 const MUTE_SLASH_COLOR = 0x8a5a5a;
-const DISTANCE_MARGIN_LEFT = 24;
-const DISTANCE_MARGIN_BOTTOM = 20;
 // Now that the lane is a staff, the instruction can name what the player
 // is actually looking at — and it doubles as the first thing that tells a
 // new reader those shapes are notes.
@@ -318,7 +318,8 @@ export class RoadScene extends Phaser.Scene {
   private stars!: Phaser.GameObjects.TileSprite;
   private moon!: Phaser.GameObjects.Image;
   private moonGlow!: Phaser.GameObjects.Arc;
-  private distancePx = 0;
+  /** Not `private` — `./readouts` reads this on the host. */
+  distancePx = 0;
   /**
    * The song the child is learning, or null to wander. Held at scene level
    * (not module level like the scaffold) because unlike learning progress
@@ -376,10 +377,11 @@ export class RoadScene extends Phaser.Scene {
   /** Not `private` — the free-play overlay also names the tune being practised here. */
   songTitleText!: Phaser.GameObjects.Text;
   private pendingAnnounce: Array<{ atMs: number; title: string }> = [];
-  private coins = 0;
-  private coinIcon!: Phaser.GameObjects.Image;
-  private coinText!: Phaser.GameObjects.Text;
-  private distanceText!: Phaser.GameObjects.Text;
+  /** Not `private` — `./readouts` reads and writes these on the host. */
+  coins = 0;
+  coinIcon!: Phaser.GameObjects.Image;
+  coinText!: Phaser.GameObjects.Text;
+  distanceText!: Phaser.GameObjects.Text;
   private hintText!: Phaser.GameObjects.Text;
   private hintShown = true;
   private muteIcon!: Phaser.GameObjects.Image;
@@ -513,20 +515,7 @@ export class RoadScene extends Phaser.Scene {
     createMeterBar(this);
 
     this.coins = 0;
-    this.coinIcon = this.add.image(0, 0, 'coin-icon');
-    this.coinText = this.add.text(0, 0, '0', {
-      fontFamily: 'sans-serif',
-      fontSize: '16px',
-      color: '#e8d9c0',
-    });
-    this.coinText.setOrigin(0, 0.5);
-
-    this.distanceText = this.add.text(0, 0, '0 steps', {
-      fontFamily: 'sans-serif',
-      fontSize: '14px',
-      color: '#a89bb5',
-    });
-    this.distanceText.setOrigin(0, 1);
+    createReadouts(this);
 
     this.muteIcon = this.add.image(0, 0, 'note-glyph');
     this.muteIcon.setScale((MUTE_ICON_RADIUS * 2) / 34);
@@ -1109,9 +1098,7 @@ export class RoadScene extends Phaser.Scene {
     // Steps and coins are both counts of walking. Leaving them on screen
     // while the road is stopped invites a child to wonder why they are not
     // going up.
-    this.distanceText.setVisible(visible);
-    this.coinText.setVisible(visible);
-    this.coinIcon.setVisible(visible);
+    setReadoutsVisible(this, visible);
   }
 
   private playFreeNote(y: number, x: number): void {
@@ -1493,8 +1480,7 @@ export class RoadScene extends Phaser.Scene {
 
     this.updateSongTitle(nowMs);
     this.updateMeterBar();
-    this.updateCoinReadout();
-    this.updateDistanceReadout();
+    layoutReadouts(this);
     this.updateBard(hitLineX);
     this.audioEngine.setMeterRatio(meterRatio);
   }
@@ -1758,26 +1744,4 @@ export class RoadScene extends Phaser.Scene {
     layoutMeterBar(this, hud.meterCenterX, hud.meterY, hud.meterWidth, this.meter / this.meterConfig.max, this.walking);
   }
 
-  /** Coin count readout — a display of song-meter performance, not an interactive system (ROADMAP task 11). */
-  private updateCoinReadout(): void {
-    const iconX = this.scale.width - COIN_MARGIN_RIGHT - COIN_ICON_RADIUS;
-    this.coinIcon.setPosition(iconX, COIN_MARGIN_TOP);
-    this.coinText.setText(Math.floor(this.coins).toString());
-    this.coinText.setPosition(iconX - COIN_ICON_RADIUS - this.coinText.width - 8, COIN_MARGIN_TOP);
-  }
-
-  /**
-   * Distance-walked readout — DESIGN.md names "distance" alongside scenery
-   * and coins as a readout of song-meter performance, but until now
-   * `distancePx` only drove the biome crossfade internally with nothing
-   * shown to the player. Steps are `distancePx` converted through
-   * `ROAD_TILE_WIDTH` (the road's own dash-tile size) rather than a new
-   * arbitrary unit, so one "step" matches one tile of ground already
-   * scrolling past.
-   */
-  private updateDistanceReadout(): void {
-    const steps = Math.floor(this.distancePx / ROAD_TILE_WIDTH);
-    this.distanceText.setText(`${steps} steps`);
-    this.distanceText.setPosition(DISTANCE_MARGIN_LEFT, this.scale.height - DISTANCE_MARGIN_BOTTOM);
-  }
 }
