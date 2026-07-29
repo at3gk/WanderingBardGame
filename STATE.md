@@ -1,10 +1,62 @@
 # STATE
 
-Run counter: 44
+Run counter: 45
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **Run 45 (human-directed): fix the gauges, then fix the ground cover.**
+  A human asked for a push toward premium cozy-game quality, with harsh
+  visual critique in the loop. Four things landed, and the first two are
+  corrections to *measurement* rather than to the game — which is the part
+  worth reading, because both had already misdirected a previous run.
+
+  1. **`shader-check`'s "time-of-day is inert" was the check, not the game.**
+     Struck from the list below as item 7. Full write-up further down; the
+     short version is that it never moved the clock, and a posed time of day
+     does not survive while the bard is walking because `dayFraction` is
+     derived from `s`. Real numbers now: a luminance range of ~102 and a
+     properly cool night.
+  2. **`tools/frame-quality.mjs` is new** — value range, hue spread and
+     largest-flat-area for six posed frames, so "flat", "monochrome" and "too
+     much bare road" stop being adjectives. Two things it taught immediately:
+     hue spread is **not** "higher is better" (golden hour is the most
+     hue-unified frame in the set *and* the best-looking one, so the floor is
+     per-pose), and **the daylight frames are not globally flat** — they
+     measure 3.3-3.9 stops. See item 8 below for what they are instead.
+  3. **Every blade of grass was concave.** `bladeGeometry`'s waist sat at 0.24
+     of the tip's horizontal travel with the tip half way up, where straight
+     is 0.5 — so each blade hooked outward at the end, and five of them fanned
+     over a full circle made every tuft a spike-star. `fernGeometry` had the
+     same full-circle fan and worse proportions (fronds reaching 1.25 lengths
+     out while rising a third of that), which is why the near foreground read
+     as literal caltrops. Both now arch and fan into a wedge.
+  4. **Grass is lit as ground, not as walls.** A blade is a near-upright
+     single plane, so its true normal is near-horizontal: blades facing away
+     from the sun went almost black and a tuft read as a dark teepee.
+     `skywardNormals` tilts blade normals toward +Y (0.72 for grass, 0.4 for
+     ferns) — free, no shader change — and it also pulls ground cover into the
+     same value neighbourhood as the ground it grows from. Blade tips are now
+     a short capping edge rather than a single apex vertex, which took the
+     tuft from 15 to 20 triangles on purpose.
+
+  `src/three/world/geometry.test.ts` is new and pins all of it: blade
+  convexity (the bug measured 0.24, the gate is 0.60), the wedge fan, the
+  capping edge, skyward normals, tuft height and the triangle budget. Nothing
+  caught the original bug for forty runs — it type-checked, no test touched
+  the module, and `shader-check` only asks whether pixels drew.
+
+  **A caveat on the new check, and the reason it is not the whole answer.**
+  The grass and fern work is a large, obvious improvement in the re-shot
+  frames and `frame-quality`'s numbers barely move for it (noon 3.33 → 3.34
+  stops). That is correct behaviour, not a broken check: silhouette is not
+  something a whole-frame histogram can see. Do not use those six numbers as
+  evidence that a *shape* change worked — shoot the frames and look.
+
+  **Next, in order.** Item 8 below (the ground has no light value) is the
+  highest-leverage thing left and is a palette/lighting decision rather than
+  a geometry one. After that, items 2/3/4/6.
 
 - **Run 44 deleted the dead 2D/Phaser code.** `src/scenes/` (the
   `RoadScene`/`picker`/`meterBar`/`freePlayOverlay`/`readouts` modules from
@@ -72,10 +124,42 @@ Run counter: 44
   visible frame band and carries cloud. The land has a midground again.
 
   **Still wrong, in the order a next run should take them:**
+
+  8. **The ground never carries a light value.** New in Run 45, from a
+     measured critique, and now the top of this list. The value histogram is
+     bimodal in every daylight frame with a hole between the lobes: in the
+     morning frame 73% of pixels sit in L32-127 (the land) and 25% in
+     L176-223 (the sky), while the whole band L128-175 holds **2.97%**.
+     Restricted to the land region, the fraction of pixels above L170 never
+     exceeds 0.5% in any frame — noon, the brightest, manages 0.14%. There is
+     no sunlit grass, no light-struck road, no bleached hilltop anywhere. A
+     Short Hike's structure is light sky / **mid** land / dark accents; here
+     the land *is* the dark tier and nothing bridges to the sky. This is what
+     people (including several critiques and this run's own eyes) have been
+     calling "flat" — it is a distribution problem, not the *range* problem
+     `frame-quality` measures, which is why that check reports a comfortable
+     3.3-3.9 stops on the same frames.
+
+     The fix is a choice, and the critique was firm that it is one or the
+     other and not a third lighting term: either raise the meadow and road
+     albedos in `world/palette.ts` until a sun-facing field reaches L170-190,
+     or pull `sky.ts`'s zenith and horizon keys down 25-30 levels so the land
+     has room to occupy the light third. Note that `palette.ts` carries a long
+     and well-argued comment justifying the *current* darkness on photographic
+     grounds (sunlit grass really does photograph at a fifth of white) — that
+     reasoning is sound and still produced a picture with a hole in it, so
+     whoever changes this should update that comment rather than quietly
+     contradict it. Also flagged: at dusk the land collapses to a 23-level
+     range and the largest boulder renders its top and its front within one
+     value level of each other.
+
   1. The road is bare. Narrowing it to a 3.4 m cart track and deepening the
-     ruts helped, but the carriageway has no scatter on it at all — no
-     pebbles, no tufts in the rut, no puddles. On a phone in portrait it is
-     still the largest single area in the frame.
+     ruts helped, and pebble/road-grass scatter and skyline landmarks have
+     since landed (both are in `WorldStreamer.ts` and visibly in frame — a
+     chapel spire shows on the dawn ridge), so this item is narrower than it
+     reads: what is left is that on a phone in portrait the carriageway is
+     still the largest single area in the frame, and it has no wet/dry
+     variation across it.
   2. The bard stands upright at his own campfire. `resting` calls
      `setPose('sitting')` and the pose does not look like sitting.
   3. The camp lantern reads as a bright quad beside a bare post.
@@ -83,9 +167,12 @@ Run counter: 44
      (844x390). Moving it means a considered change to `hudLayout.ts`, which
      its own test constrains — the top slot exists to keep the card off the
      bard mid-busk.
-  5. No landmarks on the skyline. Now that ridges exist, a standing stone or
-     a chapel placed deliberately on one would give the walk something to
-     walk toward. This was correctly deferred until the terrain could hold it.
+  5. ~~No landmarks on the skyline.~~ **Done and stale (confirmed Run 45).**
+     `WorldStreamer.ts` places standing stones, trilithons and chapels on
+     ridges with a view bias, and `geometry.ts` builds all three; a chapel
+     spire is visible on the ridge in the re-shot dawn frame. This list was
+     written before that landed and never updated — per CLAUDE.md, when STATE
+     and the code disagree the code wins.
   6. No instrument picker, and `journey.unlockedInstruments` is never
      appended to — an earned instrument is playable but not choosable.
   7. ~~Time-of-day lighting is nearly inert.~~ **Struck (Run 45): this was

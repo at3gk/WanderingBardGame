@@ -29,8 +29,15 @@ import { describe, expect, it } from 'vitest';
 import type { BufferAttribute, BufferGeometry } from 'three';
 import { grassTuftGeometry, fernGeometry, reedClumpGeometry } from './geometry';
 
-/** Vertices per blade: three triangles, unindexed. */
-const BLADE_VERTS = 9;
+/**
+ * Vertices per blade: four triangles, unindexed.
+ *
+ * Three, until the blade's tip stopped being a single apex vertex and became
+ * a short capping edge. The layout is base-left, base-right, waist-right /
+ * base-left, waist-right, waist-left / waist-left, waist-right, tip-right /
+ * waist-left, tip-right, tip-left.
+ */
+const BLADE_VERTS = 12;
 
 interface Vec3 {
   x: number;
@@ -55,13 +62,12 @@ function horizontalDistance(a: Vec3, b: Vec3): number {
  * How convex each blade of a fanned tuft is, as the fraction of the tip's
  * horizontal travel already spent by the waist.
  *
- * `bladeGeometry` emits a fixed, unindexed vertex layout per blade —
- * base-left, base-right, waist-right / base-left, waist-right, waist-left /
- * waist-left, waist-right, tip — so the root, the waist and the tip are all
- * recoverable from the merged buffer without the builder exposing anything
- * extra. Reading them positionally is a little blunt, but it means the test
- * measures the geometry that actually ships rather than a parallel
- * re-implementation of the maths, which is the only version worth pinning.
+ * `bladeGeometry` emits a fixed, unindexed vertex layout per blade (see
+ * `BLADE_VERTS`), so the root, the waist and the tip are all recoverable from
+ * the merged buffer without the builder exposing anything extra. Reading them
+ * positionally is a little blunt, but it means the test measures the geometry
+ * that actually ships rather than a parallel re-implementation of the maths,
+ * which is the only version worth pinning.
  */
 function bladeConvexity(geometry: BufferGeometry): number[] {
   const position = geometry.attributes.position as BufferAttribute;
@@ -71,7 +77,7 @@ function bladeConvexity(geometry: BufferGeometry): number[] {
     const base = b * BLADE_VERTS;
     const root = midpoint(vertexAt(geometry, base), vertexAt(geometry, base + 1));
     const waist = midpoint(vertexAt(geometry, base + 6), vertexAt(geometry, base + 7));
-    const tip = vertexAt(geometry, base + 8);
+    const tip = midpoint(vertexAt(geometry, base + 10), vertexAt(geometry, base + 11));
     const tipTravel = horizontalDistance(tip, root);
     // A blade with no lean at all has nothing to be convex about.
     if (tipTravel < 1e-6) continue;
@@ -88,7 +94,7 @@ function bladeHeadings(geometry: BufferGeometry): number[] {
   for (let b = 0; b < blades; b++) {
     const base = b * BLADE_VERTS;
     const root = midpoint(vertexAt(geometry, base), vertexAt(geometry, base + 1));
-    const tip = vertexAt(geometry, base + 8);
+    const tip = midpoint(vertexAt(geometry, base + 10), vertexAt(geometry, base + 11));
     out.push(Math.atan2(tip.z - root.z, tip.x - root.x));
   }
   return out;
@@ -153,15 +159,65 @@ describe('grassTuftGeometry', () => {
     }
   });
 
-  it('costs the same fifteen triangles it always did', () => {
-    // The silhouette fix was explicitly required to be free: grass is drawn
-    // tens of thousands of times and this is the one prop where triangle
-    // count is a phone-frame-rate decision rather than a detail. If a future
-    // pass wants more geometry per tuft it should have to change this number
-    // deliberately.
+  it('ends each blade in a capping edge rather than a point', () => {
+    for (const seed of SEEDS) {
+      const geometry = grassTuftGeometry(seed);
+      const position = geometry.attributes.position as BufferAttribute;
+      const blades = position.count / BLADE_VERTS;
+      for (let b = 0; b < blades; b++) {
+        const base = b * BLADE_VERTS;
+        const tipLeft = vertexAt(geometry, base + 11);
+        const tipRight = vertexAt(geometry, base + 10);
+        const baseLeft = vertexAt(geometry, base);
+        const baseRight = vertexAt(geometry, base + 1);
+        const tipWidth = horizontalDistance(tipLeft, tipRight);
+        const baseWidth = horizontalDistance(baseLeft, baseRight);
+        // A real edge, not two coincident vertices dressed up as one.
+        expect(tipWidth).toBeGreaterThan(0);
+        // Still tapering — a tip as wide as the base is a ribbon, not a blade.
+        expect(tipWidth).toBeLessThan(baseWidth * 0.7);
+        // But wide enough to read as a tip. The needle this replaced measured
+        // a 2.6:1 spine from a single apex vertex.
+        expect(tipWidth).toBeGreaterThan(baseWidth * 0.15);
+      }
+    }
+  });
+
+  it('tilts blade normals toward the sky so a tuft is lit as ground', () => {
+    for (const seed of SEEDS) {
+      const normal = grassTuftGeometry(seed).attributes.normal as BufferAttribute;
+      let sum = 0;
+      for (let i = 0; i < normal.count; i++) sum += normal.getY(i);
+      const mean = sum / normal.count;
+      // A blade is a near-upright plane, so its geometric normal is near
+      // horizontal and the lighting model treats it as a wall: the blades
+      // facing away from the sun go black and the tuft reads as a dark
+      // teepee. Grass has to be lit as a surface instead. Untilted, this mean
+      // sits around zero.
+      expect(mean).toBeGreaterThan(0.6);
+      for (let i = 0; i < normal.count; i++) {
+        // Still normalised, and never pointing into the ground.
+        expect(normal.getY(i)).toBeGreaterThan(0);
+        expect(
+          Math.hypot(normal.getX(i), normal.getY(i), normal.getZ(i)),
+        ).toBeCloseTo(1, 5);
+      }
+    }
+  });
+
+  it('costs twenty triangles per tuft', () => {
+    // Grass is drawn tens of thousands of times, so this is the one prop where
+    // triangle count is a phone-frame-rate decision rather than a detail — and
+    // therefore the one that should have to be changed on purpose.
+    //
+    // 15 until the blade tip stopped being a single apex vertex. That cost one
+    // triangle per blade and bought the silhouette fix a critique had scored
+    // as the single most damaging thing in the frame; the alternative on the
+    // table (a second plane per blade, to stop an edge-on blade being a
+    // one-pixel sliver) would have doubled it, and was declined for now.
     for (const seed of SEEDS) {
       const position = grassTuftGeometry(seed).attributes.position as BufferAttribute;
-      expect(position.count / 3).toBe(15);
+      expect(position.count / 3).toBe(20);
     }
   });
 });
