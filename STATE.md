@@ -1,11 +1,43 @@
 # STATE
 
-Run counter: 44
+Run counter: 45
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
 
+- **Run 45 (scheduled): ROADMAP task 115, scatter on the road — and a
+  correction to what the task thought it needed.** Before writing any code,
+  read `WorldStreamer.ts` against the task's own claim ("no pebbles, no
+  tufts in the rut, no puddles") and found two of the three already
+  shipped: `roadgrass` and `roadstone` `ScatterKind`s have existed since the
+  v0.6 initial commit, with real instance counts confirmed by a headless
+  scene scan and visible (if sparse) in a screenshot. Only puddles were
+  really missing. Added `puddleGeometry` (`src/three/world/geometry.ts`) —
+  a flat irregular ellipse, wound to face +Y since `solidMaterial` is
+  front-face-only — as a new `puddle` `ScatterKind` placed in the wheel
+  rut itself (`RUT_BAND`), the one band every other carriageway kind
+  deliberately keeps bare. That's also why "tufts in the rut" was never
+  going to be both true and right: the rut stays bare of growth because
+  it's the road's low, worn, sometimes-wet ground, which is exactly why a
+  puddle belongs there instead. `BiomePalette` gained a `density.puddle`
+  key — driest in village (0.35), wettest in riverside (1.3), forest
+  between (1.0) — and colour is a fixed cool grey-blue mixed toward each
+  biome's own road tone, since there's no real-time reflection to carry the
+  differentiation instead.
+  Verified with a 19-point headless scan along a full day's road (puddle
+  `InstancedMesh`es present and growing with distance, zero console/page
+  errors) and cropped screenshots at several of those points showing
+  puddles reading clearly as water, distinct from the road and verge.
+  `npm test` 745 green (unchanged — `src/three/world/` has no unit test
+  coverage, same precedent as the rest of the Three.js build; verified by
+  screenshot and a live scene-graph scan instead), `npm run build` green
+  (691.65 KB vs 690.96 KB).
+  **Flagged for whoever runs next, especially on task 119**: the same
+  "already built, task never updated" pattern applies to skyline landmarks
+  — `Landmark`, `landmarksNear`/`chooseLandmark`/`raiseLandmark` and four
+  landmark geometries are fully wired into chunk building already. Check
+  with a screenshot before assuming task 119 starts from nothing.
 - **Run 44 deleted the dead 2D/Phaser code.** `src/scenes/` (the
   `RoadScene`/`picker`/`meterBar`/`freePlayOverlay`/`readouts` modules from
   runs 39-43), `src/render/` (`engraving`/`scenery`/`ui`), and the orphaned

@@ -93,6 +93,13 @@ export interface BiomePalette {
      * almost no boulders in its pasture and a thoroughly gravelled lane.
      */
     road: number;
+    /**
+     * Standing water in the wheel rut. Its own key rather than folding into
+     * `road` — how gravelly a lane is and how wet its rut stays are unrelated
+     * questions, and forest's shade keeps a rut wet long after open village
+     * ground has dried the same rain off.
+     */
+    puddle: number;
   };
   /** How hilly. Multiplies the terrain amplitude within this band. */
   relief: number;
@@ -168,7 +175,20 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
       { kind: 'stones', weight: 3 },
       { kind: 'tree', weight: 2 },
     ],
-    density: { grass: 1.1, tree: 0.45, rock: 0.3, flower: 2.4, fern: 0.1, shrub: 0.9, reed: 0, log: 0, road: 1 },
+    density: {
+      grass: 1.1,
+      tree: 0.45,
+      rock: 0.3,
+      flower: 2.4,
+      fern: 0.1,
+      shrub: 0.9,
+      reed: 0,
+      log: 0,
+      road: 1,
+      // Open and sunny — a rut here dries fast, so the rarest puddles of
+      // the three biomes.
+      puddle: 0.35,
+    },
     relief: 0.7,
   },
 
@@ -204,7 +224,20 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
       { kind: 'tree', weight: 2 },
       { kind: 'chapel', weight: 1 },
     ],
-    density: { grass: 0.75, tree: 3.0, rock: 0.8, flower: 0.35, fern: 2.4, shrub: 0.45, reed: 0, log: 1.3, road: 0.8 },
+    density: {
+      grass: 0.75,
+      tree: 3.0,
+      rock: 0.8,
+      flower: 0.35,
+      fern: 2.4,
+      shrub: 0.45,
+      reed: 0,
+      log: 1.3,
+      road: 0.8,
+      // Shaded by the closest canopy of the three biomes, so a rut here
+      // holds the last rain the longest.
+      puddle: 1.0,
+    },
     relief: 1.25,
   },
 
@@ -246,7 +279,20 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
       { kind: 'stones', weight: 3 },
       { kind: 'tree', weight: 3 },
     ],
-    density: { grass: 1.45, tree: 0.9, rock: 0.45, flower: 0.8, fern: 0.6, shrub: 0.5, reed: 0.9, log: 0.2, road: 1.15 },
+    density: {
+      grass: 1.45,
+      tree: 0.9,
+      rock: 0.45,
+      flower: 0.8,
+      fern: 0.6,
+      shrub: 0.5,
+      reed: 0.9,
+      log: 0.2,
+      road: 1.15,
+      // Low, flat and closest to the water table of anywhere the road
+      // goes — the wettest rut of the three biomes.
+      puddle: 1.3,
+    },
     relief: 0.45,
   },
 };
