@@ -471,12 +471,24 @@ const SCATTER_KINDS: ScatterKind[] = [
     lodRange: CHUNK_LENGTH * 1.6,
     castShadow: false,
     material: 'foliage',
-    // Drawn from the same two greens the ground drifts between, pulled a
-    // little toward the deep tone. Mixing in the dry tone as well turned
-    // every tuft into straw standing on green, so the meadow read as
-    // stubble in a mown field.
+    /*
+     * Drawn from the same two greens the ground drifts between, pulled well
+     * toward the deep tone. Mixing in the dry tone as well turned every tuft
+     * into straw standing on green, so the meadow read as stubble in a mown
+     * field.
+     *
+     * The reach toward the pale variant was 0.85 and the pull toward the
+     * shade was 0.35, which put about half the blades *above* the ground they
+     * stand in. That is the one thing this scatter must not do. It exists
+     * only inside `lodRange` — ninety-six metres — so it is almost exactly
+     * the near and middle ground of every frame and nothing else, which
+     * makes it the one surface in the world that can be darkened without
+     * touching the treeline or the distance. A foreground that carries the
+     * frame's darks is most of what makes a landscape recede; a foreground
+     * the same value as the hillside behind it is why these frames did not.
+     */
     colorOf: (p, rand) =>
-      mixColor(mixColor(p.grass, p.grassVariant, rand() * 0.85), p.grassShade, rand() * 0.35),
+      mixColor(mixColor(p.grass, p.grassVariant, rand() * 0.5), p.grassShade, 0.2 + rand() * 0.45),
   },
   {
     key: 'fern',

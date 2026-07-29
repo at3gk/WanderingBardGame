@@ -150,9 +150,11 @@ export const SKY_KEYS: SkyKey[] = [
      * middle distance out-glows its own sky reads as a bank of fog rolling
      * in rather than as depth. Distance is *paler and lower in contrast*
      * than what is in front of it and *darker* than the air behind it, and
-     * there is only one number that puts it there.
+     * there is only one band of values that puts it there. This one lands
+     * the fully hazed distance at about nine tenths of the sky it meets:
+     * below it, and clearly above the treeline standing in front of it.
      */
-    fog: 0xa7b5bf,
+    fog: 0xb2c1cc,
     /*
      * Down from 0.62 rad and round from 0.6, and this is the change that
      * gives the morning frame a landscape instead of a lawn.
@@ -192,7 +194,7 @@ export const SKY_KEYS: SkyKey[] = [
     bounce: 0x66703f,
     // Same correction as morning; noon had the brightest fog of the day and
     // the palest sky to lose it against.
-    fog: 0xadbac2,
+    fog: 0xb8c6ce,
     // Sixty degrees was the worst case of the problem described under
     // morning: at that height a flat field and a hillside differ by almost
     // nothing and a shadow is a puddle under its own caster. Forty is still
@@ -210,7 +212,7 @@ export const SKY_KEYS: SkyKey[] = [
     horizon: 0xf3dcbc,
     sun: 0xffe2ac,
     bounce: 0x8b8452,
-    fog: 0xbcb6a8,
+    fog: 0xc8c2b3,
     // Same correction, mirrored: the afternoon sun has crossed over, so it
     // goes further round rather than back.
     elevation: 0.34,

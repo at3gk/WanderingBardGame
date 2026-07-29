@@ -144,8 +144,8 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     // value break against every ground tone in its own biome, in both
     // directions: a road lighter than the field reads as a river of milk and
     // one the same value as the field is not a road at all.
-    road: 0x8f7553,
-    roadShoulder: 0x857e58,
+    road: 0x836b4b,
+    roadShoulder: 0x797350,
     rock: 0xbcb39d,
     trunk: 0x856851,
     // Was 0x84a44f / 0xb2c46a, and the variant was the fault. It measured
@@ -184,8 +184,8 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     grassVariant: 0x607a44,
     grassShade: 0x243f30,
     grassDry: 0x7d804b,
-    road: 0x74624c,
-    roadShoulder: 0x586741,
+    road: 0x6a5945,
+    roadShoulder: 0x505e3b,
     rock: 0x8b9490,
     trunk: 0x655344,
     // Same correction as village, at forest's own scale: 0x4c7f47 measured
@@ -221,8 +221,8 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     grassDry: 0xa0a486,
     // Same problem as village, milder: 0xa89a80 against a `grassDry` of
     // 0xccd2ac was not enough of a break to survive fog at thirty metres.
-    road: 0x7e6f5b,
-    roadShoulder: 0x6c7964,
+    road: 0x736553,
+    roadShoulder: 0x626e5b,
     rock: 0xa2a8ae,
     trunk: 0x746459,
     // Darkened twice: from 0x6c9a76 / 0x9ac093 because the willows were the
