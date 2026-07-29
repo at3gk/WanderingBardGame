@@ -313,13 +313,14 @@ const KIND_BARLINE = 1;
 const REFERENCE_FRAME_WIDTH_M = 7.6;
 
 /**
- * Floor on that scale.
+ * Floor on the stave's size, though not on where it stands.
  *
  * A phone held upright is under a third of the reference width, and a stave
  * shrunk to match would put the letters below the size a child can read. So
  * the stave is allowed to take a larger share of a narrow frame than it takes
  * of a wide one, which is the right trade — on a small screen the notation is
- * most of what you are looking at anyway.
+ * most of what you are looking at anyway. See `frameShare` for why the
+ * sideways offset is measured without this floor.
  */
 const CARD_SCALE_MIN = 0.52;
 
@@ -696,28 +697,38 @@ export class SongNotes {
     // right = forward cross up, for a right-handed world with +Y up.
     this.right.set(-this.scratch.z, 0, this.scratch.x);
 
-    this.scale = camera ? this.cardScale(camera) : 1;
-    this.anchor.addScaledVector(this.right, -BAR_LEFT_M * this.scale);
+    const narrow = camera ? this.frameShare(camera) : 1;
+    this.scale = Math.max(narrow, CARD_SCALE_MIN);
+    this.anchor.addScaledVector(this.right, -BAR_LEFT_M * narrow);
     this.glyphMaterial.uniforms.uSize.value = glyphWorldSize() * this.scale;
   }
 
   /**
-   * How much to shrink the whole card for this screen.
+   * How wide this screen is compared with the one the stave was sized on.
    *
    * The stave is written in world metres because it stands in the world, but
    * what has to stay constant is the share of the *frame* it takes: the run
    * has to fit beside the bard on a phone held sideways and on a desktop
    * alike, and a note head has to stay big enough to read the letter out of.
-   * So the frame's width is measured in metres at the depth the card stands
-   * at, and the card is scaled by how that compares with the screen it was
-   * tuned on. Wider frames do not grow it — past the reference width the
-   * stave is already as large as the picture wants it.
+   * So the frame's width is measured in metres at the depth the stave stands
+   * at, and compared with the screen it was tuned on. Wider frames get no
+   * more than one — past the reference width the stave is already as large as
+   * the picture wants it.
+   *
+   * The answer is used twice and clamped only once, which is the whole point
+   * of returning it raw. The stave's *size* is held above `CARD_SCALE_MIN`,
+   * because a stave shrunk to a phone's true share of the reference width has
+   * letters no child can read. Its *offset from the road* is not, because
+   * that offset is a position in a frame rather than a size in it: floored,
+   * a portrait phone put the barline ninety-six per cent of the way to the
+   * left edge — the stave was correctly sized and standing off the side of
+   * the picture.
    */
-  private cardScale(camera: PerspectiveCamera): number {
+  private frameShare(camera: PerspectiveCamera): number {
     const depth = camera.position.distanceTo(this.anchor);
     const halfV = (camera.fov * Math.PI) / 360;
     const frameWidth = 2 * depth * Math.tan(halfV) * camera.aspect;
-    return clamp(frameWidth / REFERENCE_FRAME_WIDTH_M, CARD_SCALE_MIN, 1);
+    return clamp(frameWidth / REFERENCE_FRAME_WIDTH_M, 0.1, 1);
   }
 
   /** Bring newly-visible beats into `live`, and retire the ones that are done. */

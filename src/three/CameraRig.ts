@@ -198,10 +198,10 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     targetSmoothing: 1.3,
     drift: 0.14,
   },
-  // Pulled back and up to hand the landscape the frame. Narrower FOV
-  // compresses the distance and makes the hills read as bigger. The bard is
-  // small here on purpose, but he is kept well off-centre so he still reads
-  // as the figure in the landscape rather than a speck in the middle of it.
+  // Pulled well back to hand the landscape the frame. Narrower FOV compresses
+  // the distance and makes the hills read as bigger. The bard is small here on
+  // purpose, but he is kept well off-centre so he still reads as the figure in
+  // the landscape rather than a speck in the middle of it.
   vista: {
     distance: 7.5,
     // Was 3.6 m, and that was the worst offender in the game: at seven and a

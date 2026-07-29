@@ -120,6 +120,18 @@ describe('campfireLayout — invariants', () => {
   });
 
   it('never overlaps two props, except stones with stones', () => {
+    // The violations are collected and asserted once, rather than an
+    // `expect` per pair. Four hundred seeds times every pair of props is a
+    // few hundred thousand assertions, and building a matcher is far more
+    // expensive than the arithmetic it checks: this test took 2.5 s alone
+    // and 13.5 s when the suite ran it alongside everything else, against
+    // vitest's 5 s default. It failed in CI as a timeout, which reads
+    // exactly like a broken invariant and is not one.
+    //
+    // Coverage is unchanged — same seeds, same pairs. The failure message is
+    // better for it too: a bare `expect(gap).toBeGreaterThan(0)` inside the
+    // loop said only that some gap somewhere was negative.
+    const overlaps: string[] = [];
     for (const layout of layouts) {
       const props = layout.props;
       for (let i = 0; i < props.length; i++) {
@@ -129,10 +141,13 @@ describe('campfireLayout — invariants', () => {
             Math.hypot(props[i].x - props[j].x, props[i].z - props[j].z) -
             props[i].footprint -
             props[j].footprint;
-          expect(gap).toBeGreaterThan(0);
+          if (gap <= 0) {
+            overlaps.push(`${props[i].kind}/${props[j].kind} overlap by ${(-gap).toFixed(3)} m`);
+          }
         }
       }
     }
+    expect(overlaps).toEqual([]);
   });
 
   it('leaves the seat clear of everything', () => {
@@ -157,22 +172,29 @@ describe('campfireLayout — invariants', () => {
     // are where the disc says" are two claims and only the second one is
     // what the built camp actually depends on.
     expect(SEAT_LOG_LENGTH_M / 2).toBeLessThanOrEqual(0.45);
+    // Collected and asserted once, for the same reason as the overlap check
+    // above: an expect per prop per end per seed is what made this file time
+    // out under a loaded suite.
+    const escapes: string[] = [];
     for (const layout of layouts) {
       const { seat, fire, heading } = layout;
-      expect(SEAT_LOG_LENGTH_M / 2).toBeLessThanOrEqual(seat.footprint);
+      if (SEAT_LOG_LENGTH_M / 2 > seat.footprint) escapes.push('log longer than its seat');
       // Across the facing, which is the axis the builder lays it along.
       const across = seat.heading + Math.PI / 2;
       for (const end of [1, -1]) {
         const x = seat.x + Math.sin(across) * end * (SEAT_LOG_LENGTH_M / 2);
         const z = seat.z + Math.cos(across) * end * (SEAT_LOG_LENGTH_M / 2);
-        expect(Math.abs(roadOffset(x, z, heading))).toBeGreaterThan(ROAD_CLEARANCE_M);
-        expect(Math.hypot(x - fire.x, z - fire.z)).toBeGreaterThan(layout.flameRadius);
+        if (Math.abs(roadOffset(x, z, heading)) <= ROAD_CLEARANCE_M) escapes.push('log end on the road');
+        if (Math.hypot(x - fire.x, z - fire.z) <= layout.flameRadius) escapes.push('log end in the fire');
         for (const prop of layout.props) {
           if (prop.kind === 'stone') continue;
-          expect(Math.hypot(x - prop.x, z - prop.z)).toBeGreaterThan(prop.footprint);
+          if (Math.hypot(x - prop.x, z - prop.z) <= prop.footprint) {
+            escapes.push(`log end inside the ${prop.kind}`);
+          }
         }
       }
     }
+    expect(escapes).toEqual([]);
   });
 
   it('puts the bedroll on the far side of the fire from the road', () => {
