@@ -24,7 +24,13 @@ mkdirSync(outDir, { recursive: true });
 // source, and the two phone aspect ratios where a desktop framing breaks.
 const SHOTS = [
   { name: '01-dawn-road', s: 60, day: 0.24, phase: 'walking', viewport: [1600, 900] },
-  { name: '02-morning-open', s: 340, day: 0.42, phase: 'walking', viewport: [1600, 900] },
+  // 265, not 340. The road's stops for the pinned day sit at 138, 206, 340,
+  // 419 … and the walk is auto-forward, so a shot posed at a stop spends its
+  // settle time arriving at it: a frame asked for as 'walking' came back
+  // busking, with the stave in it, and read as a rendering fault. It was
+  // not one — a player standing at 340 really is busking. The shot was
+  // simply asking for something the road does not do there.
+  { name: '02-morning-open', s: 265, day: 0.42, phase: 'walking', viewport: [1600, 900] },
   { name: '03-noon-forest', s: 620, day: 0.55, phase: 'walking', viewport: [1600, 900] },
   { name: '04-golden-vista', s: 900, day: 0.8, phase: 'vista', viewport: [1600, 900] },
   { name: '05-golden-busk', s: 940, day: 0.82, phase: 'busking', viewport: [1600, 900] },

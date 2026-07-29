@@ -629,7 +629,16 @@ void main() {
   // Distance fog, thinned with altitude so hilltops stay legible while the
   // valley floor dissolves. Tinted toward the horizon low down.
   float depth = length(cameraPosition - vWorldPosition);
-  float distanceFog = smoothstep(uFogNear, uFogFar, depth);
+  // A steeper near ramp, then a long tail.
+  //
+  // One smoothstep across the whole range spreads the veil so evenly that
+  // the middle distance and the far distance sit within a few per cent of
+  // each other — no staircase, so no depth. Squaring the near half pushes
+  // most of the change into the first stretch beyond the treeline, which is
+  // where the eye reads distance from, and leaves the tail to separate the
+  // ridge from the sky.
+  float fogRaw = smoothstep(uFogNear, uFogFar, depth);
+  float distanceFog = fogRaw * fogRaw * (3.0 - 2.0 * fogRaw);
   float heightFalloff = uFogHeight > 0.0
     ? exp(-max(vWorldPosition.y, 0.0) / uFogHeight)
     : 1.0;
@@ -643,7 +652,15 @@ void main() {
   // that separates a hundred and sixty metres from twenty: the surfaces at
   // both ends are the same albedo under the same sun, so whatever value
   // range those two bands end up with, this is where it comes from.
-  float fogAmount = clamp(distanceFog * mix(0.45, 1.0, heightFalloff), 0.0, 0.90);
+  // Capped well below 1, and lower than it was.
+  //
+  // At 0.90 the far ground effectively became the fog colour, so a hill at
+  // the limit had no silhouette left and the middle distance and the far
+  // distance arrived at the same tone — the picture had a foreground and
+  // then one undifferentiated pale mass. A cap of 0.60 keeps the furthest
+  // land a recognisable value below the sky it stands against, which is what
+  // makes it read as land rather than as haze.
+  float fogAmount = clamp(distanceFog * mix(0.45, 1.0, heightFalloff), 0.0, 0.60);
   vec3 fogTint = mix(uFogColor, uHorizonColor, clamp(0.55 - vWorldPosition.y * 0.02, 0.0, 0.6));
   color = mix(color, fogTint, fogAmount);
 
