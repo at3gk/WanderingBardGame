@@ -287,6 +287,22 @@ function bladeGeometry(
   // an arrowhead on a stick.
   const midW = width * 0.62;
 
+  /*
+   * The tip is a short EDGE, not a point.
+   *
+   * Arching the blade fixed its middle and left its end alone, and a critique
+   * of the re-shot frames went straight to what was left: the terminal
+   * triangle ran from the waist to a single apex vertex on a base of about
+   * 1.2 widths — a 2.6:1 spine — so a blade was still a needle however
+   * nicely the section below it curved. Every tuft kept one hard point aimed
+   * at the camera and the meadow still squinted down to a bed of nails.
+   *
+   * Capping it with a narrow quad costs one triangle per blade and is the
+   * difference between a spine and a strap. `grassTuftGeometry`'s triangle
+   * budget moves from 15 to 20 deliberately, and its test moves with it.
+   */
+  const tipW = width * 0.3;
+
   const blx = cx + sx * width;
   const blz = cz + sz * width;
   const brx = cx - sx * width;
@@ -295,8 +311,12 @@ function bladeGeometry(
   const mlz = cz + dz * midOut + sz * (midW + midCurl);
   const mrx = cx + dx * midOut - sx * (midW - midCurl);
   const mrz = cz + dz * midOut - sz * (midW - midCurl);
-  const tx = cx + dx * tipOut + sx * tipCurl;
-  const tz = cz + dz * tipOut + sz * tipCurl;
+  const tcx = cx + dx * tipOut + sx * tipCurl;
+  const tcz = cz + dz * tipOut + sz * tipCurl;
+  const tlx = tcx + sx * tipW;
+  const tlz = tcz + sz * tipW;
+  const trx = tcx - sx * tipW;
+  const trz = tcz - sz * tipW;
 
   // Wound so the face normal points along `angle` — outward from the tuft's
   // centre, the direction the blade is leaning and therefore the direction
@@ -304,8 +324,40 @@ function bladeGeometry(
   return fromPositions([
     blx, 0, blz, brx, 0, brz, mrx, midY, mrz,
     blx, 0, blz, mrx, midY, mrz, mlx, midY, mlz,
-    mlx, midY, mlz, mrx, midY, mrz, tx, height, tz,
+    mlx, midY, mlz, mrx, midY, mrz, trx, height, trz,
+    mlx, midY, mlz, trx, height, trz, tlx, height, tlz,
   ]);
+}
+
+/**
+ * Tilt a blade's normals toward the sky.
+ *
+ * A blade is a single plane standing nearly upright, so its true normal is
+ * nearly horizontal — which means the lighting model treats it as a wall. Two
+ * things follow, and both were named in the critique of the frames: a blade
+ * turned away from the sun goes almost black, so a tuft reads as a dark
+ * teepee rather than as grass; and thin near-vertical planes seen edge-on
+ * alternate between lit and unlit from blade to blade, which is the
+ * "hairline antennae" flicker across the middle distance.
+ *
+ * Real grass does not read that way because a lawn is lit as a *surface*:
+ * light comes down onto the mass of it, and individual blades borrow the
+ * ground's response rather than each arguing with it. Blending each normal
+ * toward +Y is the standard stylised-grass answer and it costs nothing —
+ * no extra geometry, no shader change, no second plane per blade. It also
+ * pulls ground cover closer in value to the ground it grows out of, which is
+ * the other half of why the tufts read as dark litter scattered on a field.
+ */
+function skywardNormals(geometry: BufferGeometry, amount: number): void {
+  const normal = geometry.attributes.normal as BufferAttribute;
+  for (let i = 0; i < normal.count; i++) {
+    const nx = normal.getX(i) * (1 - amount);
+    const ny = normal.getY(i) * (1 - amount) + amount;
+    const nz = normal.getZ(i) * (1 - amount);
+    const length = Math.hypot(nx, ny, nz) || 1;
+    normal.setXYZ(i, nx / length, ny / length, nz / length);
+  }
+  normal.needsUpdate = true;
 }
 
 /**
@@ -387,6 +439,9 @@ export function grassTuftGeometry(seed = 7): BufferGeometry {
 
   const merged = mergeGeometries(blades);
   merged.computeVertexNormals();
+  // Strongly skyward: grass is the one prop that should be lit as ground
+  // rather than as a set of little walls. See `skywardNormals`.
+  skywardNormals(merged, 0.72);
   paintGradient(merged, 0xb2ab8b, 0xffffff, 0, tallest * 0.85);
   // Grass sways from the very base — it has no stiff trunk to resist.
   addSway(merged, 0, tallest, 1);
@@ -409,8 +464,27 @@ export function fernGeometry(seed = 9): BufferGeometry {
   const count = 6;
   let tallest = 0.2;
 
+  /*
+   * Fronds fan into a wedge, for the same reason grass tufts do — and a
+   * critique of the frames caught this one being *worse* than the grass was.
+   * Spread over a full circle (`f / count * 2pi`), with each frond reaching
+   * 1.25 lengths outward while rising only a third of that, the plant was a
+   * flat radial star by construction: limbs projecting sideways and downward
+   * from a common root, which is the dictionary definition of a caltrop. In
+   * the foreground of the dawn frame — the nearest and largest band in the
+   * picture — there were dozens of them, and at night they read as broken
+   * glass.
+   *
+   * The arch below was always right; what was wrong was that six arches
+   * pointing every way cancel each other out into a rosette. Confined to a
+   * wedge, with the overshoot at the tip pulled in so a frond rises about as
+   * much as it reaches, the same six arches read as one plant leaning.
+   */
+  const prevailing = rand() * Math.PI * 2;
+  const wedge = 1.7 + rand() * 0.6;
+
   for (let f = 0; f < count; f++) {
-    const angle = (f / count) * Math.PI * 2 + rand() * 0.8;
+    const angle = prevailing + (f / (count - 1) - 0.5) * wedge + (rand() - 0.5) * 0.5;
     // Length and arch vary hard from frond to frond. Six fronds of equal
     // length and equal rise is a cone, and a cone on the forest floor reads
     // as a tent — which is precisely what the first attempt looked like.
@@ -424,7 +498,11 @@ export function fernGeometry(seed = 9): BufferGeometry {
     tallest = Math.max(tallest, arch);
 
     const rootW = width * 0.28;
-    const tipDrop = arch * 0.3;
+    // Was `arch * 0.3`, which dropped the tip to under a third of the height
+    // it had just reached while still travelling outward — the frond spent
+    // most of its length going sideways-and-down. A tip that settles just
+    // below the waist of the arch still droops, without the plant lying down.
+    const tipDrop = arch * 0.62;
 
     fronds.push(
       fromPositions([
@@ -439,7 +517,9 @@ export function fernGeometry(seed = 9): BufferGeometry {
 
         // the drooping tip
         dx * length * 0.55 + sx * width, arch, dz * length * 0.55 + sz * width,
-        dx * length * 1.25, tipDrop, dz * length * 1.25,
+        // 1.0, not 1.25. The frond should reach about as far as it rises;
+        // beyond that it stops being an arch and becomes a spear.
+        dx * length, tipDrop, dz * length,
         dx * length * 0.55 - sx * width, arch, dz * length * 0.55 - sz * width,
       ]),
     );
@@ -447,6 +527,10 @@ export function fernGeometry(seed = 9): BufferGeometry {
 
   const merged = mergeGeometries(fronds);
   merged.computeVertexNormals();
+  // Gentler than grass: a fern's fronds are broad and near-horizontal already,
+  // so they have a real top surface to catch the sky. This is only here to
+  // stop the ones facing away from the sun going to black.
+  skywardNormals(merged, 0.4);
   paintGradient(merged, 0x8f9576, 0xffffff, 0, tallest);
   addSway(merged, 0, tallest * 1.4, 0.5);
   return merged;
