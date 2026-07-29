@@ -64,16 +64,18 @@ interface MoodFraming {
  * whether it is breaking something deliberate.
  */
 /**
- * Two numbers decide whether this is a game about a person or a game about
- * some scenery, and both are worth stating as arithmetic rather than taste.
+ * Three numbers decide whether this is a game about a person or a game about
+ * some scenery, and all three are worth stating as arithmetic rather than
+ * taste.
  *
  * **How tall he reads.** The bard is about 1.4 m. The frame is
  * `2 * range * tan(fov/2)` metres high where he stands, `range` being the
  * true camera-to-bard distance — `sqrt(distance² + side² + (height - 0.7)²)`,
- * not `distance`, which is why raising `side` quietly shrinks him. Walking's
- * 4.0 m / 2.4 m / 42 degrees puts him at 0.37 of frame height. The previous
- * numbers (4.6 m, 1.5 m, 50 degrees) read 0.29, and 0.29 against busy grass
- * is a figure you have to go looking for.
+ * not `distance`, which is why raising `side` quietly shrinks him, and why
+ * lowering the camera quietly grows him. Walking's 4.0 m / 1.85 m / 42
+ * degrees puts him at 0.42 of frame height. The numbers before the 3D work
+ * (4.6 m, 1.5 m, 50 degrees) read 0.29, and 0.29 against busy grass is a
+ * figure you have to go looking for.
  *
  * Note the trade in the FOV rather than the distance. Closing the distance
  * to get the same size would have put the camera on his heels, lost the road
@@ -105,8 +107,8 @@ interface MoodFraming {
  * That puts the subject a little right of centre with the road converging
  * inside the frame and sweeping up past his shoulder, which is the leading
  * line doing its job. It also grows him: the true camera-to-subject range
- * falls with `side`, so walking reads him at 0.41 of frame height rather than
- * 0.37 for nothing.
+ * falls with `side`, which is where most of the climb from 0.37 to 0.41 came
+ * from, the rest arriving later with the camera height.
  *
  * Note what is *not* done here. The alternative was to flip the sign of
  * `side` with the road's curvature so the subject always sits on the inside
@@ -117,6 +119,29 @@ interface MoodFraming {
  * `side` that changed sign would make the bias indeterminate and landmarks
  * would drift to whichever edge the last bend chose, with nothing failing
  * loudly.
+ *
+ * **How far down the frame he lands.** This is the third number and it was
+ * the one nobody had written down, which is how the walk and the vista both
+ * ended up with the bard shoved against the bottom edge while reading a
+ * perfectly respectable height. Two angles decide it. The camera is pitched
+ * below horizontal by `d = atan((height - lookHeight) / Rt)` where
+ * `Rt = sqrt((distance + lead)² + side²)`, and that alone fixes the horizon
+ * at `0.5 - tan(d) / (2 tan(fov/2))` of the way down. The subject's chest is
+ * below horizontal by `b = atan((height - 0.7) / Rh)` where
+ * `Rh = sqrt(distance² + side²)`, and lands at
+ * `0.5 + tan(b - d) / (2 tan(fov/2))`.
+ *
+ * The two are pulled apart by `height` and pushed back together by `lead`,
+ * and until this was measured every framing here had been tuned by raising
+ * the camera — which raises `b` fast and `d` slowly, so each adjustment that
+ * showed more landscape also drove the figure further down the picture.
+ * Walking's old 2.05 m with a 1.15 m look target put his chest at 0.73 and
+ * his feet at 0.94, half a boot from the edge; the vista's 3.6 m put his
+ * chest at 0.82 with the whole middle of the frame empty field. Both are now
+ * lower and looking lower, which holds the horizon exactly where it was and
+ * lifts him — walking's chest to 0.67 and the vista's to 0.70 — for nothing
+ * except a camera a little nearer his own height, which is where a camera
+ * following a person on foot ought to be anyway.
  */
 const FRAMINGS: Record<CameraMood, MoodFraming> = {
   // Close enough that the bard is unmistakably the subject, high enough to
@@ -125,8 +150,13 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
   // forward — just not so far that it pushes him into the bottom edge.
   walking: {
     distance: 4.0,
-    height: 2.05,
-    lookHeight: 1.15,
+    // Was 2.05 m looking at 1.15. Both came down together, which is what
+    // keeps the horizon at 0.32 while the bard climbs from 0.73 of the frame
+    // to 0.67 — see the arithmetic above. 1.85 is still well clear of the top
+    // of his hat, so this is a camera walking behind him rather than one
+    // riding above him.
+    height: 1.85,
+    lookHeight: 0.95,
     lead: 2.4,
     // Was 2.4. `WorldStreamer.LANDMARK_VIEW_BIAS` is measured from this
     // number and this framing — it is the one the player is in while a
@@ -174,11 +204,20 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
   // as the figure in the landscape rather than a speck in the middle of it.
   vista: {
     distance: 7.5,
-    height: 3.6,
+    // Was 3.6 m, and that was the worst offender in the game: at seven and a
+    // half metres back it put the bard's chest at 0.82 of the frame with an
+    // empty field filling the middle, so the shot meant to hand the landscape
+    // the frame handed it to nothing in particular. The distance is what
+    // makes a vista, not the altitude — pulling the height down to 2.9 keeps
+    // every hill and every landmark in shot and moves him to 0.70.
+    height: 2.9,
     // Low for the distance: the look target has to sit *below* the bard's
     // chest here or the long lead drops him onto the bottom edge of the frame.
-    lookHeight: 1.6,
-    lead: 6.0,
+    lookHeight: 1.05,
+    // Shortened with the height so the camera still tips far enough down to
+    // hold the horizon near 0.29; a six-metre lead at 2.9 m would have
+    // levelled it out and given half the frame to sky.
+    lead: 5.0,
     // Was 3.2. A little more than walking's, because a vista is the one shot
     // where the figure is meant to be small in the land and so has to be
     // firmly out of the middle to be found at all; the long lead dilutes it
@@ -193,8 +232,12 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
   // met shares the frame instead of sliding out of it.
   encounter: {
     distance: 4.3,
-    height: 2.05,
-    lookHeight: 1.2,
+    // Follows walking's down, and for the same reason it followed walking's
+    // `side` down: an encounter arrives during a walk and eases over a second
+    // and a half, so a framing that differed here by a quarter of a metre of
+    // camera height would be a visible lift every time the bard met somebody.
+    height: 1.9,
+    lookHeight: 1.05,
     lead: 2.0,
     // Was 2.4, and had to come down with walking's whether or not the two
     // are the same shot. An encounter arrives during a walk and the mood

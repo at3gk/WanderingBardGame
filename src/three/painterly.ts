@@ -309,7 +309,25 @@ const FRAGMENT = /* glsl */ `
  * which is about right for an overcast-to-sunny storybook look and leaves
  * the ACES curve something to do at the top end.
  */
-#define AMBIENT_STRENGTH 0.42
+/*
+ * Ambient down from 0.42, and the reason is what it does to the *shaded*
+ * side of things rather than to the lit side.
+ *
+ * On a field at midday the sun is about seven tenths of the light arriving,
+ * so a quarter off the ambient costs the lit ground under a tenth of its
+ * value — but a canopy underside, the away-side of a rise and the inside of
+ * a shadow have nothing else, and they lose the whole quarter. That is the
+ * gap between lit and unlit, which is the only thing giving a low-poly
+ * landscape any form at all; at 0.42 a hillside turned away from the sun was
+ * within a few per cent of one turned toward it and the middle distance came
+ * out as one flat wash of green.
+ *
+ * The night frames do not pay for this. They are ambient and hearth almost
+ * entirely, so the same fraction comes straight off them — the dusk and
+ * night keys carry a compensating lift in their own exposure instead, which
+ * is a per-hour dial and leaves the daylight keys where they are.
+ */
+#define AMBIENT_STRENGTH 0.32
 #define SUN_STRENGTH 0.92
 #include <packing>
 #include <lights_pars_begin>

@@ -85,7 +85,11 @@ export const SKY_KEYS: SkyKey[] = [
     fog: 0x232a44,
     elevation: -0.5,
     azimuth: 1.2,
-    exposure: 0.62,
+    // Lifted from 0.62 alongside the drop in AMBIENT_STRENGTH. The night
+    // keys are lit by the sky and by one fire, so a cut to the ambient term
+    // comes off them undiluted where the daylight keys barely feel it; this
+    // hands that back at the only three hours that needed it.
+    exposure: 0.73,
     starness: 1,
     cloudiness: 0.30,
   },
@@ -99,7 +103,7 @@ export const SKY_KEYS: SkyKey[] = [
     fog: 0x8e93ae,
     elevation: -0.04,
     azimuth: 1.05,
-    exposure: 0.78,
+    exposure: 0.90,
     starness: 0.35,
     cloudiness: 0.40,
   },
@@ -113,7 +117,7 @@ export const SKY_KEYS: SkyKey[] = [
     fog: 0xd9b7a4,
     elevation: 0.16,
     azimuth: 0.95,
-    exposure: 0.95,
+    exposure: 1.02,
     starness: 0,
     cloudiness: 0.46,
   },
@@ -223,7 +227,7 @@ export const SKY_KEYS: SkyKey[] = [
     fog: 0x8a7c96,
     elevation: -0.1,
     azimuth: -1.2,
-    exposure: 0.8,
+    exposure: 0.94,
     starness: 0.45,
     cloudiness: 0.44,
   },

@@ -98,6 +98,27 @@ export interface BiomePalette {
   relief: number;
 }
 
+/*
+ * A note on how bright these are allowed to be, since it is the thing that
+ * has been got wrong most often here.
+ *
+ * The sky is the light source, and in a landscape it is also the lightest
+ * thing in the frame. Everything on the ground is lit *by* it and so has to
+ * sit below it — not by a hair, by a stop or better, or the picture has no
+ * order from front to back for the eye to follow. Measured off the frames,
+ * the village ground used to sit at 0.39 relative luminance with a sunlit
+ * rise reaching 0.67, against a sky of 0.62: the field was as bright as the
+ * air above it, and the four plain daylight frames came out with a total
+ * value range of about 1.3:1 from near grass to far ridge.
+ *
+ * So the ground families here are deliberately darker than a green "looks
+ * like" on a swatch. Sunlit grass photographs at around a fifth to a quarter
+ * of white, not two fifths, and reading these numbers next to each other on
+ * a screen will always make them look too dark — they are albedos, and the
+ * sun and sky multiply them back up. What matters is the ratios: within a
+ * biome the canopy sits at roughly half the grass, the road a little under
+ * it, and nothing on the ground comes within a stop of the sky.
+ */
 export const BIOME_PALETTES: Record<string, BiomePalette> = {
   // Open, cultivated, gentle. The lightest and most golden of the three —
   // this is where the road feels most walked-on, and the wide sightlines
@@ -106,38 +127,36 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
   // else, so the ground reads as pasture rather than as wilderness.
   village: {
     id: 'village',
-    grass: 0x9ab157,
-    // The pale ends of the ground pulled down about a third of a stop, from
-    // 0xd2ce84 and 0xe3d69c. Measured off a frame, the old dry tone was the
-    // single brightest surface anywhere in the world — brighter than rock,
-    // brighter than the road, 0.67 against a sky of 0.63 — so a sunlit rise
-    // in the middle distance was the lightest thing in the picture and the
-    // sky above it was not. Ground is never the lightest thing in a
-    // landscape; that place belongs to the sky, and everything that reaches
-    // up to meet it costs the frame a band it could have composed with.
-    grassVariant: 0xc2bf7a,
-    grassShade: 0x66803e,
-    grassDry: 0xd0c48f,
-    // Darkened from 0xc0a67c / 0xb4ab77. Against `grassDry` 0xe3d69c — which
-    // is what a sunlit village rise comes up to — the old road was about a
-    // fifth of a stop darker than the field it crossed, so on golden ground
-    // the path stopped being a path and the only cue left was the ruts. A
-    // road has to hold a value break against every ground tone in its own
-    // biome; that is a bigger claim on this colour than being the right
-    // colour for dust.
-    road: 0xa88a63,
-    roadShoulder: 0x9c9468,
+    // The whole ground family taken down by three tenths, from 0x9ab157 /
+    // 0xd2ce84 / 0xe3d69c and a road of 0xa88a63. Village is the biome in all
+    // four of the plain daylight frames and it was the brightest of the
+    // three: the dry tone alone measured 0.67, which made a sunlit rise in
+    // the middle distance the lightest thing in the picture, brighter than
+    // any part of the sky above it. The grass now sits at 0.27 and the pale
+    // ends at 0.35 and 0.38, which leaves a stop and a half of daylight
+    // between the field and the air.
+    grass: 0x839749,
+    grassVariant: 0xa5a367,
+    grassShade: 0x566c34,
+    grassDry: 0xb1a779,
+    // Kept a little under the grass rather than over it. The claim on this
+    // colour is not that it is the right colour for dust but that it holds a
+    // value break against every ground tone in its own biome, in both
+    // directions: a road lighter than the field reads as a river of milk and
+    // one the same value as the field is not a road at all.
+    road: 0x8f7553,
+    roadShoulder: 0x857e58,
     rock: 0xbcb39d,
-    trunk: 0x9d7b60,
+    trunk: 0x856851,
     // Was 0x84a44f / 0xb2c46a, and the variant was the fault. It measured
     // 0.50 against a grass of 0.39, so the pale end of the canopy — which is
     // where the broadleaf bias in `buildTrees` puts most of the trees — was
     // *lighter* than the field the trees stand in. A wood that is lighter
     // than its own meadow cannot separate from it at any distance, and the
-    // treeline is the one edge in a landscape that has to hold. Both ends now
-    // sit below the grass: canopy at about 0.44 of it and the variant at 0.69.
-    canopy: 0x627b39,
-    canopyVariant: 0x87944f,
+    // treeline is the one edge in a landscape that has to hold. Both ends
+    // now sit well below the grass, at about 0.43 and 0.69 of it.
+    canopy: 0x53682f,
+    canopyVariant: 0x727e42,
     accent: 0xe07a5f,
     accentAlt: 0xf2cf8a,
     trees: [
@@ -159,18 +178,20 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
   // about this stretch. The floor is bracken and fallen timber, not lawn.
   forest: {
     id: 'forest',
-    grass: 0x466c42,
-    grassVariant: 0x68844a,
-    grassShade: 0x274434,
-    grassDry: 0x878a51,
-    road: 0x7d6a52,
-    roadShoulder: 0x5f6f47,
+    // Forest takes the smallest cut of the three — it was already the dark
+    // biome and had the least of the fault.
+    grass: 0x40643d,
+    grassVariant: 0x607a44,
+    grassShade: 0x243f30,
+    grassDry: 0x7d804b,
+    road: 0x74624c,
+    roadShoulder: 0x586741,
     rock: 0x8b9490,
-    trunk: 0x6d5a4a,
+    trunk: 0x655344,
     // Same correction as village, at forest's own scale: 0x4c7f47 measured
     // 0.17 against a grass of 0.12.
-    canopy: 0x274e35,
-    canopyVariant: 0x386034,
+    canopy: 0x244831,
+    canopyVariant: 0x335930,
     accent: 0xc4763a,
     accentAlt: 0xd9b06a,
     trees: [
@@ -194,16 +215,16 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
   // of it having to be drawn.
   riverside: {
     id: 'riverside',
-    grass: 0x76a07d,
-    grassVariant: 0x9bb185,
-    grassShade: 0x477165,
-    grassDry: 0xb6bb99,
+    grass: 0x678c6d,
+    grassVariant: 0x889b74,
+    grassShade: 0x3d6358,
+    grassDry: 0xa0a486,
     // Same problem as village, milder: 0xa89a80 against a `grassDry` of
-    // 0xccd2ac is not enough of a break to survive fog at thirty metres.
-    road: 0x907f68,
-    roadShoulder: 0x7c8a72,
+    // 0xccd2ac was not enough of a break to survive fog at thirty metres.
+    road: 0x7e6f5b,
+    roadShoulder: 0x6c7964,
     rock: 0xa2a8ae,
-    trunk: 0x847266,
+    trunk: 0x746459,
     // Darkened twice: from 0x6c9a76 / 0x9ac093 because the willows were the
     // palest foliage in the game and put the brightest object in a wide frame
     // out on the horizon, and again from 0x568170 / 0x7aa87f for the reason
@@ -211,8 +232,8 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     // riverside canopy should be cool and slightly sombre anyway; it is the
     // biome whose whole character is that its accent is cooler than its
     // greens.
-    canopy: 0x436659,
-    canopyVariant: 0x5d8161,
+    canopy: 0x3a594d,
+    canopyVariant: 0x517154,
     accent: 0x5fa6c8,
     accentAlt: 0xe4e8d2,
     trees: [

@@ -31,9 +31,10 @@
  * Two things fell out of the change rather than being designed in, and both
  * are worth keeping. Perspective no longer eats the time axis, so two notes a
  * beat apart are two notes a beat apart on screen and the screen-space
- * spacing search that used to hold them apart could go. And the staff no
- * longer crosses the treeline, the road, the listeners or the bard, so the
- * silhouette the frame is built on is left alone.
+ * spacing search that used to hold them apart could go. And it is small
+ * enough now to be placed rather than merely aimed: it sits low over the road
+ * to the bard's left, clear of the treeline, clear of the skyline and clear
+ * of his silhouette, which is the shape the whole frame is built on.
  *
  * The notation is real and stays real. A glyph sits at its **true staff
  * step** (`core/notation.ts` owns that mapping and this file does not
@@ -93,18 +94,20 @@ import type { SongBeat } from '../../core/song';
 
 /**
  * One diatonic step, in metres. Two steps make a staff space, so the printed
- * staff (E4 to F5) is eight steps — a little over a metre, from the bard's
- * waist to a head above his hat.
+ * staff (E4 to F5) is eight steps — just under a metre, about the height of
+ * the bard from his waist up.
  *
  * It was 0.2 when the staff ran down the road, and the extra height was
  * paying for something that no longer happens: seen almost end-on, the five
  * lines converged into two or three hairlines within a few metres, and the
  * pitch axis had to be given enough room to survive that. Face-on there is
- * nothing to survive, and 0.2 made a stave that filled a third of the frame.
- * Below about 0.13 the letters inside the heads stop being legible on a
- * phone, so this is nearer the floor than the ceiling.
+ * nothing to survive, and 0.2 made a stave a quarter of the frame tall
+ * standing over the middle distance. The floor is set by the letter rather
+ * than by the lines: below about 0.1 the letter inside a note head stops
+ * being legible on a phone, and the letter is the scaffold the pedagogy
+ * rests on.
  */
-const STEP_M = 0.15;
+const STEP_M = 0.12;
 
 /** The five printed lines of the treble staff: E4 G4 B4 D5 F5. */
 const LINE_STEPS = [2, 4, 6, 8, 10];
@@ -115,14 +118,17 @@ const MIDDLE_STEP = 6;
 /**
  * Height of the middle line above the road, in metres.
  *
- * The top of the bard's hat. The stave has to be pinned to the figure: hung
- * higher it floats clear of the horizon with nothing behind it and reads as
- * a signpost, hung lower it crosses the road surface and the near grass eats
- * the bottom line. At his hat the stave sits against the far land, which is
- * the quietest part of this game's pictures and the easiest thing in the
- * world to read cream lines against.
+ * A little above the bard's shoulder, which is lower than it looks like it
+ * should be and was found by shooting it. The busking camera stands at about
+ * 1.9 m, so a stave hung at chest height or above lands on the *horizon* —
+ * where the distant treeline is, where the haze is brightest, and where five
+ * horizontal rules acquire a sixth from the skyline itself. Dropped to here
+ * the whole stave sits against the road and the near field, which is the
+ * quietest and darkest ground in these pictures and the only place the ink
+ * and its bloom both read. Lower again and the near grass starts eating the
+ * bottom line.
  */
-const MIDDLE_LINE_Y = 1.32;
+const MIDDLE_LINE_Y = 1.22;
 
 /**
  * Where the stave stands, in metres along the road ahead of the bard.
@@ -144,22 +150,22 @@ const ANCHOR_AHEAD_M = 1.5;
  * because the barline is the mark the eye goes to, and it is the mark that
  * wants a clear background.
  */
-const BAR_LEFT_M = 2.6;
+const BAR_LEFT_M = 2.1;
 
 /**
  * The length of the run, from where a note appears to the barline, in metres
  * at full size. Travel time is fixed, so this is also the note's speed.
  *
- * At the busking camera this is a little under forty per cent of the frame's
- * width, which leaves the right of the frame to the bard. Notes at the
- * songbook's slowest tempo land about a beat and a half apart on it, which
- * is roughly three note heads — engraved spacing, near enough, and arrived at
- * by picking a length the frame could afford rather than by choosing it.
+ * At the busking camera this is a little under a third of the frame's width,
+ * which leaves the right of the frame to the bard and the left of it to the
+ * road. Notes a beat apart at the songbook's tempo land about two and a half
+ * note heads apart on it — engraved spacing, near enough, and arrived at by
+ * picking a length the frame could afford rather than by choosing it.
  */
-const RUN_M = 2.9;
+const RUN_M = 2.2;
 
 /** How far the staff is drawn past the barline, so it does not stop dead at it. */
-const TAIL_M = 0.4;
+const TAIL_M = 0.3;
 
 /**
  * How far a note drifts past the barline before it comes to rest.
@@ -172,7 +178,7 @@ const TAIL_M = 0.4;
  * Across the frame it is only untidy rather than ruinous, but a note that
  * went by should look like it went by, not like it charged off the edge.
  */
-const PAST_DRIFT_M = 0.3;
+const PAST_DRIFT_M = 0.25;
 
 /** How long a note stays visible after its window has closed, drifting past. */
 const PAST_MS = 620;
@@ -225,45 +231,77 @@ const LINE_HALF_STEPS = 0.062;
 const BAR_HALF_STEPS = 0.16;
 
 /**
- * How much of the horizon's colour the five lines take.
+ * The paper, and where it is.
  *
- * They used to be drawn in `INK` at full strength, which made them the
- * highest-value thing in the picture. The sky is this game's light source, so
- * the thing a line in the air should look like is the sky it is hanging in
- * front of. Half keeps a cream bias strong enough to hold against a bright
- * morning and still drops the lines out of the near-white band they used to
- * occupy; the horizon also goes a deep blue after dark, which is the other
- * end this has to survive.
+ * The obvious thing was a strip of manuscript standing behind the stave, and
+ * it was built and thrown away. A pale translucent card cannot be seen
+ * against a pale background, and the two busking postcards are a sunset: the
+ * band of land the stave hangs in front of is the brightest, haziest part of
+ * the picture, so the strip vanished over its top half and showed as a patch
+ * of fog over its bottom half. Making it strong enough to read there would
+ * have made it a panel bolted over the landscape at every other hour of the
+ * day.
  *
- * The barline does not take this tint. It is the mark that says *here*, and
- * it is the one part of the apparatus that is allowed to be ink.
+ * So the paper hugs the ink instead. Each line and the barline carry a soft
+ * cream bloom a few times their own thickness, which is what ink does on real
+ * paper and what makes a printed page legible on a photograph of anything.
+ * Where the background is dark the bloom reads and the stave sits on a scrap
+ * of light; where the background is bright the bloom disappears and the dark
+ * rule carries it on its own. There is no state in which both fail.
+ *
+ * The values turn over with it. Cream on cream is invisible, so the stave is
+ * now drawn as engraving has always drawn it: dark ink, light paper. The
+ * cream that DESIGN.md reserves for notation is still doing that job — it is
+ * the bloom and the letter in the note head, which is where a printed page
+ * puts it.
  */
-const LINE_HORIZON_TINT = 0.5;
+const PAPER = 0xf3e6c8;
+
+/**
+ * How much of the sky's own colour the bloom takes.
+ *
+ * All of it would be a hole in the picture at dusk; none of it would be white
+ * light coming from nowhere, which is the one lighting model this game does
+ * not have.
+ */
+const PAPER_HORIZON_TINT = 0.3;
+
+/** Alpha of the bloom where it touches the ink. */
+const PAPER_OPACITY = 0.55;
+
+/** How far the bloom spreads either side of a staff line, in diatonic steps. */
+const LINE_GLOW_HALF_STEPS = 0.30;
+
+/** The same for the barline, across its width. */
+const BAR_GLOW_HALF_STEPS = 0.45;
+
+/** The ink. Dark warm brown rather than black; nothing in this game is black. */
+const STAFF_INK = 0x503c27;
 
 /** Peak alpha of the five lines, at the barline. Falls away with the run. */
-const LINE_OPACITY = 0.6;
+const LINE_OPACITY = 0.70;
 
 /**
  * Alpha of the barline, which never fades.
  *
- * Held below the old staff's 0.62 rather than above it. It does not need to
- * shout to be the strongest mark here; it only needs to be stronger than what
- * is around it, and now that it is a short upright between five short rules
- * rather than a post standing in a road, it is.
+ * Level with the lines rather than above them. It was 0.8 and it read as a
+ * post standing in the road — the one hard black vertical in a picture that
+ * has no other. A barline is found by being the only upright among five
+ * horizontals, not by being darker than any of them.
  */
-const BAR_OPACITY = 0.6;
+const BAR_OPACITY = 0.70;
 
 /**
- * Sentinel written into the fade attribute for the barline's six vertices.
+ * What each of the stave's six-vertex pieces is, written into `aKind`.
  *
- * A second attribute would be the obvious way to tell the barline from the
- * lines in the shader, and it was rejected for costing a buffer, an upload
- * and a third thing to keep in step with the other two for one bit of
- * information. Nothing interpolates across the boundary — the barline is its
- * own pair of triangles and every one of its vertices carries this value —
- * so the shader can simply threshold it.
+ * This used to be a sentinel value smuggled into the fade attribute, on the
+ * argument that a second buffer was too much for one bit. The two kinds want
+ * different colours, different fade curves and the bloom measured across
+ * different axes, so it is no longer one bit and the honest attribute is
+ * cheaper to read than the arithmetic that avoided it.
  */
-const BARLINE_FADE = 2;
+const KIND_LINE = 0;
+const KIND_BARLINE = 1;
 
 /**
  * Width of the frame, in metres, at the depth the stave stands, on the
@@ -328,6 +366,8 @@ export class SongNotes {
   private readonly staffMaterial: ShaderMaterial;
   private readonly staffPosition: BufferAttribute;
   private readonly staffFade: BufferAttribute;
+  private readonly staffKind: BufferAttribute;
+  private readonly staffSpan: BufferAttribute;
 
   private readonly sparks: Mesh;
   private readonly sparkMaterial: ShaderMaterial;
@@ -395,14 +435,21 @@ export class SongNotes {
     const staffGeometry = new BufferGeometry();
     this.staffPosition = new BufferAttribute(new Float32Array(ribbonVerts * 3), 3);
     this.staffFade = new BufferAttribute(new Float32Array(ribbonVerts), 1);
+    this.staffKind = new BufferAttribute(new Float32Array(ribbonVerts), 1);
+    this.staffSpan = new BufferAttribute(new Float32Array(ribbonVerts), 1);
     this.staffPosition.setUsage(DynamicDrawUsage);
     this.staffFade.setUsage(DynamicDrawUsage);
+    this.staffKind.setUsage(DynamicDrawUsage);
+    this.staffSpan.setUsage(DynamicDrawUsage);
     staffGeometry.setAttribute('position', this.staffPosition);
     staffGeometry.setAttribute('aFade', this.staffFade);
+    staffGeometry.setAttribute('aKind', this.staffKind);
+    staffGeometry.setAttribute('aSpan', this.staffSpan);
     staffGeometry.boundingSphere = null;
     this.staffMaterial = new ShaderMaterial({
       uniforms: {
-        uColor: { value: new Color(INK) },
+        uInk: { value: new Color(STAFF_INK) },
+        uPaper: { value: new Color(PAPER) },
         // Replaced by the scene's own shared horizon colour the first time
         // this draws; see `adoptHorizon`. The literal is the daylight value
         // from `createPainterlyGlobals`, so a staff that never finds the
@@ -410,7 +457,13 @@ export class SongNotes {
         uHorizon: { value: new Color(0xf2d6b8) } as IUniform<Color>,
         uOpacity: { value: LINE_OPACITY },
         uBarOpacity: { value: BAR_OPACITY },
-        uLineTint: { value: LINE_HORIZON_TINT },
+        uPaperOpacity: { value: PAPER_OPACITY },
+        uPaperTint: { value: PAPER_HORIZON_TINT },
+        // Where the ink stops and the bloom begins, as a fraction of the
+        // quad's half-width. One number for both pieces because both are
+        // drawn at their bloom's size and cut in the middle.
+        uLineInk: { value: LINE_HALF_STEPS / LINE_GLOW_HALF_STEPS },
+        uBarInk: { value: BAR_HALF_STEPS / BAR_GLOW_HALF_STEPS },
       },
       vertexShader: STAFF_VERTEX,
       fragmentShader: STAFF_FRAGMENT,
@@ -875,11 +928,16 @@ export class SongNotes {
   private buildStaff(): void {
     const position = this.staffPosition.array as Float32Array;
     const fade = this.staffFade.array as Float32Array;
+    const kind = this.staffKind.array as Float32Array;
+    const span = this.staffSpan.array as Float32Array;
     const s = this.scale;
-    const half = STEP_M * LINE_HALF_STEPS * s;
     const uStart = -TAIL_M * s;
     const uEnd = RUN_M * s;
 
+    // Every quad is drawn at the *bloom's* size, not the ink's. The ink is a
+    // band in the middle of it, cut by the shader — which is the only way to
+    // get a soft edge out of two triangles.
+    const glow = STEP_M * LINE_GLOW_HALF_STEPS * s;
     const ax = this.anchor.x + this.right.x * uStart;
     const az = this.anchor.z + this.right.z * uStart;
     const bx = this.anchor.x + this.right.x * uEnd;
@@ -888,15 +946,7 @@ export class SongNotes {
     let v = 0;
     for (const step of LINE_STEPS) {
       const y = this.stepY(step);
-      // Two triangles, written out rather than indexed: the buffer is
-      // rewritten whole every frame and an index buffer would only add a
-      // second thing to keep in step with it.
-      v = pushVertex(position, fade, v, ax, y - half, az, 0);
-      v = pushVertex(position, fade, v, bx, y - half, bz, 1);
-      v = pushVertex(position, fade, v, bx, y + half, bz, 1);
-      v = pushVertex(position, fade, v, ax, y - half, az, 0);
-      v = pushVertex(position, fade, v, bx, y + half, bz, 1);
-      v = pushVertex(position, fade, v, ax, y + half, az, 0);
+      v = quad(position, fade, kind, span, v, KIND_LINE, ax, az, bx, bz, y - glow, y + glow, false);
     }
 
     // The barline: a single upright stroke across the five lines, standing
@@ -905,23 +955,28 @@ export class SongNotes {
     // the player reads "here" from notation they already understand. It stops
     // at the outer lines, as engraved; running it past them was an attempt to
     // make it more visible that only made it less like notation.
-    const barHalf = STEP_M * BAR_HALF_STEPS * s;
-    const low = this.stepY(LINE_STEPS[0]) - half;
-    const high = this.stepY(LINE_STEPS[LINE_STEPS.length - 1]) + half;
-    const lx = this.anchor.x - this.right.x * barHalf;
-    const lz = this.anchor.z - this.right.z * barHalf;
-    const rx = this.anchor.x + this.right.x * barHalf;
-    const rz = this.anchor.z + this.right.z * barHalf;
-    const mark = BARLINE_FADE;
-    v = pushVertex(position, fade, v, lx, low, lz, mark);
-    v = pushVertex(position, fade, v, rx, low, rz, mark);
-    v = pushVertex(position, fade, v, rx, high, rz, mark);
-    v = pushVertex(position, fade, v, lx, low, lz, mark);
-    v = pushVertex(position, fade, v, rx, high, rz, mark);
-    pushVertex(position, fade, v, lx, high, lz, mark);
+    const barGlow = STEP_M * BAR_GLOW_HALF_STEPS * s;
+    const inkHalf = STEP_M * LINE_HALF_STEPS * s;
+    quad(
+      position,
+      fade,
+      kind,
+      span,
+      v,
+      KIND_BARLINE,
+      this.anchor.x - this.right.x * barGlow,
+      this.anchor.z - this.right.z * barGlow,
+      this.anchor.x + this.right.x * barGlow,
+      this.anchor.z + this.right.z * barGlow,
+      this.stepY(LINE_STEPS[0]) - inkHalf,
+      this.stepY(LINE_STEPS[LINE_STEPS.length - 1]) + inkHalf,
+      true,
+    );
 
     this.staffPosition.needsUpdate = true;
     this.staffFade.needsUpdate = true;
+    this.staffKind.needsUpdate = true;
+    this.staffSpan.needsUpdate = true;
   }
 }
 
@@ -1079,20 +1134,49 @@ function instanced(count: number, size: number): InstancedBufferAttribute {
   return attribute;
 }
 
-function pushVertex(
+/**
+ * One upright rectangle on the stave, as two triangles.
+ *
+ * `a` and `b` are its ends in the ground plane and `low`/`high` its height;
+ * both pieces of the stave are that shape, which is why the whole thing is
+ * thirty-six vertices with no index buffer to keep in step with them.
+ *
+ * Two parameters ride on the vertices. `aFade` is where the vertex sits along
+ * the run, 0 at the near end and 1 at the far one. `aSpan` runs -1 to 1
+ * across whichever axis the ink is thin in — the height of a staff line, the
+ * width of a barline — and `spanAcrossLength` is which of the two that is.
+ */
+function quad(
   position: Float32Array,
   fade: Float32Array,
+  kind: Float32Array,
+  span: Float32Array,
   v: number,
-  x: number,
-  y: number,
-  z: number,
-  f: number,
+  k: number,
+  ax: number,
+  az: number,
+  bx: number,
+  bz: number,
+  low: number,
+  high: number,
+  spanAcrossLength: boolean,
 ): number {
-  position[v * 3] = x;
-  position[v * 3 + 1] = y;
-  position[v * 3 + 2] = z;
-  fade[v] = f;
-  return v + 1;
+  const write = (x: number, y: number, z: number, f: number, up: number): void => {
+    position[v * 3] = x;
+    position[v * 3 + 1] = y;
+    position[v * 3 + 2] = z;
+    fade[v] = f;
+    kind[v] = k;
+    span[v] = spanAcrossLength ? f * 2 - 1 : up;
+    v++;
+  };
+  write(ax, low, az, 0, -1);
+  write(bx, low, bz, 1, -1);
+  write(bx, high, bz, 1, 1);
+  write(ax, low, az, 0, -1);
+  write(bx, high, bz, 1, 1);
+  write(ax, high, az, 0, 1);
+  return v;
 }
 
 /**
@@ -1120,42 +1204,67 @@ function clamp(value: number, min: number, max: number): number {
 
 const STAFF_VERTEX = /* glsl */ `
 attribute float aFade;
+attribute float aKind;
+attribute float aSpan;
 varying float vFade;
+varying float vKind;
+varying float vSpan;
 
 void main() {
   vFade = aFade;
+  vKind = aKind;
+  vSpan = aSpan;
   gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0);
 }
 `;
 
 /**
- * The five lines are strongest at the barline and dissolve toward the far end
- * of the run, and they end rather than stopping: both ends are taken to zero
- * over a short distance so the stave reads as a torn strip of manuscript
- * hanging in the air rather than as five rules that were cut off.
+ * Ink, and the paper it soaked into.
  *
- * It does not fall to nothing before the far end, because that is where the
- * notes the player has not yet played are travelling and pitch is unreadable
- * with no line under the head.
+ * Across the thin axis: a band of ink with a cream bloom either side of it,
+ * which is what a printed line looks like close up and what makes one legible
+ * against a photograph of anything. The bloom is squared so it falls away
+ * fast — a linear falloff at this width reads as a glow, and glowing notation
+ * belongs to a different game.
+ *
+ * Along the run: strongest at the barline and thinnest at the far end,
+ * because that is the order the eye is asked to read it in, and both ends go
+ * to nothing rather than stopping square. The lines do not fall all the way,
+ * because the far end is where the notes the player has not yet played are
+ * travelling and pitch is unreadable with no line under the head.
  */
 const STAFF_FRAGMENT = /* glsl */ `
-uniform vec3 uColor;
+uniform vec3 uInk;
+uniform vec3 uPaper;
 uniform vec3 uHorizon;
 uniform float uOpacity;
 uniform float uBarOpacity;
-uniform float uLineTint;
+uniform float uPaperOpacity;
+uniform float uPaperTint;
+uniform float uLineInk;
+uniform float uBarInk;
 varying float vFade;
+varying float vKind;
+varying float vSpan;
 
 void main() {
-  float bar = step(1.5, vFade);
-  float t = min(vFade, 1.0);
-  float ends = smoothstep(0.0, 0.05, t) * smoothstep(1.0, 0.92, t);
-  float away = 0.42 + 0.58 * smoothstep(0.95, 0.12, t);
-  float fade = mix(ends * away, 1.0, bar);
-  vec3 line = mix(uColor, uHorizon, uLineTint);
-  float a = fade * mix(uOpacity, uBarOpacity, bar);
-  if (a < 0.002) discard;
-  gl_FragColor = vec4(mix(line, uColor, bar), a);
+  float bar = step(0.5, vKind);
+  float t = clamp(vFade, 0.0, 1.0);
+
+  float ends = smoothstep(0.0, 0.05, t) * smoothstep(1.0, 0.90, t);
+  float along = mix(ends * (0.66 + 0.34 * smoothstep(0.95, 0.12, t)), 1.0, bar);
+
+  float edge = mix(uLineInk, uBarInk, bar);
+  float d = abs(vSpan);
+  float core = smoothstep(edge, edge * 0.45, d);
+  float bloom = (1.0 - d) * (1.0 - d);
+
+  vec3 paper = mix(uPaper, uHorizon, uPaperTint);
+  vec3 color = mix(paper, uInk, core);
+  float a = mix(uPaperOpacity * bloom, mix(uOpacity, uBarOpacity, bar), core) * along;
+
+  if (a < 0.004) discard;
+  gl_FragColor = vec4(color, a);
 }
 `;
 
