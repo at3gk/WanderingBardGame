@@ -10,20 +10,8 @@ import {
   wasUnplayable,
 } from '../core/beats';
 import { expandSong, Song, SongBeat, songDurationMs } from '../core/song';
-import { SONGS } from '../core/songs';
 import { homeBiomeOf, SongChoice, songForPass } from '../core/songChoice';
-import {
-  advanceSequence,
-  FREE_PLAY_HIGH_STEP,
-  FREE_PLAY_LOW_STEP,
-  freePlayStaff,
-  FreePlayStaff,
-  freePlayStepAt,
-  freePlayStepY,
-  songStepSequence,
-  writtenNoteSlot,
-  stepsUsedBy,
-} from '../core/freePlay';
+import { FreePlayStaff } from '../core/freePlay';
 import { HUD_TOUCH_TARGET, hudLayout } from '../core/hud';
 import { ROAD_HEIGHT, worldLayout } from '../core/worldLayout';
 import { applyHit, applyMiss, DEFAULT_SONG_METER_CONFIG, isWalking, SongMeterConfig } from '../core/songMeter';
@@ -31,11 +19,14 @@ import { accumulateDistance } from '../core/distance';
 import { BIOMES, biomeBlendAt, BIOME_TRANSITIONS, signpostDistanceAt } from '../core/biome';
 import { duskShadeAt, nightnessAt } from '../core/dusk';
 import { accumulateCoins, crossedCoinMilestone } from '../core/coins';
-import { noteNameAt, noteNameAtStep, semitoneAtStep, staffStepAt, stemDown } from '../core/notation';
+import { noteNameAt, staffStepAt, STAFF_LINE_STEPS, stemDown } from '../core/notation';
 import {
   NOTE_HEAD_INSET_Y,
   NOTE_ORIGIN_X,
   NOTE_TEX_H,
+  NOTE_TINT_HIT,
+  NOTE_TINT_MISS,
+  NOTE_TINT_UPCOMING,
   noteTexture,
   restTexture,
   STAFF_LINE_GAP,
@@ -60,6 +51,18 @@ import { createStyleTextures, freePlayTexture, HIT_LINE_HEIGHT, songbookTexture 
 import { displaySupport, encounter, leadMsFor, ScaffoldState, supportFor } from '../core/scaffold';
 import { getSongChoice, loadScaffold, saveScaffold, setSongChoice } from '../core/scaffoldStorage';
 import { closePicker as closePickerOverlay, openPicker as openPickerOverlay, PICKER_CHOSEN_BG } from './picker';
+import {
+  buildFreeStaff as buildFreeStaffOverlay,
+  dropScrim as dropScrimOverlay,
+  fadeInFreeStaff as fadeInFreeStaffOverlay,
+  FREEPLAY_DEPTH,
+  layoutScrim as layoutScrimOverlay,
+  playFreeNote as playFreeNoteOverlay,
+  raiseScrim as raiseScrimOverlay,
+  tearDownFreeStaff as tearDownFreeStaffOverlay,
+} from './freePlayOverlay';
+import { createMeterBar, layoutMeterBar, setMeterBarVisible } from './meterBar';
+import { createReadouts, layoutReadouts, setReadoutsVisible } from './readouts';
 
 const BPM = 96;
 const MS_PER_BEAT = 60000 / BPM;
@@ -75,70 +78,32 @@ const MARKER_RADIUS = 18;
 // One visual language for everything the player reads or touches
 // (ROADMAP task 32): beat markers are eighth notes, the coin is stamped
 // with a note, the mute toggle is a note. The glyph texture is drawn
-// white and tinted per use.
-const NOTE_TINT_UPCOMING = 0xe8d9c0;
-const NOTE_TINT_HIT = 0x7fd6a0;
-const NOTE_TINT_MISS = 0x8a5a5a;
+// white and tinted per use. NOTE_TINT_* live in render/engraving.ts,
+// shared with free play's own notes (src/scenes/freePlayOverlay.ts).
 // The staff lane (ROADMAP task 42; DESIGN.md Pedagogy): the lane is a real
 // treble staff. Markers are quarter notes at their true pitch position,
 // letters baked dark into the heads so tints never eat them. The staff's
 // middle line (B4, step 6) sits on laneY; steps come from
-// core/notation.ts. Notation is never darkened by the dusk cycle and never
-// wrong — kids learn from this screen.
+// core/notation.ts (STAFF_LINE_STEPS is shared with free play's ladder).
+// Notation is never darkened by the dusk cycle and never wrong — kids
+// learn from this screen.
 // Roomy for young eyes: the staff gap sets the size of everything on it
 // (heads are one gap tall, as in real engraving), so this is the single
 // dial for notation legibility. 18px keeps the whole staff inside a phone
 // viewport while making letters comfortably readable.
 const STAFF_HALF_GAP = STAFF_LINE_GAP / 2;
 const STAFF_MIDDLE_STEP = 6;
-const STAFF_LINE_STEPS = [2, 4, 6, 8, 10];
 const STAFF_LINE_ALPHA = 0.22;
 const SONG_TITLE_HOLD_MS = 2600;
 // A note fades out once it's past the line and is gone before it reaches
 // the clef — on a narrow phone the lane's left end is only a few dozen
 // pixels past the hit line, and played notes used to pile over the clef.
 const EXIT_PROGRESS = 1.28;
-/**
- * 18 rather than 14 so the five staff lines inside the meter are actually
- * five lines. At 14 they sat 2.33px apart, which is under the width the
- * renderer needs to keep 1px strokes separate — they antialiased into each
- * other and the "sheet music filling with light" idea read as a smear of
- * texture. At 18 the spacing is 3px and they resolve.
- */
-const METER_HEIGHT = 18;
-/**
- * Gold, not cream.
- *
- * Cream (0xe8d9c0) is the notation's colour — note heads, letters, staff
- * lines, the clef. The meter used to borrow it, which was survivable while
- * the bar was 234px wide and squeezed between the buttons. Once it got a
- * row of its own and ran 342px on a phone, a full meter became the largest
- * and brightest thing on the screen, in exactly the colour the child is
- * supposed to be reading. The teaching surface has to win that contest.
- *
- * Gold is already this world's second voice — the coin beside it, the lit
- * windows in the village, the bard's buckle — so the meter joins something
- * rather than introducing a colour.
- */
-const METER_FILL_COLOR = 0xc79a3c;
-const METER_FILL_COLOR_STOPPED = 0x6b5f74;
 /** Mute, songbook, lute — the whole of the game's chrome. */
 const HUD_BUTTON_COUNT = 3;
-// Meter as staff (ROADMAP idea backlog): the song meter joins the notation
-// language established in task 32 — five faint staff lines across the bar,
-// same cream tone as the beat glyphs, sitting on top of the existing
-// track/fill so the meter reads as sheet music filling with light rather
-// than a plain progress bar.
-const METER_STAFF_LINE_COUNT = 5;
-// A mid-tone (not the fill's own cream) so the lines stay visible whether
-// they sit on the dark track or the bright fill — sheet-music lines read
-// the same whether the page under them is blank or inked.
-const METER_STAFF_LINE_COLOR = 0x6b4f18;
-// Raised with the height: the lines now sit on gold rather than cream, and
-// at 0.55 they were a 1.25:1 contrast against their own fill — present in a
-// pixel sample, invisible to a person.
-const METER_STAFF_LINE_ALPHA = 0.75;
-const METER_STAFF_LINE_THICKNESS = 1;
+// The meter's own constants (METER_HEIGHT, METER_FILL_COLOR*, METER_STAFF_LINE_*)
+// live in ./meterBar alongside the three GameObjects and functions that use
+// them (ROADMAP task 111) — see that module's header for why it split out.
 // A contact shadow. Without one the bard reads as pasted on top of the road
 // rather than standing on it — the single cheapest thing that grounds a
 // character. It is a soft ellipse in the road's own darker dash colour, not
@@ -235,25 +200,18 @@ const SKY_CLEARANCE = 10;
 const STAFF_TOP_LINE_STEP = 10;
 const COIN_RATE_PER_SEC = 5;
 const COIN_CHIME_EVERY = 25;
-const COIN_ICON_RADIUS = 8;
-const COIN_MARGIN_TOP = 24;
-const COIN_MARGIN_RIGHT = 24;
+// The readouts' own margin/radius constants (COIN_ICON_RADIUS,
+// COIN_MARGIN_TOP/RIGHT, DISTANCE_MARGIN_LEFT/BOTTOM) live in ./readouts
+// alongside the two GameObjects and functions that use them (ROADMAP task
+// 112) — see that module's header for why it split out.
 const MUTE_ICON_RADIUS = 10;
 const MUTE_ICON_COLOR_ON = 0xe8d9c0;
 const MUTE_ICON_COLOR_MUTED = 0x554e63;
 const MUTE_SLASH_COLOR = 0x8a5a5a;
-const DISTANCE_MARGIN_LEFT = 24;
-const DISTANCE_MARGIN_BOTTOM = 20;
 // Now that the lane is a staff, the instruction can name what the player
 // is actually looking at — and it doubles as the first thing that tells a
 // new reader those shapes are notes.
 const HINT_TEXT = 'tap when a note reaches the line';
-// Free play has to say what it is, once. The two modes ask for opposite
-// things — catch what arrives, versus go and find one — and a child who
-// pressed the lute button expecting the road would otherwise be looking at
-// a ladder with no idea it responds to anything.
-const FREE_HINT_TEXT = 'tap a line to hear it';
-const FREE_HINT_TEXT_SONG = 'find the glowing note';
 // Songbook picker (choose one song to learn instead of letting them
 // rotate). Sits beside the mute toggle, same 44px touch target — the two
 // are the only chrome in the game and they belong together.
@@ -261,17 +219,9 @@ const BOOK_ICON_RADIUS = 11;
 // PICKER_* constants (backdrop, layout, depth, fade) live in ./picker
 // alongside the overlay itself; PICKER_CHOSEN_BG is imported above since
 // it is also reused as a general "highlight gold" outside the picker.
-// Free play (the staff as an instrument). Its own chrome sits below the
-// picker but above the world.
-const FREEPLAY_DEPTH = 500;
-/**
- * The world sits behind a scrim while practising. Sits just under the
- * staff, over everything else — including the bard, who is not doing
- * anything in this mode and otherwise competes with the notes for
- * attention.
- */
-const FREEPLAY_SCRIM_DEPTH = FREEPLAY_DEPTH - 1;
-const FREEPLAY_SCRIM_ALPHA = 0.62;
+// Free play's own chrome (staff, scrim, hint text — FREEPLAY_* /
+// FREE_HINT_TEXT*) lives in ./freePlayOverlay; FREEPLAY_DEPTH is imported
+// above since HUD_DEPTH below is defined relative to it.
 /**
  * The heads-up chrome rides above the practice scrim. The lute button is
  * the way *back* to the walk, so dimming it by 62% would dim the exit; the
@@ -279,16 +229,6 @@ const FREEPLAY_SCRIM_ALPHA = 0.62;
  * world is what steps back in this mode, not the controls.
  */
 const HUD_DEPTH = FREEPLAY_DEPTH + 50;
-const FREEPLAY_TOP_MARGIN = 74;
-const FREEPLAY_BOTTOM_MARGIN = 56;
-const FREEPLAY_LINE_COLOR = 0xe8d9c0;
-// The five real staff lines have to stay legible as *the staff* inside the
-// wider ladder of guides, or the child learns a thirteen-line instrument
-// that does not exist on paper.
-const FREEPLAY_LINE_ALPHA = 0.44;
-const FREEPLAY_LEDGER_ALPHA = 0.11;
-const FREEPLAY_NOTE_MS = 900;
-const FREEPLAY_FADE_MS = 220;
 const HINT_Y_OFFSET = -92;
 const HINT_FADE_MS = 400;
 // Strum on hit (ROADMAP idea backlog): the visual twin of AudioEngine.pluck
@@ -342,9 +282,17 @@ export class RoadScene extends Phaser.Scene {
   private flash!: Phaser.GameObjects.Rectangle;
   private meterConfig: SongMeterConfig = DEFAULT_SONG_METER_CONFIG;
   private meter = DEFAULT_SONG_METER_CONFIG.max;
-  private meterTrack!: Phaser.GameObjects.Rectangle;
-  private meterFill!: Phaser.GameObjects.Rectangle;
-  private meterStaffLines: Phaser.GameObjects.Rectangle[] = [];
+  /**
+   * The song meter's three parts. Not `private` — `./meterBar`'s functions
+   * read and write these directly via the `MeterBarHost` interface (a
+   * private class field can't satisfy a plain interface type, same reason
+   * as `pickerParts`/`freeParts` below), and `tools/hud-check.mjs` also
+   * reaches `meterTrack` directly to check the chrome doesn't overlap
+   * itself.
+   */
+  meterTrack!: Phaser.GameObjects.Rectangle;
+  meterFill!: Phaser.GameObjects.Rectangle;
+  meterStaffLines: Phaser.GameObjects.Rectangle[] = [];
   private staffLines: Phaser.GameObjects.Rectangle[] = [];
   private clef!: Phaser.GameObjects.Image;
   private road!: Phaser.GameObjects.TileSprite;
@@ -370,7 +318,8 @@ export class RoadScene extends Phaser.Scene {
   private stars!: Phaser.GameObjects.TileSprite;
   private moon!: Phaser.GameObjects.Image;
   private moonGlow!: Phaser.GameObjects.Arc;
-  private distancePx = 0;
+  /** Not `private` — `./readouts` reads this on the host. */
+  distancePx = 0;
   /**
    * The song the child is learning, or null to wander. Held at scene level
    * (not module level like the scaffold) because unlike learning progress
@@ -379,7 +328,12 @@ export class RoadScene extends Phaser.Scene {
    * resize" premise this was written under (see the scaffold's own
    * comment above `scaffold`).
    */
-  private songChoice: SongChoice = null;
+  /**
+   * Not `private` — `./freePlayOverlay`'s `buildFreeStaff` reads this
+   * directly via the `FreePlayOverlayHost` interface, same reason as the
+   * free-play fields below.
+   */
+  songChoice: SongChoice = null;
   private bookIcon!: Phaser.GameObjects.Image;
   private bookZone!: Phaser.GameObjects.Zone;
   /**
@@ -394,20 +348,25 @@ export class RoadScene extends Phaser.Scene {
   private mode: 'walk' | 'play' = 'walk';
   private luteIcon!: Phaser.GameObjects.Image;
   private luteZone!: Phaser.GameObjects.Zone;
-  private freeParts: Phaser.GameObjects.GameObject[] = [];
-  private freeStaff: FreePlayStaff | null = null;
-  private freeScrim: Phaser.GameObjects.Rectangle | null = null;
+  /**
+   * The free-play staff's own state. Not `private` — `./freePlayOverlay`'s
+   * functions read and write these directly via the `FreePlayOverlayHost`
+   * interface, the same shape of split as the picker above.
+   */
+  freeParts: Phaser.GameObjects.GameObject[] = [];
+  freeStaff: FreePlayStaff | null = null;
+  freeScrim: Phaser.GameObjects.Rectangle | null = null;
   /** The chosen song as positions to find, and how far through it the child is. */
-  private freeSequence: number[] = [];
-  private freeIndex = 0;
+  freeSequence: number[] = [];
+  freeIndex = 0;
   /** The pip marking the note to look for, kept so it can be moved rather than rebuilt. */
-  private freeCursor: Phaser.GameObjects.Arc | null = null;
+  freeCursor: Phaser.GameObjects.Arc | null = null;
   /** The song's note markers, kept so finishing the tune can ripple through them. */
-  private freePips: Phaser.GameObjects.Arc[] = [];
-  private freeHint: Phaser.GameObjects.Text | null = null;
+  freePips: Phaser.GameObjects.Arc[] = [];
+  freeHint: Phaser.GameObjects.Text | null = null;
   /** Notes written out so far in practice, and which line they belong to. */
-  private freeWritten: Phaser.GameObjects.Image[] = [];
-  private freeWrittenLine = 0;
+  freeWritten: Phaser.GameObjects.Image[] = [];
+  freeWrittenLine = 0;
   private totalNotesGenerated = 0;
   private nextPassStartTimeMs = 0;
   private currentSongId: string | null = null;
@@ -415,12 +374,14 @@ export class RoadScene extends Phaser.Scene {
   private passesByBiome = new Map<string, number>();
   /** When the meter first fell below walking, so "lost" can be distinguished from "one bad note". */
   private lostSinceMs: number | null = null;
-  private songTitleText!: Phaser.GameObjects.Text;
+  /** Not `private` — the free-play overlay also names the tune being practised here. */
+  songTitleText!: Phaser.GameObjects.Text;
   private pendingAnnounce: Array<{ atMs: number; title: string }> = [];
-  private coins = 0;
-  private coinIcon!: Phaser.GameObjects.Image;
-  private coinText!: Phaser.GameObjects.Text;
-  private distanceText!: Phaser.GameObjects.Text;
+  /** Not `private` — `./readouts` reads and writes these on the host. */
+  coins = 0;
+  coinIcon!: Phaser.GameObjects.Image;
+  coinText!: Phaser.GameObjects.Text;
+  distanceText!: Phaser.GameObjects.Text;
   private hintText!: Phaser.GameObjects.Text;
   private hintShown = true;
   private muteIcon!: Phaser.GameObjects.Image;
@@ -435,7 +396,8 @@ export class RoadScene extends Phaser.Scene {
   private bardShadow!: Phaser.GameObjects.Ellipse;
   private bardWasWalking: boolean | null = null;
   private bardAnimToken = 0;
-  private audioEngine = new AudioEngine(AUDIO_MANIFEST);
+  /** Not `private` — `./freePlayOverlay`'s functions call `pluck`/`chime` on this directly. */
+  audioEngine = new AudioEngine(AUDIO_MANIFEST);
 
   constructor() {
     super('RoadScene');
@@ -550,27 +512,10 @@ export class RoadScene extends Phaser.Scene {
     this.songTitleText.setAlpha(0);
     this.appendSongPass();
 
-    this.meterTrack = this.add.rectangle(0, 0, 0, METER_HEIGHT, 0x2c2536, 0.9);
-    this.meterFill = this.add.rectangle(0, 0, 0, METER_HEIGHT - 4, 0xe8d9c0, 1);
-    this.meterStaffLines = Array.from({ length: METER_STAFF_LINE_COUNT }, () =>
-      this.add.rectangle(0, 0, 0, METER_STAFF_LINE_THICKNESS, METER_STAFF_LINE_COLOR, METER_STAFF_LINE_ALPHA)
-    );
+    createMeterBar(this);
 
     this.coins = 0;
-    this.coinIcon = this.add.image(0, 0, 'coin-icon');
-    this.coinText = this.add.text(0, 0, '0', {
-      fontFamily: 'sans-serif',
-      fontSize: '16px',
-      color: '#e8d9c0',
-    });
-    this.coinText.setOrigin(0, 0.5);
-
-    this.distanceText = this.add.text(0, 0, '0 steps', {
-      fontFamily: 'sans-serif',
-      fontSize: '14px',
-      color: '#a89bb5',
-    });
-    this.distanceText.setOrigin(0, 1);
+    createReadouts(this);
 
     this.muteIcon = this.add.image(0, 0, 'note-glyph');
     this.muteIcon.setScale((MUTE_ICON_RADIUS * 2) / 34);
@@ -656,8 +601,8 @@ export class RoadScene extends Phaser.Scene {
     this.scale.on(Phaser.Scale.Events.RESIZE, () => {
       if (this.pickerOpen) this.closePicker();
       if (this.mode === 'play') {
-        this.layoutScrim();
-        this.buildFreeStaff(false);
+        layoutScrimOverlay(this);
+        buildFreeStaffOverlay(this, false);
       }
     });
 
@@ -953,7 +898,8 @@ export class RoadScene extends Phaser.Scene {
    * two don't fight over the same property; if the bard is idle when the
    * strum finishes, restarts the idle sway so it doesn't go still.
    */
-  private strumLute(): void {
+  /** Not `private` — `./freePlayOverlay`'s `playFreeNote` calls this on the host. */
+  strumLute(): void {
     this.tweens.killTweensOf(this.bardLute);
     this.tweens.add({
       targets: this.bardLute,
@@ -1050,12 +996,16 @@ export class RoadScene extends Phaser.Scene {
     return 1;
   }
 
-  /** Origin that puts the note *head* (not the texture center) on the staff position. */
-  private noteOriginY(step: number): number {
+  /**
+   * Origin that puts the note *head* (not the texture center) on the staff
+   * position. Not `private` — `./freePlayOverlay` calls this on the host.
+   */
+  noteOriginY(step: number): number {
     return (stemDown(step) ? NOTE_HEAD_INSET_Y : NOTE_TEX_H - NOTE_HEAD_INSET_Y) / NOTE_TEX_H;
   }
 
-  private hitLineX(): number {
+  /** Not `private` — `./freePlayOverlay`'s `playFreeNote` calls this on the host. */
+  hitLineX(): number {
     return this.scale.width * 0.25;
   }
 
@@ -1111,86 +1061,19 @@ export class RoadScene extends Phaser.Scene {
     this.dismissHint();
     this.luteIcon.setTint(PICKER_CHOSEN_BG);
     this.setWalkChromeVisible(false);
-    this.raiseScrim();
-    this.buildFreeStaff();
-    this.fadeInFreeStaff();
-  }
-
-  /**
-   * Dims the world while practising.
-   *
-   * The staff spreads over the whole screen in this mode, so its lowest
-   * steps — middle C and the two above it — lie across the road, which is
-   * the brightest band in the scene. Cream lines at 0.55 alpha over a lit
-   * road is the one place in the game where the notation is hard to read,
-   * and it is the mode whose entire purpose is reading it.
-   *
-   * Dimming rather than hiding: the walk is still there, waiting, and a
-   * child should be able to see what they are going back to. It is the
-   * same principle as the letter scaffold — fade what is not the answer.
-   */
-  private raiseScrim(): void {
-    if (!this.freeScrim) {
-      this.freeScrim = this.add.rectangle(0, 0, 10, 10, 0x120d16, 1);
-      this.freeScrim.setDepth(FREEPLAY_SCRIM_DEPTH);
-    }
-    const scrim = this.freeScrim;
-    this.layoutScrim();
-    scrim.setVisible(true);
-    scrim.setAlpha(0);
-    this.tweens.killTweensOf(scrim);
-    this.tweens.add({ targets: scrim, alpha: FREEPLAY_SCRIM_ALPHA, duration: FREEPLAY_FADE_MS, ease: 'Quad.easeOut' });
-  }
-
-  /**
-   * Sizes the scrim to the screen. Separate from raising it because a
-   * rotation mid-practice has to resize it *without* re-running the fade —
-   * the same split the staff itself needed, and for the same reason: the
-   * scrim is already on screen, and flashing it would read as a fault.
-   */
-  private layoutScrim(): void {
-    if (!this.freeScrim) return;
-    this.freeScrim.setPosition(this.scale.width / 2, this.scale.height / 2);
-    this.freeScrim.setSize(this.scale.width, this.scale.height);
-  }
-
-  /** Drops the scrim on the same frame the road comes back — see exitFreePlay. */
-  private dropScrim(): void {
-    if (!this.freeScrim) return;
-    this.tweens.killTweensOf(this.freeScrim);
-    this.freeScrim.setVisible(false);
-  }
-
-  /**
-   * Lays the staff in rather than cutting to it. Each line, pip and letter
-   * rises from nothing to its own intended alpha — which differs per part,
-   * since the line-notes are landmarks and the spaces between them are
-   * not — so the hierarchy the staff is built with survives the fade.
-   *
-   * Entry only. Leaving fades nothing: the road is the game, and a child
-   * asking for it back should get it on the same frame they asked.
-   */
-  private fadeInFreeStaff(): void {
-    for (const part of this.freeParts) {
-      // freeParts is typed as bare GameObject because it is a teardown list;
-      // everything actually in it is an Alpha component (rectangle, circle,
-      // text), so narrow rather than widen the field's type.
-      const fadeable = part as Phaser.GameObjects.GameObject & { alpha: number; setAlpha(v: number): unknown };
-      if (typeof fadeable.alpha !== 'number') continue;
-      const target = fadeable.alpha;
-      fadeable.setAlpha(0);
-      this.tweens.add({ targets: fadeable, alpha: target, duration: FREEPLAY_FADE_MS, ease: 'Quad.easeOut' });
-    }
+    raiseScrimOverlay(this);
+    buildFreeStaffOverlay(this);
+    fadeInFreeStaffOverlay(this);
   }
 
   private exitFreePlay(): void {
     if (this.mode !== 'play') return;
     this.mode = 'walk';
     this.luteIcon.setTint(MUTE_ICON_COLOR_ON);
-    this.dropScrim();
+    dropScrimOverlay(this);
     this.setWalkChromeVisible(true);
     this.songTitleText.setAlpha(0);
-    this.tearDownFreeStaff();
+    tearDownFreeStaffOverlay(this);
     // Pick the schedule back up from here rather than from wherever it
     // stopped, so the road does not resume with a backlog of notes that
     // were due while the child was playing.
@@ -1208,289 +1091,18 @@ export class RoadScene extends Phaser.Scene {
    */
   private setWalkChromeVisible(visible: boolean): void {
     for (const line of this.staffLines) line.setVisible(visible);
-    for (const line of this.meterStaffLines) line.setVisible(visible);
     this.clef.setVisible(visible);
     this.hitLine.setVisible(visible);
     this.flash.setVisible(visible);
-    this.meterTrack.setVisible(visible);
-    this.meterFill.setVisible(visible);
+    setMeterBarVisible(this, visible);
     // Steps and coins are both counts of walking. Leaving them on screen
     // while the road is stopped invites a child to wonder why they are not
     // going up.
-    this.distanceText.setVisible(visible);
-    this.coinText.setVisible(visible);
-    this.coinIcon.setVisible(visible);
+    setReadoutsVisible(this, visible);
   }
 
-  private tearDownFreeStaff(): void {
-    // Kill the tweens before destroying the targets. fadeInFreeStaff adds
-    // one per part on every entry, and destroying a target does not remove
-    // a tween that points at it — so toggling between the walk and practice
-    // left them behind at about half a tween per toggle: 5 at the start, 19
-    // after thirty toggles, 44 after eighty. Objects and staff parts stayed
-    // flat the whole time, which is why nothing else caught it.
-    for (const part of this.freeParts) {
-      this.tweens.killTweensOf(part);
-      part.destroy();
-    }
-    this.freeParts = [];
-    this.freePips = [];
-    this.freeCursor = null;
-    this.freeHint = null;
-    this.freeStaff = null;
-  }
-
-  /**
-   * Reaching the end of the tune.
-   *
-   * Deliberately not a score, a star or a "well done" — DESIGN.md's no-fail
-   * stance cuts both ways, and a game that celebrates loudly has started
-   * grading quietly. A chime and a ripple up the notes the child just
-   * played says "that was the whole song" and then gets out of the way, so
-   * the tune simply comes round again.
-   */
-  private celebrateTune(): void {
-    this.audioEngine.chime();
-    // The phrase written out so far goes with it — the tune is complete,
-    // and the next pass starts on a clean staff.
-    for (const note of this.freeWritten) {
-      this.tweens.add({ targets: note, alpha: 0, duration: 420, onComplete: () => note.destroy() });
-    }
-    this.freeWritten = [];
-    this.freeWrittenLine = 0;
-    const pips = [...this.freePips].sort((a, b) => b.y - a.y);
-    pips.forEach((pip, i) => {
-      this.tweens.add({
-        targets: pip,
-        scale: { from: 1, to: 1.9 },
-        duration: 190,
-        delay: i * 70,
-        yoyo: true,
-        ease: 'Sine.easeOut',
-      });
-    });
-  }
-
-  /**
-   * Draws the big staff. Five real lines, plus a faint guide at every
-   * *space* and ledger position too — without them a child aiming at a
-   * space is aiming at nothing, and the whole mode is aiming.
-   */
-  private buildFreeStaff(resetProgress = true): void {
-    this.tearDownFreeStaff();
-    const w = this.scale.width;
-    const staff = freePlayStaff(this.scale.height, FREEPLAY_TOP_MARGIN, FREEPLAY_BOTTOM_MARGIN);
-    this.freeStaff = staff;
-
-    // Which positions the tune the child is learning actually uses. Free
-    // play on its own is a ladder with no suggestion of where to start;
-    // marking the song's own notes turns it into "here are the ones in
-    // Twinkle, try those" without adding an instruction nobody can read.
-    // Wandering marks nothing — there is no one tune to point at.
-    const chosen = this.songChoice ? SONGS.find((song) => song.id === this.songChoice) ?? null : null;
-    const inSong = stepsUsedBy(chosen);
-
-    for (let step = FREE_PLAY_LOW_STEP; step <= FREE_PLAY_HIGH_STEP; step++) {
-      const y = freePlayStepY(step, staff);
-      const isStaffLine = STAFF_LINE_STEPS.includes(step);
-      const used = inSong.has(step);
-      const line = this.add.rectangle(
-        w / 2,
-        y,
-        w - 24,
-        isStaffLine ? 2.5 : 1,
-        FREEPLAY_LINE_COLOR,
-        isStaffLine ? FREEPLAY_LINE_ALPHA : FREEPLAY_LEDGER_ALPHA
-      );
-      line.setDepth(FREEPLAY_DEPTH);
-      this.freeParts.push(line);
-
-      // A warm dot beside the notes this song uses — the same gold as the
-      // lit windows and the coin, which is this world's colour for "look
-      // here".
-      if (used) {
-        const pip = this.add.circle(30, y, 3.5, PICKER_CHOSEN_BG, 0.95);
-        pip.setDepth(FREEPLAY_DEPTH + 1);
-        this.freeParts.push(pip);
-        this.freePips.push(pip);
-      }
-
-      // The letter, always. Nothing is being asked here, so nothing is
-      // withheld — this is the reference the walk deliberately fades.
-      const label = this.add.text(14, y, noteNameAtStep(step), {
-        fontFamily: 'sans-serif',
-        fontSize: '13px',
-        fontStyle: 'bold',
-        color: '#e8d9c0',
-      });
-      label.setOrigin(0.5, 0.5);
-      // Letters follow the same hierarchy: the five line-notes are the
-      // landmarks a reader actually navigates by.
-      label.setAlpha(used ? 1 : isStaffLine ? 0.9 : 0.55);
-      label.setDepth(FREEPLAY_DEPTH + 1);
-      this.freeParts.push(label);
-    }
-
-    // With a song chosen, free play stops being a ladder and becomes
-    // practice: the tune is a list of positions to find, one at a time, at
-    // whatever pace the child wants. Wandering leaves the sequence empty
-    // and every marked note simply stays marked.
-    // Name the tune being practised, and leave it up. On the road the
-    // title is an announcement that fades; here it is a label — a child
-    // hunting for the next note should not have to remember which song
-    // they picked, and there is no beat for it to distract from.
-    this.tweens.killTweensOf(this.songTitleText);
-    this.songTitleText.setText(chosen ? chosen.title : '');
-    this.songTitleText.setAlpha(chosen ? 0.6 : 0);
-
-    this.freeSequence = songStepSequence(chosen);
-    // A rebuild caused by a rotation must not throw away how far through
-    // the tune the child had got — turning the phone is not starting again.
-    if (resetProgress) this.freeIndex = 0;
-    if (this.freeSequence.length) this.freeIndex %= this.freeSequence.length;
-    else this.freeIndex = 0;
-    this.freePips = this.freePips.filter((p) => p.active);
-    for (const note of this.freeWritten) {
-      this.tweens.killTweensOf(note);
-      note.destroy();
-    }
-    this.freeWritten = [];
-    this.freeWrittenLine = 0;
-    this.freeCursor = null;
-    if (this.freeSequence.length) {
-      const cursor = this.add.circle(30, freePlayStepY(this.freeSequence[this.freeIndex], staff), 6, PICKER_CHOSEN_BG, 1);
-      cursor.setDepth(FREEPLAY_DEPTH + 2);
-      this.freeCursor = cursor;
-      this.freeParts.push(cursor);
-      // A slow breath, so the eye finds it without it ever nagging.
-      this.tweens.add({
-        targets: cursor,
-        scale: { from: 1, to: 1.45 },
-        duration: 620,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-    }
-
-    // Say what this is, once. It fades on the first tap, exactly like the
-    // road's own hint — its job is discovery, not instruction, and a child
-    // who has understood it should not have to keep reading it.
-    // Below the staff, not above it: the song title already lives at the
-    // top of the screen, and the first attempt put these two lines of text
-    // straight through each other.
-    const hint = this.add.text(
-      this.scale.width / 2,
-      Math.min(this.scale.height - 18, staff.bottomY + 30),
-      this.freeSequence.length ? FREE_HINT_TEXT_SONG : FREE_HINT_TEXT,
-      { fontFamily: 'sans-serif', fontSize: '13px', color: '#e8d9c0' }
-    );
-    hint.setOrigin(0.5, 0.5);
-    hint.setAlpha(0.7);
-    hint.setDepth(FREEPLAY_DEPTH + 2);
-    this.freeHint = hint;
-    this.freeParts.push(hint);
-
-    // No fade here. Building the staff and lying it in are separate jobs,
-    // and this method has two callers that want opposite things: entering
-    // free play (fade, via fadeInFreeStaff) and a resize mid-practice
-    // (rebuild in place, no fade — the staff is already on screen and
-    // flashing it out and back would read as a fault).
-    //
-    // They used to be one thing, and doing both was what made the whole
-    // practice staff invisible: this method ended by zeroing every alpha
-    // and tweening back, then fadeInFreeStaff ran on the very same frame,
-    // read those alphas — now 0 — captured 0 as each part's *target*, and
-    // tweened 0 to 0. The second tween won. Nothing ever appeared.
-  }
-
-  /** Sounds the note a tap landed on, and draws it where it was played. */
   private playFreeNote(y: number, x: number): void {
-    const staff = this.freeStaff;
-    if (!staff) return;
-    const step = freePlayStepAt(y, staff);
-    const semitone = semitoneAtStep(step);
-    if (this.freeHint) {
-      const hint = this.freeHint;
-      this.freeHint = null;
-      this.tweens.add({ targets: hint, alpha: 0, duration: 320, onComplete: () => hint.destroy() });
-    }
-    // A wrong note sounds and costs nothing — you just have not moved on.
-    // There is no penalty to apply and no streak to break, so a child
-    // hunting around the right answer is doing exactly what this is for.
-    let wasCorrect = false;
-    let writtenIndex = 0;
-    if (this.freeSequence.length) {
-      writtenIndex = this.freeIndex;
-      const next = advanceSequence(this.freeIndex, step, this.freeSequence);
-      const found = next !== this.freeIndex;
-      const finished = found && next === 0;
-      wasCorrect = found;
-      this.freeIndex = next;
-      if (finished) this.celebrateTune();
-      if (this.freeCursor) {
-        this.freeCursor.setPosition(30, freePlayStepY(this.freeSequence[next], staff));
-        if (found) {
-          // A brief brightening on the note you were looking for, so
-          // finding it feels like finding it.
-          this.tweens.add({ targets: this.freeCursor, alpha: { from: 0.25, to: 1 }, duration: 260, ease: 'Quad.easeOut' });
-        }
-      }
-    }
-    const name = noteNameAt(semitone) ?? '';
-    this.audioEngine.pluck(semitone);
-    this.strumLute();
-
-    const noteY = freePlayStepY(step, staff);
-    // In practice a *correct* note is written out left to right, so the
-    // phrase accumulates across the staff the way it would on paper.
-    // Reading order is not obvious to a beginner; it has to be shown, and
-    // this shows it every time they play a bar. A wrong note still appears
-    // where the finger landed and fades, so the two are never confused.
-    const writing = this.freeSequence.length > 0 && wasCorrect;
-    let noteX = Math.max(60, Math.min(this.scale.width - 40, x));
-    if (writing) {
-      // Clear of the bard. He stands at the hit line, and starting the
-      // phrase at the screen edge ran the first two notes straight through
-      // him — the tune being written out is the thing to look at here, and
-      // it cannot be half-hidden behind a character.
-      const leftX = this.hitLineX() + 46;
-      const slot = writtenNoteSlot(writtenIndex, this.scale.width - leftX - 24);
-      if (slot.line !== this.freeWrittenLine) {
-        this.freeWrittenLine = slot.line;
-        for (const note of this.freeWritten) {
-          this.tweens.add({ targets: note, alpha: 0, duration: 260, onComplete: () => note.destroy() });
-        }
-        this.freeWritten = [];
-      }
-      noteX = leftX + slot.column * ((this.scale.width - leftX - 24) / slot.perLine) + 12;
-    }
-    const img = this.add.image(noteX, noteY, noteTexture(this, name, step, 1));
-    img.setOrigin(NOTE_ORIGIN_X, this.noteOriginY(step));
-    img.setTint(NOTE_TINT_HIT);
-    img.setDepth(FREEPLAY_DEPTH + 2);
-    this.tweens.add({
-      targets: img,
-      scale: { from: 1.4, to: 1 },
-      duration: 170,
-      ease: 'Sine.easeOut',
-    });
-    if (writing) {
-      // Written notes stay: they are the phrase so far, and watching it
-      // build is the point. They clear a line at a time, and all together
-      // when the tune comes round.
-      this.freeWritten.push(img);
-    } else {
-      // A freely-explored note fades on its own. One that stayed would turn
-      // the staff into a drawing the child has to clear.
-      this.tweens.add({
-        targets: img,
-        alpha: { from: 1, to: 0 },
-        duration: FREEPLAY_NOTE_MS,
-        delay: 220,
-        onComplete: () => img.destroy(),
-      });
-    }
+    playFreeNoteOverlay(this, y, x);
   }
 
   /**
@@ -1537,7 +1149,7 @@ export class RoadScene extends Phaser.Scene {
     // staff, went missed, drained the meter and fed the learning model
     // with misses the child never had a chance at.
     if (this.mode === 'play') {
-      this.buildFreeStaff();
+      buildFreeStaffOverlay(this);
       return;
     }
 
@@ -1868,8 +1480,7 @@ export class RoadScene extends Phaser.Scene {
 
     this.updateSongTitle(nowMs);
     this.updateMeterBar();
-    this.updateCoinReadout();
-    this.updateDistanceReadout();
+    layoutReadouts(this);
     this.updateBard(hitLineX);
     this.audioEngine.setMeterRatio(meterRatio);
   }
@@ -2130,51 +1741,7 @@ export class RoadScene extends Phaser.Scene {
 
   private updateMeterBar(): void {
     const hud = hudLayout(this.scale.width, HUD_BUTTON_COUNT);
-    const trackWidth = hud.meterWidth;
-    const centerX = hud.meterCenterX;
-    const meterY = hud.meterY;
-    const fillRatio = this.meter / this.meterConfig.max;
-    const walking = this.walking;
-
-    this.meterTrack.setPosition(centerX, meterY);
-    this.meterTrack.setSize(trackWidth, METER_HEIGHT);
-
-    this.meterFill.setSize(Math.max(0, trackWidth * fillRatio), METER_HEIGHT - 4);
-    this.meterFill.setFillStyle(walking ? METER_FILL_COLOR : METER_FILL_COLOR_STOPPED, 1);
-    this.meterFill.setPosition(centerX - trackWidth / 2 + this.meterFill.width / 2, meterY);
-
-    const lineCount = this.meterStaffLines.length;
-    for (let i = 0; i < lineCount; i++) {
-      // Half-pixel offset so a 1px line covers exactly one row of pixels.
-      // Centred on a whole number it straddles two, and antialiasing paints
-      // both at half strength — five 2px smudges instead of five lines,
-      // which is what made this read as corduroy rather than ruled paper.
-      const y = Math.round(meterY - METER_HEIGHT / 2 + ((i + 1) * METER_HEIGHT) / (lineCount + 1)) + 0.5;
-      this.meterStaffLines[i].setPosition(centerX, y);
-      this.meterStaffLines[i].setSize(trackWidth, METER_STAFF_LINE_THICKNESS);
-    }
+    layoutMeterBar(this, hud.meterCenterX, hud.meterY, hud.meterWidth, this.meter / this.meterConfig.max, this.walking);
   }
 
-  /** Coin count readout — a display of song-meter performance, not an interactive system (ROADMAP task 11). */
-  private updateCoinReadout(): void {
-    const iconX = this.scale.width - COIN_MARGIN_RIGHT - COIN_ICON_RADIUS;
-    this.coinIcon.setPosition(iconX, COIN_MARGIN_TOP);
-    this.coinText.setText(Math.floor(this.coins).toString());
-    this.coinText.setPosition(iconX - COIN_ICON_RADIUS - this.coinText.width - 8, COIN_MARGIN_TOP);
-  }
-
-  /**
-   * Distance-walked readout — DESIGN.md names "distance" alongside scenery
-   * and coins as a readout of song-meter performance, but until now
-   * `distancePx` only drove the biome crossfade internally with nothing
-   * shown to the player. Steps are `distancePx` converted through
-   * `ROAD_TILE_WIDTH` (the road's own dash-tile size) rather than a new
-   * arbitrary unit, so one "step" matches one tile of ground already
-   * scrolling past.
-   */
-  private updateDistanceReadout(): void {
-    const steps = Math.floor(this.distancePx / ROAD_TILE_WIDTH);
-    this.distanceText.setText(`${steps} steps`);
-    this.distanceText.setPosition(DISTANCE_MARGIN_LEFT, this.scale.height - DISTANCE_MARGIN_BOTTOM);
-  }
 }

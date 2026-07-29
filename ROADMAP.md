@@ -10,39 +10,12 @@ makes it long. You do not need to read it top to bottom.
 
 - **What to do next** is the **v0.6 queue** immediately below. It supersedes
   the numbered entries: a human reset the direction on 2026-07-28 and the
-  game is now a 3D one (DESIGN.md, "The road in three dimensions"). The
-  numbered entries below remain the record of how the 2D game was built and
-  are still worth reading for *why* something is the way it is — several of
-  their conclusions (the no-fail stance, the notation rules, the mobile
-  layout lessons) carry straight over.
-
-## v0.6 queue — the 3D road
-
-Ordered. One per run, as always.
-
-1. **Delete the dead Phaser layer.** `src/scenes/` and `src/render/` are
-   unreferenced and tree-shaken out of the bundle, but they are still in the
-   tree and still type-check, which makes them look live. Removing them means
-   also retiring the `tools/*.mjs` checks that drive the old game — most of
-   them now assert against a scene that never boots. Keep `browser.mjs`,
-   `shader-check.mjs`, `postcard.mjs`, and anything that tests pure logic.
-2. **Make the headless checks match the 3D game.** Rewrite the survivors
-   against `window.bard`, and put `shader-check` into
-   `headless-checks.yml`. A black frame is the one failure that unit tests
-   structurally cannot see, and it should block rather than inform.
-3. **A first-run welcome that is not a menu.** The pillar is "playable in
-   under five seconds, no login" and the game currently opens straight into
-   the walk, which is right. What is missing is any indication that tapping
-   does anything. Diegetic, one line, fades.
-4. **Weather.** `audio/ambience.ts` already accepts `'clear' | 'breezy' |
-   'overcast' | 'rain'` and the encounter table has weather moments in it;
-   nothing drives either. A weather state derived from the daily seed would
-   make two systems that already exist start paying for themselves.
-5. **The journal as a real artefact.** Entries are being recorded; they want
-   a place to be read that feels like a worn book rather than a list.
-6. **Performance pass on a real phone.** The quality tiers are inferred from
-   a capability probe that has never been checked against actual hardware.
-   Needs a human with a mid-range Android.
+  game is now a 3D one (DESIGN.md, "The road in three dimensions"). Entries
+  up to 113 remain the record of how the 2D game was built and are still
+  worth reading for *why* something is the way it is — several of their
+  conclusions (the no-fail stance, the notation rules, the mobile layout
+  lessons) carry straight over. Tasks 109-113 in particular split the Phaser
+  `RoadScene` into modules that v0.6 no longer loads.
 - **Why something is the way it is**: find its numbered done-entry. They are
   written to be read later and are referenced by number from STATE.md.
 - **Before you start**: read STATE.md's "At a glance" — it is the short
@@ -1296,9 +1269,48 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     `npm test` 279 green (unchanged), build green (bundle unchanged, same
     content hash), full 14-check quick suite reconfirmed green including
     the updated `rotate-check.mjs`.
-109. **Next.** Nothing queued.
+109. ~~**Consolidation: split the free-play staff out of RoadScene.**~~ Done
+    (Run 41, scheduled). Both blockers re-checked first (unchanged — see
+    Blocked on human), no playtest answer had arrived, and the idea
+    backlog held only the phone-dependent item, so this run took up the
+    "legitimate work if someone scopes a real first piece" this task's own
+    previous entry (108) left open. The free-play staff (scrim, ladder,
+    cursor, written-phrase tracking, `playFreeNote`) moved to
+    `src/scenes/freePlayOverlay.ts`, the same shape of split as the picker
+    (task 107): a `FreePlayOverlayHost` interface is the exact slice of
+    `RoadScene` the module reads and writes, including `songTitleText`
+    (shared with the walk mode, exactly the entanglement task 108 flagged)
+    and three small callbacks (`hitLineX`, `noteOriginY`, `strumLute`) for
+    the handful of things that are genuinely the scene's own layout/
+    animation rather than the staff's. `enterFreePlay`/`exitFreePlay`
+    stayed on `RoadScene` as the mode-toggle orchestration, same as the
+    picker's `openPicker`/`closePicker` wrappers.
+    Two small shared-constant moves came out of scoping this correctly:
+    `STAFF_LINE_STEPS` (the treble staff's five line positions) to
+    `core/notation.ts`, and `NOTE_TINT_UPCOMING/HIT/MISS` to
+    `render/engraving.ts` — both were RoadScene-local consts used by *both*
+    the walk's markers and free play's notes, so leaving them in RoadScene
+    would have forced a circular import between the two scene modules.
+    `RoadScene.ts` 2172 → 1838 lines; new module 414 lines.
+    Caught by the verification, not by reading: a transcription slip while
+    moving `playFreeNote`'s fade-out tween (`delay: 220` misread as
+    `ease: 'Quad.easeIn'` off a truncated file read) — the exact class of
+    mistake this file's own "when a check fails, suspect the check first"
+    lesson is really about in reverse: a *refactor* claiming
+    behaviour-preservation needs the same suspicion applied to itself.
+    Re-reading the untruncated original caught it before any check ran.
+    Verified behaviour-preserving, not assumed: `npm test` 279 green
+    (unchanged — no unit tests cover scene modules, same as the picker),
+    build green (1266.81 KB vs 1267.23 KB, module boundary only), the full
+    14-check quick suite green, plus `songpick-check`, `rotate-check` and
+    `seam-check` (normally quick-mode-skipped, run explicitly since this
+    touches the picker/free-play/rotation seams directly) all green — the
+    same specific area (practice staff visibility) that shipped invisible
+    to production once before (PRs #115–#122), so this run erred toward
+    over-verifying rather than under.
+110. **Next.** Nothing queued.
 
-    **First, check the blockers** (re-checked task 108): both remain
+    **First, check the blockers** (re-checked task 109): both remain
     blocked — forest-song fetch still 403s, GitHub MCP toolset still has no
     tag/ref-write or branch-protection-write call.
 
@@ -1310,11 +1322,14 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     **Fourth, the idea backlog below** — only sharper mobile rendering is
     left, still needs a real phone.
 
-    **Fifth, `RoadScene.ts` is 2172 lines.** The free-play staff and the
-    walk chrome remain the only two plausible further extractions (task 108
-    read the actual code and confirmed why neither is natural: shared
-    `songTitleText`, scattered chrome fields). Legitimate work if someone
-    scopes a real first piece, not an automatic pick.
+    **Fifth, `RoadScene.ts` is 1838 lines**, down from 2172 after task 109's
+    split. **Walk chrome** is the one remaining plausible extraction, and
+    task 108 already found why it isn't a clean single-unit one the way the
+    picker and free-play staff were: `setWalkChromeVisible` alone touches
+    nine unrelated fields (staff lines, meter, clef, hit line, coins,
+    distance) with no shared sub-grouping. Legitimate work if someone scopes
+    a real first piece (e.g. just the meter bar, or just the staff/clef),
+    not an automatic pick.
 
     **What not to reach for.** The verification suite is comprehensive now
     (24 checks); adding another for its own sake is drift. `createBard` is
@@ -1325,6 +1340,118 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     **The "create() re-runs on resize" question** (task 108) is now a
     checked fact, not folklore — don't re-investigate it without a reason
     (a Phaser upgrade, a `rotate-check.mjs` failure) to suspect it changed.
+111. ~~**Consolidation: split the song meter out of RoadScene.**~~ Done
+    (Run 42, scheduled). Both blockers re-checked first (unchanged — see
+    Blocked on human), no playtest answer had arrived, and the idea
+    backlog held only the phone-dependent item, so this run took up the
+    "just the meter bar" first cut task 110's own entry named as
+    legitimate work once task 108 had already ruled out
+    `setWalkChromeVisible` as a whole (nine unrelated fields, no shared
+    sub-grouping). The three meter GameObjects (`meterTrack`, `meterFill`,
+    `meterStaffLines`) and their constants moved to
+    `src/scenes/meterBar.ts` — the same `Host`-interface shape as tasks
+    107 and 109: `MeterBarHost` is the exact slice of RoadScene the module
+    reads and writes, via `createMeterBar` (build, called once from
+    `create()`), `layoutMeterBar` (the per-frame resize/reposition,
+    replacing the inline block that used to live in `updateMeterBar`) and
+    `setMeterBarVisible` (called from `setWalkChromeVisible` in place of
+    three inline `setVisible` calls). `RoadScene.ts` 1838 → 1783 lines;
+    new module 125 lines.
+    One deliberate departure from the picker/free-play shape, recorded in
+    the new module's own header: the three fields stay plain fields on
+    RoadScene rather than a returned handle. Both precedents dropped
+    `private` for the same reason (a private class field can't satisfy a
+    plain interface type) — here there was a second reason to keep them as
+    scene fields rather than hiding them behind a handle:
+    `tools/hud-check.mjs` already reaches `scene.meterTrack` directly to
+    check the HUD chrome doesn't overlap itself, and a handle would have
+    meant touching a passing check for no behavioural gain.
+    Grepped every one of the meter's seven constants (`METER_HEIGHT`,
+    `METER_FILL_COLOR`, `METER_FILL_COLOR_STOPPED`,
+    `METER_STAFF_LINE_COUNT/COLOR/ALPHA/THICKNESS`) before moving any of
+    them — all seven were meter-local, none shared with another file
+    (`core/hud.ts`'s `HUD_METER_HEIGHT` is a different constant despite the
+    similar name, confirmed by grep rather than assumed).
+    Verified behaviour-preserving rather than assumed: `npm test` 279
+    green (unchanged — no unit tests cover scene modules, same precedent as
+    the other two splits), build green (1266.84 KB vs 1266.81 KB, a
+    module-boundary-only difference), and the full 14-check quick suite
+    green — including `hud-check`, which reads `meterTrack`'s rect directly
+    at 8 viewports, and `autoplay`/`mash-check`/`seam-check`, which
+    exercise the meter's per-frame layout and mode-toggle visibility
+    continuously.
+112. ~~**Consolidation: split the coin/distance readouts out of RoadScene.**~~
+    Done (Run 43, scheduled). Both blockers re-checked first (unchanged —
+    see Blocked on human), no playtest answer had arrived, and the idea
+    backlog still held only the phone-dependent item, so this run took the
+    next piece task 112's own "nothing queued" note had already named as a
+    candidate: of the four things left in `setWalkChromeVisible` (staff
+    lines, clef, hit line/flash, coin/distance readouts), the coin/distance
+    pair was the cleanest cut — `updateCoinReadout`/`updateDistanceReadout`
+    were already two small self-contained private methods touching only
+    their own two GameObjects, unlike the staff lines/clef/hit line/flash,
+    which are interleaved with `laneY`/`hitLineX`/`beatPhase` in the same
+    per-frame block as the note markers.
+    `src/scenes/readouts.ts` (new, 75 lines) now owns `coinIcon`, `coinText`,
+    `distanceText` and their five margin/radius constants, via
+    `createReadouts` (called once from `create()`), `layoutReadouts` (the
+    per-frame text/position update, replacing the two removed methods) and
+    `setReadoutsVisible` (called from `setWalkChromeVisible`). Same
+    `Host`-interface shape as the picker/free-play/meter splits:
+    `ReadoutsHost` is the exact slice of RoadScene the module reads and
+    writes. `coins`, `distancePx`, `coinIcon`, `coinText` and `distanceText`
+    all dropped `private` for the same two reasons as the meter's fields —
+    a private class field can't satisfy a plain interface type, and
+    `tools/hud-check.mjs`, `tools/freeplay-check.mjs` and five other checks
+    already reach several of them directly. `RoadScene.ts` 1783 → 1747
+    lines.
+    Verified behaviour-preserving rather than assumed: `npm test` 279 green
+    (unchanged — no unit tests cover scene modules, same precedent as the
+    other three splits), `npm run build` green (1266.76 KB vs 1266.84 KB, a
+    module-boundary-only difference), and the full 14-check quick suite
+    green — including `hud-check` (reads `coinIcon`/`coinText` rects
+    directly) and `freeplay-check` (reads `coinText.visible`,
+    `distanceText.visible` and `coins` directly to confirm free play doesn't
+    feed the coin/step counters). `node_modules` was missing at the start of
+    this run (fresh checkout); `npm install` (54 packages, 0 vulnerabilities)
+    was needed first. Playwright for the check suite was installed fresh
+    into the scratchpad (`npm i playwright@1.56.1`, matching the pinned
+    version) since it is deliberately kept out of `package.json`.
+113. **Next.** Nothing queued.
+
+    **First, check the blockers** (re-checked task 112): both remain
+    blocked — forest-song fetch still 403s, GitHub MCP toolset still has no
+    tag/ref-write or branch-protection-write call.
+
+    **Second, if a playtest answer has arrived**, fold it in — see task 79
+    for the one open dial (`SESSION_GAIN_CAP`).
+
+    **Third, CI gating is still settled** (task 92) — don't re-litigate.
+
+    **Fourth, the idea backlog below** — only sharper mobile rendering is
+    left, still needs a real phone.
+
+    **Fifth, `RoadScene.ts` is 1747 lines**, down from 1783 after task 112's
+    split. What remains of `setWalkChromeVisible` is the staff lines, the
+    clef, and the hit line/flash — all three still interleaved with
+    `laneY`/`hitLineX`/`beatPhase` in the same per-frame block as the note
+    markers (task 108's original finding stands: not a clean single-unit
+    extraction the way the meter and the coin/distance readouts were).
+    `createBard` remains the one drawing block genuinely entangled with
+    scene state. Four small extractions in a row (tasks 107, 109, 111, 112)
+    is a real pattern worth naming: the next one should have an actual
+    reason (a bug, a new feature that needs the room, or the scene crossing
+    some further threshold) rather than being picked by default just
+    because it's there — see CLAUDE.md's drift-control note, which applies
+    to over-refactoring as much as to over-adding.
+
+    **What not to reach for.** The verification suite is comprehensive now
+    (24 checks); adding another for its own sake is drift. **Key
+    signatures** remain a v0.4+ *direction*, not a task — they break
+    naturals-only. **The picker's tween handling** (task 105)
+    mutation-tested clean — don't re-open without a new repro. **The
+    "create() re-runs on resize" question** (task 108) is a checked fact —
+    don't re-investigate without a reason to suspect it changed.
 
 ## Idea backlog (pull from here when nothing is queued)
 

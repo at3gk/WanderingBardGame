@@ -1,10 +1,20 @@
 # STATE
 
-Run counter: 41
+Run counter: 43
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **A note on runs 41-43, which landed on main while v0.6 was in flight.**
+  They split `RoadScene.ts` into `freePlayOverlay`, `meterBar` and
+  `readouts` — good work on the 2D game, and it is now dead code, because
+  v0.6 boots a Three.js stage and nothing imports any of it. The files are
+  kept rather than deleted so the history stays readable and so nothing is
+  thrown away that a future run might want to consult, but they are not the
+  game any more. Deleting `src/scenes/` and `src/render/` together with the
+  Phaser dependency and the `tools/` checks that drive them is the first
+  item on the v0.6 queue in ROADMAP.md.
 
 - **Where v0.6 actually stands, and what is still wrong.** A harsh
   frame-by-frame critique of ten posed screenshots returned **not shippable
@@ -33,8 +43,8 @@ Run counter: 41
   6. No instrument picker, and `journey.unlockedInstruments` is never
      appended to — an earned instrument is playable but not choosable.
 
-- **Run 41 (interactive, human-directed): the road goes into three
-  dimensions.** A human set a new direction — build the wandering road as a
+- **v0.6, the road in three dimensions (interactive, human-directed, landed
+  after run 43).** A human set a new direction — build the wandering road as a
   low-poly 3D painterly game in Three.js, with a shared daily road, busking,
   instrument unlocks, variable-reward encounters, idle busking and a
   campfire. DESIGN.md carries the full write-up and the changelog entry
@@ -104,6 +114,113 @@ Run counter: 41
   intermediate attempt also shortened the *along*-road hills to 165 m and
   turned the lane into a 30% climb — the existing roughness test caught that
   before it was ever seen, which is exactly what it was written for.
+
+
+- **Run 43 (scheduled): split the coin/distance readouts out of
+  `RoadScene.ts`,** per new ROADMAP task 112 — the next piece task 112's own
+  "nothing queued" note (as task 111 left it) had already named as a
+  candidate once task 111 took the meter out. Both blockers re-checked
+  first (unchanged — see Blocked on human), no playtest answer had arrived,
+  idea backlog still down to the one phone-dependent item.
+  Of the four things left in `setWalkChromeVisible` (staff lines, clef, hit
+  line/flash, coin/distance readouts), the coin/distance pair was the
+  cleanest cut: `updateCoinReadout`/`updateDistanceReadout` were already two
+  small self-contained private methods touching only their own two
+  GameObjects, unlike the other three, which are interleaved with
+  `laneY`/`hitLineX`/`beatPhase` in the same per-frame block as the note
+  markers. `src/scenes/readouts.ts` (new, 75 lines) now owns `coinIcon`,
+  `coinText`, `distanceText` and their five margin/radius constants, via
+  `createReadouts` (called once from `create()`), `layoutReadouts` (the
+  per-frame update, replacing the two removed methods) and
+  `setReadoutsVisible` (called from `setWalkChromeVisible`). Same
+  `Host`-interface shape as the picker/free-play/meter splits.
+  `coins`, `distancePx`, `coinIcon`, `coinText` and `distanceText` all
+  dropped `private` — a private class field can't satisfy a plain interface
+  type, and `tools/hud-check.mjs`, `tools/freeplay-check.mjs` and five other
+  checks already reach several of them directly. `RoadScene.ts` 1783 → 1747
+  lines.
+  Verified behaviour-preserving rather than assumed: `npm test` 279 green
+  (unchanged — no unit tests cover scene modules, same precedent as the
+  other three splits), `npm run build` green (1266.76 KB vs 1266.84 KB, a
+  module-boundary-only difference), and the full 14-check quick suite
+  green — including `hud-check` (reads `coinIcon`/`coinText` rects directly)
+  and `freeplay-check` (reads `coinText.visible`, `distanceText.visible` and
+  `coins` directly). `node_modules` was missing at the start of this run
+  (fresh checkout); `npm install` (54 packages, 0 vulnerabilities) was
+  needed first, and Playwright for the check suite was installed fresh into
+  the scratchpad (`npm i playwright@1.56.1`, matching the pinned version)
+  since it stays out of `package.json` on purpose.
+  **Flagged for whoever runs next**: this is the fourth small RoadScene
+  extraction in a row (tasks 107, 109, 111, 112). ROADMAP task 113 asks the
+  next run not to pick a fifth one by default — see its entry for the
+  reasoning.
+- **Run 42 (scheduled): split the song meter out of `RoadScene.ts`,** per
+  new ROADMAP task 111 — the "just the meter bar" first cut task 110's own
+  note left open once task 108 had ruled out `setWalkChromeVisible` as a
+  whole (nine unrelated fields, no shared sub-grouping). Both blockers
+  re-checked first (unchanged — see Blocked on human), no playtest answer
+  had arrived, idea backlog still down to the one phone-dependent item.
+  `src/scenes/meterBar.ts` (new, 125 lines) now owns the three meter
+  GameObjects (`meterTrack`, `meterFill`, `meterStaffLines`) and their
+  constants (`METER_HEIGHT`, `METER_FILL_COLOR*`, `METER_STAFF_LINE_*` —
+  grepped first and confirmed all seven were meter-only, none shared with
+  another file), plus three functions: `createMeterBar` (called once from
+  `create()`), `layoutMeterBar` (the per-frame resize/reposition, replacing
+  the inline block that used to live in `updateMeterBar`), and
+  `setMeterBarVisible` (called from `setWalkChromeVisible` in place of the
+  three inline `setVisible` calls). Same `Host`-interface shape as the
+  picker and free-play splits: `MeterBarHost` is the exact slice of
+  RoadScene the module reads and writes. One deliberate difference from
+  those two precedents, explained in the module's own header — the three
+  fields stay plain (non-`private`) fields on RoadScene rather than a
+  returned handle, both for the same reason the picker/free-play fields
+  did (a private class field can't satisfy a plain interface type) and
+  because `tools/hud-check.mjs` already reaches `scene.meterTrack` directly
+  to check the chrome doesn't overlap itself — a handle would have meant
+  touching a passing check for no behavioural reason. `RoadScene.ts` 1838
+  → 1783 lines.
+  Verified behaviour-preserving rather than assumed: `npm test` 279 green
+  (unchanged — no unit tests cover scene modules, same precedent as the
+  other two splits), `npm run build` green (1266.84 KB vs 1266.81 KB
+  before, a module-boundary-only difference), and the full 14-check quick
+  suite green — including `hud-check`, which reads `meterTrack`'s rect
+  directly at 8 viewports, and `autoplay`/`mash-check`/`seam-check`, which
+  exercise `layoutMeterBar` and `setMeterBarVisible` every frame and across
+  every mode toggle. `node_modules` was missing at the start of this run
+  (a fresh checkout); `npm install` (54 packages, 0 vulnerabilities) was
+  needed before `npm test`/`npm run build` would run at all.
+- **Run 41 (scheduled): split the free-play staff out of `RoadScene.ts`,**
+  per new ROADMAP task 109 — the "legitimate work if someone scopes a real
+  first piece" that task 108 left open rather than attempting. Both
+  blockers re-checked first (network fetch still 403s, GitHub MCP toolset
+  still has no tag/ref-write or branch-protection-write call), no playtest
+  answer had arrived, idea backlog held only the phone-dependent item.
+  `src/scenes/freePlayOverlay.ts` (new, 414 lines) now owns the scrim, the
+  ladder of lines/pips/labels, the cursor, the written-phrase tracking and
+  `playFreeNote` — same `Host`-interface shape as the picker split (task
+  107): `FreePlayOverlayHost` is the exact slice of `RoadScene` it reads
+  and writes, including `songTitleText` (shared with the walk mode — the
+  specific entanglement task 108 flagged) and three callbacks
+  (`hitLineX`, `noteOriginY`, `strumLute`) for what's genuinely the
+  scene's own layout/animation. `enterFreePlay`/`exitFreePlay` stay on
+  `RoadScene` as mode-toggle orchestration. `RoadScene.ts` 2172 → 1838
+  lines. Two constants moved out to break a would-be circular import
+  between the two scene modules: `STAFF_LINE_STEPS` to `core/notation.ts`,
+  `NOTE_TINT_UPCOMING/HIT/MISS` to `render/engraving.ts` (both were
+  RoadScene-local but shared by the walk's markers and free play's notes).
+  **Verification caught a real transcription error before it shipped**: an
+  earlier truncated file read led this run to write the wrong tween option
+  on `playFreeNote`'s fade-out (`ease: 'Quad.easeIn'` instead of the
+  actual `delay: 220`) into the new module; re-reading the untruncated
+  original caught it before any check ran. Given this exact area (the
+  practice staff) shipped invisible to production once before (PRs
+  #115–#122), verification ran wider than the minimum: `npm test` 279
+  green (unchanged — no unit tests cover scene modules, same precedent as
+  the picker), build green (1266.81 KB vs 1267.23 KB, module-boundary-only
+  difference), the full 14-check quick suite green, plus `songpick-check`,
+  `rotate-check` and `seam-check` (normally skipped in quick mode) run
+  explicitly since they exercise the picker/free-play/rotation seams this
+  change touches directly — all green, no regressions.
 
 - **Run 40 (scheduled): a five-place assumption turned out to be
   untested, and doesn't hold.** Both blockers re-checked, unchanged (see
@@ -1147,6 +1264,24 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   2275 lines since task 66. `npm test` 279 green (unchanged), build green
   (1.27 MB, unchanged), full 14-check quick suite plus `songpick-check`
   green with zero regressions.
+- Run 40 (2026-07-28, scheduled): resolved ROADMAP task 108 (see its done
+  entry and Current status above). Tested the "a resize re-runs `create()`"
+  assumption five pieces of documentation asserted flatly and found it does
+  not hold in headless Chromium: zero additional `CREATE` events across two
+  rotations, same scene instance and GameObjects throughout. Kept the
+  defenses it produced (cheap insurance against a real device behaving
+  differently) but corrected the docs and pinned the count as an assertion
+  in `rotate-check.mjs`. `npm test` 279 green (unchanged), build green,
+  full 14-check quick suite green.
+- Run 41 (2026-07-28, scheduled): resolved ROADMAP task 109 (see its done
+  entry and Current status above for the full writeup). Split the
+  free-play staff out of `RoadScene.ts` into `src/scenes/freePlayOverlay.ts`
+  — the "real first piece" task 108 left as legitimate-but-unscoped work.
+  `RoadScene.ts` 2172 → 1838 lines. `npm test` 279 green (unchanged), build
+  green (1266.81 KB vs 1267.23 KB), full 14-check quick suite plus
+  `songpick-check`, `rotate-check` and `seam-check` green with zero
+  regressions. Caught and fixed one transcription slip (a tween option
+  misread off a truncated file read) before it ever reached a check.
 
 - **Session close, 2026-07-27 small hours (human-directed, PRs #115–#122).**
   Asked for a polish pass on art, animation and the game. It found three

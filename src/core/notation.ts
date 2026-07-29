@@ -28,6 +28,13 @@ export function noteNameAt(semitoneFromC4: number): string | null {
 }
 
 /**
+ * The treble staff's five lines, as diatonic steps (E4 G4 B4 D5 F5).
+ * Shared by the walk's own staff and free play's ladder, so both draw the
+ * same five positions as "lines" rather than each hardcoding the list.
+ */
+export const STAFF_LINE_STEPS = [2, 4, 6, 8, 10];
+
+/**
  * Diatonic staff step from middle C: C4 = 0, D4 = 1, … C5 = 7, E5 = 9.
  * Null for accidentals. The treble staff's five lines sit at steps
  * 2/4/6/8/10 (E4 G4 B4 D5 F5); even steps are lines, odd steps are
