@@ -1,6 +1,6 @@
 /**
- * The busking visual: a stave standing in the world beside the bard, and
- * real notes riding it toward a barline.
+ * The busking visual: a songboard standing at the roadside beside the bard,
+ * and real notes riding it toward a barline.
  *
  * This is the picture the whole game is for, so it is worth saying exactly
  * what it is and what it refuses to be.
@@ -13,38 +13,67 @@
  * landscape are not read as a stave. They are read as **cable**. The eye has
  * a very old rule that says parallel lines shrinking toward a vanishing point
  * are a long thing going away, and no amount of tinting or fading talks it
- * out of that — a fainter wire is still a wire. The busking frame was a
- * cosy sunset with telegraph poles strung across it, and it is the frame this
- * game is most likely to be seen in.
+ * out of that — a fainter wire is still a wire.
  *
- * So the staff is now **face-on and short**: a flat card standing upright in
- * the world, a metre or so ahead of the bard and off to the camera's left,
- * yawed to face the camera so the five lines are five parallel rules and the
- * pitch axis is true world up. Notes enter at the right-hand end and travel
- * left to a barline, which is the direction written music runs and the
- * direction every scrolling display of it has run since. It is still *in* the
- * world — it stands at a place, it is depth-tested against the hill and the
- * trees, it takes the sky's own colour — but it no longer pretends to be
- * three-dimensional in its long axis, because that pretence is what turned
- * notation into scenery.
+ * The answer to that was to stand the stave up face-on and short, and it
+ * worked: pitch became readable, the cabling went. What it left behind was
+ * the fault this file is now built around. Five glowing rules hanging in
+ * clear air over a landscape are **not an object**. Nothing was in front of
+ * them because nothing *could* be — they floated at chest height in the one
+ * volume of the world that is empty. They took no light, so they were the
+ * same value at noon and at dusk while everything around them moved. And
+ * their cream bloom sat in the top tenth of the frame's values, measured, in
+ * a picture whose median value is a twentieth of that. The result was a
+ * diagram laid over a painting.
  *
- * Two things fell out of the change rather than being designed in, and both
- * are worth keeping. Perspective no longer eats the time axis, so two notes a
- * beat apart are two notes a beat apart on screen and the screen-space
- * spacing search that used to hold them apart could go. And it is small
- * enough now to be placed rather than merely aimed: it sits low over the road
- * to the bard's left, clear of the treeline, clear of the skyline and clear
- * of his silhouette, which is the shape the whole frame is built on.
+ * So the stave is now painted on **a thing that stands there**: a limewashed
+ * plank on two legs pushed into the roadside, a metre or so ahead of the
+ * bard and off to the camera's left. It is yawed to face the camera so the
+ * five lines stay five parallel rules and the pitch axis stays true world
+ * up, and notes still enter at the right and travel left to a barline, which
+ * is the direction written music runs.
+ *
+ * What the board buys, and none of it is decoration:
+ *
+ * - **It runs the same material as everything else in the world.**
+ *   `createPainterlyMaterial`, bound to the scene's own shared uniforms, so
+ *   the sun that bands a hillside bands the board, the sky that tints a
+ *   shadow tints its shadow, and a golden-hour board is warm because the
+ *   golden hour is what is lighting it. There is one lighting model in this
+ *   game and the notation is no longer the exception to it.
+ * - **The world can get in front of it.** It is opaque and it writes depth,
+ *   so a tuft of grass between the camera and the board passes in front of
+ *   the board — and, because the ink is the board's own surface rather than
+ *   a transparent overlay, in front of the stave with it. That single fact
+ *   is most of the difference between a thing that is present and a thing
+ *   that is composited.
+ * - **It sits in the frame's value range by construction.** The ink is dark
+ *   wood-stain and the paper is the plank, and the plank is only as bright
+ *   as the light falling on it. Nothing here is emissive and nothing is
+ *   drawn in a colour of its own choosing.
+ * - **It casts a shadow and has a lit edge.** The face is inset behind a
+ *   chamfer, so the top bevel catches sky and the bottom bevel catches the
+ *   ground's bounce even when the board is exactly face-on and its sides are
+ *   edge-on. A flat plane cannot do that, and a flat plane is what a UI card
+ *   is.
+ *
+ * The ink is *geometry*, not a texture: the front face is tessellated so
+ * that each staff line and the barline are their own narrow bands of dark
+ * vertex colour with a soft shoulder either side. A texture would have been
+ * one more thing to fetch or generate and would have had to be filtered at
+ * every distance; bands cost twenty-two rows and eleven columns and are
+ * exactly crisp at any range, because the transition is a gradient in world
+ * units rather than in texels.
  *
  * The notation is real and stays real. A glyph sits at its **true staff
  * step** (`core/notation.ts` owns that mapping and this file does not
  * second-guess it), wears its own stem direction by the engraving rule,
  * gets a ledger line when it needs one, and carries its letter name in the
- * head. That predates the 3D work by a long way and outranks anything
+ * head. That predates all of this by a long way and outranks anything
  * decorative here: if a choice would make a note prettier and wrong, the
  * note stays right.
  *
- * How it draws, and why:
+ * How the notes draw, and why:
  *
  * - **One glyph atlas, generated on a canvas at construction.** Seven
  *   letters times stem-up/stem-down times with/without a ledger, plus a
@@ -59,6 +88,15 @@
  *   `fx/Particles.ts` uses. A dozen notes could be a dozen sprites, but the
  *   burst that follows a hit is a hundred and something, and having one
  *   mechanism for both means one thing to get right.
+ * - **Lit by the board it is painted on.** The glyphs cannot run the
+ *   painterly material — they need the atlas, and it has no map — so the
+ *   board's own lighting term is evaluated once a frame on the CPU, from the
+ *   same shared uniforms and with the same numbers the shader uses, and
+ *   handed to them as a multiplier. That keeps a note head at a fixed ratio
+ *   below the plank it sits on, which is what holds it legible from noon to
+ *   dusk without anyone tuning a second set of colours. See `updateLight`,
+ *   and see `LIGHT_FLOOR` for the one place the notation is allowed to stop
+ *   following the world down.
  *
  * Nothing here flashes and nothing shakes. A hit blooms and scatters in the
  * instrument's colour along its own `noteMotion`; a miss softens toward
@@ -73,7 +111,6 @@ import {
   BufferGeometry,
   CanvasTexture,
   Color,
-  DoubleSide,
   DynamicDrawUsage,
   Group,
   InstancedBufferAttribute,
@@ -91,6 +128,12 @@ import type { Instrument } from '../../core/instruments';
 import { letterForStep, needsLedger, staffStepAt, stemDown } from '../../core/notation';
 import type { Judgement } from '../../core/performance';
 import type { SongBeat } from '../../core/song';
+import {
+  bindGlobals,
+  createPainterlyGlobals,
+  createPainterlyMaterial,
+  type PainterlyGlobals,
+} from '../painterly';
 
 /**
  * One diatonic step, in metres. Two steps make a staff space, so the printed
@@ -118,17 +161,24 @@ const MIDDLE_STEP = 6;
 /**
  * Height of the middle line above the road, in metres.
  *
- * A little above the bard's shoulder, which is lower than it looks like it
+ * A little below the bard's shoulder, which is lower than it looks like it
  * should be and was found by shooting it. The busking camera stands at about
  * 1.9 m, so a stave hung at chest height or above lands on the *horizon* —
  * where the distant treeline is, where the haze is brightest, and where five
- * horizontal rules acquire a sixth from the skyline itself. Dropped to here
- * the whole stave sits against the road and the near field, which is the
- * quietest and darkest ground in these pictures and the only place the ink
- * and its bloom both read. Lower again and the near grass starts eating the
- * bottom line.
+ * horizontal rules acquire a sixth from the skyline itself. Down here the
+ * whole board sits against the road and the near field, which is the
+ * quietest and darkest ground in these pictures.
+ *
+ * It came down from 1.22 when the stave became a board on stakes. The old
+ * number was chosen to keep the near grass off the bottom line, and grass
+ * crossing the ink was a fault when the ink was five lines hanging in the
+ * air. It is not a fault now: a board has a bottom edge and a foot, the
+ * grass in front of it is *meant* to cross it, and the printed area starts
+ * two staff spaces above the board's own bottom edge. What the drop buys is
+ * the thing hanging in the air had no way to buy — stakes short enough to
+ * read as something a bard drove in rather than as a gate across the road.
  */
-const MIDDLE_LINE_Y = 1.22;
+const MIDDLE_LINE_Y = 0.92;
 
 /**
  * Where the stave stands, in metres along the road ahead of the bard.
@@ -189,8 +239,17 @@ const STRIKE_MS = 420;
 /** Instances reserved for glyphs. A bar of eighths at this travel time needs ten. */
 const MAX_GLYPHS = 28;
 
-/** Cream. Reserved for notation everywhere in this game, and used here for the letters. */
-const INK = 0xf0e2c6;
+/**
+ * Cream. Reserved for notation everywhere in this game, and used here for
+ * the letters.
+ *
+ * A shade lighter than it was, and for a reason rather than for taste: it is
+ * the same limewash the plank is painted with, and a letter written on a
+ * board in the board's own paint cannot be darker than the board. It is the
+ * lightest albedo in this file and it is still only an albedo — what it
+ * actually renders at is whatever the sky is giving the board that hour.
+ */
+const INK = 0xfaf1de;
 
 /**
  * How far the note head is darkened from the instrument's own colour.
@@ -231,77 +290,214 @@ const LINE_HALF_STEPS = 0.062;
 const BAR_HALF_STEPS = 0.16;
 
 /**
- * The paper, and where it is.
+ * How far the ink's edge is allowed to soften, in diatonic steps.
  *
- * The obvious thing was a strip of manuscript standing behind the stave, and
- * it was built and thrown away. A pale translucent card cannot be seen
- * against a pale background, and the two busking postcards are a sunset: the
- * band of land the stave hangs in front of is the brightest, haziest part of
- * the picture, so the strip vanished over its top half and showed as a patch
- * of fog over its bottom half. Making it strong enough to read there would
- * have made it a panel bolted over the landscape at every other hour of the
- * day.
- *
- * So the paper hugs the ink instead. Each line and the barline carry a soft
- * cream bloom a few times their own thickness, which is what ink does on real
- * paper and what makes a printed page legible on a photograph of anything.
- * Where the background is dark the bloom reads and the stave sits on a scrap
- * of light; where the background is bright the bloom disappears and the dark
- * rule carries it on its own. There is no state in which both fail.
- *
- * The values turn over with it. Cream on cream is invisible, so the stave is
- * now drawn as engraving has always drawn it: dark ink, light paper. The
- * cream that DESIGN.md reserves for notation is still doing that job — it is
- * the bloom and the letter in the note head, which is where a printed page
- * puts it.
+ * The ink is vertex colour on a tessellated plank, so an edge is a gradient
+ * between a dark vertex and a pale one, and this is how far apart those two
+ * vertices sit. Zero would give a hard aliasing edge, which is the one thing
+ * a painted look cannot have. A twentieth of a staff space reads as a
+ * brush-drawn rule at every range the board is seen from — and, the reason
+ * it is written in steps rather than in metres, it shrinks with the board on
+ * a narrow screen instead of turning a thin rule into a smudge.
  */
-const PAPER = 0xf3e6c8;
+const INK_SOFT_STEPS = 0.10;
 
 /**
- * How much of the sky's own colour the bloom takes.
+ * The plank.
  *
- * All of it would be a hole in the picture at dusk; none of it would be white
- * light coming from nowhere, which is the one lighting model this game does
- * not have.
+ * A previous version stood a strip of pale manuscript behind the stave and
+ * it was built and thrown away, correctly: a *translucent* card cannot be
+ * seen against a pale background, so at sunset it vanished over its top half
+ * and showed as a patch of fog over its bottom half. The lesson taken from
+ * that was "no card", and the lesson was wrong. What failed was the
+ * translucency, not the card. An opaque plank running the world's own
+ * material has no such state — it is exactly as bright as the light falling
+ * on it, whatever is behind it, because there is no behind.
+ *
+ * A weathered warm timber rather than a fresh one. It has to be light enough
+ * that dark ink reads on it and dark enough that it is not the brightest
+ * thing in a frame whose median value is a twentieth of its sky. Measured
+ * against the busking postcards it sits a little above the sunlit road and
+ * well below the haze on the treeline.
  */
-const PAPER_HORIZON_TINT = 0.3;
-
-/** Alpha of the bloom where it touches the ink. */
-const PAPER_OPACITY = 0.55;
-
-/** How far the bloom spreads either side of a staff line, in diatonic steps. */
-const LINE_GLOW_HALF_STEPS = 0.30;
-
-/** The same for the barline, across its width. */
-const BAR_GLOW_HALF_STEPS = 0.45;
-
-/** The ink. Dark warm brown rather than black; nothing in this game is black. */
-const STAFF_INK = 0x503c27;
-
-/** Peak alpha of the five lines, at the barline. Falls away with the run. */
-const LINE_OPACITY = 0.70;
+const BOARD_WOOD = 0xe8d3a8;
 
 /**
- * Alpha of the barline, which never fades.
+ * The ink, as a multiplier on the plank rather than a colour of its own.
  *
- * Level with the lines rather than above them. It was 0.8 and it read as a
- * post standing in the road — the one hard black vertical in a picture that
- * has no other. A barline is found by being the only upright among five
- * horizontals, not by being darker than any of them.
+ * Written this way because it is a stain soaked into the wood, and a stain
+ * is not a different hue from the thing it soaked into. Multiplying means
+ * the ink follows the plank through every hour of the day and through its
+ * own grain for free, and it means the one number that actually matters —
+ * how dark a rule is *relative to its paper* — is stated directly instead of
+ * being the accident of two absolute colours.
+ *
+ * Three plain numbers rather than a hex, because these are linear
+ * reflectance ratios and not a colour anyone should be tempted to read off a
+ * swatch. A little cooler in blue than in red, which is what a dark stain
+ * does on warm timber and what keeps the rules from reading as burnt wood.
  */
-const BAR_OPACITY = 0.70;
+const BOARD_INK: readonly [number, number, number] = [0.09, 0.08, 0.085];
 
 /**
- * What each of the stave's six-vertex pieces is, written into `aKind`.
+ * How far the printed area sits inside the plank, in diatonic steps above
+ * the top line and below the bottom one.
  *
- * This used to be a sentinel value smuggled into the fade attribute, on the
- * argument that a second buffer was too much for one bit. The two kinds want
- * different colours, different fade curves and the bloom measured across
- * different axes, so it is no longer one bit and the honest attribute is
- * cheaper to read than the arithmetic that avoided it.
+ * Engraving leaves about a staff space of margin; a board wants more,
+ * because a board has an edge and a bevel and the ink needs to be clear of
+ * both or it reads as a label rather than as something written on wood.
+ *
+ * But the margin that matters is not an aesthetic one, and 1.3 was set as
+ * though it were. It has to be derived from the notation the songbook can
+ * actually produce: the lowest diatonic step any tune reaches, plus half a
+ * note head (1.15 steps), plus room for the ledger line that step needs.
+ * Under 1.3 the low notes hung off the bottom edge of the plank, and a
+ * pitch you cannot read off a line is the mechanic failing — this game
+ * teaches a child to read music, and a prettier board that cannot be read
+ * is a regression however well it sits in the light.
  */
-const KIND_LINE = 0;
-const KIND_BARLINE = 1;
+const BOARD_MARGIN_STEPS = 3.5;
+
+/** The same at the two ends, in metres at full size. */
+const BOARD_END_M = 0.12;
+
+/**
+ * Width of the chamfer around the front face, in metres at full size.
+ *
+ * This is why the board reads as solid while facing the camera dead on. Its
+ * sides are exactly edge-on in that pose and contribute nothing, so the
+ * thickness has to be visible *from the front*: the face is inset and stands
+ * proud, and the ring of bevel joining it to the silhouette is angled, so
+ * the top of the ring takes sky and the bottom of it takes the ground's
+ * bounce. A lit top edge over a shaded bottom edge is what an eye reads as
+ * depth, and it costs four quads.
+ */
+const BOARD_BEVEL_M = 0.05;
+
+/**
+ * How much darker a stake is than the plank it holds up, as a vertex-colour
+ * multiplier on the shared timber.
+ *
+ * Rough legs out of the hedge under a plank someone limewashed and wrote on.
+ * It is here for a compositional reason as much as a narrative one: at the
+ * plank's own value the legs were the brightest uprights in the frame and
+ * caught the eye before the notes did.
+ */
+const STAKE_TONE = 0.6;
+
+/** Half-thickness of a leg, in metres at full size. */
+const STAKE_HALF_M = 0.045;
+
+/**
+ * How far in from each end of the plank a leg stands, as a share of the
+ * plank's width.
+ *
+ * The first version put them at the very ends and stood them proud of the
+ * top edge, and the result was a field gate: two full-height posts with five
+ * horizontal rails between them is a gate in any picture book ever printed,
+ * and no amount of ink on the rails talked the eye out of it. Inset legs
+ * that stop at the plank's top edge — so all you see of them is two feet in
+ * the grass — read as what they are, which is a board propped up.
+ */
+const LEG_INSET_FRACTION = 0.17;
+
+/**
+ * How far behind the plank's *face* the legs stand.
+ *
+ * It has to clear the bevel's outer plane and the leg's own half-thickness
+ * together, with room to spare. At six centimetres the leg's front surface
+ * finished a centimetre and a half behind the plank and the depth buffer
+ * could not separate them at five metres: a hairline of leg came through the
+ * plank from top to bottom, dead straight, and read as a crack in it.
+ */
+const LEG_BEHIND_M = 0.17;
+
+/**
+ * How far below the plank's top edge a leg's shoulder sits.
+ *
+ * Same class of problem seen from above rather than from in front: with the
+ * shoulder level with the top edge, and the top edge cut a few millimetres
+ * off true, the leg's end showed over the plank as a small dark tab.
+ */
+const LEG_DROP_M = 0.06;
+
+/** How far a leg's foot is splayed out from under its shoulder, in radians. */
+const LEG_SPLAY = 0.075;
+
+/**
+ * How far below the sampled road height a leg is pushed.
+ *
+ * Generously far. The road point is sampled on the road's centreline and the
+ * legs stand a couple of metres off it, where the ground can be a good deal
+ * lower; a foot buried an extra third of a metre costs nothing and is
+ * invisible, and a foot hanging a hand's breadth above the grass costs the
+ * whole effect this file exists to produce.
+ */
+const STAKE_SINK_M = 0.5;
+
+/**
+ * The value the songboard's own light is not allowed to fall below, as
+ * relative luminance.
+ *
+ * This is the one concession in the file and it is worth stating exactly
+ * what it is and what bought it.
+ *
+ * A plank standing upright and turned to face the camera is never lit by the
+ * sun. Not at dusk, when the sun is behind it; not at noon either, when the
+ * sun is overhead and its face is edge-on to the light. Measured against the
+ * world's own shared uniforms across the day, the light arriving on that
+ * face runs from about 0.14 at midday down to 0.04 at last light, and it is
+ * essentially all ambient. That is the correct answer and the rest of the
+ * world lives with it — the bard's own front is dark in every one of these
+ * frames.
+ *
+ * The notation cannot. Shot at the dusk key with nothing but the world's
+ * light, the contrast between a note's letter and its own head fell to 1.16,
+ * with the letter sitting *below* the frame's median value: the pitch
+ * letters were gone, and DESIGN's pedagogy section is not a thing that can
+ * be traded for a nicer picture. So the light on the board is given a floor,
+ * and the shortfall is made up in the colour of lamplight.
+ *
+ * What it costs and does not cost: the board still swings with the day, in
+ * hue and in value, because the floor is only ever the *difference* and it
+ * is zero from mid-morning to late afternoon. What it buys is a stave that
+ * is as readable at last light as it is at noon, which is a thing a printed
+ * page manages and a thing this game has to.
+ */
+const LIGHT_FLOOR = 0.17;
+
+/**
+ * The colour the shortfall is made up in.
+ *
+ * Warm, and not negotiable: a grey lift would be a second light source of no
+ * colour, and the standing rule is that shadows are coloured. DESIGN puts
+ * the warmth of this game in the bard and in the music, which is what a
+ * board with a song written on it is lit by when there is nothing else.
+ */
+const FLOOR_WARMTH = 0xffd6a2;
+
+/**
+ * How much of the floor the plank itself takes, against the notes taking all
+ * of it.
+ *
+ * The first version gave both the same lift and the plank went pale: a
+ * warm-white panel standing in a sunset, its hue no longer following the
+ * sky's and its ruled lines washed halfway out, which is a good part of the
+ * fault this whole file is answering. The notes are what has to stay
+ * readable; the plank is what has to belong. A third is enough to keep the
+ * five rules alive against their own paper at last light and little enough
+ * that the plank is still the sky's colour.
+ */
+const BOARD_FLOOR_SHARE = 0.3;
+
+/**
+ * How far in front of the board's face the notes ride, in metres.
+ *
+ * Enough to clear the face and its bevel without depth-fighting either, and
+ * small enough that the parallax between a note head and the line it sits on
+ * stays under a pixel at the range the board is read from.
+ */
+const GLYPH_FRONT_M = 0.06;
 
 /**
  * Width of the frame, in metres, at the depth the stave stands, on the
@@ -309,8 +505,16 @@ const KIND_BARLINE = 1;
  *
  * Everything above is quoted "at full size", and this is what full size
  * means. See `cardScale`.
+ *
+ * Raised from 7.6, which is a halving of the board's area on screen. At 7.6
+ * the board covered roughly 500x240 of a 1600x900 frame — a third of the
+ * width and a quarter of the height, four fifths of it blank plank, parked
+ * across the vista in the one frame that shows the core mechanic. A busker's
+ * board is a small thing propped at the roadside, not signage. The taller
+ * margin above makes the plank bigger in world units, so this has to come
+ * back the other way or the two changes fight.
  */
-const REFERENCE_FRAME_WIDTH_M = 7.6;
+const REFERENCE_FRAME_WIDTH_M = 10.8;
 
 /**
  * Floor on the stave's size, though not on where it stands.
@@ -363,12 +567,17 @@ export class SongNotes {
   private readonly aAlpha: InstancedBufferAttribute;
   private readonly aPale: InstancedBufferAttribute;
 
-  private readonly staff: Mesh;
-  private readonly staffMaterial: ShaderMaterial;
-  private readonly staffPosition: BufferAttribute;
-  private readonly staffFade: BufferAttribute;
-  private readonly staffKind: BufferAttribute;
-  private readonly staffSpan: BufferAttribute;
+  private readonly board: Mesh;
+  private readonly stakes: readonly Mesh[];
+  private readonly timberMaterial: ShaderMaterial;
+  /**
+   * The lighting the board's own material is running.
+   *
+   * Starts as a private daylight block and is repointed at the scene's
+   * shared one the first time this draws; see `adoptWorldLight`. It is kept
+   * as a field because the glyphs need to read the same numbers on the CPU.
+   */
+  private globals: PainterlyGlobals = createPainterlyGlobals();
 
   private readonly sparks: Mesh;
   private readonly sparkMaterial: ShaderMaterial;
@@ -395,12 +604,17 @@ export class SongNotes {
 
   /** Where the barline stands. Everything on the card is measured from it. */
   private readonly anchor = new Vector3();
-  /** The card's long axis: the camera's right, flattened into the ground plane. */
+  /** The board's long axis: the camera's right, flattened into the ground plane. */
   private readonly right = new Vector3(1, 0, 0);
-  /** Uniform shrink applied to the whole card on a narrow screen. */
+  /** The outward normal of the board's face, in the ground plane. */
+  private readonly facing = new Vector3(0, 0, 1);
+  /** Uniform shrink applied to the whole board on a narrow screen. */
   private scale = 1;
 
   private readonly scratch = new Vector3();
+  private readonly lightScratch = new Color();
+  private readonly floorScratch = new Color();
+  private readonly floorColor = new Color(FLOOR_WARMTH);
   private nowMs = 0;
 
   /**
@@ -410,7 +624,7 @@ export class SongNotes {
    * much cheaper than threading a camera through the whole stage.
    */
   private camera: PerspectiveCamera | null = null;
-  private horizonSought = false;
+  private lightSought = false;
 
   constructor(options: SongNotesOptions = {}) {
     const density = clamp(options.particleDensity ?? 1, 0.25, 1);
@@ -418,78 +632,73 @@ export class SongNotes {
 
     this.group.name = 'song-notes';
     this.group.visible = false;
-    // Nothing in here is ever behind the camera when the busk is running,
-    // and the instanced fields position themselves from world-space
-    // attributes rather than from the group's matrix, so a bounding volume
-    // could only ever be wrong.
+    // The instanced fields position themselves from world-space attributes
+    // rather than from the group's matrix, so a bounding volume on the group
+    // could only ever be wrong. The board and its stakes are ordinary meshes
+    // with ordinary transforms and cull for themselves.
     this.group.frustumCulled = false;
 
     this.atlas = buildGlyphAtlas();
 
-    // --- the staff ------------------------------------------------------
-    // Five lines plus the barline. Each is one quad: the card is flat, so
-    // there is no curve to follow and nothing to subdivide for. What used to
-    // need twenty-six segments a line to ride the road now needs one, and
-    // the whole buffer is small enough to rewrite every frame — which it has
-    // to be, because the card turns with the camera.
-    const ribbonVerts = (LINE_STEPS.length + 1) * 6;
-    const staffGeometry = new BufferGeometry();
-    this.staffPosition = new BufferAttribute(new Float32Array(ribbonVerts * 3), 3);
-    this.staffFade = new BufferAttribute(new Float32Array(ribbonVerts), 1);
-    this.staffKind = new BufferAttribute(new Float32Array(ribbonVerts), 1);
-    this.staffSpan = new BufferAttribute(new Float32Array(ribbonVerts), 1);
-    this.staffPosition.setUsage(DynamicDrawUsage);
-    this.staffFade.setUsage(DynamicDrawUsage);
-    this.staffKind.setUsage(DynamicDrawUsage);
-    this.staffSpan.setUsage(DynamicDrawUsage);
-    staffGeometry.setAttribute('position', this.staffPosition);
-    staffGeometry.setAttribute('aFade', this.staffFade);
-    staffGeometry.setAttribute('aKind', this.staffKind);
-    staffGeometry.setAttribute('aSpan', this.staffSpan);
-    staffGeometry.boundingSphere = null;
-    this.staffMaterial = new ShaderMaterial({
-      uniforms: {
-        uInk: { value: new Color(STAFF_INK) },
-        uPaper: { value: new Color(PAPER) },
-        // Replaced by the scene's own shared horizon colour the first time
-        // this draws; see `adoptHorizon`. The literal is the daylight value
-        // from `createPainterlyGlobals`, so a staff that never finds the
-        // world's uniforms is wrong at dusk rather than wrong always.
-        uHorizon: { value: new Color(0xf2d6b8) } as IUniform<Color>,
-        uOpacity: { value: LINE_OPACITY },
-        uBarOpacity: { value: BAR_OPACITY },
-        uPaperOpacity: { value: PAPER_OPACITY },
-        uPaperTint: { value: PAPER_HORIZON_TINT },
-        // Where the ink stops and the bloom begins, as a fraction of the
-        // quad's half-width. One number for both pieces because both are
-        // drawn at their bloom's size and cut in the middle.
-        uLineInk: { value: LINE_HALF_STEPS / LINE_GLOW_HALF_STEPS },
-        uBarInk: { value: BAR_HALF_STEPS / BAR_GLOW_HALF_STEPS },
-      },
-      vertexShader: STAFF_VERTEX,
-      fragmentShader: STAFF_FRAGMENT,
-      transparent: true,
-      depthWrite: false,
-      side: DoubleSide,
+    // --- the board ------------------------------------------------------
+    //
+    // One material for the plank and the stakes both. They are the same
+    // timber and there is no reason for them to disagree about it; the ink
+    // rides in as vertex colour, which the stakes simply leave white.
+    //
+    // The options are the ones a piece of dressed wood wants and no others.
+    // Grain is up from the default because a plank has visible figure and
+    // this is the only texture it gets; the rim is down because a board is a
+    // flat slab and a strong fresnel on one turns its whole face into a
+    // highlight; `baseShade` is off because the board's own bottom edge is
+    // half a metre clear of the ground and there is nothing there to occlude.
+    this.timberMaterial = createPainterlyMaterial(this.globals, {
+      color: BOARD_WOOD,
+      colorVariant: 0xd2b98e,
+      vertexColors: true,
+      grain: 0.7,
+      grainScale: 2.6,
+      rim: 0.1,
+      rimPower: 3,
+      bandSoftness: 0.09,
+      shadowDepth: 0.42,
+      emissive: FLOOR_WARMTH,
     });
-    this.staff = new Mesh(staffGeometry, this.staffMaterial);
-    this.staff.frustumCulled = false;
-    this.staff.renderOrder = 8;
-    this.staff.name = 'song-staff';
-    // The staff is the first thing in this group to draw, which makes its
+
+    this.board = new Mesh(buildBoardGeometry(), this.timberMaterial);
+    this.board.castShadow = true;
+    // It casts but does not receive. A plate four centimetres thick, stood
+    // up nearly edge-on to a sun seven degrees above the horizon, is the
+    // worst case a shadow map has: the depth comparison lands inside the
+    // plate's own thickness and the lower half of the plank came back
+    // shadowed by itself, as a hard horizontal band with no caster anywhere
+    // near it. What the board actually owed the picture was the shadow it
+    // throws on the road, and that is unaffected.
+    this.board.receiveShadow = false;
+    this.board.name = 'song-board';
+    // The board is the first thing in this group to draw, which makes its
     // hook the cheapest place to pick up the two things the apparatus needs
-    // from outside and is not handed: the scene's shared sky colour, and the
-    // camera the card is turned toward.
-    this.staff.onBeforeRender = (_renderer, scene, camera) => {
-      if (!this.horizonSought) {
-        this.horizonSought = true;
-        this.adoptHorizon(scene);
+    // from outside and is not handed: the scene's shared lighting, and the
+    // camera the board is turned toward.
+    this.board.onBeforeRender = (_renderer, scene, camera) => {
+      if (!this.lightSought) {
+        this.lightSought = true;
+        this.adoptWorldLight(scene);
       }
       if ((camera as PerspectiveCamera).isPerspectiveCamera) {
         this.camera = camera as PerspectiveCamera;
       }
     };
-    this.group.add(this.staff);
+    this.group.add(this.board);
+
+    const stakeGeometry = buildStakeGeometry();
+    this.stakes = [new Mesh(stakeGeometry, this.timberMaterial), new Mesh(stakeGeometry, this.timberMaterial)];
+    for (const stake of this.stakes) {
+      stake.castShadow = true;
+      stake.receiveShadow = false;
+      stake.name = 'song-stake';
+      this.group.add(stake);
+    }
 
     // --- the glyphs -----------------------------------------------------
     this.glyphGeometry = new InstancedBufferGeometry();
@@ -515,6 +724,11 @@ export class SongNotes {
         uInk: { value: new Color(INK) },
         uPale: { value: new Color(PALE) },
         uSize: { value: glyphWorldSize() },
+        // The board's own lighting term, evaluated on the CPU each frame.
+        // Starts at the neutral value so a first frame drawn before the
+        // world's uniforms have been found is merely unlit rather than black.
+        uLight: { value: new Color(1, 1, 1) },
+        uFront: { value: GLYPH_FRONT_M },
       },
       vertexShader: GLYPH_VERTEX,
       fragmentShader: GLYPH_FRAGMENT,
@@ -631,14 +845,14 @@ export class SongNotes {
     note.changedMs = this.nowMs;
   }
 
-  /** Show or hide the whole apparatus. Hidden costs three draw calls, not thirty. */
+  /** Show or hide the whole apparatus. Hidden costs a few draw calls, not thirty. */
   setActive(active: boolean): void {
     this.group.visible = active;
     if (!active) this.live.clear();
     // A busk can begin before any of the world's chunks have been built, so
-    // the search for the shared sky colour is retried at the start of each
-    // one rather than made a constructor-time question with one answer.
-    if (active) this.horizonSought = false;
+    // the search for the shared lighting is retried at the start of each one
+    // rather than made a constructor-time question with one answer.
+    if (active) this.lightSought = false;
   }
 
   get active(): boolean {
@@ -656,7 +870,6 @@ export class SongNotes {
     if (!this.group.visible) return;
 
     this.placeCard();
-    this.buildStaff();
     this.harvest(nowMs);
     this.writeGlyphs(nowMs);
     this.sparkMaterial.uniforms.uNow.value = nowMs / 1000;
@@ -667,24 +880,28 @@ export class SongNotes {
     this.glyphMaterial.dispose();
     this.sparkGeometry.dispose();
     this.sparkMaterial.dispose();
-    this.staff.geometry.dispose();
-    this.staffMaterial.dispose();
+    this.board.geometry.dispose();
+    this.stakes[0].geometry.dispose();
+    this.timberMaterial.dispose();
     this.atlas.dispose();
   }
 
   // --- internals ---------------------------------------------------------
 
   /**
-   * Stand the card up: where its barline is, which way it lies, how big.
+   * Stand the board up: where its barline is, which way it faces, how big.
    *
    * The long axis is the camera's right *flattened into the ground plane*
    * rather than the camera's true right. Full billboarding would roll the
-   * stave whenever the camera pitched or drifted, and a stave that is not
+   * board whenever the camera pitched or drifted, and a stave that is not
    * level is a stave whose pitch axis is not up — which is the one thing a
-   * child is being asked to read off it.
+   * child is being asked to read off it. Flattened, the board is an upright
+   * thing standing on level ground that happens to be turned toward you,
+   * which is also what it is.
    */
   private placeCard(): void {
     this.pointAt(ANCHOR_AHEAD_M, this.anchor);
+    const groundY = this.anchor.y;
 
     const camera = this.camera;
     this.scratch.set(Math.sin(this.heading), 0, Math.cos(this.heading));
@@ -696,11 +913,108 @@ export class SongNotes {
     this.scratch.normalize();
     // right = forward cross up, for a right-handed world with +Y up.
     this.right.set(-this.scratch.z, 0, this.scratch.x);
+    // and the face looks back the way the view came.
+    this.facing.set(-this.scratch.x, 0, -this.scratch.z);
 
     const narrow = camera ? this.frameShare(camera) : 1;
     this.scale = Math.max(narrow, CARD_SCALE_MIN);
     this.anchor.addScaledVector(this.right, -BAR_LEFT_M * narrow);
     this.glyphMaterial.uniforms.uSize.value = glyphWorldSize() * this.scale;
+
+    // The board's own frame: local +X along the run, +Y world up, +Z out of
+    // its face toward the camera. The yaw is the only rotation there is —
+    // see the note above about rolling the pitch axis.
+    const yaw = Math.atan2(-this.scratch.x, -this.scratch.z);
+    this.board.position.set(this.anchor.x, groundY + MIDDLE_LINE_Y, this.anchor.z);
+    this.board.rotation.set(0, yaw, 0);
+    this.board.scale.setScalar(this.scale);
+
+    // The stakes stand at the plank's two ends and are *not* scaled
+    // vertically with it: a stake is as long as the ground is far away, and
+    // that distance does not shrink when the frame gets narrow. Only their
+    // girth and their spacing follow the board.
+    const shoulder = MIDDLE_LINE_Y + (boardTopLocal() - LEG_DROP_M) * this.scale;
+    const height = shoulder + STAKE_SINK_M;
+    const span = (boardRightLocal() - boardLeftLocal()) * this.scale;
+    const inset = span * LEG_INSET_FRACTION;
+    const feet = [boardLeftLocal() * this.scale + inset, boardRightLocal() * this.scale - inset];
+    for (let i = 0; i < this.stakes.length; i++) {
+      const stake = this.stakes[i];
+      const u = feet[i];
+      stake.position.set(
+        this.anchor.x + this.right.x * u - this.facing.x * LEG_BEHIND_M * this.scale,
+        groundY + shoulder,
+        this.anchor.z + this.right.z * u - this.facing.z * LEG_BEHIND_M * this.scale,
+      );
+      // Z first, then the yaw, which is what the default Euler order does and
+      // what puts the splay in the plank's own plane rather than across it.
+      stake.rotation.set(0, yaw, i === 0 ? LEG_SPLAY : -LEG_SPLAY);
+      stake.scale.set(this.scale, height, this.scale);
+    }
+
+    this.updateLight();
+  }
+
+  /**
+   * Work out the light the board is standing in, and give it to the notes.
+   *
+   * The glyphs cannot run the painterly material — they are billboarded
+   * quads reading a glyph atlas, and that material has no map — so the
+   * board's diffuse term is evaluated here on the CPU instead, from the same
+   * shared uniforms, with the same constants, for the board's own normal.
+   * That is one lighting model computed in two places rather than two
+   * models: the note keeps a fixed ratio to the plank it is painted on, so a
+   * head that reads at noon reads at dusk without a second set of colours
+   * being tuned to make it.
+   *
+   * The banding is kept, quantised edges and all, because the alternative is
+   * a note that slides smoothly through a value the board behind it jumps
+   * across, and the two coming apart on a hillside terminator is exactly the
+   * kind of disagreement the single-material rule exists to prevent.
+   */
+  private updateLight(): void {
+    const g = this.globals;
+    // The board is vertical, so its normal's Y is zero and the shader's
+    // sky-versus-bounce mix lands exactly halfway. Written out rather than
+    // folded to a constant because the shader's version reads this way and
+    // the two have to stay checkable against each other by eye.
+    const skyFacing = 0.5;
+    const ambient = this.lightScratch
+      .copy(g.uGroundBounce.value)
+      .lerp(g.uSkyColor.value, skyFacing)
+      .lerp(g.uHorizonColor.value, 0.35)
+      .multiplyScalar(PAINTERLY_AMBIENT);
+
+    const sun = g.uSunDirection.value;
+    const ndl = this.facing.x * sun.x + this.facing.z * sun.z;
+    const lit = ndl * 0.5 + 0.5;
+    const soft = 0.09;
+    const sunAmount =
+      smoothstep(0.46 - soft, 0.46 + soft, lit) * 0.42 +
+      smoothstep(0.62 - soft, 0.62 + soft, lit) * 0.38 +
+      smoothstep(0.86 - soft * 0.7, 0.86 + soft * 0.7, lit) * 0.2;
+
+    const light = this.glyphMaterial.uniforms.uLight.value as Color;
+    light.copy(g.uSunColor.value).multiplyScalar(sunAmount * PAINTERLY_SUN).add(ambient);
+    light.multiplyScalar(g.uExposure.value);
+
+    // The floor, and how the two halves of the board are given it.
+    //
+    // The plank takes it through the painterly material's own emissive term,
+    // which is added after the albedo and before the exposure — hence the
+    // division, so the lift lands at the same strength on both sides. The
+    // notes take it as extra *light* rather than as extra colour, which is
+    // the difference that matters: added to a note's colour it would lift a
+    // near-black head as much as a cream letter and flatten the one contrast
+    // the whole mechanic rests on. Folded into the light it leaves the ratio
+    // between them exactly where it was and only moves both up together.
+    const worldLum = 0.2126 * light.r + 0.7152 * light.g + 0.0722 * light.b;
+    const lift = Math.max(0, LIGHT_FLOOR - worldLum);
+    this.timberMaterial.uniforms.uEmissiveStrength.value =
+      (lift * BOARD_FLOOR_SHARE) / Math.max(g.uExposure.value, 0.01);
+    light.add(this.floorScratch.copy(this.floorColor).multiplyScalar(lift));
+
+    this.glyphMaterial.uniforms.uFront.value = GLYPH_FRONT_M * this.scale;
   }
 
   /**
@@ -890,28 +1204,44 @@ export class SongNotes {
   }
 
   /**
-   * Take the scene's own horizon colour, by reference.
+   * Take the scene's own lighting, by reference.
    *
-   * The staff has to be lit by the same sky as everything else — one lighting
-   * model, no exceptions — and a copy would be a second one, wrong by a whole
-   * time of day within a minute of walking. `createPainterlyMaterial` marks
-   * every surface it builds and hands them all the *same* uniform object, so
-   * finding any one of them and binding to what it is already reading keeps
-   * the staff on the world's clock for the cost of one traversal per busk.
+   * The board has to be lit by the same sky as everything else — one
+   * lighting model, no exceptions — and a copy would be a second one, wrong
+   * by a whole time of day within a minute of walking.
+   * `createPainterlyMaterial` marks every surface it builds and hands them
+   * all the *same* uniform objects, so finding any one of them and rebinding
+   * to what it is already reading puts the board on the world's clock for
+   * the cost of one traversal per busk.
+   *
+   * It is done by search rather than by being handed the globals because the
+   * alternative is a constructor parameter threaded through the stage for
+   * one object's benefit, and because the search has to be repeated anyway:
+   * a busk can start before any chunk of the world has been built, and the
+   * uniforms only exist once one has.
    */
-  private adoptHorizon(scene: Object3D): void {
-    let found: IUniform<Color> | undefined;
+  private adoptWorldLight(scene: Object3D): void {
+    let found: ShaderMaterial | undefined;
     scene.traverse((object) => {
       if (found) return;
       const material = (object as Mesh).material;
       const candidates = Array.isArray(material) ? material : [material];
       for (const candidate of candidates) {
-        if (!candidate?.userData?.painterly) continue;
-        const uniform = (candidate as ShaderMaterial).uniforms?.uHorizonColor;
-        if (uniform) found = uniform as IUniform<Color>;
+        if (candidate?.userData?.painterly) found = candidate as ShaderMaterial;
       }
     });
-    if (found) this.staffMaterial.uniforms.uHorizon = found;
+    if (!found) return;
+
+    // Repoint this object's own globals block at the world's uniforms, key
+    // by key, and rebind the material to it. Anything the world turns out
+    // not to have keeps the daylight default it was built with, so a missing
+    // uniform is one term being stale rather than a black board.
+    const shared = this.globals as unknown as Record<string, IUniform>;
+    for (const key of Object.keys(shared)) {
+      const uniform = found.uniforms[key];
+      if (uniform) shared[key] = uniform;
+    }
+    bindGlobals(this.timberMaterial, this.globals);
   }
 
   /** World point `ahead` metres along the road from the bard. */
@@ -926,69 +1256,252 @@ export class SongNotes {
       this.origin.z + Math.cos(this.heading) * ahead,
     );
   }
+}
 
-  /**
-   * Lay the five lines and the barline out across the card.
-   *
-   * Each line is a flat quad in the card's plane, and the card faces the
-   * camera, so there is no edge-on case to defend against and one quad a line
-   * is enough. The fade along the run is done in the fragment shader from a
-   * parameter carried on the vertices rather than by subdividing until the
-   * gradient is smooth, which is what the old road-borne ribbon had to do.
-   */
-  private buildStaff(): void {
-    const position = this.staffPosition.array as Float32Array;
-    const fade = this.staffFade.array as Float32Array;
-    const kind = this.staffKind.array as Float32Array;
-    const span = this.staffSpan.array as Float32Array;
-    const s = this.scale;
-    const uStart = -TAIL_M * s;
-    const uEnd = RUN_M * s;
+// ---------------------------------------------------------------------------
+// The board
+// ---------------------------------------------------------------------------
 
-    // Every quad is drawn at the *bloom's* size, not the ink's. The ink is a
-    // band in the middle of it, cut by the shader — which is the only way to
-    // get a soft edge out of two triangles.
-    const glow = STEP_M * LINE_GLOW_HALF_STEPS * s;
-    const ax = this.anchor.x + this.right.x * uStart;
-    const az = this.anchor.z + this.right.z * uStart;
-    const bx = this.anchor.x + this.right.x * uEnd;
-    const bz = this.anchor.z + this.right.z * uEnd;
+/**
+ * The two strengths the painterly fragment shader mixes its light from.
+ *
+ * Copied here rather than exported from `painterly.ts` on purpose. They are
+ * `#define`s over there, described in that file as a property of the
+ * lighting model rather than of a moment in the day, and turning them into
+ * shared runtime values so one billboard could read them would make it
+ * possible for a future edit to change the world's exposure from here. If
+ * they ever move, the notes go a shade wrong against a board that did not —
+ * which is visible in the first frame anyone looks at.
+ */
+const PAINTERLY_AMBIENT = 0.32;
+const PAINTERLY_SUN = 0.92;
 
-    let v = 0;
-    for (const step of LINE_STEPS) {
-      const y = this.stepY(step);
-      v = quad(position, fade, kind, span, v, KIND_LINE, ax, az, bx, bz, y - glow, y + glow, false);
-    }
+/** The plank's own edges, in metres from the barline and the middle line. */
+function boardLeftLocal(): number {
+  return -(TAIL_M + BOARD_END_M);
+}
 
-    // The barline: a single upright stroke across the five lines, standing
-    // where the notes are struck. It is the same mark a bar ends with in
-    // written music, which is why it is a barline and not a glowing target —
-    // the player reads "here" from notation they already understand. It stops
-    // at the outer lines, as engraved; running it past them was an attempt to
-    // make it more visible that only made it less like notation.
-    const barGlow = STEP_M * BAR_GLOW_HALF_STEPS * s;
-    const inkHalf = STEP_M * LINE_HALF_STEPS * s;
-    quad(
-      position,
-      fade,
-      kind,
-      span,
-      v,
-      KIND_BARLINE,
-      this.anchor.x - this.right.x * barGlow,
-      this.anchor.z - this.right.z * barGlow,
-      this.anchor.x + this.right.x * barGlow,
-      this.anchor.z + this.right.z * barGlow,
-      this.stepY(LINE_STEPS[0]) - inkHalf,
-      this.stepY(LINE_STEPS[LINE_STEPS.length - 1]) + inkHalf,
-      true,
-    );
+function boardRightLocal(): number {
+  return RUN_M + BOARD_END_M;
+}
 
-    this.staffPosition.needsUpdate = true;
-    this.staffFade.needsUpdate = true;
-    this.staffKind.needsUpdate = true;
-    this.staffSpan.needsUpdate = true;
+function boardTopLocal(): number {
+  return (LINE_STEPS[LINE_STEPS.length - 1] + BOARD_MARGIN_STEPS - MIDDLE_STEP) * STEP_M;
+}
+
+function boardBottomLocal(): number {
+  return (LINE_STEPS[0] - BOARD_MARGIN_STEPS - MIDDLE_STEP) * STEP_M;
+}
+
+/**
+ * The plank, with the stave printed into its vertices.
+ *
+ * Local space: X runs along the stave with the barline at zero, Y is height
+ * above the middle line, Z is out of the face. `placeCard` gives the mesh
+ * its position, its yaw and its uniform scale, so nothing here has to know
+ * where the road is.
+ *
+ * The face is an irregular grid rather than an even one, and that is the
+ * whole idea. A row exists only where the drawing changes value: either side
+ * of each staff line's ink, and a shoulder's width outside that. So five
+ * lines and a barline cost twenty-two rows and eleven columns, and the ink
+ * is exact at every distance because it is a gradient in metres rather than
+ * in texels. An evenly tessellated plank fine enough to resolve a 7 mm rule
+ * would have needed some thousands of quads to say the same thing worse.
+ *
+ * The shading needs no tessellation of its own: the painterly material's
+ * banding, grain and fog are all evaluated per fragment from world position,
+ * so a quad a metre across shades exactly as well as sixty small ones.
+ */
+function buildBoardGeometry(): BufferGeometry {
+  const bevel = BOARD_BEVEL_M;
+  const x0 = boardLeftLocal();
+  const x1 = boardRightLocal();
+  const y0 = boardBottomLocal();
+  const y1 = boardTopLocal();
+  // The printed face sits inside the silhouette by the bevel and stands
+  // proud of it by the same, so the ring between them is at forty-five
+  // degrees and its top catches sky.
+  const fx0 = x0 + bevel;
+  const fx1 = x1 - bevel;
+  const fy0 = y0 + bevel;
+  const fy1 = y1 - bevel;
+
+  const inkHalf = STEP_M * LINE_HALF_STEPS;
+  const barHalf = STEP_M * BAR_HALF_STEPS;
+  const soft = STEP_M * INK_SOFT_STEPS;
+  // Where the ruled area stops, short of the face's own edge. Engraving
+  // leaves a margin at the ends of a stave and so does a signwriter.
+  const ruleEnd = 0.06;
+  const ruleX0 = fx0 + ruleEnd;
+  const ruleX1 = fx1 - ruleEnd;
+
+  const rows = [fy0];
+  for (const step of LINE_STEPS) {
+    const y = (step - MIDDLE_STEP) * STEP_M;
+    rows.push(y - inkHalf - soft, y - inkHalf, y + inkHalf, y + inkHalf + soft);
   }
+  rows.push(fy1);
+  rows.sort((a, b) => a - b);
+
+  const cols = [
+    fx0,
+    ruleX0,
+    ruleX0 + soft,
+    -barHalf - soft,
+    -barHalf,
+    barHalf,
+    barHalf + soft,
+    ruleX1 - soft,
+    ruleX1,
+    fx1,
+  ];
+  cols.sort((a, b) => a - b);
+
+  // The barline stops at the outer staff lines, as engraved. Running it past
+  // them was tried when it was a transparent overlay, as a way of making it
+  // easier to find, and it only made it less like notation.
+  const barTop = (LINE_STEPS[LINE_STEPS.length - 1] - MIDDLE_STEP) * STEP_M + inkHalf;
+  const barBottom = (LINE_STEPS[0] - MIDDLE_STEP) * STEP_M - inkHalf;
+
+  const inked = new Color().setRGB(BOARD_INK[0], BOARD_INK[1], BOARD_INK[2]);
+  const bare = new Color(1, 1, 1);
+
+  const positions: number[] = [];
+  const normals: number[] = [];
+  const colors: number[] = [];
+  const indices: number[] = [];
+
+  const push = (x: number, y: number, z: number, nx: number, ny: number, nz: number, c: Color) => {
+    positions.push(x, y, z);
+    normals.push(nx, ny, nz);
+    colors.push(c.r, c.g, c.b);
+    return positions.length / 3 - 1;
+  };
+
+  // --- the printed face ---
+  const onRule = (x: number, y: number): boolean => {
+    if (x >= ruleX0 && x <= ruleX1) {
+      for (const step of LINE_STEPS) {
+        const ly = (step - MIDDLE_STEP) * STEP_M;
+        if (y >= ly - inkHalf && y <= ly + inkHalf) return true;
+      }
+    }
+    return Math.abs(x) <= barHalf && y >= barBottom && y <= barTop;
+  };
+
+  const first = positions.length / 3;
+  for (let r = 0; r < rows.length; r++) {
+    for (let c = 0; c < cols.length; c++) {
+      push(cols[c], rows[r], 0, 0, 0, 1, onRule(cols[c], rows[r]) ? inked : bare);
+    }
+  }
+  for (let r = 0; r + 1 < rows.length; r++) {
+    for (let c = 0; c + 1 < cols.length; c++) {
+      const a = first + r * cols.length + c;
+      const b = a + 1;
+      const d = a + cols.length;
+      const e = d + 1;
+      indices.push(a, b, e, a, e, d);
+    }
+  }
+
+  // --- the bevel ---
+  //
+  // Four mitred trapezoids from the silhouette, set back at z = -bevel, to
+  // the face at z = 0. Their normals are the halfway vectors, which is what
+  // makes the top edge take sky and the bottom edge take the ground's bounce
+  // even when the plank is exactly face-on.
+  //
+  // The four outer corners are nudged off true by a centimetre or so each,
+  // in different directions. A plank sawn by hand is not a rectangle, and a
+  // rectangle is what a UI card is; the ruled face inside is left perfectly
+  // square, so the pitch axis and the reading order are untouched and only
+  // the silhouette knows about it.
+  const k = Math.SQRT1_2;
+  const tl: [number, number] = [x0 + 0.011, y1 - 0.015];
+  const tr: [number, number] = [x1 - 0.017, y1 + 0.009];
+  const br: [number, number] = [x1 + 0.008, y0 + 0.013];
+  const bl: [number, number] = [x0 - 0.013, y0 - 0.007];
+  const ring = (
+    outerA: [number, number], outerB: [number, number],
+    ix0: number, iy0: number, ix1: number, iy1: number,
+    nx: number, ny: number,
+  ): void => {
+    const a = push(outerA[0], outerA[1], -bevel, nx * k, ny * k, k, bare);
+    const b = push(outerB[0], outerB[1], -bevel, nx * k, ny * k, k, bare);
+    const c = push(ix1, iy1, 0, nx * k, ny * k, k, bare);
+    const d = push(ix0, iy0, 0, nx * k, ny * k, k, bare);
+    // Wound outer, inner, inner, outer. The obvious order — round the
+    // trapezoid the way it is written — comes out clockwise seen from the
+    // front and the whole ring is back-face culled, which looks exactly like
+    // having no bevel at all and cost a round to notice.
+    indices.push(a, d, c, a, c, b);
+  };
+  ring(tl, tr, fx0, fy1, fx1, fy1, 0, 1);
+  ring(br, bl, fx1, fy0, fx0, fy0, 0, -1);
+  ring(bl, tl, fx0, fy0, fx0, fy1, -1, 0);
+  ring(tr, br, fx1, fy1, fx1, fy0, 1, 0);
+
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3));
+  geometry.setAttribute('normal', new BufferAttribute(new Float32Array(normals), 3));
+  geometry.setAttribute('color', new BufferAttribute(new Float32Array(colors), 3));
+  geometry.setIndex(indices);
+  return geometry;
+}
+
+/**
+ * A leg: a squared-off post, tapered a little toward the foot.
+ *
+ * Unit length hanging *down* from the origin, which sits at the shoulder
+ * where the leg meets the plank. That way `placeCard` can pin it to the
+ * plank and let the far end reach whatever the ground turns out to be, and
+ * the splay can be a rotation about a point that does not move.
+ *
+ * Four sides and no cap at either end: the top is behind the plank and the
+ * bottom is half a metre underground.
+ */
+function buildStakeGeometry(): BufferGeometry {
+  const b = STAKE_HALF_M;
+  const t = STAKE_HALF_M * 0.72;
+  const positions: number[] = [];
+  const normals: number[] = [];
+  const colors: number[] = [];
+  const indices: number[] = [];
+  const corners: [number, number][] = [
+    [-1, -1],
+    [1, -1],
+    [1, 1],
+    [-1, 1],
+  ];
+  for (let i = 0; i < 4; i++) {
+    const [ax, az] = corners[i];
+    const [bx, bz] = corners[(i + 1) % 4];
+    // The face's normal is the outward direction of its own edge, taken at
+    // the midpoint. Flat-shaded on purpose: a post with four hard edges
+    // reads as split timber, and a smoothed one reads as a dowel.
+    const nx = (ax + bx) / 2;
+    const nz = (az + bz) / 2;
+    const n = Math.hypot(nx, nz) || 1;
+    const base = positions.length / 3;
+    const put = (x: number, y: number, z: number) => {
+      positions.push(x, y, z);
+      normals.push(nx / n, 0, nz / n);
+      colors.push(STAKE_TONE, STAKE_TONE, STAKE_TONE);
+    };
+    put(ax * b, 0, az * b);
+    put(bx * b, 0, bz * b);
+    put(bx * t, -1, bz * t);
+    put(ax * t, -1, az * t);
+    indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3));
+  geometry.setAttribute('normal', new BufferAttribute(new Float32Array(normals), 3));
+  geometry.setAttribute('color', new BufferAttribute(new Float32Array(colors), 3));
+  geometry.setIndex(indices);
+  return geometry;
 }
 
 // ---------------------------------------------------------------------------
@@ -1081,7 +1594,13 @@ function drawNote(ctx: CanvasRenderingContext2D, cell: number): void {
   // the head and the letter differently from one sample.
   ctx.globalCompositeOperation = 'lighter';
   ctx.fillStyle = 'rgb(0,255,0)';
-  ctx.font = 'bold 33px Georgia, "Times New Roman", serif';
+  // Filling more of the head than looks necessary in the atlas. At the size
+  // a phone held sideways draws a note — about ten pixels of letter — a
+  // third of the glyph's height is lost to the antialiasing at its edges,
+  // and the letter is the scaffold the whole pedagogy rests on. Measured, a
+  // letter at 36 rather than 33 is worth about a fifth of the contrast
+  // between a letter and the head it sits in on that screen.
+  ctx.font = 'bold 36px Georgia, "Times New Roman", serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   // Optical centre, not geometric: capital letters in most serif faces sit
@@ -1146,51 +1665,6 @@ function instanced(count: number, size: number): InstancedBufferAttribute {
 }
 
 /**
- * One upright rectangle on the stave, as two triangles.
- *
- * `a` and `b` are its ends in the ground plane and `low`/`high` its height;
- * both pieces of the stave are that shape, which is why the whole thing is
- * thirty-six vertices with no index buffer to keep in step with them.
- *
- * Two parameters ride on the vertices. `aFade` is where the vertex sits along
- * the run, 0 at the near end and 1 at the far one. `aSpan` runs -1 to 1
- * across whichever axis the ink is thin in — the height of a staff line, the
- * width of a barline — and `spanAcrossLength` is which of the two that is.
- */
-function quad(
-  position: Float32Array,
-  fade: Float32Array,
-  kind: Float32Array,
-  span: Float32Array,
-  v: number,
-  k: number,
-  ax: number,
-  az: number,
-  bx: number,
-  bz: number,
-  low: number,
-  high: number,
-  spanAcrossLength: boolean,
-): number {
-  const write = (x: number, y: number, z: number, f: number, up: number): void => {
-    position[v * 3] = x;
-    position[v * 3 + 1] = y;
-    position[v * 3 + 2] = z;
-    fade[v] = f;
-    kind[v] = k;
-    span[v] = spanAcrossLength ? f * 2 - 1 : up;
-    v++;
-  };
-  write(ax, low, az, 0, -1);
-  write(bx, low, bz, 1, -1);
-  write(bx, high, bz, 1, 1);
-  write(ax, low, az, 0, -1);
-  write(bx, high, bz, 1, 1);
-  write(ax, high, az, 0, 1);
-  return v;
-}
-
-/**
  * Where a note sits along the card, in metres right of the barline, at a
  * given travel progress.
  */
@@ -1213,72 +1687,6 @@ function clamp(value: number, min: number, max: number): number {
 // Shaders
 // ---------------------------------------------------------------------------
 
-const STAFF_VERTEX = /* glsl */ `
-attribute float aFade;
-attribute float aKind;
-attribute float aSpan;
-varying float vFade;
-varying float vKind;
-varying float vSpan;
-
-void main() {
-  vFade = aFade;
-  vKind = aKind;
-  vSpan = aSpan;
-  gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0);
-}
-`;
-
-/**
- * Ink, and the paper it soaked into.
- *
- * Across the thin axis: a band of ink with a cream bloom either side of it,
- * which is what a printed line looks like close up and what makes one legible
- * against a photograph of anything. The bloom is squared so it falls away
- * fast — a linear falloff at this width reads as a glow, and glowing notation
- * belongs to a different game.
- *
- * Along the run: strongest at the barline and thinnest at the far end,
- * because that is the order the eye is asked to read it in, and both ends go
- * to nothing rather than stopping square. The lines do not fall all the way,
- * because the far end is where the notes the player has not yet played are
- * travelling and pitch is unreadable with no line under the head.
- */
-const STAFF_FRAGMENT = /* glsl */ `
-uniform vec3 uInk;
-uniform vec3 uPaper;
-uniform vec3 uHorizon;
-uniform float uOpacity;
-uniform float uBarOpacity;
-uniform float uPaperOpacity;
-uniform float uPaperTint;
-uniform float uLineInk;
-uniform float uBarInk;
-varying float vFade;
-varying float vKind;
-varying float vSpan;
-
-void main() {
-  float bar = step(0.5, vKind);
-  float t = clamp(vFade, 0.0, 1.0);
-
-  float ends = smoothstep(0.0, 0.05, t) * smoothstep(1.0, 0.90, t);
-  float along = mix(ends * (0.66 + 0.34 * smoothstep(0.95, 0.12, t)), 1.0, bar);
-
-  float edge = mix(uLineInk, uBarInk, bar);
-  float d = abs(vSpan);
-  float core = smoothstep(edge, edge * 0.45, d);
-  float bloom = (1.0 - d) * (1.0 - d);
-
-  vec3 paper = mix(uPaper, uHorizon, uPaperTint);
-  vec3 color = mix(paper, uInk, core);
-  float a = mix(uPaperOpacity * bloom, mix(uOpacity, uBarOpacity, bar), core) * along;
-
-  if (a < 0.004) discard;
-  gl_FragColor = vec4(color, a);
-}
-`;
-
 const GLYPH_VERTEX = /* glsl */ `
 attribute vec3 aPos;
 attribute vec2 aCell;
@@ -1287,6 +1695,7 @@ attribute float aAlpha;
 attribute float aPale;
 
 uniform float uSize;
+uniform float uFront;
 
 varying vec2 vQuad;
 varying vec2 vCell;
@@ -1302,8 +1711,14 @@ void main() {
   // Billboarded in view space from the view matrix's own basis, the same
   // way the particle fields do it: a lookAt per glyph would cost a matrix
   // per note for a result the eye cannot tell apart.
+  //
+  // The note is then lifted straight toward the camera, off the board's
+  // face. Doing it here rather than by offsetting the world position is what
+  // makes the lift the same for every note whichever way the board is
+  // turned, and it moves the glyph in depth without moving it on the glass.
   vec4 view = viewMatrix * vec4(aPos, 1.0);
   view.xy += position.xy * uSize * aScale;
+  view.z += uFront;
   gl_Position = projectionMatrix * view;
 }
 `;
@@ -1314,6 +1729,7 @@ uniform vec2 uCellSize;
 uniform vec3 uColor;
 uniform vec3 uInk;
 uniform vec3 uPale;
+uniform vec3 uLight;
 
 varying vec2 vQuad;
 varying vec2 vCell;
@@ -1331,7 +1747,28 @@ void main() {
   // own colour everywhere in this game, so a note reads as ink on wood
   // rather than as a coloured shape with a hole in it.
   vec3 color = mix(body, uInk, clamp(t.g, 0.0, 1.0));
-  gl_FragColor = vec4(color, cover * vAlpha);
+  // And the whole thing takes the light falling on the board it is painted
+  // on, so a note is a mark on a plank rather than a lamp hanging in front
+  // of one. See updateLight on the class.
+  gl_FragColor = vec4(color * uLight, cover * vAlpha);
+
+  // The two chunks the rest of the world's surfaces end with, and the reason
+  // a note could not be lit before they were here.
+  //
+  // Without them this shader was writing a linear-space colour straight into
+  // a framebuffer that is read as sRGB, and getting away with it: an unlit
+  // cream at 0.87 linear was displayed as 0.87 sRGB, which is a bright cream
+  // and looked deliberate. It was not. The moment the colour was multiplied
+  // by a real lighting term the mistake became a twentieth of the brightness
+  // it should have been — measured, the letter's contrast against its own
+  // note head fell from 3.8 to 1.1 and the pitch letters became unreadable,
+  // which is the one regression this file is not allowed to ship.
+  //
+  // With the tone map and the encode in place the note is in the same
+  // pipeline as the plank behind it, and the two can be reasoned about in
+  // the same numbers.
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }
 `;
 

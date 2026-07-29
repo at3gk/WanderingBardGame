@@ -530,6 +530,40 @@ void main() {
   float sunAmount = (band1 * 0.42 + band2 * 0.38 + band3 * 0.20);
   sunAmount *= mix(uShadowDepth, 1.0, shadowMask);
 
+  /*
+   * --- what is NOT here: a cloud shadow ---------------------------------
+   *
+   * Two octaves of noise multiplying the sun term, driven by the same
+   * coverage the sky's cloud uses, gated to the hours when the sun is high.
+   * It is the classic answer to a flat midday field and it was built, tuned
+   * three times and measured each time against the frame with the term
+   * switched off in the same page session, and it is not here because it
+   * lost every one of those comparisons.
+   *
+   * The reason is perspective, and it is worth writing down so nobody
+   * builds it a fourth time. The near ground of one of these frames is
+   * about ten metres deep and eight to twenty-five metres wide: nearly half
+   * the picture's height, and a patch of world small enough to fit inside a
+   * single cloud. Any shadow field whose features are larger than that
+   * covers the whole foreground or none of it, and a veil that is uniform
+   * across a band does not model that band — it multiplies it, which
+   * *compresses* its contrast. Measured on the noon frame the near band
+   * went from 0.67 stops between its tenth and ninetieth percentile to
+   * 0.63, and the whole picture lost a tenth of its value, at every scale
+   * from fifty metres down to twenty.
+   *
+   * What the near ground actually needs is a caster standing in it. The
+   * meadow grass was tried for that and is not here either: a tuft is a
+   * root patch 22 cm across against a shadow map whose texel is 10.7 cm at
+   * this frustum, so two texels under a filter kernel that spans three, and
+   * the twenty thousand instances it would add to the depth pass measured
+   * as doubling a phone frame while the ten postcards came back flat or
+   * slightly worse — the low-sun ones worse, because grass that receives
+   * its neighbours' long shadows goes uniformly darker and loses the range
+   * it had. That leaves the near ground of a high-sun frame genuinely
+   * unsolved rather than solved badly.
+   */
+
   // Ambient is *directional*: sky from above, warm bounce from below. This
   // is the whole trick — it gives shadowed faces colour instead of grey.
   //
