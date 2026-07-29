@@ -24,17 +24,43 @@ Run counter: 44
   `AudioEngine.test.ts`'s 17), `npm run build` green.
 
   Wiring `shader-check` into `verify-all` for the first time since v0.6
-  immediately found something real: **FAIL, time-of-day is inert
-  (luminance range 3)** across dawn/day/golden/night samples. Not a
-  regression from this run — no rendering code was touched — and not new
-  information either: `tools/README.md`'s own description of the check
-  already named exactly this failure mode as what it looks for, and the
-  "still wrong" list below already had "the upper sky does little work at
-  noon" in its critique notes. This is that finding, now pinned to a
-  number a future run can check against instead of an adjective. Added as
-  item 7 below. `headless-checks.yml` stays `continue-on-error: true` so
-  this red doesn't block anything, per the existing blocked-on-human note
-  about promoting it to a real gate.
+  reported **FAIL, time-of-day is inert (luminance range 3)** across
+  dawn/day/golden/night samples, and Run 44 wrote that up as "something
+  real" and queued it as item 7.
+
+  **It was not real. The gauge was broken, twice over, and Run 45 fixed the
+  gauge.** With the check actually driving the clock, the same four samples
+  come back dawn `109,101,82` · day `124,135,108` · golden `101,83,67` ·
+  night `15,17,27` — a luminance range of about **102** against a threshold
+  of 12, with night a proper cool blue. The time-of-day coupling was working
+  correctly the entire time, which the postcards had been showing all along.
+
+  The two faults, both in `tools/shader-check.mjs`:
+
+  1. It drove the clock through `stage.setTimeOfDay(t)` behind
+     `if (handle?.stage?.setTimeOfDay)`. `window.bard.stage` is a
+     `RoadStage`, which has no such method — only the `SmokeStage` this
+     check was first written against ever did. The guard was false on every
+     iteration, so the time never moved and the four "samples" were four
+     photographs of one frame. Four identical frames have a luminance range
+     of ~0, so the check failed *in the exact shape of the bug it exists to
+     find*. It now calls `pose({dayFraction})` and **throws** if the hook is
+     missing, rather than shrugging.
+  2. Posing a time of day while the bard is `walking` does not hold.
+     `dayFraction` is *derived from `s`* (`core/journey.ts` — the day
+     advances with distance walked, never with wall time) and is recomputed
+     on every advance, so a posed midnight at s=620 was overwritten by the
+     midday that s=620 implies, inside the settle the check waits out. The
+     samples now pose `phase: 'vista'`, which sets `walking = false` and
+     freezes `s` — same place, four times of day, one variable moving.
+
+  Item 7 is struck from the "still wrong" list below. The lesson is the one
+  `tools/README.md` already states and this run got to learn the expensive
+  way: **a failing check is a claim about the check first.** A whole run
+  wrote up a phantom as a defect, pinned a number to it, and left it as
+  queued work for the next run, because the number looked objective. An
+  optional-chained guard around the single call a check exists to make is
+  how a missing hook gets reported as a broken game.
 
 - **Where v0.6 actually stands, and what is still wrong.** A harsh
   frame-by-frame critique of ten posed screenshots returned **not shippable
@@ -62,13 +88,15 @@ Run counter: 44
      walk toward. This was correctly deferred until the terrain could hold it.
   6. No instrument picker, and `journey.unlockedInstruments` is never
      appended to — an earned instrument is playable but not choosable.
-  7. Time-of-day lighting is nearly inert: `shader-check.mjs` measures
-     average frame luminance at dawn/day/golden/night and gets a range of
-     3 (Run 44) — the palette moves the sky dome's colour but barely the
-     light falling on anything else. Ties together two items already
-     named in the critique notes below ("the near ground is dark by
-     albedo rather than by shadow", "the upper sky does little work at
-     noon") into one measured, re-checkable number.
+  7. ~~Time-of-day lighting is nearly inert.~~ **Struck (Run 45): this was
+     a broken gauge, not a broken game.** `shader-check.mjs` was never
+     moving the clock at all; with it fixed the luminance range is ~102 and
+     night is a proper cool blue. See the Run 45 note above for the two
+     faults and the lesson. Do not go looking for this one — the two
+     *genuine* critique notes it claimed to tie together ("the near ground
+     is dark by albedo rather than by shadow", "the upper sky does little
+     work at noon") stand on their own and are still worth a look at noon
+     specifically, which remains the flattest hour in the palette.
 
 - **v0.6, the road in three dimensions (interactive, human-directed, landed
   after run 43).** A human set a new direction — build the wandering road as a
