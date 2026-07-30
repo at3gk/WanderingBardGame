@@ -1064,6 +1064,54 @@ export function pebbleGeometry(seed = 41): BufferGeometry {
   return merged;
 }
 
+/**
+ * A shallow puddle, sat in the wheel rut.
+ *
+ * An ellipse, not a circle: a perfect disc laid flat on the ground reads as
+ * a coin dropped on the road, and the long axis is what tells the eye this
+ * particular pool of water followed the shape of the rut it collected in.
+ * Nine or fewer irregular sides keep it from reading as a stamped-out
+ * primitive the way a real circle would.
+ *
+ * Sits a hair above the terrain rather than on it, for the same reason as
+ * `pebbleGeometry` — the ground under it is not perfectly flat, and a puddle
+ * pinned exactly to one sampled height would clip through a slope at its own
+ * edges. Windless and flat-shaded: nothing about still water sways.
+ */
+export function puddleGeometry(seed = 71): BufferGeometry {
+  const rand = mulberry32(seed);
+  const sides = 7 + Math.floor(rand() * 3);
+  const rx = 0.45 + rand() * 0.35;
+  const rz = 0.22 + rand() * 0.14;
+  const y = 0.012;
+  const ring: Array<[number, number]> = [];
+  for (let s = 0; s < sides; s++) {
+    const a = (s / sides) * Math.PI * 2;
+    const wobble = 1 + (rand() - 0.5) * 0.3;
+    ring.push([Math.cos(a) * rx * wobble, Math.sin(a) * rz * wobble]);
+  }
+  const verts: number[] = [];
+  for (let s = 0; s < sides; s++) {
+    const [x0, z0] = ring[s];
+    const [x1, z1] = ring[(s + 1) % sides];
+    // Wound (centre, ring[s+1], ring[s]) rather than the more obvious
+    // (centre, ring[s], ring[s+1]): with the ring built at increasing angle
+    // in the XZ plane, that order is the one whose face normal works out to
+    // +Y. `solidMaterial` is front-face-only, and the camera only ever
+    // looks down at this surface, so the wrong order would render an
+    // invisible puddle rather than a visible one.
+    verts.push(0, y, 0, x1, y, z1, x0, y, z0);
+  }
+  const geometry = fromPositions(verts);
+  geometry.computeVertexNormals();
+  // A gentle per-face wobble rather than a flat fill — a dead-uniform colour
+  // on a shape this simple reads as a sticker; the wobble is what gives it
+  // the faint unevenness of a real puddle's surface.
+  paint(geometry, 0xf2f4f0, 0.08, rand);
+  addSway(geometry, 0, 1, 0);
+  return geometry;
+}
+
 // --- landmarks ---------------------------------------------------------
 
 export interface LandmarkOptions {

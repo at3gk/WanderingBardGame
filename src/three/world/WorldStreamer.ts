@@ -53,6 +53,7 @@ import {
   flowerGeometry,
   grassTuftGeometry,
   pebbleGeometry,
+  puddleGeometry,
   reedClumpGeometry,
   rockGeometry,
   shrubGeometry,
@@ -309,6 +310,16 @@ const CROWN_BAND: [number, number] = [FOOTFALL_HALF, RUT_CENTRE - RUT_HALF];
 const EDGE_BAND: [number, number] = [RUT_CENTRE + RUT_HALF, VERGE.grass];
 /** Loose stone spills a little further onto the shoulder than grass does. */
 const STONE_BAND: [number, number] = [RUT_CENTRE + RUT_HALF, SHOULDER - 0.35];
+/**
+ * The rut itself, as a band a puddle may sit in.
+ *
+ * Every other kind on the carriageway treats this as a keep-out zone — a
+ * wheel rut is where nothing grows and nothing loose stays put. Standing
+ * water is the one exception, because a wheel rut is exactly where real
+ * rain collects: it is the lowest ground on the whole cross-section, worn
+ * in by the same wheels that keep it bare of everything else.
+ */
+const RUT_BAND: [number, number] = [RUT_CENTRE - RUT_HALF, RUT_CENTRE + RUT_HALF];
 
 interface ScatterKind {
   key: string;
@@ -371,6 +382,7 @@ interface ScatterKind {
 const GRASS_SEEDS = [7, 11, 19, 23];
 const FERN_SEEDS = [9, 13, 29, 37];
 const PEBBLE_SEEDS = [41, 53, 67];
+const PUDDLE_SEEDS = [71, 79, 83];
 
 const SCATTER_KINDS: ScatterKind[] = [
   /**
@@ -435,6 +447,36 @@ const SCATTER_KINDS: ScatterKind[] = [
     // boulder grey the stones came out lighter than the track they lie on,
     // and a handful of them at the bard's feet read as spilled chalk.
     colorOf: (p, rand) => mixColor(p.rock, p.road, 0.4 + rand() * 0.45),
+  },
+  /**
+   * Standing water, in the rut and nowhere else.
+   *
+   * Every other carriageway kind keeps out of the rut band; this is the one
+   * thing placed *because* of it rather than despite it. Rare and clumped —
+   * a real cart track has a handful of wet stretches, not a continuous
+   * ribbon of water — so at `clump: 2` a puddle usually has one small
+   * companion a little further along the same rut rather than standing
+   * alone.
+   */
+  {
+    key: 'puddle',
+    geometry: (v) => cachedGeometry(`puddle:${v}`, () => puddleGeometry(PUDDLE_SEEDS[v])),
+    variants: 3,
+    clump: 2,
+    perSquareMetre: 0.12,
+    densityKey: 'puddle',
+    zones: [RUT_BAND],
+    clearance: RUT_BAND[0],
+    spread: RUT_BAND[1],
+    scale: [0.7, 1.3],
+    lodRange: CHUNK_LENGTH * 2.6,
+    castShadow: false,
+    material: 'solid',
+    // A cool, sky-reflecting grey-blue rather than a literal reflection —
+    // the world has one shared shader and no real-time reflections in it.
+    // Mixed toward the road colour so it reads as *this biome's* water
+    // sitting in *this biome's* earth, not a decal dropped on top of it.
+    colorOf: (p, rand) => mixColor(0x3c4d54, p.road, 0.2 + rand() * 0.25),
   },
   {
     key: 'grass',

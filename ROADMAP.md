@@ -1474,9 +1474,58 @@ section before picking one up, since it has the reasoning each item here
 is a one-line pointer to. Take them roughly in order; reprioritize freely
 if a bug turns up that matters more.
 
-115. **Scatter on the road.** The carriageway is bare — no pebbles, no
-    tufts in the rut, no puddles — and on a phone in portrait it's the
-    largest single area in the frame.
+115. ~~**Scatter on the road.**~~ Done (Run 45, scheduled). Investigated
+    before writing any code, because the claim didn't match a read of
+    `WorldStreamer.ts`: `roadgrass` and `roadstone` — tufts on the crown and
+    the outer lip, loose stone spilling onto the shoulder — were already
+    real `ScatterKind`s, present since the v0.6 initial commit (3ef8d0c),
+    with their own keep-out zones around the wheel ruts and the bard's own
+    footfall. A headless scan (`window.bard.stage.scene.traverse`, counting
+    `InstancedMesh`es by name) confirmed both render with real instance
+    counts at every point sampled along the road, and a screenshot confirmed
+    they're visible, if sparse in the middle of the carriageway. So the
+    critique this task was seeded from was wrong about two of its three
+    items — worth recording since "suspect the check first" (STATE.md's
+    standing lesson) applies the other way too: this time a *finding* was
+    the thing to suspect, and it would have been cheap to skip straight to
+    "add more tufts and pebbles" without ever opening the file.
+    The third item was real: nothing painted standing water anywhere. Added
+    it. `puddleGeometry` (`src/three/world/geometry.ts`) is a flat, low,
+    irregular ellipse — not a circle, which reads as a coin dropped on the
+    road — fanned from a centre vertex, wound so its normal faces +Y (the
+    only direction the camera ever looks at it from) since `solidMaterial`
+    is front-face-only. A new `puddle` `ScatterKind` places it in the rut
+    band alone (`RUT_BAND`, the same `RUT_CENTRE`/`RUT_HALF` geometry every
+    other carriageway kind treats as a keep-out zone) — the one place on the
+    cross-section real rain would actually collect, and the reason
+    "puddles in the rut" and "tufts in the rut" were never both going to
+    happen: the rut stays bare of growth *because* it's the low, worn,
+    sometimes-wet part of the road, which is exactly the ground a puddle
+    wants. Colour is a fixed cool grey-blue mixed toward each biome's own
+    road tone (`0x3c4d54` toward `p.road`) rather than a per-biome palette
+    field — no real-time reflection exists to differentiate, so one water
+    colour, biome-tinted by the earth it sits in, was enough. `density.puddle`
+    is a new `BiomePalette` key: driest in village (open, sun-dried, 0.35),
+    wettest in riverside (low ground, near the water table, 1.3), forest
+    between the two (shaded, holds rain longest, 1.0).
+    Verified with a 19-point headless scan along a full day's road: puddle
+    `InstancedMesh` counts present and increasing with distance (never
+    zero once past the first chunk), zero console/page errors. Screenshots
+    at several of those points, cropped and inspected directly, show the
+    puddles reading clearly as water — cool and pooled in the rut, distinct
+    from the warm road and the green verge — alongside the pebbles and
+    tufts that turned out to already be there. `npm test` 745 green
+    (unchanged — no unit tests cover `src/three/world/`, the established
+    precedent for this whole module; verification is screenshots and a
+    live-scene instance scan, same as every other Three.js-era change),
+    `npm run build` green (691.65 KB vs 690.96 KB, the new geometry
+    function only).
+    **Flagged for whoever picks up task 119 next**: the same "already built,
+    never marked" pattern applies there too. Skyline landmarks
+    (`Landmark` interface, `landmarksNear`/`chooseLandmark`/`raiseLandmark`,
+    chapel/stones/trilithon/tree geometry) are fully wired into chunk
+    building, not stubs — worth a screenshot check before assuming task 119
+    means starting from nothing.
 116. **Fix the campfire sitting pose.** `resting` calls `setPose('sitting')`
     and the bard stands upright anyway.
 117. **The camp lantern.** Reads as a bright quad beside a bare post, not a
