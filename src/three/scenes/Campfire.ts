@@ -774,7 +774,12 @@ export class Campfire {
     // live term is the ground drop. It is left this way because the numbers
     // it produces are the ones the camp was composed around, but it is not
     // the ring-following behaviour it looks like, and the instrument is a
-    // clear 0.9 m from the stones — stood beside the fire, not propped on it.
+    // clear 0.72-0.82 m from the stones — stood beside the fire, not propped
+    // on it. That draw came in from 0.85-0.95 when the slot moved off the
+    // camera's line to the bard (see `INSTRUMENT` in `campfireLayout`), which
+    // stands this a few degrees more upright than it was: `atan2(0.77, 0.85)`
+    // rather than `atan2(0.90, 0.85)`, 42 degrees off vertical rather than
+    // 47, and still well inside the clamp below.
     const reach = prop.radius - this.layout.ringRadius;
     const drop = groundHeightAt(prop.x, prop.z) - fireY;
     lean.rotation.x = Math.min(1.0, Math.max(0.5, Math.atan2(reach, 0.85 + drop)));

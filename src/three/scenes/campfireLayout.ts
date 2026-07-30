@@ -207,8 +207,75 @@ const SEAT: Slot = { bearing: Math.PI, jitter: 0.2, radius: [1.95, 2.15], footpr
  * ground no test is watching.
  */
 export const SEAT_LOG_LENGTH_M = 0.86;
-/** Radius is measured out from the stone ring; see `campfireLayout`. */
-const INSTRUMENT: Slot = { bearing: -1.1, jitter: 0.18, radius: [0.85, 0.95], footprint: 0.26 };
+/**
+ * Radius is measured out from the stone ring; see `campfireLayout`.
+ *
+ * **Moved from -1.1, and the reason is a number rather than a preference.**
+ * At -1.1 this prop stood in the column the resting camera sees the bard in:
+ * over 400 seeds and headings, 393 of them put it inside
+ * `sightlineViolations`' threshold, and on the shipped frame its screen box
+ * ended three pixels from the bard's and its top rose twenty-eight pixels
+ * above his hat. What that draws is a brown stick growing out of the brim.
+ *
+ * 1.65 is the only bearing that is clear of the sightline *and* keeps every
+ * prop off every other prop. The camp is a tight six slots and the search was
+ * exhaustive: bearing swept 0.30 to 2.35 at 0.025, jitter over
+ * {0.06, 0.10, 0.14, 0.18}, radius draw over six ranges, against the same
+ * 400 seeds `campfireLayout.test.ts` uses. Exactly one combination came back
+ * clean.
+ * Everything clear of the sightline collided with the bedroll (footprint 0.8,
+ * so nothing may come within 1.06 m of it) or the pack, except this one, and
+ * only with the draw pulled in from 0.85-0.95 to 0.72-0.82 and the jitter
+ * from 0.18 to 0.06 — tighter even than the bedroll's, and for the same
+ * reason its own note gives: there is one lane free and no room to wander in
+ * it. Both of those are the price, not a separate opinion.
+ *
+ * It also lands the instrument on the far side of the fire, where — like the
+ * firewood at bearing 0 — it reads as a dark silhouette against the glow
+ * instead of as a second vertical beside a figure who already has one.
+ */
+const INSTRUMENT: Slot = { bearing: 1.65, jitter: 0.06, radius: [0.72, 0.82], footprint: 0.26 };
+
+/**
+ * Where the resting camera stands, in the camp's own frame.
+ *
+ * `CameraRig.FRAMINGS.resting` puts it `distance` back along the subject's
+ * heading and `side` across it, and the subject at a camp is the seat. The
+ * two numbers are repeated rather than imported for the same reason
+ * `ROAD_CLEARANCE_M` is: importing them would drag the rig, the app and three
+ * itself into a module whose whole value is being cheap and pure. They are
+ * checked against the live rig by `campfireLayout.test.ts`'s own comment
+ * and, more usefully, by having been *measured* — a shot of the shipped camp
+ * put the camera 1.0 m from where these produce it, the difference being the
+ * rig's ground-clearance lift and idle drift. Every threshold below carries
+ * far more margin than that.
+ */
+const RESTING_CAMERA_DISTANCE_M = 3.8;
+const RESTING_CAMERA_SIDE_M = 2.6;
+/**
+ * Half the width of the seated bard on the ground, hat brim included.
+ *
+ * `hatGeometry`'s brim reaches 0.315 of a unit and the figure is built at
+ * unit scale, so this is the widest thing about him.
+ */
+const BARD_HALF_WIDTH_M = 0.35;
+/**
+ * How near the seat a prop may come to *not* being called an occluder.
+ *
+ * Anything nearer the camera than this is in front of the bard rather than
+ * behind him, and a thing in front of him is a foreground element, not a
+ * spike out of his hat.
+ */
+const IN_FRONT_MARGIN_M = 0.3;
+
+export function restingCameraStandpoint(seat: SeatPlacement): { x: number; z: number } {
+  const s = Math.sin(seat.heading);
+  const c = Math.cos(seat.heading);
+  return {
+    x: seat.x - s * RESTING_CAMERA_DISTANCE_M + c * RESTING_CAMERA_SIDE_M,
+    z: seat.z - c * RESTING_CAMERA_DISTANCE_M - s * RESTING_CAMERA_SIDE_M,
+  };
+}
 
 /**
  * Signed distance from the road centreline, positive on the road's right.
@@ -535,5 +602,49 @@ export function layoutViolations(layout: CampfireLayout): string[] {
     if (reach > layout.ringRadius) problems.push(`log[${i}] sticks out past the ring`);
   }
 
+  problems.push(...sightlineViolations(layout));
+
+  return problems;
+}
+
+/**
+ * Props that stand behind the bard, in the column the camera sees him in.
+ *
+ * The camp already reasons about the camera once — bearing 0 is kept clear of
+ * the bedroll because it is the axis the lens looks along — but it did so in
+ * prose, and prose does not fail a build. This states it as arithmetic, and
+ * it exists because the propped instrument spent every shipped campfire frame
+ * three pixels from the bard's silhouette with its neck above his hat brim.
+ *
+ * The test is an angle at the lens, not a distance on the ground, because
+ * that is what an occluder actually is: two things a metre apart in plan can
+ * be on top of each other on screen if the near one is nearer. So each prop's
+ * bearing from the camera is compared with the seat's, and it has to clear
+ * the bard's own angular half-width plus its own. Props *nearer* the camera
+ * than the bard are skipped: those are foreground, which is a composition
+ * question and not this function's business.
+ *
+ * Only the tall props are tested. A bedroll or a pack behind him reads as
+ * ground he is sitting in front of; a lute on end and a lantern on a staff
+ * read as things growing out of him.
+ */
+const STANDING_PROPS: ReadonlySet<CampPropKind> = new Set(['instrument', 'lantern']);
+
+export function sightlineViolations(layout: CampfireLayout): string[] {
+  const problems: string[] = [];
+  const camera = restingCameraStandpoint(layout.seat);
+  const toSeat = Math.hypot(layout.seat.x - camera.x, layout.seat.z - camera.z);
+  const seatBearing = Math.atan2(layout.seat.x - camera.x, layout.seat.z - camera.z);
+  for (const prop of layout.props) {
+    if (!STANDING_PROPS.has(prop.kind)) continue;
+    const range = Math.hypot(prop.x - camera.x, prop.z - camera.z);
+    if (range <= toSeat - IN_FRONT_MARGIN_M) continue;
+    const bearing = Math.atan2(prop.x - camera.x, prop.z - camera.z);
+    const apart = Math.abs(wrapAngle(bearing - seatBearing));
+    const needed = Math.atan2(BARD_HALF_WIDTH_M, toSeat) + Math.atan2(prop.footprint, range);
+    if (apart < needed) {
+      problems.push(`${prop.kind}[${prop.index}] stands behind the bard from the resting camera`);
+    }
+  }
   return problems;
 }

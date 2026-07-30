@@ -367,6 +367,35 @@ export class Traveller {
         const roll = add(boxPart(0.36, 0.13, 0.15, 1), under, 0, hip + 0.72, -0.12);
         roll.rotation.z = 0.13;
         this.body.add(pack, roll);
+
+        // A walking staff, and the point of it is that it is on ONE side.
+        //
+        // Measured before it existed: reduced to twenty pixels the walker is
+        // twenty cells wide and forty-four tall, and its width per row runs
+        // 9,9,9,9,9,10,10,11,11,12,12,12 — the same nine to twelve cells from
+        // the boots to the shoulders, with a straight left edge at cell 4-6 on
+        // thirty-eight of forty-four rows. That is a bar, and the pack and the
+        // bedroll cannot fix it: both sit on the centreline, so the pack adds
+        // depth the camera cannot see and the roll adds height, and neither
+        // adds a side.
+        //
+        // A staff does, for twelve triangles. It stands outboard of the boots,
+        // leans its head back in over the shoulder, and passes the hanging
+        // hand on the way — so it reads as *held* rather than as a post the
+        // figure happens to be standing next to, which is the failure the
+        // elder's staff note already records from the other direction.
+        //
+        // Deliberately not a second vertical of the same height: it finishes
+        // above the hat, so the top of the silhouette gains a notch on one
+        // side as well as a bump at the hip.
+        const staff = add(boxPart(0.038, 1.26, 0.038, 0.86), under, 0.33, 0, 0.05);
+        staff.rotation.z = 0.16;
+        staff.rotation.x = -0.04;
+        this.body.add(staff);
+        // And the hand goes out to meet it. A staff the figure is not holding
+        // is a fence post it is standing beside — the elder's note records the
+        // same trap from the other end.
+        rightArm.rotation.z = 0.24;
       }
 
       if (kind === 'child') {

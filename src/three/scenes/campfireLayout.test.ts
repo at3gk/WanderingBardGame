@@ -4,7 +4,9 @@ import {
   SEAT_LOG_LENGTH_M,
   campfireLayout,
   layoutViolations,
+  restingCameraStandpoint,
   roadOffset,
+  sightlineViolations,
   type CampfireLayout,
 } from './campfireLayout';
 
@@ -159,6 +161,40 @@ describe('campfireLayout — invariants', () => {
           layout.seat.footprint;
         expect(gap).toBeGreaterThan(0);
       }
+    }
+  });
+
+  it('stands nothing tall in the line from the camera to the bard', () => {
+    // The failure this catches shipped for four rounds of critique: the
+    // propped instrument sat three pixels from the seated bard's silhouette
+    // with its neck above his hat brim, and every camp in the game had it —
+    // 393 of 400 seeds put the prop inside the threshold. It is checked here
+    // as well as inside `layoutViolations` because the mechanism is worth
+    // naming: this is the only invariant in the file about the *lens* rather
+    // than about the ground, and somebody re-tuning a bearing for a reason to
+    // do with plan view needs to be told which rule they broke.
+    const failures: string[] = [];
+    for (const layout of layouts) {
+      for (const problem of sightlineViolations(layout)) {
+        failures.push(`seed ${layout.seed} @ ${layout.heading.toFixed(2)}: ${problem}`);
+      }
+    }
+    expect(failures.slice(0, 8)).toEqual([]);
+  });
+
+  it('measures that line from behind the seat, not from the fire', () => {
+    // The check above is only worth anything if the standpoint it measures
+    // from is the one the game actually uses. `FRAMINGS.resting` sets the
+    // camera 3.8 m back along the subject's heading and 2.6 m across it, and
+    // the subject at a camp is the seat — so the standpoint has to be behind
+    // the bard and further from the fire than he is, whichever way the road
+    // runs. A standpoint accidentally derived from the fire would pass every
+    // sightline test above while testing nothing.
+    for (const layout of layouts) {
+      const camera = restingCameraStandpoint(layout.seat);
+      const cameraToFire = Math.hypot(camera.x - layout.fire.x, camera.z - layout.fire.z);
+      const seatToFire = Math.hypot(layout.seat.x - layout.fire.x, layout.seat.z - layout.fire.z);
+      expect(cameraToFire).toBeGreaterThan(seatToFire + 3);
     }
   });
 
