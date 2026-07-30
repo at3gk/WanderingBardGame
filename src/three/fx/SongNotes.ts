@@ -262,12 +262,37 @@ const INK = 0xfaf1de;
 const HEAD_INK = 0.3;
 
 /**
- * What a softened note fades toward: the paper, not a warning colour.
+ * What a softened note's *head* fades toward: the paper, not a warning colour.
  *
  * A missed note is a note that went past, which is a thing that happens
  * while you are learning a tune. It goes quiet and grey-cream and drifts on.
  */
 const PALE = 0xbdb3a2;
+
+/**
+ * What a softened note's *letter* fades toward, and why there has to be a
+ * second colour here at all.
+ *
+ * A live note is a cream letter inside a dark head. Fading only the head to
+ * PALE keeps the letter cream, and cream on grey-cream is nothing: measured on
+ * a golden-hour busk, the letter separated from its own head by a ratio of
+ * 1.27 against the live note's 5.29. STATE's claim that a miss "costs a dimmed
+ * note and never information" was not true — a letter at 1.27 is information
+ * lost, and this file is not allowed to lose a pitch.
+ *
+ * Darkening PALE instead was measured and does not reach: PALE and INK are
+ * only 1.36 apart as albedos, so no amount of head-darkening that still reads
+ * as *faded* can put a cream letter clear of it. Ratio 4 against a head at
+ * this value needs a letter a quarter of it, which is not a pale colour at all.
+ *
+ * So the letter turns over with the head. A gone-past note stops being a
+ * lit-up head with a bright letter and becomes ink on paper — which is what
+ * notation printed in a book looks like, and is exactly as legible. It reads
+ * as quieter because its whole area is now near the plank's own value instead
+ * of being a dark blot on it, and nothing about the pitch has been given up.
+ * A soft brown-grey rather than a black: still a faded mark.
+ */
+const PALE_INK = 0x544d42;
 
 const ATLAS_CELL_PX = 128;
 const ATLAS_COLS = 8;
@@ -723,6 +748,7 @@ export class SongNotes {
         uColor: { value: new Color(0xc98a4b).multiplyScalar(HEAD_INK) },
         uInk: { value: new Color(INK) },
         uPale: { value: new Color(PALE) },
+        uPaleInk: { value: new Color(PALE_INK) },
         uSize: { value: glyphWorldSize() },
         // The board's own lighting term, evaluated on the CPU each frame.
         // Starts at the neutral value so a first frame drawn before the
@@ -1729,6 +1755,7 @@ uniform vec2 uCellSize;
 uniform vec3 uColor;
 uniform vec3 uInk;
 uniform vec3 uPale;
+uniform vec3 uPaleInk;
 uniform vec3 uLight;
 
 varying vec2 vQuad;
@@ -1746,7 +1773,12 @@ void main() {
   // The letter is cream on the instrument's colour. Cream is the notation's
   // own colour everywhere in this game, so a note reads as ink on wood
   // rather than as a coloured shape with a hole in it.
-  vec3 color = mix(body, uInk, clamp(t.g, 0.0, 1.0));
+  //
+  // And it turns over with the head as the note softens, so the letter is
+  // always the far end of the head's own value rather than always the light
+  // one. See PALE_INK for the measurement that forced this.
+  vec3 letter = mix(uInk, uPaleInk, vPale);
+  vec3 color = mix(body, letter, clamp(t.g, 0.0, 1.0));
   // And the whole thing takes the light falling on the board it is painted
   // on, so a note is a mark on a plank rather than a lamp hanging in front
   // of one. See updateLight on the class.

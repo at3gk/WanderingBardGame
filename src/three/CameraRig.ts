@@ -192,7 +192,28 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     height: 1.6,
     lookHeight: 0.85,
     lead: 1.4,
-    side: 2.1,
+    // Was 2.1, which is 29 degrees off dead astern, and at that angle a
+    // seated figure does not read as seated: what the frame showed under the
+    // cloak hem was a pile of unrelated box faces with no visible seat.
+    //
+    // Two things carry a seated silhouette and both are horizontal, which is
+    // why they both die in a rear view. The thigh points along the bard's own
+    // forward axis, and the seat log lies across it. Swept in the rig's own
+    // projection, the thigh's *horizontal* extent — the part that says "this
+    // limb goes forward" rather than "this is another shin" — runs 0.47 of its
+    // true length at 2.1, 0.55 at 2.6, 0.62 at 3.1 and 0.68 at 3.6, against a
+    // seat log that foreshortens the other way, from 195 px across to 137.
+    // 3.3 is where the two curves have both given up about as little as they
+    // are going to; past it the thigh stops improving and the seat keeps
+    // shrinking.
+    //
+    // Distance, height and fov are left alone. It looked as though a swing
+    // this large would push the fire out of frame, and it does not: the camera
+    // arcs *around* the bard and the fire sits in front of him, so its screen
+    // position barely moves. That was worth checking rather than assuming,
+    // because "the fire has to stay in frame with him" is what set this
+    // framing's numbers in the first place.
+    side: 3.3,
     fov: 43,
     positionSmoothing: 1.1,
     targetSmoothing: 1.3,

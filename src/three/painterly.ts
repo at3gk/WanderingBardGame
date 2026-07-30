@@ -524,7 +524,13 @@ void main() {
     vec3 N = normalize(vWorldNormal);
   #endif
 
-  vec3 V = normalize(cameraPosition - vWorldPosition);
+  // The distance to the camera is wanted twice — once by the ground's fine
+  // drift below and once by the fog at the end — so the vector is kept and
+  // the view direction falls out of it. This is one square root fewer per
+  // fragment than computing V and the fog depth separately.
+  vec3 toCamera = cameraPosition - vWorldPosition;
+  float viewDepth = length(toCamera);
+  vec3 V = toCamera / max(viewDepth, 0.0001);
   vec3 L = normalize(uSunDirection);
 
   /*
@@ -595,6 +601,73 @@ void main() {
      */
     albedo = mix(albedo, vToneLo, smoothstep(0.50, 0.27, drift) * uGroundTones * 0.72);
     albedo = mix(albedo, vToneHi, smoothstep(0.56, 0.82, drift) * uGroundTones * 0.62);
+
+    /*
+     * --- and then the same thing again at a metre, for the near ground ----
+     *
+     * Everything above is calibrated for ground seen at fifty metres, and
+     * the bottom of the frame is not that. It is worth being exact about the
+     * scales, because the obvious repair is an order of magnitude too timid.
+     * The bottom fifth of a 1600-pixel frame shows ground from about two
+     * metres out to about six, which is under two metres of world across the
+     * whole width of the bottom row: driftA's 69 m contributes a constant
+     * across it, driftB's 21 m under a tenth of a cycle, and the paper grain
+     * at 9 m not much more. That is the whole reason the near ground reads as
+     * a flat fill with grass standing on it rather than as ground.
+     *
+     * A fourth octave at 4.5 m was tried first, which is what the arithmetic
+     * gives if the near ground is taken to be ten metres deep — and then at
+     * 0.95 m, added into the drift sum at a weight that leaves the field's overall
+     * deviation and its dark and pale area fractions where they were. Both
+     * were shot and measured and both are gone. The near band's modal
+     * ten-level share moved from 32.0 to 28.2 per cent on the morning frame
+     * and the wrong way, 46.9 to 50.1, on noon; the band's own standard
+     * deviation fell slightly in all four frames. The reason is structural
+     * rather than a matter of tuning: vToneLo and vToneHi on the
+     * carriageway are deliberately pulled close to the road's own colour so
+     * that a track stays a track, so the whole distance from one end of the
+     * ramps to the other is about thirty levels of albedo there, and two
+     * standard deviations of a fourth octave is a small fraction of thirty.
+     *
+     * So this is multiplicative instead, and it is not spending the ramps'
+     * budget. A wet hollow in a cart track is darker and cooler than the
+     * earth around it and a baked crust is lighter and warmer, in whatever
+     * biome, so the two ends can be factors rather than tones — which makes
+     * the amplitude a fraction of the surface's own albedo and takes it out
+     * of the ramps' calibration entirely. One noise call, the same one the
+     * failed version paid for.
+     *
+     * The distance fade is not a performance dodge, it is what makes a
+     * feature this small safe at all. There are no mipmaps on a noise
+     * function; a metre of ground at a hundred and fifty metres is two
+     * pixels, and a pattern sampled at two pixels a cycle is not texture, it
+     * is a hash. Gone by forty-five metres, a metre is still fourteen pixels
+     * across, which is a brush mark. Beyond the fade the ground is
+     * bit-identical to what it was, which is wanted: the mid and far bands of
+     * these frames measure well and had nothing to gain here.
+     *
+     * Steepened into patches rather than left as the raw noise, and that is
+     * the difference between a term that measures and a term that is
+     * visible. The smooth version shipped for one round: it moved the near
+     * band's modal ten-level share from 32.0 to 30.1 per cent on morning and
+     * 52.7 to 42.3 on portrait, and in the zoomed frame the near ground was
+     * indistinguishable from before. A gradient of fifteen levels spread
+     * across four hundred pixels is not a mark. The same fifteen levels
+     * either side of an edge a few tens of pixels wide is, which is the
+     * argument this file's header already makes about the light bands: a
+     * gradient reads as untextured 3D and an edge broken up by noise reads
+     * as a brush.
+     */
+    float nearness = 1.0 - smoothstep(10.0, 45.0, viewDepth);
+    float mottle = noise21f(vWorldPosition.xz * 1.05 + 31.7);
+    // Four fifths of the way to a two-tone patchwork. Not all the way: at
+    // full steepening the near ground reads as two colours of paint and the
+    // last fifth of raw noise is what keeps a patch's interior from being
+    // dead flat.
+    mottle = mix(mottle, smoothstep(0.38, 0.62, mottle), 0.8);
+    vec3 damp = vec3(0.78, 0.83, 0.93);
+    vec3 baked = vec3(1.23, 1.18, 1.05);
+    albedo *= mix(vec3(1.0), mix(damp, baked, mottle), nearness);
   #endif
 
   albedo = mix(albedo, albedo * uColorVariant, smoothstep(0.35, 0.75, grain) * uGrain);
@@ -756,7 +829,7 @@ void main() {
   // --- fog ---------------------------------------------------------------
   // Distance fog, thinned with altitude so hilltops stay legible while the
   // valley floor dissolves. Tinted toward the horizon low down.
-  float depth = length(cameraPosition - vWorldPosition);
+  float depth = viewDepth;
   // A steeper near ramp, then a long tail.
   //
   // One smoothstep across the whole range spreads the veil so evenly that
