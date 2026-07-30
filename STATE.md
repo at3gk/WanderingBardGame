@@ -1,11 +1,46 @@
 # STATE
 
-Run counter: 47
+Run counter: 48
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
 
+- **Run 48 (scheduled): ROADMAP task 120, the instrument picker — closed as
+  already-built, no code changed.** Before writing a picker, read
+  `RoadStage.ts` and `Hud.ts` against the task's claim and found both halves
+  already shipped: `noteUnlocks()` appends to `journey.unlockedInstruments`
+  every campfire, and the HUD's tap-to-open "case" (`Hud.setCase`/
+  `onInstrumentChosen`) plus `RoadStage.takeOut`/`chooseInstrument` let the
+  player pick from it, with mid-busk locking on both ends. Third instance of
+  the "already built, never marked" pattern tasks 115 and 119 flagged —
+  worth naming as a pattern now: a critique or a stale read names a gap, a
+  later feature quietly closes it, and nobody tells the roadmap.
+  Verified live in a headless Playwright session rather than trusting the
+  code read alone (STATE.md's standing lesson: suspect the claim, not just
+  the code): gave the journey 1000m of real lifetime distance (Reed Flute's
+  actual unlock threshold is 900m), ran the same `noteUnlocks()` path the
+  campfire uses, then drove the actual DOM — tapped the instrument corner,
+  tapped the "Reed Flute" row — and confirmed `journey.instrumentId`, the HUD
+  label, and the `localStorage` save all changed together, zero console/page
+  errors. First pass of that check hand-set `journey.unlockedInstruments`
+  directly instead of raising `totalMetres` and calling `noteUnlocks()`, and
+  silently desynced it from the derived-from-totals list `instrument()`
+  actually reads — a mismatch impossible in real play (the narrow list is
+  only ever populated as a subset of the derived one) but a reminder that a
+  test rig can fake a state real code paths never produce. See ROADMAP task
+  120's done-entry for the full detail.
+  Also checked, before assuming this run's task-120 read was current: the
+  separate unmerged branch `claude/wandering-bard-game-gj4fd0` sitting 12
+  commits ahead of `main` as of this run's start. Its commit messages
+  (campfire seating, songboard tessellation, ground-shadow work) read as an
+  active, same-day human-directed session rather than a stale red-CI branch
+  from a prior scheduled run, so per this run's remit ("if `claude/dev`
+  exists, fixing its red CI is the job") — a different branch name, and no
+  open or red PR against it — it was left alone rather than merged, rebased
+  onto, or otherwise touched.
+  `npm test` 753 green (unchanged), `npm run build` green (696.77 kB,
+  unchanged).
 - **Run 47 (scheduled): no code changed — STATE.md and ROADMAP.md were
   quietly wrong about three shipped fixes and one already-done task, and
   this run's whole job was closing that gap.** Between Run 46 (PR #138,

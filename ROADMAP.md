@@ -1550,8 +1550,31 @@ if a bug turns up that matters more.
     left to build here — reprioritize if a *specific* landmark placement or
     frequency complaint ever surfaces, but don't re-open this as "add
     landmarks."
-120. **Instrument picker.** `journey.unlockedInstruments` is never appended
-    to — an earned instrument is playable but not choosable.
+120. ~~**Instrument picker.**~~ Done — already built, closed here rather than
+    by new code (Run 48, scheduled). Task's own claim ("`unlockedInstruments`
+    is never appended to — earned but not choosable") does not match the
+    code: `RoadStage.noteUnlocks()` already calls `unlockInstrument()` to
+    append to `journey.unlockedInstruments` every time a campfire is reached
+    with something new earned (per real lifetime totals, via
+    `unlockedInstruments()` in `instruments.ts`), and the HUD's "case" —
+    tap the instrument corner to open a row list, tap a row to take it out —
+    is fully wired: `Hud.setCase`/`onInstrumentChosen` on the UI side,
+    `RoadStage.takeOut`/`chooseInstrument` on the state side, refused mid-busk
+    on both ends so a swap can't desync a tune's baked tempo. Same pattern as
+    tasks 115 and 119: a critique or an old read of the code named a gap that
+    a later feature already closed without the roadmap being told.
+    Verified live rather than trusting the reading: a headless Playwright
+    session gave the journey real earned distance (900m, Reed Flute's actual
+    `unlock.metres`, not a hand-set unlock list — that would have desynced
+    `journey.unlockedInstruments` from the derived-from-totals list
+    `RoadStage.instrument()` actually reads, which is a mismatch that
+    cannot occur in real play but did on the first pass of this check, worth
+    naming since it cost most of this run), ran `noteUnlocks()`, tapped the
+    instrument corner, tapped the "Reed Flute" row, and confirmed all three:
+    `journey.instrumentId` changed, the HUD label changed, and the choice
+    persisted to `localStorage` — zero console/page errors throughout. No
+    code touched. `npm test` 753 green (unchanged), `npm run build` green
+    (696.77 kB, unchanged).
 121. **Time-of-day lighting.** `shader-check.mjs` measures a luminance range
     of 3 across dawn/day/golden/night (task 114) — the sky dome's colour
     moves but the light on everything else barely does. Ties together two
