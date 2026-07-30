@@ -1,11 +1,41 @@
 # STATE
 
-Run counter: 46
+Run counter: 47
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
 
+- **Run 47 (scheduled): no code changed — STATE.md and ROADMAP.md were
+  quietly wrong about three shipped fixes and one already-done task, and
+  this run's whole job was closing that gap.** Between Run 46 (PR #138,
+  puddles) and this run, a human ran an interactive session that landed
+  three more real fixes from the same six-lens critique — PR #141 (shadow
+  hue, partial), #142 (village cool accent), #143 (chapel/landmark fog) —
+  none of which touched STATE.md or ROADMAP.md (`git show --stat` on all
+  three confirms it: #141 and #142 touch only shader/palette source, #143
+  only `painterly.ts`/`WorldStreamer.ts`). So both docs still described
+  items 9, 11 and 12 as open, and ROADMAP task 119 ("skyline landmarks,"
+  never started per its own text) as unstarted, when the code had already
+  moved past all four. Per CLAUDE.md's "if STATE.md and the code disagree,
+  trust the code and fix STATE.md," this run read the three PRs, confirmed
+  what they actually changed against the critique items they claimed to
+  address, and independently re-verified rather than taking the commit
+  messages' word for it: a fresh `tools/postcard.mjs` shot of
+  `02-morning-open` (this run, not reused from the PR) shows a trilithon
+  reading as a clear dark silhouette against the pale sky on the ridge —
+  confirming task 119 is genuinely done, not just claimed done. Items 11 and
+  12 are struck below as closed; item 9 is narrowed to "still open at golden
+  hour only," which is what PR #141's own numbers already said. Item 10
+  (haze cancels to grey) and item 8 (ground never carries a light value) are
+  untouched by any of the three PRs and remain fully open — do not assume
+  the shadow-hue work closed either of them.
+  No code touched, so verification was `npm test` (753 green, unchanged) and
+  `npm run build` (696.77 KB, unchanged) as a baseline, plus the one fresh
+  screenshot above. If another run is tempted to skip this kind of
+  reconciliation because "the PR already explains itself" — it doesn't help
+  the *next* run, which reads STATE.md and ROADMAP.md first per the session
+  protocol, not the PR history.
 - **Run 46 (scheduled): ROADMAP task 115, scatter on the road — and a
   correction to what the task thought it needed.** Before writing any code,
   read `WorldStreamer.ts` against the task's own claim ("no pebbles, no
@@ -200,22 +230,33 @@ Run counter: 46
      range and the largest boulder renders its top and its front within one
      value level of each other.
 
-  9. **Every shadow is the same hue as its own lit side.** Measured: in the
-     golden-vista frame, shadowed grass is H36 S0.73 against lit grass at H36
-     S0.67 — a pure value multiply, no hue shift at all — and the golden-hour
-     frames contain *zero* cool pixels below the skyline. DESIGN.md's stated
-     rule ("shadows are always the complement of the sun") is therefore not
-     actually happening in the render.
+  9. **Partially fixed (2026-07-29, PR #141, human-directed session — landed
+     without a STATE.md/ROADMAP.md update, reconciled here per CLAUDE.md's
+     "trust the code" rule): every shadow was the same hue as its own lit
+     side.** Measured: in the golden-vista frame, shadowed grass was H36
+     S0.73 against lit grass at H36 S0.67 — a pure value multiply, no hue
+     shift at all — and the golden-hour frames contained *zero* cool pixels
+     below the skyline. DESIGN.md's stated rule ("shadows are always the
+     complement of the sun") was therefore not actually happening in the
+     render.
 
-     The cause is arithmetic and worth knowing before anyone re-tunes the
-     palette: `painterly.ts` does `color = albedo * lighting`, and the warm
-     albedos in `palette.ts` have almost no blue left in them (village grass
-     `0x839749` has B=0x49), so *multiplying* by a blue zenith cannot produce
-     a cool shadow — the blue is already gone. A cool shadow has to be
-     **added**, not multiplied. The additive term that would do it already
-     exists (`floorLight`, around `painterly.ts:656`) but is gated by
-     `exp(-luma * 22.0)`, which at the measured shadow luma of ~0.24 is
-     effectively zero. This is very likely the same root cause as item 8.
+     The cause was arithmetic: `painterly.ts` did `color = albedo *
+     lighting`, and the warm albedos in `palette.ts` have almost no blue left
+     in them (village grass `0x839749` has B=0x49), so *multiplying* by a
+     blue zenith cannot produce a cool shadow — the blue is already gone. PR
+     #141 added a `1 - sunAmount`-scaled additive skylight term (the part of
+     ambient light that reaches the eye without being filtered by the
+     surface) instead, and pulled `AMBIENT_STRENGTH` down (0.32 → 0.27) so
+     the multiply side gives up roughly what the add side gains. Measured
+     hue-spread gain: morning 0.208 → 0.356 (+71%), noon 0.284 → 0.328
+     (+15%).
+
+     **Still open, and deliberately not closed by #141**: golden hour. The
+     additive term needs shade to colour, and at a low sun almost the whole
+     frame is lit, so golden-vista's hue spread barely moved (0.036 → 0.031).
+     Whoever picks this up next should treat golden hour as its own case
+     rather than assuming the general fix covers it — this is likely the
+     same root cause as item 8, which is also still open.
 
   10. **The haze cancels to dead neutral grey instead of reading as air.**
       The daylight fog keys in `sky.ts` are near-neutral (morning `0xb2c1cc`
@@ -225,22 +266,38 @@ Run counter: 46
       the complements cancel. Suggested: commit the daylight fog to a hue at
       S~0.25-0.35 (e.g. morning `0x9fb8d2`).
 
-  11. **No biome contains both a warm and a cool albedo.** Every member of
-      village and forest is in the same warm-olive family, which is the real
-      reason the land reads monochrome even where `frame-quality` scores the
-      whole frame as varied. Suggested: re-hue `rock` to a blue-slate
-      (`0x8f9aa6`) so scattered stones become the cool notes A Short Hike
-      uses, and make one accent per biome a cool complement rather than
-      shipping two warms.
+  11. ~~**No biome contains both a warm and a cool albedo.**~~ **Done
+      (2026-07-29, PR #142, human-directed session — reconciled here, see the
+      item 9 note above for why).** Every member of village and forest was in
+      the same warm-olive family, the real reason the land read monochrome
+      even where `frame-quality` scored the whole frame as varied. Village's
+      `rock` moved warm-tan `0xbcb39d` → cool-slate `0xaab3c1` (matched at the
+      same relative luminance, 178 vs 179, so the hue rotation didn't
+      smuggle in a value change too) and `accentAlt` moved gold `0xf2cf8a` →
+      periwinkle `0xa9a6d8` (cornflower/harebell, darker on purpose — a small
+      cool speck rather than a bright one competing with the sky). Barely
+      moves `frame-quality`'s whole-frame number (too few pixels), which the
+      check already documents as its own blind spot; visible directly in the
+      re-shot golden-vista frame as violet-cast shadow bands and cool flecks
+      through the warm field. Forest is unaddressed and may want the same
+      treatment if it turns out to need it.
 
-  12. **The chapel — the one thing worth walking toward — is fogged to
-      near-invisibility.** `RoadStage.ts:355-356` sets `uFogNear` ≈ 20 m and
-      `uFogFar` ≈ 242 m, so a landmark at 150 m sits at ~0.72 fog blend and
-      ends up within a few percent of the sky, less visible than a random
-      tree. Not a landmark-placement problem — a fog problem. Suggested:
-      clamp fog on landmark meshes to ~0.55 so they always hold a value step
-      against the sky, or pull `LANDMARK_SPACING_M`/`NEAR_M`/`FAR_M`
-      (`WorldStreamer.ts:610,625-626`) in.
+  12. ~~**The chapel — the one thing worth walking toward — is fogged to
+      near-invisibility.**~~ **Done (2026-07-29, PR #143, human-directed
+      session — reconciled here, see the item 9 note above for why).**
+      `RoadStage.ts:355-356`'s `uFogNear`/`uFogFar` put a landmark at 150 m
+      at ~0.72 fog blend, within a few percent of the sky and less visible
+      than a random tree. Fixed with a per-material dial rather than a
+      change to the global fog (the haze is doing real work everywhere
+      else): `PainterlyOptions.fogScale` halves the fog on landmark meshes
+      only (1.0 elsewhere, 0.5 for landmarks — not 0, since a landmark that
+      ignores the atmosphere entirely reads as a decal pasted on the sky).
+      Landmarks got their own material rather than sharing `solidMaterial`
+      with rock/log scatter. Verified independently this run (not just
+      taking the PR's word for it): a fresh `tools/postcard.mjs` shot of
+      `02-morning-open` shows a trilithon reading as a clearly separated dark
+      shape against the pale sky at the ridge on the right — see the task
+      119 note below, since this is also what closes it.
 
   13. **Bare road plus empty sky own ~60% of every walking frame**, and on
       tall aspects the widened FOV is spent on exactly those two dead zones

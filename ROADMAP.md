@@ -1533,8 +1533,23 @@ if a bug turns up that matters more.
 118. **Busk caption vs. top note collision** on phone landscape (844x390).
     Needs a considered change to `hudLayout.ts` — its own test constrains
     the top slot, which exists to keep the card off the bard mid-busk.
-119. **Skyline landmarks.** A standing stone or a chapel placed on a ridge,
-    now that ridges exist, to give the walk something to walk toward.
+119. ~~**Skyline landmarks.**~~ Done — already built before this task was
+    ever started, and closed here rather than by new code (Run 47,
+    scheduled). Task 115's done-entry flagged this in advance: `Landmark`,
+    `landmarksNear`/`chooseLandmark`/`raiseLandmark` and four landmark
+    geometries (chapel, standing stones, trilithon, tree) were fully wired
+    into chunk building since the v0.6 initial commit, not stubs. What was
+    genuinely missing was visibility, not existence — STATE.md item 12
+    (fixed by PR #143, human-directed session, and reconciled into
+    STATE.md/ROADMAP.md by this run) found a chapel at 150 m sitting within
+    a few percent of the sky, fogged less visible than a nearby tree; #143's
+    per-material `fogScale` (halved on landmark meshes only) fixed that
+    without touching placement. Verified independently this run with a fresh
+    `tools/postcard.mjs` shot of `02-morning-open`: a trilithon reads as a
+    clearly separated dark shape against the pale sky on the ridge. Nothing
+    left to build here — reprioritize if a *specific* landmark placement or
+    frequency complaint ever surfaces, but don't re-open this as "add
+    landmarks."
 120. **Instrument picker.** `journey.unlockedInstruments` is never appended
     to — an earned instrument is playable but not choosable.
 121. **Time-of-day lighting.** `shader-check.mjs` measures a luminance range
