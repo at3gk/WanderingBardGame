@@ -362,6 +362,8 @@ export class CameraRig {
   private moodBlendRate = 1;
   private elapsed = 0;
   private initialised = false;
+  /** Posed for a screenshot: snapped to the goal and not drifting. */
+  private posed = false;
 
   /**
    * Extra height added when the ground under the camera would otherwise
@@ -396,6 +398,8 @@ export class CameraRig {
    */
   setMood(mood: CameraMood, seconds = 1.4): void {
     if (mood === this.mood) return;
+    // A real framing change means the game is being played, not posed.
+    this.posed = false;
     // Blend from wherever the current blend has actually got to.
     this.fromFraming = this.blendedFraming();
     this.mood = mood;
@@ -462,10 +466,11 @@ export class CameraRig {
 
     // Idle drift. Two incommensurable frequencies so it never visibly
     // repeats; scaled by the framing so the close shots breathe more.
+    const drift = this.posed ? 0 : framing.drift;
     const driftX = Math.sin(this.elapsed * 0.23) * Math.cos(this.elapsed * 0.11);
     const driftY = Math.sin(this.elapsed * 0.31 + 1.7);
-    this.scratchGoal.x += driftX * framing.drift;
-    this.scratchGoal.y += driftY * framing.drift * 0.6;
+    this.scratchGoal.x += driftX * drift;
+    this.scratchGoal.y += driftY * drift * 0.6;
 
     if (!this.initialised) {
       // First frame: snap. Damping in from wherever a default-constructed
@@ -621,9 +626,51 @@ export class CameraRig {
   }
 
   /** Drop the smoothing state, e.g. when teleporting to a new scene. */
+  /**
+   * Put the rig into a *posed* state: snapped to its goal, and held there.
+   *
+   * The only caller is `RoadStage.pose`, which is how the screenshot harness
+   * asks the game to hold still. That makes this the right place to solve a
+   * problem the harness had no way to solve for itself.
+   *
+   * Measured before this: three shoots of one unchanged build, all posed
+   * `07-night-campfire`, put the camera at x = -13.29, -14.15 and -14.11, a
+   * spread of 0.86 m. The whole difference between the two candidate values
+   * of `resting.side` that this project has argued about for two waves is
+   * 1.2 m. The thigh's projected horizontal extent came back 0.735, 0.551
+   * and 0.571 of its length off those same three shoots — a spread three
+   * times the size of the effect the last wave swept for and reasoned from.
+   *
+   * Two causes, both fixed here rather than worked around:
+   *
+   * - **The rig is damped on `frameDt`, not on the fixed step.** That is
+   *   correct for play — the camera should move in wall-clock time — but
+   *   under SwiftShader a frame is anywhere between 0.3 and 5 seconds, so
+   *   how far the damping has converged when the shutter opens is luck.
+   *   Probed directly, a shot frame sat 0.27 m short of its own goal.
+   *   `initialised = false` makes the next update snap exactly onto it.
+   * - **The idle drift keeps running.** It is 0.14 m of lateral sway at
+   *   this framing and its phase at the shutter is set by how long the page
+   *   took to boot. `posed` holds it at zero, and `elapsed` goes back to
+   *   zero with it.
+   *
+   * `posed` clears itself on the next real mood change (`setMood` with a
+   * duration), so a game that somehow reached this path would get its drift
+   * back the next time the camera changed framing rather than losing it for
+   * the session.
+   */
   reset(): void {
     this.initialised = false;
     this.groundLift = 0;
     this.moodBlend = 1;
+    this.elapsed = 0;
+    this.posed = true;
+    // The FOV damps like everything else and is the one channel `initialised`
+    // never snapped, so a posed 'resting' frame was shot through a lens
+    // somewhere between walking's 42 and resting's 43 depending on frame
+    // timing. Small, but it scales every pixel measurement taken off the
+    // frame, including the thigh extents above.
+    this.camera.fov = this.goalFov(this.blendedFraming().fov);
+    this.camera.updateProjectionMatrix();
   }
 }

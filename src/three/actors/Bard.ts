@@ -49,6 +49,7 @@ import {
   Group,
   Mesh,
   Object3D,
+  Vector3,
   type ShaderMaterial,
 } from 'three';
 import { createFoliageMaterial, createPainterlyMaterial, type PainterlyGlobals } from '../painterly';
@@ -112,6 +113,28 @@ const HAT_Y = HEAD_Y + HEAD_HEIGHT - 0.06;
 /** Hip to knee, and knee to ankle. They sum to the old one-piece leg. */
 const THIGH_LEN = 0.22;
 const SHIN_LEN = 0.18;
+
+/**
+ * Shoulder pivot to the middle of the hand, in metres.
+ *
+ * There is no elbow on this figure, so this is a hard constraint rather than
+ * a starting length: the hand can only ever be on a sphere of this radius
+ * about the shoulder. `gripNeck` solves against that sphere, which is why
+ * the number lives here instead of inline — it has to stay equal to the
+ * hand mesh's own offset in the constructor or the hand grips thin air.
+ */
+const ARM_REACH = 0.43;
+/**
+ * The stretch of the instrument's own +Y axis a hand is allowed to hold.
+ *
+ * `instrumentGeometry` builds the neck from y 0.245 to 0.555 and then slides
+ * the whole instrument down by half its 0.62 length, so the neck ends up
+ * spanning -0.065 to 0.245 about the pivot. These are that span pulled in at
+ * both ends: off the shoulder joint at the bottom, short of the pegbox at
+ * the top, which is where a hand actually goes on a lute.
+ */
+const NECK_GRIP_MIN = -0.02;
+const NECK_GRIP_MAX = 0.2;
 
 /**
  * How far the seated bard's boots reach below his own origin.
@@ -533,6 +556,8 @@ export class Bard {
   private readonly boots: Mesh[] = [];
   /** The cloak mesh, so the walk can trail it without moving the torso. */
   private readonly cloak: Mesh;
+  /** Scratch for `gripNeck`, so the solve allocates nothing per frame. */
+  private readonly grip = new Vector3();
 
   private readonly materials: ShaderMaterial[] = [];
   private readonly globals: PainterlyGlobals;
@@ -598,6 +623,32 @@ export class Bard {
      */
     const underBrim = (color: number, rim = 0.5) => solid(color, rim, 0.72);
 
+    /**
+     * The legs, which have the same problem the head has and worse.
+     *
+     * Measured on `07-night-campfire` with the seated pose actually settled:
+     * the thighs came back at luminance 21.3 and 17.6 against ground at
+     * 41.8-49.1 and the seat log they rest on at 60.8. The one shape in the
+     * figure whose job is to say "this person is sitting down" — a
+     * horizontal bar of thigh against the log — was the darkest object
+     * anywhere near him, more than a stop below everything it had to read
+     * against, which is a silhouette you cannot see rather than one that is
+     * wrong.
+     *
+     * The cause is not the pose and not the camera. `trousers` is 0x4a5a6b,
+     * a cool slate, deliberately: it is the one cool note on a warm figure
+     * and it earns its place in daylight. A campfire is a warm source, and a
+     * warm light on a cool albedo cancels — sampled, the rendered pixel was
+     * (43,15,17), keeping 58 per cent of the albedo's red and 16 per cent of
+     * its green and blue. Repainting the trousers warm would fix the fire
+     * and lose the daylight, so the fix is the same one the head already
+     * uses and for the same stated reason: lift the *shadow floor*, which
+     * cosy games do not take to black, and add enough rim that the limb
+     * keeps an edge when its faces are turned away from the only light in
+     * the scene. Both are hue-neutral, so the slate stays slate.
+     */
+    const legMaterial = () => solid(colors.trousers, 0.62, 0.72);
+
     // --- legs ----------------------------------------------------------
     // Pivots sit at the hip so a rotation swings the leg rather than
     // sliding it. This is the one thing that has to be right or the walk
@@ -621,14 +672,14 @@ export class Bard {
       [-1, this.leftLeg],
       [1, this.rightLeg],
     ] as const) {
-      const thigh = new Mesh(thighGeo, solid(colors.trousers, 0.35));
+      const thigh = new Mesh(thighGeo, legMaterial());
       thigh.position.y = -THIGH_LEN;
       thigh.castShadow = true;
       pivot.add(thigh);
 
       const knee = new Group();
       knee.position.y = -THIGH_LEN;
-      const shin = new Mesh(shinGeo, solid(colors.trousers, 0.35));
+      const shin = new Mesh(shinGeo, legMaterial());
       shin.position.y = -SHIN_LEN;
       shin.castShadow = true;
       const boot = new Mesh(bootGeo, solid(colors.boots, 0.3));
@@ -833,6 +884,39 @@ export class Bard {
     this.pose = pose;
     this.poseBlend = 0;
     this.poseBlendRate = 1 / Math.max(0.001, seconds);
+  }
+
+  /**
+   * Finish whatever pose transition is in flight, now.
+   *
+   * Nothing in the game calls this: a pose that cut would look like a
+   * dropped frame. It exists for `RoadStage.pose`, the handle the postcard
+   * tool drives, and it exists because **every campfire postcard this
+   * project has ever shot caught this figure part-way out of a walk.**
+   *
+   * The arithmetic, because it is not obvious and it cost a wave. `App`
+   * runs a fixed step with `MAX_CATCHUP_MS = 250`, so one *rendered* frame
+   * advances the simulation by at most a quarter second no matter how long
+   * the frame took. Under SwiftShader — no GPU, a few hundred thousand
+   * triangles — a 1600x900 night frame takes the better part of a second,
+   * measured here at about one frame per 600 ms. `setPhase` blends a pose
+   * over 0.6 s, which is four sim steps, which is between two and four
+   * whole seconds of wall clock; `postcard.mjs` waits 1800 ms. Measured
+   * across that wait the blend read 0.417 on one run and 1.0 on the next.
+   *
+   * At 0.417 the figure is not a seated bard at all. It is 42 per cent of
+   * one and 58 per cent of a walker: thighs at 42 per cent of their seated
+   * angle so there is no horizontal in the silhouette, the cloak only
+   * two-fifths gathered so the hem still swallows the lap, and — this is
+   * the one the critics kept describing — the instrument 58 per cent
+   * *slung across the back*, where its neck rises past the shoulder on a
+   * strap. "A hunched red mass with the lute neck floating detached above
+   * his left shoulder" is a literal description of a half-finished blend,
+   * and no amount of moving the camera or re-solving the pose can fix a
+   * frame that is not showing the pose.
+   */
+  settlePose(): void {
+    this.poseBlend = 1;
   }
 
   private poseBlendRate = 1;
@@ -1120,6 +1204,89 @@ export class Bard {
       playAmount * -0.5 + slung * 0.08 - lap * 0.889,
       -slung * 0.52 - playAmount * 0.62 - lap * 0.62,
     );
+    if (lap > 0) this.gripNeck(lap);
+  }
+
+  /**
+   * Put the seated bard's left hand *on the neck of the instrument he is
+   * holding*, by solving for it rather than by dialling an angle.
+   *
+   * The problem this fixes, measured: seated, the left hand sat 0.61 m from
+   * the middle of the neck — 132 px apart in a 1600 px frame, on an
+   * instrument whose whole neck projects 96 px. The hand was further from
+   * the neck than the neck is long, and it was down beside the *body* of the
+   * lute, which is the wrong end for a left hand anyway. Four critiques in a
+   * row said the instrument looked detached, and it was.
+   *
+   * Why a solve and not a number. The lap pose's three Euler angles are
+   * solved against the resting camera (see the long note above) and they are
+   * allowed to keep moving; an arm angle tuned by eye against today's
+   * instrument angles separates again the moment either changes, which is
+   * how this drifted apart in the first place. Here the arm is aimed at the
+   * neck every frame, so the two cannot come apart by construction.
+   *
+   * How. Both the arm pivot and the instrument pivot are children of the
+   * torso, so the whole thing is solvable in torso space with no world
+   * matrices. The neck is the segment `A + t·B` for `t` in
+   * `NECK_GRIP_RANGE`, `A` being the instrument pivot's origin and `B` its
+   * local +Y in torso space. The arm is a rigid rod of `ARM_REACH` from a
+   * fixed shoulder `S`, so the hand can only ever land on a sphere of that
+   * radius: intersect the sphere with the neck line, which is a quadratic in
+   * `t`, and take the root furthest up the neck that is still on the neck.
+   * If the neck misses the sphere entirely — it does not today, but the
+   * pose is allowed to move — fall back to the point on the neck nearest the
+   * shoulder, so the hand still points at the instrument instead of
+   * snapping somewhere absurd.
+   *
+   * Then the two Euler angles. With the arm's default hanging direction
+   * `(0,-1,0)` and Euler order XYZ with no yaw, the hand direction is
+   * `(sin z, -cos x·cos z, -sin x·cos z)`, which inverts in closed form:
+   * `z = asin(dx)` and `x = atan2(-dz, -dy)`.
+   *
+   * Weighted by the sitting blend and nothing else, so the walking and
+   * busking arms are bit-for-bit what they were. That is deliberate: those
+   * two poses were tuned against frames and this is not licence to re-tune
+   * them.
+   */
+  private gripNeck(lap: number): void {
+    this.instrumentPivot.updateMatrix();
+    const m = this.instrumentPivot.matrix.elements;
+    // Origin and local +Y of the instrument, in torso space.
+    const ax = m[12];
+    const ay = m[13];
+    const az = m[14];
+    const bx = m[4];
+    const by = m[5];
+    const bz = m[6];
+    const sx = this.leftArm.position.x;
+    const sy = this.leftArm.position.y;
+    const sz = this.leftArm.position.z;
+    const ux = ax - sx;
+    const uy = ay - sy;
+    const uz = az - sz;
+    const ub = ux * bx + uy * by + uz * bz;
+    const uu = ux * ux + uy * uy + uz * uz;
+    const disc = ub * ub - uu + ARM_REACH * ARM_REACH;
+    let t: number;
+    if (disc >= 0) {
+      const root = Math.sqrt(disc);
+      const far = -ub + root;
+      const near = -ub - root;
+      // Prefer the root that is on the neck; of two, the one further up it,
+      // which is where a fretting hand goes.
+      const onNeck = (v: number) => v >= NECK_GRIP_MIN && v <= NECK_GRIP_MAX;
+      t = onNeck(far) ? far : onNeck(near) ? near : Math.min(NECK_GRIP_MAX, Math.max(NECK_GRIP_MIN, far));
+    } else {
+      t = Math.min(NECK_GRIP_MAX, Math.max(NECK_GRIP_MIN, -ub));
+    }
+    this.grip.set(ax + bx * t - sx, ay + by * t - sy, az + bz * t - sz);
+    const d = this.grip.length();
+    if (d < 1e-5) return;
+    this.grip.multiplyScalar(1 / d);
+    const rz = Math.asin(Math.min(1, Math.max(-1, this.grip.x)));
+    const rx = Math.atan2(-this.grip.z, -this.grip.y);
+    this.leftArm.rotation.x += (rx - this.leftArm.rotation.x) * lap;
+    this.leftArm.rotation.z += (rz - this.leftArm.rotation.z) * lap;
   }
 
   /** How much a pose contributes right now, accounting for the blend. */
