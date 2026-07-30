@@ -225,6 +225,18 @@ function channelRatio(a: number, b: number): number {
 }
 
 /**
+ * Relative luminance of a colour whose channels are already linear.
+ *
+ * Rec. 709 weights, and linear rather than the eye-matched sRGB version on
+ * purpose: this is used to compare a mirror's brightness against the ground's,
+ * which is a question about light arriving and not about how a screen encodes
+ * it.
+ */
+function luminanceOf(c: Color): number {
+  return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+}
+
+/**
  * Choose one of a kind's allowed bands, weighted by how wide it is, so a
  * band twice as wide gets twice the plants and the density figure means the
  * same thing in every band.
@@ -375,7 +387,18 @@ interface ScatterKind {
   lodRange: number;
   castShadow: boolean;
   material: 'foliage' | 'solid';
-  colorOf: (palette: BiomePalette, rand: Rand) => number;
+  colorOf?: (palette: BiomePalette, rand: Rand) => number;
+  /**
+   * This kind's colour comes from the sky, not from the palette.
+   *
+   * Standing water is the only surface in the world that is a mirror, and a
+   * mirror has no albedo of its own — so it is the one kind whose instance
+   * colours have to be rewritten as the day turns rather than baked when the
+   * chunk is built. A kind with this set has no `colorOf`; `paintWater`
+   * supplies its colours instead, and the one random draw `colorOf` would
+   * have made is still made, so placement is untouched.
+   */
+  skyLit?: boolean;
 }
 
 /** Seeds for the four grass silhouettes and the four ferns. Arbitrary primes. */
@@ -472,11 +495,24 @@ const SCATTER_KINDS: ScatterKind[] = [
     lodRange: CHUNK_LENGTH * 2.6,
     castShadow: false,
     material: 'solid',
-    // A cool, sky-reflecting grey-blue rather than a literal reflection —
-    // the world has one shared shader and no real-time reflections in it.
-    // Mixed toward the road colour so it reads as *this biome's* water
-    // sitting in *this biome's* earth, not a decal dropped on top of it.
-    colorOf: (p, rand) => mixColor(0x3c4d54, p.road, 0.2 + rand() * 0.25),
+    /*
+     * Was a fixed cool grey-blue mixed toward the road, and that was the
+     * wrong lever. Measured off the frames it shipped in: at dusk the puddle
+     * read L18.8 against a carriageway of L22.6 beside it — darker than the
+     * earth — and on the tablet frame L74.5 against a road whose own sunlit
+     * patches reach L118. A dark blue lozenge on brown ground is a hole, or
+     * a shard of something; standing water is the one thing on a road that
+     * is *lighter* than the road, at every hour, because it is not showing
+     * you its own colour at all. It is showing you the sky.
+     *
+     * There is still no real-time reflection here and there does not need to
+     * be. A puddle two or three metres from a walking camera is seen at
+     * fifteen or twenty degrees off flat, and what a horizontal mirror
+     * returns at that angle is the sky just above the horizon — which is a
+     * uniform the shader already carries. So the colour is derived from
+     * `uHorizonColor` in `paintWater` and rewritten as the day turns.
+     */
+    skyLit: true,
   },
   {
     key: 'grass',
@@ -744,10 +780,23 @@ function insideLandmark(landmarks: Landmark[], x: number, z: number): boolean {
   return false;
 }
 
+/**
+ * One instanced mesh of standing water, with what `paintWater` needs to
+ * recolour it: the road tone it is lying in, and the per-instance random draw
+ * that gives one puddle a slightly different mix from the next.
+ */
+interface WaterField {
+  mesh: InstancedMesh;
+  road: Color;
+  variation: Float32Array;
+}
+
 interface Chunk {
   index: number;
   group: Group;
   meshes: Array<Mesh | InstancedMesh>;
+  /** Standing water in this chunk, empty for all but a few. */
+  water: WaterField[];
   /**
    * Which scatter kinds this chunk was built with, one bit each.
    *
@@ -808,6 +857,8 @@ export class WorldStreamer {
   private readonly upAxis = new Vector3(0, 1, 0);
 
   private lastCentre = Number.NaN;
+  /** The horizon colour the standing water was last painted for. */
+  private readonly paintedHorizon = new Color(-1, -1, -1);
 
   /**
    * Patches of ground the scatter keeps out of.
@@ -1054,6 +1105,81 @@ export class WorldStreamer {
     // same frame is a visible stall on a phone; spread over three frames it
     // is three ordinary chunk builds, which the walk already does.
     this.promoteOne(centre);
+
+    this.refreshWater();
+  }
+
+  /**
+   * Standing water, repainted when the sky it is reflecting has moved.
+   *
+   * A chunk bakes its instance colours once, and for everything else in the
+   * world that is right — a tuft of grass has the same albedo all day and the
+   * shader does the rest. Water does not: it has no albedo, and a puddle built
+   * at golden hour and still on screen at dusk would be reflecting an hour
+   * that has gone. The visible puddles are never more than about two and a
+   * half chunks old, which at this road's pace is enough of the day for a
+   * dusk sky to move a long way.
+   *
+   * Gated on the horizon colour actually having changed rather than run every
+   * frame, so a walk at a steady hour costs one colour comparison per frame
+   * and nothing else. The threshold is a quarter of a level in eight-bit
+   * terms, well below anything visible, so this repaints often enough that
+   * no two puddles on screen disagree about the hour.
+   */
+  private refreshWater(): void {
+    const horizon = this.globals.uHorizonColor.value;
+    const moved =
+      Math.abs(horizon.r - this.paintedHorizon.r) +
+      Math.abs(horizon.g - this.paintedHorizon.g) +
+      Math.abs(horizon.b - this.paintedHorizon.b);
+    if (moved < 0.001) return;
+    this.paintedHorizon.copy(horizon);
+    for (const chunk of this.chunks.values()) {
+      for (const field of chunk.water) this.paintWater(field);
+    }
+  }
+
+  /**
+   * The colour of standing water at this hour.
+   *
+   * Two rules, and the second is the one that matters. First, the hue is the
+   * sky's: a horizontal mirror seen from a walking camera returns the band of
+   * sky just above the horizon, so this starts at `uHorizonColor` and is
+   * pulled a little way back toward the road so that a puddle still belongs
+   * to the earth it is lying in. Second, and regardless of what the first
+   * rule produced, it is never dark: a puddle is the lightest thing on the
+   * carriageway at every hour of the day, and the floor here is what
+   * guarantees that at the hours when the sky itself has gone dim. Without
+   * it, dusk and night hand back exactly the navy shard this replaced.
+   *
+   * The two numbers turn out to divide the day cleanly between them, which is
+   * why both are here rather than one being tuned to cover both cases. At the
+   * bright hours the mix sets the value and the floor never binds: shot at
+   * 0.34 the tablet frame's puddle came back at L135.9 against a road of
+   * L68.4, which reads less as water than as a spill of milk, so the mix is
+   * most of the way to the earth now and lands the same puddle at about half
+   * again the road rather than double it. At dusk the horizon has so little
+   * value left that the mix falls below the floor and the floor sets the
+   * value instead — measured, a dusk puddle sits at 1.3 times its road before
+   * the floor and 1.75 after. So the mix is the bright hours' dial and the
+   * floor is the dark hours', and neither reaches into the other's half of
+   * the day.
+   */
+  private paintWater(field: WaterField): void {
+    const horizon = this.globals.uHorizonColor.value;
+    const floor = luminanceOf(field.road) * 1.75;
+    for (let i = 0; i < field.variation.length; i++) {
+      const water = this.scratchColor
+        .copy(horizon)
+        .lerp(field.road, 0.72 + field.variation[i] * 0.14);
+      const lum = luminanceOf(water);
+      if (lum < floor) water.multiplyScalar(floor / Math.max(lum, 0.0001));
+      water.r = Math.min(1, water.r);
+      water.g = Math.min(1, water.g);
+      water.b = Math.min(1, water.b);
+      field.mesh.setColorAt(i, water);
+    }
+    if (field.mesh.instanceColor) field.mesh.instanceColor.needsUpdate = true;
   }
 
   private promoteOne(centre: number): void {
@@ -1083,9 +1209,10 @@ export class WorldStreamer {
     // trees all have to keep out of the same patches of ground.
     const landmarks = this.landmarksNear(index);
 
+    const water: WaterField[] = [];
     for (const kind of SCATTER_KINDS) {
       if (distanceM > kind.lodRange) continue;
-      for (const mesh of this.buildScatter(index, kind, landmarks)) {
+      for (const mesh of this.buildScatter(index, kind, landmarks, water)) {
         group.add(mesh);
         meshes.push(mesh);
       }
@@ -1103,7 +1230,7 @@ export class WorldStreamer {
     }
 
     this.group.add(group);
-    return { index, group, meshes, detail: detailAt(distanceM) };
+    return { index, group, meshes, water, detail: detailAt(distanceM) };
   }
 
   /**
@@ -1373,6 +1500,7 @@ export class WorldStreamer {
     index: number,
     kind: ScatterKind,
     landmarks: Landmark[],
+    water: WaterField[],
   ): InstancedMesh[] {
     const s0 = index * CHUNK_LENGTH;
     const rand = mulberry32(subSeed(this.road.seed, `scatter:${kind.key}:${index}`));
@@ -1392,7 +1520,7 @@ export class WorldStreamer {
     const variants = Math.max(1, kind.variants ?? 1);
     const bias = kind.edgeBias ?? 1;
     const clump = kind.clump ?? 0;
-    const buckets: Array<Array<{ matrix: Matrix4; color: number }>> = [];
+    const buckets: Array<Array<{ matrix: Matrix4; color: number; variation: number }>> = [];
     for (let v = 0; v < variants; v++) buckets.push([]);
 
     // Clump state: where the current group is centred, which side and which
@@ -1455,7 +1583,11 @@ export class WorldStreamer {
       // up at the bard's knee.
       this.scratchScale.set(scale, scale * randRange(rand, 0.85, 1.15), scale);
       const variant = variants === 1 ? 0 : Math.floor(rand() * variants);
-      const color = kind.colorOf(palette, rand);
+      // One draw either way, so a sky-lit kind places exactly where it placed
+      // when it had a colorOf. White is a placeholder: paintWater writes the
+      // real instance colours before the mesh is ever drawn.
+      const variation = kind.skyLit ? rand() : 0;
+      const color = kind.colorOf ? kind.colorOf(palette, rand) : 0xffffff;
       // Tested last, after every draw this instance was going to make, so a
       // clearing removes plants without moving the ones around it. Skipping
       // earlier would leave the random stream short and reshuffle the whole
@@ -1470,6 +1602,7 @@ export class WorldStreamer {
       buckets[variant].push({
         matrix: new Matrix4().compose(this.scratchPos, this.scratchQuat, this.scratchScale),
         color,
+        variation,
       });
     }
 
@@ -1489,6 +1622,15 @@ export class WorldStreamer {
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       mesh.computeBoundingSphere();
+      if (kind.skyLit) {
+        const field: WaterField = {
+          mesh,
+          road: new Color().setHex(palette.road),
+          variation: new Float32Array(list.map((entry) => entry.variation)),
+        };
+        water.push(field);
+        this.paintWater(field);
+      }
       meshes.push(mesh);
     }
     return meshes;
@@ -1884,6 +2026,7 @@ export class WorldStreamer {
       if (mesh instanceof InstancedMesh) mesh.dispose();
     }
     chunk.meshes.length = 0;
+    chunk.water.length = 0;
   }
 
   dispose(): void {

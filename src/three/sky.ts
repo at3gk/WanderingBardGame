@@ -124,13 +124,63 @@ export const SKY_KEYS: SkyKey[] = [
   {
     t: 0.42,
     name: 'morning',
-    zenith: 0x8dc0e8,
+    /*
+     * The three daylight keys — this one, high day and afternoon — are all
+     * about a stop and a half brighter than the land they light, and this is
+     * the round that takes the difference out of the sky rather than out of
+     * the ground.
+     *
+     * Measured on the ten postcards: 02-morning's land sits at 46/78/118 for
+     * its fifth, fiftieth and ninety-fifth percentile against a sky of 204,
+     * and 0.89 per cent of it reaches above L170. Worked through the shader
+     * by hand, it cannot: the palest ground tone in the village palette is
+     * grassDry, the drift only mixes 62 per cent of the way to it, and a
+     * fully sunlit fragment of the result lands at about L160 after ACES and
+     * the sRGB encode. So "the land never reaches the light third" is not a
+     * tuning failure that a ground albedo would fix — it is arithmetic, and
+     * palette.ts's argument for those albedos is sound and is left standing.
+     *
+     * What is wrong is the gap. The sky dome has no exposure uniform and
+     * takes these keys almost directly, so a change here moves the sky's own
+     * value nearly one for one while costing the lit ground only the slice of
+     * it that arrives as ambient — roughly a twentieth. Down about 27 levels
+     * from 0x8dc0e8 at exactly held saturation (0.392 to 0.394), so this is a
+     * value change and nothing else; the hue rotation on the horizon below is
+     * the separate argument.
+     */
+    zenith: 0x78a4c6,
     // Was 0xdceaf2, which is within a few per cent of white. A near-white
     // horizon key does two bad things at once: it leaves the lower sky with
     // no colour to differ from the cloud in it, and — because this same
     // value is the world's sideways ambient — it lifts every vertical
     // surface in the frame until there is no dark left to compose with.
-    horizon: 0xbfd4e6,
+    /*
+     * Rotated from 0xbfd4e6 and NOT darkened, and the second half of that is
+     * a measured result rather than caution.
+     *
+     * The rotation first: S0.170 to S0.259 at held luminance (208.8 to
+     * 208.9). Measured per depth band, the two widest high-sun frames wash to
+     * neutral where the rest of the set does not — 08-phone-portrait reads
+     * skyline S0.091 and treeline S0.123, 10-tablet skyline S0.081, against
+     * 01-dawn's skyline S0.223 and 04-golden's S0.302, which are fine. The
+     * skyline band is mostly *sky*, so this key and not only the fog had to
+     * move: at S0.17 there was no hue in the lower sky for the far land to be
+     * hazed toward, and the haze then mixed a warm olive with a near-neutral
+     * grey and arrived at grey.
+     *
+     * The value was taken down 27 levels alongside the zenith for one round
+     * and put back, because this key is not only sky. `fogTint` in
+     * painterly.ts is `mix(uFogColor, uHorizonColor, ...)` running up to 0.6
+     * at ground level, so this is also what the far land tends toward — and
+     * the fog is applied *after* uExposure, so unlike everything else the
+     * exposure lift below cannot pay the far land back. Shot with it dark:
+     * 10-tablet's treeline fell from L130 to L106 and its skyline from L170
+     * to L141 while the near ground rose, which took the frame's front-to-
+     * back range from 2.79 stops to 1.95 and left a *wider* empty gap between
+     * the land and the sky than it started with. The zenith is the half of
+     * the sky that is only sky, and it is where the whole drop belongs.
+     */
+    horizon: 0xb4d6f3,
     sun: 0xfff0d0,
     // Darkened from 0x7d8a5c. This value is the light coming back UP off the
     // ground into every downward-facing surface, so a bright one lifts the
@@ -153,8 +203,17 @@ export const SKY_KEYS: SkyKey[] = [
      * there is only one band of values that puts it there. This one lands
      * the fully hazed distance at about nine tenths of the sky it meets:
      * below it, and clearly above the treeline standing in front of it.
+     *
+     * Rotated from 0xb2c1cc, and only rotated: L190.6 to L190.7, S0.127 to
+     * S0.278. Everything the paragraph above says about where the value has
+     * to sit still holds and is untouched, which is the whole reason this was
+     * done as a hue change rather than by reaching for the value again. The
+     * three daylight fogs were the three flattest hues in the file and they
+     * are the three that have to carry aerial perspective; a grey haze
+     * subtracts saturation from the distance instead of replacing it with
+     * the colour of air.
      */
-    fog: 0xb2c1cc,
+    fog: 0xa4c3e3,
     /*
      * Down from 0.62 rad and round from 0.6, and this is the change that
      * gives the morning frame a landscape instead of a lawn.
@@ -187,7 +246,32 @@ export const SKY_KEYS: SkyKey[] = [
      */
     elevation: 0.38,
     azimuth: 0.92,
-    exposure: 1.02,
+    /*
+     * Up from 1.02, and this is the other half of the sky coming down.
+     *
+     * uExposure multiplies the painterly shader's colour and the sky dome has
+     * no such uniform, so this is the one dial in the file that moves the
+     * land without moving the air. It is not a new term: the note under deep
+     * night already uses it as a per-hour compensation for a change made to
+     * the shared lighting model.
+     *
+     * It is needed because darkening the sky costs the land the slice of its
+     * light that arrives as ambient. Measured on 02-morning across the sky
+     * change: the land's median fell from L78 to L74 and its share above
+     * L170 from 0.89 to 0.09 per cent, so the gap the change was meant to
+     * close was being closed partly by pulling the land down with the sky.
+     *
+     * Eighteen per cent, and it was cut to eight for one round on the
+     * argument that a large lift would compress the top of the land's range
+     * through the ACES curve. Measured, it does the opposite: at 1.18 the
+     * morning land reads 45/81/125 for its fifth, fiftieth and ninety-fifth
+     * percentile against 46/78/118 before any of this, so the top of the
+     * range expanded by seven levels; at 1.10 it reads 44/78/120 and the
+     * frame's share of the L128-175 tier the land is supposed to be
+     * occupying falls from 2.43 back to 1.37 per cent. The argument was
+     * plausible and wrong, and the frames settled it.
+     */
+    exposure: 1.18,
     starness: 0,
         /*
      * Up from the mid-thirties and forties. The three daylight keys are the
@@ -205,17 +289,27 @@ export const SKY_KEYS: SkyKey[] = [
   {
     t: 0.55,
     name: 'high day',
-    zenith: 0x86bde6,
+    // Down 28 levels at held saturation, and see the long note on morning's
+    // zenith for the measurement: noon's land reaches above L170 on 0.66 per
+    // cent of its pixels and structurally cannot do much better, so the gap
+    // between land and sky is closed from the sky's end.
+    zenith: 0x72a0c3,
     // See the note on morning. Noon is the frame with the least colour in it
-    // and the most to lose from a white horizon.
-    horizon: 0xc8d8e4,
+    // and the most to lose from a white horizon. Rotated from S0.123 to
+    // S0.259 at held luminance (213.5 to 213.3) and deliberately not
+    // darkened: this key is most of what the skyline band of a wide high-sun
+    // frame is made of, and it is also what the far land is hazed toward, so
+    // taking its value down takes the whole distance with it.
+    horizon: 0xb7dbf7,
     sun: 0xfff6e2,
     // See the note on morning; noon has the least colour to lose and the
     // most flattening to undo.
     bounce: 0x66703f,
     // Same correction as morning; noon had the brightest fog of the day and
-    // the palest sky to lose it against.
-    fog: 0xb8c6ce,
+    // the palest sky to lose it against. Then rotated, L195.6 to L195.7 and
+    // S0.107 to S0.272 — the flattest hue in the file, on the frame with the
+    // longest sightlines and so the most aerial perspective to carry.
+    fog: 0xa9c8e8,
     /*
      * Sixty degrees was the worst case of the problem described under
      * morning: at that height a flat field and a hillside differ by almost
@@ -239,7 +333,9 @@ export const SKY_KEYS: SkyKey[] = [
      */
     elevation: 0.70,
     azimuth: 0.34,
-    exposure: 1.05,
+    // Up from 1.05. See the note under morning: the land pays for a darker
+    // sky through the ambient term and this is where it is handed back.
+    exposure: 1.21,
     starness: 0,
         // See the note under morning.
     cloudiness: 0.52,
@@ -247,17 +343,30 @@ export const SKY_KEYS: SkyKey[] = [
   {
     t: 0.7,
     name: 'afternoon',
-    zenith: 0x8ec2df,
-    horizon: 0xf3dcbc,
+    // The third daylight key, and the one 10-tablet is posed exactly on. Down
+    // 20 levels rather than 27: afternoon's zenith was already the lowest of
+    // the three relative to its own horizon, and this key has to stay warmer
+    // and softer than noon or the afternoon stops being an afternoon.
+    zenith: 0x7fadc7,
+    // Was 0xf3dcbc at L222.6, the brightest key in the file. Rotated warm
+    // from S0.226 to S0.300 at held luminance and left at that value: this is
+    // the key 10-tablet is posed under, and it was the frame that proved
+    // darkening a horizon darkens the whole distance with it. See morning.
+    horizon: 0xf8dcad,
     sun: 0xffe2ac,
     bounce: 0x8b8452,
-    fog: 0xc8c2b3,
+    // Rotated warm, L194.2 to L194.4 and S0.105 to S0.271. Afternoon's fog
+    // was as neutral as noon's while sitting under a warm horizon, so the
+    // haze was pulling the distance toward grey and the horizon toward cream
+    // at the same time, which is two atmospheres.
+    fog: 0xd2c299,
     // Same correction, mirrored: the afternoon sun has crossed over, so it
     // goes further round rather than back. Tried at 0.27 and put back; see
     // the note under morning.
     elevation: 0.34,
     azimuth: -0.92,
-    exposure: 1.0,
+    // Up from 1.0. See the note under morning.
+    exposure: 1.15,
     starness: 0,
         // See the note under morning.
     cloudiness: 0.54,
@@ -459,13 +568,29 @@ float ridgeMask(vec2 ring, float height, float base, float amp, float seed) {
  * Aerial perspective for a band of distant land, in the sky's own colours
  * rather than a grey wash. base is the sky's value in this direction, so
  * the band is darker than the air it meets by construction at every hour,
- * instead of by a set of constants tuned against one of them. cool pulls
- * it toward the zenith, away from the warm band it stands in; land is
- * the trace of the ground's own colour that keeps a forested skyline
+ * instead of by a set of constants tuned against one of them. haze pulls
+ * it toward the colour of distance, away from the band it stands in; land
+ * is the trace of the ground's own colour that keeps a forested skyline
  * blue-green and not blue.
+ *
+ * haze used to pull toward uZenith, and that is the term that made the
+ * tablet frame's skyline grey. Measured, its skyline band came back at
+ * saturation 0.081 while the near ground read 0.417, and it did not move
+ * when the afternoon horizon and fog keys were both committed to a
+ * saturated hue — because at an hour whose horizon is warm cream and whose
+ * zenith is cool blue, a third of the way from one to the other is the grey
+ * axis. Mixing two near-complements and expecting a colour is the same
+ * mistake the haze over the terrain was making.
+ *
+ * uFogColor is the right target and not merely a less bad one: it is the
+ * value and hue this file already declares distance tends toward, the
+ * terrain's own haze uses it, and it is now committed at every hour to a
+ * hue rather than to a grey. So the ridge and the hazed land in front of it
+ * arrive at the same colour from opposite directions, which is what makes
+ * them read as one atmosphere.
  */
-vec3 ridgeTint(vec3 base, vec2 ring, float cool, float value, float land) {
-  vec3 tinted = mix(mix(base, uZenith, cool) * value, uGroundBounce, land);
+vec3 ridgeTint(vec3 base, vec2 ring, float haze, float value, float land) {
+  vec3 tinted = mix(mix(base, uFogColor, haze) * value, uGroundBounce, land);
   // The flank turned toward the sun keeps a little of the sun's colour,
   // which is what stops the band being a flat cut-out.
   vec2 sunRing = normalize(uSunDirection.xz + vec2(1e-5));
