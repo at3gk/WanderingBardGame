@@ -1425,32 +1425,63 @@ function barLeftM(): number {
  * the critique that prompted it. "A flat bright tan slab, the largest and
  * brightest object in the picture" is two claims, and only one of them is
  * true. Sampled on a grid over the printed face of a shipped golden-hour
- * busk, the plank's mean rendered luminance sits at the **48th percentile of
- * its own frame** — dead median, not bright; the sky is far above it and the
- * bard's shadowed side far below. Pulling the timber down would have been a
- * fix aimed at a number that was already right, and the frame would have lost
- * a mid tier it needs. So the level is left alone and only its *evenness* is
- * addressed: the same grid measures a standard deviation of 15 over a face
- * spanning 130 levels, which is the part a critic's eye is actually reading
- * when it says "flat".
+ * busk, with the glyphs hidden, the plank's mean rendered luminance sits at
+ * the **51st percentile of its own frame** — dead median, not bright; the sky
+ * is far above it and the bard's shadowed side far below. Pulling the timber
+ * down would have been a fix aimed at a number that was already right, and
+ * the frame would have lost a mid tier it needs. So the level is left alone
+ * and only its *evenness* is addressed.
+ *
+ * Two things a future run should know before re-measuring this, because both
+ * cost a round here.
+ *
+ * The first is that the glyphs have to come out of the shot. Read off an
+ * ordinary frame, a 442-point grid over this face caught two note heads: 12
+ * samples at luminance 14 against a face mean of 65 put 8.4 into the standard
+ * deviation on their own, and the first version of the measurement duly
+ * reported the plank getting *flatter* when weathering was added, because the
+ * two builds happened to have different numbers of heads inside the grid.
+ * The instrument was correct and pointed at the wrong pixels.
+ *
+ * The second is that this board resists albedo structure by construction at
+ * exactly the hours it is most looked at. `LIGHT_FLOOR` is paid to the plank
+ * through the painterly material's emissive, and `painterly.ts` adds that as
+ * `color += uEmissive * uEmissiveStrength` — a constant, after the albedo and
+ * before the exposure. A constant added to every fragment compresses every
+ * ratio between them, so at golden hour a 22 per cent swing in this field
+ * arrives on screen as about seven, and the face's standard deviation moves
+ * 8.4 to 8.1 for it. That is not this field failing; it is the pedagogy floor
+ * doing its job, and the floor is not tradeable. What the field does buy at
+ * that hour is visible where the swing is largest rather than in the mean:
+ * the foot of the plank goes 54 to 48 and the far end 69 to 66, which is the
+ * board sitting into the grass instead of ending at a line.
  *
  * The field is weather rather than decoration, and it is deliberately not
  * symmetric — a vignette is what a symmetric one becomes, and a vignette
  * reads as a lit panel rather than as a board. The wash goes thin where a
  * plank standing in grass loses it: up from the foot, where the damp is, and
  * at the far end, which is the end away from the barline and the end that
- * points into the middle of the frame. Two slow waves along the length are
- * the timber's own figure; the painterly material's `grain` handles
- * everything finer than that, so there is nothing here above a metre or so of
- * wavelength.
+ * points into the middle of the frame.
  *
  * It multiplies the *paper*, and `BOARD_INK` multiplies it in turn, so a rule
  * keeps exactly its ratio to the paper it is drawn on at every point of the
  * board. That is the property that makes this safe to do at all: the stave's
  * legibility is a ratio, and a multiplier cannot change a ratio.
+ *
+ * **A second term was built here and thrown away, and it is worth saying
+ * why.** Two slow sine waves along the length, meant as the timber's own
+ * figure at a scale coarser than the material's `grain`. At the sampling the
+ * face can afford — seven added columns, so about five samples per wavelength
+ * — a sine interpolated linearly between vertices is a chain of creases, and
+ * a crease is a Mach band. Shot at 2x it read as a row of evenly-spaced
+ * vertical plank seams across a board whose planking runs the other way, and
+ * the leftmost of them sat close enough to the barline to be taken for a
+ * second one. Resolving it properly would have cost several times the
+ * columns to duplicate what `grain` already does per fragment. The wear
+ * terms below are monotone smoothsteps, which is why they survive the same
+ * sampling: a crease in a monotone ramp is a change of slope, not a band.
  */
-const WEATHER_DEPTH = 0;
-const WEATHER_FIGURE = 0;
+const WEATHER_DEPTH = 0.22;
 
 function weathering(x: number, y: number): number {
   const left = boardLeftLocal();
@@ -1460,8 +1491,41 @@ function weathering(x: number, y: number): number {
   const u = (x - left) / (right - left);
   const v = (y - bottom) / (top - bottom);
   const wear = smoothstep(0.32, 0, v) * 0.6 + smoothstep(0.58, 1, u) * 0.45;
-  const figure = Math.sin(u * 5.1 + 0.7) * 0.55 + Math.sin(u * 12.9 + 2.4) * 0.25;
-  return 1 - WEATHER_DEPTH * wear + WEATHER_FIGURE * figure;
+  return 1 - WEATHER_DEPTH * wear;
+}
+
+/**
+ * What sets the plank's width, in the terms that set it.
+ *
+ * Exported only so a test can pin it, for the same reason `printableSteps` is:
+ * every critique of this board so far has asked for it to be narrower, and
+ * the reasons it cannot be are arithmetic about notation that no screenshot
+ * shows. A frame posed on a tune of crotchets looks like there is room to
+ * spare at both ends; the bar that proves otherwise is a run of quavers on
+ * the fastest instrument, and nobody poses that.
+ *
+ * `gapAtWhichHeadsTouchMs` is the one to read first: it is the note-to-note
+ * spacing, *in milliseconds of song*, at which two heads on this run print on
+ * top of each other. Shortening `RUN_M` raises it. The songbook's own tightest
+ * pair has to stay above it.
+ */
+export function boardSpan(): {
+  leftOfBarline: number;
+  rightOfBarline: number;
+  driftedNoteReach: number;
+  headWidth: number;
+  barlineOffset: number;
+  gapAtWhichHeadsTouchMs: number;
+} {
+  const headWidth = ((HEAD_RX * 2) / ATLAS_CELL_PX) * glyphWorldSize();
+  return {
+    leftOfBarline: TAIL_M + BOARD_END_M,
+    rightOfBarline: boardRightLocal(),
+    driftedNoteReach: PAST_DRIFT_M + headWidth / 2,
+    headWidth,
+    barlineOffset: barLeftM(),
+    gapAtWhichHeadsTouchMs: (TRAVEL_TIME_MS * headWidth) / RUN_M,
+  };
 }
 
 /** The plank's own edges, in metres from the barline and the middle line. */
@@ -1562,9 +1626,10 @@ function buildBoardGeometry(): BufferGeometry {
   // at the barline and at the two ends, because they were placed by where the
   // *ink* changes value, which left one quad two metres wide covering the
   // whole run — and a two-metre quad can only interpolate `weathering`
-  // linearly across it, which is a gradient rather than a plank. Seven takes
-  // the widest gap to about a quarter of a metre, which resolves the figure's
-  // shorter wave. The cost is 21 rows x 7 columns of extra quads on one mesh.
+  // linearly across it, so the far end's wear would start at the barline and
+  // ramp the whole way, which reads as a lighting gradient rather than as a
+  // weathered end. Seven takes the widest gap to about a quarter of a metre.
+  // The cost is seven columns of extra quads on one mesh.
   for (let i = 1; i <= 7; i++) {
     cols.push(barHalf + soft + ((ruleX1 - soft - barHalf - soft) * i) / 8);
   }
