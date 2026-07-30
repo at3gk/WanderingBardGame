@@ -796,6 +796,8 @@ export class WorldStreamer {
   private readonly terrainMaterial: ShaderMaterial;
   private readonly foliageMaterial: ShaderMaterial;
   private readonly solidMaterial: ShaderMaterial;
+  /** solidMaterial with the haze halved, for the things the road aims at. */
+  private readonly landmarkMaterial: ShaderMaterial;
   private readonly trunkMaterials = new Map<string, ShaderMaterial>();
 
   /** Scratch objects; the chunk builder runs on a walking player's frame. */
@@ -913,6 +915,36 @@ export class WorldStreamer {
       flatShading: true,
       swayAttribute: true,
       sway: 0,
+    });
+
+    /*
+     * The same material as the scatter above, with the haze turned down.
+     *
+     * A landmark exists to be walked toward, and measured against the frames
+     * it was failing at exactly that: a chapel on a ridge at 150 m sat within
+     * a few per cent of the sky behind it and read as less visible than a
+     * nearby tree. The landmark system was placing it correctly — on a ridge,
+     * biased to the side of the road the camera can see — and then the fog was
+     * dissolving it.
+     *
+     * 0.5, not 0: a destination that ignores the atmosphere entirely detaches
+     * from the country around it and reads as a decal pasted on the sky, which
+     * is worse than being faint. Half the haze keeps it sitting in the same
+     * air as the ridge it stands on while holding a value step against it.
+     */
+    this.landmarkMaterial = createPainterlyMaterial(globals, {
+      color: 0xffffff,
+      colorVariant: 0xbfae94,
+      grain: 0.6,
+      grainScale: 0.7,
+      rim: 0.16,
+      baseShade: 0.16,
+      baseShadeHeight: 0.3,
+      vertexColors: true,
+      flatShading: true,
+      swayAttribute: true,
+      sway: 0,
+      fogScale: 0.5,
     });
   }
 
@@ -1827,7 +1859,7 @@ export class WorldStreamer {
         `landmark:${landmark.kind}:${palette.id}:${landmark.variant}`,
         () => build(options),
       );
-      material = this.solidMaterial;
+      material = this.landmarkMaterial;
     }
 
     const mesh = new Mesh(geometry, material);
@@ -1860,6 +1892,7 @@ export class WorldStreamer {
     this.terrainMaterial.dispose();
     this.foliageMaterial.dispose();
     this.solidMaterial.dispose();
+    this.landmarkMaterial.dispose();
     for (const material of this.trunkMaterials.values()) material.dispose();
     this.trunkMaterials.clear();
   }

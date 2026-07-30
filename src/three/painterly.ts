@@ -133,6 +133,25 @@ export interface PainterlyOptions {
   emissiveStrength?: number;
   /** Flat-shade: derive the normal from screen-space derivatives. */
   flatShading?: boolean;
+  /**
+   * Per-material multiplier on the distance fog, 1 = the world's own haze.
+   *
+   * Exists for one specific job: the thing at the end of the road has to stay
+   * visible. Fog is capped at 0.60 globally, and 60% of the way to the sky
+   * colour is enough to take a chapel on a ridge at 150 m to within a few per
+   * cent of the sky behind it — measured, it was less visible than a nearby
+   * tree, which makes the one landmark the walk is aimed at the least legible
+   * thing in the frame.
+   *
+   * Deliberately a per-material dial and not a change to the global fog. The
+   * haze is doing real work everywhere else: it is what separates the
+   * middle distance from the ridge line and stops the treeline ending in a
+   * hard silhouette. What is wrong is not the amount of fog but that a
+   * destination is subject to the same amount as the scenery it is meant to
+   * stand out from. Landmarks are the exception because they are the only
+   * objects in the world whose *purpose* is to be seen from far away.
+   */
+  fogScale?: number;
 }
 
 /**
@@ -416,6 +435,7 @@ uniform vec3 uFogColor;
 uniform float uFogNear;
 uniform float uFogFar;
 uniform float uFogHeight;
+uniform float uFogScale;
 uniform float uGrain;
 uniform float uGrainScale;
 uniform float uRim;
@@ -768,7 +788,10 @@ void main() {
   // then one undifferentiated pale mass. A cap of 0.60 keeps the furthest
   // land a recognisable value below the sky it stands against, which is what
   // makes it read as land rather than as haze.
-  float fogAmount = clamp(distanceFog * mix(0.45, 1.0, heightFalloff), 0.0, 0.60);
+  // uFogScale is per-material and 1 for everything except the landmarks the
+  // road is aimed at. See the note on fogScale in PainterlyOptions: the cap
+  // below is right for scenery and wrong for a destination.
+  float fogAmount = clamp(distanceFog * mix(0.45, 1.0, heightFalloff) * uFogScale, 0.0, 0.60);
   vec3 fogTint = mix(uFogColor, uHorizonColor, clamp(0.55 - vWorldPosition.y * 0.02, 0.0, 0.6));
   color = mix(color, fogTint, fogAmount);
 
@@ -818,6 +841,7 @@ export function createPainterlyMaterial(
     emissive = 0x000000,
     emissiveStrength = 0,
     flatShading = false,
+    fogScale = 1,
   } = options;
 
   const defines: Record<string, string | number | boolean> = {};
@@ -846,6 +870,7 @@ export function createPainterlyMaterial(
         uRimPower: { value: rimPower },
         uBaseShade: { value: baseShade },
         uBaseShadeHeight: { value: baseShadeHeight },
+        uFogScale: { value: fogScale },
         uShadowDepth: { value: shadowDepth },
         uBandSoftness: { value: bandSoftness },
         uOpacity: { value: 1 },
