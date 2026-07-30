@@ -140,15 +140,44 @@ export const SKY_KEYS: SkyKey[] = [
      * tuning failure that a ground albedo would fix — it is arithmetic, and
      * palette.ts's argument for those albedos is sound and is left standing.
      *
-     * What is wrong is the gap. The sky dome has no exposure uniform and
-     * takes these keys almost directly, so a change here moves the sky's own
-     * value nearly one for one while costing the lit ground only the slice of
-     * it that arrives as ambient — roughly a twentieth. Down about 27 levels
-     * from 0x8dc0e8 at exactly held saturation (0.392 to 0.394), so this is a
-     * value change and nothing else; the hue rotation on the horizon below is
-     * the separate argument.
+     * What is wrong is the gap, and the round before this one tried to close
+     * it by taking the zenith down 27 levels from 0x8dc0e8. Roughly half of
+     * that is now back, and the paragraph that justified the whole drop is
+     * struck, because its central claim is measurably the wrong way round.
+     *
+     * It claimed a change here "moves the sky's own value nearly one for one
+     * while costing the lit ground only the slice of it that arrives as
+     * ambient — roughly a twentieth". Shot three ways at one matched horizon
+     * — exposure lifted alone, exposure plus half the zenith, exposure plus
+     * all of it — the zenith is mostly GROUND light, not sky light:
+     *
+     *   08-phone-portrait  sky band  199 → 199 → 201 → 204
+     *                      land >L128  11.8 → 18.7 → 27.3 → 33.0 per cent
+     *   10-tablet          sky band  209 → 209 → 210 → 212
+     *                      land >L128   2.7 →  3.5 →  3.8 →  4.2 per cent
+     *
+     * So thirteen levels of zenith bought eight and a half points of land in
+     * the light-mid tier for two levels of sky. The reason is geometry the
+     * old paragraph did not account for: these cameras look along the road,
+     * so the sky actually in frame is nearly all horizon and fog and holds
+     * almost no zenith at all, while a patch of ground has its normal
+     * pointing straight up and therefore takes the zenith at very nearly full
+     * weight through the ambient mix in painterly.ts. The zenith is the half
+     * of the sky the frame does not show and the ground does.
+     *
+     * Half rather than all of it, and the ladder above is why the next round
+     * has a real lever rather than a guess: a full restore measures better
+     * again on both frames and was shot, not assumed. It is left on the table
+     * because it would revert the previous round wholesale on two frames'
+     * evidence, and because the sky band is beginning to move under it.
+     *
+     * Held at exactly the same saturation as both endpoints (0.392 old,
+     * 0.394 dropped, 0.391 here), so this is a value change and nothing else;
+     * the hue rotation on the horizon below is the separate argument and is
+     * untouched — it is what earned the saturation and none of it is given
+     * back here.
      */
-    zenith: 0x78a4c6,
+    zenith: 0x83b2d7,
     // Was 0xdceaf2, which is within a few per cent of white. A near-white
     // horizon key does two bad things at once: it leaves the lower sky with
     // no colour to differ from the cloud in it, and — because this same
@@ -270,8 +299,28 @@ export const SKY_KEYS: SkyKey[] = [
      * frame's share of the L128-175 tier the land is supposed to be
      * occupying falls from 2.43 back to 1.37 per cent. The argument was
      * plausible and wrong, and the frames settled it.
+     *
+     * Thirty per cent now, and this is where the separation the zenith
+     * restore gives back is taken instead. Same reasoning one step further:
+     * this is the only dial that moves the land and leaves the air alone, so
+     * it is the right place to spend, and there is no ACES shoulder anywhere
+     * near the land — the morning band sits at a linear 0.07, a long way
+     * below where the curve starts to compress. Measured at a matched
+     * horizon, base to shipped, on the two frames item 8 names:
+     *
+     *   08-phone-portrait  land 42/104/155 → 47/114/162, >L170 0.69 → 2.18,
+     *                      >L128 11.8 → 32.0 per cent, frame HOLE 9.1 → 20.9
+     *   10-tablet          land 45/80/112 → 51/89/122, >L128 2.7 → 3.9,
+     *                      frame HOLE 4.9 → 5.8
+     *
+     * The front-to-back range falls as this rises (08 1.47 → 1.28 stops, 10
+     * 1.65 → 1.46) and that is the trade being made deliberately, not a
+     * regression: item 8 is a claim about the land never occupying the light
+     * third, and the only way to fill the L128-175 tier from below is to
+     * bring the land up toward the sky. The band ORDER is intact on every
+     * frame, which is the property worth guarding.
      */
-    exposure: 1.18,
+    exposure: 1.30,
     starness: 0,
         /*
      * Up from the mid-thirties and forties. The three daylight keys are the
@@ -289,11 +338,12 @@ export const SKY_KEYS: SkyKey[] = [
   {
     t: 0.55,
     name: 'high day',
-    // Down 28 levels at held saturation, and see the long note on morning's
-    // zenith for the measurement: noon's land reaches above L170 on 0.66 per
-    // cent of its pixels and structurally cannot do much better, so the gap
-    // between land and sky is closed from the sky's end.
-    zenith: 0x72a0c3,
+    // Down 14 levels at held saturation (0.417 old, 0.415 dropped, 0.418
+    // here), half of the 28 the previous round took. See the long note on
+    // morning's zenith: the gap is closed from the LAND's end by uExposure,
+    // because a zenith at these camera pitches is mostly ground ambient and
+    // barely appears in the frame's own sky.
+    zenith: 0x7cafd5,
     // See the note on morning. Noon is the frame with the least colour in it
     // and the most to lose from a white horizon. Rotated from S0.123 to
     // S0.259 at held luminance (213.5 to 213.3) and deliberately not
@@ -333,9 +383,13 @@ export const SKY_KEYS: SkyKey[] = [
      */
     elevation: 0.70,
     azimuth: 0.34,
-    // Up from 1.05. See the note under morning: the land pays for a darker
-    // sky through the ambient term and this is where it is handed back.
-    exposure: 1.21,
+    // Up from 1.05, then to 1.33. See the note under morning: this is the one
+    // dial that moves the land without moving the air, so it is where the
+    // separation is taken rather than out of the sky. Noon moves least of the
+    // four measured frames — its land is 41/87/106 against 48/95/116 — which
+    // is the arithmetic under morning's first paragraph showing through: this
+    // hour's ground is already near the palest tone the palette can reach.
+    exposure: 1.33,
     starness: 0,
         // See the note under morning.
     cloudiness: 0.52,
@@ -344,10 +398,12 @@ export const SKY_KEYS: SkyKey[] = [
     t: 0.7,
     name: 'afternoon',
     // The third daylight key, and the one 10-tablet is posed exactly on. Down
-    // 20 levels rather than 27: afternoon's zenith was already the lowest of
-    // the three relative to its own horizon, and this key has to stay warmer
-    // and softer than noon or the afternoon stops being an afternoon.
-    zenith: 0x7fadc7,
+    // 10 levels rather than the 20 the previous round took, keeping the same
+    // proportion as the other two: afternoon's zenith was already the lowest
+    // of the three relative to its own horizon, and this key has to stay
+    // warmer and softer than noon or the afternoon stops being an afternoon.
+    // Saturation held (0.363 old, 0.362 dropped, 0.360 here).
+    zenith: 0x87b8d3,
     // Was 0xf3dcbc at L222.6, the brightest key in the file. Rotated warm
     // from S0.226 to S0.300 at held luminance and left at that value: this is
     // the key 10-tablet is posed under, and it was the frame that proved
@@ -365,8 +421,10 @@ export const SKY_KEYS: SkyKey[] = [
     // the note under morning.
     elevation: 0.34,
     azimuth: -0.92,
-    // Up from 1.0. See the note under morning.
-    exposure: 1.15,
+    // Up from 1.0, then to 1.27. See the note under morning; 10-tablet is
+    // posed on this key and is one of the two frames the change is measured
+    // on.
+    exposure: 1.27,
     starness: 0,
         // See the note under morning.
     cloudiness: 0.54,

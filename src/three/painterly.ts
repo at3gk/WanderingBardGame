@@ -417,6 +417,31 @@ const FRAGMENT = /* glsl */ `
  * the shade side roughly where it was.
  */
 #define SKY_SCATTER 0.09
+/*
+ * How hard the near-ground mark rides the scattered-skylight term above.
+ *
+ * A relative swing on SKY_SCATTER, not an amplitude in its own right — see
+ * the long note at the point of use for why the mark needs a second carrier
+ * at a low sun and why this is the term it borrows rather than a new one.
+ *
+ * Shot at 0.85 and at 1.50 on the two frames the mark was missing, and the
+ * larger one is better on every reading of both:
+ *
+ *   06-dusk-encounter  largest connected flat region 19.8 → 14.6 → 10.6 per
+ *                      cent of frame, and its top edge moves down 129 rows,
+ *                      so it is the plane breaking up rather than shrinking
+ *   05-golden-busk     near band modal share 47.7 → 43.7 → 41.3, sd 10.7 →
+ *                      10.9 → 11.1, every scale-resolved difference up
+ *
+ * Not higher than this. The clamp at the point of use starts to bind here:
+ * at 1.50 the damp end of the patchwork takes the scatter term to zero over
+ * the bottom sixth of the noise, and past that the extra amplitude is spent
+ * flattening those patches against each other instead of separating them.
+ * The measured cost is small and real — 06's land hue spread falls 0.103 to
+ * 0.091 — and the cool-pixel share, which is what item 9 is actually about,
+ * holds at 4.9 → 4.8 per cent.
+ */
+#define NEAR_SHADE_MARK 1.50
 #include <packing>
 #include <lights_pars_begin>
 #include <shadowmap_pars_fragment>
@@ -551,6 +576,13 @@ void main() {
   float grainB = noise31f(vWorldPosition * uGrainScale * 2.7 + 11.3);
   float grain = grainA * 0.68 + grainB * 0.32;
 
+  // The near-ground mottle, carried out of the albedo block so the shade
+  // side can use it too. Zero on every surface that is not near ground, and
+  // on every material without PAINTERLY_GROUND_TONES, which is what keeps
+  // the term below inert everywhere except the strip it is for.
+  float nearWeight = 0.0;
+  float nearMark = 0.0;
+
   vec3 albedo = uColor;
   #ifdef PAINTERLY_VERTEX_COLORS
     albedo *= vVertexColor;
@@ -668,6 +700,10 @@ void main() {
     vec3 damp = vec3(0.78, 0.83, 0.93);
     vec3 baked = vec3(1.23, 1.18, 1.05);
     albedo *= mix(vec3(1.0), mix(damp, baked, mottle), nearness);
+    nearWeight = nearness;
+    // Signed, so the two ends of the patchwork pull opposite ways about the
+    // field's own value rather than only lifting it.
+    nearMark = mottle * 2.0 - 1.0;
   #endif
 
   albedo = mix(albedo, albedo * uColorVariant, smoothstep(0.35, 0.75, grain) * uGrain);
@@ -748,7 +784,45 @@ void main() {
   // The one light term that does not pass through the albedo. See
   // SKY_SCATTER: a warm albedo cannot be multiplied into a cool shadow, so
   // the shade side is given its colour additively instead.
-  color += ambient * SKY_SCATTER * (1.0 - sunAmount) * mix(0.25, 1.0, skyFacing);
+  float scatter = SKY_SCATTER * (1.0 - sunAmount) * mix(0.25, 1.0, skyFacing);
+  /*
+   * --- the near-ground mark's second carrier -----------------------------
+   *
+   * Not a new light term. The mark above is a factor on albedo, and a factor
+   * on albedo is a fixed RELATIVE change in linear light — which the sRGB
+   * encode turns into a level difference very nearly proportional to the
+   * level itself. Measured through the real encode with the shipped damp and
+   * baked constants, the same shader term is worth 12.8 sRGB levels at the
+   * morning frame's near-band mean of L74 and 5.7 at the dusk frame's L25.
+   * Against a ten-level bucket that is the difference between a band spread
+   * over three buckets and a band sitting in one, and it is exactly the shape
+   * of the failure: the mottle measures well on the six high-sun frames and
+   * misses 05-golden-busk and 06-dusk-encounter, the two where the near
+   * ground is LARGEST.
+   *
+   * The multiply cannot be turned up to fix it. Its amplitude is a fraction
+   * of the surface's own albedo by construction — that is the whole reason it
+   * is multiplicative rather than a fourth octave in the drift, and the note
+   * above records what happened when the drift's own budget was spent
+   * instead. At a low sun the surface simply has little light to take a
+   * fraction of.
+   *
+   * So the mark rides the one term that is BIGGEST where the multiply is
+   * weakest. SKY_SCATTER is scaled by 1 - sunAmount, so it is near nothing at
+   * noon (flat ground there takes sunAmount ~0.81) and near everything at
+   * dusk (the sun is below the horizon by 06's hour, so ~0.85 of it survives)
+   * — the two frames that needed this are the two that get it, and the six
+   * that already measure well are barely touched. It is the same patchwork
+   * with the same edges, reinforcing the multiply rather than fighting it.
+   *
+   * The amplitude is a relative swing on a small term, not a term of its own,
+   * so it cannot introduce light where the sky is dark: the ambient collapses
+   * with the sky at night exactly as SKY_SCATTER's own note describes, and
+   * the clamp keeps the damp end from ever subtracting more scatter than
+   * there is.
+   */
+  scatter *= clamp(1.0 + nearMark * NEAR_SHADE_MARK * nearWeight, 0.0, 2.0);
+  color += ambient * scatter;
 
   // --- rim ---------------------------------------------------------------
   float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), uRimPower);
