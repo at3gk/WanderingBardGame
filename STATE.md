@@ -1,12 +1,12 @@
 # STATE
 
-Run counter: 45
+Run counter: 46
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
 
-- **Run 45 (scheduled): ROADMAP task 115, scatter on the road — and a
+- **Run 46 (scheduled): ROADMAP task 115, scatter on the road — and a
   correction to what the task thought it needed.** Before writing any code,
   read `WorldStreamer.ts` against the task's own claim ("no pebbles, no
   tufts in the rut, no puddles") and found two of the three already
@@ -38,6 +38,73 @@ Run counter: 45
   — `Landmark`, `landmarksNear`/`chooseLandmark`/`raiseLandmark` and four
   landmark geometries are fully wired into chunk building already. Check
   with a screenshot before assuming task 119 starts from nothing.
+- **Run 45 (human-directed): fix the gauges, then fix the ground cover.**
+  A human asked for a push toward premium cozy-game quality, with harsh
+  visual critique in the loop. Four things landed, and the first two are
+  corrections to *measurement* rather than to the game — which is the part
+  worth reading, because both had already misdirected a previous run.
+
+  1. **`shader-check`'s "time-of-day is inert" was the check, not the game.**
+     Struck from the list below as item 7. Full write-up further down; the
+     short version is that it never moved the clock, and a posed time of day
+     does not survive while the bard is walking because `dayFraction` is
+     derived from `s`. Real numbers now: a luminance range of ~102 and a
+     properly cool night.
+  2. **`tools/frame-quality.mjs` is new** — value range, hue spread and
+     largest-flat-area for six posed frames, so "flat", "monochrome" and "too
+     much bare road" stop being adjectives. Two things it taught immediately:
+     hue spread is **not** "higher is better" (golden hour is the most
+     hue-unified frame in the set *and* the best-looking one, so the floor is
+     per-pose), and **the daylight frames are not globally flat** — they
+     measure 3.3-3.9 stops. See item 8 below for what they are instead.
+  3. **Every blade of grass was concave.** `bladeGeometry`'s waist sat at 0.24
+     of the tip's horizontal travel with the tip half way up, where straight
+     is 0.5 — so each blade hooked outward at the end, and five of them fanned
+     over a full circle made every tuft a spike-star. `fernGeometry` had the
+     same full-circle fan and worse proportions (fronds reaching 1.25 lengths
+     out while rising a third of that), which is why the near foreground read
+     as literal caltrops. Both now arch and fan into a wedge.
+  4. **Grass is lit as ground, not as walls.** A blade is a near-upright
+     single plane, so its true normal is near-horizontal: blades facing away
+     from the sun went almost black and a tuft read as a dark teepee.
+     `skywardNormals` tilts blade normals toward +Y (0.72 for grass, 0.4 for
+     ferns) — free, no shader change — and it also pulls ground cover into the
+     same value neighbourhood as the ground it grows from. Blade tips are now
+     a short capping edge rather than a single apex vertex, which took the
+     tuft from 15 to 20 triangles on purpose.
+
+  `src/three/world/geometry.test.ts` is new and pins all of it: blade
+  convexity (the bug measured 0.24, the gate is 0.60), the wedge fan, the
+  capping edge, skyward normals, tuft height and the triangle budget. Nothing
+  caught the original bug for forty runs — it type-checked, no test touched
+  the module, and `shader-check` only asks whether pixels drew.
+
+  **A caveat on the new check, and the reason it is not the whole answer.**
+  The grass and fern work is a large, obvious improvement in the re-shot
+  frames and `frame-quality`'s numbers barely move for it (noon 3.33 → 3.34
+  stops). That is correct behaviour, not a broken check: silhouette is not
+  something a whole-frame histogram can see. Do not use those six numbers as
+  evidence that a *shape* change worked — shoot the frames and look.
+
+  **Next, in order.** Items 8-14 below are new in Run 45, from a six-lens
+  critique of ten posed frames where each lens judged one thing only (value,
+  silhouette, colour, composition, mobile framing, emotional read). All six
+  returned **not shippable next to A Short Hike**, and unusually for a
+  critique they came back with pixel measurements and `file:line`
+  attribution, so they are recorded here in that form rather than paraphrased.
+
+  Take them in this order, because 8, 9 and 10 are probably **one bug**:
+  the world is lit by a multiply, and a multiply cannot put a colour back
+  into an albedo that no longer contains it. Fixing the additive term
+  (`floorLight`, currently gated to nothing) may move all three at once.
+  Then 11, then 12/13/14, which are independent.
+
+  **A note on how to use a critique like that one.** Two of its highest-damage
+  findings this round were about *shape* — needle blade tips and radial ferns
+  — and both were invisible to every automated check the project has,
+  including the new one. The frames are still the only instrument that sees
+  silhouette. Shoot them and look.
+
 - **Run 44 deleted the dead 2D/Phaser code.** `src/scenes/` (the
   `RoadScene`/`picker`/`meterBar`/`freePlayOverlay`/`readouts` modules from
   runs 39-43), `src/render/` (`engraving`/`scenery`/`ui`), and the orphaned
@@ -56,17 +123,43 @@ Run counter: 45
   `AudioEngine.test.ts`'s 17), `npm run build` green.
 
   Wiring `shader-check` into `verify-all` for the first time since v0.6
-  immediately found something real: **FAIL, time-of-day is inert
-  (luminance range 3)** across dawn/day/golden/night samples. Not a
-  regression from this run — no rendering code was touched — and not new
-  information either: `tools/README.md`'s own description of the check
-  already named exactly this failure mode as what it looks for, and the
-  "still wrong" list below already had "the upper sky does little work at
-  noon" in its critique notes. This is that finding, now pinned to a
-  number a future run can check against instead of an adjective. Added as
-  item 7 below. `headless-checks.yml` stays `continue-on-error: true` so
-  this red doesn't block anything, per the existing blocked-on-human note
-  about promoting it to a real gate.
+  reported **FAIL, time-of-day is inert (luminance range 3)** across
+  dawn/day/golden/night samples, and Run 44 wrote that up as "something
+  real" and queued it as item 7.
+
+  **It was not real. The gauge was broken, twice over, and Run 45 fixed the
+  gauge.** With the check actually driving the clock, the same four samples
+  come back dawn `109,101,82` · day `124,135,108` · golden `101,83,67` ·
+  night `15,17,27` — a luminance range of about **102** against a threshold
+  of 12, with night a proper cool blue. The time-of-day coupling was working
+  correctly the entire time, which the postcards had been showing all along.
+
+  The two faults, both in `tools/shader-check.mjs`:
+
+  1. It drove the clock through `stage.setTimeOfDay(t)` behind
+     `if (handle?.stage?.setTimeOfDay)`. `window.bard.stage` is a
+     `RoadStage`, which has no such method — only the `SmokeStage` this
+     check was first written against ever did. The guard was false on every
+     iteration, so the time never moved and the four "samples" were four
+     photographs of one frame. Four identical frames have a luminance range
+     of ~0, so the check failed *in the exact shape of the bug it exists to
+     find*. It now calls `pose({dayFraction})` and **throws** if the hook is
+     missing, rather than shrugging.
+  2. Posing a time of day while the bard is `walking` does not hold.
+     `dayFraction` is *derived from `s`* (`core/journey.ts` — the day
+     advances with distance walked, never with wall time) and is recomputed
+     on every advance, so a posed midnight at s=620 was overwritten by the
+     midday that s=620 implies, inside the settle the check waits out. The
+     samples now pose `phase: 'vista'`, which sets `walking = false` and
+     freezes `s` — same place, four times of day, one variable moving.
+
+  Item 7 is struck from the "still wrong" list below. The lesson is the one
+  `tools/README.md` already states and this run got to learn the expensive
+  way: **a failing check is a claim about the check first.** A whole run
+  wrote up a phantom as a defect, pinned a number to it, and left it as
+  queued work for the next run, because the number looked objective. An
+  optional-chained guard around the single call a check exists to make is
+  how a missing hook gets reported as a broken game.
 
 - **Where v0.6 actually stands, and what is still wrong.** A harsh
   frame-by-frame critique of ten posed screenshots returned **not shippable
@@ -78,10 +171,100 @@ Run counter: 45
   visible frame band and carries cloud. The land has a midground again.
 
   **Still wrong, in the order a next run should take them:**
+
+  8. **The ground never carries a light value.** New in Run 45, from a
+     measured critique, and now the top of this list. The value histogram is
+     bimodal in every daylight frame with a hole between the lobes: in the
+     morning frame 73% of pixels sit in L32-127 (the land) and 25% in
+     L176-223 (the sky), while the whole band L128-175 holds **2.97%**.
+     Restricted to the land region, the fraction of pixels above L170 never
+     exceeds 0.5% in any frame — noon, the brightest, manages 0.14%. There is
+     no sunlit grass, no light-struck road, no bleached hilltop anywhere. A
+     Short Hike's structure is light sky / **mid** land / dark accents; here
+     the land *is* the dark tier and nothing bridges to the sky. This is what
+     people (including several critiques and this run's own eyes) have been
+     calling "flat" — it is a distribution problem, not the *range* problem
+     `frame-quality` measures, which is why that check reports a comfortable
+     3.3-3.9 stops on the same frames.
+
+     The fix is a choice, and the critique was firm that it is one or the
+     other and not a third lighting term: either raise the meadow and road
+     albedos in `world/palette.ts` until a sun-facing field reaches L170-190,
+     or pull `sky.ts`'s zenith and horizon keys down 25-30 levels so the land
+     has room to occupy the light third. Note that `palette.ts` carries a long
+     and well-argued comment justifying the *current* darkness on photographic
+     grounds (sunlit grass really does photograph at a fifth of white) — that
+     reasoning is sound and still produced a picture with a hole in it, so
+     whoever changes this should update that comment rather than quietly
+     contradict it. Also flagged: at dusk the land collapses to a 23-level
+     range and the largest boulder renders its top and its front within one
+     value level of each other.
+
+  9. **Every shadow is the same hue as its own lit side.** Measured: in the
+     golden-vista frame, shadowed grass is H36 S0.73 against lit grass at H36
+     S0.67 — a pure value multiply, no hue shift at all — and the golden-hour
+     frames contain *zero* cool pixels below the skyline. DESIGN.md's stated
+     rule ("shadows are always the complement of the sun") is therefore not
+     actually happening in the render.
+
+     The cause is arithmetic and worth knowing before anyone re-tunes the
+     palette: `painterly.ts` does `color = albedo * lighting`, and the warm
+     albedos in `palette.ts` have almost no blue left in them (village grass
+     `0x839749` has B=0x49), so *multiplying* by a blue zenith cannot produce
+     a cool shadow — the blue is already gone. A cool shadow has to be
+     **added**, not multiplied. The additive term that would do it already
+     exists (`floorLight`, around `painterly.ts:656`) but is gated by
+     `exp(-luma * 22.0)`, which at the measured shadow luma of ~0.24 is
+     effectively zero. This is very likely the same root cause as item 8.
+
+  10. **The haze cancels to dead neutral grey instead of reading as air.**
+      The daylight fog keys in `sky.ts` are near-neutral (morning `0xb2c1cc`
+      S0.13, high day `0xb8c6ce` S0.11, afternoon `0xc8c2b3` S0.09), and
+      `painterly.ts` mixes up to 60% of that into warm olive terrain. A
+      low-saturation cool mixed 60/40 into a saturated warm lands on grey —
+      the complements cancel. Suggested: commit the daylight fog to a hue at
+      S~0.25-0.35 (e.g. morning `0x9fb8d2`).
+
+  11. **No biome contains both a warm and a cool albedo.** Every member of
+      village and forest is in the same warm-olive family, which is the real
+      reason the land reads monochrome even where `frame-quality` scores the
+      whole frame as varied. Suggested: re-hue `rock` to a blue-slate
+      (`0x8f9aa6`) so scattered stones become the cool notes A Short Hike
+      uses, and make one accent per biome a cool complement rather than
+      shipping two warms.
+
+  12. **The chapel — the one thing worth walking toward — is fogged to
+      near-invisibility.** `RoadStage.ts:355-356` sets `uFogNear` ≈ 20 m and
+      `uFogFar` ≈ 242 m, so a landmark at 150 m sits at ~0.72 fog blend and
+      ends up within a few percent of the sky, less visible than a random
+      tree. Not a landmark-placement problem — a fog problem. Suggested:
+      clamp fog on landmark meshes to ~0.55 so they always hold a value step
+      against the sky, or pull `LANDMARK_SPACING_M`/`NEAR_M`/`FAR_M`
+      (`WorldStreamer.ts:610,625-626`) in.
+
+  13. **Bare road plus empty sky own ~60% of every walking frame**, and on
+      tall aspects the widened FOV is spent on exactly those two dead zones
+      (`CameraRig.ts:262-274`, `WIDEN_RISE_SHARE`/`FOV_WIDEN_MAX`). The
+      critique was explicit that the answer is *not* more scatter: bias the
+      widening toward the mid-band, and give the road surface events — a
+      milestone, standing water in a rut, a branch across it.
+
+  14. **The songboard, not the bard, is the subject of a busk frame**, and on
+      phone landscape it collides with the bard and clips a listener.
+      `SongNotes.ts:509-517` already halved it once; it should be sized to
+      the live note span rather than drawn full-width, kept off the vanishing
+      point, and its lateral offset should scale with `camera.aspect`
+      (`SongNotes.ts:1041-1046`, clamped at 0.1 today). Listener bearings in
+      `RoadStage.gatherListeners` (`RoadStage.ts:769-787`) should reject
+      slots that project inside the board.
+
   1. The road is bare. Narrowing it to a 3.4 m cart track and deepening the
-     ruts helped, but the carriageway has no scatter on it at all — no
-     pebbles, no tufts in the rut, no puddles. On a phone in portrait it is
-     still the largest single area in the frame.
+     ruts helped, and pebble/road-grass scatter and skyline landmarks have
+     since landed (both are in `WorldStreamer.ts` and visibly in frame — a
+     chapel spire shows on the dawn ridge), so this item is narrower than it
+     reads: what is left is that on a phone in portrait the carriageway is
+     still the largest single area in the frame, and it has no wet/dry
+     variation across it.
   2. The bard stands upright at his own campfire. `resting` calls
      `setPose('sitting')` and the pose does not look like sitting.
   3. The camp lantern reads as a bright quad beside a bare post.
@@ -89,18 +272,23 @@ Run counter: 45
      (844x390). Moving it means a considered change to `hudLayout.ts`, which
      its own test constrains — the top slot exists to keep the card off the
      bard mid-busk.
-  5. No landmarks on the skyline. Now that ridges exist, a standing stone or
-     a chapel placed deliberately on one would give the walk something to
-     walk toward. This was correctly deferred until the terrain could hold it.
+  5. ~~No landmarks on the skyline.~~ **Done and stale (confirmed Run 45).**
+     `WorldStreamer.ts` places standing stones, trilithons and chapels on
+     ridges with a view bias, and `geometry.ts` builds all three; a chapel
+     spire is visible on the ridge in the re-shot dawn frame. This list was
+     written before that landed and never updated — per CLAUDE.md, when STATE
+     and the code disagree the code wins.
   6. No instrument picker, and `journey.unlockedInstruments` is never
      appended to — an earned instrument is playable but not choosable.
-  7. Time-of-day lighting is nearly inert: `shader-check.mjs` measures
-     average frame luminance at dawn/day/golden/night and gets a range of
-     3 (Run 44) — the palette moves the sky dome's colour but barely the
-     light falling on anything else. Ties together two items already
-     named in the critique notes below ("the near ground is dark by
-     albedo rather than by shadow", "the upper sky does little work at
-     noon") into one measured, re-checkable number.
+  7. ~~Time-of-day lighting is nearly inert.~~ **Struck (Run 45): this was
+     a broken gauge, not a broken game.** `shader-check.mjs` was never
+     moving the clock at all; with it fixed the luminance range is ~102 and
+     night is a proper cool blue. See the Run 45 note above for the two
+     faults and the lesson. Do not go looking for this one — the two
+     *genuine* critique notes it claimed to tie together ("the near ground
+     is dark by albedo rather than by shadow", "the upper sky does little
+     work at noon") stand on their own and are still worth a look at noon
+     specifically, which remains the flattest hour in the palette.
 
 - **v0.6, the road in three dimensions (interactive, human-directed, landed
   after run 43).** A human set a new direction — build the wandering road as a
