@@ -186,10 +186,19 @@ const STRUM_GRIP_MAX = -0.11;
  * the left, which is how a right-handed player holds a lute and is also the
  * arrangement that puts the big end of the shape on the near side.
  *
+ * The height is the one number that was swept rather than solved, and it was
+ * worth the sweep: at 0.592 the instrument sits at the hip, where the near
+ * backdrop measures L36-45 and reads as a bag being carried; 18 cm higher it
+ * crosses the chest, and 20 px cells changed against the old build went 5 to
+ * 30 of 660 for the same visible fraction. Lower again by 8 cm and it falls
+ * back to 28. Above this the pegbox climbs behind the hat brim, which is the
+ * "stick growing out of his hat" failure this project already has once, at
+ * the campfire.
+ *
  * The `y` here is an offset from `SHOULDER_Y`, matching the slung and lap
  * terms it is summed against.
  */
-const PLAY_CARRY_POS: readonly [number, number, number] = [0.198, 0.592 - SHOULDER_Y, 0.192];
+const PLAY_CARRY_POS: readonly [number, number, number] = [0.198, 0.772 - SHOULDER_Y, 0.192];
 const PLAY_CARRY_ROT: readonly [number, number, number] = [0.557, -0.373, 0.566];
 
 /**

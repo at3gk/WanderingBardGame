@@ -21,7 +21,7 @@ import { Bard, SITTING_SEAT_HEIGHT_M } from './Bard';
 import { createPainterlyGlobals } from '../painterly';
 
 /** A bard, settled into a pose, with every matrix up to date. */
-function seated(pose: 'sitting' | 'walking' = 'sitting'): Bard {
+function seated(pose: 'sitting' | 'walking' | 'playing' = 'sitting'): Bard {
   const bard = new Bard(createPainterlyGlobals());
   bard.setPose(pose, 0.01);
   bard.settlePose();
@@ -99,9 +99,66 @@ describe('the seated bard', () => {
     const walking = seated('walking');
     const arm = part(walking, 'leftArm') as unknown as { rotation: { x: number; z: number } };
     // The slung carry's own numbers, with no walk swing at zero speed:
-    // rotation.x = -0.1, rotation.z = 0.11. If the seated grip solve ever
-    // starts running outside the sitting blend, these move.
+    // rotation.x = -0.1, rotation.z = 0.11. If a grip solve ever starts
+    // running outside the sitting and playing blends, these move.
     expect(arm.rotation.x).toBeCloseTo(-0.1, 5);
     expect(arm.rotation.z).toBeCloseTo(0.11, 5);
+  });
+});
+
+/**
+ * The playing pose, pinned — and pinned as a *fact about which side of him
+ * the instrument is on*, not as the Euler angles that put it there.
+ *
+ * The failure these exist to catch is the one the busking postcards had for
+ * four rounds: the instrument brought round to the front of his chest, where
+ * the busking camera — which stands behind him and off to his right — cannot
+ * see it. Measured on the shipped build before the fix, 18.6 per cent of the
+ * instrument's own footprint changed a single pixel of the frame. So what is
+ * pinned is that the body of the lute sits well out on the camera's side of
+ * the spine and the pegbox does not, which is the geometry that makes it
+ * visible; any angles that keep that are free to change.
+ */
+describe('the playing bard', () => {
+  const pivotPoint = (bard: Bard, t: number): Vector3 =>
+    worldPoint(part(bard, 'instrumentPivot'), new Vector3(0, t, 0));
+
+  it('carries the instrument out on his strumming side, not across his chest', () => {
+    const bard = seated('playing');
+    // The widest ring of the body, and the pegbox. See `instrumentGeometry`:
+    // the shape spans local y -0.31 to 0.31 about the pivot.
+    const body = pivotPoint(bard, -0.185);
+    const pegbox = pivotPoint(bard, 0.31);
+    // Out past the shoulder joint (0.172) rather than on the centreline.
+    expect(body.x).toBeGreaterThan(0.22);
+    // The big end of the shape is the outboard end. Flip the carry and this
+    // goes negative: the old pose put the body at x -0.14 and the pegbox at
+    // +0.18, which is the arrangement that hid it.
+    expect(body.x - pegbox.x).toBeGreaterThan(0.18);
+    // Being played, not slung: forward of the spine rather than behind it.
+    expect(body.z).toBeGreaterThan(0.08);
+  });
+
+  it('puts both hands on it', () => {
+    const bard = seated('playing');
+    const nearest = (arm: string, from: number, to: number): number => {
+      const hand = worldPoint(part(bard, arm), new Vector3(0, -0.43, 0));
+      let best = Infinity;
+      for (let t = from; t <= to; t += 0.005) {
+        best = Math.min(best, hand.distanceTo(pivotPoint(bard, t)));
+      }
+      return best;
+    };
+    // The fretting hand on the neck, the strumming hand on the belly.
+    expect(nearest('leftArm', -0.065, 0.245)).toBeLessThan(0.05);
+    expect(nearest('rightArm', -0.25, -0.11)).toBeLessThan(0.06);
+  });
+
+  it('keeps the pegbox below the brim of his hat', () => {
+    const bard = seated('playing');
+    // The hat sits at HAT_Y = 1.19 and its brim dips about 0.1 below that.
+    // A pegbox that climbs past it reads as a stick growing out of the hat,
+    // which this project already shipped once at the campfire.
+    expect(pivotPoint(bard, 0.31).y).toBeLessThan(1.05);
   });
 });
