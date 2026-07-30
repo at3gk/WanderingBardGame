@@ -153,7 +153,28 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     // one the same value as the field is not a road at all.
     road: 0x836b4b,
     roadShoulder: 0x797350,
-    rock: 0xbcb39d,
+    /*
+     * A cool slate, where this was a warm grey-tan (0xbcb39d).
+     *
+     * Village is the biome in all four plain daylight frames, and a critique
+     * measuring those frames found that not one member of this palette
+     * dissents from warm — the greens are yellow-olive, the road is warm
+     * earth, the rock was warm tan and both accents were warm. A frame with
+     * no cool in it anywhere cannot have a shadow that is the complement of
+     * its light, however the shader is written, and it reads as a sepia tint
+     * pass over one hue.
+     *
+     * Scattered stone is the right carrier for the cool note: there is enough
+     * of it to register across the middle distance, it is never the subject,
+     * and cool stone against warm grass is one of the oldest readings in
+     * landscape painting. A Short Hike uses exactly this.
+     *
+     * Chosen at matched relative luminance — 178 against the old 179 — rather
+     * than at the darker blue-slate first suggested, because the value
+     * relationships in this file are measured off frames and hard-won, and a
+     * hue rotation should not quietly become a value change as well.
+     */
+    rock: 0xaab3c1,
     trunk: 0x856851,
     // Was 0x84a44f / 0xb2c46a, and the variant was the fault. It measured
     // 0.50 against a grass of 0.39, so the pale end of the canopy — which is
@@ -165,7 +186,15 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     canopy: 0x53682f,
     canopyVariant: 0x727e42,
     accent: 0xe07a5f,
-    accentAlt: 0xf2cf8a,
+    // A periwinkle, where this was a warm yellow (0xf2cf8a). The comment at
+    // the top of this file describes the scheme as "one family with one
+    // dissenting accent", and village was shipping two accents that both
+    // agreed with the family. Cornflower and harebell are the obvious
+    // wildflowers for open pasture, so the cool note costs nothing in
+    // plausibility. Darker than the yellow it replaces, which is wanted:
+    // flowers are small and a cool note reads best as a dark speck rather
+    // than competing with the sky for the light end.
+    accentAlt: 0xa9a6d8,
     trees: [
       { kind: 'broadleaf', weight: 9 },
       { kind: 'conifer', weight: 1 },
