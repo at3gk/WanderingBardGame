@@ -6,6 +6,31 @@ Run counter: 47
 
 **At a glance** — read this, then only the sections you need.
 
+- **CORRECTION TO COMMIT 5c7fb07's MESSAGE.** That message says the songboard's
+  pitch contrast broke because wave 11's foreground tier darkened the plank
+  while the glyphs, drawn by a different material, did not follow. The tier
+  mismatch is REAL and is fixed in that commit, but it is NOT what produced
+  the reported 3.67:1 — the agent reproduced 3.67:1 byte-identically on a
+  control build of 62ea1b6, long before the tier existed. So nothing regressed;
+  a long-standing number was measured for the first time in WCAG terms. I wrote
+  that causal claim from the diff plus my own brief's hypothesis, before the
+  agent reported. **Rule that follows: when committing an agent's tree before
+  its report arrives, describe WHAT changed and not WHY it was broken.** This
+  is the second commit message in two waves to assert a cause the measurement
+  later contradicted.
+
+- **THE 7:1 PITCH HOLD WAS ARITHMETICALLY UNREACHABLE, and every critique that
+  judged against it was scoring against an impossible target.** WCAG contrast
+  is `(L1+0.05)/(L2+0.05)`, and the note head's luminance is 0.0058 against
+  that constant 0.05, so even a perfectly black head buys about 11 per cent and
+  the whole letter-to-head curve PEAKS AT 6.46 across all light levels. The
+  ninth critic's `pitchReadable: false` was therefore half right — the number
+  was real and worth fixing, the bar it was compared to was not achievable. It
+  now reads 5.93:1, within a whisker of the 6.46 ceiling, and holds at every
+  hour (noon 6.14, golden 5.93, dusk 5.93, midnight 5.94) where before it moved
+  with the light. Also note the older figures in this file's comments (5.29,
+  1.27) are NOT WCAG ratios and have cost a round each; the file now says so.
+
 - **Wave 11 (interactive, 2026-07-30): the near ground finally got a value
   tier, and the project's own gate went green.** `tools/frame-quality.mjs` had
   gone RED on phone-portrait (2.36 stops against a 2.5 floor) after wave 10
