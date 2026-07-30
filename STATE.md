@@ -6,6 +6,57 @@ Run counter: 47
 
 **At a glance** — read this, then only the sections you need.
 
+- **Wave 9 (interactive, 2026-07-30): seven fixes off a sixth visual
+  critique, and five of that critique's own prescribed fixes rejected on
+  measurement.** Two fixers split by file ownership so they could not fight
+  over one file — one owning `painterly.ts`/`sky.ts`/`world/*`, the other
+  owning `SongNotes.ts`/`CameraRig.ts`/`actors/*`. The rejections are the
+  part worth reading, because every one of them was a plausible fix that
+  measured worse:
+  - **The near ground's third octave** (as prescribed, 4.5 m into `drift`)
+    made noon *worse*, 46.9 to 50.1 per cent modal share. Two reasons: the
+    claim that reweighting to sum to 1.0 "keeps the calibration" is false —
+    weights preserve the mean, not the deviation — and the finding's premise
+    that the near ground is ten metres deep is wrong for the strip it
+    measures. The bottom fifth of a 1600 px frame shows under two metres of
+    world across its whole width. What shipped is multiplicative instead of
+    additive, because the carriageway's tone ramps are deliberately close to
+    the road's own colour and leave an additive term only ~30 albedo levels
+    to work in.
+  - **Dropping the daylight horizons** made its own target worse: morning's
+    share above L170 fell 0.89 to 0.09 per cent. The horizon key also feeds
+    `fogTint`, and fog is applied *after* `uExposure`, so darkening it pulls
+    the whole distance down and no later dial can pay it back.
+  - **The songboard margin split** would have shipped a clipped note. `SONGS`
+    spans steps 0–12 with `needsLedger` true at *both* ends, so the margin
+    derivation is symmetric, not bottom-only; a 1.5-step top margin puts the
+    plank edge at 5.5 steps while Old MacDonald's A5 sits at 6. Now pinned by
+    `songNotes.test.ts`, written against the songbook rather than a hardcoded
+    range and mutation-tested (at margin 1.5, two of its three tests go red).
+  - **The travellers' shoulder cape** was built, shot and thrown away: these
+    figures are a column of boxes whose top faces each catch a light edge, so
+    the silhouette is already a ladder of rungs and a wide flat plate adds a
+    rung. Its premise was also wrong — the torso already tapers to 1.52 of
+    its waist, so the shoulders are wider than the head. A hat shipped
+    instead, which is the mark the bard actually has.
+  - **The campfire seat log** needed no change at all: measured, its top
+    surface already sits at exactly `SITTING_SEAT_HEIGHT_M` and its axis
+    already projects 97 per cent across the camera.
+  One item's real cause was below where the critique looked: the daylight
+  haze cancelling to grey was not only the fog keys but `ridgeTint` in the sky
+  dome, which mixed a third of the way toward `uZenith` — and at an hour whose
+  horizon is warm cream and zenith cool blue, a third of the way between them
+  *is* the grey axis. Fixing that one line lifted golden hour's skyline
+  saturation 0.302 to 0.438 with its keys untouched.
+  **Still open after this wave:** the near ground is improved but not closed
+  (modal share 26–32 per cent against a 25 target, and it still reads as broad
+  soft fields rather than as cover); the seated bard reads as sitting because
+  of the *log*, not the figure, which is a value problem in his leg albedos
+  against the fire rather than a framing one; there is still no clef, and the
+  critique's proposed home for it does not exist (left of the barline is the
+  tail, where past notes drift to rest); and `06-dusk-encounter` promises two
+  figures in prose while `RoadStage.placeMeeting` deliberately stands one —
+  a content mismatch, not a model fault, and both sides are deliberate.
 - **Run 47 (scheduled): no code changed — STATE.md and ROADMAP.md were
   quietly wrong about three shipped fixes and one already-done task, and
   this run's whole job was closing that gap.** Between Run 46 (PR #138,
@@ -1177,6 +1228,19 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   its own CPU contention. Every one produced a confident, specific,
   plausible failure. None of them was the game. Before changing code to fix
   a failing check, make the check prove it can see its own success case.
+- **A pinned scanline is a check that goes stale silently.** Several of the
+  scratchpad measuring scripts (`bands.mjs`, `c6-hist.mjs`) read depth bands
+  at *pinned* image rows — a row number chosen when the script was written
+  because the horizon happened to sit there. Move a camera and the pin cuts a
+  different strip of world, so the instrument reports a change the render
+  never made. Wave 9 moved `resting.side` and `WIDEN_RISE_SHARE`, and against
+  the pins the tablet frame looks like it collapsed from 2.79 to 2.02 stops;
+  with the horizon *detected* it went 2.44 to 2.27 with every band brighter.
+  Before believing any band comparison that spans a camera change, re-run with
+  horizon detection (copy the shot to a filename the PINNED table does not
+  list). This is the "suspect the check first" rule again, in the one form
+  that survives a passing self-check: the instrument is correct, and pointed
+  at the wrong pixels.
 - **Verify behaviour, not just green tests.** `tools/autoplay.mjs` plays
   the game and checks every pitch it hears; `tools/learning-check.mjs`
   plays *well and then badly* to prove the letter-fading model both fades
