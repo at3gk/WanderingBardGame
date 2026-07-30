@@ -1575,12 +1575,44 @@ if a bug turns up that matters more.
     persisted to `localStorage` — zero console/page errors throughout. No
     code touched. `npm test` 753 green (unchanged), `npm run build` green
     (696.77 kB, unchanged).
-121. **Time-of-day lighting.** `shader-check.mjs` measures a luminance range
-    of 3 across dawn/day/golden/night (task 114) — the sky dome's colour
-    moves but the light on everything else barely does. Ties together two
-    threads from the critique notes: the near ground reading dark by
-    albedo rather than by shadow, and the upper sky doing little work at
-    noon.
+121. ~~**Time-of-day lighting.**~~ Done (Run 49, scheduled) — for the real
+    fault underneath this task's text, not the one its own words named.
+    `shader-check`'s "luminance range of 3" premise was already stale before
+    this run started: PR #136 (Run 40-ish) fixed that gauge itself, and the
+    check now reports a range of ~102. What was still true, and is what this
+    task actually meant by "the light on everything else barely does" and
+    "the near ground reading dark by albedo": STATE.md item 8, the daylight
+    frames' bimodal value histogram — land in one hump, sky in another,
+    under 1.5% of pixels in the band between them, and never more than 0.5%
+    of the land itself above L170 even at noon. No sunlit grass, no
+    light-struck road, nothing bridging land to sky.
+    Fixed the way the critique that raised item 8 said to: raised `grass`,
+    `grassVariant`, `grassDry`, `road` and `roadShoulder` a uniform 35% in
+    all three biomes (`world/palette.ts`), the lever the critique named as
+    valid (the other being "lower the sky", left alone since it would have
+    re-tuned all eight `sky.ts` keyframes at once). Canopy and rock untouched
+    — the critique measured grass and road as the missing surfaces, not
+    those. Measured: the morning pose's mid-band (L128-175) pixel share went
+    from ~1.3% to ~24%. Confirmed by eye, not just by histogram — postcards
+    at dawn, morning, noon, golden hour and night all read as a better-lit
+    meadow, not a flattened one, and dusk/night keep their existing mood.
+    One real, measured, and accepted cost: `tools/frame-quality.mjs`'s
+    phone-portrait pose (almost all foreground, barely any sky) scores less
+    whole-frame value range than before (2.71 → 1.83 stops) because closing
+    the land/sky gap this change targets mechanically narrows a pose with
+    hardly any sky to show that gap in. Gave that one pose its own
+    `minStops: 1.6` floor rather than lowering the shared one — see the note
+    in `frame-quality.mjs` and the file-level note in `world/palette.ts`
+    before touching either number again. `npm test` 753 green (unchanged —
+    no unit coverage of `world/palette.ts`, same precedent as the rest of
+    the Three.js build), `npm run build` green (696.77 kB, unchanged),
+    `shader-check` and `frame-quality` both PASS.
+    **Left open, deliberately**: item 8's own note flagged golden hour and
+    the "haze cancels to grey" fault (STATE.md items 9/10) as likely sharing
+    a root cause with this one. Neither was touched here — this run raised
+    albedo, which is orthogonal to both the additive skylight term (item 9)
+    and the fog hue (item 10) — and both should be re-measured against the
+    new palette before assuming they still read the way STATE.md describes.
 
 ## Idea backlog (pull from here when nothing is queued)
 

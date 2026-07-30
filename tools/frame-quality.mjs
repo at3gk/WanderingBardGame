@@ -71,12 +71,24 @@ const only = process.argv[2] ?? null;
 // `minHue` is set only where a single hue across the whole frame would be a
 // fault. Golden hour, night and the golden-hour busk are deliberately
 // hue-unified and carry no floor — see the note on hueSpread above.
+//
+// `minStops` overrides the global valueStops floor for one pose. Only
+// phone-portrait has one, and it is *lower* than the global floor rather
+// than absent, for the same reason minHue exists at all: a floor is a claim
+// about what a healthy frame measures, and this pose stopped being a fair
+// test of that claim once task 121 (see world/palette.ts) closed the
+// land/sky value gap the other poses are wide enough to show. Phone-portrait
+// is almost entirely close foreground with a sliver of sky, so raising the
+// ground's value on purpose — the whole point of that change — mechanically
+// narrows *this pose's* own range even as the postcards read as a better,
+// not flatter, frame. See the long note in world/palette.ts before touching
+// either number again.
 const POSES = [
   { name: 'morning', s: 265, day: 0.42, viewport: [1600, 900], minHue: 0.1 },
   { name: 'noon', s: 620, day: 0.55, viewport: [1600, 900], minHue: 0.15 },
   { name: 'golden', s: 900, day: 0.8, viewport: [1600, 900] },
   { name: 'night', s: 1400, day: 0.95, viewport: [1600, 900] },
-  { name: 'phone-portrait', s: 420, day: 0.5, viewport: [390, 844], minHue: 0.1 },
+  { name: 'phone-portrait', s: 420, day: 0.5, viewport: [390, 844], minHue: 0.1, minStops: 1.6 },
   { name: 'phone-landscape', s: 900, day: 0.82, viewport: [844, 390] },
 ];
 
@@ -90,7 +102,7 @@ const POSES = [
  */
 // Every pose currently measures between 3.3 and 6.8 stops, so 2.5 is a real
 // regression gate with room to spare rather than a number art tuning will
-// trip over.
+// trip over. phone-portrait is the one exception — see its `minStops` above.
 const FLOORS = {
   valueStops: 2.5,
 };
@@ -224,9 +236,10 @@ for (const pose of POSES) {
   }
   rows.push({ name: pose.name, ...stats });
 
-  if (stats.valueStops < FLOORS.valueStops) {
+  const stopsFloor = pose.minStops ?? FLOORS.valueStops;
+  if (stats.valueStops < stopsFloor) {
     problems.push(
-      `${pose.name}: flat — ${stats.valueStops} stops of value range (floor ${FLOORS.valueStops})`,
+      `${pose.name}: flat — ${stats.valueStops} stops of value range (floor ${stopsFloor})`,
     );
   }
   if (pose.minHue !== undefined && stats.hueSpread < pose.minHue) {
