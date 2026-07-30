@@ -326,9 +326,78 @@ const FRAGMENT = /* glsl */ `
  * entirely, so the same fraction comes straight off them — the dusk and
  * night keys carry a compensating lift in their own exposure instead, which
  * is a per-hour dial and leaves the daylight keys where they are.
+ *
+ * Down again, 0.32 to 0.27, and this time as the other half of SKY_SCATTER
+ * below rather than for a reason of its own. That term adds a slice of
+ * sky-coloured light to the shade side; this takes a comparable slice back
+ * out of the multiplied ambient, so the shade side ends up about as bright as
+ * it was but a fraction of its light now arrives through a path that can
+ * actually carry a hue. Without this second half, the additive term is a
+ * milky wash over the picture instead of colour in the shadows.
  */
-#define AMBIENT_STRENGTH 0.32
+#define AMBIENT_STRENGTH 0.27
 #define SUN_STRENGTH 0.92
+/*
+ * Scattered skylight, added rather than multiplied.
+ *
+ * This exists because a critique measured the thing DESIGN.md has always
+ * claimed the lighting does — "shadows are always the complement of the sun"
+ * — and found it simply was not happening: shadowed grass came back at H36
+ * S0.73 against lit grass at H36 S0.67. Identical hue, pure value darken. At
+ * golden hour there was not one cool pixel below the skyline.
+ *
+ * The cause is arithmetic, and no amount of palette tuning could have fixed
+ * it. Every other light term here reaches the frame through
+ * albedo * lighting, and a multiply cannot put back a channel the albedo
+ * has already thrown away: village grass is 0x839749, so its blue is 0x49 —
+ * about a quarter — and multiplying that by the bluest sky in the palette
+ * still leaves a warm olive, only darker. The sky-tinted ambient above is
+ * doing exactly what its comment says, and it was never going to be visible
+ * through a warm albedo.
+ *
+ * So a shadow gets its colour ADDED. Physically this is the part of skylight
+ * that reaches the eye without having been filtered by the surface —
+ * scattering in the air between here and the viewer, which is genuinely
+ * additive and genuinely the colour of the sky rather than of the leaf. That
+ * is also why painters put a cool wash into a warm shadow and why it does not
+ * look wrong.
+ *
+ * Kept small, and shaped three ways so it buys a cool shadow without paying
+ * for it in contrast:
+ *
+ * - Scaled by 1 - sunAmount, so it is absent in full sun and full in
+ *   shadow. It lifts the shade side only, which is where the hue is missing.
+ * - Scaled by how skyward the surface is, so a downward face — which cannot
+ *   see the sky — keeps its warm bounce instead of being handed a blue it has
+ *   no business receiving.
+ * - Carried by ambient, which already collapses with the sky at night, so
+ *   the night frames need no separate gate: when the sky is dark this term
+ *   goes dark with it and the darks stay dark.
+ *
+ * Distinct from the floorLight term further down, which is an anti-black
+ * measure gated to fire only on fragments that are already nearly black
+ * (exp(-luma * 22.0) is 0.005 by a luma of 0.24). The two barely overlap:
+ * that one rescues soot, this one colours shade.
+ *
+ * On the number, and on the thing that had to change with it.
+ *
+ * Measured, this term's effect saturates almost immediately: 0.13 and 0.09
+ * give morning a hue spread of 0.367 and 0.359 against a baseline of 0.208,
+ * and cost the phone-portrait framing the same 0.7 stops either way. So the
+ * strength is not the dial that trades hue against contrast — the two are not
+ * on a slider, and an early version of this comment claimed a smaller number
+ * "gives back most of the contrast", which the numbers plainly did not
+ * support.
+ *
+ * The contrast cost is inherent to *adding* light to shade, and the fix is
+ * therefore not to add less but to multiply less: AMBIENT_STRENGTH comes down
+ * from 0.32 to 0.27 alongside this. That is the real move here. Shadowed
+ * surfaces get the same amount of light in total, but a slice of it now
+ * arrives through a term that carries the sky's hue instead of through one
+ * the albedo strips the blue out of. Hue in, range kept, and the net light on
+ * the shade side roughly where it was.
+ */
+#define SKY_SCATTER 0.09
 #include <packing>
 #include <lights_pars_begin>
 #include <shadowmap_pars_fragment>
@@ -582,6 +651,11 @@ void main() {
   vec3 lighting = ambient + uSunColor * sunAmount * SUN_STRENGTH;
 
   vec3 color = albedo * lighting;
+
+  // The one light term that does not pass through the albedo. See
+  // SKY_SCATTER: a warm albedo cannot be multiplied into a cool shadow, so
+  // the shade side is given its colour additively instead.
+  color += ambient * SKY_SCATTER * (1.0 - sunAmount) * mix(0.25, 1.0, skyFacing);
 
   // --- rim ---------------------------------------------------------------
   float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), uRimPower);
