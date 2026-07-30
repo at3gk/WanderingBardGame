@@ -192,28 +192,43 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     height: 1.6,
     lookHeight: 0.85,
     lead: 1.4,
-    // Was 2.1, which is 29 degrees off dead astern, and at that angle a
-    // seated figure does not read as seated: what the frame showed under the
-    // cloak hem was a pile of unrelated box faces with no visible seat.
+    // 2.6. This has been 2.1 and it has been 3.3, and this is the first time
+    // it has been swept through a lens that was holding still — see `reset`,
+    // which had to be fixed before any of these numbers meant anything.
     //
-    // Two things carry a seated silhouette and both are horizontal, which is
-    // why they both die in a rear view. The thigh points along the bard's own
-    // forward axis, and the seat log lies across it. Swept in the rig's own
-    // projection, the thigh's *horizontal* extent — the part that says "this
-    // limb goes forward" rather than "this is another shin" — runs 0.47 of its
-    // true length at 2.1, 0.55 at 2.6, 0.62 at 3.1 and 0.68 at 3.6, against a
-    // seat log that foreshortens the other way, from 195 px across to 137.
-    // 3.3 is where the two curves have both given up about as little as they
-    // are going to; past it the thigh stops improving and the seat keeps
-    // shrinking.
+    // What the previous pass measured is real and it reproduces: the thigh's
+    // *horizontal* extent — the part that says "this limb goes forward"
+    // rather than "this is another shin" — grows monotonically with `side`,
+    // 0.36 of its true length at 1.6, 0.46 at 2.1, 0.54 at 2.6, 0.63 at 3.3,
+    // 0.69 at 3.9 (mean of the two thighs, seated pose settled). Against
+    // that, it quoted a seat log foreshortening from 195 px to 137. Both
+    // curves are confirmed here at 252 -> 160 px.
     //
-    // Distance, height and fov are left alone. It looked as though a swing
-    // this large would push the fire out of frame, and it does not: the camera
-    // arcs *around* the bard and the fire sits in front of him, so its screen
-    // position barely moves. That was worth checking rather than assuming,
-    // because "the fire has to stay in frame with him" is what set this
-    // framing's numbers in the first place.
-    side: 3.3,
+    // What it did not measure is the price, and the price is in this file's
+    // own header: the true camera-to-subject range is
+    // `sqrt(distance² + side² + (height - 0.7)²)`, so `side` is a distance
+    // like any other and **raising it shrinks the subject**. From 2.1 to 3.3
+    // that is sqrt(15.25 + 4.41) = 4.43 m to sqrt(15.25 + 10.89) = 5.11 m,
+    // 15 per cent further away; measured, the seated figure went from 0.339
+    // of frame height to 0.298, a 12 per cent loss, and the instrument in his
+    // lap went from 2201 visible pixels to 1536, a 30 per cent loss. The
+    // complaint the swing was meant to answer was that the subject of the
+    // best-lit frame in the game is illegible. Twelve per cent of his height
+    // and a third of his instrument is a steep way to pay for thigh angle.
+    //
+    // Nor can it be paid back by closing the distance: holding the range at
+    // 4.43 m with `side` at 3.3 needs `distance` = sqrt(19.66 - 10.89) =
+    // 2.96 m, and 3 m behind a seated figure is where the fire leaves the
+    // frame, which is the constraint that set this framing in the first
+    // place.
+    //
+    // So 2.6 takes 47 per cent of the thigh's available gain for 40 per cent
+    // of the size loss, and keeps the seat log 206 px across — the log being,
+    // per the last two waves of notes, the thing that actually reads as
+    // "seated" here. Distance, height and fov stay as they are; the fire's
+    // screen position moves by under thirty pixels across the whole sweep,
+    // so it is not the binding constraint anywhere in this range.
+    side: 2.6,
     fov: 43,
     positionSmoothing: 1.1,
     targetSmoothing: 1.3,

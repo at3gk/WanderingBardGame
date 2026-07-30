@@ -642,12 +642,30 @@ export class Bard {
      * (43,15,17), keeping 58 per cent of the albedo's red and 16 per cent of
      * its green and blue. Repainting the trousers warm would fix the fire
      * and lose the daylight, so the fix is the same one the head already
-     * uses and for the same stated reason: lift the *shadow floor*, which
-     * cosy games do not take to black, and add enough rim that the limb
-     * keeps an edge when its faces are turned away from the only light in
-     * the scene. Both are hue-neutral, so the slate stays slate.
+     * uses: add enough rim that the limb keeps an edge when its faces are
+     * turned away from the only light in the scene. Rim is hue-neutral, so
+     * the slate stays slate.
+     *
+     * **The shadow floor was tried here and does nothing — do not try it
+     * again.** Measured same-frame, with the thigh's own pixels isolated by
+     * flooding its albedo and keeping the mask: `shadowDepth` 0.45 -> 0.72
+     * -> 0.90 leaves the thigh at 22.9, 22.9, 22.9. That is the right answer
+     * and it says what the real cause is. The head's dark band is genuinely
+     * *in shadow* — the brim casts one — so lifting the shadow floor pays
+     * there. A seated thigh at a campfire is not in anyone's shadow; its
+     * faces are simply turned away from the only light in the scene, which
+     * is a `dot(N,L)` term no shadow dial touches. Rim is the one dial that
+     * moves it: 0.35 -> 0.62 takes the thigh from 19.3 to 22.9, and 0.90
+     * would reach 26.3.
+     *
+     * 0.62 rather than 0.90 because this material is on the *walking* bard
+     * in daylight too, where the legs have no legibility problem and a hard
+     * rim on a near-frontlit limb reads as a plastic outline. It buys a
+     * quarter of a stop, which is honest but small: the thigh is still 0.85
+     * of a stop under the ground behind it, and closing that properly means
+     * the albedo, which is a daylight decision and not this wave's to make.
      */
-    const legMaterial = () => solid(colors.trousers, 0.62, 0.72);
+    const legMaterial = () => solid(colors.trousers, 0.62);
 
     // --- legs ----------------------------------------------------------
     // Pivots sit at the hip so a rotation swings the leg rather than
