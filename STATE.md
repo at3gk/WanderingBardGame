@@ -6,6 +6,60 @@ Run counter: 47
 
 **At a glance** — read this, then only the sections you need.
 
+- **Wave 11 (interactive, 2026-07-30): the near ground finally got a value
+  tier, and the project's own gate went green.** `tools/frame-quality.mjs` had
+  gone RED on phone-portrait (2.36 stops against a 2.5 floor) after wave 10
+  brightened the land; it is green again at 2.88, with every other pose up too
+  (morning 3.24 -> 3.74, noon 3.22 -> 3.63, golden 4.76 -> 5.03, landscape
+  4.87 -> 5.10). Verified independently of the agent that did it.
+  - **The lever, and it was the same shape of bug as the road corridor.** There
+    was no depth-dependent value term anywhere inside 40 m. Worse than that:
+    `painterly.ts`'s `uFogNear`/`uFogFar` defaults are DEAD — `RoadStage.ts:355`
+    overwrites them with 19.8 m and 242.5 m — and `distanceFog` puts the
+    smoothstep through a SECOND smoothstep, so `fogAmount` is 0.001 at 40 m and
+    0.013 at 60 m. Nothing separated five metres from sixty. A foreground tier
+    now darkens 4-45 m, gated by `sunHeight` so it lands on the high-sun frames
+    that are flat and is arithmetically absent from dawn, dusk and night, which
+    already get a ladder from long cast shadows.
+  - **A class bug fixed at last: the light floor was ADDED, not multiplied.**
+    `color += uEmissive * uEmissiveStrength` is a constant added to every
+    fragment, which compresses every ratio between them — it was flattening
+    every albedo field on the material at the hours the game looks best, and on
+    the songboard it had not merely flattened the ink but INVERTED it, drawing
+    the five staff rules LIGHTER than the timber they are printed on. Now
+    multiplied by the vertex/instance colour field. Ink-to-paper at night
+    3.10 -> 16.49.
+  - **Cloud shadows rebuilt and rejected AGAIN, for a new reason.** The old
+    recorded objection turned out to be an additive-dilution artefact of the
+    same class as the emissive bug, so it should never have been trusted. The
+    real reason is scale and the road change does not touch it: the 0-8 m band
+    is about 7.5 m x 4 m, so a 55 m cloud feature covers it entirely, and more
+    relief cannot help because relief changes the NORMAL while the term
+    multiplies `sunAmount` irrespective of normal.
+  - Also: the lute is visible while playing (18.6 -> 45.8 per cent of its
+    projected area), the camp's propped instrument is off the sightline to the
+    bard's head (265 px gap, 0 violations across 3600 layouts), and travellers
+    carry something on one side to break the 20 px vertical bar.
+  - **Still open, with a named cause:** at 20 px the busking bard is still a
+    dark red cone. The fix that shipped was a SILHOUETTE change and this is a
+    VALUE problem — at day 0.82 the sun is on the FAR side from the busk camera,
+    so the only side an instrument can be carried on and be seen is the shade
+    side. The lute renders L49 against a backdrop of L36-45; the walking lute,
+    sunlit, renders L132 against L95. Treat it as a rim/grain question on the
+    instrument material, not as a pose question.
+
+- **CORRECTION TO COMMIT 8ca52c7's MESSAGE.** That message claims "the fire's
+  glow pool is draped over the terrain rather than laid down as a flat disc."
+  That change is NOT in the commit and was never needed: the pool has been
+  draped since before wave 11 (`Campfire.ts:1099` writes each vertex at
+  `groundHeightAt(...)`; measured, the mesh spans 0.527 m of y over a 4.87 m
+  radius). The only Campfire.ts change in that commit is a stale comment
+  corrected from 0.9 m to 0.72-0.82 m. The description was inferred from the
+  task brief rather than read off the diff. History is not rewritten in this
+  project, so the correction lives here. The pool does read as an airbrushed
+  wash, but that is because the ground inside it carries little modelled form —
+  a scatter question, not a drape question.
+
 - **Wave 9 (interactive, 2026-07-30): seven fixes off a sixth visual
   critique, and five of that critique's own prescribed fixes rejected on
   measurement.** Two fixers split by file ownership so they could not fight
@@ -1228,6 +1282,21 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   its own CPU contention. Every one produced a confident, specific,
   plausible failure. None of them was the game. Before changing code to fix
   a failing check, make the check prove it can see its own success case.
+- **Do not commit an agent's working tree while it is measuring.** Two
+  concrete costs, both from 2026-07-30. A songboard agent's `WEATHER_DEPTH = 0`
+  was committed and described as cautious groundwork; it was the *control* half
+  of an A/B, so the commit shipped the feature switched off under
+  documentation saying it was on. And a figure agent's baseline was silently
+  corrupted — it read its "before" state with `git show HEAD:...`, and HEAD had
+  moved under it, so its control returned byte-identical numbers to its
+  variant. It caught that; it might not have. If a tree must be committed
+  mid-run, diff it and describe only what the diff shows, and name any constant
+  that is an A/B control so a reader cannot mistake it for a shipped value.
+- **Describe a commit from its diff, not from the brief that requested it.**
+  Commit 8ca52c7's message claims a glow-pool fix that is not in the commit and
+  was never needed. The work had already shipped; the agent measured it and
+  correctly refused to redo it. Writing the message from the task description
+  rather than from `git diff` put a false statement in permanent history.
 - **A pinned scanline is a check that goes stale silently.** Several of the
   scratchpad measuring scripts (`bands.mjs`, `c6-hist.mjs`) read depth bands
   at *pinned* image rows — a row number chosen when the script was written
