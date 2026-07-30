@@ -579,6 +579,27 @@ export class CameraRig {
    * bottom third of a portrait frame is still one brown plane; that is the
    * ground's own business and not something a camera can fix.
    *
+   * **And a third option that has been asked for twice does not exist.** The
+   * standing note on this constant is to stop spending the widening on road
+   * and sky and "bias it toward the mid band" instead. It cannot be done from
+   * here, and the reason is geometry rather than tuning: the widening adds
+   * angle at the top and bottom EDGES of the frustum, and the mid band is by
+   * definition the part that is at neither edge. Whatever this constant is
+   * set to, every degree the widening adds arrives as more sky, more road, or
+   * some split of the two — the middle of the picture cannot receive any of
+   * it. The two extremes have both now been shot (+0.25 gave it all to the
+   * sky, -0.35 all to the road) and there is no third setting hiding between
+   * them.
+   *
+   * What *would* grow the mid band is a narrower FOV, which magnifies
+   * everything and is the opposite of what a phone needs, or a higher camera,
+   * which spreads the same slab of world over more angle. Measured on the
+   * frames as they stand: the horizon sits at 0.316 of frame height on the
+   * 1600x900 walking shot and 0.382 on phone portrait, so the tall frame is
+   * already giving only six and a half points more of its height to sky than
+   * the desktop composition it is derived from. The portrait frame's real
+   * problem is what is IN its bottom half, not how much of it there is.
+   *
    * It is done by moving the *look target*, not by adding a pitch offset, so
    * it damps with everything else and cannot fight the target smoothing. That
    * is also why a negative value is safe: it is a look target a little below

@@ -140,8 +140,8 @@ const SHOULDER = 2.9;
  * where the scatter's keep-out band and the puddles thought the rut was.
  * Three constants for one rut; they agree now.
  */
-const RUT_CENTRE = ROAD_HALF_WIDTH * 0.58;
-const RUT_HALF = 0.42;
+export const RUT_CENTRE = ROAD_HALF_WIDTH * 0.58;
+export const RUT_HALF = 0.42;
 
 /**
  * How deep the worn rut is cut into the carriageway, metres.
@@ -163,7 +163,7 @@ const RUT_HALF = 0.42;
  * them, and a 7 cm dip under a camera 1.9 m up is invisible as a *bump* and
  * visible only as shading, which is exactly the division of labour wanted.
  */
-const RUT_DEPTH_M = 0.07;
+export const RUT_DEPTH_M = 0.07;
 
 /** The steepest a bedded prop is laid over, as a slope. tan(30 deg). */
 const BEDDED_MAX_SLOPE = 0.577;
@@ -185,13 +185,31 @@ const BEDDED_MAX_SLOPE = 0.577;
  * precisely nothing. The rut's contribution to the normal is added
  * analytically instead. See `buildTerrain`.
  */
-function rutDrop(u: number): number {
+export function rutDrop(u: number): number {
   const d = Math.abs(Math.abs(u) - RUT_CENTRE);
   if (d >= RUT_HALF) return 0;
   return -RUT_DEPTH_M * 0.5 * (1 + Math.cos((Math.PI * d) / RUT_HALF));
 }
 
-function rutSlope(u: number): number {
+/**
+ * The height of the ground *as drawn*, at any world point.
+ *
+ * `terrainHeight` stays the one authority on the landform and is what places
+ * the bard, the camera and everything off the road. This is that plus the
+ * rut, and it is what anything standing on the carriageway has to use — a
+ * figure who stops in a wheel rut is otherwise standing 7 cm above the ground
+ * the player can see under their boots.
+ *
+ * The lateral offset is taken as the horizontal distance from the centreline,
+ * which is the same approximation `terrainHeight` makes for the corridor: it
+ * differs from the true perpendicular by cos(heading), a couple of per cent
+ * through the sharpest bend this road can make.
+ */
+export function roadSurfaceHeight(road: DailyRoad, x: number, z: number): number {
+  return terrainHeight(road, x, z) + rutDrop(x - sampleRoad(road, z).x);
+}
+
+export function rutSlope(u: number): number {
   const au = Math.abs(u);
   const d = Math.abs(au - RUT_CENTRE);
   if (d >= RUT_HALF) return 0;
@@ -267,7 +285,7 @@ const FAR_SAMPLES = 12;
  */
 const FAR_FALLOFF = 1.8;
 
-const ACROSS_OFFSETS = (() => {
+export const ACROSS_OFFSETS = (() => {
   const half = NEAR_OFFSETS.slice();
   const last = half[half.length - 1];
   for (let i = 1; i <= FAR_SAMPLES; i++) {
@@ -390,7 +408,7 @@ const VERGE = {
  * own `x` with no lateral offset — so the middle of the crown is the one
  * strip of road that must stay bare however much the rest of it gains.
  */
-const FOOTFALL_HALF = 0.29;
+export const FOOTFALL_HALF = 0.29;
 
 /**
  * The carriageway, as the bands that are left once the ruts and the bard's

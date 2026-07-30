@@ -37,7 +37,7 @@ import { Group, Scene, Vector3 } from 'three';
 import type { App, Stage } from './App';
 import { CameraRig, type CameraMood } from './CameraRig';
 import { Sky, applyTimeOfDay, skyStateAt } from './sky';
-import { TERRAIN_REACH, WorldStreamer } from './world/WorldStreamer';
+import { roadSurfaceHeight, TERRAIN_REACH, WorldStreamer } from './world/WorldStreamer';
 import { Bard } from './actors/Bard';
 import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
 import { Campfire } from './scenes/Campfire';
@@ -737,7 +737,9 @@ export class RoadStage implements Stage {
     const angle = this.subject.heading + bearing;
     const x = this.subject.position.x + Math.sin(angle) * radius;
     const z = this.subject.position.z + Math.cos(angle) * radius;
-    person.group.position.set(x, terrainHeight(this.road, x, z), z);
+    // The drawn surface, not the landform: a listener who stops in a wheel
+    // rut stands in it rather than on the flat road that used to be there.
+    person.group.position.set(x, roadSurfaceHeight(this.road, x, z), z);
     // Facing back down their own bearing, which is the bard.
     person.setHeading(angle + Math.PI);
     person.setAttention(attention);
