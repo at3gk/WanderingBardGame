@@ -135,6 +135,62 @@ const ARM_REACH = 0.43;
  */
 const NECK_GRIP_MIN = -0.02;
 const NECK_GRIP_MAX = 0.2;
+/**
+ * The stretch of the same axis the *strumming* hand is allowed to hold.
+ *
+ * The body's rings sit at local y -0.31 to -0.035 about the pivot: bowl to
+ * -0.255, belly to -0.185, waist to -0.11, shoulders to -0.035. This is the
+ * belly and the waist — the middle of the soundboard, where a soundhole is
+ * and where a hand strums. Not the bowl, which is the bottom edge, and not
+ * the shoulders, which is where the neck starts.
+ */
+const STRUM_GRIP_MIN = -0.25;
+const STRUM_GRIP_MAX = -0.11;
+
+/**
+ * The playing carry: where the instrument sits, in torso space, while it is
+ * being played, and the Euler angles that put it there.
+ *
+ * **This is the fix for the frame the whole game is about.** The busking
+ * postcards showed a red cone with a hat and a brown stick emerging from
+ * behind its left edge; reduced to twenty pixels the figure was a traffic
+ * cone, while the *walking* bard at the same twenty pixels reads instantly.
+ * So the fault was the pose, not the model, and it is an occlusion fault
+ * rather than a contrast one. Measured on the shipped build, flooding this
+ * one mesh and differencing the frame with it shown against the frame with
+ * it hidden: **19.4 per cent of the instrument's own footprint changed a
+ * single pixel.** The other four fifths were behind the bard.
+ *
+ * Why. The camera stands *behind* him — `FRAMINGS.busking` is 3.9 m back
+ * against 2.7 m of side, which is 35 degrees off his spine, a rear
+ * three-quarter — and the old carry brought the instrument round to the
+ * front of his chest at z +0.30 with the body swung to x -0.14, his far
+ * side. His own torso and the cloak were between it and the lens. Nothing
+ * about the instrument's own angles could fix that; a shape held in front of
+ * a figure photographed from behind is not visible, however well it is
+ * posed.
+ *
+ * These numbers are therefore solved against that camera, the way the lap
+ * carry is solved against the resting one, and the working is worth keeping
+ * because it is the only reason they are not round numbers. Projected on the
+ * busk shot, the cloak's own silhouette occupies screen x >= 920 at every
+ * row of the torso and the hat brim reaches 897; screen x runs
+ * `962 - 200·x - 121·z` px in torso space there. So an instrument is clear
+ * of the figure's near edge when `200·x + 121·z > 47`. This carry puts the
+ * body of the lute at x 0.29, z 0.14 — screen 887, thirty-three pixels
+ * outside the cloak — and the pegbox at screen 920, which is the edge
+ * itself. The whole instrument is on the camera's side of the cloth.
+ *
+ * The handedness flipped with it, and that was free: the body now sits at
+ * the *right* hip under the strumming hand with the neck rising across to
+ * the left, which is how a right-handed player holds a lute and is also the
+ * arrangement that puts the big end of the shape on the near side.
+ *
+ * The `y` here is an offset from `SHOULDER_Y`, matching the slung and lap
+ * terms it is summed against.
+ */
+const PLAY_CARRY_POS: readonly [number, number, number] = [0.198, 0.592 - SHOULDER_Y, 0.192];
+const PLAY_CARRY_ROT: readonly [number, number, number] = [0.557, -0.373, 0.566];
 
 /**
  * How far the seated bard's boots reach below his own origin.
@@ -759,6 +815,7 @@ export class Bard {
       }),
     );
     this.cloak = new Mesh(cloakGeometry(), cloakMaterial);
+    this.cloak.name = 'bard-cloak';
     // High enough that the collar tucks under the jaw. Two centimetres
     // lower and a strip of sky-lit shoulder shows between the hat brim and
     // the cloak, which from behind reads as a gap straight through the
@@ -888,6 +945,13 @@ export class Bard {
       }),
     );
     const mesh = new Mesh(instrumentGeometry(id), material);
+    // Named for the same reason every other prop in this project is: a
+    // headless check has to be able to find one object in the scene graph
+    // and ask what it looks like on screen. The occlusion measurement that
+    // fixed the playing carry floods *this* mesh with a flat colour and
+    // counts the pixels that survive the depth test, which is the only way
+    // to tell "the instrument projects 150 px" from "you can see it".
+    mesh.name = 'bard-instrument';
     mesh.castShadow = true;
     // The pivot handles carrying angle and slinging; the geometry is already
     // centred on its own middle, so the two can be animated independently
@@ -1139,17 +1203,9 @@ export class Bard {
       Math.sin(armPhase + Math.PI) * armSwing * slung - carryPose * playAmount - 0.1 + lap * 0.45;
     this.leftArm.rotation.z = 0.11 + playAmount * 0.32 - armCross - lap * 0.15;
 
-    // The right hand strums. The kick from `pluck` is what makes a note
-    // land visually at the same instant it lands audibly.
     const strumMotion = Math.sin(this.elapsed * 7.5) * 0.1 * playAmount * (0.4 + this.warmth * 0.6);
-    this.rightArm.rotation.x =
-      Math.sin(armPhase) * armSwing * slung -
-      carryPose * playAmount -
-      this.strum * 0.5 +
-      strumMotion +
-      lap * 0.45;
-    this.rightArm.rotation.z =
-      -0.11 - playAmount * 0.28 - this.strum * 0.16 - armCross + lap * 0.15;
+    this.rightArm.rotation.x = Math.sin(armPhase) * armSwing * slung - carryPose * playAmount + lap * 0.45;
+    this.rightArm.rotation.z = -0.11 - playAmount * 0.28 - armCross + lap * 0.15;
 
     // --- instrument ----------------------------------------------------
     // Two poses, blended rather than switched. Slung it rides across the
@@ -1172,10 +1228,11 @@ export class Bard {
     // altogether: from the side it read as a bag being carried rather than
     // an instrument being worn.
     //
-    // Played, it has to come well clear in front instead. The chest reaches
-    // z 0.10 and the instrument is 0.12 deep, so anything nearer than about
-    // 0.26 buries the bowl in the ribs — 0.22 did, and brought the neck up
-    // through the jaw with it.
+    // Played, it comes round to the bard's own right rather than round to the
+    // front of his chest — see `PLAY_CARRY_POS`, which carries the measurement
+    // and the arithmetic. The short version: the busking camera stands behind
+    // him, so "clear in front" is the far side of the figure, and the version
+    // that put it there had four fifths of the instrument behind his own back.
     //
     // In the lap it comes down to just above the thighs and forward of them,
     // which in this frame is the hip line and a hand's width out. It is not
@@ -1183,9 +1240,9 @@ export class Bard {
     // toward them, and that lean is most of what says "resting" rather than
     // "balanced there".
     this.instrumentPivot.position.set(
-      playAmount * 0.02 - slung * 0.03 + lap * 0.045,
-      SHOULDER_Y - (playAmount * 0.28 + slung * 0.12) - lap * 0.219,
-      playAmount * 0.3 - slung * 0.285 + lap * 0.187,
+      playAmount * PLAY_CARRY_POS[0] - slung * 0.03 + lap * 0.045,
+      SHOULDER_Y + playAmount * PLAY_CARRY_POS[1] - slung * 0.12 - lap * 0.219,
+      playAmount * PLAY_CARRY_POS[2] - slung * 0.285 + lap * 0.187,
     );
     // Thirty degrees across the back, not forty. The steeper tilt threw the
     // bowl clear of the cloak's outline with daylight showing between the
@@ -1218,16 +1275,33 @@ export class Bard {
     // three numbers are the Euler angles that put it there once the seated
     // torso's own forward lean is paid back.
     this.instrumentPivot.rotation.set(
-      this.strum * 0.07 + slung * 0.15 + playAmount * 0.18 + lap * 0.54,
-      playAmount * -0.5 + slung * 0.08 - lap * 0.889,
-      -slung * 0.52 - playAmount * 0.62 - lap * 0.62,
+      this.strum * 0.07 + slung * 0.15 + playAmount * PLAY_CARRY_ROT[0] + lap * 0.54,
+      playAmount * PLAY_CARRY_ROT[1] + slung * 0.08 - lap * 0.889,
+      -slung * 0.52 + playAmount * PLAY_CARRY_ROT[2] - lap * 0.62,
     );
-    if (lap > 0) this.gripNeck(lap);
+
+    // Both hands go on the instrument, and both are solved rather than
+    // dialled — see `gripLine`. The fretting hand takes the neck in the lap
+    // pose *and* the playing pose; the strumming hand takes the belly, and
+    // only while playing, because the seated bard's right hand belongs on the
+    // log beside him and not on the strings.
+    const fret = Math.min(1, lap + playAmount);
+    if (fret > 0) this.gripLine(this.leftArm, NECK_GRIP_MIN, NECK_GRIP_MAX, fret, true);
+    if (playAmount > 0) {
+      this.gripLine(this.rightArm, STRUM_GRIP_MIN, STRUM_GRIP_MAX, playAmount, false);
+    }
+    // The strum kick rides on top of whatever the solve produced, rather than
+    // inside it. Folded into the base angles it would be diluted by the
+    // solve's own lerp exactly when the bard is playing, which is the one
+    // time it exists for: `pluck` is what makes a note land visually at the
+    // same instant it lands audibly.
+    this.rightArm.rotation.x += strumMotion - this.strum * 0.5;
+    this.rightArm.rotation.z -= this.strum * 0.16;
   }
 
   /**
-   * Put the seated bard's left hand *on the neck of the instrument he is
-   * holding*, by solving for it rather than by dialling an angle.
+   * Put a hand *on the instrument the bard is holding*, by solving for it
+   * rather than by dialling an angle.
    *
    * The problem this fixes, measured: seated, the left hand sat 0.61 m from
    * the middle of the neck — 132 px apart in a 1600 px frame, on an
@@ -1245,28 +1319,39 @@ export class Bard {
    *
    * How. Both the arm pivot and the instrument pivot are children of the
    * torso, so the whole thing is solvable in torso space with no world
-   * matrices. The neck is the segment `A + t·B` for `t` in
-   * `NECK_GRIP_RANGE`, `A` being the instrument pivot's origin and `B` its
-   * local +Y in torso space. The arm is a rigid rod of `ARM_REACH` from a
-   * fixed shoulder `S`, so the hand can only ever land on a sphere of that
-   * radius: intersect the sphere with the neck line, which is a quadratic in
-   * `t`, and take the root furthest up the neck that is still on the neck.
-   * If the neck misses the sphere entirely — it does not today, but the
-   * pose is allowed to move — fall back to the point on the neck nearest the
-   * shoulder, so the hand still points at the instrument instead of
-   * snapping somewhere absurd.
+   * matrices. The stretch of instrument being held is the segment `A + t·B`
+   * for `t` in `[tMin, tMax]`, `A` being the instrument pivot's origin and
+   * `B` its local +Y in torso space. The arm is a rigid rod of `ARM_REACH`
+   * from a fixed shoulder `S`, so the hand can only ever land on a sphere of
+   * that radius: intersect the sphere with the line, which is a quadratic in
+   * `t`, and take the root inside the allowed stretch. If the line misses the
+   * sphere entirely — it does not today, but the pose is allowed to move —
+   * fall back to the point nearest the shoulder, so the hand still points at
+   * the instrument instead of snapping somewhere absurd.
+   *
+   * `preferFar` breaks the tie when both roots are legal. The fretting hand
+   * takes the one further *up* the neck, which is where a fretting hand goes;
+   * the strumming hand takes the one further down, which is the near edge of
+   * the belly rather than the far one, and keeps the forearm off the
+   * soundboard.
    *
    * Then the two Euler angles. With the arm's default hanging direction
    * `(0,-1,0)` and Euler order XYZ with no yaw, the hand direction is
    * `(sin z, -cos x·cos z, -sin x·cos z)`, which inverts in closed form:
    * `z = asin(dx)` and `x = atan2(-dz, -dy)`.
    *
-   * Weighted by the sitting blend and nothing else, so the walking and
-   * busking arms are bit-for-bit what they were. That is deliberate: those
-   * two poses were tuned against frames and this is not licence to re-tune
-   * them.
+   * Weighted, so a pose that does not hold the instrument does not get its
+   * arms moved. The walking arms are still bit-for-bit what they were — the
+   * weights are the sitting and playing blends, and both are zero on the
+   * road. `bard.test.ts` pins that.
    */
-  private gripNeck(lap: number): void {
+  private gripLine(
+    arm: Group,
+    tMin: number,
+    tMax: number,
+    weight: number,
+    preferFar: boolean,
+  ): void {
     this.instrumentPivot.updateMatrix();
     const m = this.instrumentPivot.matrix.elements;
     // Origin and local +Y of the instrument, in torso space.
@@ -1276,9 +1361,9 @@ export class Bard {
     const bx = m[4];
     const by = m[5];
     const bz = m[6];
-    const sx = this.leftArm.position.x;
-    const sy = this.leftArm.position.y;
-    const sz = this.leftArm.position.z;
+    const sx = arm.position.x;
+    const sy = arm.position.y;
+    const sz = arm.position.z;
     const ux = ax - sx;
     const uy = ay - sy;
     const uz = az - sz;
@@ -1288,14 +1373,12 @@ export class Bard {
     let t: number;
     if (disc >= 0) {
       const root = Math.sqrt(disc);
-      const far = -ub + root;
-      const near = -ub - root;
-      // Prefer the root that is on the neck; of two, the one further up it,
-      // which is where a fretting hand goes.
-      const onNeck = (v: number) => v >= NECK_GRIP_MIN && v <= NECK_GRIP_MAX;
-      t = onNeck(far) ? far : onNeck(near) ? near : Math.min(NECK_GRIP_MAX, Math.max(NECK_GRIP_MIN, far));
+      const first = preferFar ? -ub + root : -ub - root;
+      const second = preferFar ? -ub - root : -ub + root;
+      const inRange = (v: number) => v >= tMin && v <= tMax;
+      t = inRange(first) ? first : inRange(second) ? second : Math.min(tMax, Math.max(tMin, first));
     } else {
-      t = Math.min(NECK_GRIP_MAX, Math.max(NECK_GRIP_MIN, -ub));
+      t = Math.min(tMax, Math.max(tMin, -ub));
     }
     this.grip.set(ax + bx * t - sx, ay + by * t - sy, az + bz * t - sz);
     const d = this.grip.length();
@@ -1303,8 +1386,8 @@ export class Bard {
     this.grip.multiplyScalar(1 / d);
     const rz = Math.asin(Math.min(1, Math.max(-1, this.grip.x)));
     const rx = Math.atan2(-this.grip.z, -this.grip.y);
-    this.leftArm.rotation.x += (rx - this.leftArm.rotation.x) * lap;
-    this.leftArm.rotation.z += (rz - this.leftArm.rotation.z) * lap;
+    arm.rotation.x += (rx - arm.rotation.x) * weight;
+    arm.rotation.z += (rz - arm.rotation.z) * weight;
   }
 
   /** How much a pose contributes right now, accounting for the blend. */

@@ -442,6 +442,61 @@ const FRAGMENT = /* glsl */ `
  * holds at 4.9 → 4.8 per cent.
  */
 #define NEAR_SHADE_MARK 1.50
+/*
+ * --- the foreground tier -----------------------------------------------
+ *
+ * The one term that separates five metres from thirty-five, and it exists
+ * because NOTHING ELSE IN THIS SHADER DOES. The fog block at the bottom of
+ * this file claims to be "the only term in the frame that separates a
+ * hundred and sixty metres from twenty", and that claim is true and is also
+ * the whole problem: read it the other way round and the frame has no
+ * distance cue at all inside the fog's near edge.
+ *
+ * The arithmetic, done properly, because the numbers in this file's own
+ * defaults are not the numbers the game runs. "createPainterlyGlobals"
+ * initialises uFogNear/uFogFar to 40 and 260, and "RoadStage" overwrites both
+ * before the first frame with TERRAIN_REACH * 0.12 and * 1.47 — 19.8 m and
+ * 242.5 m. It is worse than the defaults suggest, not better, because
+ * "distanceFog" puts the smoothstep through a SECOND smoothstep:
+ *
+ *     depth     40 m    60 m    90 m   120 m   160 m
+ *     fogAmount 0.001   0.013   0.084   0.233   0.463
+ *
+ * So the veil is a tenth of one per cent at forty metres and a hundredth at
+ * sixty. On a walking frame the near and mid thirds of the picture are both
+ * inside sixty metres — measured with a depth pass rather than a horizon row,
+ * the phone-portrait frame reads 25 per cent of its pixels at 0-8 m, 19 per
+ * cent at 8-20 m and 7 per cent at 20-40 m — and every one of those pixels is
+ * lit and hazed identically. That is why the land reads as one grey tier: not
+ * because it has no shape, but because two thirds of it is at one value.
+ *
+ * What this term is: a short-range darkening of the direct light, full at the
+ * camera's feet and gone by forty-five metres, which hands the near ground a
+ * value of its own to be read against the middle distance. It is the
+ * reverse-facing half of aerial perspective — haze lightens the far, a
+ * foreground shadow darkens the near — and it is the device a painter uses
+ * when the near ground has nothing standing in it to cast one.
+ *
+ * Why it is scaled by sunHeight, which is the part worth keeping if anything
+ * here is ever retuned. The two frames in this game's own sheet that already
+ * have a genuine two-tier field are golden hour and dusk, and both get it from
+ * long low-sun cast shadows lying across the foreground. Those frames need
+ * nothing from this term and must not be paid for by it; the high-sun frames,
+ * whose shadows are directly under the things casting them, are exactly the
+ * ones that come back flat. Riding sunHeight puts the term where the shadows
+ * are not, and takes it to zero at night, where the near ground is the
+ * campfire's business and the hearth term owns it.
+ *
+ * Applied to "albedo * lighting" only — before the scattered skylight, the
+ * rim, the hearth and the black floor. That ordering is deliberate three
+ * times over: shade that is already dark barely moves (its light is mostly
+ * scatter, which is not scaled), a near silhouette keeps its rim so the tier
+ * cannot swallow an edge, and the anti-soot floor still fires underneath, so
+ * this can darken the foreground without ever crushing it to black.
+ */
+#define FG_TIER_DEPTH 0.30
+#define FG_TIER_NEAR_M 4.0
+#define FG_TIER_FAR_M 45.0
 #include <packing>
 #include <lights_pars_begin>
 #include <shadowmap_pars_fragment>
@@ -779,7 +834,12 @@ void main() {
 
   vec3 lighting = ambient + uSunColor * sunAmount * SUN_STRENGTH;
 
-  vec3 color = albedo * lighting;
+  // See FG_TIER_DEPTH: the near ground's own value, and the only thing in
+  // this shader that tells five metres from thirty-five.
+  float foreground = 1.0 - smoothstep(FG_TIER_NEAR_M, FG_TIER_FAR_M, viewDepth);
+  float foregroundTier = 1.0 - FG_TIER_DEPTH * foreground * sunHeight;
+
+  vec3 color = albedo * lighting * foregroundTier;
 
   // The one light term that does not pass through the albedo. See
   // SKY_SCATTER: a warm albedo cannot be multiplied into a cool shadow, so
@@ -822,7 +882,7 @@ void main() {
    * there is.
    */
   scatter *= clamp(1.0 + nearMark * NEAR_SHADE_MARK * nearWeight, 0.0, 2.0);
-  color += ambient * scatter;
+  color += ambient * scatter * foregroundTier;
 
   // --- rim ---------------------------------------------------------------
   float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), uRimPower);
@@ -895,9 +955,45 @@ void main() {
    */
   vec3 hue = albedo / max(max(albedo.r, max(albedo.g, albedo.b)), 0.001);
   vec3 floorLight = ambient * mix(vec3(1.0), hue, 0.5) * 0.28;
-  color += floorLight * exp(-dot(color, vec3(0.30, 0.59, 0.11)) * 22.0);
+  color += floorLight * foregroundTier * exp(-dot(color, vec3(0.30, 0.59, 0.11)) * 22.0);
 
-  color += uEmissive * uEmissiveStrength;
+  /*
+   * The emissive floor rides the surface's own painted field.
+   *
+   * It used to be added flat — one constant, the same on every fragment of
+   * the material, laid on top of the albedo. A constant added to two values
+   * compresses the ratio between them, and that is not a small effect here
+   * because this term is at its largest exactly when the light is at its
+   * smallest: the songboard's floor is sized as LIGHT_FLOOR minus the world's
+   * own luminance, so at dusk it is most of what the plank is made of. The
+   * plank carries its weathering and its printed rules as VERTEX COLOUR, a
+   * 22 per cent value swing between fresh and worn timber and a factor of
+   * eleven between paper and ink (BOARD_INK is 0.09 of the paper) — and a
+   * flat addition arrives on all of them equally, so the worn end and the
+   * fresh end converge and, worse, the rules fill in toward the paper at the
+   * hour a player most needs to read a pitch off them.
+   *
+   * Multiplying by the painted field fixes both without touching the floor's
+   * size: a fragment that is nine per cent of the paper's albedo receives
+   * nine per cent of the lift, so every ratio the artist painted survives the
+   * floor intact and the plank as a whole is lifted by the same amount it was.
+   *
+   * Deliberately vVertexColor * vInstanceColor and NOT the full albedo. The
+   * distinction is what makes this safe: the field is the part of the albedo
+   * somebody painted per vertex or per instance, while the rest of the albedo
+   * (uColor, the grain's colour variant, the ground drift) is the material's
+   * own base tone, and dividing a light term by that would tint every emitter
+   * with the square of its own colour. Of the eight emissive surfaces in the
+   * game, seven are the campfire's — flames, coals, lantern glass — and every
+   * one of them is a plain mesh with neither vertex nor instance colour, so
+   * this leaves the fire arithmetically identical. The songboard's timber is
+   * the only material in the world with both, which is the one this is for.
+   */
+  vec3 emissiveField = vInstanceColor;
+  #ifdef PAINTERLY_VERTEX_COLORS
+    emissiveField *= vVertexColor;
+  #endif
+  color += uEmissive * uEmissiveStrength * emissiveField;
   color *= uExposure;
 
   // --- fog ---------------------------------------------------------------
