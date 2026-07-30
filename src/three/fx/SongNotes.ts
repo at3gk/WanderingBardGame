@@ -326,6 +326,21 @@ const PALE = 0xbdb3a2;
  * note and never information" was not true — a letter at 1.27 is information
  * lost, and this file is not allowed to lose a pitch.
  *
+ * THOSE TWO NUMBERS ARE NOT WCAG RATIOS AND HAVE COST A ROUND EACH. They are
+ * recorded here without units, which is the fault; the ninth visual critique
+ * read them as WCAG contrast, found 3.67 where this comment says 5.29, and
+ * reported the project's number one rule broken. It was not: a control build
+ * of the very commit this comment was written in measures 3.67 as well, with
+ * `uLight` identical to four decimals. The metric that lands on 5.25 for this
+ * frame is HSP perceived brightness, `sqrt(0.299r^2 + 0.587g^2 + 0.114b^2)`,
+ * on the rendered bytes — near enough that it is almost certainly what was
+ * used. In WCAG, on the same frame and the same pixels, the numbers this
+ * paragraph is arguing from are: live 3.67 before `LIGHT_FLOOR` was raised
+ * and 5.93 after, and a fully softened note 2.03 before and about 3.5 after.
+ * The argument is unchanged and still correct — the failure it describes was
+ * a *ratio near one*, which is a ratio near one in every metric. Quote units
+ * next time.
+ *
  * Darkening PALE instead was measured and does not reach: PALE and INK are
  * only 1.36 apart as albedos, so no amount of head-darkening that still reads
  * as *faded* can put a cream letter clear of it. Ratio 4 against a head at
@@ -555,13 +570,58 @@ const STAKE_SINK_M = 0.5;
  * be traded for a nicer picture. So the light on the board is given a floor,
  * and the shortfall is made up in the colour of lamplight.
  *
- * What it costs and does not cost: the board still swings with the day, in
- * hue and in value, because the floor is only ever the *difference* and it
- * is zero from mid-morning to late afternoon. What it buys is a stave that
- * is as readable at last light as it is at noon, which is a thing a printed
- * page manages and a thing this game has to.
+ * What it costs and does not cost: the board still swings with the day in
+ * *hue*, because the shortfall is paid in lamplight and the world's own
+ * contribution is still whatever the sky is giving. It no longer swings much
+ * in value, and that is a deliberate trade made below. What it buys is a
+ * stave that is as readable at last light as it is at noon, which is a thing
+ * a printed page manages and a thing this game has to.
+ *
+ * --- 0.17 to 0.30, and the arithmetic that forced it -------------------
+ *
+ * The ninth visual critique returned `pitchReadable: false` — the first
+ * false in nine — with a letter-to-head contrast of 3.67:1 on
+ * `05-golden-busk` against a 7:1 hold. Three things were measured before
+ * anything was changed, and all three matter to whoever reads this next.
+ *
+ * FIRST, 3.67 IS RIGHT. It is the WCAG ratio, `(L+0.05)/(L+0.05)` on
+ * relative luminance, and it reproduces exactly: the letter renders at
+ * sRGB 141,101,77 and its head at 37,9,1, which a probe both read off the
+ * framebuffer and predicted from this file's own albedos through
+ * `uLight`, ACES and the sRGB encode, agreeing to the byte.
+ *
+ * SECOND, IT WAS NOT A REGRESSION. A control build of the exact commit
+ * whose comment recorded "5.29" (62ea1b6, where `PALE_INK` was written)
+ * measures 3.67 too, with `uLight` identical to four decimals. Nothing in
+ * waves 10 or 11 touched it. The 5.29 in `PALE_INK`'s comment is simply
+ * not a WCAG number — of the metrics that could have produced it, the one
+ * that lands on this frame is HSP perceived brightness, which gives 5.25
+ * for the same two pixels. There was no good state to restore, which is
+ * why this had to be fixed forward rather than reverted.
+ *
+ * THIRD, 7:1 IS UNREACHABLE AND THE HOLD IS WRONG, NOT THE GAME. Sweeping
+ * the board's light through every value from a twentieth of today's to
+ * twelve times it, the letter-to-head WCAG ratio PEAKS AT 6.46, at about
+ * three times the old light, and falls away either side — below, because
+ * both terms sink toward the 0.05 in the denominator; above, because ACES
+ * compresses the letter into the shoulder while the head is still climbing.
+ * No light level reaches 7:1 with a cream letter in a head at `HEAD_INK`.
+ * 7:1 is WCAG AAA for *body* text; for large text — which a bold letter
+ * about 28 px tall on the desktop frame is — AAA is 4.5:1, and that is the
+ * hold this file is now written against.
+ *
+ * So the floor goes to 0.30, which is the point on that curve where the
+ * ratio is within a whisker of its ceiling (5.9 of a possible 6.46) and
+ * the light is still short of the level where ACES starts giving it back.
+ * Measured after the change, and this is the property the floor exists
+ * for: noon 6.14, golden hour 5.93, dusk 5.93, midnight 5.94 — the pitch
+ * letter is now the same to read at every hour of the day. A softened
+ * note's letter-to-head separation goes with it, 2.25 to about 3.5, back
+ * inside the band this file's own softening was tuned against.
+ *
+ * The plank does not pay for it: see `BOARD_FLOOR_SHARE`.
  */
-const LIGHT_FLOOR = 0.17;
+const LIGHT_FLOOR = 0.3;
 
 /**
  * The colour the shortfall is made up in.
@@ -570,8 +630,17 @@ const LIGHT_FLOOR = 0.17;
  * colour, and the standing rule is that shadows are coloured. DESIGN puts
  * the warmth of this game in the bard and in the music, which is what a
  * board with a song written on it is lit by when there is nothing else.
+ *
+ * It is always paid out through `unitLuminance`, and that is not a detail.
+ * `LIGHT_FLOOR` is quoted in relative luminance and this colour's own
+ * relative luminance is 0.7196, so paying the debt in it straight settled it
+ * at 72 pence in the pound: measured on `05-golden-busk`, the board's light
+ * landed at 0.150 against a floor that said 0.170, and the shortfall grew
+ * with the size of the lift — worst at the darkest hours, which are the
+ * hours the floor exists for. Two constants that had to be in the same units
+ * and never were.
  */
-const FLOOR_WARMTH = 0xffd6a2;
+export const FLOOR_WARMTH = 0xffd6a2;
 
 /**
  * How much of the floor the plank itself takes, against the notes taking all
@@ -581,11 +650,35 @@ const FLOOR_WARMTH = 0xffd6a2;
  * warm-white panel standing in a sunset, its hue no longer following the
  * sky's and its ruled lines washed halfway out, which is a good part of the
  * fault this whole file is answering. The notes are what has to stay
- * readable; the plank is what has to belong. A third is enough to keep the
- * five rules alive against their own paper at last light and little enough
- * that the plank is still the sky's colour.
+ * readable; the plank is what has to belong.
+ *
+ * This is the dial that lets those two be answered separately, and raising
+ * `LIGHT_FLOOR` from 0.17 to 0.30 is what made using it necessary. At the
+ * old third of the old floor the plank's lift was 0.0312 of a unit at golden
+ * hour; a third of the new floor is 0.0702, and shot at that the plank is
+ * visibly a pale panel — brighter than the sunlit land it stands in, which
+ * is the exact failure described above. Holding the plank's lift where it
+ * was needs 0.0312 / 0.2341, which is 0.133; 0.14 is that, rounded to a
+ * number a reader can hold.
+ *
+ * Measured, and this is the whole point of the split: with the notes on a
+ * 0.30 floor and the plank on a 0.14 share, the plank's rendered relative
+ * luminance on `05-golden-busk` goes 0.0603 to 0.0635 — two sRGB levels,
+ * invisible — while the pitch letter's contrast against its own head goes
+ * 4.08 to 5.93. At noon the plank moves 0.0692 to 0.0785 and at midnight
+ * 0.0376 to 0.0314, both small and both in the direction the frame wants
+ * (a fraction warmer under a high sun, a fraction deeper in the dark).
+ *
+ * One reason for a third that has quietly expired, and should not be used
+ * to argue this back up: the old comment said a third was what kept the
+ * five rules alive against their own paper at last light. That was true
+ * when `painterly.ts` ADDED the emissive flat, which filled the ink in
+ * toward the paper. It multiplies by the vertex-colour field now, so the
+ * rule-to-paper ratio survives any lift at all and this share no longer
+ * has anything to do with it. What it still governs is the plank's own
+ * value against the world, which is the number quoted above.
  */
-const BOARD_FLOOR_SHARE = 0.3;
+const BOARD_FLOOR_SHARE = 0.14;
 
 /**
  * How far in front of the board's face the notes ride, in metres.
@@ -711,8 +804,33 @@ export class SongNotes {
   private readonly scratch = new Vector3();
   private readonly lightScratch = new Color();
   private readonly floorScratch = new Color();
-  private readonly floorColor = new Color(FLOOR_WARMTH);
+  /**
+   * The colour the light floor is paid in, scaled so a unit of it carries a
+   * unit of *relative luminance*.
+   *
+   * `LIGHT_FLOOR` is documented, and reasoned about everywhere in this file,
+   * as a relative luminance. The lift was being paid in `FLOOR_WARMTH`
+   * straight, and `FLOOR_WARMTH`'s own relative luminance is 0.7196 — so the
+   * board was being handed 72 per cent of the light the floor promised it,
+   * and the floor's whole point is that it is the number the notation is not
+   * allowed to fall below. Measured on `05-golden-busk`, the board's light
+   * landed at 0.150 against a floor of 0.170.
+   *
+   * Normalising is a uniform scale, so the hue is untouched — the lamplight
+   * is exactly as warm as it was — and the only thing that changes is that
+   * the floor now means what it says. Two constants that had to agree, in
+   * the same units, and never were.
+   */
+  private readonly floorColor = unitLuminance(new Color(FLOOR_WARMTH));
   private nowMs = 0;
+
+  /**
+   * The painterly lighting model's own constants, read off the board
+   * material's shader source at construction. See `painterlyConstant`.
+   */
+  private readonly painterly: Record<keyof typeof PAINTERLY_CONSTANTS, number> = {
+    ...PAINTERLY_CONSTANTS,
+  };
 
   /**
    * Last camera this drew for, kept so the card can be turned to face it.
@@ -759,8 +877,21 @@ export class SongNotes {
       rimPower: 3,
       bandSoftness: 0.09,
       shadowDepth: 0.42,
-      emissive: FLOOR_WARMTH,
+      // The same unit-luminance lamplight the notes take their lift in, so
+      // the plank's share of the floor and the notes' share are in the same
+      // units and `BOARD_FLOOR_SHARE` still means the fraction it says.
+      emissive: unitLuminance(new Color(FLOOR_WARMTH)),
     });
+
+    // The lighting model is read out of the shader this material was just
+    // built from, rather than copied. See `painterlyConstant` for why.
+    for (const name of Object.keys(this.painterly) as (keyof typeof PAINTERLY_CONSTANTS)[]) {
+      this.painterly[name] = painterlyConstant(
+        this.timberMaterial.fragmentShader,
+        name,
+        PAINTERLY_CONSTANTS[name],
+      );
+    }
 
     this.board = new Mesh(buildBoardGeometry(), this.timberMaterial);
     this.board.castShadow = true;
@@ -1081,7 +1212,7 @@ export class SongNotes {
       .copy(g.uGroundBounce.value)
       .lerp(g.uSkyColor.value, skyFacing)
       .lerp(g.uHorizonColor.value, 0.35)
-      .multiplyScalar(PAINTERLY_AMBIENT);
+      .multiplyScalar(this.painterly.AMBIENT_STRENGTH);
 
     const sun = g.uSunDirection.value;
     const ndl = this.facing.x * sun.x + this.facing.z * sun.z;
@@ -1093,7 +1224,35 @@ export class SongNotes {
       smoothstep(0.86 - soft * 0.7, 0.86 + soft * 0.7, lit) * 0.2;
 
     const light = this.glyphMaterial.uniforms.uLight.value as Color;
-    light.copy(g.uSunColor.value).multiplyScalar(sunAmount * PAINTERLY_SUN).add(ambient);
+    light
+      .copy(g.uSunColor.value)
+      .multiplyScalar(sunAmount * this.painterly.SUN_STRENGTH)
+      .add(ambient);
+
+    // The foreground tier, which the plank takes and the notes did not.
+    //
+    // `painterly.ts` multiplies `albedo * lighting` by a short-range
+    // darkening — full at the camera's feet, gone by forty-five metres,
+    // ridden on the sun's height — and the plank runs that material. The
+    // glyphs run this file's own material, which has no such term, so for as
+    // long as the tier has existed the two halves of one board have been lit
+    // by two different models. Measured on `05-golden-busk`, where the board
+    // stands 6.2 m from the camera and the sun is 0.12 above the horizon,
+    // the tier is 0.870: the plank was being darkened by thirteen per cent
+    // and the notes painted on it were not, which is exactly the
+    // disagreement `updateLight`'s own comment says this arrangement exists
+    // to prevent, and at high sun it reaches thirty.
+    //
+    // It is applied here, to the light, and *before* the floor is worked
+    // out — which is what keeps the two sides consistent rather than merely
+    // both darker. The tier makes the world's contribution smaller, the
+    // floor sees a smaller world and pays a larger lift, and the plank's
+    // share of that larger lift arrives through an emissive term that
+    // `painterly.ts` adds *after* the tier and does not scale by it. So at
+    // the hours the floor is firing the notes end up in exactly the same
+    // place and only the plank moves; at the hours it is not, both move
+    // together.
+    light.multiplyScalar(this.foregroundTier(sun.y));
     light.multiplyScalar(g.uExposure.value);
 
     // The floor, and how the two halves of the board are given it.
@@ -1113,6 +1272,25 @@ export class SongNotes {
     light.add(this.floorScratch.copy(this.floorColor).multiplyScalar(lift));
 
     this.glyphMaterial.uniforms.uFront.value = GLYPH_FRONT_M * this.scale;
+  }
+
+  /**
+   * `painterly.ts`'s foreground tier, evaluated for the board's own distance
+   * from the camera.
+   *
+   * The shader takes its depth from `length(toCamera)` — a true distance,
+   * not a view-space z — so this does the same. With no camera yet (the
+   * first frame, before `onBeforeRender` has handed one over) the tier is
+   * one, which is the shader's own answer beyond forty-five metres and the
+   * safe way to be wrong: the board is merely un-tiered rather than dark.
+   */
+  private foregroundTier(sunY: number): number {
+    if (!this.camera) return 1;
+    const depth = this.camera.position.distanceTo(this.board.position);
+    const sunHeight = smoothstep(-0.05, 0.32, sunY);
+    const nearness =
+      1 - smoothstep(this.painterly.FG_TIER_NEAR_M, this.painterly.FG_TIER_FAR_M, depth);
+    return 1 - this.painterly.FG_TIER_DEPTH * nearness * sunHeight;
   }
 
   /**
@@ -1361,18 +1539,59 @@ export class SongNotes {
 // ---------------------------------------------------------------------------
 
 /**
- * The two strengths the painterly fragment shader mixes its light from.
+ * Read a `#define`d constant out of the painterly fragment shader.
  *
- * Copied here rather than exported from `painterly.ts` on purpose. They are
- * `#define`s over there, described in that file as a property of the
- * lighting model rather than of a moment in the day, and turning them into
- * shared runtime values so one billboard could read them would make it
- * possible for a future edit to change the world's exposure from here. If
- * they ever move, the notes go a shade wrong against a board that did not —
- * which is visible in the first frame anyone looks at.
+ * The lighting model this board's notes are lit by lives in `painterly.ts`
+ * as a handful of `#define`s, and this file has to evaluate the same model
+ * on the CPU because a billboarded glyph cannot run that material. For most
+ * of this project's life the numbers were *copied* here, with a comment
+ * explaining that copying them was deliberate — and then one of them drifted
+ * and stayed drifted: `AMBIENT_STRENGTH` came down from 0.32 to 0.27 over
+ * there and the copy here never followed, so the notes spent every dark hour
+ * predicting a world 19 per cent brighter than the shader was painting,
+ * which made `LIGHT_FLOOR` fire later and smaller at exactly the hours it
+ * exists for. That is the same class of fault as every structural bug this
+ * project has found: two constants that had to agree and were never
+ * compared.
+ *
+ * So they are not copied any more; they are read, once, out of the shader
+ * source the board's own material was compiled from. That is the single
+ * source of truth by construction — the string this parses is the string the
+ * GPU is running — and it cannot drift, because there is only one of it. The
+ * original objection (that exporting them as runtime values would let a
+ * future edit change the world's exposure from here) is answered too: this
+ * only ever *reads*, and there is nothing to write to.
+ *
+ * The anchor is `^\s*#define`, with the multiline flag. Deliberately, and
+ * for a reason this project has already paid for once: three's own
+ * preprocessor only substitutes an `#include` that STARTS a line, and a
+ * probe that ignored that quietly measured nothing for a round. A directive
+ * that is not at the start of a line is not a directive, and this must not
+ * match one.
+ *
+ * The fallbacks are the shader's current values, so a parse that ever fails
+ * degrades to today's behaviour rather than to black — and
+ * `songNotes.test.ts` asserts the parse actually finds every one of them in
+ * the real material, so a rename over there fails a test here instead of
+ * silently falling back.
  */
-const PAINTERLY_AMBIENT = 0.32;
-const PAINTERLY_SUN = 0.92;
+export function painterlyConstant(source: string, name: string, fallback: number): number {
+  const match = new RegExp(`^[ \\t]*#define[ \\t]+${name}[ \\t]+([0-9.eE+-]+)`, 'm').exec(source);
+  const value = match ? Number(match[1]) : Number.NaN;
+  return Number.isFinite(value) ? value : fallback;
+}
+
+/**
+ * The names and fallbacks of every painterly constant the board's own
+ * lighting has to agree with. Exported so the test can walk them.
+ */
+export const PAINTERLY_CONSTANTS = {
+  AMBIENT_STRENGTH: 0.27,
+  SUN_STRENGTH: 0.92,
+  FG_TIER_DEPTH: 0.3,
+  FG_TIER_NEAR_M: 4.0,
+  FG_TIER_FAR_M: 45.0,
+} as const;
 
 /**
  * The highest and lowest diatonic step whose note head the plank has room to
@@ -1443,18 +1662,23 @@ function barLeftM(): number {
  * two builds happened to have different numbers of heads inside the grid.
  * The instrument was correct and pointed at the wrong pixels.
  *
- * The second is that this board resists albedo structure by construction at
- * exactly the hours it is most looked at. `LIGHT_FLOOR` is paid to the plank
- * through the painterly material's emissive, and `painterly.ts` adds that as
- * `color += uEmissive * uEmissiveStrength` — a constant, after the albedo and
- * before the exposure. A constant added to every fragment compresses every
- * ratio between them, so at golden hour a 22 per cent swing in this field
- * arrives on screen as about seven, and the face's standard deviation moves
- * 8.4 to 8.1 for it. That is not this field failing; it is the pedagogy floor
- * doing its job, and the floor is not tradeable. What the field does buy at
- * that hour is visible where the swing is largest rather than in the mean:
- * the foot of the plank goes 54 to 48 and the far end 69 to 66, which is the
- * board sitting into the grass instead of ending at a line.
+ * The second USED to be that this board resisted albedo structure by
+ * construction at exactly the hours it is most looked at. `LIGHT_FLOOR` is
+ * paid to the plank through the painterly material's emissive, and
+ * `painterly.ts` once added that as `color += uEmissive * uEmissiveStrength`
+ * — a constant, after the albedo and before the exposure. A constant added
+ * to every fragment compresses every ratio between them, so at golden hour a
+ * 22 per cent swing in this field arrived on screen as about seven, and the
+ * face's standard deviation moved 8.4 to 8.1 for it. What the field bought
+ * at that hour was visible where the swing is largest rather than in the
+ * mean: the foot of the plank went 54 to 48 and the far end 69 to 66, which
+ * is the board sitting into the grass instead of ending at a line.
+ *
+ * That is no longer the arrangement, and the numbers above are the old ones.
+ * `painterly.ts` MULTIPLIES the emissive by the vertex/instance colour field
+ * now, so a fragment at nine per cent of the paper's albedo receives nine per
+ * cent of the lift and this field's own swing arrives at full strength
+ * whatever the floor is doing. The compression is gone; do not re-derive it.
  *
  * The field is weather rather than decoration, and it is deliberately not
  * symmetric — a vignette is what a symmetric one becomes, and a vignette
@@ -1970,6 +2194,21 @@ function instanced(count: number, size: number): InstancedBufferAttribute {
 function runAt(progress: number): number {
   if (progress <= 1) return RUN_M * (1 - progress);
   return -PAST_DRIFT_M * (1 - Math.exp(-(progress - 1) * 4));
+}
+
+/**
+ * Scale a colour so one unit of it carries one unit of relative luminance,
+ * leaving its hue exactly where it was.
+ *
+ * Used on `FLOOR_WARMTH`, because `LIGHT_FLOOR` is quoted in relative
+ * luminance and a warm colour's own luminance is well under one — paying a
+ * luminance debt in un-normalised lamplight settles it at 72 cents in the
+ * pound. Mutates and returns the colour it is given; every caller here hands
+ * it a fresh one.
+ */
+export function unitLuminance(color: Color): Color {
+  const luma = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+  return luma > 1e-4 ? color.multiplyScalar(1 / luma) : color;
 }
 
 function smoothstep(edge0: number, edge1: number, x: number): number {

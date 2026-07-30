@@ -16,7 +16,16 @@
  * screenshot nobody takes.
  */
 import { describe, expect, it } from 'vitest';
-import { boardSpan, printableSteps } from './SongNotes';
+import { Color } from 'three';
+import {
+  FLOOR_WARMTH,
+  PAINTERLY_CONSTANTS,
+  boardSpan,
+  painterlyConstant,
+  printableSteps,
+  unitLuminance,
+} from './SongNotes';
+import { createPainterlyGlobals, createPainterlyMaterial } from '../painterly';
 import { SONGS } from '../../core/songs';
 import { staffStepAt } from '../../core/notation';
 import { beatIntervalMs } from '../../core/beats';
@@ -116,5 +125,96 @@ describe('the songboard is as narrow as the notation lets it be', () => {
     // from the plank now, so the two cannot drift apart again.
     const span = boardSpan();
     expect(span.barlineOffset).toBeGreaterThan(span.rightOfBarline);
+  });
+});
+
+/**
+ * The other thing about this board that a frame cannot judge: whether the two
+ * halves of it are lit by the same model.
+ *
+ * The plank runs `painterly.ts`'s material and the notes run this file's own,
+ * so the lighting model is evaluated twice — once on the GPU over there and
+ * once on the CPU in `updateLight`. For most of the project's life the
+ * constants were copied across, and one of them drifted and stayed drifted:
+ * `AMBIENT_STRENGTH` came down to 0.27 in `painterly.ts` while the copy here
+ * stayed at 0.32, so the notes predicted a world 19 per cent brighter than
+ * the shader was painting and `LIGHT_FLOOR` fired late and small at exactly
+ * the dark hours it exists for. Nothing failed, nothing looked obviously
+ * wrong, and it survived a wave of visual critique.
+ *
+ * They are read out of the shader source now rather than copied. These tests
+ * are what makes that safe: they prove the reader can find each constant in
+ * the real material, and that the fallbacks recorded beside it are still the
+ * shader's own values, so a rename or a retune over there fails here loudly
+ * instead of silently degrading to a stale number.
+ */
+describe('the board reads its lighting model rather than copying it', () => {
+  const source = createPainterlyMaterial(createPainterlyGlobals(), {
+    vertexColors: true,
+  }).fragmentShader;
+
+  for (const [name, recorded] of Object.entries(PAINTERLY_CONSTANTS)) {
+    it(`finds ${name} in the painterly shader, and the fallback still matches it`, () => {
+      // A sentinel no shader constant would ever be, so "found" and "fell
+      // back" cannot be confused — the failure this whole arrangement is
+      // guarding against is a silent fallback.
+      const sentinel = -12345;
+      const found = painterlyConstant(source, name, sentinel);
+      expect(found).not.toBe(sentinel);
+      expect(found).toBeCloseTo(recorded, 6);
+    });
+  }
+
+  it('will not match a #define that does not start a line', () => {
+    // Three's own preprocessor only substitutes an `#include` that starts a
+    // line, and a probe in this project that ignored that quietly measured
+    // nothing for a round. A directive mid-line is not a directive, and a
+    // reader that matched one would happily pick up a number out of a
+    // comment or a string.
+    expect(painterlyConstant('float x = 1.0; #define SUN_STRENGTH 9.5', 'SUN_STRENGTH', 0.92)).toBe(
+      0.92,
+    );
+    expect(painterlyConstant('// see #define SUN_STRENGTH 9.5 above', 'SUN_STRENGTH', 0.92)).toBe(
+      0.92,
+    );
+    // …and it must still see its own success case, indented or not.
+    expect(painterlyConstant('#define SUN_STRENGTH 9.5', 'SUN_STRENGTH', 0.92)).toBe(9.5);
+    expect(painterlyConstant('  #define SUN_STRENGTH 9.5\n', 'SUN_STRENGTH', 0.92)).toBe(9.5);
+  });
+});
+
+/**
+ * The floor is quoted in relative luminance, so it has to be *paid* in
+ * relative luminance.
+ *
+ * It was not. The lift was added as `FLOOR_WARMTH * lift`, and `FLOOR_WARMTH`
+ * carries 0.7196 of a unit of luminance per unit of itself, so the board
+ * received 72 per cent of the light `LIGHT_FLOOR` promised — worst at the
+ * darkest hours, where the lift is nearly all of the board's light. Measured
+ * on `05-golden-busk`, the board's light landed at 0.150 against a floor of
+ * 0.170. This is the arithmetic that says so.
+ */
+describe('the light floor is paid in the units it is quoted in', () => {
+  const luma = (c: Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+
+  it('records the shortfall that made this necessary', () => {
+    // The bug, preserved as a number so nobody has to rediscover it.
+    expect(luma(new Color(FLOOR_WARMTH))).toBeCloseTo(0.7196, 3);
+  });
+
+  it('normalises the lamplight to carry exactly one unit of luminance', () => {
+    expect(luma(unitLuminance(new Color(FLOOR_WARMTH)))).toBeCloseTo(1, 6);
+  });
+
+  it('leaves the hue exactly where it was — this is a scale, not a tint', () => {
+    const raw = new Color(FLOOR_WARMTH);
+    const paid = unitLuminance(new Color(FLOOR_WARMTH));
+    expect(paid.r / paid.g).toBeCloseTo(raw.r / raw.g, 9);
+    expect(paid.g / paid.b).toBeCloseTo(raw.g / raw.b, 9);
+  });
+
+  it('cannot divide by a black lamp', () => {
+    const black = unitLuminance(new Color(0x000000));
+    expect(Number.isFinite(black.r + black.g + black.b)).toBe(true);
   });
 });
