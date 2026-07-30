@@ -279,8 +279,11 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
 /**
  * How much of the narrow-screen widening is handed back to the sky rather
  * than to the ground. See `widenRise`, which is where the number is argued.
+ *
+ * Negative, which is not a typo. It used to be +0.25 — a quarter of the added
+ * angle given to the sky — and going the other way is the change.
  */
-const WIDEN_RISE_SHARE = 0.25;
+const WIDEN_RISE_SHARE = -0.35;
 
 /**
  * Ceiling on the narrow-screen FOV widening, in tangent space.
@@ -529,14 +532,37 @@ export class CameraRig {
    * phone — the framing most players see first — was very nearly half empty
    * sky with everything of interest squeezed into a band at the skyline.
    *
-   * A quarter share, with the widening itself pulled back to 1.14, lands the
+   * A quarter share, with the widening itself pulled back to 1.14, landed the
    * horizon at 0.35 on both phone portrait and tablet: still a little more
    * sky than the desktop framing, which is right for a tall frame, and
-   * nowhere near half of it. The bottom edge picks up about two degrees more
-   * road, which is a price worth paying and much the smaller of the two.
+   * nowhere near half of it. The bottom edge picked up about two degrees more
+   * road, which read as a price worth paying and much the smaller of the two.
+   *
+   * **That last judgement was wrong, and the share is now negative.** The
+   * reason is a measurement the argument above never made: how big the largest
+   * *connected* patch of one value in the frame is. On the tall aspects it was
+   * the sky, and the sky is not a price worth paying, because a flat sky is
+   * flat everywhere while a flat road has grass, ruts, stones and a shadow
+   * across it and therefore breaks into small patches at the same bucket
+   * share. Measured on 08-phone-portrait, largest flat region as a share of
+   * frame: 12.1 per cent at +0.25, 10.6 per cent at -0.35, against 8 to 13.5
+   * per cent on the desktop frames — so a tall frame stops being the outlier.
+   * The treeline band, which is the one carrying the midground, went from 61
+   * per cent of its pixels in a single ten-level bucket to 49; the near road
+   * gave up 25 to 30 the other way, which is the trade being made on purpose.
+   *
+   * A note on what this fixes and what it does not. The critique that prompted
+   * it asked for the skyline to sit *nearer 0.45* of frame height rather than
+   * 0.37 — that is, for more sky, not less — while also naming the flat sky as
+   * a quarter of the frame and the answer as "not more scatter". Those two
+   * cannot both be had, and the arithmetic above says which one to keep. The
+   * bottom third of a portrait frame is still one brown plane; that is the
+   * ground's own business and not something a camera can fix.
    *
    * It is done by moving the *look target*, not by adding a pitch offset, so
-   * it damps with everything else and cannot fight the target smoothing.
+   * it damps with everything else and cannot fight the target smoothing. That
+   * is also why a negative value is safe: it is a look target a little below
+   * the one the desktop framing uses, not a rotation bolted on afterwards.
    */
   private widenRise(framing: MoodFraming): number {
     if (this.fovWiden <= 1) return 0;

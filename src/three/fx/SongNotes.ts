@@ -380,6 +380,32 @@ const BOARD_INK: readonly [number, number, number] = [0.09, 0.08, 0.085];
  * pitch you cannot read off a line is the mechanic failing — this game
  * teaches a child to read music, and a prettier board that cannot be read
  * is a regression however well it sits in the light.
+ *
+ * **It is one number and not two, and that is worth stating because it looks
+ * like two.** A critique measured the staff at 55 per cent of the plank's
+ * height, called the other 45 per cent blank by construction, and proposed
+ * splitting this into 3.5 below and 1.5 above on the grounds that the
+ * derivation above is an argument for the bottom margin only. The derivation
+ * is symmetric and the songbook says so: `SONGS` spans steps 0 to 12, the
+ * printed lines sit at 2 to 10, and `needsLedger` is true at both ends. So
+ * the notation reaches two steps past the top line exactly as it reaches two
+ * steps past the bottom one, and both ends need the same three terms:
+ * `2` steps to that note, `0.92` for half a note head — `HEAD_RY` of a cell,
+ * through `glyphWorldSize`, in steps — and `0.42` for the bevel, because the
+ * printed face is inset from the silhouette by `BOARD_BEVEL_M` and ink that
+ * runs onto the chamfer is ink on an edge. That is 3.34, and 3.5 is it with
+ * sixteen hundredths of a step to spare, at both ends. There is nothing here
+ * to reclaim: taking the margin to its floor would shorten the plank by four
+ * per cent.
+ *
+ * A margin of 1.5 above would put the plank's top edge at 5.5 steps over the
+ * middle line while Old MacDonald's A5 sits at 6, so the head of the highest
+ * note in the songbook — and the ledger line that names it — would render
+ * off the top of the board entirely. That is the same failure the 1.3 margin
+ * shipped at the bottom, and it is the one this file is not allowed to ship.
+ * The plank is not 45 per cent blank; it is 45 per cent reserved, and which
+ * of the two it looks like on any given frame depends only on where the tune
+ * playing at that moment happens to sit. `songNotes.test.ts` pins it.
  */
 const BOARD_MARGIN_STEPS = 3.5;
 
@@ -1301,6 +1327,30 @@ export class SongNotes {
  */
 const PAINTERLY_AMBIENT = 0.32;
 const PAINTERLY_SUN = 0.92;
+
+/**
+ * The highest and lowest diatonic step whose note head the plank has room to
+ * print, with the ledger line it needs and clear of the bevel.
+ *
+ * Exported only so a test can pin it against the songbook's actual range. The
+ * game never asks: the board is built once and the notation is what it is.
+ * The test exists because the plank looks 45 per cent empty from any frame
+ * where the tune sits inside the staff, and the obvious response to that —
+ * take the margin off the top — silently clips the top note in the book. It
+ * is the sort of change that type-checks, renders, looks better in nine
+ * frames out of ten, and loses a pitch in the tenth.
+ */
+export function printableSteps(): { lowest: number; highest: number } {
+  // Half a note head, in steps, through the same two constants the atlas is
+  // drawn and sized by, plus the chamfer the printed face is inset behind.
+  const headHalfSteps = ((HEAD_RY / ATLAS_CELL_PX) * glyphWorldSize()) / STEP_M;
+  const bevelSteps = BOARD_BEVEL_M / STEP_M;
+  const clearance = headHalfSteps + bevelSteps;
+  return {
+    highest: LINE_STEPS[LINE_STEPS.length - 1] + BOARD_MARGIN_STEPS - clearance,
+    lowest: LINE_STEPS[0] - BOARD_MARGIN_STEPS + clearance,
+  };
+}
 
 /** The plank's own edges, in metres from the barline and the middle line. */
 function boardLeftLocal(): number {
