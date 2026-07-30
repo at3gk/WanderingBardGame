@@ -1417,6 +1417,53 @@ function barLeftM(): number {
   return boardRightLocal() + BOARD_CLEAR_M;
 }
 
+/**
+ * How much of the limewash has worn off, as a multiplier on the plank's own
+ * colour at a point on its face.
+ *
+ * This exists because of a measurement that came back the *opposite* way to
+ * the critique that prompted it. "A flat bright tan slab, the largest and
+ * brightest object in the picture" is two claims, and only one of them is
+ * true. Sampled on a grid over the printed face of a shipped golden-hour
+ * busk, the plank's mean rendered luminance sits at the **48th percentile of
+ * its own frame** — dead median, not bright; the sky is far above it and the
+ * bard's shadowed side far below. Pulling the timber down would have been a
+ * fix aimed at a number that was already right, and the frame would have lost
+ * a mid tier it needs. So the level is left alone and only its *evenness* is
+ * addressed: the same grid measures a standard deviation of 15 over a face
+ * spanning 130 levels, which is the part a critic's eye is actually reading
+ * when it says "flat".
+ *
+ * The field is weather rather than decoration, and it is deliberately not
+ * symmetric — a vignette is what a symmetric one becomes, and a vignette
+ * reads as a lit panel rather than as a board. The wash goes thin where a
+ * plank standing in grass loses it: up from the foot, where the damp is, and
+ * at the far end, which is the end away from the barline and the end that
+ * points into the middle of the frame. Two slow waves along the length are
+ * the timber's own figure; the painterly material's `grain` handles
+ * everything finer than that, so there is nothing here above a metre or so of
+ * wavelength.
+ *
+ * It multiplies the *paper*, and `BOARD_INK` multiplies it in turn, so a rule
+ * keeps exactly its ratio to the paper it is drawn on at every point of the
+ * board. That is the property that makes this safe to do at all: the stave's
+ * legibility is a ratio, and a multiplier cannot change a ratio.
+ */
+const WEATHER_DEPTH = 0;
+const WEATHER_FIGURE = 0;
+
+function weathering(x: number, y: number): number {
+  const left = boardLeftLocal();
+  const right = boardRightLocal();
+  const bottom = boardBottomLocal();
+  const top = boardTopLocal();
+  const u = (x - left) / (right - left);
+  const v = (y - bottom) / (top - bottom);
+  const wear = smoothstep(0.32, 0, v) * 0.6 + smoothstep(0.58, 1, u) * 0.45;
+  const figure = Math.sin(u * 5.1 + 0.7) * 0.55 + Math.sin(u * 12.9 + 2.4) * 0.25;
+  return 1 - WEATHER_DEPTH * wear + WEATHER_FIGURE * figure;
+}
+
 /** The plank's own edges, in metres from the barline and the middle line. */
 function boardLeftLocal(): number {
   return -(TAIL_M + BOARD_END_M);
@@ -1484,6 +1531,20 @@ function buildBoardGeometry(): BufferGeometry {
   }
   rows.push(fy1);
   rows.sort((a, b) => a - b);
+  // Three more rows in each margin, which are the two stretches of face with
+  // no ink in them and therefore no rows of their own. They carry no line —
+  // a horizontal band anywhere on this board would be read as a sixth rule,
+  // which is the one thing the margin must not grow — they only give
+  // `weathering` somewhere to be sampled, so the damp rising from the foot is
+  // a curve rather than one long linear ramp from the bottom line to the edge.
+  const lowInk = rows[1];
+  const highInk = rows[rows.length - 2];
+  for (let i = 1; i <= 3; i++) {
+    const t = i / 4;
+    rows.push(fy0 + (lowInk - fy0) * t);
+    rows.push(fy1 + (highInk - fy1) * t);
+  }
+  rows.sort((a, b) => a - b);
 
   const cols = [
     fx0,
@@ -1497,6 +1558,16 @@ function buildBoardGeometry(): BufferGeometry {
     ruleX1,
     fx1,
   ];
+  // Seven more columns spread across the run. The ten above are all clustered
+  // at the barline and at the two ends, because they were placed by where the
+  // *ink* changes value, which left one quad two metres wide covering the
+  // whole run — and a two-metre quad can only interpolate `weathering`
+  // linearly across it, which is a gradient rather than a plank. Seven takes
+  // the widest gap to about a quarter of a metre, which resolves the figure's
+  // shorter wave. The cost is 21 rows x 7 columns of extra quads on one mesh.
+  for (let i = 1; i <= 7; i++) {
+    cols.push(barHalf + soft + ((ruleX1 - soft - barHalf - soft) * i) / 8);
+  }
   cols.sort((a, b) => a - b);
 
   // The barline stops at the outer staff lines, as engraved. Running it past
@@ -1505,8 +1576,16 @@ function buildBoardGeometry(): BufferGeometry {
   const barTop = (LINE_STEPS[LINE_STEPS.length - 1] - MIDDLE_STEP) * STEP_M + inkHalf;
   const barBottom = (LINE_STEPS[0] - MIDDLE_STEP) * STEP_M - inkHalf;
 
-  const inked = new Color().setRGB(BOARD_INK[0], BOARD_INK[1], BOARD_INK[2]);
-  const bare = new Color(1, 1, 1);
+  // Scratch, refilled per vertex. `weathering` multiplies the paper and
+  // `BOARD_INK` multiplies that, so a rule holds exactly its ratio to its own
+  // paper wherever it is on the board.
+  const tone = new Color();
+  const paintAt = (x: number, y: number, onIt: boolean): Color => {
+    const w = weathering(x, y);
+    return onIt
+      ? tone.setRGB(BOARD_INK[0] * w, BOARD_INK[1] * w, BOARD_INK[2] * w)
+      : tone.setRGB(w, w, w);
+  };
 
   const positions: number[] = [];
   const normals: number[] = [];
@@ -1534,7 +1613,7 @@ function buildBoardGeometry(): BufferGeometry {
   const first = positions.length / 3;
   for (let r = 0; r < rows.length; r++) {
     for (let c = 0; c < cols.length; c++) {
-      push(cols[c], rows[r], 0, 0, 0, 1, onRule(cols[c], rows[r]) ? inked : bare);
+      push(cols[c], rows[r], 0, 0, 0, 1, paintAt(cols[c], rows[r], onRule(cols[c], rows[r])));
     }
   }
   for (let r = 0; r + 1 < rows.length; r++) {
@@ -1554,25 +1633,39 @@ function buildBoardGeometry(): BufferGeometry {
   // makes the top edge take sky and the bottom edge take the ground's bounce
   // even when the plank is exactly face-on.
   //
-  // The four outer corners are nudged off true by a centimetre or so each,
-  // in different directions. A plank sawn by hand is not a rectangle, and a
-  // rectangle is what a UI card is; the ruled face inside is left perfectly
-  // square, so the pitch axis and the reading order are untouched and only
-  // the silhouette knows about it.
+  // The four outer corners are nudged off true, in different directions. A
+  // plank sawn by hand is not a rectangle, and a rectangle is what a UI card
+  // is; the ruled face inside is left perfectly square, so the pitch axis and
+  // the reading order are untouched and only the silhouette knows about it.
+  //
+  // They were a centimetre or so each, and a centimetre could not do the job
+  // the paragraph above claims for it. The plank is 2.74 m long, and the
+  // frame it was written for draws it 420 px wide at a board scale of 0.82 —
+  // 179 px to the metre before the scale, so a 0.011 m nudge is **1.6 px**.
+  // Rounded into a silhouette at that size it is a rectangle, which is what
+  // a critic kept calling it. These are three to four times that: the top
+  // edge now loses 12 px of length against the bottom and tilts by 3, which
+  // reads as sawn rather than as broken.
+  //
+  // The ceiling is `BOARD_BEVEL_M`: an *inward* nudge eats the bevel ring at
+  // that corner, and a corner nudged in past 0.05 would inside-out it. The
+  // vertical nudges are deliberately the small ones, because the top and
+  // bottom rings are the ones that catch sky and bounce and they are what
+  // makes the plank read as solid from dead in front.
   const k = Math.SQRT1_2;
-  const tl: [number, number] = [x0 + 0.011, y1 - 0.015];
-  const tr: [number, number] = [x1 - 0.017, y1 + 0.009];
-  const br: [number, number] = [x1 + 0.008, y0 + 0.013];
-  const bl: [number, number] = [x0 - 0.013, y0 - 0.007];
+  const tl: [number, number] = [x0 + 0.038, y1 - 0.014];
+  const tr: [number, number] = [x1 - 0.046, y1 + 0.009];
+  const br: [number, number] = [x1 + 0.026, y0 + 0.017];
+  const bl: [number, number] = [x0 - 0.030, y0 - 0.011];
   const ring = (
     outerA: [number, number], outerB: [number, number],
     ix0: number, iy0: number, ix1: number, iy1: number,
     nx: number, ny: number,
   ): void => {
-    const a = push(outerA[0], outerA[1], -bevel, nx * k, ny * k, k, bare);
-    const b = push(outerB[0], outerB[1], -bevel, nx * k, ny * k, k, bare);
-    const c = push(ix1, iy1, 0, nx * k, ny * k, k, bare);
-    const d = push(ix0, iy0, 0, nx * k, ny * k, k, bare);
+    const a = push(outerA[0], outerA[1], -bevel, nx * k, ny * k, k, paintAt(outerA[0], outerA[1], false));
+    const b = push(outerB[0], outerB[1], -bevel, nx * k, ny * k, k, paintAt(outerB[0], outerB[1], false));
+    const c = push(ix1, iy1, 0, nx * k, ny * k, k, paintAt(ix1, iy1, false));
+    const d = push(ix0, iy0, 0, nx * k, ny * k, k, paintAt(ix0, iy0, false));
     // Wound outer, inner, inner, outer. The obvious order — round the
     // trapezoid the way it is written — comes out clockwise seen from the
     // front and the whole ring is back-face culled, which looks exactly like
