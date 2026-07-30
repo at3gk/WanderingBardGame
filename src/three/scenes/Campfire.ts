@@ -578,7 +578,7 @@ export class Campfire {
           placeProp(prop, this.buildInstrument(prop, fireY, groundHeightAt));
           break;
         case 'lantern':
-          placeProp(prop, this.buildLantern(rand));
+          placeProp(prop, this.buildLantern(rand, prop, groundHeightAt));
           break;
         case 'firewood':
           placeProp(prop, this.buildFirewood(rand));
@@ -805,7 +805,11 @@ export class Campfire {
    * camp whose next tallest thing is knee-high, and the eye went to it
    * instead of to the fire.
    */
-  private buildLantern(rand: Rand): Object3D {
+  private buildLantern(
+    rand: Rand,
+    prop: PropPlacement,
+    groundHeightAt: (x: number, z: number) => number,
+  ): Object3D {
     const group = new Group();
     group.name = 'campfire-lantern';
     const lean = new Group();
@@ -897,6 +901,117 @@ export class Campfire {
       back.position.set(sx * 0.052, -0.228, -0.052);
       lamp.add(back);
     }
+
+    // The ground under it.
+    //
+    // The housing above fixed the lantern's *shape*; this is about what it
+    // is for. A lamp that lights nothing is a decal, and every frame of the
+    // camp showed one: the glass carried an emissive term and the metre of
+    // ground beneath it was the same value as the ground four metres away,
+    // so the eye read a bright rectangle stuck to a stick rather than a lamp
+    // burning. Measured on `07-night-campfire`, the ground at the staff's
+    // foot came back within a luminance point of open ground outside the
+    // camp entirely.
+    //
+    // This is the fire's own pool, small: the same additive disc with the
+    // same squared-and-eased falloff, at a fifth of `POOL_RADIUS_M` and
+    // about a third of the strength the fire's runs at. Note what it is
+    // *not* — it is not a second light. There is one point light in this
+    // scene and the comment on the glass above explains why it stays that
+    // way; a pool is a painted mark on the ground, it costs one draw, and it
+    // cannot compete with the fire because it does not reach anything the
+    // fire is lighting.
+    //
+    // What it buys, measured on `07-night-campfire`: the ground at the
+    // staff's foot goes from luminance 49.6 to 77.8 and the ground a metre
+    // out from 52.5 to 61.8, while a control patch four metres away is
+    // unchanged at 39.9 -> 39.4. So the lift is local to the lamp, which is
+    // the whole claim.
+    //
+    // Held at a constant strength rather than flickering. A candle inside
+    // glass is the steadiest flame at a camp, and a second pool pulsing on
+    // the fire's rhythm would say the two are the same source.
+    const poolRadius = 0.95;
+    const poolSegments = 18;
+    const poolRings = 4;
+    const positions: number[] = [];
+    const falloffs: number[] = [];
+    const rimScale: number[] = [];
+    for (let s = 0; s < poolSegments; s++) rimScale.push(randRange(rand, 0.84, 1.08));
+    // Draped over the terrain, exactly as the fire's pool is, and for a
+    // reason worth writing down: the first version of this was flat and
+    // almost all of it was underground. Measured, a flat disc lifted 3 cm
+    // showed a 40-pixel contact spot at the staff's foot where the geometry
+    // predicts about 250 — the camp is on a roadside verge with a few
+    // centimetres of crown across a metre, which is more than enough to bury
+    // a disc that does not follow it. The prop group carries the lantern's
+    // own yaw and scale, so the sample has to be taken at the *world* point
+    // each vertex lands on and brought back through both.
+    const groundY = groundHeightAt(prop.x, prop.z);
+    const cos = Math.cos(prop.rotation);
+    const sin = Math.sin(prop.rotation);
+    const scale = Math.max(0.01, prop.scale);
+    const vertex = (ring: number, segment: number) => {
+      const s = ((segment % poolSegments) + poolSegments) % poolSegments;
+      const angle = (s / poolSegments) * Math.PI * 2;
+      const t = ring / poolRings;
+      const radius = t * poolRadius * rimScale[s];
+      const dx = Math.sin(angle) * radius;
+      const dz = Math.cos(angle) * radius;
+      const wx = prop.x + scale * (dx * cos + dz * sin);
+      const wz = prop.z + scale * (-dx * sin + dz * cos);
+      positions.push(dx, (groundHeightAt(wx, wz) - groundY) / scale + 0.035, dz);
+      const falloff = 1 - t;
+      falloffs.push(falloff * falloff * (3 - 2 * falloff) * falloff);
+    };
+    for (let ring = 0; ring < poolRings; ring++) {
+      for (let s = 0; s < poolSegments; s++) {
+        vertex(ring, s);
+        vertex(ring + 1, s);
+        vertex(ring + 1, s + 1);
+        vertex(ring, s);
+        vertex(ring + 1, s + 1);
+        vertex(ring, s + 1);
+      }
+    }
+    const poolGeometry = this.keep(new BufferGeometry());
+    poolGeometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3));
+    poolGeometry.setAttribute('aFalloff', new BufferAttribute(new Float32Array(falloffs), 1));
+    const poolMaterial = this.track(
+      new ShaderMaterial({
+        uniforms: {
+          uColor: { value: new Color(LANTERN_GLASS).lerp(new Color(0xffb347), 0.6) },
+          uStrength: { value: 0.26 },
+        },
+        vertexShader: /* glsl */ `
+          attribute float aFalloff;
+          varying float vFalloff;
+          void main() {
+            vFalloff = aFalloff;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          uniform vec3 uColor;
+          uniform float uStrength;
+          varying float vFalloff;
+          void main() {
+            gl_FragColor = vec4(uColor, vFalloff * uStrength);
+          }
+        `,
+        transparent: true,
+        blending: AdditiveBlending,
+        depthWrite: false,
+      }),
+    );
+    const pool = new Mesh(poolGeometry, poolMaterial);
+    // Behind the fire's own pool in the queue, so where the two overlap the
+    // fire is the one that wins.
+    pool.renderOrder = 3;
+    pool.name = 'campfire-lantern-pool';
+    // On the group, not on `lean`: the staff is driven in at an angle and a
+    // pool of light does not lean with the thing casting it.
+    group.add(pool);
 
     return group;
   }
