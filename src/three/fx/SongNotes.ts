@@ -190,17 +190,33 @@ const MIDDLE_LINE_Y = 0.92;
 const ANCHOR_AHEAD_M = 1.5;
 
 /**
- * How far to the camera's left of that point the barline stands, in metres
- * at full size.
+ * How much clear ground the plank's *right edge* keeps between itself and the
+ * point the camera is aimed at, in metres at full size.
  *
- * This is the number that keeps the stave off the bard. He sits right of
- * centre in both busking framings, so the stave is given the left of the
- * frame — which in this game is where the road runs away and there is least
- * going on. Measured to the *barline* rather than to the middle of the stave
- * because the barline is the mark the eye goes to, and it is the mark that
- * wants a clear background.
+ * This replaces a flat 2.1 m offset from the road to the barline, and the
+ * replacement is the whole point: 2.1 was chosen on its own, while the plank
+ * reaches `boardRightLocal()` = 2.32 m to the right of the barline. The board
+ * was therefore always drawn *across* the point the road runs to, by a fifth
+ * of a metre, on every screen — because the two numbers were never compared.
+ * Measured on the shipped build, the plank's right edge crossed the camera's
+ * own aim point by 42 px on 1600x900 and by 21 px on 844x390, and on the
+ * phone it stopped 5 px short of the bard's arm.
+ *
+ * Scaling with `camera.aspect` was investigated first, since that is where
+ * the fault looks like it should be, and it is not there: `frameShare`
+ * already carries aspect (`frameWidth` is proportional to it), and on
+ * 844x390 it returns 1.02 — the offset is saturated at the *upper* clamp, so
+ * un-clamping it buys two per cent. Both framings put the barline within half
+ * a per cent of the same share of their own frame. The offset was never
+ * aspect-blind; it was simply too small by the width of the board.
+ *
+ * So the offset is derived from the plank instead of guessed beside it: the
+ * barline stands wherever it has to for the plank's right edge to finish this
+ * far short of the aim point. Half a metre is about a note head and a half at
+ * full size, and it is what takes the right edge from 42 px past the aim
+ * point to 66 px clear of it on a desktop frame.
  */
-const BAR_LEFT_M = 2.1;
+const BOARD_CLEAR_M = 0.5;
 
 /**
  * The length of the run, from where a note appears to the barline, in metres
@@ -211,10 +227,40 @@ const BAR_LEFT_M = 2.1;
  * road. Notes a beat apart at the songbook's tempo land about two and a half
  * note heads apart on it — engraved spacing, near enough, and arrived at by
  * picking a length the frame could afford rather than by choosing it.
+ *
+ * **It is also the plank's width, and it has no room left in it.** The board
+ * runs from `boardLeftLocal` to `boardRightLocal`, so shortening the plank
+ * means shortening this, and a critique that asks for a narrower board is
+ * asking for this number. The floor is set by the songbook and by the
+ * instruments: `SONGS` contains runs of four consecutive half-beat notes, and
+ * the fastest instrument's `tempoFeel` of 1.12 puts the base 92 BPM at 103, so
+ * the tightest pair the game can draw is 291 ms apart. Over a fixed
+ * `TRAVEL_TIME_MS` of 1800 that is `RUN_M * 0.162` between their centres —
+ * 0.356 m here — against a note head 0.294 m wide through `glyphWorldSize`.
+ * Sixty-two millimetres of daylight, a fifth of a head, and it is measured on
+ * screen as well: adjacent heads on a 1600x900 busk sit 60 px apart and are
+ * 43 px wide. At 2.0 the gap is 29 mm and at 1.84 the heads touch outright.
+ * Two note heads printed on top of each other is not notation.
+ *
+ * So the plank cannot be drawn to less than the note run without either
+ * colliding heads or standing notes off the end of the board, and the answer
+ * to a board that dominates a frame is `BOARD_CLEAR_M` and the plank's own
+ * value structure, not this. `songNotes.test.ts` pins the arithmetic.
  */
 const RUN_M = 2.2;
 
-/** How far the staff is drawn past the barline, so it does not stop dead at it. */
+/**
+ * How far the staff is drawn past the barline, so it does not stop dead at it.
+ *
+ * It looks like a taste number and it is not one, which is worth writing down
+ * because a critique once measured the drifted-past note as falling off the
+ * plank's left edge and had to retract it. Together with `BOARD_END_M` this
+ * gives 0.42 m of plank left of the barline, and a note that has gone by comes
+ * to rest at `PAST_DRIFT_M` = 0.25 m carrying a head half `HEAD_RX` of a cell
+ * wide — 0.147 m through `glyphWorldSize` — so its left edge reaches 0.397 m.
+ * The plank has twenty-three millimetres to spare and no more. Anything taken
+ * off this end ships a note hanging off the board.
+ */
 const TAIL_M = 0.3;
 
 /**
@@ -970,7 +1016,7 @@ export class SongNotes {
 
     const narrow = camera ? this.frameShare(camera) : 1;
     this.scale = Math.max(narrow, CARD_SCALE_MIN);
-    this.anchor.addScaledVector(this.right, -BAR_LEFT_M * narrow);
+    this.anchor.addScaledVector(this.right, -barLeftM() * narrow);
     this.glyphMaterial.uniforms.uSize.value = glyphWorldSize() * this.scale;
 
     // The board's own frame: local +X along the run, +Y world up, +Z out of
@@ -1350,6 +1396,25 @@ export function printableSteps(): { lowest: number; highest: number } {
     highest: LINE_STEPS[LINE_STEPS.length - 1] + BOARD_MARGIN_STEPS - clearance,
     lowest: LINE_STEPS[0] - BOARD_MARGIN_STEPS + clearance,
   };
+}
+
+/**
+ * How far to the camera's left of the road point the barline stands, in metres
+ * at full size.
+ *
+ * A function rather than a constant because it is *derived* from the plank's
+ * own right edge — see `BOARD_CLEAR_M` for why the two have to be stated
+ * together — and `boardRightLocal` is declared after the point a constant
+ * would be evaluated at.
+ *
+ * The offset is measured to the barline rather than to the middle of the
+ * board because the barline is the mark the eye goes to, and it is the mark
+ * that wants a clear background. The bard sits right of centre in both
+ * busking framings, so the board is given the left of the frame — which in
+ * this game is where the road runs away and there is least going on.
+ */
+function barLeftM(): number {
+  return boardRightLocal() + BOARD_CLEAR_M;
 }
 
 /** The plank's own edges, in metres from the barline and the middle line. */
