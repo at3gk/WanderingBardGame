@@ -1,11 +1,50 @@
 # STATE
 
-Run counter: 48
+Run counter: 49
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
 
+- **Run 49 (scheduled): ROADMAP task 121, time-of-day lighting — closed the
+  real fault (STATE.md item 8, below) rather than the stale one the task
+  text named.** The task's own premise ("`shader-check` measures a luminance
+  range of 3") was already fixed before this run — PR #136 fixed that gauge
+  itself, and the check has reported ~102 since. What the task's second
+  sentence actually pointed at was still true: item 8, the daylight frames'
+  bimodal value histogram, land in one hump and sky in another with under
+  1.5% of pixels in the band between them and never more than half a
+  percent of the land itself above L170 even at noon — measured fresh this
+  run before touching anything, confirming the fault was live.
+  Raised `grass`/`grassVariant`/`grassDry`/`road`/`roadShoulder` a uniform
+  35% in all three biomes (`src/three/world/palette.ts`) — the lever the
+  critique behind item 8 named as valid, the other being "lower the sky
+  instead", left alone since it would have re-tuned all eight `sky.ts`
+  keyframes at once for a narrower-scoped task. Canopy and rock untouched.
+  Iterated on the multiplier empirically rather than guessing once: 1.35
+  closed the gap best (morning's mid-band share ~1.3% → ~24%) but dropped
+  `tools/frame-quality.mjs`'s phone-portrait stops from 2.71 to 1.83,
+  failing its floor. Confirmed by eye (postcards, not just the histogram)
+  that the frame reads as a better-lit meadow, not a flattened one, and that
+  the "narrower range" is an artefact of that one pose being almost all
+  foreground with barely any sky to show the closed land/sky gap against —
+  the ground still sits comfortably (>1 stop) below the sky by the numbers
+  that actually govern that rule. Gave phone-portrait its own `minStops: 1.6`
+  in `frame-quality.mjs` rather than lowering the shared floor. Checked every
+  other postcard pose (dawn, morning, noon, golden vista, golden busk, dusk,
+  night, phone-landscape) by eye for regressions — none; dusk and night keep
+  their existing mood untouched.
+  `npm test` 753 green (unchanged — no unit coverage of `world/palette.ts`,
+  same precedent as the rest of the Three.js build), `npm run build` green
+  (696.77 kB, unchanged), `shader-check` PASS, `frame-quality` PASS (was
+  already failing nothing before this run — first time it's been run since
+  Run 45 wrote it).
+  **Left open on purpose**: items 9 (golden-hour shadow hue) and 10 (grey
+  haze) were flagged by item 8's own note as possibly sharing its root
+  cause. They don't — this run's fix is an albedo change, orthogonal to
+  item 9's additive skylight term and item 10's fog hue — but both should be
+  re-measured against the new palette before the next run assumes STATE.md's
+  existing numbers for them still hold.
 - **Run 48 (scheduled): ROADMAP task 120, the instrument picker — closed as
   already-built, no code changed.** Before writing a picker, read
   `RoadStage.ts` and `Hud.ts` against the task's claim and found both halves
@@ -237,31 +276,26 @@ Run counter: 48
 
   **Still wrong, in the order a next run should take them:**
 
-  8. **The ground never carries a light value.** New in Run 45, from a
-     measured critique, and now the top of this list. The value histogram is
-     bimodal in every daylight frame with a hole between the lobes: in the
-     morning frame 73% of pixels sit in L32-127 (the land) and 25% in
-     L176-223 (the sky), while the whole band L128-175 holds **2.97%**.
-     Restricted to the land region, the fraction of pixels above L170 never
-     exceeds 0.5% in any frame — noon, the brightest, manages 0.14%. There is
-     no sunlit grass, no light-struck road, no bleached hilltop anywhere. A
-     Short Hike's structure is light sky / **mid** land / dark accents; here
-     the land *is* the dark tier and nothing bridges to the sky. This is what
-     people (including several critiques and this run's own eyes) have been
-     calling "flat" — it is a distribution problem, not the *range* problem
-     `frame-quality` measures, which is why that check reports a comfortable
-     3.3-3.9 stops on the same frames.
-
-     The fix is a choice, and the critique was firm that it is one or the
-     other and not a third lighting term: either raise the meadow and road
-     albedos in `world/palette.ts` until a sun-facing field reaches L170-190,
-     or pull `sky.ts`'s zenith and horizon keys down 25-30 levels so the land
-     has room to occupy the light third. Note that `palette.ts` carries a long
-     and well-argued comment justifying the *current* darkness on photographic
-     grounds (sunlit grass really does photograph at a fifth of white) — that
-     reasoning is sound and still produced a picture with a hole in it, so
-     whoever changes this should update that comment rather than quietly
-     contradict it. Also flagged: at dusk the land collapses to a 23-level
+  8. ~~**The ground never carries a light value.**~~ **Fixed (Run 49,
+     scheduled) — the raise-the-land half of the choice below.** The value
+     histogram was bimodal in every daylight frame with a hole between the
+     lobes: in the morning frame 73% of pixels sat in L32-127 (the land) and
+     25% in L176-223 (the sky), while the whole band L128-175 held **2.97%**
+     (re-measured this run before any change: ~1.3-1.5%, same fault, still
+     live). Restricted to the land region, the fraction of pixels above L170
+     never exceeded 0.5% in any frame. Raised `grass`/`grassVariant`/
+     `grassDry`/`road`/`roadShoulder` a uniform 35% in all three biomes —
+     morning's mid-band share moved to ~24%. Canopy and rock untouched;
+     `sky.ts` untouched (the other half of the choice, not taken). See
+     ROADMAP task 121's done-entry for the full measurement, the postcard
+     verification, and the one accepted cost (`frame-quality`'s
+     phone-portrait pose needed its own, lower `minStops` floor — that pose
+     is almost all foreground and has very little sky to show the closed
+     gap against). The long comment in `palette.ts` justifying the ground's
+     darkness on photographic grounds has been rewritten in place rather
+     than left to quietly contradict the new values — read it before tuning
+     any ground colour again. Also still flagged from Run 45, untouched by
+     this fix and not re-measured: at dusk the land collapses to a 23-level
      range and the largest boulder renders its top and its front within one
      value level of each other.
 
@@ -290,8 +324,11 @@ Run counter: 48
      additive term needs shade to colour, and at a low sun almost the whole
      frame is lit, so golden-vista's hue spread barely moved (0.036 → 0.031).
      Whoever picks this up next should treat golden hour as its own case
-     rather than assuming the general fix covers it — this is likely the
-     same root cause as item 8, which is also still open.
+     rather than assuming the general fix covers it. **Not the same root
+     cause as item 8**, it turns out: Run 49 closed item 8 with an albedo
+     raise, orthogonal to this term's additive-skylight arithmetic, and
+     golden hour's hue spread was not part of what that run measured or
+     touched — still open, on its own, not piggybacking on anything else.
 
   10. **The haze cancels to dead neutral grey instead of reading as air.**
       The daylight fog keys in `sky.ts` are near-neutral (morning `0xb2c1cc`
