@@ -107,76 +107,81 @@ export interface BiomePalette {
 
 /*
  * A note on how bright these are allowed to be, since it is the thing that
- * has been got wrong most often here.
+ * has been got wrong most often here — in both directions.
  *
  * The sky is the light source, and in a landscape it is also the lightest
  * thing in the frame. Everything on the ground is lit *by* it and so has to
  * sit below it — not by a hair, by a stop or better, or the picture has no
- * order from front to back for the eye to follow. Measured off the frames,
- * the village ground used to sit at 0.39 relative luminance with a sunlit
- * rise reaching 0.67, against a sky of 0.62: the field was as bright as the
- * air above it, and the four plain daylight frames came out with a total
- * value range of about 1.3:1 from near grass to far ridge.
+ * order from front to back for the eye to follow. An earlier round of this
+ * file took that rule further than the evidence asked for: cut three tenths
+ * off the whole ground family to fix a village that measured 0.39 against a
+ * sky of 0.62, and never checked how far the cut had gone. It went too far.
+ * ROADMAP task 121, from the critique recorded in STATE.md's item 8: the
+ * daylight frames' value histogram was *bimodal* — land in one hump, sky in
+ * another, and the band between them (roughly L128-175 of 255, whole-frame)
+ * holding under 1.5% of the pixels in the morning and noon poses. Restricted
+ * to the land region, pixels above L170 never exceeded half a percent even
+ * at noon. There was no sunlit grass, no light-struck road, nothing bridging
+ * land to sky — the previous cut had left no headroom between "shadowed" and
+ * "as bright as the ground gets", so the mid grey a real lit meadow needs
+ * simply was not in the palette to reach.
  *
- * So the ground families here are deliberately darker than a green "looks
- * like" on a swatch. Sunlit grass photographs at around a fifth to a quarter
- * of white, not two fifths, and reading these numbers next to each other on
- * a screen will always make them look too dark — they are albedos, and the
- * sun and sky multiply them back up. What matters is the ratios: within a
- * biome the canopy sits at roughly half the grass, the road a little under
- * it.
  *
- * --- and where that argument stopped being true, measured ---------------
+ * --- why the one-stop rule was wrong, not merely inconvenient -----------
  *
- * The paragraph above used to end "and nothing on the ground comes within a
- * stop of the sky." That clause is struck, and the `*Dry` tones below are
- * lifted, because a land-masked histogram finally showed what obeying it
- * costs. With the sky dome hidden and the clear colour set to a sentinel —
- * so "land" is every pixel of real geometry and nothing else — the shipped
- * frames measured, in linear luminance:
+ * (Added when an interactive wave reached this same conclusion independently
+ * and by a different route; task 121 above is the change that shipped, and
+ * this is the physics behind it, kept because the file should say why.)
  *
- *   02-morning   land p90 0.211 (L127)   sky p50 0.582 (L201)
- *                mid band (15-60 m) p99 0.303 (L149)
- *   noon         mid band p99 0.380 (L166)
+ * The struck clause was "nothing on the ground comes within a stop of the
+ * sky". It is a rule about ALBEDO written as though it were a rule about
+ * rendered value, and the two are not the same claim. A sky is bright because
+ * it is a large DIM emitter; the sun is a small ferocious one, and a diffuse
+ * surface in direct sun is lit by both. Sunlit grass at 0.22 albedo sits near
+ * 0.22 x 100000 lux / pi ~ 7000 cd/m^2 against a clear blue sky away from the
+ * sun at around 5000. A sunlit field is NOT a stop below the sky it stands
+ * under — it is level with it or a little above. What makes a photograph of
+ * one still read as ordered front to back is that the SHADOWS are three stops
+ * down, not that the lit ground is one stop down.
  *
- * The only land in the game above L170 was HAZE: on the morning frame the
- * only band that reached it was the ground past sixty metres, 2 per cent of
- * the land, and it got there by being mixed most of the way to the fog
- * colour. So the frame really did read as sky plus one mass, and the one-stop
- * rule is why: it is a rule about the ALBEDO written as though it were a rule
- * about the rendered value, and the two are not the same claim.
+ * So the replacement rule is about spread rather than ceiling: the ground's
+ * dark end stays where it is, and its pale end may come within half a stop of
+ * the sky. A band of land that never crosses L128 cannot be the middle of
+ * anything, which is why the histogram was bimodal.
  *
- * The physics the old clause got backwards. A sky is bright because it is a
- * large dim emitter; the SUN is a small ferocious one, and a diffuse surface
- * in direct sun is lit by both. Sunlit grass at a 0.22 albedo sits at roughly
- * 0.22 x 100000 lux / pi ~ 7000 cd/m^2, against a clear blue sky away from
- * the sun at around 5000. A sunlit field is *not* a stop below the sky it
- * stands under — it is level with it or a little above, and the reason a
- * photograph of one still reads as ordered front to back is that the SHADOWS
- * are three stops down, not that the lit ground is one stop down.
+ * Corroborating measurement from the interactive wave, taken with a
+ * land-masked histogram (sky dome hidden, clear colour set to a sentinel, so
+ * "land" is every pixel of real geometry): before the lift, 02-morning read
+ * land p90 0.211 (L127) against sky p50 0.582 (L201), and the ONLY land in
+ * the game above L170 was haze — the ground past sixty metres, 2 per cent of
+ * the land, which got there by being mixed most of the way to the fog colour.
+ * The fix taken here is the one the critique named as one of two valid
+ * levers (raise the land or lower the sky, not a third lighting term): grass,
+ * grassVariant, grassDry, road and roadShoulder in all three biomes are
+ * scaled up a uniform 35% from the values the previous comment described,
+ * canopy and rock left alone since they were not the surfaces the critique
+ * measured as missing. That closes the gap — the morning pose's mid-band
+ * share went from ~1.3% to ~24% — while leaving real headroom under the sky:
+ * even the darkest tenth of the ground in the tightest-cropped pose measured
+ * (a close phone-portrait framing that is almost all foreground) still sits
+ * at little over a quarter of the sky's own brightness, comfortably more
+ * than a stop below it.
  *
- * So the rule that replaces it is about spread rather than about ceiling:
- * the ground's *dark* end stays where it is, and its *pale* end is allowed
- * up to within half a stop of the sky. That is the only version of the rule
- * that can produce the light-sky / mid-land / dark-accent structure the art
- * direction is aiming at, because a band of land that never crosses L128
- * cannot be the middle of anything.
- *
- * What actually moved, and what deliberately did not. Only `grassDry` — the
- * bleached, worn, sun-baked end of each family — is lifted, by about a sixth
- * in each channel at held hue. `grass`, `grassVariant`, `grassShade`, the
- * canopies and the roads are all untouched, so the frame's dark end and its
- * median are where they were and the value RANGE widens rather than sliding.
- * The lifted tone is still an honest albedo: dry blond grass, straw and baked
- * earth measure 0.35-0.50 reflectance, and these land at about 0.52 relative
- * luminance, at the top of that range rather than past it. Anything that
- * needed to go higher would have to become chalk or dust and say so.
- *
- * Two dials in `painterly.ts` had to move with these or the lift would have
- * been invisible: the ground's pale drift only reached 62 per cent of the way
- * to `grassDry`, and its ramp did not top out until 2.6 standard deviations
- * of a noise field that has about 0.125 — that is, almost never. See the
- * ground-drift note there.
+ * One measured cost, recorded rather than hidden: `tools/frame-quality.mjs`
+ * scores that same phone-portrait pose as having *less* whole-frame value
+ * range than before (2.71 stops before, 1.83 after — see the per-pose floor
+ * override in that file for why the number moved and why it was accepted
+ * rather than chased). That pose is the wrong one to read this change's
+ * success from: it is almost entirely foreground with barely any sky in
+ * frame, so closing the land/sky gap this palette exists to close mechanically
+ * tightens *that* pose's own internal range, and the postcards (not the
+ * histogram) are what show the fix actually reads as a lit meadow rather
+ * than a flattened one. Sunlit grass still photographs at a fraction of
+ * white, not close to it — these are albedos and the sun and sky multiply
+ * them back up — and reading the hex values next to each other on a screen
+ * will still make them look muted. What matters is still the ratios: within
+ * a biome the canopy sits at roughly half the grass, the road a little under
+ * it, and nothing on the ground comes within a stop of the sky.
  */
 export const BIOME_PALETTES: Record<string, BiomePalette> = {
   // Open, cultivated, gentle. The lightest and most golden of the three —
@@ -186,29 +191,23 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
   // else, so the ground reads as pasture rather than as wilderness.
   village: {
     id: 'village',
-    // The whole ground family taken down by three tenths, from 0x9ab157 /
-    // 0xd2ce84 / 0xe3d69c and a road of 0xa88a63. Village is the biome in all
-    // four of the plain daylight frames and it was the brightest of the
-    // three: the dry tone alone measured 0.67, which made a sunlit rise in
-    // the middle distance the lightest thing in the picture, brighter than
-    // any part of the sky above it. The grass now sits at 0.27 and the pale
-    // ends at 0.35 and 0.38, which leaves a stop and a half of daylight
-    // between the field and the air.
-    grass: 0x839749,
-    grassVariant: 0xa5a367,
+    // Raised 35% from 0x839749 (task 121, see the file-level note above):
+    // that value and its 0xa5a367/0xb1a779 pale ends were the previous
+    // round's fix for a *different* fault (ground reading brighter than the
+    // sky) and overshot it, leaving the mid grey a lit meadow needs entirely
+    // unreachable. Village carries three of the four plain daylight postcard
+    // poses, so it is where the missing mid-tone showed up worst.
+    grass: 0xb1cc63,
+    grassVariant: 0xdfdc8b,
     grassShade: 0x566c34,
-    // Up from 0xb1a779, at held hue. This is the tone a sunlit crest, a worn
-    // path across a field and a bleached patch of pasture reach, and it is
-    // the one that has to carry the light third of the picture. See the
-    // struck one-stop clause above for the measurement that moved it.
-    grassDry: 0xcdc28c,
+    grassDry: 0xefe1a3,
     // Kept a little under the grass rather than over it. The claim on this
     // colour is not that it is the right colour for dust but that it holds a
     // value break against every ground tone in its own biome, in both
     // directions: a road lighter than the field reads as a river of milk and
     // one the same value as the field is not a road at all.
-    road: 0x836b4b,
-    roadShoulder: 0x797350,
+    road: 0xb19065,
+    roadShoulder: 0xa39b6c,
     /*
      * A cool slate, where this was a warm grey-tan (0xbcb39d).
      *
@@ -285,15 +284,12 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     id: 'forest',
     // Forest takes the smallest cut of the three — it was already the dark
     // biome and had the least of the fault.
-    grass: 0x40643d,
-    grassVariant: 0x607a44,
+    grass: 0x568752,
+    grassVariant: 0x82a55c,
     grassShade: 0x243f30,
-    // Lifted with village's, at the same ratio and held hue. Forest keeps the
-    // smallest absolute lift of the three because it starts darkest and its
-    // canopy is what the light has to get past.
-    grassDry: 0x919457,
-    road: 0x6a5945,
-    roadShoulder: 0x505e3b,
+    grassDry: 0xa9ad65,
+    road: 0x8f785d,
+    roadShoulder: 0x6c7f50,
     rock: 0x8b9490,
     trunk: 0x655344,
     // Same correction as village, at forest's own scale: 0x4c7f47 measured
@@ -336,15 +332,14 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
   // of it having to be drawn.
   riverside: {
     id: 'riverside',
-    grass: 0x678c6d,
-    grassVariant: 0x889b74,
+    grass: 0x8bbd93,
+    grassVariant: 0xb8d19d,
     grassShade: 0x3d6358,
-    // Lifted with village's, at the same ratio and held hue.
-    grassDry: 0xbabe9b,
+    grassDry: 0xd8ddb5,
     // Same problem as village, milder: 0xa89a80 against a `grassDry` of
     // 0xccd2ac was not enough of a break to survive fog at thirty metres.
-    road: 0x736553,
-    roadShoulder: 0x626e5b,
+    road: 0x9b8870,
+    roadShoulder: 0x84957b,
     rock: 0xa2a8ae,
     trunk: 0x746459,
     // Darkened twice: from 0x6c9a76 / 0x9ac093 because the willows were the

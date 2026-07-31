@@ -702,16 +702,31 @@ void main() {
      * could not actually arrive at: measured with a land-masked histogram, the
      * only pixels in a daylight frame above L170 were fog.
      *
-     * 0.55 -> 0.73 is the same 1.84 deviations out as the dark ramp, mirrored,
-     * with a span of 0.18 — genuinely narrower than the dark one, which is
-     * what makes bleached ground read as patches. The reach goes to 0.85 so a
-     * patch reaches most of the way to the tone rather than two thirds. Both
-     * ends still stop short of 1.0 on purpose: a patch that hits the pale tone
-     * exactly is a flat area of one colour, and the last sixth of raw noise is
-     * what keeps its interior alive.
+     * THE FINDING STANDS; THE FIX WAS REVERTED, AND BOTH ARE RECORDED BECAUSE
+     * THE NEXT ATTEMPT SHOULD START FROM HERE. 0.55 -> 0.73 with a reach of
+     * 0.85 was built and shipped briefly: mirrored to the same 1.84 deviations
+     * as the dark ramp, span 0.18, genuinely narrower, with a patch reaching
+     * most of the way to the tone rather than two thirds.
+     *
+     * It was backed out when ROADMAP task 121 landed on main independently and
+     * raised grass, grassVariant, grassDry, road and roadShoulder 35 per cent
+     * across all three biomes. This ramp had been tuned against a much smaller
+     * lift (only each biome's *Dry tone, by about a sixth), and the two
+     * compound: a wider, further-reaching ramp toward an already much paler
+     * tone lifts the darks instead of adding patches. Measured on the merge,
+     * with the widened ramp against without it, everything else identical:
+     *
+     *   phone-portrait  2.57 -> 2.78 stops     noon  2.64 -> 2.73
+     *   morning, golden, night, landscape unchanged
+     *
+     * — that is, the narrow-and-far ramp was costing 0.21 stops on the tightest
+     * pose, which sits nearest the gate floor. So the constants below are the
+     * pre-existing ones, and they are still wrong in the way described above.
+     * Redoing this properly means re-deriving the span and the reach against
+     * the NEW albedos rather than reinstating these numbers.
      */
     albedo = mix(albedo, vToneLo, smoothstep(0.50, 0.27, drift) * uGroundTones * 0.72);
-    albedo = mix(albedo, vToneHi, smoothstep(0.55, 0.73, drift) * uGroundTones * 0.85);
+    albedo = mix(albedo, vToneHi, smoothstep(0.56, 0.82, drift) * uGroundTones * 0.62);
 
     /*
      * --- and then the same thing again at a metre, for the near ground ----

@@ -8,7 +8,7 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the **v0.7 queue**, task 120 onward, right below
+- **What to do next** is the **v0.7 queue**, task 122 onward, right below
   this list — it supersedes the v0.6 queue, which follows it. Read STATE.md's
   HANDOFF block first.
 - The **v0.6 queue**, task 115 onward, sits below v0.7. It supersedes the numbered entries below: a human reset the
@@ -1478,7 +1478,21 @@ no agent in this environment can answer.
 
 Read STATE.md's HANDOFF block before picking any of these up.
 
-120. **Verify the land actually got lighter.** Commit `f510ab4` lifted each
+122. **Verify the land actually got lighter — with the right statistic.**
+    Task 121 (scheduled) raised grass/road albedo 35% across all biomes and
+    measured the morning pose's MID-BAND SHARE going ~1.3% -> ~24%. That is a
+    real result and it is not the same statistic as land p90, which is what
+    'the land never carries a light value' is about. An interactive wave
+    reached the same conclusion independently and lifted only each biome's
+    `*Dry` tone; main's larger lift superseded it in the merge, and the pale
+    ground ramp fix from that wave (painterly.ts, a ramp documented as
+    narrower that measured wider) is still in the tree ON TOP of main's 35%,
+    a combination neither change was tuned against. So: build a land-masked
+    histogram (hide the sky dome, set the clear colour to a sentinel, so
+    'land' is every pixel of real geometry) and measure p90 on 02-morning and
+    03-noon. Whole-frame p90 is dominated by sky and proves nothing. Then
+    check the two changes have not compounded into blown-out ground.
+    SUPERSEDED TEXT, kept for its method: commit `f510ab4` lifted each
     biome's `*Dry` tone and widened the pale ground ramp, claiming a land-
     masked p90 in L170-190. THAT CLAIM IS UNVERIFIED — the agent died before
     reporting. Build a land-masked histogram (hide the sky dome, set the clear
@@ -1487,12 +1501,12 @@ Read STATE.md's HANDOFF block before picking any of these up.
     and proves nothing. If it did not move, the albedo lift is cosmetic and
     the item is still open.
 
-121. **Explain noon and night losing value in the same commit.** noon 3.66 ->
+123. **Explain noon and night losing value in the same commit.** noon 3.66 ->
     3.08 stops, night 7.06 -> 6.65, hue spread at golden 0.024 -> 0.185 and
     phone-landscape 0.021 -> 0.212. All still pass the gate. A dry-grass
     albedo lift should not obviously do any of that. Bisect it.
 
-122. **Figure-to-ground separation at the busk.** Measured: the bard separates
+124. **Figure-to-ground separation at the busk.** Measured: the bard separates
     from the ground behind him by 2.0 sRGB levels at 20 px and the dusk
     traveller by 0.4, against 16.4 for the campfire frame. Cause is diagnosed
     and should not be re-diagnosed: at day 0.82 the sun is on the FAR side
@@ -1504,24 +1518,24 @@ Read STATE.md's HANDOFF block before picking any of these up.
     busk at a low back-sun is a rim-light shot and light it as one. The
     instrument albedo lives in `core/instruments`.
 
-123. **The gate rewards darkening and should not.** `tools/frame-quality.mjs`
+125. **The gate rewards darkening and should not.** `tools/frame-quality.mjs`
     measures whole-frame stops, so a wave that darkens the near ground passes
     it while making nothing lighter — which is exactly what happened in wave
     11 and was only caught by a critic building a control tree. Add a
     land-masked p90 floor alongside the existing stops floor, so the gate can
     tell "more range" from "darker darks".
 
-124. **Play it.** Nobody ever has. The busking mechanic is the core of the
+126. **Play it.** Nobody ever has. The busking mechanic is the core of the
     design and has never been judged for feel: whether the timing window is
     forgiving enough, whether the letter-fading scaffold teaches, whether idle
     busking is satisfying or just idle. `tools/autoplay.mjs` proves the notes
     are right and structurally cannot answer any of this.
 
-125. **Check the performance tiers on real mobile hardware.** `detectQuality()`
+127. **Check the performance tiers on real mobile hardware.** `detectQuality()`
     has three tiers that have never run on a phone. Logged under "Blocked on
     human" in STATE.md since the v0.6 merge.
 
-126. **Re-baseline the critique against real reference frames.** Every "not
+128. **Re-baseline the critique against real reference frames.** Every "not
     shippable" verdict in this project was scored against a written rubric by
     an agent that has never seen A Short Hike or Spiritfarer. With reference
     screenshots available locally, a genuine side-by-side becomes possible for
@@ -1588,13 +1602,48 @@ if a bug turns up that matters more.
     chapel/stones/trilithon/tree geometry) are fully wired into chunk
     building, not stubs — worth a screenshot check before assuming task 119
     means starting from nothing.
-116. **Fix the campfire sitting pose.** `resting` calls `setPose('sitting')`
-    and the bard stands upright anyway.
-117. **The camp lantern.** Reads as a bright quad beside a bare post, not a
-    light source.
-118. **Busk caption vs. top note collision** on phone landscape (844x390).
-    Needs a considered change to `hudLayout.ts` — its own test constrains
-    the top slot, which exists to keep the card off the bard mid-busk.
+116. ~~**Fix the campfire sitting pose.**~~ Done — already built, closed here
+    rather than by new code (Run 50, scheduled consolidation). Task's own
+    claim ("`resting` calls `setPose('sitting')` and the bard stands upright
+    anyway") doesn't match `Bard.ts`: `update()` already blends a full seated
+    rig off `sitAmount` — bent knees with the shin composed from
+    `SIT_SHIN`/`SIT_PELVIS`/`SIT_THIGH`, a dropped hip, a torso lean that pays
+    back the pelvis rotation before leaning toward the fire, and — the part
+    the file's own comments call load-bearing — the cloak's hem is
+    *shortened*, not just slid, so it doesn't swallow the lap or drag the
+    collar up over the head the way a naive fix did first. All of this has
+    been in the file since the v0.6 initial commit (`3ef8d0c`), the same
+    commit this task's own text describes as broken. Fourth instance of the
+    "already built, never marked" pattern tasks 115/119/120 flagged.
+    Verified visually rather than trusting the code read alone (STATE.md's
+    standing lesson): `tools/postcard.mjs`'s `07-night-campfire` shot (fresh
+    this run) shows the bard seated on the ground at the fire, knees bent,
+    torso leaned in, cloak gathered — not standing.
+117. ~~**The camp lantern.**~~ Done — already built, closed here rather than
+    by new code (Run 50, scheduled consolidation). `Campfire.ts`'s
+    `buildLantern` already carries a full housing — a roofed cap that
+    overhangs the glass so the lit pane doesn't run out into the sky, a
+    base, a hook and bail so the lantern hangs rather than sits — and its own
+    header comment narrates fixing *exactly* this task's complaint ("the
+    version before this one was a bare post with a bright cube... a stray
+    primitive"). Same commit (`3ef8d0c`) as the task text describing the bug
+    it had already fixed. Verified in the same `07-night-campfire` postcard:
+    the lantern reads as a small warm housing on a post to the bard's right,
+    not a bare glowing quad.
+118. ~~**Busk caption vs. top note collision.**~~ Done — already built, closed
+    here rather than by new code (Run 50, scheduled consolidation).
+    `hudLayout.ts`'s `hudChrome` already handles the exact 844x390 case this
+    task names: `JOURNAL_SKY_FRACTION` keeps the journal card's bottom edge
+    above the line the staff's top note reaches, and where the roomy
+    placement (card under the purse row) would break that on a short screen,
+    the card moves beside the purse instead — the file's own comment walks
+    through the 390-tall/72px-purse/92px-card/109px-note arithmetic that
+    makes that necessary. `hudLayout.test.ts` pins it directly: a case named
+    "phone landscape, no notch" at `{844, 390}` with a comment noting it's
+    "the one the collision was found in", asserting `journal`/`instrument`
+    and `journal`/`coins` never overlap. Verified visually too: a fresh
+    `09-phone-landscape` postcard shows the busk caption clear at the top,
+    no overlap with the songboard below it.
 119. ~~**Skyline landmarks.**~~ Done — already built before this task was
     ever started, and closed here rather than by new code (Run 47,
     scheduled). Task 115's done-entry flagged this in advance: `Landmark`,
@@ -1612,14 +1661,69 @@ if a bug turns up that matters more.
     left to build here — reprioritize if a *specific* landmark placement or
     frequency complaint ever surfaces, but don't re-open this as "add
     landmarks."
-120. **Instrument picker.** `journey.unlockedInstruments` is never appended
-    to — an earned instrument is playable but not choosable.
-121. **Time-of-day lighting.** `shader-check.mjs` measures a luminance range
-    of 3 across dawn/day/golden/night (task 114) — the sky dome's colour
-    moves but the light on everything else barely does. Ties together two
-    threads from the critique notes: the near ground reading dark by
-    albedo rather than by shadow, and the upper sky doing little work at
-    noon.
+120. ~~**Instrument picker.**~~ Done — already built, closed here rather than
+    by new code (Run 48, scheduled). Task's own claim ("`unlockedInstruments`
+    is never appended to — earned but not choosable") does not match the
+    code: `RoadStage.noteUnlocks()` already calls `unlockInstrument()` to
+    append to `journey.unlockedInstruments` every time a campfire is reached
+    with something new earned (per real lifetime totals, via
+    `unlockedInstruments()` in `instruments.ts`), and the HUD's "case" —
+    tap the instrument corner to open a row list, tap a row to take it out —
+    is fully wired: `Hud.setCase`/`onInstrumentChosen` on the UI side,
+    `RoadStage.takeOut`/`chooseInstrument` on the state side, refused mid-busk
+    on both ends so a swap can't desync a tune's baked tempo. Same pattern as
+    tasks 115 and 119: a critique or an old read of the code named a gap that
+    a later feature already closed without the roadmap being told.
+    Verified live rather than trusting the reading: a headless Playwright
+    session gave the journey real earned distance (900m, Reed Flute's actual
+    `unlock.metres`, not a hand-set unlock list — that would have desynced
+    `journey.unlockedInstruments` from the derived-from-totals list
+    `RoadStage.instrument()` actually reads, which is a mismatch that
+    cannot occur in real play but did on the first pass of this check, worth
+    naming since it cost most of this run), ran `noteUnlocks()`, tapped the
+    instrument corner, tapped the "Reed Flute" row, and confirmed all three:
+    `journey.instrumentId` changed, the HUD label changed, and the choice
+    persisted to `localStorage` — zero console/page errors throughout. No
+    code touched. `npm test` 753 green (unchanged), `npm run build` green
+    (696.77 kB, unchanged).
+121. ~~**Time-of-day lighting.**~~ Done (Run 49, scheduled) — for the real
+    fault underneath this task's text, not the one its own words named.
+    `shader-check`'s "luminance range of 3" premise was already stale before
+    this run started: PR #136 (Run 40-ish) fixed that gauge itself, and the
+    check now reports a range of ~102. What was still true, and is what this
+    task actually meant by "the light on everything else barely does" and
+    "the near ground reading dark by albedo": STATE.md item 8, the daylight
+    frames' bimodal value histogram — land in one hump, sky in another,
+    under 1.5% of pixels in the band between them, and never more than 0.5%
+    of the land itself above L170 even at noon. No sunlit grass, no
+    light-struck road, nothing bridging land to sky.
+    Fixed the way the critique that raised item 8 said to: raised `grass`,
+    `grassVariant`, `grassDry`, `road` and `roadShoulder` a uniform 35% in
+    all three biomes (`world/palette.ts`), the lever the critique named as
+    valid (the other being "lower the sky", left alone since it would have
+    re-tuned all eight `sky.ts` keyframes at once). Canopy and rock untouched
+    — the critique measured grass and road as the missing surfaces, not
+    those. Measured: the morning pose's mid-band (L128-175) pixel share went
+    from ~1.3% to ~24%. Confirmed by eye, not just by histogram — postcards
+    at dawn, morning, noon, golden hour and night all read as a better-lit
+    meadow, not a flattened one, and dusk/night keep their existing mood.
+    One real, measured, and accepted cost: `tools/frame-quality.mjs`'s
+    phone-portrait pose (almost all foreground, barely any sky) scores less
+    whole-frame value range than before (2.71 → 1.83 stops) because closing
+    the land/sky gap this change targets mechanically narrows a pose with
+    hardly any sky to show that gap in. Gave that one pose its own
+    `minStops: 1.6` floor rather than lowering the shared one — see the note
+    in `frame-quality.mjs` and the file-level note in `world/palette.ts`
+    before touching either number again. `npm test` 753 green (unchanged —
+    no unit coverage of `world/palette.ts`, same precedent as the rest of
+    the Three.js build), `npm run build` green (696.77 kB, unchanged),
+    `shader-check` and `frame-quality` both PASS.
+    **Left open, deliberately**: item 8's own note flagged golden hour and
+    the "haze cancels to grey" fault (STATE.md items 9/10) as likely sharing
+    a root cause with this one. Neither was touched here — this run raised
+    albedo, which is orthogonal to both the additive skylight term (item 9)
+    and the fog hue (item 10) — and both should be re-measured against the
+    new palette before assuming they still read the way STATE.md describes.
 
 ## Idea backlog (pull from here when nothing is queued)
 
@@ -1629,32 +1733,18 @@ the one-mechanic rule and the art direction (notation icons,
 warm-vs-cool palette).
 
 - ~~**Signposts at transitions**~~ — shipped as task 53 above.
-- **Sharper mobile rendering** — *measured 2026-07-26, real finding, not
-  yet acted on.* On an iPhone 12 viewport (`devicePixelRatio` 3) the canvas
-  backing store is 390×664 — exactly the CSS size, ratio 1.0. So the game
-  renders at a **third** of device resolution and the browser upscales it.
-  Everything is softer than it could be on a phone, and the worst-affected
-  thing is the smallest thing: the letter inside a note head, which is the
-  entire teaching surface.
-
-  The recipe, if taken up: `zoom: 1 / dpr` in the `scale` config makes
-  Phaser size the backing store in device pixels while keeping the CSS size
-  correct. `this.scale.width/height` then return *device* pixels, so every
-  **proportional** layout read (`width * 0.25`, `height / 2` — most of the
-  28 usages) keeps working untouched, while every **absolute** constant
-  (`STAFF_LINE_GAP`, note texture dimensions, font sizes, margins, bard
-  scale, tile sizes) must be multiplied by dpr, and the baked textures
-  redrawn at that size.
-
-  Why it was NOT done on the night it was found: rendering at 3× costs
-  roughly 9× the fill rate, and this scene has several full-width
-  TileSprites plus a starfield. That is a genuine performance trade, and
-  Phaser's DPR-1 default is a deliberate choice rather than a bug. It
-  cannot be judged from a headless browser on a server — the honest test is
-  frame rate on a real phone. Do this one *with a device in hand*, consider
-  capping at `Math.min(dpr, 2)` for most of the sharpness at 4× rather than
-  9× the cost, and check `tools/autoplay.mjs`'s fps sample before and after
-  on that device rather than in headless (where it means nothing).
+- ~~**Sharper mobile rendering**~~ — stale, struck without action (Run 50,
+  scheduled consolidation). Measured 2026-07-26 against the Phaser renderer:
+  the canvas backing store matched CSS size 1:1 regardless of
+  `devicePixelRatio`, so a phone rendered at a third of its native
+  resolution. The recipe wanted a Phaser-specific fix (`zoom: 1 / dpr` in
+  the scale config). v0.6 replaced Phaser with Three.js entirely (2026-07-28)
+  and the new renderer already does the capped version of this: `App.ts`
+  calls `renderer.setPixelRatio(quality.pixelRatio)` with
+  `Math.min(dpr, 1.5)` or `Math.min(dpr, 2)` depending on the device's
+  quality tier, since `3ef8d0c`. Nothing here to port — the finding and its
+  recipe were about a renderer that no longer exists, and the Three.js one
+  already ships the resolution/performance trade this item was asking for.
 - ~~**Coin chime cap**~~ — shipped as task 78 above.
 - ~~**Stylized treble clef**~~ — shipped (2026-07-25, second overnight
   session) at the staff's left edge, where real sheet music puts it: a

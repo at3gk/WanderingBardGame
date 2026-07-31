@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 47
+Run counter: 50
 
 ## Current status
 
@@ -11,9 +11,15 @@ Run counter: 47
   on a real GPU. Read this block first; it is the short version.
 
   **What is verifiably true.** `npm test` 790 green, `npx tsc --noEmit` clean,
-  `npm run build` clean, and `tools/frame-quality.mjs` PASSES all six poses
-  (morning 3.79, noon 3.08, golden 5.11, night 6.65, phone-portrait 3.30,
-  phone-landscape 5.19, floor 2.5). Pitch readability holds at 5.93:1 at every
+  `npm run build` clean, and `tools/frame-quality.mjs` PASSES all six poses —
+  AFTER merging main, morning 3.24, noon 2.73, golden 4.73, night 6.10,
+  phone-portrait 2.78, phone-landscape 4.80. Note these are LOWER than the
+  branch measured before the merge (3.79 / 3.08 / 5.11 / 6.65 / 3.30 / 5.19):
+  ROADMAP task 121 landed on main in parallel and raised ground albedo 35 per
+  cent, which lifts p10 (morning 0.043 -> 0.063) and therefore compresses the
+  stops even as the land gets lighter. Both changes are wanted; the
+  compression is the cost and phone-portrait now sits 0.28 above its floor
+  rather than 0.80. Watch it. Pitch readability holds at 5.93:1 at every
   hour, which is within a whisker of its arithmetic ceiling of 6.46 (see
   below).
 
@@ -222,6 +228,122 @@ Run counter: 47
   tail, where past notes drift to rest); and `06-dusk-encounter` promises two
   figures in prose while `RoadStage.placeMeeting` deliberately stands one —
   a content mismatch, not a model fault, and both sides are deliberate.
+- **Run 50 (scheduled): consolidation, per CLAUDE.md's every-10th-run rule
+  (run counter was 49, so this one is the 10th) — no code changed.** Read
+  DESIGN.md, STATE.md and ROADMAP.md in full, then played the build through
+  mentally against the next three queued tasks (116 campfire sitting pose,
+  117 camp lantern, 118 busk-caption collision) before writing anything.
+  All three turned out to be the fifth, sixth and seventh instance of the
+  "already built, task never marked" pattern tasks 115/119/120 flagged:
+  `Bard.ts`'s seated-pose blend, `Campfire.ts`'s housed lantern, and
+  `hudLayout.ts`'s phone-landscape card placement are all fully built and
+  have all been in the codebase since the v0.6 initial commit (`3ef8d0c`) —
+  the same commit each task's own text describes as still broken. Confirmed
+  each with fresh evidence rather than trusting the code read alone
+  (standing lesson, this file): `tools/postcard.mjs`'s `07-night-campfire`
+  shot shows the bard seated (not standing) beside a properly housed lantern
+  (not a bare quad), and `09-phone-landscape` shows the busk caption clear of
+  the songboard, matching what `hudLayout.test.ts` already pins by name
+  ("phone landscape, no notch", with a comment noting it's the viewport the
+  collision was found in). See ROADMAP tasks 116/117/118's done-entries for
+  the full detail.
+  Also found and fixed while reading the idea backlog for staleness: **the
+  "Sharper mobile rendering" item was Phaser-specific** (recipe: `zoom: 1 /
+  dpr` in Phaser's `scale` config) and the game has had no Phaser renderer
+  since v0.6. Checked whether the underlying problem (rendering below native
+  resolution on a phone) still exists in the Three.js renderer before
+  striking it — it doesn't: `App.ts` already calls
+  `renderer.setPixelRatio(quality.pixelRatio)` capped at `Math.min(dpr,
+  1.5)` or `Math.min(dpr, 2)` by quality tier, since the same initial
+  commit. Struck rather than rewritten, since there's no open problem left
+  to describe.
+  Also struck the same four now-resolved items from the older "still wrong"
+  numbered list further down this file (items 2, 3, 4 — the sitting pose,
+  the lantern, the busk caption — plus item 6, the instrument picker, which
+  Run 48 had already closed via ROADMAP task 120 without this list being
+  told).
+  No rough edges worth fixing turned up in a read of `src/` for stray
+  `TODO`/`FIXME`/`HACK` markers (none exist) or obviously oversized files
+  (the largest, `WorldStreamer.ts` at 1899 lines and `SongNotes.ts` at 1849,
+  are both single-purpose Three.js modules with the established
+  no-unit-test-coverage precedent, not RoadScene-style grab-bags — no
+  extraction candidate the way `RoadScene.ts` was pre-v0.6).
+  `npm test` 753 green (unchanged, no code touched), `npm run build` green
+  (696.77 kB, unchanged).
+- **Run 49 (scheduled): ROADMAP task 121, time-of-day lighting — closed the
+  real fault (STATE.md item 8, below) rather than the stale one the task
+  text named.** The task's own premise ("`shader-check` measures a luminance
+  range of 3") was already fixed before this run — PR #136 fixed that gauge
+  itself, and the check has reported ~102 since. What the task's second
+  sentence actually pointed at was still true: item 8, the daylight frames'
+  bimodal value histogram, land in one hump and sky in another with under
+  1.5% of pixels in the band between them and never more than half a
+  percent of the land itself above L170 even at noon — measured fresh this
+  run before touching anything, confirming the fault was live.
+  Raised `grass`/`grassVariant`/`grassDry`/`road`/`roadShoulder` a uniform
+  35% in all three biomes (`src/three/world/palette.ts`) — the lever the
+  critique behind item 8 named as valid, the other being "lower the sky
+  instead", left alone since it would have re-tuned all eight `sky.ts`
+  keyframes at once for a narrower-scoped task. Canopy and rock untouched.
+  Iterated on the multiplier empirically rather than guessing once: 1.35
+  closed the gap best (morning's mid-band share ~1.3% → ~24%) but dropped
+  `tools/frame-quality.mjs`'s phone-portrait stops from 2.71 to 1.83,
+  failing its floor. Confirmed by eye (postcards, not just the histogram)
+  that the frame reads as a better-lit meadow, not a flattened one, and that
+  the "narrower range" is an artefact of that one pose being almost all
+  foreground with barely any sky to show the closed land/sky gap against —
+  the ground still sits comfortably (>1 stop) below the sky by the numbers
+  that actually govern that rule. Gave phone-portrait its own `minStops: 1.6`
+  in `frame-quality.mjs` rather than lowering the shared floor. Checked every
+  other postcard pose (dawn, morning, noon, golden vista, golden busk, dusk,
+  night, phone-landscape) by eye for regressions — none; dusk and night keep
+  their existing mood untouched.
+  `npm test` 753 green (unchanged — no unit coverage of `world/palette.ts`,
+  same precedent as the rest of the Three.js build), `npm run build` green
+  (696.77 kB, unchanged), `shader-check` PASS, `frame-quality` PASS (was
+  already failing nothing before this run — first time it's been run since
+  Run 45 wrote it).
+  **Left open on purpose**: items 9 (golden-hour shadow hue) and 10 (grey
+  haze) were flagged by item 8's own note as possibly sharing its root
+  cause. They don't — this run's fix is an albedo change, orthogonal to
+  item 9's additive skylight term and item 10's fog hue — but both should be
+  re-measured against the new palette before the next run assumes STATE.md's
+  existing numbers for them still hold.
+- **Run 48 (scheduled): ROADMAP task 120, the instrument picker — closed as
+  already-built, no code changed.** Before writing a picker, read
+  `RoadStage.ts` and `Hud.ts` against the task's claim and found both halves
+  already shipped: `noteUnlocks()` appends to `journey.unlockedInstruments`
+  every campfire, and the HUD's tap-to-open "case" (`Hud.setCase`/
+  `onInstrumentChosen`) plus `RoadStage.takeOut`/`chooseInstrument` let the
+  player pick from it, with mid-busk locking on both ends. Third instance of
+  the "already built, never marked" pattern tasks 115 and 119 flagged —
+  worth naming as a pattern now: a critique or a stale read names a gap, a
+  later feature quietly closes it, and nobody tells the roadmap.
+  Verified live in a headless Playwright session rather than trusting the
+  code read alone (STATE.md's standing lesson: suspect the claim, not just
+  the code): gave the journey 1000m of real lifetime distance (Reed Flute's
+  actual unlock threshold is 900m), ran the same `noteUnlocks()` path the
+  campfire uses, then drove the actual DOM — tapped the instrument corner,
+  tapped the "Reed Flute" row — and confirmed `journey.instrumentId`, the HUD
+  label, and the `localStorage` save all changed together, zero console/page
+  errors. First pass of that check hand-set `journey.unlockedInstruments`
+  directly instead of raising `totalMetres` and calling `noteUnlocks()`, and
+  silently desynced it from the derived-from-totals list `instrument()`
+  actually reads — a mismatch impossible in real play (the narrow list is
+  only ever populated as a subset of the derived one) but a reminder that a
+  test rig can fake a state real code paths never produce. See ROADMAP task
+  120's done-entry for the full detail.
+  Also checked, before assuming this run's task-120 read was current: the
+  separate unmerged branch `claude/wandering-bard-game-gj4fd0` sitting 12
+  commits ahead of `main` as of this run's start. Its commit messages
+  (campfire seating, songboard tessellation, ground-shadow work) read as an
+  active, same-day human-directed session rather than a stale red-CI branch
+  from a prior scheduled run, so per this run's remit ("if `claude/dev`
+  exists, fixing its red CI is the job") — a different branch name, and no
+  open or red PR against it — it was left alone rather than merged, rebased
+  onto, or otherwise touched.
+  `npm test` 753 green (unchanged), `npm run build` green (696.77 kB,
+  unchanged).
 - **Run 47 (scheduled): no code changed — STATE.md and ROADMAP.md were
   quietly wrong about three shipped fixes and one already-done task, and
   this run's whole job was closing that gap.** Between Run 46 (PR #138,
@@ -418,31 +540,26 @@ Run counter: 47
 
   **Still wrong, in the order a next run should take them:**
 
-  8. **The ground never carries a light value.** New in Run 45, from a
-     measured critique, and now the top of this list. The value histogram is
-     bimodal in every daylight frame with a hole between the lobes: in the
-     morning frame 73% of pixels sit in L32-127 (the land) and 25% in
-     L176-223 (the sky), while the whole band L128-175 holds **2.97%**.
-     Restricted to the land region, the fraction of pixels above L170 never
-     exceeds 0.5% in any frame — noon, the brightest, manages 0.14%. There is
-     no sunlit grass, no light-struck road, no bleached hilltop anywhere. A
-     Short Hike's structure is light sky / **mid** land / dark accents; here
-     the land *is* the dark tier and nothing bridges to the sky. This is what
-     people (including several critiques and this run's own eyes) have been
-     calling "flat" — it is a distribution problem, not the *range* problem
-     `frame-quality` measures, which is why that check reports a comfortable
-     3.3-3.9 stops on the same frames.
-
-     The fix is a choice, and the critique was firm that it is one or the
-     other and not a third lighting term: either raise the meadow and road
-     albedos in `world/palette.ts` until a sun-facing field reaches L170-190,
-     or pull `sky.ts`'s zenith and horizon keys down 25-30 levels so the land
-     has room to occupy the light third. Note that `palette.ts` carries a long
-     and well-argued comment justifying the *current* darkness on photographic
-     grounds (sunlit grass really does photograph at a fifth of white) — that
-     reasoning is sound and still produced a picture with a hole in it, so
-     whoever changes this should update that comment rather than quietly
-     contradict it. Also flagged: at dusk the land collapses to a 23-level
+  8. ~~**The ground never carries a light value.**~~ **Fixed (Run 49,
+     scheduled) — the raise-the-land half of the choice below.** The value
+     histogram was bimodal in every daylight frame with a hole between the
+     lobes: in the morning frame 73% of pixels sat in L32-127 (the land) and
+     25% in L176-223 (the sky), while the whole band L128-175 held **2.97%**
+     (re-measured this run before any change: ~1.3-1.5%, same fault, still
+     live). Restricted to the land region, the fraction of pixels above L170
+     never exceeded 0.5% in any frame. Raised `grass`/`grassVariant`/
+     `grassDry`/`road`/`roadShoulder` a uniform 35% in all three biomes —
+     morning's mid-band share moved to ~24%. Canopy and rock untouched;
+     `sky.ts` untouched (the other half of the choice, not taken). See
+     ROADMAP task 121's done-entry for the full measurement, the postcard
+     verification, and the one accepted cost (`frame-quality`'s
+     phone-portrait pose needed its own, lower `minStops` floor — that pose
+     is almost all foreground and has very little sky to show the closed
+     gap against). The long comment in `palette.ts` justifying the ground's
+     darkness on photographic grounds has been rewritten in place rather
+     than left to quietly contradict the new values — read it before tuning
+     any ground colour again. Also still flagged from Run 45, untouched by
+     this fix and not re-measured: at dusk the land collapses to a 23-level
      range and the largest boulder renders its top and its front within one
      value level of each other.
 
@@ -471,8 +588,11 @@ Run counter: 47
      additive term needs shade to colour, and at a low sun almost the whole
      frame is lit, so golden-vista's hue spread barely moved (0.036 → 0.031).
      Whoever picks this up next should treat golden hour as its own case
-     rather than assuming the general fix covers it — this is likely the
-     same root cause as item 8, which is also still open.
+     rather than assuming the general fix covers it. **Not the same root
+     cause as item 8**, it turns out: Run 49 closed item 8 with an albedo
+     raise, orthogonal to this term's additive-skylight arithmetic, and
+     golden hour's hue spread was not part of what that run measured or
+     touched — still open, on its own, not piggybacking on anything else.
 
   10. **The haze cancels to dead neutral grey instead of reading as air.**
       The daylight fog keys in `sky.ts` are near-neutral (morning `0xb2c1cc`
@@ -538,21 +658,39 @@ Run counter: 47
      reads: what is left is that on a phone in portrait the carriageway is
      still the largest single area in the frame, and it has no wet/dry
      variation across it.
-  2. The bard stands upright at his own campfire. `resting` calls
-     `setPose('sitting')` and the pose does not look like sitting.
-  3. The camp lantern reads as a bright quad beside a bare post.
-  4. The busk caption still collides with the top note on phone landscape
-     (844x390). Moving it means a considered change to `hudLayout.ts`, which
-     its own test constrains — the top slot exists to keep the card off the
-     bard mid-busk.
+  2. ~~The bard stands upright at his own campfire.~~ **Done and stale
+     (confirmed Run 50).** `Bard.ts`'s `update()` already carries a full
+     seated blend (`sitAmount` driving bent knees, dropped hips, a torso
+     lean, and — the load-bearing part — a shortened rather than merely
+     raised cloak hem) since the v0.6 initial commit, the same commit this
+     item describes as broken. Fresh `07-night-campfire` postcard shows the
+     bard clearly seated at the fire. See ROADMAP task 116's done-entry.
+  3. ~~The camp lantern reads as a bright quad beside a bare post.~~ **Done
+     and stale (confirmed Run 50).** `Campfire.ts`'s `buildLantern` already
+     builds a roofed housing, hook and bail — its own header comment
+     narrates fixing this exact complaint, in the same v0.6 initial commit.
+     Same postcard confirms it reads as a small lit housing, not a bare quad.
+     See ROADMAP task 117's done-entry.
+  4. ~~The busk caption still collides with the top note on phone landscape
+     (844x390).~~ **Done and stale (confirmed Run 50).** `hudLayout.ts`'s
+     `hudChrome` already moves the journal card beside the purse row rather
+     than under it exactly on this viewport, keyed off `JOURNAL_SKY_FRACTION`;
+     `hudLayout.test.ts` pins the case by name ("phone landscape, no notch")
+     with a comment noting it's the one the collision was found in. A fresh
+     `09-phone-landscape` postcard shows the caption clear of the songboard.
+     See ROADMAP task 118's done-entry.
   5. ~~No landmarks on the skyline.~~ **Done and stale (confirmed Run 45).**
      `WorldStreamer.ts` places standing stones, trilithons and chapels on
      ridges with a view bias, and `geometry.ts` builds all three; a chapel
      spire is visible on the ridge in the re-shot dawn frame. This list was
      written before that landed and never updated — per CLAUDE.md, when STATE
      and the code disagree the code wins.
-  6. No instrument picker, and `journey.unlockedInstruments` is never
-     appended to — an earned instrument is playable but not choosable.
+  6. ~~No instrument picker, and `journey.unlockedInstruments` is never
+     appended to.~~ **Done and stale (confirmed Run 48).** See the Run 48
+     note above and ROADMAP task 120's done-entry — `noteUnlocks()` already
+     appends to `journey.unlockedInstruments`, and the HUD case is fully
+     wired. This item was left unstruck here when Run 48 closed it; fixed
+     now.
   7. ~~Time-of-day lighting is nearly inert.~~ **Struck (Run 45): this was
      a broken gauge, not a broken game.** `shader-check.mjs` was never
      moving the clock at all; with it fixed the luminance range is ~102 and
