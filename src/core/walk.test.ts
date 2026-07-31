@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { PERFORMANCE_METER_CONFIG, START_METER } from './performance';
+import {
+  PERFORMANCE_METER_CONFIG,
+  START_METER,
+  WALK_METER_CONFIG,
+  WALK_PERFORMANCE_CONFIG,
+  applyJudgement,
+  createPerformance,
+} from './performance';
 import { applyHit, applyMiss } from './songMeter';
 import { MARY_HAD_A_LITTLE_LAMB } from './songs';
 import {
@@ -11,6 +18,44 @@ import {
 } from './walk';
 
 const CONFIG = PERFORMANCE_METER_CONFIG;
+
+describe('the walking meter (WALK_METER_CONFIG)', () => {
+  it('lets one hit buy two misses, so casual timing holds the walk', () => {
+    // The contract DESIGN.md v0.8 states in prose: a player answering every
+    // third note keeps the bard moving. Break-even accuracy = drain/(gain+
+    // drain) — it must sit at or below one-third.
+    const { hitGain, missDrain } = WALK_METER_CONFIG;
+    expect(missDrain / (hitGain + missDrain)).toBeLessThanOrEqual(1 / 3 + 1e-9);
+  });
+
+  it('never makes a hit weaker than the busk meter does', () => {
+    expect(WALK_METER_CONFIG.hitGain).toBeGreaterThanOrEqual(PERFORMANCE_METER_CONFIG.hitGain);
+  });
+
+  it('keeps the same walking threshold as the busk meter', () => {
+    // The pace ramp (walkPaceFactor) reads PERFORMANCE_METER_CONFIG's
+    // threshold; if the walk judged against a different one, the stride and
+    // the meter would disagree about what "walking" means.
+    expect(WALK_METER_CONFIG.walkingThreshold).toBe(PERFORMANCE_METER_CONFIG.walkingThreshold);
+  });
+
+  it('is what applyJudgement actually uses when handed the walk config', () => {
+    const state = createPerformance();
+    const before = state.meter;
+    applyJudgement(state, 'miss', WALK_PERFORMANCE_CONFIG);
+    expect(before - state.meter).toBeCloseTo(WALK_METER_CONFIG.missDrain, 10);
+    const afterMiss = state.meter;
+    applyJudgement(state, 'good', WALK_PERFORMANCE_CONFIG);
+    expect(state.meter - afterMiss).toBeCloseTo(WALK_METER_CONFIG.hitGain, 10);
+  });
+
+  it('leaves the busk meter untouched when no meter config is passed', () => {
+    const state = createPerformance();
+    const before = state.meter;
+    applyJudgement(state, 'miss');
+    expect(before - state.meter).toBeCloseTo(PERFORMANCE_METER_CONFIG.missDrain, 10);
+  });
+});
 
 describe('walkPaceFactor', () => {
   it('walks at full stride at or above the meter walking threshold', () => {

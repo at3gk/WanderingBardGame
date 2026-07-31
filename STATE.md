@@ -6,6 +6,53 @@ Run counter: 50
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-07-31 (second interactive session, continued) — v0.8
+  wave 2 landed: the notes come at you, the light got honest, the camera
+  learned moods, stops telegraph themselves.** Read the wave-1 entry below
+  first. Wave 2 was four more parallel builds plus two orchestrator fixes,
+  all verified: `npm test` 910 green, build 770.30 kB, `frame-quality`
+  PASS all six, `land-histogram` held or rose.
+
+  **The builds, one line each** (ROADMAP 133-135 + item 7 done-entries):
+  notes-lane — the plank is gone; a translucent parchment ribbon recedes
+  over the road and notes ride it toward a barline at the bard (the
+  human's explicit ask, and v0.6's original promise); light — the grey
+  haze was ACES shoulder desaturation plus a complementary mix, fixed by
+  blending fog hue separately from value, golden-hour shadows got a
+  low-sun scatter term, smudge shadows got edges (penumbra was texel
+  stretch, remapped); camera — per-mood framings (tall vista, close
+  over-shoulder encounter), phone strategy moved from FOV-widen to
+  camera-height; telegraph — banner-pole busk pitches, wayside cairns,
+  a campfire smoke plume visible 380 m out, all seeded and streamed.
+  Orchestrator: walking meter retuned (miss 14 → 6 pre-normalise;
+  break-even accuracy 54% → 33% — DESIGN v0.8's "casual timing holds the
+  walk", pinned in walk.test.ts) and the busk keeps the original meter.
+
+  **Blind re-critique (task 136, done): mean 4.3 → 5.4.** Same six-lens
+  panel vs the same press-kit references: 01 5.25, 02 5.63, 03 4.25,
+  04 6.75, 07 ~6.5, phones weakest. Verdict verbatim: "one focused wave
+  below shippable, not at it." The re-derived gap list (full text in the
+  session's critique output, distilled into ROADMAP tasks 137-141):
+  cast-shadow smears are now the #1 artifact (5 of 6 lenses); note tokens
+  betray pitch position at range and clip at the portrait edge — and TWO
+  independent critics counted SIX staff lines in some frames (disputed by
+  three others; needs a code-level check before believing either side);
+  the bard reads armless from behind cameras; the midground rung is
+  achromatic; the campfire smoke reads as stacked glass octagons.
+
+  **Lessons this wave, same shape as ever:** the light agent DISPROVED the
+  critique's own prescription for warm bounce (warming upward faces at
+  golden hour warms the whole frame — measured hueSpread 0.167 → 0.106,
+  replaced with sun-bearing warmth, 0.182); STATE item 10's fog hexes had
+  not existed for rounds (the symptom had a different cause — check the
+  constants a critique quotes); `renderer.shadowMap.enabled = false` is
+  NOT a valid shadow ablation (materials keep sampling the stale map —
+  use `uShadowDepth = 1`); and `frame-quality` shoots every pose through
+  the VISTA framing, so that one mood is the lens the whole tonal gate
+  sees — its noon has 0.10 stops of headroom, and camera distance/fov
+  changes cost stops while camera height is free (measured table in the
+  CameraRig vista comment).
+
 - **HANDOFF, 2026-07-31 (second interactive session, local machine, real
   GPU) — v0.8 wave 1 landed.** A human watched the live game and reset
   direction (DESIGN.md "The walk is played, not watched"): notes existed only

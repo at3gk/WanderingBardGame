@@ -41,25 +41,31 @@ import {
   terrainHeight,
   type DailyRoad,
   type RoadSample,
+  type RoadStopKind,
 } from '../../core/road';
 
 import { fbm1D, mulberry32, randRange, subSeed, weightedPick, type Rand } from '../../core/rng';
 import { createFoliageMaterial, createPainterlyMaterial, type PainterlyGlobals } from '../painterly';
+import { campfireLayout, roadOffset } from '../scenes/campfireLayout';
 import {
+  buskPitchGeometry,
   cachedGeometry,
   chapelGeometry,
   fallenLogGeometry,
   fernGeometry,
   flowerGeometry,
   grassTuftGeometry,
+  lanternGlowGeometry,
   pebbleGeometry,
   puddleGeometry,
   reedClumpGeometry,
   rockGeometry,
   shrubGeometry,
+  smokeColumnGeometry,
   standingStoneGeometry,
   treeGeometry,
   trilithonGeometry,
+  waysideCairnGeometry,
   type LandmarkOptions,
 } from './geometry';
 import { mixColor, paletteFor, type BiomePalette, type LandmarkKind } from './palette';
@@ -1320,6 +1326,171 @@ function insideLandmark(landmarks: Landmark[], x: number, z: number): boolean {
   return false;
 }
 
+/* ======================================================================
+ * Stop dressing: seeing the event before you reach it.
+ *
+ * DESIGN.md v0.8 item 7, human-set: "A stop should announce itself down the
+ * road before you reach it — a lit signpost, listeners already gathered at a
+ * busk spot, campfire smoke on the evening sky — so walking toward something
+ * is anticipation, not surprise."
+ *
+ * The listeners are `RoadStage`'s and appear when you arrive. What is here is
+ * the other half: **static world geometry standing at the stop all day**, so
+ * that the thing you are walking toward is visible from a hundred metres out
+ * rather than assembling itself at your feet.
+ *
+ * It lives in the streamer rather than in the stage for the same reason the
+ * landmarks do: it is a property of the day's seed, it belongs to a place on
+ * the road and not to a moment in the walk, and it has to stream in and out
+ * with the chunk that contains it. `RoadStage` is untouched by any of this.
+ *
+ * Three kinds, and one deliberate absence.
+ *
+ * - **Busk** gets the loudest mark in the set: a banner pole with a lit
+ *   lantern and a stack of crates. It is announcing a stage, and it is the
+ *   only dressing carrying its own light — which the art rules allow,
+ *   because a lantern is fire.
+ * - **Encounter** (and the crossroads that shares its phase) gets a cool
+ *   stone cairn under a leaning marker. An encounter is a meeting, not a
+ *   stage; it should read as *something is here* and not as *come and see*.
+ * - **Campfire** gets no object at all — only its smoke, which is the one
+ *   thing in this file legible from the far end of the streamer's reach and
+ *   is exactly what the human asked for by name.
+ * - **Vista** gets nothing, on purpose. A vista *is* the view; furniture
+ *   standing in front of it would be competing with the thing it announces.
+ * ====================================================================== */
+
+/**
+ * How far off the centreline the nearest dressing may be pitched.
+ *
+ * The promise is that nothing here ever stands on the walking lane, and this
+ * is where it is kept — not by a test on the finished mesh but by the offset
+ * every site is drawn from. The packed carriageway is 1.7 m either side and
+ * the worn shoulder finishes at 2.9; the widest footprint any of these
+ * shapes reaches from its own origin is about 1.1 m (the busk pitch's
+ * crates), so a marker centred at 3.6 m leaves 0.8 m of untouched shoulder
+ * even at its nearest corner, and the busk pitch — pushed a further 1.6 m out
+ * because it is the wide one — leaves more than three.
+ */
+export const STOP_DRESSING_CLEARANCE_M = SHOULDER + 0.7;
+/** Lateral offsets, as a band. Camera-left; see `dressingSide` below. */
+const BUSK_OFFSET_M: [number, number] = [STOP_DRESSING_CLEARANCE_M + 1.6, STOP_DRESSING_CLEARANCE_M + 3.0];
+const CAIRN_OFFSET_M: [number, number] = [STOP_DRESSING_CLEARANCE_M, STOP_DRESSING_CLEARANCE_M + 1.2];
+/** Distinct base shapes per dressing kind, so two busk pitches are not twins. */
+const DRESSING_VARIANTS = 3;
+
+/**
+ * Which side of the road dressing stands on: camera-left, always.
+ *
+ * The same rule and the same reason as `LANDMARK_VIEW_BIAS` — the rig stands
+ * the camera to one side of the bard and aims it ahead of him, so the road
+ * occupies the right of the frame and the *left* is the part with nothing in
+ * it. A marker on the right is a marker that is never in shot until you are
+ * standing on it, which is the precise failure this feature exists to fix.
+ * `roadOffset`'s sign convention (positive on the road's right) makes this
+ * negative.
+ */
+const DRESSING_SIDE = -1;
+
+/** What a stop's dressing is made of. Not the stop kind: two kinds share one. */
+type DressingShape = 'pitch' | 'wayside' | 'smoke';
+
+function dressingShapeFor(kind: RoadStopKind): DressingShape | null {
+  if (kind === 'busk') return 'pitch';
+  if (kind === 'encounter' || kind === 'crossroads') return 'wayside';
+  if (kind === 'campfire') return 'smoke';
+  return null;
+}
+
+/** One dressed stop, resolved to a world position. */
+export interface StopDressingSite {
+  shape: DressingShape;
+  /** Distance along the road, for the biome the dressing is painted from. */
+  s: number;
+  seed: number;
+  /** Signed lateral offset from the centreline. Negative is camera-left. */
+  u: number;
+  x: number;
+  y: number;
+  z: number;
+  rotation: number;
+  variant: number;
+  /** Ground kept clear of trees and big scatter, so nothing stands in front. */
+  radius: number;
+}
+
+/**
+ * Every dressed stop on a day's road, in road order.
+ *
+ * A pure function of the road, which is what makes it testable and what makes
+ * it deterministic in the way this game means the word: two players walking
+ * the same day see the same banner on the same pole. Each site draws from its
+ * own stop's `seed` — never from a shared stream — so adding a kind here can
+ * never re-roll the stops around it.
+ *
+ * Cheap enough to call once and keep: a day has fifteen or so stops.
+ */
+export function stopDressingSites(road: DailyRoad): StopDressingSite[] {
+  const sites: StopDressingSite[] = [];
+  for (const stop of road.stops) {
+    const shape = dressingShapeFor(stop.kind);
+    if (!shape) continue;
+    const rand = mulberry32(subSeed(stop.seed, 'dressing'));
+    const variant = Math.floor(rand() * DRESSING_VARIANTS);
+
+    if (shape === 'smoke') {
+      // Placed from the camp's *own* layout rather than from a guess, so the
+      // plume stands over the fire it belongs to when the camp is finally
+      // pitched. `campfireLayout` is pure and is the one authority on where
+      // that fire is; asking it here is what stops the smoke and the flame
+      // being two independent opinions about the same camp.
+      const at = sampleRoad(road, stop.s);
+      const layout = campfireLayout(stop.seed, at.heading);
+      const x = at.x + layout.fire.x;
+      const z = roadZ(at) + layout.fire.z;
+      sites.push({
+        shape,
+        s: stop.s,
+        seed: stop.seed,
+        u: roadOffset(layout.fire.x, layout.fire.z, at.heading),
+        x,
+        y: terrainHeight(road, x, z),
+        z,
+        rotation: rand() * Math.PI * 2,
+        variant,
+        radius: 3.2,
+      });
+      continue;
+    }
+
+    const band = shape === 'pitch' ? BUSK_OFFSET_M : CAIRN_OFFSET_M;
+    const at = sampleRoad(road, stop.s + randRange(rand, -1.6, 1.6));
+    const u = DRESSING_SIDE * randRange(rand, band[0], band[1]);
+    const nx = Math.cos(at.heading);
+    const nz = -Math.sin(at.heading);
+    const x = at.x + nx * u;
+    const z = roadZ(at) + nz * u;
+    sites.push({
+      shape,
+      s: at.s,
+      seed: stop.seed,
+      u,
+      x,
+      y: terrainHeight(road, x, z),
+      z,
+      // A pitch is turned to face along the road, because that is where the
+      // people it is advertising to are coming from — and because its
+      // crossbar reaches out in local +X, which that turn points at the lane,
+      // so the lantern hangs over the verge rather than out in the field. A
+      // cairn has no front and faces anywhere.
+      rotation: shape === 'pitch' ? at.heading + randRange(rand, -0.3, 0.3) : rand() * Math.PI * 2,
+      variant,
+      radius: shape === 'pitch' ? 3.6 : 2.0,
+    });
+  }
+  return sites;
+}
+
 /**
  * One body of water, with what `paintWater` needs to recolour it as the day
  * turns: what to pull the sky's colour toward, how far to pull it per entry,
@@ -1400,6 +1571,12 @@ export class WorldStreamer {
   private readonly waterMaterial: ShaderMaterial;
   /** solidMaterial with the haze halved, for the things the road aims at. */
   private readonly landmarkMaterial: ShaderMaterial;
+  /** Stop dressing: the landmark treatment, with less haze again. */
+  private readonly dressingMaterial: ShaderMaterial;
+  /** The busk lantern's glass: the one roadside surface lit from inside. */
+  private readonly lanternMaterial: ShaderMaterial;
+  /** The camp's plume. The only translucent thing in the world. */
+  private readonly smokeMaterial: ShaderMaterial;
   private readonly trunkMaterials = new Map<string, ShaderMaterial>();
 
   /** Scratch objects; the chunk builder runs on a walking player's frame. */
@@ -1461,6 +1638,15 @@ export class WorldStreamer {
   /** Resolved landmarks by slot; null means "this stretch has no brow". */
   private readonly landmarkSlots = new Map<number, Landmark | null>();
 
+  /**
+   * Every dressed stop on the day's road, resolved once.
+   *
+   * Not memoised per chunk like the landmarks are, because there is no search
+   * to amortise: a site is a couple of road samples and a day has fifteen of
+   * them, so the whole set costs less than one landmark's ridge hunt.
+   */
+  private readonly dressings: StopDressingSite[];
+
   /** Chunks waiting to be rebuilt at a higher level of detail. */
   private readonly pending: number[] = [];
 
@@ -1480,6 +1666,7 @@ export class WorldStreamer {
     this.riverSide = mulberry32(subSeed(road.seed, 'river/side'))() < 0.5 ? -1 : 1;
     this.riverCourseSeed = subSeed(road.seed, 'river/course');
     this.riverWidthSeed = subSeed(road.seed, 'river/width');
+    this.dressings = stopDressingSites(road);
 
     // Three materials for the whole world. Vertex and instance colours carry
     // every difference between a village oak and a riverside willow, which
@@ -1671,6 +1858,101 @@ export class WorldStreamer {
       sway: 0,
       fogScale: 0.5,
     });
+
+    /*
+     * Stop dressing, which is the landmark material's argument taken one step
+     * further because the objects are one step smaller.
+     *
+     * A landmark is a chapel on a ridge and gets half the world's haze. A
+     * busk pole is five metres of timber and half a metre of cloth standing
+     * in a hollow, and at 0.5 the frame came back with a *pale post*: the
+     * banner had lost its colour entirely, which is the one thing on the
+     * marker doing any identifying work. Fog is a mix toward the sky, so what
+     * it takes first is chroma, and chroma is exactly what a small distant
+     * mark has instead of size.
+     *
+     * The rest of the treatment is the landmark's, unchanged. These are the
+     * two categories of object in this world whose *purpose* is to be seen
+     * from far away, and they should not disagree about anything else.
+     */
+    this.dressingMaterial = createPainterlyMaterial(globals, {
+      color: 0xffffff,
+      colorVariant: 0xbfae94,
+      grain: 0.6,
+      grainScale: 0.7,
+      rim: 0.16,
+      baseShade: 0.16,
+      baseShadeHeight: 0.3,
+      vertexColors: true,
+      flatShading: true,
+      swayAttribute: true,
+      sway: 0,
+      fogScale: 0.28,
+    });
+
+    /*
+     * The busk lantern's glass.
+     *
+     * The only light in the world that is not the fire and not the music, and
+     * it is allowed under the art rules for the reason the brief states: a
+     * lantern *is* fire. It behaves like one too — the emissive is the same
+     * family the campfire uses, and the strength is set so the glass reads as
+     * a source rather than as a pale object, which is the difference between
+     * "there is a lantern there" and "there is a white blob there".
+     *
+     * `fogScale` is lower than the landmarks' because this is the smallest
+     * thing in the game asked to be seen from the furthest away: four pixels
+     * at 120 m, and haze at the scenery's rate would take most of them.
+     */
+    this.lanternMaterial = createPainterlyMaterial(globals, {
+      color: 0xffca88,
+      colorVariant: 0xffab5c,
+      grain: 0.18,
+      grainScale: 1.1,
+      rim: 0.4,
+      rimPower: 2,
+      emissive: 0xffb163,
+      emissiveStrength: 1.4,
+      // A lamp does not have a shaded side worth speaking of.
+      shadowDepth: 0.9,
+      bandSoftness: 0.8,
+      fogScale: 0.26,
+    });
+
+    /*
+     * The camp's smoke.
+     *
+     * Three settings here are not taste and would break the plume if moved.
+     *
+     * `uOpacity` is reached into directly because `PainterlyOptions` has no
+     * door for it — the uniform exists and is pinned at 1 for every other
+     * material in the world, and this is the only surface that has any reason
+     * to be see-through. `depthWrite` off, because a stack of translucent
+     * puffs that writes depth punches its own neighbours out of the frame and
+     * the column comes back as a lattice.
+     *
+     * And the sway is the strongest in the game. Every other swaying thing is
+     * anchored at both ends by being a plant; a plume is anchored only at the
+     * fire, and the whole of what makes it read as smoke rather than as a
+     * grey monument is that its top wanders while its root does not.
+     */
+    this.smokeMaterial = createPainterlyMaterial(globals, {
+      color: 0xffffff,
+      colorVariant: 0xe8e2d8,
+      grain: 0.3,
+      grainScale: 0.16,
+      rim: 0,
+      vertexColors: true,
+      swayAttribute: true,
+      sway: 0.85,
+      swaySpeed: 0.32,
+      shadowDepth: 0.88,
+      bandSoftness: 1,
+      transparent: true,
+      fogScale: 0.7,
+    });
+    this.smokeMaterial.uniforms.uOpacity.value = 0.36;
+    this.smokeMaterial.depthWrite = false;
 
     /*
      * Open water, and the one place a fresnel rim is doing physics rather
@@ -2100,6 +2382,17 @@ export class WorldStreamer {
       const mesh = this.raiseLandmark(landmark);
       group.add(mesh);
       meshes.push(mesh);
+    }
+
+    // Last, and at full detail whatever the chunk's LOD: a marker exists to
+    // be seen from four hundred metres, so the one place it must not be
+    // thinned is the distance it is for.
+    for (const site of this.dressings) {
+      if (Math.floor(site.z / CHUNK_LENGTH) !== index) continue;
+      for (const mesh of this.dressStop(site)) {
+        group.add(mesh);
+        meshes.push(mesh);
+      }
     }
 
     this.group.add(group);
@@ -2814,7 +3107,12 @@ export class WorldStreamer {
       // campfire, and grass and flowers growing up to the stone ring are
       // exactly what a camp in a meadow should look like.
       if (drowned) continue;
-      if (kind.castShadow && (this.inClearing(x, z) || insideLandmark(landmarks, x, z))) continue;
+      if (
+        kind.castShadow &&
+        (this.inClearing(x, z) || insideLandmark(landmarks, x, z) || this.insideDressing(x, z))
+      ) {
+        continue;
+      }
       buckets[variant].push({
         matrix: new Matrix4().compose(this.scratchPos, this.scratchQuat, this.scratchScale),
         color,
@@ -2928,7 +3226,9 @@ export class WorldStreamer {
             : 0.3 + rand() * 0.7;
       const color = mixColor(canopyTint, 0xffffff, shade);
       // Last, after every draw, for the reason given in `buildScatter`.
-      if (drowned || this.inClearing(x, z) || insideLandmark(landmarks, x, z)) continue;
+      if (drowned || this.inClearing(x, z) || insideLandmark(landmarks, x, z) || this.insideDressing(x, z)) {
+        continue;
+      }
       const list = buckets.get(key);
       if (list) list.push({ matrix, color });
       else buckets.set(key, [{ matrix, color }]);
@@ -3241,6 +3541,126 @@ export class WorldStreamer {
     return mesh;
   }
 
+  /**
+   * Build one stop's dressing. One mesh, except the busk pitch, which is two:
+   * the pole and everything on it, plus the lantern's lit glass on its own
+   * emissive material.
+   *
+   * The two share a transform rather than a group, because the glass's
+   * geometry is already built at its anchor in the pole's frame — so the
+   * lantern cannot come adrift from the crossbar it hangs on, however either
+   * shape is retuned.
+   */
+  private dressStop(site: StopDressingSite): Mesh[] {
+    const palette = paletteFor(biomeAt(this.road, site.s));
+    const seed = 600 + site.variant * 149;
+    const meshes: Mesh[] = [];
+
+    if (site.shape === 'smoke') {
+      const mesh = new Mesh(
+        cachedGeometry(`smoke:${palette.id}:${site.variant}`, () =>
+          smokeColumnGeometry({
+            // Near-white, warmed at the mouth and cooled as it goes: smoke is
+            // the one surface in the world whose albedo is genuinely neutral,
+            // and the band's own tones are borrowed only far enough that a
+            // forest plume and a riverside plume are not the same grey.
+            base: mixColor(0xf4ece0, palette.grassDry, 0.3),
+            tip: mixColor(0xeceef0, palette.rock, 0.2),
+            lean: site.rotation,
+            seed,
+          }),
+        ),
+        this.smokeMaterial,
+      );
+      mesh.position.set(site.x, site.y, site.z);
+      // No shadow, either way. A translucent plume has no business stamping
+      // one on the camp it is rising out of.
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      mesh.name = 'stop-smoke';
+      meshes.push(mesh);
+      return meshes;
+    }
+
+    if (site.shape === 'pitch') {
+      const pitch = new Mesh(
+        cachedGeometry(`buskpitch:${palette.id}:${site.variant}`, () =>
+          buskPitchGeometry({
+            timber: mixColor(palette.trunk, palette.rock, 0.22),
+            // Undiluted accent, for the reason the chapel roof records: a
+            // marker is seen through eighty metres of haze, haze is already a
+            // mix toward grey, and anything pre-greyed arrives as slate.
+            cloth: palette.accent,
+            iron: mixColor(palette.rock, palette.trunk, 0.55),
+            seed,
+          }),
+        ),
+        this.dressingMaterial,
+      );
+      pitch.position.set(site.x, site.y, site.z);
+      pitch.rotation.y = site.rotation;
+      pitch.castShadow = this.castShadows;
+      pitch.receiveShadow = this.castShadows;
+      pitch.name = 'stop-busk';
+      meshes.push(pitch);
+
+      const glass = new Mesh(
+        cachedGeometry('busklantern', () => lanternGlowGeometry()),
+        this.lanternMaterial,
+      );
+      glass.position.copy(pitch.position);
+      glass.rotation.y = site.rotation;
+      glass.name = 'stop-busk-lantern';
+      meshes.push(glass);
+      return meshes;
+    }
+
+    const cairn = new Mesh(
+      cachedGeometry(`wayside:${palette.id}:${site.variant}`, () =>
+        waysideCairnGeometry({
+          // The cool counterpart to the ridge landmarks' stone, which is
+          // pulled toward the dry grass. Same rock, opposite direction, and
+          // the difference is the whole of what says "meeting" rather than
+          // "monument".
+          stone: mixColor(palette.rock, palette.grassShade, 0.28),
+          roof: mixColor(palette.canopy, palette.rock, 0.45),
+          seed,
+        }),
+      ),
+      this.dressingMaterial,
+    );
+    cairn.position.set(site.x, site.y - 0.12, site.z);
+    cairn.rotation.y = site.rotation;
+    cairn.castShadow = this.castShadows;
+    cairn.receiveShadow = this.castShadows;
+    cairn.name = 'stop-wayside';
+    meshes.push(cairn);
+    return meshes;
+  }
+
+  /**
+   * Ground a stop's dressing has claimed.
+   *
+   * Its own list rather than `clearings`, and that is load-bearing: the camp
+   * strikes its clearing at the end of the day with `clearClearings`, and a
+   * marker that gave its ground back would find a shrub planted in front of
+   * it. This ground is a property of the seed and is claimed for the whole
+   * day, exactly as a landmark's is.
+   *
+   * Scanned in full rather than indexed by chunk, because it is only ever
+   * asked about the few kinds big enough to hide something — shrubs, logs,
+   * boulders and trees — and a day has fifteen stops.
+   */
+  private insideDressing(x: number, z: number): boolean {
+    for (const site of this.dressings) {
+      const dz = z - site.z;
+      if (dz > site.radius || dz < -site.radius) continue;
+      const dx = x - site.x;
+      if (dx * dx + dz * dz < site.radius * site.radius) return true;
+    }
+    return false;
+  }
+
   private disposeChunk(chunk: Chunk): void {
     this.group.remove(chunk.group);
     for (const mesh of chunk.meshes) {
@@ -3264,6 +3684,9 @@ export class WorldStreamer {
     this.solidMaterial.dispose();
     this.waterMaterial.dispose();
     this.landmarkMaterial.dispose();
+    this.dressingMaterial.dispose();
+    this.lanternMaterial.dispose();
+    this.smokeMaterial.dispose();
     for (const material of this.trunkMaterials.values()) material.dispose();
     this.trunkMaterials.clear();
   }

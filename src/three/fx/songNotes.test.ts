@@ -1,18 +1,24 @@
 /**
- * The one thing about the songboard that cannot be judged from a frame.
+ * The things about the song lane that cannot be judged from a frame.
  *
- * Every other property of the board — whether it sits well in the light,
- * whether the plank is too big, whether the ink reads — is a question a
- * screenshot answers. This one is not: the plank's margin is sized for the
- * *highest and lowest notes the songbook can ask for*, and most frames show a
- * tune sitting comfortably inside the staff, so a margin that has been cut too
- * far looks fine until the one bar that needs it arrives. A critique measured
- * the staff at 55 per cent of the plank's height and proposed taking the top
- * margin from 3.5 steps to 1.5; that would have put Old MacDonald's A5 and its
- * ledger line off the top edge of the board. This is the test that says so.
+ * Most properties of this object — whether it sits well in the light, whether
+ * it dominates the composition, whether the ink reads — are questions a
+ * screenshot answers, and the visual harness answers them. These are the ones
+ * it cannot:
  *
- * It is written against the songbook rather than against a hardcoded step
- * range, so adding a tune that reaches higher fails here rather than in a
+ * - the paper is sized to the *tune currently on the road*, and most frames
+ *   show a tune sitting comfortably inside the staff, so paper that has been
+ *   trimmed too far looks fine until the one bar that needs a ledger line
+ *   arrives. A clipped pitch is the mechanic failing.
+ * - the notation's own spacing is set by the fastest bar the songbook can
+ *   ask for on the hurrying-est instrument, and nobody poses that bar.
+ * - the lane's shape has to keep it off the road and turned enough toward the
+ *   eye to be read, at every aspect ratio, and the frame that would show a
+ *   violation is the frame nobody shoots.
+ *
+ * They are written against the songbook and against `core/scaffold.ts` rather
+ * than against hardcoded numbers, so adding a tune that reaches higher — or
+ * changing how long a letter is revealed for — fails here rather than in a
  * screenshot nobody takes.
  */
 import { describe, expect, it } from 'vitest';
@@ -20,79 +26,107 @@ import { Color } from 'three';
 import {
   FLOOR_WARMTH,
   PAINTERLY_CONSTANTS,
-  boardSpan,
+  headHalfSteps,
+  laneSpan,
   painterlyConstant,
-  printableSteps,
+  paperEdges,
+  sideEase,
   unitLuminance,
 } from './SongNotes';
 import { createPainterlyGlobals, createPainterlyMaterial } from '../painterly';
 import { SONGS } from '../../core/songs';
 import { staffStepAt } from '../../core/notation';
-import { beatIntervalMs } from '../../core/beats';
+import { TRAVEL_TIME_MS, beatIntervalMs } from '../../core/beats';
 import { INSTRUMENTS } from '../../core/instruments';
+import { SUPPORT_LEAD_MS } from '../../core/scaffold';
 
 /**
- * The tempo the busk runs at, which lives in `RoadStage.ts` as `BASE_BPM` and
+ * The tempo the tune runs at, which lives in `RoadStage.ts` as `BASE_BPM` and
  * is not exported. Restated here rather than imported because this file is
- * about the *board*, and reaching into the stage for one number would couple
- * the notation's geometry to the scene that happens to drive it. If the busk
+ * about the *lane*, and reaching into the stage for one number would couple
+ * the notation's geometry to the scene that happens to drive it. If the tune
  * is ever re-pitched, this is the line that has to follow it — and the
  * assertions below carry enough margin to say so loudly rather than quietly.
  */
-const BUSK_BASE_BPM = 92;
+const BASE_BPM = 92;
 
-function songbookRange(): { lowest: number; highest: number } {
+/** The five printed lines of a treble staff, in diatonic steps. */
+const LOWEST_LINE = 2;
+const HIGHEST_LINE = 10;
+
+function rangeOf(notes: readonly { semitone: number }[]): { lowest: number; highest: number } {
   let lowest = Infinity;
   let highest = -Infinity;
-  for (const song of SONGS) {
-    for (const note of song.notes) {
-      const step = staffStepAt(note.semitone);
-      if (step === null) continue;
-      lowest = Math.min(lowest, step);
-      highest = Math.max(highest, step);
-    }
+  for (const note of notes) {
+    const step = staffStepAt(note.semitone);
+    if (step === null) continue;
+    lowest = Math.min(lowest, step);
+    highest = Math.max(highest, step);
   }
   return { lowest, highest };
 }
 
-describe('the songboard has room for the songbook', () => {
-  it('prints the highest note any tune reaches', () => {
-    expect(printableSteps().highest).toBeGreaterThanOrEqual(songbookRange().highest);
+function songbookRange(): { lowest: number; highest: number } {
+  return rangeOf(SONGS.flatMap((song) => song.notes));
+}
+
+describe('the paper is sized to the tune, and never smaller than the tune', () => {
+  for (const song of SONGS) {
+    it(`carries every note of ${song.title}, head and ledger line and all`, () => {
+      const { lowest, highest } = rangeOf(song.notes);
+      const edges = paperEdges(lowest, highest);
+      // Full-strength paper has to reach past the note's *head*, not just its
+      // centre: half a head, and the ledger line a low or high note wears,
+      // both live out there. Anything less and a pitch is read off a rule
+      // that is already dissolving.
+      expect(edges.low).toBeLessThanOrEqual(lowest - headHalfSteps());
+      expect(edges.high).toBeGreaterThanOrEqual(highest + headHalfSteps());
+    });
+  }
+
+  it('always prints all five lines, whatever the tune is doing', () => {
+    // A treble staff with four lines showing is not a treble staff. A tune
+    // that never leaves the middle of the stave must not shrink the paper
+    // onto the notes it happens to use — the child reads pitch off line
+    // positions, and that needs the lines it is *not* using too.
+    const edges = paperEdges(LOWEST_LINE + 2, HIGHEST_LINE - 2);
+    expect(edges.low).toBeLessThanOrEqual(LOWEST_LINE);
+    expect(edges.high).toBeGreaterThanOrEqual(HIGHEST_LINE);
   });
 
-  it('prints the lowest note any tune reaches', () => {
-    expect(printableSteps().lowest).toBeLessThanOrEqual(songbookRange().lowest);
+  it('is narrower for a mid-staff tune than for the whole songbook', () => {
+    // The point of the whole arrangement, and the thing a regression would
+    // quietly undo by going back to one fixed reserve. The plank this
+    // replaced sized its margins for Old MacDonald's A5 and Mary's C4 at all
+    // times, which was 45 per cent of its height blank in most frames.
+    const book = paperEdges(songbookRange().lowest, songbookRange().highest);
+    const middling = paperEdges(LOWEST_LINE + 1, HIGHEST_LINE - 1);
+    expect(middling.high - middling.low).toBeLessThan(book.high - book.low);
   });
 
-  it('is sized for notation and not for taste — the margin is nearly all used', () => {
-    // Guards the change in the other direction. If the margin grows, the plank
-    // grows with it and the board goes back to being signage across the
-    // vanishing point, so the slack at each end is held under half a step.
-    const { lowest, highest } = songbookRange();
-    const printable = printableSteps();
-    expect(printable.highest - highest).toBeLessThan(0.5);
-    expect(lowest - printable.lowest).toBeLessThan(0.5);
+  it('degrades to the bare staff when a schedule has no pitched notes at all', () => {
+    // `setBeats` hands in ±Infinity when every beat is a rest, which is not a
+    // schedule the songbook can produce today and is exactly the sort of
+    // thing that reaches a shipped build as a NaN-shaped hole in the geometry.
+    const edges = paperEdges(Infinity, -Infinity);
+    expect(Number.isFinite(edges.low)).toBe(true);
+    expect(Number.isFinite(edges.high)).toBe(true);
+    expect(edges.low).toBeLessThan(LOWEST_LINE);
+    expect(edges.high).toBeGreaterThan(HIGHEST_LINE);
   });
 });
 
 /**
- * The same argument for the plank's *width*, which is the thing every critique
- * of this board has actually asked to change.
- *
- * A busk frame shows a tune of crotchets sitting comfortably on a board with
- * daylight at both ends, so "draw it to the live note span instead of full
- * width" looks free. It is not: both ends are already at their floor, and the
- * bar that proves it — a run of quavers played on the fastest instrument, or a
- * note that has just gone by — is not the bar anybody poses for a screenshot.
- * So it is pinned here instead.
+ * The lane's length, which is the number every critique of the shape before
+ * this one actually asked to change.
  */
-describe('the songboard is as narrow as the notation lets it be', () => {
+describe('the lane is as short as the notation lets it be', () => {
   it('reaches past where a gone-by note comes to rest', () => {
-    // A critic once measured the drifted-past note falling off the left edge
-    // and retracted it. It does not fall off — but only by 23 mm, so anything
-    // taken off `TAIL_M` or `BOARD_END_M` ships the fault for real.
-    const span = boardSpan();
-    expect(span.leftOfBarline).toBeGreaterThanOrEqual(span.driftedNoteReach);
+    // A critic once measured the drifted-past note falling off the old
+    // plank's edge and retracted it. It does not fall off — but the margin is
+    // small, so anything taken off the tail ships the fault for real.
+    const span = laneSpan();
+    expect(span.tailM).toBeGreaterThanOrEqual(span.driftedNoteReach);
   });
 
   it('keeps the tightest pair of note heads the songbook can ask for apart', () => {
@@ -103,52 +137,134 @@ describe('the songboard is as narrow as the notation lets it be', () => {
       for (const note of song.notes) shortestBeats = Math.min(shortestBeats, note.beats);
     }
     const fastest = Math.max(...INSTRUMENTS.map((i) => i.tempoFeel));
-    const tightestGapMs = shortestBeats * beatIntervalMs(BUSK_BASE_BPM * fastest);
+    const tightestGapMs = shortestBeats * beatIntervalMs(BASE_BPM * fastest);
 
     // Below this gap two heads print on top of each other. Two note heads
     // overlapping is not notation, and the child is being asked to read the
     // pitch off exactly those heads.
-    const span = boardSpan();
+    const span = laneSpan();
     expect(span.gapAtWhichHeadsTouchMs).toBeLessThan(tightestGapMs);
     // And with enough daylight left that they read as two marks rather than
     // as a smear: a fifth of a head between them at the worst case. This is
-    // the assertion that fails if someone shortens the run to narrow the
-    // plank, which is what the composition critiques keep asking for.
+    // the assertion that fails if someone shortens the lane, which is what
+    // every composition critique of this object has asked for.
     expect(span.gapAtWhichHeadsTouchMs * 1.2).toBeLessThan(tightestGapMs);
-  });
-
-  it('stands the whole plank clear of the point the road runs to', () => {
-    // The fault this replaced: the barline was offset 2.1 m from the road
-    // while the plank reached 2.32 m to the right of the barline, so the board
-    // was drawn across the road's own vanishing point on every screen — by 42
-    // px on 1600x900 and 21 px on 844x390, measured. The offset is derived
-    // from the plank now, so the two cannot drift apart again.
-    const span = boardSpan();
-    expect(span.barlineOffset).toBeGreaterThan(span.rightOfBarline);
+    // And again for the screen that squeezes it hardest: a phone held upright
+    // gets the shortest lane the aspect fan allows *and* the largest notation
+    // the pixel floor allows, which are the two things that push heads
+    // together. Nobody screenshots that bar on that device.
+    expect(span.narrowGapAtWhichHeadsTouchMs * 1.2).toBeLessThan(tightestGapMs);
   });
 });
 
 /**
- * The other thing about this board that a frame cannot judge: whether the two
- * halves of it are lit by the same model.
+ * The lane's shape: where it runs, and how far it is turned toward the eye.
  *
- * The plank runs `painterly.ts`'s material and the notes run this file's own,
- * so the lighting model is evaluated twice — once on the GPU over there and
- * once on the CPU in `updateLight`. For most of the project's life the
- * constants were copied across, and one of them drifted and stayed drifted:
- * `AMBIENT_STRENGTH` came down to 0.27 in `painterly.ts` while the copy here
- * stayed at 0.32, so the notes predicted a world 19 per cent brighter than
- * the shader was painting and `LIGHT_FLOOR` fired late and small at exactly
- * the dark hours it exists for. Nothing failed, nothing looked obviously
- * wrong, and it survived a wave of visual critique.
+ * Two failures live here and neither is visible in a frame that happens to be
+ * posed well. A lane that drifts back onto the road puts notation across the
+ * one thing the composition is built around; a lane that straightens out to
+ * road-parallel is seen exactly edge-on from a camera standing on the road,
+ * and disappears.
+ */
+describe('the lane stays off the road and turned toward the eye', () => {
+  it('runs entirely on the road\'s left, at every aspect ratio', () => {
+    // Both figures are the worst case across the aspect fan. Other files rely
+    // on this: the lane lives on one side of the road, so anything placed on
+    // the other side — the bard included — is never behind it.
+    const span = laneSpan();
+    expect(span.nearSideM).toBeGreaterThan(0);
+    expect(span.farSideM).toBeGreaterThan(0);
+  });
+
+  it('clears the bard at the barline even on the narrowest screen', () => {
+    // The barline stands where the arriving note has to be readable, which
+    // means it cannot be behind the person playing it. Half a bard across the
+    // shoulders is about 0.23 m; half a note head is the rest.
+    const span = laneSpan();
+    expect(span.nearSideM).toBeGreaterThan(0.23 + span.headWidth / 2);
+  });
+
+  it('leaves the barline at a real angle to the road, and never straightens to parallel', () => {
+    // The angle at the barline is what makes a note *cross* the hit line
+    // rather than merely grow on the way in; the angle at the far end is what
+    // keeps the ribbon from being edge-on, which is how the very first
+    // version of this idea failed.
+    const span = laneSpan();
+    expect(span.nearAngleDeg).toBeGreaterThan(16);
+    expect(span.nearAngleDeg).toBeLessThan(45);
+    expect(span.farAngleDeg).toBeGreaterThan(3);
+    // And the near end is always the turned-toward-you end. A lane that
+    // straightened at the barline and fanned in the distance would put its
+    // readable stretch where nobody is reading.
+    expect(span.nearAngleDeg).toBeGreaterThan(span.farAngleDeg * 2);
+  });
+
+  it('fans out monotonically — a lane that doubled back would fold its own staff', () => {
+    let previous = -Infinity;
+    for (let i = 0; i <= 40; i++) {
+      const value = sideEase(i / 40);
+      expect(value).toBeGreaterThan(previous);
+      previous = value;
+    }
+    expect(sideEase(0)).toBeCloseTo(0, 9);
+    expect(sideEase(1)).toBeCloseTo(1, 9);
+  });
+});
+
+/**
+ * The one place the lane's geometry touches the learning model.
+ *
+ * `scaffold.ts` reveals a note's letter somewhere between 350 ms and the whole
+ * 1800 ms flight before the hit, depending on how much support that staff
+ * position has earned. The letter itself rides on the note head, which is a
+ * billboard and is drawn for the whole flight — but the letter is read
+ * *against the staff*, and the staff is on paper that dissolves toward the far
+ * end. If the paper faded early enough, the top support bands would quietly
+ * stop meaning anything.
+ */
+describe('the paper is present for as much of the flight as the scaffold promises', () => {
+  it('carries full-strength staff through the second support band', () => {
+    const fullMs = laneSpan().paperFullShare * TRAVEL_TIME_MS;
+    expect(fullMs).toBeGreaterThanOrEqual(SUPPORT_LEAD_MS[1]);
+  });
+
+  it('carries at least half-strength staff through the third', () => {
+    // The paper does not stop where it stops being at full strength — it
+    // dissolves over the rest of the lane, and a rule at half opacity is
+    // still a rule you can read a note's position off. Half strength is
+    // where that stops being obviously true, so that is the point the
+    // longer support bands are measured against.
+    const halfMs = laneSpan().paperHalfShare * TRAVEL_TIME_MS;
+    expect(halfMs).toBeGreaterThanOrEqual(SUPPORT_LEAD_MS[2]);
+  });
+
+  it('carries it well past the reveal floor, which is the one that must never be missed', () => {
+    // The floor exists so a child always sees the answer in the same glance
+    // as the tap. Paper that had gone by then would answer the question into
+    // thin air.
+    const fullMs = laneSpan().paperFullShare * TRAVEL_TIME_MS;
+    expect(fullMs).toBeGreaterThan(SUPPORT_LEAD_MS[0] * 2);
+  });
+});
+
+/**
+ * Whether the two halves of this object are lit by the same model.
+ *
+ * The paper and the notes run two different shaders — one needs per-vertex
+ * opacity, the other needs a glyph atlas, and `painterly.ts`'s material offers
+ * neither — so the world's lighting model is evaluated here rather than there.
+ * For most of the project's life the constants were copied across, and one of
+ * them drifted and stayed drifted: `AMBIENT_STRENGTH` came down to 0.27 in
+ * `painterly.ts` while the copy here stayed at 0.32, so the notes predicted a
+ * world 19 per cent brighter than the shader was painting and `LIGHT_FLOOR`
+ * fired late and small at exactly the dark hours it exists for. Nothing
+ * failed, nothing looked obviously wrong, and it survived a wave of visual
+ * critique.
  *
  * They are read out of the shader source now rather than copied. These tests
- * are what makes that safe: they prove the reader can find each constant in
- * the real material, and that the fallbacks recorded beside it are still the
- * shader's own values, so a rename or a retune over there fails here loudly
- * instead of silently degrading to a stale number.
+ * are what makes that safe.
  */
-describe('the board reads its lighting model rather than copying it', () => {
+describe('the lane reads its lighting model rather than copying it', () => {
   const source = createPainterlyMaterial(createPainterlyGlobals(), {
     vertexColors: true,
   }).fragmentShader;
@@ -188,11 +304,10 @@ describe('the board reads its lighting model rather than copying it', () => {
  * relative luminance.
  *
  * It was not. The lift was added as `FLOOR_WARMTH * lift`, and `FLOOR_WARMTH`
- * carries 0.7196 of a unit of luminance per unit of itself, so the board
+ * carries 0.7196 of a unit of luminance per unit of itself, so the surface
  * received 72 per cent of the light `LIGHT_FLOOR` promised — worst at the
- * darkest hours, where the lift is nearly all of the board's light. Measured
- * on `05-golden-busk`, the board's light landed at 0.150 against a floor of
- * 0.170. This is the arithmetic that says so.
+ * darkest hours, where the lift is nearly all of the light there is. This is
+ * the arithmetic that says so.
  */
 describe('the light floor is paid in the units it is quoted in', () => {
   const luma = (c: Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;

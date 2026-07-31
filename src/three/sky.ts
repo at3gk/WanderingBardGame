@@ -623,6 +623,30 @@ float ridgeMask(vec2 ring, float height, float base, float amp, float seed) {
 }
 
 /**
+ * The fog colour as it has to be written in order to arrive as air.
+ *
+ * The dome runs through the same ACES pass the world does, and the haze is
+ * the brightest large area in a daylight frame, so it lands on the tone
+ * mapper's shoulder where ACES desaturates by design. painterly.ts's
+ * FOG_CHROMA note has the measurement: the morning frame's fully-hazed
+ * distance goes in at S0.274 and comes out at S0.122. The terrain's haze and
+ * this ridge are supposed to arrive at the same colour from opposite
+ * directions — that is the argument in the note on ridgeTint below — so they
+ * have to be corrected by the same amount, and this constant is deliberately
+ * the same number as FOG_CHROMA rather than a second one tuned by eye.
+ *
+ * Luminance-preserving by construction (a mix toward the colour's own luma
+ * moves chroma and leaves dot(c, luma) exactly where it was), because the
+ * value of this band is load-bearing and separately argued for below: it is
+ * darker than the air it meets by construction, and a saturation pass must
+ * not quietly become a value change.
+ */
+vec3 air(vec3 c) {
+  float luma = dot(c, vec3(0.2126, 0.7152, 0.0722));
+  return max(vec3(0.0), mix(vec3(luma), c, 1.35));
+}
+
+/**
  * Aerial perspective for a band of distant land, in the sky's own colours
  * rather than a grey wash. base is the sky's value in this direction, so
  * the band is darker than the air it meets by construction at every hour,
@@ -653,7 +677,13 @@ vec3 ridgeTint(vec3 base, vec2 ring, float haze, float value, float land) {
   // which is what stops the band being a flat cut-out.
   vec2 sunRing = normalize(uSunDirection.xz + vec2(1e-5));
   float facing = max(dot(ring, sunRing), 0.0);
-  return mix(tinted, mix(tinted, uSunColor, 0.22), facing * facing);
+  // air() last, on the finished band rather than on uFogColor alone: the
+  // band is mostly base — the sky's own colour in this direction — and it
+  // is the BAND that measured grey, so correcting one of its three
+  // ingredients corrects a third of the problem. Measured on the morning
+  // frame, boosting only the fog input moved the skyline band from S0.114 to
+  // S0.134; the band itself is what the critique is looking at.
+  return air(mix(tinted, mix(tinted, uSunColor, 0.22), facing * facing));
 }
 
 void main() {

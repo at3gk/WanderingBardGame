@@ -179,6 +179,29 @@ v0.6 quietly made walking automatic and inputless, which DESIGN.md's own
    road can ask something tiny of the player and pay off in delight —
    optional, missable, never gating the walk.
 
+Three more, set later the same day watching the build:
+
+6. **The notes come at you.** *"I kind of like the idea of the notes coming
+   at you from the front and you have to hit it when it reaches the bard."*
+   This is what the v0.6 section above already promised ("notes travel
+   toward the bard along the road rather than down a screen") before the
+   implementation settled on a roadside board. The staff becomes a lane in
+   the world: a receding ribbon over the road carrying real notation toward
+   a barline at the bard. The pedagogy is untouched — positions, letters,
+   pitch height and note values all survive; only the geometry of arrival
+   changes.
+7. **You can see events coming.** A stop should announce itself down the
+   road before you reach it — a lit signpost, listeners already gathered at
+   a busk spot, campfire smoke on the evening sky — so walking toward
+   something is anticipation, not surprise.
+8. **Stakes, not failure.** The human floated *"perhaps the ability to
+   fail."* Resolved as: *moments* can be failed — a side quest can be
+   missed, a crowd can drift away from a poorly-kept busk, an opportunity
+   can pass — but the walk itself never fails and nothing is ever taken
+   away. This keeps real consequence (what you play determines what the
+   road gives you) without reintroducing the anxiety the pedagogy section
+   forbids: a child can lose a chance, never progress.
+
 ## The one core mechanic
 
 **Single-lane rhythm tapping.** Beat markers scroll toward a hit line at a
@@ -427,6 +450,21 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   game opens directly into the walk.
 
 ## Changelog
+
+- 2026-07-31 (second interactive session, wave 2) — **v0.8 items 6-8 set
+  and largely built.** The human, watching the live build: notes should
+  come at you from the front and be hit at the bard (built — the songboard
+  plank is gone, replaced by a receding parchment ribbon); events should
+  announce themselves down the road (built — banner-pole busk pitches,
+  wayside cairns, campfire smoke visible from 380 m); "perhaps the ability
+  to fail" (resolved as stakes-not-failure, new item 8 — failable moments,
+  never a failing walk; queued as ROADMAP task 142). Also this wave: the
+  light pass (fog carries hue through ACES now; golden-hour shadows are
+  cool; shadow smudges have edges), per-mood camera framings, and the
+  walking meter retuned so casual timing holds the walk (miss drain 14 →
+  6 on the road only — the busk keeps the human-playtested original).
+  Blind re-critique vs the reference games: mean 4.3 → 5.4, best frames
+  at 6.75; verdict "one focused wave below shippable." NOTHING CUT.
 
 - 2026-07-31 (second interactive session the same day) — **v0.8, the walk is
   played, not watched** (human-set, watching the live game). New section above.
