@@ -1738,37 +1738,75 @@ export interface SmokeColumnOptions {
  */
 export const SMOKE_HEIGHT_M = 11;
 /**
- * Twelve, not the nine first built.
+ * Fourteen, and every one of them a different shape.
  *
  * Nine was enough at a hundred and twenty metres and not at thirty: shot on
  * the approach to camp, the plume came back visibly *beaded* — a stack of
- * separate hexagons with their edges showing, which is a diagram of smoke
- * rather than smoke. Three more puffs at the same total height is purely
- * overlap, so the column merges into one soft mass where it is dense and
- * still comes apart where it is thinning. It costs 96 triangles.
+ * separate hexagons with their edges showing. Twelve fixed the beading and
+ * introduced the failure that replaced it: at four metres, in the campfire
+ * frame, the column read as a tower of stacked translucent plates, because
+ * every puff was the same regular octagon on the same axis and each one's
+ * edge lay parallel to the one below. More puffs cannot fix that; only
+ * breaking their agreement can, which is what the jitter below is for.
  */
-export const SMOKE_PUFFS = 12;
-/** Sides per puff. Eight rather than six for the same reason. */
-const SMOKE_PUFF_SIDES = 8;
+export const SMOKE_PUFFS = 14;
+/**
+ * Sides per puff. Seven, not eight: an odd polygon has no two parallel
+ * edges, so the two crossed planes of a puff cannot line up with each other
+ * and the puff above cannot line up with the puff below.
+ */
+const SMOKE_PUFF_SIDES = 7;
+
+/**
+ * How much of the caller's colour actually reaches the plume.
+ *
+ * The caller owns the smoke's **hue** — a forest plume and a riverside plume
+ * borrow their own band's tones — and this module owns its **value**, because
+ * value is the whole of whether a thing reads as smoke. Shot at night against
+ * a deep violet sky, near-white puffs at 0.36 opacity came back as the
+ * second-brightest mass in the frame: a pale column dividing the composition,
+ * lighter than the sky it was drawn over and lighter than everything but the
+ * fire. Real smoke at night is a hole in the stars. Scaled to a little over a
+ * third, each layer now *darkens* the sky it composites over at dusk and
+ * night, and is still a legible pale smudge against a bright daytime sky —
+ * which is the one direction the telegraph has to survive in both.
+ */
+const SMOKE_VALUE = 0.38;
 
 /**
  * A smoke column, as a stack of crossed polygonal puffs.
  *
- * Three decisions, and the second is the one that makes it read.
+ * Four decisions, and the last two are what make it read as a wisp rather
+ * than as a monument.
  *
  * **Crossed planes, not billboards.** A billboard has to be turned toward the
  * camera every frame by something that knows where the camera is, and nothing
- * in the world streamer does. Two octagons at right angles give a shape with
+ * in the world streamer does. Two polygons at right angles give a shape with
  * no silhouette worth speaking of from any horizontal direction, which is all
  * a plume needs — and it costs nothing per frame.
  *
  * **The plume breaks up as it climbs.** The puffs grow *and* their spacing
- * grows, so the bottom of the column is a solid overlapping mass and the top
- * is separated blobs with sky between them. That is the only fade available:
- * the painterly shader carries one opacity for a whole material and no
- * per-vertex alpha, so a continuous tapering ribbon would end in a hard flat
- * edge eleven metres up, which reads as a grey obelisk. Dissolving it
- * *geometrically* costs eight extra triangles and needs no shader at all.
+ * grows, so the bottom of the column is a rope and the top is separated blobs
+ * with sky between them. That is the only fade available: the painterly
+ * shader carries one opacity for a whole material and no per-vertex alpha, so
+ * a continuous tapering ribbon would end in a hard flat edge eleven metres up.
+ * Dissolving it *geometrically* costs a few triangles and needs no shader.
+ *
+ * **It swells and then gives out.** The width used to climb monotonically to
+ * its widest at the very top, which draws a wedge — the exact silhouette of a
+ * thing getting stronger as it leaves. Smoke does the opposite: it opens out
+ * where the heat runs out and then thins to nothing. So the profile peaks
+ * around three quarters of the way up and tapers above it, and the whole
+ * column is under half the girth it was, because a camp fire makes a thread
+ * of smoke and not a cooling tower.
+ *
+ * **No two puffs agree.** Each puff gets its own rotation, its own vertical
+ * squash, and a per-vertex radial jitter, so no edge is parallel to any other
+ * edge in the column. Without this the stack is a diagram of smoke: regular
+ * polygons, coincident axes, and every silhouette repeating the one below it.
+ * The lateral wander starts low and grows nearly linearly, so the plume leans
+ * off its own root from the first puff instead of standing straight up a
+ * third of its height and then bending.
  *
  * **Every face is doubled and reversed.** The material is front-faced, so of
  * each coincident pair exactly one passes the winding test from any viewpoint
@@ -1789,23 +1827,50 @@ export function smokeColumnGeometry(options: SmokeColumnOptions): BufferGeometry
     const t = i / (SMOKE_PUFFS - 1);
     // Linear near the fire, quadratic above it: smoke leaves the flame as a
     // rope and only opens out once it has lost the heat driving it.
-    const y = baseY + (height - baseY) * (t * 0.5 + t * t * 0.5);
-    const halfW = 0.34 + 1.75 * Math.pow(t, 0.72);
-    const halfH = halfW * (0.92 - 0.24 * t);
-    const drift = height * 0.16 * Math.pow(t, 1.7);
-    const cx = lx * drift + (rand() - 0.5) * halfW * 0.55;
-    const cz = lz * drift + (rand() - 0.5) * halfW * 0.55;
-    puffPlane(verts, cx, y, cz, halfW, halfH, false);
-    puffPlane(verts, cx, y, cz, halfW, halfH, true);
+    const y = baseY + (height - baseY) * (t * 0.42 + t * t * 0.58);
+    // Swell, then give out. The cubic term is what takes the top back in.
+    const halfW = 0.15 + 1.42 * Math.pow(t, 0.6) * (1 - 0.46 * t * t * t);
+    const halfH = halfW * (0.86 - 0.26 * t);
+    // Nearly linear, so the column is off its own axis from the bottom.
+    const drift = height * 0.3 * Math.pow(t, 1.15);
+    const cx = lx * drift + (rand() - 0.5) * halfW * 0.9;
+    const cz = lz * drift + (rand() - 0.5) * halfW * 0.9;
+    // One rotation and one squash per puff, shared by both of its planes so
+    // the pair still reads as one blob rather than as two.
+    const spin = rand() * Math.PI * 2;
+    const squash = 0.78 + rand() * 0.5;
+    // A radius per corner, reused by both planes for the same reason.
+    // Floored at 0.68 rather than 0.6: a corner drawn much shorter than its
+    // neighbours pulls the puff's vertical reach below the step to the next
+    // one, and the column beads — which at a hundred and twenty metres is the
+    // stacked-plates failure again, smaller.
+    const jitter: number[] = [];
+    for (let k = 0; k < SMOKE_PUFF_SIDES; k++) jitter.push(0.68 + rand() * 0.62);
+    puffPlane(verts, cx, y, cz, halfW, halfH * squash, spin, jitter, false);
+    puffPlane(verts, cx, y, cz, halfW, halfH * squash, spin, jitter, true);
   }
 
   const geometry = fromPositions(verts);
-  paintGradient(geometry, options.base, options.tip, baseY, height);
+  paintGradient(
+    geometry,
+    scaleHex(options.base, SMOKE_VALUE),
+    scaleHex(options.tip, SMOKE_VALUE),
+    baseY,
+    height,
+  );
   geometry.computeVertexNormals();
   // Rooted at the fire and loose at the top, so the world's own wind bends
   // the plume over instead of sliding the whole column sideways.
   addSway(geometry, baseY, height, 1);
   return geometry;
+}
+
+/** Multiply a packed hex colour's value, channel by channel. */
+function scaleHex(hex: number, scale: number): number {
+  const r = Math.round(Math.min(255, ((hex >> 16) & 0xff) * scale));
+  const g = Math.round(Math.min(255, ((hex >> 8) & 0xff) * scale));
+  const b = Math.round(Math.min(255, (hex & 0xff) * scale));
+  return (r << 16) | (g << 8) | b;
 }
 
 /** One puff face and its mirror, in the XY or the ZY plane. */
@@ -1816,14 +1881,16 @@ function puffPlane(
   cz: number,
   halfW: number,
   halfH: number,
+  spin: number,
+  jitter: readonly number[],
   acrossZ: boolean,
 ): void {
   const n = SMOKE_PUFF_SIDES;
   const pts: number[][] = [];
   for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 + Math.PI / n;
-    const px = Math.cos(a) * halfW;
-    const py = Math.sin(a) * halfH;
+    const a = (i / n) * Math.PI * 2 + spin;
+    const px = Math.cos(a) * halfW * jitter[i];
+    const py = Math.sin(a) * halfH * jitter[i];
     pts.push(acrossZ ? [cx, cy + py, cz + px] : [cx + px, cy + py, cz]);
   }
   for (let i = 1; i < n - 1; i++) {

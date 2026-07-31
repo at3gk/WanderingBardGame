@@ -39,7 +39,14 @@
 
 import { mulberry32, pick, randInt, randRange, subSeed } from '../../core/rng';
 
-export type CampPropKind = 'stone' | 'bedroll' | 'pack' | 'instrument' | 'lantern' | 'firewood';
+export type CampPropKind =
+  | 'stone'
+  | 'pebble'
+  | 'bedroll'
+  | 'pack'
+  | 'instrument'
+  | 'lantern'
+  | 'firewood';
 
 export interface PropPlacement {
   kind: CampPropKind;
@@ -235,6 +242,47 @@ export const SEAT_LOG_LENGTH_M = 0.86;
  * instead of as a second vertical beside a figure who already has one.
  */
 const INSTRUMENT: Slot = { bearing: 1.65, jitter: 0.06, radius: [0.72, 0.82], footprint: 0.26 };
+
+/**
+ * The scatter on the ground inside the firelight.
+ *
+ * This is not decoration, and it is the answer to a specific complaint about
+ * a specific frame: the fire's pool of light read as an airbrushed wash. The
+ * diagnosis is worth keeping because it was not the obvious one. The pool is
+ * draped over the terrain, its falloff is graded and its rim is broken up —
+ * all the things you would reach for first were already true. What was
+ * missing was on the *ground*, not in the light: a few square metres of
+ * unbroken flat terrain with nothing on it to catch a lit side and cast a
+ * small shadow, so a carefully graded pool had nothing to grade *over* and
+ * came back as paint.
+ *
+ * Stones an inch or two proud of the grass fix that for a few dozen
+ * triangles. Each one gets a bright fire-facing face, a dark side and a
+ * shadow, so the eye reads modelled ground instead of a coloured plane —
+ * and, because they are scattered rather than ringed, they also break the
+ * pool's outline where they cross it.
+ *
+ * They are placed by a bounded scan rather than by slots, unlike everything
+ * else here: a dozen small things distributed through the *gaps* between six
+ * big ones is not an arrangement, it is a filter, and giving each one a slot
+ * would mean re-solving the slot geometry every time a prop moved. The scan
+ * is a fixed number of candidates from a fixed seed with a pure test, so the
+ * camp remains exactly reproducible; what it is not is *stable* under an edit
+ * to any other radius, which is the price and is the reason the count below
+ * is a floor the test checks rather than a promise.
+ */
+const PEBBLE_TARGET = 13;
+/** Candidates offered to the filter. Bounded, so this stays a pure function. */
+const PEBBLE_CANDIDATES = 64;
+/** How far out from the stone ring the scatter is allowed to start and stop. */
+const PEBBLE_BAND_M: [number, number] = [0.5, 2.15];
+const PEBBLE_FOOTPRINT_M: [number, number] = [0.085, 0.2];
+/**
+ * The golden angle. Successive candidates land a bit over half a turn apart,
+ * so the scan spreads round the camp from the first few draws instead of
+ * filling one side and then finding the other side full.
+ */
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
 /**
  * Where the resting camera stands, in the camp's own frame.
@@ -501,6 +549,43 @@ export function campfireLayout(seed: number, heading: number): CampfireLayout {
     heading: wrapAngle(seatAngle + Math.PI),
     footprint: SEAT.footprint,
   };
+
+  // --- the scatter -------------------------------------------------------
+  // Last, and it has to stay last: every draw above is reproduced in order
+  // from the seed, so a scan that consumed random numbers before them would
+  // re-roll every camp in the game.
+  const bigDiscs = props
+    .map((p) => ({ x: p.x, z: p.z, footprint: p.footprint }))
+    .concat([{ x: seat.x, z: seat.z, footprint: seat.footprint }]);
+  let placedPebbles = 0;
+  for (let i = 0; i < PEBBLE_CANDIDATES && placedPebbles < PEBBLE_TARGET; i++) {
+    const angle = away + i * GOLDEN_ANGLE + randRange(rand, -0.1, 0.1);
+    const radius =
+      ringRadius + randRange(rand, PEBBLE_BAND_M[0], PEBBLE_BAND_M[1]);
+    const footprint = randRange(rand, PEBBLE_FOOTPRINT_M[0], PEBBLE_FOOTPRINT_M[1]);
+    // Measured from the camp's own frame, like the ring stones', so turning
+    // the heading turns the scatter rather than re-seating every stone in it.
+    const yaw = away + randRange(rand, 0, Math.PI * 2);
+    const x = fire.x + Math.sin(angle) * radius;
+    const z = fire.z + Math.cos(angle) * radius;
+    // Same three rules everything else in the camp obeys, applied as a
+    // filter rather than designed around: off the road, clear of every
+    // other footprint, and — since these are the only props allowed to sit
+    // this near the stones — clear of the ring itself.
+    if (Math.abs(roadOffset(x, z, heading)) - footprint < ROAD_CLEARANCE_M) continue;
+    if (bigDiscs.some((d) => Math.hypot(x - d.x, z - d.z) < d.footprint + footprint)) continue;
+    bigDiscs.push({ x, z, footprint });
+    place(
+      'pebble',
+      placedPebbles,
+      angle,
+      radius,
+      yaw,
+      footprint / STONE_FOOTPRINT_PER_SCALE,
+      footprint,
+    );
+    placedPebbles++;
+  }
 
   let extent = ringRadius;
   for (const prop of props) extent = Math.max(extent, prop.radius + prop.footprint);

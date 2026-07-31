@@ -26,10 +26,12 @@ import { Color } from 'three';
 import {
   FLOOR_WARMTH,
   PAINTERLY_CONSTANTS,
+  glyphEnvelope,
   headHalfSteps,
   laneSpan,
   painterlyConstant,
   paperEdges,
+  ribbonLayout,
   sideEase,
   unitLuminance,
 } from './SongNotes';
@@ -244,6 +246,156 @@ describe('the paper is present for as much of the flight as the scaffold promise
     // thin air.
     const fullMs = laneSpan().paperFullShare * TRAVEL_TIME_MS;
     expect(fullMs).toBeGreaterThan(SUPPORT_LEAD_MS[0] * 2);
+  });
+});
+
+/**
+ * The staff draws exactly five rule lines. Not four, and not six.
+ *
+ * This exists to settle a dispute no screenshot could: two visual critics
+ * pixel-counted SIX staff lines on the shipped build, with coordinates, and
+ * three counted five. Both were looking at real pixels. The geometry was the
+ * only witness that could rule — so it is walked here, for every tune the
+ * songbook can put on the road, and asserted to carry exactly five ink
+ * bands, each centred on a printed line step. The sixth "line" turned out to
+ * be the paper's own dissolve boundary rendered crisp enough to counterfeit
+ * a rule (for a G5 tune it sat almost exactly one staff space above the top
+ * line); the last test in this block is the one that keeps any fade from
+ * ever being that steep again.
+ */
+describe('the ribbon prints exactly five staff lines', () => {
+  /** B4, the middle line — rows are measured in steps from it. */
+  const MIDDLE = 6;
+  const LINE_STEPS = [2, 4, 6, 8, 10];
+  const arcM = laneSpan().arcM;
+
+  const cases: Array<[string, { low: number; high: number }]> = [
+    ['the bare staff', paperEdges(Infinity, -Infinity)],
+    ...SONGS.map((song): [string, { low: number; high: number }] => {
+      const { lowest, highest } = rangeOf(song.notes);
+      return [song.title, paperEdges(lowest, highest)];
+    }),
+  ];
+
+  /** Contiguous runs of ink rows at a column, as [firstRow, lastRow] heights. */
+  function inkBands(layout: ReturnType<typeof ribbonLayout>, c: number): Array<[number, number]> {
+    const bands: Array<[number, number]> = [];
+    let start: number | null = null;
+    for (let r = 0; r < layout.rows.length; r++) {
+      if (layout.ink(r, c)) {
+        if (start === null) start = layout.rows[r];
+      } else if (start !== null) {
+        bands.push([start, layout.rows[r - 1]]);
+        start = null;
+      }
+    }
+    if (start !== null) bands.push([start, layout.rows[layout.rows.length - 1]]);
+    return bands;
+  }
+
+  /** The column nearest a given share of the arc. */
+  function colNear(cols: number[], arc: number): number {
+    let best = 0;
+    for (let c = 0; c < cols.length; c++) if (Math.abs(cols[c] - arc) < Math.abs(cols[best] - arc)) best = c;
+    return best;
+  }
+
+  for (const [name, edges] of cases) {
+    it(`draws five rules and only five for ${name}`, () => {
+      const layout = ribbonLayout(edges.low, edges.high, arcM);
+      // A column in the open run: past the barline's ink, before the far fade.
+      const c = colNear(layout.cols, arcM * 0.3);
+      const bands = inkBands(layout, c);
+      expect(bands.length).toBe(5);
+      for (let b = 0; b < 5; b++) {
+        const centre = (bands[b][0] + bands[b][1]) / 2 + MIDDLE;
+        expect(centre).toBeCloseTo(LINE_STEPS[b], 5);
+      }
+    });
+
+    it(`confines the barline to the staff for ${name} — nothing prints past the outer lines`, () => {
+      // The barline's ink spans the five rules and stops. Ink above the top
+      // line or below the bottom one, at any column, would BE a sixth line.
+      const layout = ribbonLayout(edges.low, edges.high, arcM);
+      const c = colNear(layout.cols, 0);
+      for (let r = 0; r < layout.rows.length; r++) {
+        if (!layout.ink(r, c)) continue;
+        expect(layout.rows[r]).toBeGreaterThanOrEqual(LINE_STEPS[0] - MIDDLE - 0.2);
+        expect(layout.rows[r]).toBeLessThanOrEqual(LINE_STEPS[4] - MIDDLE + 0.2);
+      }
+    });
+
+    it(`dissolves its margins too gently to counterfeit a rule, for ${name}`, () => {
+      // A rule's shoulder climbs about 18 units of alpha per step; the fade
+      // that once read as a sixth line climbed 1.2. Everything outside the
+      // ink must stay an order of magnitude below the shoulder — a gradient
+      // the eye reads as dissolve, never as mark.
+      const layout = ribbonLayout(edges.low, edges.high, arcM);
+      const c = colNear(layout.cols, arcM * 0.3);
+      for (let r = 0; r + 1 < layout.rows.length; r++) {
+        if (layout.ink(r, c) || layout.ink(r + 1, c)) continue;
+        const dy = layout.rows[r + 1] - layout.rows[r];
+        if (dy < 1e-6) continue;
+        const slope = Math.abs(layout.alpha(r + 1, c) - layout.alpha(r, c)) / dy;
+        expect(slope).toBeLessThanOrEqual(0.65);
+      }
+    });
+  }
+});
+
+/**
+ * The approach envelope: the note at the barline is the boldest thing on the
+ * ribbon, and every note is readable for the whole of its final approach.
+ *
+ * The wave-2 critique found the inverse shipped — the note to tap NOW was
+ * the least legible mark on the lane, half-dissolved at the hit moment,
+ * while mid-flight notes rode at full strength — and separately that a note
+ * fading in at full size next to its same-pitch predecessor read as a ghost
+ * duplicate. These pin the envelope that answers both.
+ */
+describe('the imminent note is the most legible thing on the ribbon', () => {
+  // The runway contract, in the critique's own terms: readable for at least
+  // 1.5 s of approach. Stated against TRAVEL_TIME_MS so a re-timed flight
+  // moves the pin with it.
+  const runwayStart = 1 - 1500 / TRAVEL_TIME_MS;
+
+  it('arrives at full ink and its largest size exactly at the barline', () => {
+    const atBar = glyphEnvelope(1);
+    expect(atBar.alpha).toBeCloseTo(1, 6);
+    const cruise = glyphEnvelope(0.5);
+    expect(atBar.alpha).toBeGreaterThan(cruise.alpha);
+    expect(atBar.scale).toBeGreaterThan(cruise.scale);
+  });
+
+  it('is readable for the whole runway', () => {
+    for (let p = runwayStart; p <= 1.0001; p += 0.01) {
+      const env = glyphEnvelope(p);
+      expect(env.alpha).toBeGreaterThanOrEqual(0.7);
+      expect(env.scale).toBeGreaterThanOrEqual(0.95);
+    }
+  });
+
+  it('only ever grows on the way in — urgency runs the same direction as time', () => {
+    let prev = glyphEnvelope(0);
+    for (let p = 0.01; p <= 1.0001; p += 0.01) {
+      const env = glyphEnvelope(p);
+      expect(env.alpha).toBeGreaterThanOrEqual(prev.alpha - 1e-9);
+      expect(env.scale).toBeGreaterThanOrEqual(prev.scale - 1e-9);
+      prev = env;
+    }
+  });
+
+  it('is born small and dim, so a newcomer cannot ghost its neighbour', () => {
+    const born = glyphEnvelope(0.03);
+    expect(born.alpha).toBeLessThan(0.25);
+    expect(born.scale).toBeLessThan(0.8);
+  });
+
+  it('holds its arrival strength past the barline rather than snapping back', () => {
+    const past = glyphEnvelope(1.2);
+    const atBar = glyphEnvelope(1);
+    expect(past.alpha).toBeCloseTo(atBar.alpha, 9);
+    expect(past.scale).toBeCloseTo(atBar.scale, 9);
   });
 });
 

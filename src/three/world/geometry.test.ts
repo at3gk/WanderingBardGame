@@ -496,43 +496,74 @@ describe('stop dressing', () => {
     }
   });
 
-  it('opens the smoke plume out and breaks it up as it climbs', () => {
+  it('swells the smoke plume, then lets it give out, and breaks it up as it climbs', () => {
     const geometry = smokeColumnGeometry({ base: 0xf0e8dc, tip: 0xe4e8ec, seed: 233 });
     const position = geometry.attributes.position as BufferAttribute;
-    // Two crossed octagons per puff, each face doubled and reversed: six
-    // triangles a fan, twelve a plane, twenty-four a puff.
-    const perPuff = 72;
+    // Two crossed heptagons per puff, each face doubled and reversed: five
+    // triangles a fan, ten a plane, twenty a puff.
+    const perPuff = 60;
     expect(position.count).toBe(SMOKE_PUFFS * perPuff);
 
-    const centres: number[] = [];
+    const anchors: number[] = [];
     const widths: number[] = [];
     for (let p = 0; p < SMOKE_PUFFS; p++) {
-      let minY = Infinity;
-      let maxY = -Infinity;
+      let sumY = 0;
       let minX = Infinity;
       let maxX = -Infinity;
       for (let i = p * perPuff; i < (p + 1) * perPuff; i++) {
-        minY = Math.min(minY, position.getY(i));
-        maxY = Math.max(maxY, position.getY(i));
+        sumY += position.getY(i);
         minX = Math.min(minX, position.getX(i));
         maxX = Math.max(maxX, position.getX(i));
       }
-      centres.push((minY + maxY) / 2);
+      // The mean rather than the mid-extent: the puffs are jittered per
+      // corner now, so their extents are not symmetric about their own
+      // centres and the mid-extent wobbles by a few centimetres.
+      anchors.push(sumY / perPuff);
       widths.push(maxX - minX);
     }
 
     for (let p = 1; p < SMOKE_PUFFS; p++) {
-      // Rises, and each puff is wider than the one under it.
-      expect(centres[p]).toBeGreaterThan(centres[p - 1]);
-      expect(widths[p]).toBeGreaterThan(widths[p - 1]);
-      if (p < 2) continue;
-      // And the gaps open out. This is the only fade the plume has: the
-      // shader carries one opacity for the whole material and no per-vertex
-      // alpha, so a column that stayed evenly stacked would end in a hard
-      // flat edge eleven metres up and read as a grey monument.
-      expect(centres[p] - centres[p - 1]).toBeGreaterThan(centres[p - 1] - centres[p - 2]);
+      expect(anchors[p]).toBeGreaterThan(anchors[p - 1]);
     }
+    // The gaps open out. This is the only fade the plume has: the shader
+    // carries one opacity for the whole material and no per-vertex alpha, so
+    // a column that stayed evenly stacked would end in a hard flat edge
+    // eleven metres up and read as a grey monument. Measured over thirds
+    // rather than pair by pair, because the per-puff jitter moves an
+    // individual anchor further than one step of the profile does.
+    const third = Math.floor(SMOKE_PUFFS / 3);
+    const low = (anchors[third] - anchors[0]) / third;
+    const high = (anchors[SMOKE_PUFFS - 1] - anchors[SMOKE_PUFFS - 1 - third]) / third;
+    expect(high).toBeGreaterThan(low * 1.6);
+
+    // It swells and then gives out. A column that is at its widest where it
+    // leaves the frame draws a wedge — a thing getting stronger as it goes —
+    // which is the opposite of what smoke does.
+    const widest = widths.indexOf(Math.max(...widths));
+    expect(widest).toBeGreaterThan(SMOKE_PUFFS * 0.4);
+    expect(widest).toBeLessThan(SMOKE_PUFFS - 2);
+    expect(widths[SMOKE_PUFFS - 1]).toBeLessThan(widths[widest] * 0.92);
+    // And it is a thread, not a tower. At the resting camera's four metres a
+    // plume four metres across is the second-largest mass in the frame.
+    expect(Math.max(...widths)).toBeLessThan(2.8);
+
     expect(bounds(geometry).maxY).toBeGreaterThan(SMOKE_HEIGHT_M * 0.9);
+  });
+
+  it('draws the smoke well below the value it is handed', () => {
+    // The caller owns the plume's hue; the module owns its value. Near-white
+    // smoke at night was the second-brightest mass in the campfire frame,
+    // lighter than the sky it was drawn over.
+    const geometry = smokeColumnGeometry({ base: 0xf4ece0, tip: 0xeceef0, seed: 233 });
+    const color = geometry.attributes.color as BufferAttribute;
+    expect(color).toBeDefined();
+    let brightest = 0;
+    for (let i = 0; i < color.count; i++) {
+      brightest = Math.max(brightest, color.getX(i), color.getY(i), color.getZ(i));
+    }
+    // 0xf4 is 0.957; anything near it is the old near-white plume.
+    expect(brightest).toBeLessThan(0.45);
+    expect(brightest).toBeGreaterThan(0.2);
   });
 
   it('roots the plume at the fire and leaves its top free to wander', () => {

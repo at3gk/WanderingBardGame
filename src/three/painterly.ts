@@ -543,8 +543,96 @@ const FRAGMENT = /* glsl */ `
  * penumbra, it does not grow or shrink the shadow, which matters because the
  * long-shadow ladder at dawn and dusk is load-bearing for those frames and
  * must not be traded away for an edge.
+ *
+ * --- and then the narrowing alone was measured, and it was not enough ------
+ *
+ * 0.34 shipped for a round and the next blind critique put the cast shadows
+ * back at the top of the list, five lenses out of six: "enormous soft
+ * grey-brown smears", "they read as stains", "they clash with the hard-edged
+ * low-poly vocabulary". The arithmetic above says why a narrowing on its own
+ * cannot win. The penumbra on the morning road is about four hundred pixels
+ * of gradient; 0.34 divides that by three, and a hundred and thirty pixels of
+ * smooth ramp is still a stain, just a smaller one. Dividing further is the
+ * obvious next move and it is the wrong one — a hard threshold on a PCF ramp
+ * is a stair-step, which is the artifact the kernel exists to prevent, and it
+ * arrives as a straight machine-cut line through a landscape whose entire
+ * vocabulary is faceted planes.
+ *
+ * So the ramp is narrowed HARD and its centre is then walked about by
+ * world-space noise. That is this file's own standing argument, applied to
+ * the one boundary it had not been applied to: a gradient reads as untextured
+ * 3D, an edge broken up by noise reads as a brush. The boundary lands
+ * somewhere different every half metre, so what was a two-metre wash becomes
+ * a ragged line of interlocking hard-edged lobes — the shape a shadow has
+ * when a painter puts it down with a loaded brush, and the shape the rest of
+ * this world is already made of.
+ *
+ * The two numbers are a pair and should be read as one. SHADOW_EDGE is how
+ * wide the riser is; SHADOW_FRAY is how far the riser's centre wanders. The
+ * fray must be several times the riser or the edge is merely soft again, and
+ * their SUM must stay inside the penumbra or the boundary starts detaching
+ * from the shadow it belongs to. 0.13 and 0.30 sit comfortably inside.
+ *
+ * The area argument from the paragraph above survives: the fray is zero-mean,
+ * so it moves the boundary in and out in equal measure and the long-shadow
+ * ladder at dawn and dusk keeps its reach.
  */
-#define SHADOW_EDGE 0.34
+#define SHADOW_EDGE 0.13
+#define SHADOW_FRAY 0.30
+/*
+ * The size of the lobes the shadow edge breaks into, as a world-space
+ * frequency: 2.1 is a feature every fifty centimetres or so.
+ *
+ * Chosen against the road rather than against the shadow. Half a metre of
+ * near ground is a couple of hundred pixels in one of these frames, which is
+ * a brush mark; ten centimetres would be a pixel-level fuzz, which is the
+ * same stain with more steps in it.
+ *
+ * And faded out with distance for the reason the near-ground mottle records
+ * at length: there are no mipmaps on a noise function, and half a metre at
+ * eighty metres is two pixels. A pattern sampled at two pixels a cycle is not
+ * a brush mark, it is a hash — and on a shadow BOUNDARY it would crawl as the
+ * camera moves, which is worse than the stain. Past the fade the riser is
+ * still narrow, so the far shadows keep the edge and lose only the ragging;
+ * at that range they are a few pixels across and there was never room for a
+ * lobe in them.
+ */
+#define SHADOW_FRAY_SCALE 2.1
+#define SHADOW_FRAY_NEAR_M 20.0
+#define SHADOW_FRAY_FAR_M 70.0
+/*
+ * How much sky-coloured light a fragment gets for being inside a CAST shadow,
+ * as a multiple of the skylight already arriving there.
+ *
+ * DESIGN's standing rule is that shadows are coloured and never grey, and
+ * SKY_SCATTER above is the term that delivers it — but read its own note
+ * carefully and it only ever promised the SHADE side. It is scaled by
+ * 1 - sunAmount, which is large on a face turned away from the sun and, at
+ * the top of the day, small on flat ground that a tree happens to be standing
+ * in front of: noon ground takes sunAmount 0.81 lit and about 0.28 under a
+ * cast shadow, so the term lands at 0.065 of a small number against 0.017.
+ * Worked through the palette that is under two thousandths of the road's
+ * value. The cast shadow was a pure multiply — the same brown, darker — which
+ * is exactly what "grey-brown smear" describes, and it is why the complaint
+ * survived a round of edge work that was otherwise correct.
+ *
+ * LOW_SUN_SCATTER already triples the term at dawn and dusk and its note
+ * gives the physical argument. This is the same argument at the other end of
+ * the day, which that note explicitly leaves open: a cast shadow at noon is a
+ * patch of ground whose ONLY light source is the sky dome, so its
+ * illuminant really is a saturated blue, while the lit ground beside it is
+ * taking three quarters of its light from a warm sun. The blue shadow on a
+ * bright day is not a stylisation, it is the single most photographed fact in
+ * landscape painting.
+ *
+ * Keyed on 1 - shadowMask rather than on 1 - sunAmount, which is the whole
+ * point: this is about being OCCLUDED, not about facing away. A canopy
+ * underside is already served by the term above and must not be paid twice.
+ * Scaled by sunHeight so the low-sun hours keep LOW_SUN_SCATTER as their one
+ * answer and night, where there is no sun to be occluded from, is
+ * arithmetically untouched.
+ */
+#define CAST_SHADOW_SKY 0.20
 /*
  * How far the haze is pushed away from its own grey axis before it is mixed
  * into the picture — and the reason STATE.md item 10 survived the fix that
@@ -690,6 +778,110 @@ const FRAGMENT = /* glsl */ `
 #define FG_TIER_DEPTH 0.30
 #define FG_TIER_NEAR_M 4.0
 #define FG_TIER_FAR_M 45.0
+/*
+ * --- and the same ladder again, as TREADS rather than as a ramp -----------
+ *
+ * The term above was built as a smooth curve from four metres to forty-five,
+ * and the next critique named the result precisely: a broad soft dark area
+ * owning the bottom of the frame, dragging the eye to the bottom edge, with
+ * no shape and no boundary. That is a fair description of a four-hundred-pixel
+ * gradient, and it is the same complaint the cast shadows drew — this file has
+ * now been told twice, by two independent routes, that a smooth value gradient
+ * across a low-poly landscape reads as a smudge rather than as space.
+ *
+ * So the ramp is quantised into three treads with a narrow riser between them.
+ * The near ground, the middle distance and the ground beyond forty-five metres
+ * become three PLANES of different value, which is how a landscape painter
+ * builds depth and is the same device the fog uses at the far end. The riser
+ * is broken with the grain, exactly as the shadow edge is, so the boundary
+ * between two treads is a brush line and not a contour on a map.
+ *
+ * The endpoints are unchanged by construction — floor(0) is 0 and floor(3)/3
+ * is 1 — so the near ground is as dark as it was and the far ground as light,
+ * and everything the note above says about the term's size still holds. What
+ * moves is the middle: it used to sit wherever the curve happened to put it,
+ * and now it sits on a tread with a stated value of its own.
+ *
+ * Three, not four or five. Four treads put a riser inside the near band where
+ * the mottle already lives and the two patterns fought; two is the ramp again
+ * with one step in it.
+ */
+#define FG_TIER_TREADS 3.0
+#define FG_TIER_RISER 0.10
+#define FG_TIER_FRAY 0.30
+/*
+ * How far each tread of the ladder above steps toward the colour of the air.
+ *
+ * The other half of the same critique: between the near ground's full local
+ * colour and the haze band on the skyline there is no tinted middle rung, so
+ * the noon frame reads as one bleached band. That is true and it is a gap in
+ * the model rather than in the palette. The fog is the only term in this
+ * shader that knows about distance, and by its own note it is a tenth of one
+ * per cent at forty metres — so everything from the bard's feet out to sixty
+ * metres is hazed identically, which is to say not at all.
+ *
+ * Aerial perspective is not only a veil, it is a HUE ROTATION, and it starts
+ * far nearer than the veil does: the middle distance of a landscape is cooler
+ * and less local than the foreground long before it is any paler. So each
+ * tread takes a step toward the air's own hue, which hands the middle distance
+ * a colour that is neither the foreground's green nor the horizon's wash.
+ *
+ * Normalised to unit luminance before it is applied, so this is a rotation and
+ * not a lift: the ladder's VALUE is the term above's business and this must not
+ * quietly re-tune it. Ridden by sunHeight for the same reason the ladder is —
+ * at night the air has no colour of its own to lend.
+ */
+#define FG_TIER_HUE 0.50
+/*
+ * The warm/cool split across a mass, and how much value comes with it.
+ *
+ * Critique gap: the sun's direction exists in this world ONLY in the cast
+ * shadows. A tree crown, a rock, a fallen log renders at one flat value
+ * whether it faces the sun or turns away from it, and every reference frame
+ * the panel judged against splits each form warm on one side and cool on the
+ * other. That reads as a missing lighting term and it is not one — the banded
+ * diffuse above has always had ndl. What it does not have, on the objects that
+ * matter most, is a NORMAL that can carry it.
+ *
+ * world/geometry.ts tilts the foliage normals ninety-two per cent of the way
+ * toward straight up, deliberately and with a good reason: it is what makes a
+ * canopy read as one mass rather than as a heap of little walls. The price,
+ * never written down, is that the horizontal component of a leaf normal is
+ * left about eight hundredths of a unit long — so dot(N, L) on a crown at noon
+ * separates its sun side from its shade side by a few per cent of one band,
+ * and the crown comes back flat. The tilt is right and the flatness is right
+ * next to it; both follow from the same line.
+ *
+ * The way out is that the tilt scales the bearing down without destroying it.
+ * Normalising the horizontal part of the normal recovers WHICH WAY the surface
+ * faces at full length whatever the tilt did to its magnitude, and a term
+ * riding that gives a crown a sun side without giving back the heap of walls —
+ * because it is the crown's HUE that splits, and its value only slightly.
+ *
+ * Hue first, and mostly hue, for two reasons. It is the honest one: the sun
+ * side of a form is lit by sunlight and the shade side by skylight, and those
+ * are two different colours, which is the whole of the physics here. And it is
+ * the safe one: the split is applied as a luminance-normalised rotation of the
+ * light, so a mass gains a warm side and a cool side without the frame's value
+ * structure moving underneath the gates that guard it.
+ *
+ * MODEL_TURN sits the band edge slightly onto the shade side rather than at
+ * the terminator, so the lit side is the larger of the two. That is what a
+ * sphere does — the terminator on a real form is past the halfway point from
+ * the viewer's side — and a form split exactly in half reads as a two-tone
+ * decal instead.
+ */
+#define MODEL_SPLIT 0.36
+#define MODEL_VALUE 0.15
+#define MODEL_TURN 0.16
+/**
+ * How far the rim is turned up with the sun on the horizon. See the note at
+ * the point it is applied: critique gap 7, the bard as the darkest thing in
+ * the frame with no edge.
+ */
+#define RIM_LOW_SUN 0.6
+/** Rec. 709 luminance weights, for the two hue rotations that must not lift. */
+#define LUMA_W vec3(0.2126, 0.7152, 0.0722)
 #include <packing>
 #include <lights_pars_begin>
 #include <shadowmap_pars_fragment>
@@ -1016,9 +1208,19 @@ void main() {
   // --- banded diffuse ----------------------------------------------------
   float ndl = dot(N, L);
   // See SHADOW_EDGE: three hands back a penumbra that a low sun stretches
-  // into a stain metres wide. Narrowed about the middle of its own range, so
-  // the shadow keeps its place and its area and gains a boundary.
-  float shadowMask = smoothstep(0.5 - SHADOW_EDGE * 0.5, 0.5 + SHADOW_EDGE * 0.5, getShadowMask());
+  // into a stain metres wide. The riser is narrowed hard and then its centre
+  // is walked about by world-space noise, so the boundary lands somewhere
+  // different every half metre and the wash becomes a ragged line of
+  // hard-edged lobes. Zero-mean, so the shadow keeps its place and its area.
+  float frayA = noise31f(vWorldPosition * SHADOW_FRAY_SCALE);
+  float frayB = noise31f(vWorldPosition * SHADOW_FRAY_SCALE * 2.9 + 5.1);
+  float frayFade = 1.0 - smoothstep(SHADOW_FRAY_NEAR_M, SHADOW_FRAY_FAR_M, viewDepth);
+  float shadowCentre = 0.5 + (frayA * 0.62 + frayB * 0.38 - 0.5) * SHADOW_FRAY * frayFade;
+  float shadowMask = smoothstep(
+    shadowCentre - SHADOW_EDGE * 0.5,
+    shadowCentre + SHADOW_EDGE * 0.5,
+    getShadowMask()
+  );
 
   // Nudging the band edges with the grain is what keeps the terminator from
   // looking like a contour line on a map.
@@ -1099,12 +1301,64 @@ void main() {
 
   vec3 lighting = ambient + uSunColor * sunAmount * SUN_STRENGTH;
 
-  // See FG_TIER_DEPTH: the near ground's own value, and the only thing in
-  // this shader that tells five metres from thirty-five.
-  float foreground = 1.0 - smoothstep(FG_TIER_NEAR_M, FG_TIER_FAR_M, viewDepth);
-  float foregroundTier = 1.0 - FG_TIER_DEPTH * foreground * sunHeight;
+  /*
+   * --- the sun side and the shade side of a mass -------------------------
+   *
+   * See MODEL_SPLIT. sunBearing above already asks which way a surface
+   * turns relative to the sun, but it takes the raw normal — and on foliage
+   * that normal has been tilted almost straight up, so the answer it gets is
+   * within a few per cent of the same on both sides of a crown. Normalising
+   * the horizontal part recovers the DIRECTION at full length whatever the
+   * tilt did to its length, which is the one piece of information the tilt
+   * scaled down rather than threw away.
+   */
+  vec3 sunHeading = normalize(vec3(L.x, 0.0, L.z) + vec3(1e-4, 0.0, 0.0));
+  vec3 faceHeading = vec3(N.x, 0.0, N.z);
+  float faceMag = length(faceHeading);
+  float facing = faceMag > 1e-4 ? dot(faceHeading / faceMag, sunHeading) : 0.0;
+  // Flat ground has no bearing to speak of and must not be handed one; by a
+  // tenth of a unit — a gentle hillside, or a canopy normal after the tilt —
+  // there is a side to model and the term is fully in.
+  float faceWeight = smoothstep(0.02, 0.10, faceMag)
+    // No sun below the horizon means no sun side. Deliberately not sunHeight,
+    // which is already half gone at golden hour — the hour that needs this
+    // most.
+    * smoothstep(-0.10, 0.06, uSunDirection.y);
+  // Banded with the same wobble and softness as the diffuse, so the split
+  // arrives as a painted plane rather than as a gradient across the form.
+  float faceBand = smoothstep(-MODEL_TURN - soft, -MODEL_TURN + soft, facing + wobble);
+  // The sun side is lit by sunlight and the shade side by skylight. Both keys
+  // normalised to unit luminance, so this rotates the light's hue and leaves
+  // its value to the terms that own it.
+  vec3 warmKey = uSunColor / max(dot(uSunColor, LUMA_W), 1e-4);
+  vec3 coolKey = uSkyColor / max(dot(uSkyColor, LUMA_W), 1e-4);
+  lighting *= mix(vec3(1.0), mix(coolKey, warmKey, faceBand), MODEL_SPLIT * faceWeight);
+  lighting *= mix(1.0, mix(1.0 - MODEL_VALUE, 1.0 + MODEL_VALUE, faceBand), faceWeight);
 
-  vec3 color = albedo * lighting * foregroundTier;
+  /*
+   * See FG_TIER_DEPTH for what this term is and FG_TIER_TREADS for why it is
+   * a staircase rather than a curve: the near ground, the middle distance and
+   * everything past forty-five metres are three planes of stated value, with
+   * a narrow riser between them broken by the grain so the boundary is a
+   * brush line. The endpoints are exactly where the ramp left them.
+   */
+  float depthRamp = 1.0 - smoothstep(FG_TIER_NEAR_M, FG_TIER_FAR_M, viewDepth);
+  float tread = depthRamp * FG_TIER_TREADS;
+  float riser = smoothstep(
+    0.5 - FG_TIER_RISER,
+    0.5 + FG_TIER_RISER,
+    fract(tread) + (grain - 0.5) * FG_TIER_FRAY
+  );
+  float foreground = (floor(tread) + riser) / FG_TIER_TREADS;
+  float foregroundTier = 1.0 - FG_TIER_DEPTH * foreground * sunHeight;
+  // See FG_TIER_HUE: each tread also steps toward the colour of the air, so
+  // the middle distance is neither the foreground's local colour nor the
+  // horizon's haze. Luminance-normalised, so this is the rotation and the
+  // line above is the value.
+  vec3 airKey = uFogColor / max(dot(uFogColor, LUMA_W), 1e-4);
+  vec3 airward = mix(vec3(1.0), airKey, FG_TIER_HUE * (1.0 - foreground) * sunHeight);
+
+  vec3 color = albedo * lighting * foregroundTier * airward;
 
   // The one light term that does not pass through the albedo. See
   // SKY_SCATTER: a warm albedo cannot be multiplied into a cool shadow, so
@@ -1151,6 +1405,11 @@ void main() {
    * there is.
    */
   scatter *= clamp(1.0 + nearMark * NEAR_SHADE_MARK * nearWeight, 0.0, 2.0);
+  // See CAST_SHADOW_SKY: the term above serves the SHADE side and, by its own
+  // arithmetic, barely reaches a cast shadow under a high sun. A patch of
+  // ground a tree is standing in front of at noon has the sky dome for its
+  // only illuminant, so it is the one genuinely blue thing in the frame.
+  scatter += CAST_SHADOW_SKY * (1.0 - shadowMask) * sunHeight * mix(0.35, 1.0, skyFacing);
   color += skyLight * scatter * foregroundTier;
 
   // --- rim ---------------------------------------------------------------
@@ -1164,7 +1423,28 @@ void main() {
   // edge-on, so fresnel is ~1 across the whole blade — into a field of white
   // slivers. Tying it to albedo keeps a rim a *highlight on a thing* instead
   // of a light source in its own right.
-  color += rimColor * (0.35 + albedo * 0.65) * fresnel * uRim * (0.3 + 0.7 * sunWrap);
+  /*
+   * And turned up when the sun is on the horizon, which is critique gap 7:
+   * in the vista, busk and encounter frames the bard is the darkest thing in
+   * the picture with no edge to lift him off the ground behind him.
+   *
+   * This is the one term in the shader that models light wrapping round a
+   * silhouette, and a low sun is when that actually happens — a figure with
+   * the sun behind him at golden hour carries a bright line down one side,
+   * and it is the single most reliable way a reference frame separates a
+   * character from a landscape. Not a new light and not a per-object dial:
+   * the same rim, riding the same lowSun the two colour terms above ride, so
+   * a mood cannot disagree with the world about how the light works.
+   *
+   * The grass regression this file records is guarded by the multiply. That
+   * failure was a FLAT addition; this one is scaled by uRim, which is 0.05 on
+   * meadow blades and 0.5 to 1.15 on the bard's cloth. Turning the whole term
+   * up by half turns the grass up from a twentieth to a thirteenth and the
+   * figure up from a half to three quarters, which is the ratio that was
+   * wanted in the first place.
+   */
+  color += rimColor * (0.35 + albedo * 0.65) * fresnel * uRim
+    * (0.3 + 0.7 * sunWrap) * (1.0 + lowSun * RIM_LOW_SUN);
 
   // --- hearth ------------------------------------------------------------
   // Deliberately NOT banded, unlike the sun. Banding is a stylisation of

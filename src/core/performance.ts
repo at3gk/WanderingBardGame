@@ -685,6 +685,156 @@ function openingLine(peakWarmth: number): string {
   }
 }
 
+// ---------------------------------------------------------------------------
+// The crowd as individuals (v0.8 item 8 — stakes, not failure)
+// ---------------------------------------------------------------------------
+//
+// `crowdFor` describes warmth as a category; this section describes it as
+// *people*, so that a poorly-kept busk has a consequence you can watch: one
+// listener at a time deciding the tune is not holding them, turning, and
+// strolling off. The rules, in DESIGN.md's words: a crowd can drift away,
+// the busk itself never fails, and nothing is ever taken — a departed
+// listener costs only what they would have added, because coins already
+// scale with warmth and a drifting crowd is a cooling one.
+//
+// The model is deliberately small. Each gathered listener has a keep
+// threshold on warmth — the first who stopped is the easiest to keep, the
+// last to join the quickest to leave — and only the *marginal* listener is
+// ever in question, so departures come one at a time with a fresh grace
+// period each, never as a rout. Departures are recoverable: warmth climbing
+// back past the returning listener's threshold (plus a margin, so the edge
+// cannot flicker) brings them back after a shorter grace. And the first
+// listener never leaves at all: however the tune goes, somebody hears it
+// out, which is the same floor of kindness as the summary's dog.
+
+/** Sustained low warmth this long is what loses the marginal listener. About twelve beats at walking tempo. */
+export const CROWD_DRIFT_GRACE_MS = 8000;
+/** Warmth held above the return line this long brings one back. Shorter than leaving: returning is easy. */
+export const CROWD_RETURN_GRACE_MS = 2500;
+/** Hysteresis on the return line, so warmth sitting exactly on a threshold cannot churn a listener. */
+export const CROWD_RETURN_MARGIN = 0.08;
+/** Top of the threshold ladder, as warmth. Kept under the 'crowd' step so a full house is holdable, not a knife edge. */
+const CROWD_KEEP_SPAN = 0.5;
+
+export interface BuskCrowd {
+  /** How many gathered when the case opened. Never changes during the busk. */
+  capacity: number;
+  /** How many are still listening, [1, capacity] once gathered. */
+  present: number;
+  /** When warmth first failed the marginal listener's threshold, or -1 while they are content. */
+  strainedSinceMs: number;
+  /** When warmth first cleared the returning listener's line, or -1 while nobody is on their way back. */
+  easedSinceMs: number;
+  /** Total who drifted off, for the closing line. A listener who leaves twice counts twice. */
+  departures: number;
+  /** Total who came back. */
+  returns: number;
+}
+
+/**
+ * The warmth the `n`-th listener (1-based) needs to stay.
+ *
+ * A ladder from zero: the first listener asks nothing (they chose to stop
+ * and they will hear it out), and each later one asks a little more. For a
+ * crowd of four that is 0, 0.125, 0.25 and 0.375 — a handful of decent
+ * notes keeps everyone, and only sustained silence or fumbling walks the
+ * ladder down.
+ */
+export function crowdKeepThreshold(n: number, capacity: number): number {
+  const size = Math.max(1, Math.floor(finiteOr(capacity, 1)));
+  const rank = Math.max(1, Math.min(size, Math.floor(finiteOr(n, 1))));
+  return (CROWD_KEEP_SPAN * (rank - 1)) / size;
+}
+
+/** A freshly gathered crowd: everyone present, nobody strained, nothing to report. */
+export function createBuskCrowd(capacity: number): BuskCrowd {
+  const size = Math.max(0, Math.floor(finiteOr(capacity, 0)));
+  return {
+    capacity: size,
+    present: size,
+    strainedSinceMs: -1,
+    easedSinceMs: -1,
+    departures: 0,
+    returns: 0,
+  };
+}
+
+export interface CrowdTick {
+  /** One listener has just turned to go. At most one per tick, by construction. */
+  departed: boolean;
+  /** One listener has just come back. */
+  returned: boolean;
+}
+
+/**
+ * One frame of the crowd's patience, in place (same contract as
+ * `applyJudgement`: a frame-loop record with no history).
+ *
+ * `nowMs` is the busk's own clock. The timers compare timestamps rather
+ * than accumulating deltas so a repeated or backwards timestamp (which real
+ * hardware produces) can only delay a departure, never double one — and a
+ * tab asleep for a minute costs at most the one listener whose patience was
+ * already running out, because only the marginal listener is ever timed.
+ */
+export function tickBuskCrowd(crowd: BuskCrowd, warmth: number, nowMs: number): CrowdTick {
+  const w = clamp01(finiteOr(warmth, 0));
+  const now = finiteOr(nowMs, 0);
+  const tick: CrowdTick = { departed: false, returned: false };
+  if (crowd.capacity <= 0) return tick;
+
+  // The marginal listener. `present > 1` is the floor: the first never leaves.
+  if (crowd.present > 1 && w < crowdKeepThreshold(crowd.present, crowd.capacity)) {
+    if (crowd.strainedSinceMs < 0) {
+      crowd.strainedSinceMs = now;
+    } else if (now - crowd.strainedSinceMs >= CROWD_DRIFT_GRACE_MS) {
+      crowd.present -= 1;
+      crowd.departures += 1;
+      crowd.strainedSinceMs = -1;
+      tick.departed = true;
+    }
+  } else {
+    crowd.strainedSinceMs = -1;
+  }
+
+  // The would-be returner. Cannot fire on the same tick as a departure:
+  // their line sits a whole rung plus the margin above the one just failed.
+  const returnLine =
+    crowdKeepThreshold(crowd.present + 1, crowd.capacity) + CROWD_RETURN_MARGIN;
+  if (crowd.present < crowd.capacity && w >= returnLine) {
+    if (crowd.easedSinceMs < 0) {
+      crowd.easedSinceMs = now;
+    } else if (now - crowd.easedSinceMs >= CROWD_RETURN_GRACE_MS) {
+      crowd.present += 1;
+      crowd.returns += 1;
+      crowd.easedSinceMs = -1;
+      tick.returned = true;
+    }
+  } else {
+    crowd.easedSinceMs = -1;
+  }
+
+  return tick;
+}
+
+/**
+ * The crowd's half of the closing line, or null when there is nothing worth
+ * adding. Same rules as `summaryLine`: facts about the evening, one kind
+ * sentence, never a grade — a listener who left is reported as a person
+ * with somewhere to be, not as a verdict.
+ */
+export function crowdFarewellLine(crowd: BuskCrowd): string | null {
+  if (crowd.capacity <= 0) return null;
+  if (crowd.departures <= 0) {
+    // The earned contrast: a crowd big enough to have doubters, and none
+    // left. Two listeners staying is ordinary and stays unremarked.
+    return crowd.capacity >= 3 ? 'Nobody who stopped left before the end.' : null;
+  }
+  if (crowd.present >= crowd.capacity) {
+    return 'A few drifted off in the middle and drifted back before the end, which is how squares are.';
+  }
+  return 'One or two drifted off along the way. The ones who stayed heard it through.';
+}
+
 /**
  * Config sanitisers. A window that arrives negative, reversed or non-finite
  * has to degrade into a narrower-but-sane one, never into a state where

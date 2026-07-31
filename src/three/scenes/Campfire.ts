@@ -125,14 +125,95 @@ const LIGHT_BLAZE = new Color(0xffa552);
  * How far the fire's light reaches.
  *
  * Sized against the layout, not against physics: the bedroll sits about
- * 2.6 m out, so a 4.6 m pool covers the whole camp with room to spare. It
- * does not stop short of the road — the fire is 5.8 m off the centreline at
- * its closest and the packed surface is 2.3 m wide, so the pool's rim laps
- * about a metre onto it — but the falloff below is cubic, and by that radius
- * it is carrying a few per cent of its centre strength. The composition
- * still reads: the camp is warm, the road it came off is still blue.
+ * 2.6 m out, so this covers the whole camp with room to spare. It does not
+ * stop short of the road — the fire is 5.8 m off the centreline at its
+ * closest and the packed surface is 2.3 m wide, so the pool's rim laps onto
+ * it — but by that radius the ramp below has run all the way down to its
+ * dark red. The composition still reads: the camp is warm, the road it came
+ * off is still blue.
+ *
+ * **Measured, not chosen.** The resting camera stands 3.8 m back from a seat
+ * that is about 2 m from the fire, looking at it, so *the whole of the
+ * visible foreground is within about six metres of the flame*. A pool sized
+ * generously — 4.6 m, and then 5.6 m when the hue ramp was first added —
+ * therefore fills the entire lower half of the frame with its inner, orange
+ * half and pushes everything interesting past the frame edge. That is the
+ * mechanical reason the pool read as "one uniform saturated orange": not
+ * that it had no ramp, but that the frame only ever showed the top of it.
+ * 4.4 m puts the far corners of the picture *outside* the pool, which is
+ * where the night gets to be night.
  */
-const POOL_RADIUS_M = 4.6;
+const POOL_RADIUS_M = 4.4;
+
+/**
+ * The fire's radial hue journey, as multipliers on the light's own colour.
+ *
+ * This is the whole fix for "one uniform saturated orange with a hard rim".
+ * A fire does not light the ground evenly and then stop; it grades — a
+ * yellow-white core where the coals are, orange out to arm's reach, deep red
+ * where it is only just reaching, and then a bruised violet-brown as the last
+ * of it meets the blue of the night. Painting that ramp *into the pool* is
+ * cheaper and more controllable than trying to get it out of a falloff curve,
+ * and it means the rim is a colour change rather than a brightness edge —
+ * which is why it stops reading as the boundary of a decal.
+ *
+ * Multipliers, not colours, so the ramp stays coupled to the flame: as the
+ * fire banks down and `lightColor` slides from blaze to ember, the whole
+ * journey slides with it instead of a painted gradient sitting on top of a
+ * dying fire. Against `LIGHT_BLAZE` (1.00, 0.65, 0.32) these give, in order:
+ * warm cream, gold, orange, red-orange, deep red, and a dark red-violet that
+ * — added onto blue night ground — comes out as the violet-brown the last of
+ * a fire actually makes.
+ *
+ * The stops are bunched hard toward the middle, which looks wrong written
+ * down and is right on screen, for a reason that was measured rather than
+ * guessed. Sampled at sixteen bearings per radius on `07-night-campfire`,
+ * the ground *without* this pool is flat: luminance 50 to 64 from half a
+ * metre out to seven and a half, with a red/green ratio of about 1.35. So
+ * the pool is not grading over darkness, it is grading over an unchanging
+ * ochre — and the moment its own contribution drops below roughly the
+ * ground's own value, the ground's hue wins and the journey stops. The first
+ * version of this ramp reached red at 0.62 of the radius, by which point the
+ * pool was adding 51 to red and 5 to green over a ground already sitting at
+ * 81/59: a strongly red *addition* that came out, composited, at the same
+ * orange as everywhere else.
+ *
+ * The fix is not more light — that undoes the darkness the frame needs. It
+ * is to strip the green out earlier, while there is still enough of the pool
+ * left to be seen doing it. Red arrives at 0.36 of the radius here, about a
+ * metre and a half from the coals.
+ */
+const POOL_TINT: readonly (readonly [number, number, number, number])[] = [
+  [0.0, 1.14, 1.36, 1.66],
+  [0.08, 1.06, 1.08, 0.98],
+  [0.2, 1.0, 0.78, 0.55],
+  [0.36, 0.99, 0.44, 0.2],
+  [0.55, 0.95, 0.21, 0.1],
+  [0.75, 0.78, 0.11, 0.16],
+  [1.0, 0.5, 0.07, 0.32],
+];
+
+/**
+ * How far the *shader's* hearth term reaches, metres.
+ *
+ * Distinct from the pool: the pool is a mark on the ground and this is the
+ * light on everything standing in it. The painterly falloff is
+ * `1/(1 + d²/r²)`, which never reaches zero, so `r` is the only thing
+ * deciding how much of the world the fire washes.
+ *
+ * Down from the shader's own 4.2 default, and the reason is the second half
+ * of the campfire critique: the night never darkened. At 4.2 the term still
+ * carries fifteen per cent of its strength twelve metres out — past the
+ * camp, past the road, out to the frame edge — so every olive-grey mid-value
+ * in the picture was being lifted warm and there was nothing dark left for
+ * the fire to be precious against. At 3.0 the same distance carries six per
+ * cent. The cost is at the bard, two metres away, who loses about a sixth of
+ * his firelight; `HEARTH_GAIN` hands that back, and only that, so the trade
+ * is local warmth kept and distant wash removed.
+ */
+const HEARTH_RADIUS_M = 3.0;
+/** Restores the near-field loss from the tighter radius above. Nothing more. */
+const HEARTH_GAIN = 1.18;
 
 /** Irrational, so sums built from them have no period. */
 const PHI = 1.618033988749895;
@@ -228,6 +309,7 @@ export class Campfire {
     this.group.add(this.fireGroup);
 
     this.buildRing(palette, rand, groundHeightAt);
+    this.buildScatter(palette, rand, groundHeightAt);
     this.coalMaterial = this.buildCoals(rand);
     this.buildLaidFire(rand);
     this.buildFlame();
@@ -367,12 +449,21 @@ export class Campfire {
     this.group.getWorldPosition(hearth);
     hearth.y += 0.35;
     this.globals.uHearthColor.value.copy(this.lightColor);
-    this.globals.uHearthStrength.value = (0.25 + flame * 1.15) * pulse;
+    this.globals.uHearthRadius.value = HEARTH_RADIUS_M;
+    this.globals.uHearthStrength.value = (0.25 + flame * 1.15) * pulse * HEARTH_GAIN;
 
     // The pool is a shade more responsive than the light, because it is the
     // part anyone actually sees move.
+    //
+    // Cut from (0.3 + 0.7·flame), and the cut is what lets the ramp read.
+    // Measured on `07-night-campfire` with the shader's hearth term switched
+    // off, the pool alone was pinning the red channel at 255 across roughly a
+    // metre and a half of ground either side of the coals — and a clipped
+    // channel has no hue, so the brightest, most-looked-at part of the pool
+    // was the part with the least colour in it. The spike in the falloff
+    // above gives the coals their heat back over a much smaller area.
     this.glowMaterial.uniforms.uStrength.value =
-      (0.3 + flame * 0.7) * (0.82 + (this.lit - 1) * 0.7 + sparkle * 0.06);
+      (0.22 + flame * 0.5) * (0.82 + (this.lit - 1) * 0.7 + sparkle * 0.06);
     this.glowMaterial.uniforms.uColor.value.copy(this.lightColor);
 
     // Coals are brightest when the flame is low — that is when you can see
@@ -458,6 +549,77 @@ export class Campfire {
       // will name and everybody will feel; approximated by darkening a
       // random share of the stones rather than by a per-face mask.
       tint.setScalar(1).lerp(soot, rand() * 0.45);
+      mesh.setColorAt(i, tint);
+    }
+    this.group.add(mesh);
+  }
+
+  /**
+   * The stones scattered through the firelight, as opposed to the ring.
+   *
+   * `campfireLayout`'s note on the scatter explains why these exist at all;
+   * this is what they have to *be* to do that job. Flat and half-buried, not
+   * cobbles: the point is a lit face and a small cast shadow on ground that
+   * otherwise has neither, and a rounded stone standing proud of the grass
+   * would read as a second, badly-built ring. Each one is squashed to
+   * between a fifth and a half of its width in height and sunk a third of
+   * the way in, so what shows is a plate tilted a few degrees out of the
+   * ground — which is what a stone in a worn verge actually looks like.
+   *
+   * They take the biome's own rock colour like the ring does, darkened a
+   * little: these sit *outside* the ring in the part of the pool where the
+   * light has gone deep orange and red, so a stone drawn at the ring's value
+   * out here would pop out of the ramp as a bright fleck.
+   */
+  private buildScatter(
+    palette: BiomePalette,
+    rand: Rand,
+    groundHeightAt: (x: number, z: number) => number,
+  ): void {
+    const pebbles = this.layout.props.filter((p) => p.kind === 'pebble');
+    if (pebbles.length === 0) return;
+    const geometry = this.keep(rockGeometry(Math.floor(rand() * 0xffff) + 1));
+
+    const mesh = new InstancedMesh(
+      geometry,
+      this.solid({
+        color: palette.rock,
+        colorVariant: 0x9c8d78,
+        rim: 0.22,
+        grain: 0.45,
+        grainScale: 2.4,
+        baseShade: 0.3,
+        baseShadeHeight: 0.2,
+      }),
+      pebbles.length,
+    );
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.name = 'campfire-scatter';
+    this.instanced.push(mesh);
+
+    const dummy = new Object3D();
+    const tint = new Color();
+    const earth = new Color(0x6a5b4a);
+    for (let i = 0; i < pebbles.length; i++) {
+      const pebble = pebbles[i];
+      const flat = randRange(rand, 0.2, 0.5);
+      dummy.position.set(
+        pebble.x,
+        groundHeightAt(pebble.x, pebble.z) - pebble.scale * flat * 0.34,
+        pebble.z,
+      );
+      // A few degrees of tilt, so no two catch the fire at the same angle
+      // and the scatter has a range of values rather than one.
+      dummy.rotation.set(
+        randRange(rand, -0.3, 0.3),
+        pebble.rotation,
+        randRange(rand, -0.3, 0.3),
+      );
+      dummy.scale.set(pebble.scale, pebble.scale * flat, pebble.scale);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      tint.setScalar(1).lerp(earth, randRange(rand, 0.1, 0.55));
       mesh.setColorAt(i, tint);
     }
     this.group.add(mesh);
@@ -651,26 +813,89 @@ export class Campfire {
     group.add(stub);
   }
 
+  /**
+   * The bedroll: a bed made up on the ground, not a sack.
+   *
+   * What was here before was a long low mound with a flat red box sitting on
+   * top of it, and from the resting camera that draws a table with a cloth on
+   * it — which is exactly what the critique named it. Two things were wrong
+   * and neither was the mound. The blanket was a *box*, so it had a hard
+   * horizontal top edge and four vertical corners, which is furniture; and
+   * the bed had no head, so nothing said which way a person lies in it.
+   *
+   * So: the roll is taller and narrower (a mat is a mat, bedding is bedding),
+   * the blanket is now a soft mound of its own that is *wider* than the roll
+   * and so hangs over its sides, and there is a bunched pillow at the far end.
+   * A long shape with a lump at one end and a cover over the other is read as
+   * a bed by anyone who has ever seen one, at any distance where the outline
+   * survives at all.
+   */
   private buildBedroll(): Object3D {
     const group = new Group();
     group.name = 'campfire-bedroll';
 
+    // Sunk, like the ring stones and the seat log. `bedrollGeometry` closes
+    // flat at y = 0 and the prop is seated on a *single* ground sample, so on
+    // the roadside crown a metre and a half of bedding stands off the grass
+    // at one end and hovers. Shot at the resting camera it read as furniture
+    // on legs, which is half of why the critique called it a table.
+    const sink = -0.035;
+
     const roll = new Mesh(
-      this.keep(bedrollGeometry(1.55, 0.56, 0.19)),
-      this.solid({ color: CANVAS_COLOR, colorVariant: 0xbda882, rim: 0.45, grain: 0.5 }),
+      // Taller and narrower than the mat it was. Seen from a camera three
+      // metres up, a flat shape shows the viewer nothing but its top face,
+      // and a top face lit by a low fire is lit by the *sky* — which is
+      // exactly how the bedding came back mauve in a warm frame. Height is
+      // what turns a plan view into a form.
+      this.keep(bedrollGeometry(1.4, 0.46, 0.31)),
+      // A stronger rim than the rest of the camp carries, and it is not
+      // decoration. The bedroll's slot puts its fire-facing flank away from
+      // the resting camera, so the side anybody sees is the shaded one, and
+      // it sits in knee-high grass that is the same value as its shadow. The
+      // fresnel edge is the only thing that draws a line between the two.
+      this.solid({ color: CANVAS_COLOR, colorVariant: 0xbda882, rim: 0.62, grain: 0.5 }),
     );
+    roll.position.y = sink;
     roll.castShadow = true;
     roll.receiveShadow = true;
     group.add(roll);
 
-    // A blanket folded back at one end. It costs six triangles and it is the
-    // difference between a laid bed and a sack.
-    const blanket = new Mesh(
-      this.keep(taperedBox(0.5, 0.13, 0.42, 0.86, 0.9)),
-      this.solid({ color: BLANKET_COLOR, colorVariant: 0xd0996a, rim: 0.5 }),
+    // The pillow, across the head end rather than along it — which is how a
+    // pillow lies, and the crossways axis is what makes it read as a
+    // *different* thing from the roll it sits on rather than as another
+    // section of the same sausage.
+    // `bedrollGeometry` runs its *length* along local Z, so a pillow lying
+    // across the bed is a long one turned a quarter turn — not a short one,
+    // which is what the first attempt built and which came out as one more
+    // section of the same sausage.
+    //
+    // It is also the lightest thing in the camp on purpose. The bed is read
+    // by its ends: a pale lump at the head against a dark cover at the foot
+    // is a bed at any size where either survives, and two masses of the same
+    // value in a row are a log.
+    const pillow = new Mesh(
+      this.keep(bedrollGeometry(0.46, 0.3, 0.19)),
+      this.solid({ color: 0xa8957a, colorVariant: 0xe0cfae, rim: 0.7, grain: 0.55 }),
     );
-    blanket.position.set(0, 0.13, 0.46);
-    blanket.rotation.y = 0.16;
+    pillow.position.set(0, 0.15 + sink, -0.45);
+    pillow.rotation.y = Math.PI / 2 + 0.12;
+    pillow.castShadow = true;
+    group.add(pillow);
+
+    // The blanket, over the foot two thirds. Wider than the roll on purpose:
+    // the overhang is what makes it a cover thrown over something rather than
+    // a lid resting on it, and the long run of it is what stops the bed
+    // reading as three separate lumps in a row.
+    const blanket = new Mesh(
+      this.keep(bedrollGeometry(0.98, 0.52, 0.22)),
+      this.solid({ color: BLANKET_COLOR, colorVariant: 0xd0996a, rim: 0.6, grain: 0.45 }),
+    );
+    // Lifted so its crown clears the roll's rather than sitting level with
+    // it. Two soft mounds of the same height, overlapping, merge into one
+    // lumpy mass with a colour change across the middle — which is what the
+    // bed came back as. A cover has to be *on* the thing it covers.
+    blanket.position.set(0, 0.135 + sink, 0.3);
+    blanket.rotation.y = -0.06;
     blanket.castShadow = true;
     group.add(blanket);
 
@@ -703,44 +928,108 @@ export class Campfire {
     belly.receiveShadow = true;
     lean.add(belly);
 
-    const body = new Mesh(this.keep(taperedBox(0.4, 0.3, 0.31, 0.84, 0.9)), leather);
+    const body = new Mesh(this.keep(taperedBox(0.4, 0.34, 0.31, 0.72, 0.8)), leather);
     body.position.y = 0.2;
     body.castShadow = true;
     body.receiveShadow = true;
     lean.add(body);
 
-    const flap = new Mesh(
-      this.keep(taperedBox(0.36, 0.11, 0.3, 1, 1)),
-      this.solid({ color: STRAP_COLOR, colorVariant: 0x6b5340, rim: 0.35 }),
-    );
-    flap.position.y = 0.47;
-    flap.rotation.x = 0.24;
-    flap.castShadow = true;
-    lean.add(flap);
+    /*
+     * The top of the pack, and the two failures it has to avoid.
+     *
+     * At night, two metres away, this prop is a dark mass against bright
+     * firelit ground: nothing inside its outline survives, so its *outline*
+     * is the whole of what it says. Two outlines have been tried and both
+     * were named something else by a critic.
+     *
+     * A box that narrows and then finishes in a broad flat lid with an
+     * overhang is a **mailbox** — that was the first one, and no amount of
+     * strapping on the front argues with it. Replacing the lid with a wide
+     * bedding roll laid across the top made it a **cauldron**: same overhang,
+     * rounder. What both share is a horizontal thing wider than the body
+     * sitting on top of the body.
+     *
+     * So nothing up here is allowed to be wider than the belly. A narrow
+     * cinched collar, a soft bunched mouth *inside* that width, the bedding
+     * roll short enough to sit within it, and — the one piece doing real
+     * work — a **carry loop** arching over the top. A closed loop with
+     * daylight through it is the single most nameable thing a pack has in
+     * silhouette, and it is the only mark here that cannot be read as a lid.
+     */
+    const collar = new Mesh(this.keep(taperedBox(0.29, 0.07, 0.24, 0.78, 0.8)), strapping);
+    collar.position.y = 0.5;
+    collar.castShadow = true;
+    lean.add(collar);
 
-    // The bedding roll lashed across the top. Cloth against leather, round
-    // against square, and it is the shape everyone recognises as a pack that
-    // somebody walks with — the flap alone reads as a lid on a box.
+    const mouth = new Mesh(this.keep(bedrollGeometry(0.19, 0.23, 0.1)), leather);
+    mouth.position.set(0, 0.56, 0);
+    mouth.castShadow = true;
+    lean.add(mouth);
+
+    // The bedding roll lashed on. Cloth against leather, round against
+    // square — kept narrower than the body, and set back so it reads as
+    // strapped to the pack rather than balanced on it.
     const roll = new Mesh(
-      this.keep(bedrollGeometry(0.44, 0.17, 0.085)),
+      this.keep(bedrollGeometry(0.3, 0.15, 0.075)),
       this.solid({ color: BLANKET_COLOR, colorVariant: 0xd0996a, rim: 0.5, grain: 0.5 }),
     );
-    roll.position.set(0, 0.52, 0.02);
+    roll.position.set(0, 0.6, -0.06);
     roll.rotation.y = Math.PI / 2;
     roll.castShadow = true;
     lean.add(roll);
 
-    // Two straps over the flap and down the front, not one down the side.
-    // They are what tie the roll to the pack, so they have to cross it.
+    // The carry loop: two short uprights and a bar across them.
+    const loopPost = this.keep(taperedBox(0.032, 0.11, 0.03, 0.9, 1));
+    for (const sx of [-0.075, 0.075] as const) {
+      const post = new Mesh(loopPost, strapping);
+      post.position.set(sx, 0.55, 0.045);
+      post.rotation.z = sx > 0 ? -0.22 : 0.22;
+      post.castShadow = true;
+      lean.add(post);
+    }
+    const bar = new Mesh(this.keep(taperedBox(0.14, 0.03, 0.035, 1, 1)), strapping);
+    bar.position.set(0, 0.655, 0.045);
+    bar.castShadow = true;
+    lean.add(bar);
+
+    // Two straps down the front, not one down the side, each finishing in a
+    // buckle at the belly.
     for (const sx of [-0.1, 0.11] as const) {
       const strap = new Mesh(this.keep(taperedBox(0.055, 0.42, 0.05, 1, 1)), strapping);
       strap.position.set(sx, 0.13, 0.15);
       strap.rotation.z = sx > 0 ? 0.09 : -0.07;
       lean.add(strap);
-      const over = new Mesh(this.keep(taperedBox(0.05, 0.14, 0.045, 1, 1)), strapping);
-      over.position.set(sx, 0.47, 0.09);
-      over.rotation.x = 1.1;
+      const over = new Mesh(this.keep(taperedBox(0.05, 0.15, 0.045, 1, 1)), strapping);
+      over.position.set(sx, 0.52, 0.075);
+      over.rotation.x = 1.0;
       lean.add(over);
+    }
+
+    // The shoulder straps, arcing off the back.
+    //
+    // A pack with nothing to carry it by is luggage; a pack with two loops
+    // over its back is a thing a person wears. The gap between strap and body
+    // is what survives at four metres, because it puts firelit ground
+    // *inside* the silhouette where a box has none.
+    //
+    // Two segments each, not three: the third ran down past the base of the
+    // pack and, seen from the resting camera, the pair of them stuck out
+    // below it as two dark feet — which turned the whole prop into a small
+    // standing animal. A shoulder strap that disappears into the bottom of
+    // the bag is right anyway; that is where they are sewn on.
+    const backZ = -0.17;
+    for (const sx of [-0.1, 0.1] as const) {
+      const upper = new Mesh(this.keep(taperedBox(0.05, 0.22, 0.032, 0.9, 1)), strapping);
+      upper.position.set(sx, 0.4, backZ);
+      upper.rotation.set(-0.66, 0, sx > 0 ? 0.1 : -0.1);
+      upper.castShadow = true;
+      lean.add(upper);
+
+      const bow = new Mesh(this.keep(taperedBox(0.048, 0.26, 0.03, 0.85, 1)), strapping);
+      bow.position.set(sx * 1.1, 0.2, backZ - 0.11);
+      bow.rotation.set(0.42, 0, sx > 0 ? 0.06 : -0.06);
+      bow.castShadow = true;
+      lean.add(bow);
     }
 
     return group;
@@ -1072,29 +1361,62 @@ export class Campfire {
    *
    * Draped over the terrain rather than laid flat, because the ground under
    * a camp beside a crowned road is not level and a flat disc would sink
-   * into it on one side and hover on the other. The rim is jittered per
-   * segment so the pool is not a perfect circle — a perfect circle is the
-   * tell that it is a decal.
+   * into it on one side and hover on the other.
+   *
+   * Three things carry it, and the first two are the fix for the frame that
+   * read as "one uniform saturated orange with a hard rim":
+   *
+   * - **The hue journey** (`POOL_TINT`), baked per vertex. Colour does the
+   *   work brightness was being asked to do alone.
+   * - **A rim that is not a shape.** The old pool jittered its radius once
+   *   per segment and used the same jitter at every ring, which draws a
+   *   slightly wobbly circle — still a circle, still a decal. Here the
+   *   jitter is per *vertex*, it only bites on the outer rings (a wobbly
+   *   core would read as a flickering fault), and the falloff itself is
+   *   jittered alongside it, so the last of the light breaks into patches
+   *   rather than ending on a contour.
+   * - **A core, then a long tail.** The falloff is an eased ramp with a
+   *   sharp bright peak added at the very middle, so the coals are hot and
+   *   the outer two metres still carry enough alpha for the red and the
+   *   violet to be visible at all. The old cubic ramp put ninety per cent of
+   *   the light inside half the radius and left the rest with nothing to
+   *   grade *with*.
    */
   private buildGlow(
     rand: Rand,
     groundHeightAt: (x: number, z: number) => number,
     fireY: number,
   ): ShaderMaterial {
-    const segments = 28;
-    const rings = 5;
+    const segments = 34;
+    const rings = 9;
     const { fire } = this.layout;
 
     const positions: number[] = [];
     const falloffs: number[] = [];
-    const rimScale: number[] = [];
-    for (let s = 0; s < segments; s++) rimScale.push(randRange(rand, 0.82, 1.06));
+    const tints: number[] = [];
+    // One draw per vertex of the grid, taken up front so the shared corners
+    // between two triangles get the same jitter and the mesh does not tear.
+    const jitter: number[] = [];
+    for (let i = 0; i < (rings + 1) * segments; i++) jitter.push(rand());
+
+    const tintAt = (t: number): [number, number, number] => {
+      let i = 1;
+      while (i < POOL_TINT.length - 1 && POOL_TINT[i][0] < t) i++;
+      const [t0, r0, g0, b0] = POOL_TINT[i - 1];
+      const [t1, r1, g1, b1] = POOL_TINT[i];
+      const k = Math.min(1, Math.max(0, (t - t0) / Math.max(1e-4, t1 - t0)));
+      return [r0 + (r1 - r0) * k, g0 + (g1 - g0) * k, b0 + (b1 - b0) * k];
+    };
 
     const vertex = (ring: number, segment: number) => {
       const s = ((segment % segments) + segments) % segments;
       const angle = (s / segments) * Math.PI * 2;
       const t = ring / rings;
-      const radius = t * POOL_RADIUS_M * rimScale[s];
+      // Ragged only where it is dissolving. Nothing at the core, everything
+      // by the rim.
+      const rough = Math.pow(t, 2.2);
+      const draw = jitter[ring * segments + s];
+      const radius = t * POOL_RADIUS_M * (1 + (draw - 0.5) * 0.5 * rough);
       const dx = Math.sin(angle) * radius;
       const dz = Math.cos(angle) * radius;
       positions.push(
@@ -1104,10 +1426,37 @@ export class Campfire {
         groundHeightAt(fire.x + dx, fire.z + dz) - fireY + 0.035,
         dz,
       );
-      // Squared, then eased, so the centre is a broad warm flood and the
-      // edge dissolves rather than ending on a line.
-      const falloff = 1 - t;
-      falloffs.push(falloff * falloff * (3 - 2 * falloff) * falloff);
+      const f = 1 - t;
+      // A long tail with a hot spike at the coals, and a soft close at the
+      // very edge.
+      //
+      // The shape matters more than the numbers. The old curve was a cubic:
+      // it put nine tenths of its light inside half the radius and left the
+      // outer half nothing to grade *with*, so however the colours were
+      // ramped there was no alpha out there to show them. This one falls
+      // gently (1.7, not 3), which keeps enough light in the outer half for
+      // the reds and the violet to register, and takes the brightness back at
+      // the middle with an eighth-power spike that is gone within half a
+      // metre — a bright core without a broad blown-out plateau, which is the
+      // other half of why the pool used to have no hue: a clipped red channel
+      // is the same colour everywhere.
+      // One shallow bump where the ramp turns red. Not brightness for its own
+      // sake: the red band is the part of the journey with the least alpha
+      // behind it and the most ground showing through, so without a little
+      // extra presence exactly there the pool goes gold, orange, and then
+      // straight back to the colour of the field.
+      const band = Math.max(0, 1 - Math.abs(t - 0.52) / 0.3);
+      const eased = Math.pow(f, 1.35) * (1 + 1.0 * Math.pow(f, 8) + 0.42 * band * band);
+      // And a smootherstep over the last fifth, so the outermost ring reaches
+      // zero flat instead of arriving at it with a slope still on.
+      const close = Math.min(1, f / 0.2);
+      const shut = close * close * close * (close * (close * 6 - 15) + 10);
+      // Patchy at the rim, for the same reason the radius is.
+      falloffs.push(eased * shut * (1 - rough * 0.55 * draw));
+      // The colour is a function of the *nominal* radius, not the jittered
+      // one, so the ramp's bands stay concentric while its edge does not.
+      const [r, g, b] = tintAt(t);
+      tints.push(r, g, b);
     };
 
     for (let ring = 0; ring < rings; ring++) {
@@ -1124,6 +1473,7 @@ export class Campfire {
     const geometry = this.keep(new BufferGeometry());
     geometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3));
     geometry.setAttribute('aFalloff', new BufferAttribute(new Float32Array(falloffs), 1));
+    geometry.setAttribute('aTint', new BufferAttribute(new Float32Array(tints), 3));
 
     const material = new ShaderMaterial({
       uniforms: {
@@ -1132,9 +1482,12 @@ export class Campfire {
       },
       vertexShader: /* glsl */ `
         attribute float aFalloff;
+        attribute vec3 aTint;
         varying float vFalloff;
+        varying vec3 vTint;
         void main() {
           vFalloff = aFalloff;
+          vTint = aTint;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
@@ -1142,8 +1495,9 @@ export class Campfire {
         uniform vec3 uColor;
         uniform float uStrength;
         varying float vFalloff;
+        varying vec3 vTint;
         void main() {
-          gl_FragColor = vec4(uColor, vFalloff * uStrength);
+          gl_FragColor = vec4(uColor * vTint, vFalloff * uStrength);
         }
       `,
       transparent: true,

@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { BIOMES } from './biome';
 import {
   ANY_BIOME,
+  ASK_CHANCE,
+  ASK_NEEDED,
+  ASK_NOTES,
   ENCOUNTERS,
+  EncounterAsk,
   EncounterDef,
   EncounterKind,
   EncounterRoll,
@@ -15,6 +19,8 @@ import {
   candidatesFor,
   matchesBiome,
   matchesWindow,
+  resolveAsk,
+  rollAsk,
   rollEncounter,
 } from './encounters';
 
@@ -591,5 +597,123 @@ describe('roll options', () => {
 
   it('treats an empty exclude list as no exclusion at all', () => {
     expect(rollEncounter(11, 'riverside', 0.7, { exclude: [] })).toEqual(rollEncounter(11, 'riverside', 0.7));
+  });
+});
+
+describe("a traveller's ask (stakes, not failure)", () => {
+  const travellers = ENCOUNTERS.filter((d) => d.kind === 'traveller');
+
+  /** Every ask the first `seeds` seeds produce, across the whole traveller table. */
+  function allAsks(seeds: number): Array<{ def: EncounterDef; ask: EncounterAsk }> {
+    const out: Array<{ def: EncounterDef; ask: EncounterAsk }> = [];
+    for (let seed = 0; seed < seeds; seed++) {
+      for (const def of travellers) {
+        const ask = rollAsk(seed, def);
+        if (ask) out.push({ def, ask });
+      }
+    }
+    return out;
+  }
+
+  it('is deterministic: the same stop asks the same thing forever', () => {
+    for (let seed = 0; seed < 100; seed++) {
+      for (const def of travellers) {
+        expect(rollAsk(seed, def)).toEqual(rollAsk(seed, def));
+      }
+    }
+  });
+
+  it('only travellers ever ask', () => {
+    for (const def of ENCOUNTERS) {
+      if (def.kind === 'traveller') continue;
+      for (let seed = 0; seed < 50; seed++) expect(rollAsk(seed, def)).toBeNull();
+    }
+  });
+
+  it('turns up on roughly a third of travellers, not all of them', () => {
+    // A missable moment on every meeting stops being a moment. The share is
+    // pinned loosely so a retune of ASK_CHANCE is a decision, not a drift.
+    let asks = 0;
+    let met = 0;
+    for (let seed = 0; seed < 600; seed++) {
+      for (const def of travellers) {
+        met += 1;
+        if (rollAsk(seed, def)) asks += 1;
+      }
+    }
+    const share = asks / met;
+    expect(share).toBeGreaterThan(ASK_CHANCE - 0.08);
+    expect(share).toBeLessThan(ASK_CHANCE + 0.08);
+  });
+
+  it('asks for a window a child can actually play', () => {
+    for (const { ask } of allAsks(200)) {
+      expect(ask.notes).toBe(ASK_NOTES);
+      expect(ask.needed).toBe(ASK_NEEDED);
+      expect(ask.needed).toBeLessThan(ask.notes);
+      expect(ask.needed).toBeGreaterThan(0);
+      expect(ask.coins).toBeGreaterThanOrEqual(1);
+      expect(ask.delight).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('keeps the table voice, and the no-fail language, in every line', () => {
+    for (const { ask } of allAsks(200)) {
+      for (const line of [ask.line, ask.fulfilledLine, ask.passedLine]) {
+        expect(line.length).toBeGreaterThan(40);
+        expect(line.length).toBeLessThanOrEqual(120);
+        expect(line).not.toContain('!');
+        expect(line.endsWith('.')).toBe(true);
+        expect(line).not.toMatch(/fail|lose|lost|wrong|penalt/i);
+      }
+    }
+  });
+
+  it('pays a rarer traveller better for the same request', () => {
+    const byRarity = new Map<Rarity, number[]>();
+    for (const { def, ask } of allAsks(800)) {
+      const list = byRarity.get(def.rarity) ?? [];
+      list.push(ask.coins);
+      byRarity.set(def.rarity, list);
+    }
+    const avg = (r: Rarity) => mean(byRarity.get(r) ?? [0]);
+    expect(avg('uncommon')).toBeGreaterThan(avg('common'));
+    expect(avg('rare')).toBeGreaterThan(avg('uncommon'));
+    expect(avg('wondrous')).toBeGreaterThan(avg('rare'));
+  });
+
+  it('settles fulfilled at the bar and passed below it, and the lines match', () => {
+    const { ask } = allAsks(50)[0];
+    const passed = resolveAsk(ask, ask.needed - 1);
+    expect(passed.fulfilled).toBe(false);
+    expect(passed.line).toBe(ask.passedLine);
+    const landed = resolveAsk(ask, ask.needed);
+    expect(landed.fulfilled).toBe(true);
+    expect(landed.coins).toBe(ask.coins);
+    expect(landed.delight).toBe(ask.delight);
+    expect(landed.line).toBe(ask.fulfilledLine);
+  });
+
+  it('a passed ask pays nothing and takes nothing, whatever the input', () => {
+    // Item 8's contract: a child can lose a chance, never progress. Zero,
+    // negative and unreadable hit counts all resolve to the kind zero.
+    const { ask } = allAsks(50)[0];
+    for (const hits of [0, -3, Number.NaN, Number.NEGATIVE_INFINITY]) {
+      const outcome = resolveAsk(ask, hits);
+      expect(outcome.fulfilled).toBe(false);
+      expect(outcome.coins).toBe(0);
+      expect(outcome.delight).toBe(0);
+      expect(outcome.line).toBe(ask.passedLine);
+    }
+  });
+
+  it('drawing an ask does not disturb who you meet at the stop', () => {
+    // The ask reads its own sub-stream. If it shared the roll's, adding it
+    // would silently reshuffle every encounter in the shipped game.
+    for (let seed = 0; seed < 60; seed++) {
+      const before = rollEncounter(seed, 'village', 0.5);
+      rollAsk(seed, before.def);
+      expect(rollEncounter(seed, 'village', 0.5)).toEqual(before);
+    }
   });
 });

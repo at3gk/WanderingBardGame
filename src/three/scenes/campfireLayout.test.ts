@@ -282,6 +282,33 @@ describe('campfireLayout — invariants', () => {
     }
   });
 
+  it('scatters stones through the firelight without ringing the fire twice', () => {
+    // The scatter exists to give the fire's pool of light some modelled
+    // ground to fall on; see the note above `PEBBLE_TARGET`. Three things
+    // have to hold for it to do that rather than become clutter.
+    for (const layout of layouts) {
+      const pebbles = layout.props.filter((p) => p.kind === 'pebble');
+      // The scan is a filter, not a slot allocation, so the count is a floor
+      // and not a promise. A camp that came back with three would mean the
+      // gaps had closed up and the fix had quietly stopped working.
+      expect(pebbles.length).toBeGreaterThanOrEqual(8);
+      for (const pebble of pebbles) {
+        // Inside the light. A stone out past the pool is a stone in the dark.
+        expect(pebble.radius).toBeGreaterThan(layout.ringRadius);
+        expect(pebble.radius).toBeLessThan(layout.ringRadius + 2.2);
+        // And small: these are meant to read as ground, not as boulders.
+        expect(pebble.footprint).toBeLessThan(0.21);
+      }
+      // Not a second ring. Every other prop is filtered against, so the only
+      // way the scatter can go wrong is by bunching at one radius and drawing
+      // a circle — the exact failure the ring test above exists to prove the
+      // *stones* do not have.
+      const radii = pebbles.map((p) => p.radius);
+      const spread = Math.max(...radii) - Math.min(...radii);
+      expect(spread).toBeGreaterThan(0.8);
+    }
+  });
+
   it('reports an extent that covers the camp', () => {
     // Callers use `extent` to decide what to keep out of the camp — trees
     // are scattered as close as 4.9 m to the centreline, which is inside it.

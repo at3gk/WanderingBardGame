@@ -63,12 +63,15 @@
  *   left of the road's, which is what keeps the road running clear past it.
  * - **Both ends dissolve, and so do the top and bottom.** There is no
  *   silhouette anywhere on this object: the paper's opacity falls to nothing
- *   at the far end, just past the barline at the near end, and a step and a
- *   half above and below whatever the tune is actually using. A thing with no
- *   hard edge cannot read as signage. It also means the board's old margin
- *   problem — a fixed reserve of blank plank sized for the highest and lowest
- *   notes in the whole songbook — is gone: the paper is only *there* where
- *   the tune on the road right now needs it. See `paperEdges`.
+ *   at the far end, just past the barline at the near end, and over a couple
+ *   of steps above and below whatever the tune is actually using. A thing
+ *   with no hard edge cannot read as signage — and the dissolve has to be
+ *   genuinely gradual, because a short one is a dark *band*, and a dark band
+ *   parallel to the staff is a sixth rule (see `PAPER_FADE_STEPS` for the
+ *   round that proved it). It also means the board's old margin problem — a
+ *   fixed reserve of blank plank sized for the highest and lowest notes in
+ *   the whole songbook — is gone: the paper is only *there* where the tune on
+ *   the road right now needs it. See `paperEdges`.
  * - **The ink is more opaque than the paper.** A veil at forty per cent that
  *   ruled its staff at forty per cent would lose the staff over a bright sky,
  *   which is exactly how shape zero (a translucent card) died. Ink on tracing
@@ -107,6 +110,13 @@
  *   `fx/Particles.ts` uses. A dozen notes could be a dozen sprites, but the
  *   burst that follows a hit is a hundred and something, and having one
  *   mechanism for both means one thing to get right.
+ * - **The imminent note is the boldest thing on the ribbon.** A note is born
+ *   small and faint at the far end, is fully readable for the whole of its
+ *   last 1500 ms, and swells to full ink and its largest size exactly at the
+ *   barline — see `glyphEnvelope`. The wave-2 critique found the opposite
+ *   shipped: mid-flight notes at full strength while the one to tap NOW was
+ *   already dissolving, because the fade toward "gone by" started at the hit
+ *   moment itself. Urgency must run the same direction as time.
  * - **Lit by the ribbon they are printed on.** Neither the ribbon nor the
  *   glyphs can run `painterly.ts`'s material — the glyphs need an atlas it
  *   has no sampler for, and the ribbon needs per-vertex opacity it has no
@@ -429,8 +439,54 @@ const PAST_DRIFT_M = 0.25;
 /** How long a note stays visible after its window has closed, drifting past. */
 const PAST_MS = 620;
 
+/**
+ * How long an unstruck note keeps its full ink after the hit moment, before
+ * it starts to fade toward gone-by.
+ *
+ * Zero was the urgency inversion the wave-2 critique named: the note AT the
+ * barline — the one to tap NOW — began dissolving at the exact moment it
+ * mattered most, so the most urgent mark on the ribbon was the least legible
+ * one. The judge's own late tail runs about two good-windows past the beat
+ * (`core/performance.ts`), and a note the player is still allowed to play is
+ * a note that must still look playable. `soften` takes over the moment the
+ * judge actually rules it missed; this grace only covers the gap before that
+ * ruling, and the fade that follows still completes inside `PAST_MS`, which
+ * is when `harvest` culls.
+ */
+const PAST_GRACE_MS = 260;
+
 /** How long a struck note's bloom lasts. */
 const STRIKE_MS = 420;
+
+/**
+ * The approach envelope: how a travelling note's ink and size run over its
+ * flight. See `glyphEnvelope`, which is the only consumer, and the test that
+ * pins its shape.
+ *
+ * `RUNWAY_MS` is the readability contract: a note is at full readable
+ * presence for at least its last 1500 ms, which is the number the portrait
+ * phone critique demanded ("readable for ~1.5 s of approach"). Everything
+ * before that is birth: the note fades and scales in quickly at the far end,
+ * so a newcomer is a small dim thing clearly *behind* its neighbour rather
+ * than a translucent full-size twin floating beside it — which is exactly
+ * how the wave-2 landscape frame manufactured a ghost duplicate out of two
+ * consecutive same-pitch notes. On a lane that recedes upward, depth reads
+ * as height, so depth has to be disambiguated the honest way: the nearer of
+ * two equal marks is bigger and bolder, always.
+ *
+ * The urgency ramp is the other half of the same rule: from 55 to 95 per
+ * cent of the flight the ink climbs from its cruise value to full and the
+ * glyph swells a seventh, so the note at the barline is unmistakably the
+ * highest-contrast, largest mark on the ribbon at the moment it asks to be
+ * tapped.
+ */
+const RUNWAY_MS = 1500;
+const SPAWN_SHARE = 1 - RUNWAY_MS / TRAVEL_TIME_MS;
+const URGENCY_START = 0.55;
+const URGENCY_END = 0.95;
+const CRUISE_INK = 0.74;
+const SPAWN_SCALE = 0.6;
+const ARRIVAL_SWELL = 1.14;
 
 /** Instances reserved for glyphs. A bar of eighths at this travel time needs ten. */
 const MAX_GLYPHS = 28;
@@ -612,9 +668,28 @@ const RULE_INK: readonly [number, number, number] = [0.09, 0.08, 0.085];
  * so a head and its ledger line never sit in the dissolving part where the
  * rule under them would be fading. `songNotes.test.ts` pins both against the
  * songbook's actual range.
+ *
+ * The fade's length is not a taste number — it is the answer to the sixth
+ * staff line two critics pixel-counted and three could not see, and the
+ * dispute was settled by measurement before this was changed. The ribbon's
+ * geometry carries exactly five ink bands (the test below walks it), but at
+ * 0.95 steps the dissolve was so short that the boundary where full-strength
+ * paper meets the fade rendered as a crisp dark transition two to three
+ * pixels tall — the same thickness as a rule, at both counting thresholds.
+ * Worse, for a tune that reaches G5 the top boundary sits at step 12.15,
+ * which is 2.1 steps above the F5 line: within a few per cent of exactly one
+ * staff space. A rule-thick dark band, one rule-gap above the top rule, IS a
+ * sixth line to any honest eye, and this is a music-teaching game. The
+ * critics who counted five were looking at tunes or hours where the boundary
+ * fell elsewhere or against a dim sky.
+ *
+ * At 2.1 steps, sampled through four intermediate rows, the steepest alpha
+ * gradient anywhere in the margin is about 0.55 per step against the 18 per
+ * step of a real rule's shoulder — a gradient, not a mark. The test pins the
+ * ratio so nobody re-tightens the fade back into a line.
  */
 const PAPER_CLEAR_STEPS = 1.15;
-const PAPER_FADE_STEPS = 0.95;
+const PAPER_FADE_STEPS = 2.1;
 
 /**
  * Where along the lane the paper starts to dissolve, as a share of the arc,
@@ -626,21 +701,23 @@ const PAPER_FADE_STEPS = 0.95;
  * vanishing point cannot be occluded by something that is no longer being
  * drawn when it gets near it.
  *
- * 0.5 leaves the staff at full strength for the near half of the flight — 900
- * ms of an 1800 ms travel time — and at half strength or better for 1350 ms of
- * it. Both numbers are chosen against `core/scaffold.ts`: the letter, which
- * lives on the note head, is a billboard and is therefore *not* affected by
- * the paper at all, and is revealed between 350 ms and the whole 1800 ms
- * before the hit depending on how much support a position has earned. The
- * paper carries the *staff*, and the staff is what a letter is read against,
- * so the two want to overlap for as much of the flight as the composition can
- * afford. At 0.5 the 600 ms band is fully served on full-strength paper, the
- * 950 ms band on paper still better than half, and the reveal floor — the one
- * that must never be missed — has two and a half times the room it needs.
- * `songNotes.test.ts` pins all three against `SUPPORT_LEAD_MS` rather than
- * against numbers written here, so re-tuning the learning model fails there.
+ * It sat at 0.5 for a round and that was too greedy, for a reason the ninth
+ * critique photographed: the notes are now readable for the whole of their
+ * last 1500 ms (`glyphEnvelope`), which begins at 83 per cent of the arc —
+ * and at 0.5 the paper out there was down to a fifth. A readable note on
+ * paper that has already dissolved is a glyph hanging in mid-air, and a row
+ * of them at the far end was read as lollipops floating over the fence. At
+ * 0.68 a note entering its readable life stands on paper still above half
+ * strength, while the last third of the lane still dissolves before the
+ * road's vanishing point.
+ *
+ * The scaffold arithmetic still holds, with more room than before: the
+ * letter reveal bands in `core/scaffold.ts` run 350 to 1800 ms before the
+ * hit, and `songNotes.test.ts` pins full-strength paper past the second band
+ * and half-strength past the third, against `SUPPORT_LEAD_MS` rather than
+ * against numbers written here.
  */
-const FAR_FADE_START = 0.5;
+const FAR_FADE_START = 0.68;
 const NEAR_FADE_SHARE = 0.88;
 
 /**
@@ -763,23 +840,27 @@ const GLYPH_FRONT_M = 0.05;
 /**
  * How much of the perspective shrink the glyphs are allowed to give back.
  *
- * Zero is honest and nearly worked. A note at the far end of the lane sits at
- * about 1.9 times the depth of one at the barline, so honest perspective
- * draws it at 53 per cent of the size — which on a desktop frame is a
- * fourteen-pixel letter, right at the edge of legible, and under ten on a
- * phone. The letter is the scaffold the pedagogy rests on and `scaffold.ts`
- * hands out reveal leads of up to the entire 1800 ms flight, so a letter that
- * is only readable in the last third would quietly make the top support band
- * mean nothing.
+ * Down from 0.24, and the reason is the pitch axis rather than taste. The
+ * staff compresses honestly with distance — a line-gap at the far end is a
+ * third the pixels it is at the barline — but a glyph given back a share of
+ * its shrink does not, so the ratio of head to gap grew with distance: 0.92
+ * gaps at the barline, 1.1 and more at the far end (measured on the wave-2
+ * phone frame). A head noticeably taller than a staff space cannot be seen
+ * to sit IN a space or ON a line, which is how a whole critique wave read
+ * top-of-staff notes as riding above the fence at "roughly the same height"
+ * — vertical-position-equals-pitch, contradicted by the one object that
+ * exists to teach it. The anchors were never wrong; the balloons were too
+ * big for the fence behind them.
  *
- * So a third of the shrink is given back: a far note draws at about 69 per
- * cent rather than 53. It still grows as it comes, which is the cue that
- * matters, and it is still smaller than its neighbours ahead of it, so
- * nothing about the depth order is lost. A full compensation was tried and is
- * wrong — notes then arrive without appearing to approach at all, and the
- * lane stops reading as depth.
+ * At 0.10 a far head stays within four per cent of one staff space, which is
+ * engraving-correct at every depth the lane spans. What the far letters lose
+ * in size the approach envelope pays back in attention: a note is not asked
+ * to be fully read until its last 1500 ms (`glyphEnvelope`), by which point
+ * it has most of its perspective size back. A full compensation was tried
+ * long ago and is wrong the other way — notes then arrive without appearing
+ * to approach at all, and the lane stops reading as depth.
  */
-const GLYPH_DEPTH_MAKEUP = 0.24;
+const GLYPH_DEPTH_MAKEUP = 0.1;
 
 const MOTION_INDEX: Record<Instrument['noteMotion'], number> = {
   drift: 0,
@@ -1361,10 +1442,17 @@ export class SongNotes {
     const camera = this.camera;
     if (!camera) return 1;
     const zeroIndex = Math.round(((PATH_SAMPLES - 1) * PATH_TAIL_T) / (1 + PATH_TAIL_T));
+    // The guard has to fit the *notation*, not the lane's centreline: a note
+    // at the lane's end carries half a billboarded glyph past it, and the
+    // wave-2 portrait frame caught exactly that half-glyph clipped off the
+    // screen edge while the centreline sat obediently inside the margin. So
+    // each probe is pushed out by half a glyph at the notation's current
+    // scale before it is projected.
+    const pad = (glyphWorldSize() * this.notationScale) / 2;
     let share = 1;
     for (const [i, side] of [
-      [zeroIndex, nearSide],
-      [PATH_SAMPLES - 1, farSide],
+      [zeroIndex, nearSide + pad],
+      [PATH_SAMPLES - 1, farSide + pad],
     ] as const) {
       const base = this.projectedX(camera, this.pathX[i], this.pathZ[i]);
       const out = this.projectedX(
@@ -1424,52 +1512,13 @@ export class SongNotes {
    * same thing worse.
    */
   private buildRibbon(): void {
-    const inkHalf = LINE_HALF_STEPS;
-    const soft = INK_SOFT_STEPS;
-
-    // --- rows, in steps from the middle line ---
-    const rows = new Set<number>();
-    const bottom = this.printedLow - PAPER_FADE_STEPS - MIDDLE_STEP;
-    const top = this.printedHigh + PAPER_FADE_STEPS - MIDDLE_STEP;
-    rows.add(bottom);
-    rows.add(top);
-    rows.add(this.printedLow - MIDDLE_STEP);
-    rows.add(this.printedHigh - MIDDLE_STEP);
-    for (const step of LINE_STEPS) {
-      const y = step - MIDDLE_STEP;
-      rows.add(y - inkHalf - soft);
-      rows.add(y - inkHalf);
-      rows.add(y + inkHalf);
-      rows.add(y + inkHalf + soft);
-    }
-    // Two rows through each dissolving margin, so the fade is a curve rather
-    // than one long linear ramp. They carry no ink — a horizontal band
-    // anywhere out there would be read as a sixth rule, which is the one
-    // thing the margin must not grow.
-    for (let i = 1; i <= 2; i++) {
-      const t = i / 3;
-      rows.add(this.printedLow - MIDDLE_STEP + (bottom - (this.printedLow - MIDDLE_STEP)) * t);
-      rows.add(this.printedHigh - MIDDLE_STEP + (top - (this.printedHigh - MIDDLE_STEP)) * t);
-    }
-    this.rows = [...rows].sort((a, b) => a - b);
-
-    // --- columns, in metres of arc from the barline ---
-    const barHalf = BAR_HALF_STEPS * STEP_M;
-    const softM = soft * STEP_M;
-    const cols = new Set<number>([-TAIL_M, -barHalf - softM, -barHalf, barHalf, barHalf + softM]);
-    // The rest of the run, biased toward the near end: that is where the
-    // curvature is, where the paper is at full strength, and where a player
-    // is reading. The far half is nearly straight and nearly gone.
-    const forwardCols = 26;
-    const start = barHalf + softM;
-    for (let i = 1; i <= forwardCols; i++) {
-      const t = i / forwardCols;
-      cols.add(start + (this.laneArcM - start) * (0.35 * t + 0.65 * t * t));
-    }
-    // A couple more through the tail, for the near dissolve.
-    cols.add(-TAIL_M * 0.62);
-    cols.add(-TAIL_M * 0.3);
-    this.cols = [...cols].sort((a, b) => a - b);
+    // The rows, columns, ink pattern and opacities are a pure function of
+    // the printed extent and the arc — `ribbonLayout`, which the test walks
+    // to assert the staff draws exactly five rules. This method only turns
+    // that layout into buffers.
+    const layout = ribbonLayout(this.printedLow, this.printedHigh, this.laneArcM);
+    this.rows = layout.rows;
+    this.cols = layout.cols;
 
     const rowCount = this.rows.length;
     const colCount = this.cols.length;
@@ -1480,20 +1529,11 @@ export class SongNotes {
     const indices: number[] = [];
 
     const paper = new Color(PAPER);
-    // Slack on the band tests, because the rows and columns are *placed* at
-    // the band edges and an exact comparison against a float that has been
-    // through an addition is a coin toss.
-    const eps = 1e-6;
-    const staffLow = LINE_STEPS[0] - MIDDLE_STEP - inkHalf;
-    const staffHigh = LINE_STEPS[LINE_STEPS.length - 1] - MIDDLE_STEP + inkHalf;
     for (let r = 0; r < rowCount; r++) {
       const y = this.rows[r];
-      const onRule = LINE_STEPS.some((step) => Math.abs(y - (step - MIDDLE_STEP)) <= inkHalf + eps);
-      const inStaff = y >= staffLow - eps && y <= staffHigh + eps;
-      const fadeV = this.paperFadeV(y);
       for (let c = 0; c < colCount; c++) {
         const a = this.cols[c];
-        const ink = onRule || (inStaff && Math.abs(a) <= barHalf + eps);
+        const ink = layout.ink(r, c);
         const i = r * colCount + c;
         // A slow, shallow value drift along the ribbon so the paper is not a
         // dead flat field. It multiplies the paper, and the ink multiplies
@@ -1504,7 +1544,7 @@ export class SongNotes {
         colors[i * 3] = paper.r * tooth * (ink ? RULE_INK[0] : 1);
         colors[i * 3 + 1] = paper.g * tooth * (ink ? RULE_INK[1] : 1);
         colors[i * 3 + 2] = paper.b * tooth * (ink ? RULE_INK[2] : 1);
-        alphas[i] = (ink ? INK_ALPHA : PAPER_ALPHA) * fadeV * this.paperFadeU(a);
+        alphas[i] = layout.alpha(r, c);
       }
     }
     for (let r = 0; r + 1 < rowCount; r++) {
@@ -1524,25 +1564,6 @@ export class SongNotes {
     this.ribbonGeometry.setIndex(indices);
     this.ribbonGeometry.boundingSphere = null;
     this.ribbon.geometry = this.ribbonGeometry;
-  }
-
-  /** How present the paper is at a height, in steps from the middle line. */
-  private paperFadeV(y: number): number {
-    const step = y + MIDDLE_STEP;
-    if (step < this.printedLow) {
-      return smoothstep(this.printedLow - PAPER_FADE_STEPS, this.printedLow, step);
-    }
-    if (step > this.printedHigh) {
-      return 1 - smoothstep(this.printedHigh, this.printedHigh + PAPER_FADE_STEPS, step);
-    }
-    return 1;
-  }
-
-  /** How present the paper is at an arc distance from the barline. */
-  private paperFadeU(arc: number): number {
-    const near = smoothstep(-TAIL_M, -TAIL_M * (1 - NEAR_FADE_SHARE), arc);
-    const far = 1 - smoothstep(this.laneArcM * FAR_FADE_START, this.laneArcM, arc);
-    return near * far;
   }
 
   /** Push this frame's path into the ribbon's vertices. */
@@ -1673,21 +1694,20 @@ export class SongNotes {
 
       let y = this.middleY + (step - MIDDLE_STEP) * STEP_M * this.notationScale;
 
-      let a = 1;
-      let scaleMul = 1;
+      // Born small and dim, readable through the runway, boldest at the
+      // barline. The envelope is a pure function so the test can pin its
+      // shape — see `glyphEnvelope` for why each piece exists.
+      const env = glyphEnvelope(progress);
+      let a = env.alpha;
+      let scaleMul = env.scale;
       let paleness = 0;
-
-      // Fade in with the paper it is riding on, rather than over a fixed
-      // stretch of the run: a note that appeared crisply where the ribbon has
-      // already dissolved would be a glyph hanging in mid-air.
-      a *= smoothstep(0, 0.42, progress);
 
       if (note.state === 'struck') {
         const t = clamp((nowMs - note.changedMs) / STRIKE_MS, 0, 1);
         // Blooms outward and gives its light to the burst. Alpha falls
         // faster than the scale grows, so it reads as dissolving into the
         // sparks rather than as a balloon.
-        scaleMul = 1 + t * 0.85;
+        scaleMul = env.scale * (1 + t * 0.85);
         a *= (1 - t) * (1 - t);
       } else if (note.state === 'softened') {
         const t = clamp((nowMs - note.changedMs) / PAST_MS, 0, 1);
@@ -1695,8 +1715,11 @@ export class SongNotes {
         a *= 1 - t * t;
         // Sinks a little as it goes past, the way a dropped note feels.
         y -= t * t * 0.22;
-      } else if (nowMs > note.hitTimeMs) {
-        a *= 1 - clamp((nowMs - note.hitTimeMs) / PAST_MS, 0, 1);
+      } else if (nowMs > note.hitTimeMs + PAST_GRACE_MS) {
+        // The fallback fade for a note the judge never ruled on. It starts
+        // only after the grace — an unstruck note at the barline stays fully
+        // lit through the moment it asks to be tapped. See PAST_GRACE_MS.
+        a *= 1 - clamp((nowMs - note.hitTimeMs - PAST_GRACE_MS) / (PAST_MS - PAST_GRACE_MS), 0, 1);
       }
 
       const col = note.cell % ATLAS_COLS;
@@ -1941,12 +1964,166 @@ export function paperEdges(lowest: number, highest: number): { low: number; high
 }
 
 /**
+ * The ribbon's face, as data: where its rows and columns sit, which cells
+ * carry ink, and how present the paper is at each.
+ *
+ * Pure, and exported, because of a dispute that could not be settled from
+ * screenshots: two critics pixel-counted SIX staff lines on the shipped
+ * build, three counted five, and both sides had coordinates. The truth
+ * needed the geometry itself on the witness stand. The test walks this
+ * layout and asserts exactly five contiguous ink bands, centred on the five
+ * printed line steps — and separately that no paper fade anywhere is steep
+ * enough to counterfeit a sixth (the actual culprit; see
+ * `PAPER_FADE_STEPS`). `buildRibbon` consumes the same object, so the thing
+ * tested is the thing drawn.
+ *
+ * The face is an irregular grid rather than an even one, and that is the
+ * whole idea. A row exists only where the drawing changes value: either
+ * side of each staff line's ink, a shoulder's width outside that, and a few
+ * stations through each dissolving margin. The ink is then exact at every
+ * distance because it is a gradient in metres rather than in texels. An
+ * evenly tessellated ribbon fine enough to resolve a 7 mm rule would have
+ * needed some thousands of quads to say the same thing worse.
+ */
+export interface RibbonLayout {
+  /** Row heights, in diatonic steps from the middle line, ascending. */
+  rows: number[];
+  /** Column positions, in metres of arc from the barline, ascending. */
+  cols: number[];
+  /** Whether the cell at row r, column c is ink (a rule or the barline). */
+  ink(r: number, c: number): boolean;
+  /** The cell's opacity: ink or paper strength, through both fades. */
+  alpha(r: number, c: number): number;
+}
+
+export function ribbonLayout(
+  printedLow: number,
+  printedHigh: number,
+  laneArcM: number,
+): RibbonLayout {
+  const inkHalf = LINE_HALF_STEPS;
+  const soft = INK_SOFT_STEPS;
+
+  // --- rows, in steps from the middle line ---
+  const rowSet = new Set<number>();
+  const bottom = printedLow - PAPER_FADE_STEPS - MIDDLE_STEP;
+  const top = printedHigh + PAPER_FADE_STEPS - MIDDLE_STEP;
+  rowSet.add(bottom);
+  rowSet.add(top);
+  rowSet.add(printedLow - MIDDLE_STEP);
+  rowSet.add(printedHigh - MIDDLE_STEP);
+  for (const step of LINE_STEPS) {
+    const y = step - MIDDLE_STEP;
+    rowSet.add(y - inkHalf - soft);
+    rowSet.add(y - inkHalf);
+    rowSet.add(y + inkHalf);
+    rowSet.add(y + inkHalf + soft);
+  }
+  // Four rows through each dissolving margin, so the fade is a smooth curve
+  // rather than a few long linear ramps. They carry no ink — a dark band
+  // anywhere out there would be read as a sixth rule, which is the one thing
+  // the margin must not grow, and which its own boundary once did when the
+  // fade was short. See PAPER_FADE_STEPS.
+  for (let i = 1; i <= 4; i++) {
+    const t = i / 5;
+    rowSet.add(printedLow - MIDDLE_STEP + (bottom - (printedLow - MIDDLE_STEP)) * t);
+    rowSet.add(printedHigh - MIDDLE_STEP + (top - (printedHigh - MIDDLE_STEP)) * t);
+  }
+  const rows = [...rowSet].sort((a, b) => a - b);
+
+  // --- columns, in metres of arc from the barline ---
+  const barHalf = BAR_HALF_STEPS * STEP_M;
+  const softM = soft * STEP_M;
+  const colSet = new Set<number>([-TAIL_M, -barHalf - softM, -barHalf, barHalf, barHalf + softM]);
+  // The rest of the run, biased toward the near end: that is where the
+  // curvature is, where the paper is at full strength, and where a player
+  // is reading. The far stretch is nearly straight and nearly gone.
+  const forwardCols = 26;
+  const start = barHalf + softM;
+  for (let i = 1; i <= forwardCols; i++) {
+    const t = i / forwardCols;
+    colSet.add(start + (laneArcM - start) * (0.35 * t + 0.65 * t * t));
+  }
+  // A couple more through the tail, for the near dissolve.
+  colSet.add(-TAIL_M * 0.62);
+  colSet.add(-TAIL_M * 0.3);
+  const cols = [...colSet].sort((a, b) => a - b);
+
+  // Slack on the band tests, because the rows and columns are *placed* at
+  // the band edges and an exact comparison against a float that has been
+  // through an addition is a coin toss.
+  const eps = 1e-6;
+  const staffLow = LINE_STEPS[0] - MIDDLE_STEP - inkHalf;
+  const staffHigh = LINE_STEPS[LINE_STEPS.length - 1] - MIDDLE_STEP + inkHalf;
+
+  /** How present the paper is at a height, in steps from the middle line. */
+  const fadeV = (y: number): number => {
+    const step = y + MIDDLE_STEP;
+    if (step < printedLow) return smoothstep(printedLow - PAPER_FADE_STEPS, printedLow, step);
+    if (step > printedHigh) return 1 - smoothstep(printedHigh, printedHigh + PAPER_FADE_STEPS, step);
+    return 1;
+  };
+  /** How present the paper is at an arc distance from the barline. */
+  const fadeU = (arc: number): number => {
+    const near = smoothstep(-TAIL_M, -TAIL_M * (1 - NEAR_FADE_SHARE), arc);
+    const far = 1 - smoothstep(laneArcM * FAR_FADE_START, laneArcM, arc);
+    return near * far;
+  };
+  const ink = (r: number, c: number): boolean => {
+    const y = rows[r];
+    const onRule = LINE_STEPS.some((step) => Math.abs(y - (step - MIDDLE_STEP)) <= inkHalf + eps);
+    const inStaff = y >= staffLow - eps && y <= staffHigh + eps;
+    return onRule || (inStaff && Math.abs(cols[c]) <= barHalf + eps);
+  };
+
+  return {
+    rows,
+    cols,
+    ink,
+    alpha: (r, c) => (ink(r, c) ? INK_ALPHA : PAPER_ALPHA) * fadeV(rows[r]) * fadeU(cols[c]),
+  };
+}
+
+/**
  * Half a note head, in diatonic steps, through the same two constants the
  * atlas is drawn and sized by. Exported for the test that checks a head and
  * its ledger line land on full-strength paper.
  */
 export function headHalfSteps(): number {
   return ((HEAD_RY / ATLAS_CELL_PX) * glyphWorldSize()) / STEP_M;
+}
+
+/**
+ * A travelling note's ink and size over its flight, `progress` running 0 at
+ * spawn to 1 at the barline (and past it, where the envelope holds).
+ *
+ * Three pieces, each answering a named failure from the wave-2 critique:
+ *
+ * - **Birth** (`SPAWN_SHARE`): alpha and scale climb from nothing/small over
+ *   the first sixth of the flight, so a note entering the lane is a small
+ *   dim thing behind its neighbour — not a translucent full-size twin, which
+ *   is what a landscape frame read as a ghost duplicate of a repeated pitch.
+ * - **Cruise** (`CRUISE_INK`): mid-flight notes ride below full ink, so the
+ *   eye is not asked to weight the far end of the lane equally with the
+ *   barline. They are readable — the runway contract starts here — just not
+ *   the boldest thing in view.
+ * - **Urgency** (`URGENCY_START..END`, `ARRIVAL_SWELL`): ink climbs to full
+ *   and the glyph swells a seventh over the last stretch, so the note AT the
+ *   barline is unmistakably the most legible mark on the ribbon. The
+ *   shipped inverse — imminent note dissolving, mid-flight notes at full
+ *   strength — is the one reading a rhythm game cannot afford.
+ *
+ * Pure and exported so the test can pin the contract: full presence for the
+ * whole runway, boldest exactly at the barline, monotone on the way in.
+ */
+export function glyphEnvelope(progress: number): { alpha: number; scale: number } {
+  const p = Math.min(progress, 1);
+  const born = smoothstep(0, SPAWN_SHARE, p);
+  const urgency = smoothstep(URGENCY_START, URGENCY_END, p);
+  return {
+    alpha: born * (CRUISE_INK + (1 - CRUISE_INK) * urgency),
+    scale: (SPAWN_SCALE + (1 - SPAWN_SCALE) * born) * (1 + (ARRIVAL_SWELL - 1) * urgency),
+  };
 }
 
 /**

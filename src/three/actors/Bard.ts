@@ -61,6 +61,21 @@ export type BardPose = 'idle' | 'walking' | 'playing' | 'sitting';
 export interface BardColors {
   skin: number;
   tunic: number;
+  /**
+   * The sleeves, and they are a separate colour from the tunic on purpose.
+   *
+   * An arm is only ever seen against the cloak — it hangs off the shoulder
+   * with the cloth immediately behind it at every camera this game holds —
+   * so the one measurement that decides whether it reads is the sleeve's
+   * value against `cloak`. In the tunic's own 0xc4694a that gap is 0.46 of
+   * a stop, and at the twenty to forty pixels of figure height the walking
+   * and busking frames give it, 0.46 of a stop between two warm reds is
+   * nothing: three rounds of critique in a row have reported this figure as
+   * having no arms at all. Lifted here to 0.63 of a stop, and the cuff and
+   * the hand carry the rest — sleeve, dark cuff, light skin is three values
+   * inside fifteen centimetres, which survives being small.
+   */
+  sleeve: number;
   cloak: number;
   cloakLining: number;
   trousers: number;
@@ -79,6 +94,7 @@ export interface BardColors {
 export const DEFAULT_BARD_COLORS: BardColors = {
   skin: 0xd9a077,
   tunic: 0xc4694a,
+  sleeve: 0xd2794e,
   cloak: 0xa8452f,
   cloakLining: 0xd98a5c,
   trousers: 0x4a5a6b,
@@ -135,6 +151,32 @@ const SHIN_LEN = 0.18;
  */
 const ARM_REACH = 0.43;
 /**
+ * The shoulder joint, off the spine and forward of it.
+ *
+ * Named because three separate places have to agree on it — the constructor
+ * that builds the pivot, the strum in `update` which rewrites the right
+ * shoulder's position every frame, and the test that checks the arm clears
+ * the cloak. They disagreed once already: a previous wave moved the pivot in
+ * the constructor and the strum quietly put it back.
+ */
+const ARM_ROOT_X = 0.178;
+const ARM_ROOT_Z = 0.085;
+/**
+ * How far the hanging arms splay off vertical, in radians.
+ *
+ * Fifteen degrees, and it is a clearance before it is a pose. The cloak's
+ * hem stands 0.285 m off the spine; an arm dropped straight down from a
+ * shoulder 0.178 m out ends *inside* that, so the hand has to travel
+ * outward as it falls or it is behind cloth by the time it is a hand. At
+ * 0.26 rad the wrist sits about 0.30 m out — three centimetres proud of the
+ * hem, which holds through the walk's fore-and-aft swing as well, since
+ * that swing moves the hand in depth and leaves this offset alone.
+ *
+ * It also happens to be what a relaxed arm does over a bulky cloak, which
+ * is the only reason a number chosen for clearance is allowed to stay.
+ */
+const ARM_SPLAY = 0.26;
+/**
  * The stretch of the instrument's own +Y axis a hand is allowed to hold.
  *
  * `instrumentGeometry` builds the neck from y 0.245 to 0.555 and then slides
@@ -143,8 +185,24 @@ const ARM_REACH = 0.43;
  * both ends: off the shoulder joint at the bottom, short of the pegbox at
  * the top, which is where a hand actually goes on a lute.
  */
-const NECK_GRIP_MIN = -0.02;
-const NECK_GRIP_MAX = 0.2;
+/**
+ * Three centimetres lower than it was, and the reason is that the shoulder
+ * moved.
+ *
+ * Bringing the shoulder joints forward off the spine (see `ARM_ROOT_Z`)
+ * shortened the run from the left shoulder to the instrument's neck: its
+ * closest approach is now 0.317 m against an arm of 0.43, so the two points
+ * where a rigid arm can actually touch that line spread apart to t 0.553 and
+ * t -0.028 — one past the pegbox, the other eight millimetres below the old
+ * floor. With neither legal the solve clamped, and a clamped grip is a hand
+ * *pointing at* the instrument rather than on it: measured, eleven
+ * centimetres off, which is the "detached instrument" fault this whole solve
+ * exists to prevent. Lowering the floor to the neck's own base gives the
+ * solve back a legal root, and the hand lands at the foot of the
+ * fingerboard, which is where a lute is fretted when it is held high.
+ */
+const NECK_GRIP_MIN = -0.05;
+const NECK_GRIP_MAX = 0.23;
 /**
  * The stretch of the same axis the *strumming* hand is allowed to hold.
  *
@@ -161,55 +219,56 @@ const STRUM_GRIP_MAX = -0.1;
  * The playing carry: where the instrument sits, in torso space, while it is
  * being played, and the Euler angles that put it there.
  *
- * **This is the fix for the frame the whole game is about.** The busking
- * postcards showed a red cone with a hat and a brown stick emerging from
- * behind its left edge; reduced to twenty pixels the figure was a traffic
- * cone, while the *walking* bard at the same twenty pixels reads instantly.
- * So the fault was the pose, not the model, and it is an occlusion fault
- * rather than a contrast one. Measured on the shipped build, flooding this
- * one mesh and differencing the frame with it shown against the frame with
- * it hidden: **19.4 per cent of the instrument's own footprint changed a
- * single pixel.** The other four fifths were behind the bard.
+ * **This is the frame the whole game is about, and it has now been solved
+ * twice against two different faults.**
  *
- * Why. The camera stands *behind* him — `FRAMINGS.busking` is 3.9 m back
- * against 2.7 m of side, which is 35 degrees off his spine, a rear
- * three-quarter — and the old carry brought the instrument round to the
- * front of his chest at z +0.30 with the body swung to x -0.14, his far
- * side. His own torso and the cloak were between it and the lens. Nothing
- * about the instrument's own angles could fix that; a shape held in front of
- * a figure photographed from behind is not visible, however well it is
- * posed.
+ * The first was occlusion by the *bard*. The busking postcards showed a red
+ * cone with a hat and a brown stick emerging from behind its left edge,
+ * because the carry brought the instrument round to the front of his chest
+ * while `FRAMINGS.busking` stands 3.9 m behind him against 2.7 m of side —
+ * a rear three-quarter. Measured by flooding the mesh and differencing the
+ * frame against one with it hidden: 19.4 per cent of the instrument's own
+ * footprint changed a single pixel. Swinging the body out to his right hip
+ * with the neck rising across him fixed that and is still the arrangement
+ * here — it is also how a right-handed player holds a lute.
  *
- * These numbers are therefore solved against that camera, the way the lap
- * carry is solved against the resting one, and the working is worth keeping
- * because it is the only reason they are not round numbers. Projected on the
- * busk shot, the cloak's own silhouette occupies screen x >= 920 at every
- * row of the torso and the hat brim reaches 897; screen x runs
- * `962 - 200·x - 121·z` px in torso space there. So an instrument is clear
- * of the figure's near edge when `200·x + 121·z > 47`. This carry puts the
- * body of the lute at x 0.29, z 0.14 — screen 887, thirty-three pixels
- * outside the cloak — and the pegbox at screen 920, which is the edge
- * itself. The whole instrument is on the camera's side of the cloth.
+ * The second only appeared once this wave gave the bard visible arms, and it
+ * is the same class of fault one layer in: **the arm was standing on the
+ * instrument.** Flooded the same way, the strumming arm lay along the whole
+ * length of the lute — neck, soundhole and bridge — leaving a rim of bowl
+ * showing round a plank. It is a screen-space coincidence, not a modelling
+ * error: the shoulder sits 13 cm above the instrument's own pivot, so the
+ * two shapes start from nearly the same point on screen, and the old carry
+ * hung the body down at 31 degrees off vertical while the arm hangs at 24.
+ * Two lines from one origin, seven degrees apart, are one line.
  *
- * The handedness flipped with it, and that was free: the body now sits at
- * the *right* hip under the strumming hand with the neck rising across to
- * the left, which is how a right-handed player holds a lute and is also the
- * arrangement that puts the big end of the shape on the near side.
+ * So these six numbers were swept — 5,400 combinations of position and
+ * Euler, each one built, posed and measured — against four things at once,
+ * all of them properties of the *busk camera's* view rather than of the
+ * model:
  *
- * The height is the one number that was swept rather than solved, and it was
- * worth the sweep: at 0.592 the instrument sits at the hip, where the near
- * backdrop measures L36-45 and reads as a bag being carried; 18 cm higher it
- * crosses the chest, and 20 px cells changed against the old build went 5 to
- * 30 of 660 for the same visible fraction. Lower again by 8 cm and it falls
- * back to 28. Above this the pegbox climbs behind the hat brim, which is the
- * "stick growing out of his hat" failure this project already has once, at
- * the campfire.
+ * - both grip solves still land (fretting hand within 5 cm of the neck, the
+ *   strumming hand within 5 cm of the belly);
+ * - the instrument's projected length stays near its true 0.62 m, so the
+ *   neck lies across the frame instead of pointing at the lens — the failure
+ *   the lap carry's note records, and the one that turns a lute into a blob;
+ * - the pegbox stays below the hat brim and above the chest;
+ * - and the arm's drawn line passes as far as possible from the soundhole.
+ *
+ * The winner clears the soundhole by 5.6 cm — about fifteen pixels at this
+ * framing — with the full length of the instrument projected and the pegbox
+ * at 0.96 m. In the shot that means the bowl, the rose and all three courses
+ * are in the open with the forearm crossing them, which is the picture the
+ * game has been trying to take for five rounds.
  *
  * The `y` here is an offset from `SHOULDER_Y`, matching the slung and lap
- * terms it is summed against.
+ * terms it is summed against. The half-turn that faces the soundboard at the
+ * camera is applied in `update` and is still exact: adding pi to the Y term
+ * while negating Z leaves the neck axis these numbers were solved for
+ * bit-for-bit alone.
  */
-const PLAY_CARRY_POS: readonly [number, number, number] = [0.198, 0.772 - SHOULDER_Y, 0.192];
-const PLAY_CARRY_ROT: readonly [number, number, number] = [0.557, -0.373, 0.566];
+const PLAY_CARRY_ROT: readonly [number, number, number] = [0.25, -0.6, 0.566];
+const PLAY_CARRY_POS: readonly [number, number, number] = [0.28, 0.70 - SHOULDER_Y, 0.25];
 
 /**
  * How far the seated bard's boots reach below his own origin.
@@ -229,6 +288,26 @@ const PLAY_CARRY_ROT: readonly [number, number, number] = [0.557, -0.373, 0.566]
  * centimetre or two of each other rather than exactly level, because the
  * pose is deliberately asymmetric and nobody sits with their feet squared.
  */
+/**
+ * Where the instrument rests when he is sitting, as an offset from the
+ * shoulder — and these three are a *measured clearance*, not a look.
+ *
+ * The report was that the lute sinks into his knee, and it was true: with the
+ * seated pose settled, the instrument's own vertices were tested against each
+ * leg's box and sixteen of the 396 lay inside the far thigh, up to a
+ * centimetre deep, so the thigh cut a notch out of the bowl in the one frame
+ * where the instrument is the subject. The three numbers were swept against
+ * that count. Out to 0.08 and up to 0.19 takes it to zero from every
+ * direction at once; further out (0.115) is much worse, because the lute
+ * swings its bowl back into the *near* thigh instead. The forward term is
+ * unchanged in spirit — an instrument across someone's legs sits in front of
+ * the knees — and the pegbox still lands well below the hat brim, which
+ * `bard.test.ts` keeps checking.
+ */
+const LAP_X = 0.18;
+const LAP_Y = 0.16;
+const LAP_Z = 0.17;
+const LAP_ROT: readonly [number, number, number] = [0.78, Math.PI - 0.889, 0.2];
 export const SITTING_SEAT_HEIGHT_M = 0.2;
 
 /**
@@ -291,8 +370,116 @@ export function boxPart(
   ];
   const verts: number[] = [];
   for (const [p0, p1, p2, p3] of quads) {
-    verts.push(...p0, ...p1, ...p2, ...p0, ...p2, ...p3);
+    // **Wound outward. It was wound inward, and it had been since the file
+    // was written.**
+    //
+    // Measured rather than argued: build any `boxPart` and compare each
+    // triangle's normal against the vector from the shape's centroid to its
+    // own centre, and *zero per cent* of them agreed. Every box on this
+    // figure and on every traveller had its normals pointing into itself.
+    //
+    // The materials here are `FrontSide`, so what that meant is not a
+    // subtle shading error — it is that the renderer culled the near wall
+    // of every limb and drew the far one. The player has been looking at
+    // the *inside* of the bard. The silhouette is identical, which is why
+    // it survived so long; everything else about it is wrong. Interior
+    // faces show through outer ones, because there is no outer one to win
+    // the depth test. Caps that ought to be hidden inside a joint are drawn
+    // over the limb that contains them — the flat plate across each knee in
+    // every walking frame is the thigh's own bottom cap, seen from above
+    // through a thigh that is not being drawn. And the lighting is
+    // inverted, since the surface you see is lit by a normal aimed at the
+    // camera rather than by its own.
+    //
+    // "Geometry decomposes at inspection distance", "overlapping boot boxes
+    // with stray wedge fragments", "reads as z-fighting debris" — three
+    // separate critiques, one cause, and it is this line. The winding is
+    // now such that a box seen from outside shows its outside.
+    verts.push(...p0, ...p2, ...p1, ...p0, ...p3, ...p2);
   }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/**
+ * A boot, as rings about the **ankle**: height, half-width, and how far the
+ * sole runs behind and in front of the leg.
+ *
+ * **This replaced a single tapered box and the box was on backwards.** It was
+ * `boxPart(0.135, 0.115, 0.185, 0.76, 0.66)` set at z -0.04, which centres a
+ * 0.185 m foot four centimetres *behind* the ankle: thirteen centimetres of
+ * sole trailing back and five in front, a heel where the toe should be. Every
+ * camera in this game stands behind the bard, so what those frames showed was
+ * the sky-lit top of that trailing sole sticking out from under each leg —
+ * two pale wedges where the feet ought to be, plus the pale bottom cap of the
+ * trouser bursting out of the boot's narrow rim in front. Three fragments per
+ * foot, six in the frame, moving independently as the ankles rolled. The
+ * critique called it z-fighting debris twice; it was neither z-fighting nor
+ * debris, it was a foot built pointing the wrong way.
+ *
+ * So: one closed hull per foot, and the length of the foot in *front* of the
+ * leg where a toe goes. The rings run bottom-up so the winding matches
+ * `boxPart`'s, which is the one convention every other part of this figure
+ * is built to.
+ *
+ * **The top ring sits exactly on the ankle joint, and it is small enough to
+ * live inside the trouser.** Both halves of that matter and the second one is
+ * the rule this figure did not have:
+ *
+ * > *Every upward-facing cap has to be buried inside the part above it.*
+ *
+ * The materials are single-sided and every camera in this game looks down at
+ * the bard, so a downward cap is culled and costs nothing while an upward cap
+ * is a flat plate pointed straight at the sky — the brightest surface this
+ * lighting model can produce. An exposed one does not read as a mistake in
+ * the geometry; it reads as a loose bright shape sitting on the character,
+ * which is precisely the report this task was written from. The boot's rim is
+ * therefore 0.076 by 0.088 against a trouser cuff of 0.090 by 0.102 that runs
+ * three and a half centimetres past it, so the rim is never seen. Putting the
+ * ring *on* the joint rather than above it is what keeps that true while the
+ * ankle rolls: a ring at the pivot rotates in place, so it cannot swing out
+ * of the leg however hard the roll goes.
+ */
+const BOOT_RINGS: readonly (readonly [number, number, number, number])[] = [
+  // y, half-width, sole back, sole front.
+  [-0.080, 0.062, -0.064, 0.104],
+  [-0.050, 0.069, -0.072, 0.098],
+  [-0.010, 0.068, -0.072, 0.066],
+  // The cuff flares out through the trouser here, which is where the boot's
+  // outline starts — about ten centimetres of visible boot on a forty
+  // centimetre leg, against the seven the old box managed.
+  [0.022, 0.052, -0.058, 0.056],
+  [0.038, 0.028, -0.034, 0.034],
+];
+
+function bootGeometry(): BufferGeometry {
+  const ring = (index: number): number[][] => {
+    const [y, hw, back, front] = BOOT_RINGS[index];
+    return [
+      [-hw, y, back],
+      [hw, y, back],
+      [hw, y, front],
+      [-hw, y, front],
+    ];
+  };
+  const verts: number[] = [];
+  // Outward, matching the corrected `boxPart`. See the note there.
+  const quad = (p0: number[], p1: number[], p2: number[], p3: number[]) =>
+    verts.push(...p0, ...p2, ...p1, ...p0, ...p3, ...p2);
+  for (let i = 0; i < BOOT_RINGS.length - 1; i++) {
+    const b = ring(i);
+    const t = ring(i + 1);
+    for (let k = 0; k < 4; k++) {
+      const k1 = (k + 1) % 4;
+      quad(b[k], b[k1], t[k1], t[k]);
+    }
+  }
+  const sole = ring(0);
+  const cuff = ring(BOOT_RINGS.length - 1);
+  quad(cuff[0], cuff[1], cuff[2], cuff[3]);
+  quad(sole[3], sole[2], sole[1], sole[0]);
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
   geometry.computeVertexNormals();
@@ -326,7 +513,22 @@ const CLOAK_TOP = 0.46;
 function cloakGeometry(): BufferGeometry {
   const panels = 11;
   const topRadius = 0.155;
-  const bottomRadius = 0.33;
+  /**
+   * Four and a half centimetres in from where it hung, and the number is a
+   * clearance rather than a taste.
+   *
+   * The arms hang from shoulders 0.178 m off the spine and splay fifteen
+   * degrees as they fall, so the hand ends about 0.30 m out. At 0.33 the
+   * hem stood *further* from the spine than the hand did, which put the
+   * whole arm — sleeve, cuff and hand — inside a solid cone of cloth from
+   * every bearing the cloak covers. Every game camera stands in that arc
+   * (see `CameraRig`: walking, busking and resting are all behind him and
+   * off to his right), so "inside the cone" meant invisible in every frame
+   * the player ever sees, which is exactly what three rounds of critique
+   * reported. `bard.test.ts` now pins the hand outside this radius in all
+   * three poses so it cannot silently close again.
+   */
+  const bottomRadius = 0.285;
   const top = CLOAK_TOP;
   // Six centimetres shorter than it was. The legs are the only part of the
   // figure that says "walking" at a glance and the old hem left them two
@@ -336,7 +538,16 @@ function cloakGeometry(): BufferGeometry {
   // Wide enough to read as a cloak from behind — which is the angle the
   // walking camera holds — and open enough at the front that the hands and
   // the instrument are never buried.
-  const arc = Math.PI * 1.22;
+  //
+  // 1.04 turns rather than 1.22. At 1.22 the cloth wrapped 20 degrees past
+  // each side of him and closed over the front of both shoulders; the
+  // cameras stand about 17 degrees off his spine, so the near edge of that
+  // wrap sat between the lens and his whole near arm. This stops the cloth
+  // just short of his sides, which from those cameras reads as a cloak
+  // falling open on the near side with an arm in the gap — and from
+  // directly behind, which is the only place the difference could show as a
+  // loss, still covers past both silhouette edges.
+  const arc = Math.PI * 1.04;
   const back = -Math.PI * 0.5;
   const start = back - arc / 2;
 
@@ -806,7 +1017,7 @@ export class Bard {
   /** Timber, dark facets and strings. Swapped together, disposed together. */
   private readonly instrumentMeshes: Mesh[] = [];
   /** Ankles, so the foot can stay flatter than the leg it hangs off. */
-  private readonly boots: Mesh[] = [];
+  private readonly boots: Group[] = [];
   /** The cloak mesh, so the walk can trail it without moving the torso. */
   private readonly cloak: Mesh;
   /** Scratch for `gripNeck`, so the solve allocates nothing per frame. */
@@ -934,11 +1145,48 @@ export class Bard {
     // halves occupy exactly the volume the single box did. That is the point:
     // the walk was tuned against that silhouette and this must not disturb it.
     const thighGeo = boxPart(0.11, THIGH_LEN, 0.124, 0.892);
-    const shinGeo = boxPart(0.12, SHIN_LEN, 0.135, 0.919);
-    // The boot narrows toward the ankle so the trouser covers its top rim.
-    // Left wider, the rim reads as a pale collar of sky-lit sock, which at
-    // walking distance is the only thing you notice about the feet.
-    const bootGeo = boxPart(0.135, 0.115, 0.185, 0.76, 0.66);
+    /**
+     * The shin, and its taper is the other way round from how it was built.
+     *
+     * `boxPart` grows along +Y and the mesh is hung so that y 0 is the
+     * *ankle*, so the third argument's `topScale` is the knee end. It used
+     * to read `boxPart(0.12, SHIN_LEN, 0.135, 0.919)`: 0.12 by 0.135 at the
+     * ankle tapering *up* to 0.110 by 0.124 at the knee — a calf thinner
+     * than the ankle it stands on, which is not a leg, and worse, it made
+     * the ankle the widest point of the whole limb. The boot it had to fit
+     * inside was 0.103 by 0.122 at its rim, so the trouser burst out of the
+     * boot on all four sides and its flat, sky-facing bottom cap showed as a
+     * pale wedge under a dark box. That is most of the "overlapping boot
+     * boxes with stray wedge fragments" the critique reported.
+     *
+     * Worse, it matched the thigh's knee end *exactly* — 0.110 by 0.124 at
+     * both — and the two met at one plane, so the shin's upward top cap and
+     * the thigh's downward bottom cap were coincident. The downward one is
+     * culled, so what every camera in this game saw at each knee was a
+     * flat, sky-lit 0.11 by 0.124 plate: thirty pixels by thirty-three in
+     * the walking frame, a bright rung across the leg with nothing to
+     * explain it. Half of the "overlapping boxes with stray wedge
+     * fragments" is that plate, on both legs.
+     *
+     * Now it narrows downward the way a calf does, and — the part that
+     * actually fixes the frame — it runs three centimetres *past* the knee
+     * joint into the thigh and three and a half past the ankle into the
+     * boot, staying narrower than the thigh over the whole overlap. Its own
+     * upward cap is therefore inside the thigh and the boot's is inside it:
+     * see `BOOT_RINGS` for the rule and why it is a rule. Nothing about the
+     * walk changes; the silhouette it was tuned against is set by the limb's
+     * length and swing and both are untouched.
+     */
+    const SHIN_INTO_THIGH = 0.03;
+    const SHIN_INTO_BOOT = 0.035;
+    const shinGeo = boxPart(
+      0.088,
+      SHIN_LEN + SHIN_INTO_THIGH + SHIN_INTO_BOOT,
+      0.1,
+      1.136,
+      1.14,
+    );
+    const bootGeo = bootGeometry();
     for (const [side, pivot] of [
       [-1, this.leftLeg],
       [1, this.rightLeg],
@@ -951,16 +1199,35 @@ export class Bard {
       const knee = new Group();
       knee.position.y = -THIGH_LEN;
       const shin = new Mesh(shinGeo, legMaterial());
-      shin.position.y = -SHIN_LEN;
+      shin.position.y = -SHIN_LEN - SHIN_INTO_BOOT;
       shin.castShadow = true;
-      const boot = new Mesh(bootGeo, solid(colors.boots, 0.3));
-      boot.position.set(0, -0.26, -0.04);
+      /**
+       * The ankle is a joint now, not an offset.
+       *
+       * The boot used to be a mesh whose origin was its own *sole*, so the
+       * roll that keeps a foot flatter than the leg above it pivoted the
+       * boot about the ground and swung its shaft away from the shin —
+       * opening and closing the intersection above differently on each foot
+       * on every frame, which is the flicker that reads as z-fighting.
+       * Hung off a joint at the ankle instead, the roll does what an ankle
+       * does and the shaft never leaves the leg.
+       */
+      const ankle = new Group();
+      ankle.position.y = -SHIN_LEN;
+      const boot = new Mesh(bootGeo, solid(colors.boots, 0.45));
+      boot.name = `bard-boot-${side < 0 ? 'left' : 'right'}`;
       boot.castShadow = true;
-      knee.add(shin, boot);
+      ankle.add(boot);
+      knee.add(shin, ankle);
       pivot.add(knee);
 
-      pivot.position.set(side * 0.082, HIP_Y, 0);
-      this.boots.push(boot);
+      // Six millimetres wider than it stood. The boots are 0.138 across and
+      // were 0.026 apart, which at any distance the game's cameras hold
+      // closes into one block — `Traveller` learned the same lesson about
+      // its own legs and wrote it down. Nearly four centimetres of daylight
+      // between them is what makes them two feet.
+      pivot.position.set(side * 0.088, HIP_Y, 0);
+      this.boots.push(ankle);
       this.knees.push(knee);
       this.hips.add(pivot);
     }
@@ -1030,13 +1297,14 @@ export class Bard {
     this.torso.add(this.cloak);
 
     // --- arms ----------------------------------------------------------
-    const armGeo = boxPart(0.085, 0.36, 0.095, 0.85);
-    const handGeo = boxPart(0.095, 0.095, 0.1, 0.9);
+    const armGeo = boxPart(0.092, 0.36, 0.1, 0.85);
+    const handGeo = boxPart(0.1, 0.098, 0.104, 0.9);
     for (const [side, pivot] of [
       [-1, this.leftArm],
       [1, this.rightArm],
     ] as const) {
-      const arm = new Mesh(armGeo, solid(colors.tunic, 0.45));
+      pivot.name = `bard-arm-${side < 0 ? 'left' : 'right'}`;
+      const arm = new Mesh(armGeo, solid(colors.sleeve, 0.5));
       arm.position.y = -0.36;
       arm.castShadow = true;
       const hand = new Mesh(handGeo, solid(colors.skin, 0.55));
@@ -1057,12 +1325,21 @@ export class Bard {
       cuff.position.y = -0.408;
       cuff.castShadow = false;
       pivot.add(arm, cuff, hand);
-      // Slightly narrower and set forward. The cloak's radius grows as it
-      // falls, so an arm hanging at a fixed 0.18 started outside the cloth at
-      // the shoulder and passed through it at the elbow, stitching a bright
-      // sliver of sleeve down the cloak on both sides. Forward of the
-      // shoulder line the arm hangs in the cloak's front opening instead.
-      pivot.position.set(side * 0.172, SHOULDER_Y, 0.035);
+      /**
+       * Where the shoulder joint sits, and it is the second half of the fix
+       * the cloak's hem is the first half of.
+       *
+       * The old (0.172, ·, 0.035) hung the arm on a 0.175 m radius about the
+       * spine, five centimetres inside a cloak whose hem reached 0.33. Half
+       * a metre of arm and hand, wholly inside a cone of cloth, at every
+       * bearing the game's cameras use. Five centimetres further forward
+       * puts the shoulder in front of the cloak's own front edge rather
+       * than under it; the splay in `update` does the rest, and between
+       * them the sleeve, the cuff and the hand are outside the cloth at
+       * every height. That is a geometric fact rather than a hope, and it
+       * is what `bard.test.ts` pins.
+       */
+      pivot.position.set(side * ARM_ROOT_X, SHOULDER_Y, ARM_ROOT_Z);
       this.torso.add(pivot);
     }
 
@@ -1120,14 +1397,27 @@ export class Bard {
     //
     // Raised two centimetres so its front edge is a hairline above the eyes
     // rather than a fringe across them.
-    const hair = new Mesh(boxPart(0.255, 0.095, 0.235, 1.02), underBrim(colors.hair, 0.4));
-    hair.position.set(0, HEAD_Y + 0.165, -0.012);
+    //
+    // Narrower than the head, and that is the whole of the second fix. At
+    // 0.255 by 0.235 it was *wider* than the skull it sits on — the head has
+    // tapered to 0.241 by 0.217 at that height — so seven millimetres of
+    // dark hair stood proud of the cheek on both sides. Square to the lens
+    // that is invisible; at the near-profile the campfire camera holds it is
+    // a hard horizontal slab cutting across the face at brow height, which
+    // is what the critique saw. Hair belongs *behind* a face: this is inside
+    // the head on every side but the back, where it still stands two
+    // centimetres proud and does the job it was added for.
+    const hair = new Mesh(boxPart(0.228, 0.095, 0.222, 1.0), underBrim(colors.hair, 0.4));
+    hair.position.set(0, HEAD_Y + 0.165, -0.02);
     hair.castShadow = false;
     // The nape reaches down to the collar. It is the surface the player
     // actually looks at for most of the game — the back of a head under a
     // hat — so it gets the height to fill the gap and a rim term to give the
     // shape an edge in the shade.
-    const nape = new Mesh(boxPart(0.235, 0.235, 0.078, 1.04, 1.1), underBrim(colors.hair, 0.6));
+    // Kept inside the head's width for the same reason the hair is: at 0.235
+    // widening to 1.04 it cleared the skull by three millimetres at its top,
+    // which from the side is a second dark edge running down past the ear.
+    const nape = new Mesh(boxPart(0.222, 0.235, 0.078, 1.02, 1.1), underBrim(colors.hair, 0.6));
     nape.position.set(0, HEAD_Y - 0.03, -0.108);
     nape.castShadow = false;
     const hatMaterial = this.track(
@@ -1403,19 +1693,26 @@ export class Bard {
     // same job standing still: the sole comes back to level under a shin
     // that is leaning, so the boot sits flat on the ground instead of
     // resting on its heel.
+    //
+    // The amplitude came down by a third, from a peak of forty degrees to
+    // twenty-three, and that is a clearance as much as a taste. The boot's
+    // rim is buried 0.038 m up inside the trouser; a roll of r slides it
+    // `0.038 · sin r` sideways, and at forty degrees that is more than the
+    // eighteen millimetres of trouser it has to hide behind — the cuff came
+    // out through the leg at the top of each step. Twenty-three degrees is
+    // still a real ankle and it stays inside.
     this.boots[0].rotation.x =
-      -leftSwing * legSwing * 0.55 - Math.min(0, leftSwing) * 0.3 - sitAmount * SIT_SHIN[0];
+      -leftSwing * legSwing * 0.35 - Math.min(0, leftSwing) * 0.15 - sitAmount * SIT_SHIN[0];
     this.boots[1].rotation.x =
-      -rightSwing * legSwing * 0.55 - Math.min(0, rightSwing) * 0.3 - sitAmount * SIT_SHIN[1];
-    // Seated, the feet go forward six centimetres, and that is a clearance
+      -rightSwing * legSwing * 0.35 - Math.min(0, rightSwing) * 0.15 - sitAmount * SIT_SHIN[1];
+    // Seated, the ankles go forward six centimetres, and that is a clearance
     // rather than a pose. The seat log is a cylinder of 0.115 m radius lying
-    // under the bard's own origin; the boot is 0.185 m deep and standing at
-    // z 0.16, so its heel sat at z 0.07 — four and a half centimetres *inside*
-    // the log it is supposed to be sitting in front of. Nobody saw it in a
-    // frame because the log occludes the feet from the resting camera, which
-    // is exactly why it is worth writing down rather than left for the first
-    // camera that does not.
-    for (const boot of this.boots) boot.position.z = -0.04 + sitAmount * 0.06;
+    // under the bard's own origin, and the boot's heel now reaches only
+    // 0.066 m behind the ankle rather than the old box's 0.13, so the same
+    // shift clears it with room to spare. Standing, the ankle sits on the
+    // shin's own axis: the old -0.04 was what pushed a whole foot out behind
+    // the leg, and it is gone with the box it belonged to.
+    for (const boot of this.boots) boot.position.z = sitAmount * 0.06;
 
     // --- body bob ------------------------------------------------------
     // Twice step frequency, and skewed: the rise is quicker than the fall.
@@ -1546,10 +1843,30 @@ export class Bard {
     // everything in the lap.
     this.leftArm.rotation.x =
       Math.sin(armPhase + Math.PI) * armSwing * slung - carryPose * playAmount - 0.1 + lap * 0.45;
-    this.leftArm.rotation.z = 0.11 + playAmount * 0.32 - armCross - lap * 0.15;
+    // **The sign of the splay was inverted, on both arms, for the whole life
+    // of this file.** `gripLine`'s own derivation states the convention —
+    // the hand direction is `(sin z, ...)` — so a positive roll carries a
+    // hand toward +x, which on the *left* arm is toward the middle of the
+    // chest. The old base of `+0.11` left and `-0.11` right therefore pulled
+    // both arms four centimetres *into* the torso rather than out of it,
+    // pressing each sleeve flat against a tunic of nearly its own value
+    // inside a cloak of nearly its own value. Out is negative on the left.
+    this.leftArm.rotation.z = -ARM_SPLAY - playAmount * 0.32 - armCross - lap * 0.1;
 
-    this.rightArm.rotation.x = Math.sin(armPhase) * armSwing * slung - carryPose * playAmount + lap * 0.45;
-    this.rightArm.rotation.z = -0.11 - playAmount * 0.28 - armCross + lap * 0.15;
+    // Seated, the free hand goes *back* rather than out, and that is a
+    // measurement now rather than a preference. The resting camera stands
+    // behind the bard and off to his right, so his right arm is the nearest
+    // thing to the lens; splayed outward it hung flat across the lute in the
+    // lap — flooded and shot, the instrument came back as a sliver behind a
+    // solid plank of sleeve, which is the same "arm standing on the
+    // instrument" fault the playing carry has its own long note about.
+    // Swung back to 0.62 and brought in to 0.12, the hand lands beside the
+    // hip on the log where a sitting person's hand goes, the forearm leaves
+    // the lap alone, and it is still outside the gathered cloak — which
+    // `bard.test.ts` checks, because "in" is the direction that would bury
+    // it in the cloth.
+    this.rightArm.rotation.x = Math.sin(armPhase) * armSwing * slung - carryPose * playAmount + lap * 0.62;
+    this.rightArm.rotation.z = ARM_SPLAY + playAmount * 0.28 - armCross - lap * 0.14;
 
     // --- the strum ------------------------------------------------------
     //
@@ -1581,9 +1898,15 @@ export class Bard {
     const stroke = Math.abs((strumCycle - Math.floor(strumCycle)) * 2 - 1) * 2 - 1;
     const strumSwing = stroke * playAmount * (0.6 + this.warmth * 0.4);
     this.rightArm.position.set(
-      0.172,
-      SHOULDER_Y + strumSwing * 0.085,
-      0.035 + strumSwing * 0.055,
+      ARM_ROOT_X,
+      // A centimetre and a half more lift than before. The carry was
+      // re-solved to keep the arm off the soundhole (see `PLAY_CARRY_ROT`),
+      // which brought the instrument nearer the shoulder and shortened the
+      // stroke the same solve produces — measured, eight centimetres of hand
+      // travel fell to under seven. The gesture is the point; the extra
+      // shoulder movement pays it back.
+      SHOULDER_Y + strumSwing * 0.105,
+      ARM_ROOT_Z + strumSwing * 0.07,
     );
 
     // --- instrument ----------------------------------------------------
@@ -1619,8 +1942,17 @@ export class Bard {
     // toward them, and that lean is most of what says "resting" rather than
     // "balanced there".
     this.instrumentPivot.position.set(
-      playAmount * PLAY_CARRY_POS[0] - slung * 0.03 + lap * 0.045,
-      SHOULDER_Y + playAmount * PLAY_CARRY_POS[1] - slung * 0.12 - lap * 0.219,
+      playAmount * PLAY_CARRY_POS[0] - slung * 0.03 + lap * LAP_X,
+      // The lap term came up seven millimetres and forward eighteen, which
+      // is the whole of the "the lute sinks into his knee" report. Measured
+      // rather than eyeballed: with the seated pose settled, sixteen of the
+      // instrument's 396 vertices lay *inside* the far thigh's box, up to a
+      // centimetre deep, so the thigh's silhouette cut a notch out of the
+      // bowl. Forward is the direction that pays, because an instrument
+      // resting across someone's legs sits in front of the knees; up alone
+      // would have walked the pegbox toward the hat brim, which this file
+      // has a separate note and a separate test about.
+      SHOULDER_Y + playAmount * PLAY_CARRY_POS[1] - slung * 0.12 - lap * LAP_Y,
       // Six centimetres further off the spine than it hung, and the reason is
       // a depth test rather than a taste. The old body was four boxes, so its
       // rear face was a flat slab a hand's width across sitting at one depth;
@@ -1630,7 +1962,7 @@ export class Bard {
       // ninety per cent of it inside the cloth. Measured: at 0.285 the
       // instrument projected 100 px wide against a cloak 138 px wide and ten
       // of those pixels were outside it.
-      playAmount * PLAY_CARRY_POS[2] - slung * 0.345 + lap * 0.187,
+      playAmount * PLAY_CARRY_POS[2] - slung * 0.345 + lap * LAP_Z,
     );
     // Thirty degrees across the back, not forty. The steeper tilt threw the
     // bowl clear of the cloak's outline with daylight showing between the
@@ -1696,9 +2028,9 @@ export class Bard {
     // the identification is carried by the outline and by the bowl's five
     // staves instead.
     this.instrumentPivot.rotation.set(
-      this.strum * 0.07 + slung * 0.15 + playAmount * PLAY_CARRY_ROT[0] + lap * 0.54,
-      playAmount * (PLAY_CARRY_ROT[1] + Math.PI) + slung * 0.08 + lap * (Math.PI - 0.889),
-      -slung * 0.52 - playAmount * PLAY_CARRY_ROT[2] + lap * 0.62,
+      this.strum * 0.07 + slung * 0.15 + playAmount * PLAY_CARRY_ROT[0] + lap * LAP_ROT[0],
+      playAmount * (PLAY_CARRY_ROT[1] + Math.PI) + slung * 0.08 + lap * LAP_ROT[1],
+      -slung * 0.52 - playAmount * PLAY_CARRY_ROT[2] + lap * LAP_ROT[2],
     );
 
     // Both hands go on the instrument, and both are solved rather than

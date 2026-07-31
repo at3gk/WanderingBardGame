@@ -1507,37 +1507,90 @@ session; the open tasks follow.
 133-136 landed 2026-07-31 (same interactive session, wave 2); 137+ queued
 from the wave-2 blind re-critique and the human's stakes direction.
 
-137. **Replace the cast-shadow layer's read.** Five of six lenses: soft
-    caster-less grey-brown smears own the dark end of every daytime frame.
-    Hard-edged shapes matching the low-poly vocabulary, tied to visible
-    casters, hue-shifted never neutral. (painterly.ts, RoadStage.ts,
-    palette.ts.)
-138. **Notes must sit on the staff.** At range, note heads read ABOVE the
-    top line at similar heights (pitch contradicted); tokens clip at the
-    portrait edge with no runway; a ghost duplicate rendered in 09; the
-    barline note is the LEAST legible on the ribbon (urgency inverted).
-    Plus the DISPUTED six-line count — two critics counted six lines with
-    coordinates, three counted five; settle it with a code-level rendered
-    line-count check before believing either. (SongNotes.ts.)
-139. **Every mass gets a lit side and a shade side, and the midground gets
-    a tinted rung.** Sun direction currently exists only in cast shadows;
-    references split warm/cool per form. One tinted value rung between
-    full local colour and the haze. (painterly.ts, sky.ts, palette.ts.)
-140. **Character construction at hero scale.** Arms/hands visibly holding
-    the lute in travel and busk poses from the game's real cameras (07
-    proves the rig has them); rebuild boot geometry (reads as z-fighting
-    debris); one listening gesture per NPC; fix the 07 hair-plane and
-    lute-knee interpenetrations. (Bard.ts, Traveller.ts.)
-141. **Campfire light and smoke.** Fire pool needs a hue journey (orange →
-    deep red/violet → dark night rim, not a hard-edged orange decal);
-    rebuild the smoke as a dim tapering off-centre wisp — the current
-    stacked translucent octagons read as shattered glass. (Campfire.ts,
-    smoke.ts, world/geometry.ts smoke column.)
-142. **Stakes, not failure** (DESIGN v0.8 item 8, human-set). Failable
-    moments: a side quest can be missed, a crowd disperses from a
-    poorly-kept busk, an opportunity passes. Nothing is ever taken away;
-    the walk never fails. (core/encounters.ts, core/performance.ts,
-    RoadStage.ts.)
+137. ~~**Replace the cast-shadow layer's read.**~~ Done (2026-07-31,
+    wave 3) — with the premise CORRECTED by ablation: in the morning/noon
+    frames the "smears" mostly SURVIVE `uShadowDepth = 1`, so they were
+    never cast shadows — they were the foreground tier's smooth 30% ramp
+    (now three frayed treads with hue rotation toward the fog colour) and
+    the road's soft boundary against the grass (STILL OPEN, see 143).
+    Real cast shadows: SHADOW_EDGE 0.34 → 0.13 plus a zero-mean
+    world-space fray (~50 cm lobes) — binary mask, ragged painted edge,
+    area preserved so the dawn/dusk ladder keeps its reach; plus
+    CAST_SHADOW_SKY keyed on occlusion (not facing), because SKY_SCATTER's
+    own arithmetic only ever coloured the *shade* side and a noon cast
+    shadow was a pure multiply. Map resolution was measured NOT to be the
+    lever (4096 A/B'd: indistinguishable once remapped). Also from this
+    agent: `renderer.shadowMap.enabled=false` is not a valid ablation —
+    materials keep sampling the stale map.
+138. ~~**Notes must sit on the staff.**~~ Done (2026-07-31, wave 3). All
+    five defects root-caused: glyph anchors were always exact — the
+    depth-size makeup (0.24 → 0.10) inflated far heads past a staff
+    space; portrait clipping was fitShare guarding the lane centreline
+    while half a billboarded glyph hung past it; the "ghost" was
+    consecutive same-pitch notes stacking in depth; urgency inverted
+    because fading began at hitTimeMs exactly (now: notes swell to their
+    boldest AT the barline, hold through the late tail); and the SIX-LINE
+    DISPUTE settled — both camps right: five ink bands in the geometry,
+    but the paper's dissolve boundary rendered rule-thick and landed one
+    staff space above the top line on G5-range tunes. Now a 2.1-step
+    gradient; a geometry-walking test pins exactly five lines forever.
+    Worst-hour pitch contrast 6.18:1.
+139. ~~**Lit side / shade side + tinted midground rung.**~~ Done
+    (2026-07-31, wave 3). Root cause: skywardNormals(0.92) leaves ~0.08 of
+    horizontal normal — the bearing survives scaled; normalising the
+    horizontal component recovers WHICH WAY a surface faces. MODEL_SPLIT
+    rotates hue between luminance-normalised sky (shade) and sun colours,
+    MODEL_VALUE adds a banded mean-neutral step, gated off flat ground and
+    below-horizon sun. Midground: FG_TIER stepped into 3 frayed treads
+    with FG_TIER_HUE toward the fog colour (aerial perspective is a hue
+    rotation before it is a veil). Gates all PASS; morning land p90 158 →
+    163. Note for tuning: MODEL_VALUE is the dial that buys stops back.
+140. ~~**Character construction at hero scale.**~~ Done (2026-07-31,
+    wave 3). THE root cause, found by measurement: `boxPart` has been
+    wound INSIDE-OUT since the file was written — 0% of normals pointed
+    outward, so FrontSide materials culled the near wall of every limb
+    and the player was looking at the inside of the bard. One line;
+    explains three critique cycles of "decomposing geometry" (the knee
+    plates were the thigh's own bottom cap seen through an undrawn
+    thigh). Also: arms were occluded by a 220° cloak (now 187°, shoulders
+    out, splay sign corrected — it was pressing both arms INTO the
+    chest), sleeves recoloured off the cloak; busk strum re-solved by a
+    5,400-combination sweep (bowl, rose and strings in the open, forearm
+    crossing them); boots rebuilt as closed hulls (the box was centred
+    4 cm behind the ankle — the "stray wedges" were sky-lit sole tops);
+    travellers got real arms, hands, and one gesture each (staff-lean,
+    raised hand, eye-shade, clasped lap). New pins: hand-outside-cloak in
+    three poses, strum travel > 8 cm, zero lute vertices inside legs.
+141. ~~**Campfire light and smoke.**~~ Done (2026-07-31, wave 3). Fire
+    pool: per-vertex tint ramp (cream→gold→orange→deep red→violet-brown)
+    with the mechanical find that the resting camera stood entirely
+    inside the pool's inner orange half (radius 4.6 → 4.4, strength cut —
+    a clipped channel has no hue); rim jitter moved per-vertex; ~13
+    seeded pebbles give the light modelled ground. Night darkens:
+    uHearthRadius was defaulting to 4.2 with nobody writing it — now
+    driven at 3.0. Smoke: 7-sided (odd — no parallel edges) per-puff
+    rotated/squashed/jittered wisp that swells and gives out at ¾ height,
+    leaning off its root, drawn at 0.38 value. Camp props renamed
+    themselves: pack got a carry loop (the one mark that can't be a lid),
+    bedroll raised and pillow palest-in-camp. Layout test caught a real
+    rigid-rotation bug in the new pebble scatter.
+142. ~~**Stakes, not failure.**~~ Done (2026-07-31, wave 3; DESIGN v0.8
+    item 8). Crowd dispersal: each gathered listener beyond the first has
+    a warmth keep-threshold; only the marginal listener is ever timed
+    (8 s grace, one departure at a time, visible stroll-out); recovery
+    brings them back; THE FIRST LISTENER NEVER LEAVES. Closing journal
+    line stays kind, pinned by a test banning fail/lose/wrong/penalty
+    vocabulary. Asks: ~35% of traveller encounters (own sub-seed, share
+    pinned) request the next 8 notes, 6 landed pays rarity-scaled
+    coins+delight settled early; fumbled passes with a warm line and
+    costs nothing. Not persisted — a reload lets the moment go quietly.
+    +20 tests (performance 79, encounters 55).
+143. **The road's soft edge.** Wave 3's ablation identified the road's
+    soft-blended boundary against the grass as the biggest remaining
+    soft-shape offender in 01/02/03 (it reads as part of the "smear"
+    family). A crisper, more deliberate carriageway edge — wheel-rut
+    lines, verge break — in RoadStage/world geometry. Flagged by the
+    shadow agent, not yet attempted.
 
 133. ~~**The songboard as presentation, not billboard.**~~ Done
     (2026-07-31, wave 2 — superseded mid-task by the human's "notes coming
