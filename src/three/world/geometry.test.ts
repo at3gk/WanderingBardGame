@@ -27,7 +27,14 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { BufferAttribute, BufferGeometry } from 'three';
-import { grassTuftGeometry, fernGeometry, reedClumpGeometry } from './geometry';
+import {
+  fallenLogGeometry,
+  fernGeometry,
+  grassTuftGeometry,
+  reedClumpGeometry,
+  rockGeometry,
+  shrubGeometry,
+} from './geometry';
 
 /**
  * Vertices per blade: four triangles, unindexed.
@@ -259,6 +266,134 @@ describe('ground cover keeps its volume', () => {
       }
       // Reeds stand. A clump wider than it is tall is a puddle of leaves.
       expect(highest).toBeGreaterThan(widest);
+    }
+  });
+});
+
+/*
+ * The three props the mid-distance has to tell apart.
+ *
+ * A critique of the walking frames found bush, boulder and log reading as one
+ * rounded blob at different tints: all three were built from the same soft
+ * primitive (`lumpDome`, or a capless tapered tube, which has a dome's outline
+ * from the side), so at forty metres — where every internal detail is gone and
+ * only the outline is doing work — the field was a scatter of identical lumps.
+ *
+ * What is pinned here is one shape *grammar* per prop, not a tuned number:
+ * stone is faceted with its mass low, timber is a cylinder with a flat cut end,
+ * scrub is a soft mound that sits down in the grass. Ordinary art tuning stays
+ * free; a change that collapses two of them back into each other fails.
+ */
+function bounds(geometry: BufferGeometry): {
+  minY: number;
+  maxY: number;
+  maxX: number;
+  radius: number;
+} {
+  const position = geometry.attributes.position as BufferAttribute;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  let maxX = -Infinity;
+  let radius = 0;
+  for (let i = 0; i < position.count; i++) {
+    minY = Math.min(minY, position.getY(i));
+    maxY = Math.max(maxY, position.getY(i));
+    maxX = Math.max(maxX, position.getX(i));
+    radius = Math.max(radius, Math.hypot(position.getX(i), position.getZ(i)));
+  }
+  return { minY, maxY, maxX, radius };
+}
+
+/** Unit face normal of triangle `f`, from the geometry's own winding. */
+function faceNormal(geometry: BufferGeometry, f: number): Vec3 {
+  const a = vertexAt(geometry, f * 3);
+  const b = vertexAt(geometry, f * 3 + 1);
+  const c = vertexAt(geometry, f * 3 + 2);
+  const ux = b.x - a.x;
+  const uy = b.y - a.y;
+  const uz = b.z - a.z;
+  const vx = c.x - a.x;
+  const vy = c.y - a.y;
+  const vz = c.z - a.z;
+  const nx = uy * vz - uz * vy;
+  const ny = uz * vx - ux * vz;
+  const nz = ux * vy - uy * vx;
+  const length = Math.hypot(nx, ny, nz) || 1;
+  return { x: nx / length, y: ny / length, z: nz / length };
+}
+
+describe('props keep three separate silhouettes', () => {
+  const PROP_SEEDS = [17, 23, 29, 41, 53, 71];
+
+  it('carries a boulder’s mass in its lower half and caps it with a plane', () => {
+    for (const seed of PROP_SEEDS) {
+      const geometry = rockGeometry(seed);
+      const position = geometry.attributes.position as BufferAttribute;
+      const { minY, maxY } = bounds(geometry);
+      // Where the widest section of the stone sits, as a fraction of its
+      // height. A dome's widest ring is at its equator or above; a stone that
+      // has settled carries it low, and that difference is most of what
+      // separates the two outlines at distance.
+      let widest = 0;
+      let widestY = 0;
+      for (let i = 0; i < position.count; i++) {
+        const r = Math.hypot(position.getX(i), position.getZ(i));
+        if (r > widest) {
+          widest = r;
+          widestY = position.getY(i);
+        }
+      }
+      expect((widestY - minY) / (maxY - minY)).toBeLessThan(0.5);
+
+      // A flat top, not an apex. The cap is a fan around its own centre, so
+      // its faces all point within a few degrees of straight up even after
+      // the cap is tilted.
+      let flatTop = 0;
+      const faces = Math.floor(position.count / 3);
+      for (let f = 0; f < faces; f++) {
+        const normal = faceNormal(geometry, f);
+        if (normal.y > 0.8 && vertexAt(geometry, f * 3 + 1).y > minY + (maxY - minY) * 0.75) {
+          flatTop++;
+        }
+      }
+      expect(flatTop).toBeGreaterThanOrEqual(4);
+
+      // And still low and wide overall — a boulder standing taller than it is
+      // across stops being scatter and becomes a landmark.
+      expect(maxY - minY).toBeLessThan(widest * 2);
+    }
+  });
+
+  it('finishes a fallen log with a flat cut end', () => {
+    for (const seed of PROP_SEEDS) {
+      const geometry = fallenLogGeometry(seed);
+      const position = geometry.attributes.position as BufferAttribute;
+      const { maxX } = bounds(geometry);
+      // The trunk lies along +X, so its far end is a disc of faces at the
+      // extreme X pointing along the axis. Without them the tube is open and
+      // renders — under a front-face-only material — as a hole with the ground
+      // showing through, which is exactly a dome's outline from the side.
+      let cut = 0;
+      const faces = Math.floor(position.count / 3);
+      for (let f = 0; f < faces; f++) {
+        const onEnd =
+          vertexAt(geometry, f * 3).x > maxX - 0.02 &&
+          vertexAt(geometry, f * 3 + 1).x > maxX - 0.02 &&
+          vertexAt(geometry, f * 3 + 2).x > maxX - 0.02;
+        if (onEnd && faceNormal(geometry, f).x > 0.9) cut++;
+      }
+      expect(cut).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  it('keeps a bush a low mound rather than a standing mass', () => {
+    for (const seed of PROP_SEEDS) {
+      const { minY, maxY, radius } = bounds(shrubGeometry(seed));
+      // Half as tall as it is wide, at most. The bush is the one of the three
+      // that stays soft, so the separation it owes the other two has to be
+      // bought in height — and a waist-high dome beside a knee-high dome is
+      // one shape at forty metres.
+      expect(maxY - minY).toBeLessThan(radius);
     }
   });
 });

@@ -43,7 +43,7 @@ import {
   type RoadSample,
 } from '../../core/road';
 
-import { mulberry32, randRange, subSeed, weightedPick, type Rand } from '../../core/rng';
+import { fbm1D, mulberry32, randRange, subSeed, weightedPick, type Rand } from '../../core/rng';
 import { createFoliageMaterial, createPainterlyMaterial, type PainterlyGlobals } from '../painterly';
 import {
   cachedGeometry,
@@ -443,6 +443,259 @@ const STONE_BAND: [number, number] = [RUT_CENTRE + RUT_HALF, SHOULDER - 0.35];
  */
 const RUT_FLOOR_BAND: [number, number] = [RUT_CENTRE - 0.12, RUT_CENTRE + 0.12];
 
+/* ======================================================================
+ * The river.
+ *
+ * DESIGN.md has called the third band "Riverside Camp" since v0.3 and the
+ * riverside palette's own comment has said "a bank of verticals at the
+ * roadside says water is near without a drop of it having to be drawn". That
+ * was a defensible dodge in 2D and it is not one here: a human watched the 3D
+ * game and the first thing they said was that the riverside has no river, and
+ * v0.8 item 4 makes it scope.
+ *
+ * Four decisions, and the first is the one everything else follows from.
+ *
+ * **The river is a ribbon in road space, like the terrain.** Its centreline is
+ * a lateral offset from the road's own, so it meanders because the road
+ * meanders and it can never, at any `s`, cross the lane — the clearance is
+ * arithmetic rather than something a noise field has to be trusted not to
+ * violate. It also means the whole thing streams with the chunk system for
+ * free and needs no second spatial structure.
+ *
+ * **The water is level and the ground is carved to meet it**, not the other
+ * way round. The surface height at `s` is the terrain along the river's own
+ * course *averaged over ~100 m*, which throws away `core/road`'s two bump
+ * octaves (52 m and 31 m) and leaves only the landform — so the surface drifts
+ * with the valley over hundreds of metres and is flat across the channel and
+ * over any one frame, which is what "level" has to mean for a river that runs
+ * downhill. The channel is then cut *relative to that surface*: a flat bed a
+ * fixed depth below it, banks rising to a crest a fixed freeboard above it,
+ * and a skirt blending the crest back into whatever the untouched ground was
+ * doing. Cutting relative to the water rather than relative to the ground is
+ * what guarantees the water is never left floating over a hollow the noise
+ * happened to put beside it.
+ *
+ * **The carve is applied to the drawn mesh, not to `terrainHeight`.** That is
+ * the same division of labour the wheel rut already uses and for the same
+ * reason: `core/road`'s height field stays the one authority on where the
+ * ground is, so the bard's footing, the camera and every prop keep agreeing
+ * with each other. Anything that has to stand *in* the channel asks for the
+ * carved height explicitly, exactly as anything standing in the rut asks
+ * `roadSurfaceHeight`.
+ *
+ * **The terrain ribbon grows columns where the river is.** The lateral sample
+ * curve puts vertices at 12.5, 14.2, 18.6, 25.1 and 33.6 m — four to six
+ * metres apart across exactly the band a river lives in, which would describe
+ * an eighteen-metre channel with three vertices and render it as a coarse V.
+ * So each row inserts a fixed set of columns positioned from the river's own
+ * profile at that `s`. They are inserted at *every* `s`, river or no river,
+ * because the count has to be constant for the index buffer and because a
+ * layout that is a pure function of `s` is what keeps two chunks agreeing on
+ * the row they share.
+ * ====================================================================== */
+
+/** Half-width of open water, before the per-course variation below. */
+const RIVER_HALF_M = 5.6;
+const RIVER_HALF_VARY_M = 1.4;
+const RIVER_WIDTH_WAVELENGTH_M = 137;
+/** Water's edge to the top of the bank. */
+const RIVER_BANK_M = 4.4;
+/** Top of the bank to where the ground is untouched again. */
+const RIVER_SKIRT_M = 4.2;
+/** Water surface to the bed. */
+const RIVER_DEPTH_M = 1.45;
+/*
+ * Water surface to the crest of the bank, and how far the surface sits below
+ * the ground's own local average.
+ *
+ * Both are small, and the reason is sightlines rather than hydrology. The
+ * camera's eye is about 2.2 m above the water and the crest of the near bank
+ * is thirteen metres away, so a crest standing 0.6 m proud of the surface hides
+ * the first three metres of water from anyone walking the road — and since the
+ * near water is the only part of it with any size in the frame, a bank that
+ * tall costs most of what the river is for. At 0.35 the sightline clears the
+ * crest within a metre of the waterline. The exposed bank is still a real bank
+ * (the bed is 1.45 m below the surface, so it is 1.8 m from bed to crest over
+ * 4.4 m of slope) and the silt band painted on it is what actually carries the
+ * edge; what has gone is only the part of it that was standing in the way.
+ */
+const RIVER_FREEBOARD_M = 0.35;
+const RIVER_SURFACE_DROP_M = 0.16;
+/**
+ * Untouched ground between the outside of the river's skirt and the road.
+ *
+ * This is the constant that makes "never across the walking lane" a proof
+ * rather than a hope: the course is clamped so that `|u|` is at least
+ * `half + bank + skirt + this`, and the carve is exactly zero beyond
+ * `half + bank + skirt`. The road corridor's own falloff ends at 11.5 m, so
+ * at this clearance the two shapings never even touch.
+ */
+const RIVER_ROAD_CLEARANCE_M = 6.2;
+/*
+ * How far off the road the channel runs, and how far that wanders.
+ *
+ * The meander amplitude is more than half the base on purpose, and it is what
+ * turns a canal into a river. A watercourse held at a constant offset is
+ * always in the same place in the frame — and because the camera looks *down*
+ * the road, that place is a thin sliver near the vanishing point whatever
+ * distance is chosen: at this field of view the frame is only 0.68 metres wide
+ * per metre of depth, so anything parallel to the lane enters the picture at
+ * about `1.5 * offset` metres ahead and is already foreshortened when it does.
+ *
+ * Swinging the offset instead gives the walk a rhythm — the road meets the
+ * water every couple of hundred metres, runs beside it, and drifts away —
+ * and it is the near passages that make the river read, because they are the
+ * only frames where it is close enough to have a bank with size in it. For
+ * today's road the course sits at 21.5 m at its nearest tenth, 27 m in the
+ * middle and 32 m at its furthest.
+ */
+const RIVER_COURSE_M = 24;
+const RIVER_MEANDER_M = 12;
+/*
+ * 240 m, not the 190 first tried, and the wavelength turned out to matter more
+ * than the amplitude.
+ *
+ * At 190 the course moved about ten metres across a single sixty-metre chunk,
+ * which is a bend tighter than the road's own — so in a walking frame the far
+ * shore swung out of the picture within one chunk and what the eye read was a
+ * bay, or a pond, rather than a watercourse running somewhere. Stretched out,
+ * the same amplitude drifts about a metre every twenty, the two banks stay
+ * roughly parallel across everything one frame can see, and the near passages
+ * still arrive — just as a long approach rather than as a kink.
+ */
+const RIVER_MEANDER_WAVELENGTH_M = 240;
+/**
+ * How long the river takes to arrive and leave at a band boundary.
+ *
+ * A river that stops dead at a band edge is a wall of water; one that fades
+ * over 55 m shallows out, narrows and is gone, which is what a watercourse
+ * leaving the road looks like. The fade scales the whole carve, so the bed
+ * rises toward the surface as it goes and the open water closes from both
+ * banks — no term has to be special-cased for it.
+ */
+const RIVER_FADE_M = 55;
+/** Along-course span averaged for the water's level. See the note above. */
+const RIVER_LEVEL_SPAN_M = 96;
+
+/**
+ * The river's cross-section at one point along the road, as everything the
+ * ground, the water and the reeds all have to agree about.
+ */
+interface RiverProfile {
+  /** Signed lateral offset of the channel's centreline from the road's. */
+  u: number;
+  /** Half-width of the flat bed. */
+  half: number;
+  /** 0 where there is no river; ramps at band boundaries. */
+  strength: number;
+  /** How far the carve reaches from the centreline. Zero effect beyond it. */
+  reach: number;
+  surfaceY: number;
+  bedY: number;
+  crestY: number;
+}
+
+/** Lateral columns the terrain ribbon grows around the channel, per side. */
+const RIVER_COLUMN_STOPS = 9;
+/** Columns across the water's own strip. */
+const RIVER_SURFACE_COLS = 7;
+/**
+ * How far the water's colour is pulled from the sky toward its own depth, in
+ * the middle of the channel and at its rim.
+ *
+ * The rim is *lighter*, which is a stylisation and not physics: real shallows
+ * show you the bed and go browner. But the bed here is silt the same warm tone
+ * as the bank, so a darkening rim would close the value gap the waterline
+ * needs, and every reference this project is aimed at — A Short Hike's ponds,
+ * Spiritfarer's sea — paints a bright edge and a deep middle for exactly that
+ * reason. The gap between these two numbers is what makes a flat plane read as
+ * having volume under it.
+ */
+const RIVER_MIX_CENTRE = 0.85;
+const RIVER_MIX_EDGE = 0.55;
+
+/**
+ * The ground's height inside the river's cross-section.
+ *
+ * `natural` is what `terrainHeight` said; `d` is the distance from the
+ * channel's centreline. Both blends are smoothsteps meeting with zero slope,
+ * for the reason this file has learned three times over: a corner in a height
+ * field sampled at vertices comes back as a crease no amount of tuning
+ * removes.
+ */
+function riverShape(profile: RiverProfile, d: number, natural: number): number {
+  if (profile.strength <= 0 || d >= profile.reach) return natural;
+  const bankOuter = profile.half + RIVER_BANK_M;
+  let shaped: number;
+  if (d <= profile.half) shaped = profile.bedY;
+  else if (d >= bankOuter) shaped = profile.crestY;
+  else {
+    shaped =
+      profile.bedY +
+      (profile.crestY - profile.bedY) * smoothstep(profile.half, bankOuter, d);
+  }
+  const weight = d <= bankOuter ? 1 : 1 - smoothstep(bankOuter, profile.reach, d);
+  return natural + (shaped - natural) * weight * profile.strength;
+}
+
+/**
+ * Where the ribbon puts its extra columns, as distances from the channel's
+ * centreline. Crowded on the bank, because the bank is the only part of this
+ * shape with any curvature in it — the bed is flat and the skirt is nearly so.
+ */
+/**
+ * `ACROSS_OFFSETS` with the river's own columns folded into it, still sorted.
+ *
+ * Sorted is load-bearing and this file has paid for learning that once
+ * already: an unsorted offset list folds two strips of ground back on
+ * themselves, and a folded quad has a normal pointing anywhere at all. Both
+ * inputs are ascending, so this is a straight merge and cannot produce one.
+ */
+function mergeRiverColumns(
+  profile: RiverProfile,
+  distances: readonly number[],
+  out: Float64Array,
+): void {
+  let a = 0;
+  let b = 0;
+  let n = 0;
+  const extra = distances.length * 2 - 1;
+  const columnAt = (i: number): number =>
+    profile.u + (i < distances.length - 1 ? -distances[distances.length - 1 - i] : distances[i - distances.length + 1]);
+  while (a < ACROSS_SAMPLES || b < extra) {
+    if (b >= extra || (a < ACROSS_SAMPLES && ACROSS_OFFSETS[a] <= columnAt(b))) {
+      out[n++] = ACROSS_OFFSETS[a++];
+    } else {
+      out[n++] = columnAt(b++);
+    }
+  }
+}
+
+/**
+ * How dry the meadow's own drift says this patch of ground is, 0..1.
+ *
+ * The two sines are `buildTerrain`'s `broad`, verbatim and deliberately so:
+ * that expression decides how far the ground is mixed toward its pale tone,
+ * so it already *is* the map of where the field is bleached and where it is
+ * deep. Reading it here rather than rolling a second field is the whole
+ * point — the cover thins on exactly the ground the eye can see is thin.
+ *
+ * Kept as a free function beside the profile helpers rather than a method
+ * because it is arithmetic on a world position and nothing else.
+ */
+function meadowDryness(x: number, z: number): number {
+  const broad =
+    0.3 + 0.22 * Math.sin(x * 0.038 + z * 0.027 + 2.1) + 0.15 * Math.sin(x * 0.071 - z * 0.059 + 4.7);
+  return smoothstep(0.28, 0.62, broad);
+}
+
+function riverColumnDistances(profile: RiverProfile, out: number[]): void {
+  const h = profile.half;
+  const b = RIVER_BANK_M;
+  out.length = 0;
+  out.push(0, h * 0.6, h, h + b * 0.3, h + b * 0.6, h + b * 0.85, h + b, h + b + RIVER_SKIRT_M * 0.45, profile.reach);
+}
+
 interface ScatterKind {
   key: string;
   /**
@@ -464,6 +717,19 @@ interface ScatterKind {
    * them, and bare ground is what makes the clumps read as plants.
    */
   clump?: number;
+  /**
+   * How far a clump's members spread from its centre, metres.
+   *
+   * Defaults to `0.55 + clump * 0.22`, which grows with the member count —
+   * and that default is backwards for anything meant to read as a *patch*.
+   * Seven tufts over two metres is still an even scatter; it is an even
+   * scatter of seven. Seven over three quarters of a metre is a clump of
+   * grass, and the difference between the two is the whole of what a critique
+   * meant by "clump tufts rather than scatter them evenly". The default is
+   * kept because the kinds that use it — ferns, flowers, roadside stones —
+   * are things that genuinely do stand a metre or two apart.
+   */
+  clumpRadius?: number;
   /** Instances per square metre at density 1. */
   perSquareMetre: number;
   /** Which palette density multiplier applies. */
@@ -486,6 +752,37 @@ interface ScatterKind {
    * other kind means.
    */
   zones?: Array<[number, number]>;
+  /**
+   * Place this kind relative to the *river's* centreline rather than the
+   * road's, as a band measured from the edge of the open water in multiples
+   * of `RIVER_BANK_M`.
+   *
+   * A waterline is the one place in this world where the vegetation has a
+   * reason to crowd, and it is what makes a river read as a river rather than
+   * as a blue stripe: reeds standing in the shallows, then a thick fringe up
+   * the bank, then the ordinary meadow. `[0.4, 1.2]` therefore straddles the
+   * waterline — the ground crosses the surface at about 0.6 of the bank — so
+   * some of the clump is in the water and some is out of it, which is exactly
+   * where reeds grow.
+   *
+   * A kind with this set is skipped entirely wherever the river's strength is
+   * low, so it costs nothing in the two bands that have no water.
+   */
+  riverBand?: [number, number];
+  /**
+   * How hard this kind thins out where the ground itself is dry, 0..1.
+   *
+   * The meadow's own colour drift — the pair of ~170 m sines `buildTerrain`
+   * uses to mix between the two grass tones — is a lushness field that was
+   * being ignored by everything that grows on it, so the cover was uniform
+   * over ground that visibly was not. A critique put it bluntly: the tufts
+   * read as litter scattered on a lawn, because litter is what an even
+   * scatter *is*. Thinning whole clumps (not individual plants) against the
+   * same field the ground is painted from is what gives the eye somewhere to
+   * rest — bare pale ground where the ground is pale, thick cover where it is
+   * deep — and it costs two sines per clump.
+   */
+  thin?: number;
   /**
    * Exponent on the lateral placement. 1 is uniform across the band; above
    * 1 crowds the kind against its clearance, which is how a hedgerow ends
@@ -664,13 +961,27 @@ const SCATTER_KINDS: ScatterKind[] = [
     // matters is only that they differ.
     geometry: (v) => cachedGeometry(`grass:${v}`, () => grassTuftGeometry(GRASS_SEEDS[v])),
     variants: 4,
-    clump: 4,
-    // Twice the old figure, and biased hard toward the road so most of it
-    // lands where the camera is. Grass at 0.75 tufts per square metre is not
-    // a lawn, it is a scattering of individual plants on bare earth, and
-    // that is exactly how it read.
-    perSquareMetre: 1.15,
+    // Seven, not four, and the count per square metre is unchanged — so this
+    // is a redistribution rather than more grass. Bigger clumps at the same
+    // total means fewer patches with more in each, which is the whole shape
+    // of the fix: an even scatter of small clumps is still an even scatter,
+    // and the eye reads evenness as texture rather than as plants. What makes
+    // a meadow read is the *bare ground between the patches*.
+    clump: 7,
+    clumpRadius: 0.8,
+    // Was 1.15, which had been doubled once to stop the meadow reading as
+    // "a scattering of individual plants on bare earth". It fixed that and
+    // overshot into the opposite failure: unbroken cover from the verge to the
+    // treeline, which is what every critique since has called litter. The
+    // count comes down about a tenth and the clumping above concentrates what
+    // is left, so the same ground carries fewer, denser, more obviously
+    // plant-shaped patches with bare field between them. Not further: 0.92 was
+    // tried and the phone-portrait framing — which is almost all foreground and
+    // is the pose the mobile pillar is judged on — came back with a bare verge
+    // beside a bare road, which trades one empty frame for another.
+    perSquareMetre: 1.05,
     densityKey: 'grass',
+    thin: 0.72,
     // Reaches much further than it needs to be dense at. A tight spread was
     // cheaper but drew a hard circle of green around the road with bare
     // ground outside it — which, in a view that spends half its time
@@ -694,23 +1005,39 @@ const SCATTER_KINDS: ScatterKind[] = [
     castShadow: false,
     material: 'foliage',
     /*
-     * Drawn from the same two greens the ground drifts between, pulled well
-     * toward the deep tone. Mixing in the dry tone as well turned every tuft
-     * into straw standing on green, so the meadow read as stubble in a mown
-     * field.
+     * Drawn from the same two greens the ground drifts between, pulled a
+     * little way toward the deep tone. Mixing in the dry tone as well turned
+     * every tuft into straw standing on green, so the meadow read as stubble
+     * in a mown field.
      *
-     * The reach toward the pale variant was 0.85 and the pull toward the
-     * shade was 0.35, which put about half the blades *above* the ground they
-     * stand in. That is the one thing this scatter must not do. It exists
-     * only inside `lodRange` — ninety-six metres — so it is almost exactly
-     * the near and middle ground of every frame and nothing else, which
-     * makes it the one surface in the world that can be darkened without
-     * touching the treeline or the distance. A foreground that carries the
-     * frame's darks is most of what makes a landscape recede; a foreground
-     * the same value as the hillside behind it is why these frames did not.
+     * **The pull toward the shade was 0.2 to 0.65 and it was too much.** The
+     * argument for it was real and is recorded here because it is still half
+     * true: this scatter exists only inside `lodRange`, so it is almost
+     * exactly the near and middle ground of every frame, which makes it the
+     * one surface that can carry the picture's darks without touching the
+     * treeline. What that reasoning missed is that a *foreground* and a
+     * *scatter of individual objects* are not the same thing. Ground carrying
+     * the darks is a field with shadow in it. Twenty thousand separate objects
+     * each carrying the darks is twenty thousand dark marks on a light ground,
+     * and every critique of the frames said the same word for it: litter. At
+     * night, against the fire, they went further and called them black spikes.
+     *
+     * Measured against village's own palette the old range put a tuft at
+     * 0.55 to 0.85 of the grass it stands in — up to a full stop below the
+     * ground, per object, at the scale of a hand. The range is now 0.06 to
+     * 0.32, which is 0.78 to 0.96 of the ground: still darker, still enough
+     * to read as a plant on a surface, and inside the ground's own value
+     * neighbourhood rather than a separate tier of marks laid over it. This
+     * is the same argument `skywardNormals` makes about the *lighting* of a
+     * blade, applied to its albedo, and the two have to agree or one undoes
+     * the other.
      */
     colorOf: (p, rand) =>
-      mixColor(mixColor(p.grass, p.grassVariant, rand() * 0.5), p.grassShade, 0.2 + rand() * 0.45),
+      mixColor(
+        mixColor(p.grass, p.grassVariant, rand() * 0.45),
+        p.grassShade,
+        0.06 + rand() * 0.26,
+      ),
   },
   {
     key: 'fern',
@@ -734,6 +1061,7 @@ const SCATTER_KINDS: ScatterKind[] = [
     key: 'flower',
     geometry: () => cachedGeometry('flower', () => flowerGeometry(13)),
     clump: 3,
+    clumpRadius: 0.55,
     perSquareMetre: 0.07,
     densityKey: 'flower',
     spread: 20,
@@ -764,6 +1092,52 @@ const SCATTER_KINDS: ScatterKind[] = [
     // a wet bank — the one thing the reeds exist to say.
     colorOf: (p, rand) => mixColor(p.grassShade, p.canopy, 0.25 + rand() * 0.55),
   },
+  /**
+   * Reeds standing in the shallows and up the first metre of bank.
+   *
+   * Its own kind rather than a wider band on `reed`, because the two are
+   * describing different things: `reed` above says "there is a ditch beside
+   * this road", which is true in the riverside band whether or not the river
+   * is in frame, while this one is the river's own fringe and is placed from
+   * the channel's profile. It is also much denser — a waterline is the one
+   * edge in this world that vegetation genuinely crowds, and the thickening
+   * is most of what stops a river reading as a painted stripe.
+   */
+  {
+    key: 'bankreed',
+    geometry: () => cachedGeometry('reed', () => reedClumpGeometry(21)),
+    clump: 5,
+    clumpRadius: 0.85,
+    perSquareMetre: 0.55,
+    densityKey: 'reed',
+    riverBand: [0.4, 1.2],
+    spread: 0,
+    clearance: 0,
+    lodRange: 150,
+    scale: [0.75, 1.15],
+    castShadow: false,
+    material: 'foliage',
+    colorOf: (p, rand) => mixColor(p.grassShade, p.canopy, 0.2 + rand() * 0.5),
+  },
+  /** The thick grass above the reeds, from the bank's shoulder outward. */
+  {
+    key: 'bankgrass',
+    geometry: (v) => cachedGeometry(`grass:${v}`, () => grassTuftGeometry(GRASS_SEEDS[v])),
+    variants: 4,
+    clump: 6,
+    clumpRadius: 0.85,
+    perSquareMetre: 1.5,
+    densityKey: 'grass',
+    riverBand: [0.75, 2.0],
+    spread: 0,
+    clearance: 0,
+    lodRange: CHUNK_LENGTH * 1.6,
+    scale: [0.9, 1.4],
+    castShadow: false,
+    material: 'foliage',
+    colorOf: (p, rand) =>
+      mixColor(mixColor(p.grass, p.grassVariant, rand() * 0.45), p.grassShade, 0.1 + rand() * 0.3),
+  },
   {
     key: 'shrub',
     geometry: () => cachedGeometry('shrub', () => shrubGeometry(23)),
@@ -779,7 +1153,27 @@ const SCATTER_KINDS: ScatterKind[] = [
     lodRange: 120,
     castShadow: true,
     material: 'foliage',
-    colorOf: (p, rand) => mixColor(p.canopy, p.canopyVariant, rand() * 0.7),
+    /*
+     * Pulled a fifth of the way toward the meadow, where this used to be pure
+     * canopy.
+     *
+     * A canopy colour is chosen to read as a mass of leaves seen against the
+     * SKY at eighty metres, and a shrub is the same albedo seen against the
+     * GROUND at twenty. Against a sky it is a silhouette; against a lit field
+     * it is a hole — and once the shrub was lowered to break the blob
+     * silhouette it shares with the boulder, it stopped being a mass with a
+     * lit top and became a dark pad lying on bright grass, which is the
+     * loudest possible mark in the one part of the frame the eye is supposed
+     * to be able to rest on. A tenth of the way, not the fifth first tried: at 0.16-0.36 the frame
+     * quality gate's noon pose fell from 2.7 stops of value range to 2.25 and
+     * went red, because a shrub is one of the few LARGE dark shapes a flat
+     * midday field has and the picture was relying on it for its darks. That
+     * is the honest version of the trade the whole of this pass is making —
+     * darks belong to big shapes and to shadow, not to twenty thousand little
+     * marks — and it only works if the big shapes keep theirs.
+     */
+    colorOf: (p, rand) =>
+      mixColor(mixColor(p.canopy, p.canopyVariant, 0.25 + rand() * 0.75), p.grass, 0.06 + rand() * 0.15),
   },
   {
     key: 'log',
@@ -927,14 +1321,25 @@ function insideLandmark(landmarks: Landmark[], x: number, z: number): boolean {
 }
 
 /**
- * One instanced mesh of standing water, with what `paintWater` needs to
- * recolour it: the road tone it is lying in, and the per-instance random draw
- * that gives one puddle a slightly different mix from the next.
+ * One body of water, with what `paintWater` needs to recolour it as the day
+ * turns: what to pull the sky's colour toward, how far to pull it per entry,
+ * and the tone it must never be allowed to sink below.
+ *
+ * Two shapes of water use this. A puddle field is an `InstancedMesh` and its
+ * entries are instances; the river is an ordinary `Mesh` and its entries are
+ * vertices, which is how one surface carries a gradient from a bright rim to
+ * a deep middle. Everything else about them is the same question — what
+ * colour is a mirror at this hour — so they share the answer.
  */
 interface WaterField {
-  mesh: InstancedMesh;
-  road: Color;
-  variation: Float32Array;
+  mesh: InstancedMesh | Mesh;
+  /** What the sky's colour is pulled toward: earth for a puddle, depth for a river. */
+  toward: Color;
+  /** How far, per instance or per vertex. */
+  mix: Float32Array;
+  /** Never darker than `floorScale` times this colour's own luminance. */
+  floorFrom: Color;
+  floorScale: number;
 }
 
 interface Chunk {
@@ -991,6 +1396,8 @@ export class WorldStreamer {
   private readonly terrainMaterial: ShaderMaterial;
   private readonly foliageMaterial: ShaderMaterial;
   private readonly solidMaterial: ShaderMaterial;
+  /** Open water: the one surface in the world with no albedo of its own. */
+  private readonly waterMaterial: ShaderMaterial;
   /** solidMaterial with the haze halved, for the things the road aims at. */
   private readonly landmarkMaterial: ShaderMaterial;
   private readonly trunkMaterials = new Map<string, ShaderMaterial>();
@@ -1007,6 +1414,34 @@ export class WorldStreamer {
   private lastCentre = Number.NaN;
   /** The horizon colour the standing water was last painted for. */
   private readonly paintedHorizon = new Color(-1, -1, -1);
+
+  /**
+   * The river, as the two things that are constant for a whole day's road.
+   *
+   * One river, one side, all day. The alternative — a side chosen per band —
+   * puts a discontinuity in the channel's own centreline at every boundary,
+   * and since the terrain ribbon grows its columns around that centreline a
+   * jump would tear the mesh across the row the two bands share. One river
+   * that the road meets, leaves and meets again is also the better reading:
+   * it is the same water, and the walk is going somewhere.
+   */
+  private readonly riverSide: number;
+  private readonly riverCourseSeed: number;
+  private readonly riverWidthSeed: number;
+  /**
+   * Profiles by whole metre of `s`.
+   *
+   * Quantised on purpose rather than as an optimisation that happens to be
+   * lossy: every consumer — the ribbon's columns, the water strip, the reeds,
+   * the suppression test — has to be looking at the *same* channel, and the
+   * cheapest way to guarantee that across three call sites with three
+   * different sampling rates is to make the profile a function of `round(s)`
+   * by construction. The level drifts by under two centimetres across a
+   * bucket.
+   */
+  private readonly riverProfiles = new Map<number, RiverProfile>();
+  private readonly riverScratch: RoadSample = { s: 0, x: 0, y: 0, heading: 0 };
+  private readonly riverColumns: number[] = [];
 
   /**
    * Patches of ground the scatter keeps out of.
@@ -1041,6 +1476,10 @@ export class WorldStreamer {
     this.density = options.foliageDensity ?? 1;
     this.castShadows = options.castShadows ?? true;
     this.group.name = 'world';
+
+    this.riverSide = mulberry32(subSeed(road.seed, 'river/side'))() < 0.5 ? -1 : 1;
+    this.riverCourseSeed = subSeed(road.seed, 'river/course');
+    this.riverWidthSeed = subSeed(road.seed, 'river/width');
 
     // Three materials for the whole world. Vertex and instance colours carry
     // every difference between a village oak and a riverside willow, which
@@ -1085,17 +1524,104 @@ export class WorldStreamer {
     // grass is dark where it meets the soil and a boulder is dark where it
     // is bedded in. It is the cheapest available substitute for contact
     // occlusion on meshes that cannot afford to receive a shadow map.
+    /*
+     * The grain came down from 0.55 to 0.26 and got four times coarser
+     * (`grainScale` 0.5 to 0.13), and the variant it swings toward was pulled
+     * most of the way back to white.
+     *
+     * This is the "dark stipple that reads as compression noise" three
+     * separate critiques named in the same frames. The arithmetic behind the
+     * complaint: `grainScale` 0.5 puts the noise's period at about two metres,
+     * which is *smaller than the clumps it lands on* and, past twenty metres,
+     * smaller than a pixel — so what it does at any distance the player
+     * actually looks at is dither the value of every tuft independently. That
+     * is the definition of speckle. Meanwhile `uGrain` 0.55 toward a variant
+     * whose blue channel is 0.60 meant the dark end of the dither cost a tuft
+     * a fifth of its value, per plant, at random.
+     *
+     * Coarse and gentle is what the term is for. At 0.13 the period is about
+     * eight metres, so a whole patch of meadow drifts together and the drift
+     * reads as ground varying rather than as plants disagreeing — which is
+     * also what the terrain's own grain is set up to do (0.11, for exactly
+     * this reason, and the two are now within a hair of each other on purpose).
+     */
     this.foliageMaterial = createFoliageMaterial(globals, {
       color: 0xffffff,
-      colorVariant: 0xe4dd9a,
-      grain: 0.55,
-      grainScale: 0.5,
+      colorVariant: 0xefe9cf,
+      grain: 0.26,
+      grainScale: 0.13,
       sway: 0.2,
       swaySpeed: 1.5,
       swayAttribute: true,
       vertexColors: true,
-      flatShading: true,
+      /*
+       * **Flat shading off, and this is the fix the other two were waiting
+       * for.**
+       *
+       * `PAINTERLY_FLAT_SHADING` derives the normal from the screen-space
+       * derivative of the world position — `cross(dFdx(P), dFdy(P))`. That is
+       * exact for a surface that covers several pixels and it is *noise* for
+       * one that does not: a blade of grass is two or three centimetres wide,
+       * so past a few metres it covers one or two pixels, and the neighbouring
+       * fragments the derivative is taken against belong to a different blade,
+       * to a different triangle of the same blade, or to the ground behind it.
+       * Every blade was therefore being lit by an essentially arbitrary normal.
+       *
+       * That is why the meadow read as litter at every hour and under every
+       * palette, and why two rounds of fixing it from the albedo side barely
+       * moved: `skywardNormals` has been carefully tilting these normals toward
+       * the sky since Run 45, `bandSoftness` was widened to stop the bands
+       * stepping between them, and the shader was throwing both away before
+       * the light was ever evaluated. Measured at noon, with the sun
+       * overhead and every blade's true normal within eight degrees of
+       * vertical, one tuft still ran from near-white to dark forest green.
+       *
+       * Nothing loses its facets for this. Every geometry here is non-indexed
+       * and calls `computeVertexNormals`, which writes the FACE normal into
+       * each of a triangle's three vertices — so the interpolated normal is
+       * already constant across a face, and a shrub or a fern keeps exactly
+       * the hard low-poly facets it had. The only shapes that change are the
+       * ones `skywardNormals` deliberately edited, which is the whole point.
+       */
+      flatShading: false,
       shadowDepth: 0.5,
+      /*
+       * Soft bands, where every other opaque surface in the world takes the
+       * default 0.07.
+       *
+       * A cel terminator is a stylisation of a *large* surface turning away
+       * from the light, and the ground already has its own softness (0.45) for
+       * exactly the reason that the band edge has to be small against the
+       * thing it crosses. A blade of grass is the opposite case and the
+       * default was failing it in the other direction: the whole blade is
+       * narrower than one band edge, so each triangle landed wholly inside one
+       * band or another and neighbouring blades came out a full light-step
+       * apart. That is the per-blade flicker every critique of these frames
+       * described — pale shard, dark shard, pale shard — and it is why a tuft
+       * read as a handful of scattered debris rather than as one plant. With
+       * a soft ramp a tuft varies across itself instead of stepping.
+       */
+      bandSoftness: 0.3,
+      /*
+       * Almost no rim, where the default is 0.2.
+       *
+       * `painterly.ts` already records that a flat additive rim turns grass
+       * white, "because blades are thin and seen edge-on, so fresnel sits near
+       * 1 across the whole blade rather than at its edge", and scales the term
+       * by albedo to stop it. Scaling by albedo bounds the damage; it does not
+       * remove it, because the term is still applied at full fresnel to every
+       * fragment of every blade. At golden hour, where `rimColor` is two
+       * thirds sun and `sunWrap` is at its highest, that measured as the whole
+       * meadow coming out as pale straw shards over dark olive ground — a
+       * value break of a stop and a half between a plant and the ground it
+       * grows in, which is the litter read arriving by a third route after the
+       * albedo and the band edges were both fixed.
+       *
+       * Grass does not need a rim to separate from the background; it needs to
+       * NOT separate from the ground it belongs to. Kept just above zero so a
+       * shrub against a bright sky still has an edge.
+       */
+      rim: 0.07,
       // The gradient already darkens the base; doubling up on baseShade
       // buried the bottom third of every tuft in near-black.
       baseShade: 0.12,
@@ -1144,6 +1670,55 @@ export class WorldStreamer {
       swayAttribute: true,
       sway: 0,
       fogScale: 0.5,
+    });
+
+    /*
+     * Open water, and the one place a fresnel rim is doing physics rather
+     * than drawing an outline.
+     *
+     * A level surface seen from a camera 1.9 m up at twenty to eighty metres
+     * is being looked at within a few degrees of grazing, and at grazing
+     * incidence a dielectric returns nearly all of the light that reaches it.
+     * `rim` in this shader is `pow(1 - dot(N, V), rimPower)` scaled by the
+     * surface's own albedo and tinted between sky and sun — which is, near
+     * enough, that. So a strong broad rim on a horizontal plane gives water
+     * that brightens toward the far bank and toward the distance without a
+     * reflection pass, a second camera, or a line of new shader code.
+     *
+     * `grainScale` is an order of magnitude coarser than anything else in the
+     * world: a twenty-metre period, so the noise reads as slicks and currents
+     * across the whole channel rather than as texture on it. And the bands are
+     * softened almost flat, because a cel terminator on water is the one place
+     * the stylisation reads as a mistake — water has no facets for a hard edge
+     * to sit on.
+     */
+    this.waterMaterial = createPainterlyMaterial(globals, {
+      color: 0xffffff,
+      colorVariant: 0xdce8ee,
+      grain: 0.24,
+      grainScale: 0.05,
+      // 0.28, not the 0.62 the argument above talks itself into. The physics
+      // is right and the amount was not: at grazing incidence `fresnel` is
+      // near 1 across the *whole* surface, so a strong rim is not a highlight
+      // on water, it is a flat additive wash in sky colour over every pixel of
+      // it — measured, the first build came back as a sheet of white paper
+      // with no colour and no gradient left in it at all. This is the same
+      // mistake the rim term's own comment in `painterly.ts` records being
+      // made with grass, for the same reason: a thing seen edge-on has no
+      // edge. Turned down until it reads as sheen rather than as light.
+      rim: 0.28,
+      rimPower: 1.5,
+      vertexColors: true,
+      flatShading: false,
+      bandSoftness: 0.4,
+      shadowDepth: 0.55,
+      sway: 0,
+      // Water is the one surface whose *colour* is the whole of what it says.
+      // At full haze a channel forty metres off is mixed most of the way to
+      // the sky and stops being blue, which is exactly the failure the
+      // landmark material exists to fix — and for the same reason: this is a
+      // thing the walk is meant to see.
+      fogScale: 0.6,
     });
   }
 
@@ -1234,6 +1809,87 @@ export class WorldStreamer {
     this.scratchNormal.set(-dhdx * k, 1, -dhdz * k).normalize();
     this.scratchTilt.setFromUnitVectors(this.upAxis, this.scratchNormal);
     quat.premultiply(this.scratchTilt);
+  }
+
+  /**
+   * The river's cross-section at `s`, memoised per whole metre.
+   *
+   * The cache is bounded by the road's own length in the ordinary case and
+   * cleared rather than grown if a session ever walks far enough past it to
+   * matter; a profile is six numbers, so a day's road is a few tens of
+   * kilobytes.
+   */
+  private riverAt(s: number): RiverProfile {
+    const key = Math.round(s);
+    const cached = this.riverProfiles.get(key);
+    if (cached) return cached;
+    if (this.riverProfiles.size > 8192) this.riverProfiles.clear();
+    const profile = this.buildRiverProfile(key);
+    this.riverProfiles.set(key, profile);
+    return profile;
+  }
+
+  private buildRiverProfile(s: number): RiverProfile {
+    const half =
+      RIVER_HALF_M + RIVER_HALF_VARY_M * fbm1D(this.riverWidthSeed, s / RIVER_WIDTH_WAVELENGTH_M, 2);
+    const reach = half + RIVER_BANK_M + RIVER_SKIRT_M;
+    // The clamp, not a hope: see RIVER_ROAD_CLEARANCE_M.
+    const magnitude = Math.max(
+      reach + RIVER_ROAD_CLEARANCE_M,
+      RIVER_COURSE_M + RIVER_MEANDER_M * fbm1D(this.riverCourseSeed, s / RIVER_MEANDER_WAVELENGTH_M, 2),
+    );
+    const u = magnitude * this.riverSide;
+    const strength = this.riverStrengthAt(s);
+    const surfaceY = this.riverLevelAt(s, u) - RIVER_SURFACE_DROP_M;
+    return {
+      u,
+      half,
+      strength,
+      reach,
+      surfaceY,
+      bedY: surfaceY - RIVER_DEPTH_M,
+      crestY: surfaceY + RIVER_FREEBOARD_M,
+    };
+  }
+
+  /**
+   * How much river there is at `s`: none outside a riverside band, ramping in
+   * and out over `RIVER_FADE_M` at its edges.
+   *
+   * The road's very first band does not fade in. A player opens the game at
+   * `s = 0` and the whole point of the item this builds is that the riverside
+   * has a river; starting them fifty-five metres short of one to satisfy a
+   * symmetry nobody can see would be the wrong trade.
+   */
+  private riverStrengthAt(s: number): number {
+    const band = this.road.bands.find((b) => s >= b.startS && s < b.endS);
+    if (!band || band.biomeId !== 'riverside') return 0;
+    const arriving = band.startS <= 0 ? 1 : smoothstep(0, RIVER_FADE_M, s - band.startS);
+    const leaving = smoothstep(0, RIVER_FADE_M, band.endS - s);
+    return Math.min(arriving, leaving);
+  }
+
+  /**
+   * The water's level: the ground along the river's own course, averaged over
+   * `RIVER_LEVEL_SPAN_M`.
+   *
+   * Averaging is the whole of it. `core/road`'s height field is a landform
+   * (330 m and 205 m) plus two bump octaves at 52 m and 31 m, and it is the
+   * bumps that would make a "level" surface visibly climb and fall along its
+   * own length. Five stations spanning ~96 m sit close enough to a whole
+   * period of both bumps to cancel most of them while leaving the landform
+   * almost untouched — so the surface still follows the valley, which is what
+   * a river does, and is flat across anything one frame can see.
+   */
+  private riverLevelAt(s: number, u: number): number {
+    let sum = 0;
+    for (let k = -2; k <= 2; k++) {
+      const sample = sampleRoad(this.road, s + (k * RIVER_LEVEL_SPAN_M) / 4, this.riverScratch);
+      const nx = Math.cos(sample.heading);
+      const nz = -Math.sin(sample.heading);
+      sum += terrainHeight(this.road, sample.x + nx * u, roadZ(sample) + nz * u);
+    }
+    return sum / 5;
   }
 
   private inClearing(x: number, z: number): boolean {
@@ -1346,19 +2002,47 @@ export class WorldStreamer {
    */
   private paintWater(field: WaterField): void {
     const horizon = this.globals.uHorizonColor.value;
-    const floor = luminanceOf(field.road) * 1.75;
-    for (let i = 0; i < field.variation.length; i++) {
-      const water = this.scratchColor
-        .copy(horizon)
-        .lerp(field.road, 0.72 + field.variation[i] * 0.14);
-      const lum = luminanceOf(water);
-      if (lum < floor) water.multiplyScalar(floor / Math.max(lum, 0.0001));
+    const floor = luminanceOf(field.floorFrom) * field.floorScale;
+
+    /*
+     * The floor is one scale for the whole field, taken from its mean mix,
+     * rather than a clamp applied per entry.
+     *
+     * A puddle field barely notices the difference — its entries span 0.14 of
+     * mix and land within a couple of per cent of each other. The river does:
+     * its entries span a deliberate gradient from a bright rim to a deep
+     * middle, and a per-entry clamp is exactly the operation that would flatten
+     * it, because at the hours the floor binds it binds on the dark end first
+     * and lifts it to meet the light one. Scaling the whole field preserves
+     * every ratio inside it and still guarantees the promise the floor exists
+     * to make: water is never the dark thing in the frame.
+     */
+    let meanMix = 0;
+    for (let i = 0; i < field.mix.length; i++) meanMix += field.mix[i];
+    meanMix /= Math.max(1, field.mix.length);
+    const reference = this.scratchColor.copy(horizon).lerp(field.toward, meanMix);
+    const referenceLum = luminanceOf(reference);
+    const lift = referenceLum < floor ? floor / Math.max(referenceLum, 0.0001) : 1;
+
+    const instanced = field.mesh instanceof InstancedMesh ? field.mesh : null;
+    const vertexColor = instanced
+      ? null
+      : (field.mesh.geometry.attributes.color as BufferAttribute);
+
+    for (let i = 0; i < field.mix.length; i++) {
+      const water = this.scratchColor.copy(horizon).lerp(field.toward, field.mix[i]);
+      water.multiplyScalar(lift);
       water.r = Math.min(1, water.r);
       water.g = Math.min(1, water.g);
       water.b = Math.min(1, water.b);
-      field.mesh.setColorAt(i, water);
+      if (instanced) instanced.setColorAt(i, water);
+      else vertexColor?.setXYZ(i, water.r, water.g, water.b);
     }
-    if (field.mesh.instanceColor) field.mesh.instanceColor.needsUpdate = true;
+    if (instanced) {
+      if (instanced.instanceColor) instanced.instanceColor.needsUpdate = true;
+    } else if (vertexColor) {
+      vertexColor.needsUpdate = true;
+    }
   }
 
   private promoteOne(centre: number): void {
@@ -1389,6 +2073,16 @@ export class WorldStreamer {
     const landmarks = this.landmarksNear(index);
 
     const water: WaterField[] = [];
+
+    // Before the scatter, because the reeds on its banks are placed from the
+    // same profile and it is the one thing in the chunk they all defer to.
+    const river = this.buildRiverSurface(index);
+    if (river) {
+      group.add(river.mesh);
+      meshes.push(river.mesh);
+      water.push(river.field);
+    }
+
     for (const kind of SCATTER_KINDS) {
       if (distanceM > kind.lodRange) continue;
       for (const mesh of this.buildScatter(index, kind, landmarks, water)) {
@@ -1435,7 +2129,11 @@ export class WorldStreamer {
   private buildTerrain(index: number): Mesh {
     const s0 = index * CHUNK_LENGTH;
     const rows = ALONG_SAMPLES;
-    const cols = ACROSS_SAMPLES;
+    // Every row grows the same number of extra columns around the river's
+    // centreline, whether or not there is a river there. Constant, because the
+    // index buffer is built once for the whole chunk; a pure function of `s`,
+    // because two neighbouring chunks share a row and would otherwise tear.
+    const cols = ACROSS_SAMPLES + RIVER_COLUMN_STOPS * 2 - 1;
     const vertexCount = rows * cols;
 
     const positions = new Float32Array(vertexCount * 3);
@@ -1446,6 +2144,12 @@ export class WorldStreamer {
     const lateralSlope = new Float32Array(vertexCount);
     const rowNx = new Float32Array(rows);
     const rowNz = new Float32Array(rows);
+    const rowX = new Float64Array(rows);
+    const rowZ = new Float64Array(rows);
+    const rowRiver: RiverProfile[] = [];
+    /** Which lateral offset each vertex was built at, for the normal pass. */
+    const rowOffsets = new Float64Array(vertexCount);
+    const merged = new Float64Array(cols);
 
     for (let r = 0; r < rows; r++) {
       // Overlap the last row of one chunk with the first of the next by
@@ -1471,7 +2175,15 @@ export class WorldStreamer {
       const dryColor = mixColor(palette.grassDry, blendPalette.grassDry, bandBlend);
       const roadColor = mixColor(palette.road, blendPalette.road, bandBlend);
       const shoulderColor = mixColor(palette.roadShoulder, blendPalette.roadShoulder, bandBlend);
+      const bankColor = mixColor(palette.bank, blendPalette.bank, bandBlend);
       const laneY = sample.y;
+
+      const river = this.riverAt(s);
+      rowRiver.push(river);
+      rowX[r] = sample.x;
+      rowZ[r] = roadZ(sample);
+      riverColumnDistances(river, this.riverColumns);
+      mergeRiverColumns(river, this.riverColumns, merged);
 
       /**
        * The meadow's base tone at a point: the slow drift, plus the landform.
@@ -1514,16 +2226,17 @@ export class WorldStreamer {
       };
 
       for (let c = 0; c < cols; c++) {
-        const u = ACROSS_OFFSETS[c];
+        const u = merged[c];
         const x = sample.x + nx * u;
         const z = roadZ(sample) + nz * u;
-        // The rut is cut into the graded surface rather than into
-        // `terrainHeight`, which stays the one authority on where the ground
-        // is: the bard's footing, the camera's clearance and every prop in
-        // the world are placed by it. Everything that stands *in* the rut
-        // band is placed through `roadSurfaceAt` instead, which is this same
-        // sum — see `scatterFor`.
-        const y = terrainHeight(this.road, x, z) + rutDrop(u);
+        // The rut and the river channel are both cut into the graded surface
+        // rather than into `terrainHeight`, which stays the one authority on
+        // where the ground is: the bard's footing, the camera's clearance and
+        // every prop in the world are placed by it. Everything that stands
+        // *in* the rut band is placed through `roadSurfaceAt` instead, and
+        // everything in the channel through `riverShape` — see `buildScatter`.
+        const riverD = Math.abs(u - river.u);
+        const y = riverShape(river, riverD, terrainHeight(this.road, x, z)) + rutDrop(u);
 
         const i = (r * cols + c) * 3;
         positions[i] = x;
@@ -1532,6 +2245,7 @@ export class WorldStreamer {
         // Kept for the normal pass below, where the rut has to be added
         // analytically because the pass's own step is wider than the rut.
         lateralSlope[r * cols + c] = rutSlope(u);
+        rowOffsets[r * cols + c] = u;
 
         const absU = Math.abs(u);
 
@@ -1545,8 +2259,13 @@ export class WorldStreamer {
           // Deepened along with the narrowing. The ruts are the only thing
           // giving the carriageway any structure at all in a close frame,
           // and at the old strength they were invisible under a low sun.
+          // Deepened again (0.46 -> 0.58) on 2026-07-31: the carriageway fills
+          // the near half of every walking frame, so its ruts are the largest
+          // dark mark available in the one part of the picture that most needs
+          // one — and they are structure rather than speckle, which is the
+          // whole distinction the grass work in this file rests on.
           const rut = Math.abs(absU - ROAD_HALF_WIDTH * 0.58);
-          if (rut < 0.42) track = mixColor(track, 0x2a1d12, 0.46 * (1 - rut / 0.42));
+          if (rut < 0.42) track = mixColor(track, 0x2a1d12, 0.58 * (1 - rut / 0.42));
           // A crown down the middle, where nothing drives and the grass
           // has not quite given up.
           if (absU < 0.7) track = mixColor(track, shoulderColor, 0.35 * (1 - absU / 0.7));
@@ -1565,7 +2284,7 @@ export class WorldStreamer {
         let hi: number;
         if (absU <= ROAD_HALF_WIDTH) {
           color = trackAt();
-          lo = mixColor(color, 0x36291c, 0.52);
+          lo = mixColor(color, 0x36291c, 0.64);
           hi = mixColor(color, dryColor, 0.3);
         } else if (absU <= SHOULDER) {
           const t = (absU - ROAD_HALF_WIDTH) / (SHOULDER - ROAD_HALF_WIDTH);
@@ -1573,12 +2292,42 @@ export class WorldStreamer {
           const meadow = meadowAt(x, z, y);
           const track = trackAt();
           color = mixColor(track, meadow, w);
-          lo = mixColor(mixColor(track, 0x36291c, 0.52), shadeColor, w);
+          lo = mixColor(mixColor(track, 0x36291c, 0.64), shadeColor, w);
           hi = mixColor(mixColor(track, dryColor, 0.3), dryColor, w);
         } else {
           color = meadowAt(x, z, y);
           lo = shadeColor;
           hi = dryColor;
+        }
+
+        /*
+         * The bank is a different material from the meadow it interrupts.
+         *
+         * Without this the channel is a green trench with blue in the bottom,
+         * and a river drawn on grass reads as a ribbon of paint. Silt is what
+         * actually lines a watercourse, and the value break between a warm
+         * pale bank and the cool greens either side of it is what makes the
+         * waterline a real edge rather than a change of tint. Weighted to the
+         * bed and the lower bank and gone by the outside of the skirt, so
+         * there is no line where the mud stops.
+         */
+        if (river.strength > 0 && riverD < river.reach) {
+          // Held at full strength across the bed and the bank and gone a third
+          // of the way up the skirt, rather than fading from the water's edge
+          // outward. Faded from the edge, the silt was already half meadow by
+          // the time it reached the waterline — which is the one place it has
+          // to be unambiguous, because that line is the whole read.
+          const wet =
+            (1 -
+              smoothstep(
+                river.half + RIVER_BANK_M,
+                river.half + RIVER_BANK_M + RIVER_SKIRT_M * 0.75,
+                riverD,
+              )) *
+            river.strength;
+          color = mixColor(color, bankColor, wet * 0.92);
+          lo = mixColor(lo, mixColor(bankColor, shadeColor, 0.45), wet * 0.92);
+          hi = mixColor(hi, mixColor(bankColor, dryColor, 0.4), wet * 0.92);
         }
 
         this.scratchColor.setHex(color);
@@ -1655,8 +2404,35 @@ export class WorldStreamer {
       // either side. Its slope is added analytically instead — the drop is a
       // function of the lateral offset alone, so its gradient is
       // `d(drop)/du` pointed along the road's own lateral direction.
-      const slope = lateralSlope[i];
       const row = Math.floor(i / cols);
+      /*
+       * The channel cannot come through the difference above either, and for
+       * the opposite reason to the rut: it is eighteen metres across against a
+       * one-metre step, so the step resolves it perfectly well — but the carve
+       * is not *in* `terrainHeight` at all, by the design decision at the top
+       * of this file. So its own lateral gradient is differenced separately,
+       * at a step short enough to sit inside the bank, and added along the
+       * road's lateral direction exactly as the rut's is. Only the vertices
+       * the channel actually reaches pay for it.
+       */
+      const river = rowRiver[row];
+      let riverSlope = 0;
+      const u = rowOffsets[i];
+      if (river.strength > 0 && Math.abs(u - river.u) < river.reach) {
+        const step = 0.4;
+        const nx = rowNx[row];
+        const nz = rowNz[row];
+        let carved = 0;
+        let natural = 0;
+        for (const dir of [-1, 1]) {
+          const uu = u + dir * step;
+          const raw = terrainHeight(this.road, rowX[row] + nx * uu, rowZ[row] + nz * uu);
+          natural += dir * raw;
+          carved += dir * riverShape(river, Math.abs(uu - river.u), raw);
+        }
+        riverSlope = (carved - natural) / (2 * step);
+      }
+      const slope = lateralSlope[i] + riverSlope;
       const dhdx =
         (terrainHeight(this.road, x + eps, z) - terrainHeight(this.road, x - eps, z)) / (2 * eps) +
         slope * rowNx[row];
@@ -1675,6 +2451,156 @@ export class WorldStreamer {
     mesh.receiveShadow = this.castShadows;
     mesh.name = `terrain-${index}`;
     return mesh;
+  }
+
+  /**
+   * Where the open water ends on one side of the channel: the first place,
+   * going outward, that the carved ground rises through the surface.
+   *
+   * Found by walking out rather than by solving the profile, and that is the
+   * point. The bank's own shape is analytic and could be inverted, but the
+   * ground it is blended into is not — a bank that runs into a natural rise
+   * meets the water sooner on that side than on the other, and a river whose
+   * two edges are always the same distance from its centre is a canal. This
+   * gives the waterline the irregularity for free, out of terrain the world
+   * already has.
+   */
+  private waterEdge(
+    profile: RiverProfile,
+    sample: RoadSample,
+    nx: number,
+    nz: number,
+    dir: number,
+  ): number {
+    if (profile.strength <= 0) return 0;
+    const step = 0.5;
+    for (let d = 0; d <= profile.reach; d += step) {
+      const u = profile.u + dir * d;
+      const ground = riverShape(
+        profile,
+        d,
+        terrainHeight(this.road, sample.x + nx * u, roadZ(sample) + nz * u),
+      );
+      if (ground >= profile.surfaceY) return Math.max(0, d - step * 0.5);
+    }
+    return profile.reach;
+  }
+
+  /**
+   * The river's surface for one chunk: one strip, level across every row.
+   *
+   * Two things are worth stating because both were choices.
+   *
+   * The strip is drawn *wider than the water actually is* — half a metre past
+   * where the bank was found to rise through it — and the terrain is left to
+   * hide the excess. A strip cut exactly to the waterline leaves a hairline of
+   * dry bank showing wherever the mesh's own linear interpolation disagrees
+   * with the search's step, all the way along both banks; overshooting into
+   * ground that is already above the water costs nothing, because the depth
+   * buffer resolves it, and it is the only version with no seam.
+   *
+   * And the surface's height is one number per row, not per vertex. That is
+   * the entire definition of "level" here, and it is what makes this read as
+   * water rather than as a blue-tinted piece of terrain: the ground under it
+   * rolls, the surface does not, and the varying gap between them is what the
+   * eye reads as depth.
+   */
+  private buildRiverSurface(index: number): { mesh: Mesh; field: WaterField } | null {
+    const s0 = index * CHUNK_LENGTH;
+    // Cheap gate first: three probes across the chunk, so a forest chunk pays
+    // three band lookups instead of a thousand height samples.
+    if (
+      this.riverStrengthAt(s0) <= 0 &&
+      this.riverStrengthAt(s0 + CHUNK_LENGTH / 2) <= 0 &&
+      this.riverStrengthAt(s0 + CHUNK_LENGTH) <= 0
+    ) {
+      return null;
+    }
+
+    const rows = ALONG_SAMPLES;
+    const cols = RIVER_SURFACE_COLS;
+    const count = rows * cols;
+    const positions = new Float32Array(count * 3);
+    const normals = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const mix = new Float32Array(count);
+    let open = false;
+
+    for (let r = 0; r < rows; r++) {
+      const s = s0 + (r / (rows - 1)) * CHUNK_LENGTH;
+      const sample = sampleRoad(this.road, s);
+      const nx = Math.cos(sample.heading);
+      const nz = -Math.sin(sample.heading);
+      const river = this.riverAt(s);
+      const inner = this.waterEdge(river, sample, nx, nz, -1);
+      const outer = this.waterEdge(river, sample, nx, nz, 1);
+      if (inner + outer > 0.9) open = true;
+      // A slow drift along the course, so the channel is not one flat wash
+      // from the first chunk to the last. Two octaves at a ~35 m period: long
+      // enough to read as the water changing rather than as noise on it.
+      const drift = 0.05 * fbm1D(this.riverWidthSeed, s / 35, 2);
+      const left = river.u - (inner + 0.5);
+      const right = river.u + (outer + 0.5);
+
+      for (let c = 0; c < cols; c++) {
+        const t = c / (cols - 1);
+        const u = left + t * (right - left);
+        const i = (r * cols + c) * 3;
+        positions[i] = sample.x + nx * u;
+        positions[i + 1] = river.surfaceY;
+        positions[i + 2] = roadZ(sample) + nz * u;
+        // A level plane has one normal, and saying so is cheaper and steadier
+        // than computing it: `computeVertexNormals` on a strip whose width
+        // changes row to row would tilt the ends of every row a little.
+        normals[i] = 0;
+        normals[i + 1] = 1;
+        normals[i + 2] = 0;
+        const centre = 1 - Math.abs(t * 2 - 1);
+        mix[r * cols + c] = clamp01(
+          RIVER_MIX_EDGE +
+            (RIVER_MIX_CENTRE - RIVER_MIX_EDGE) * centre * centre * (3 - 2 * centre) +
+            drift,
+        );
+      }
+    }
+    if (!open) return null;
+
+    const geometry = new BufferGeometry();
+    geometry.setAttribute('position', new BufferAttribute(positions, 3));
+    geometry.setAttribute('normal', new BufferAttribute(normals, 3));
+    geometry.setAttribute('color', new BufferAttribute(colors, 3));
+    const indices: number[] = [];
+    for (let r = 0; r < rows - 1; r++) {
+      for (let c = 0; c < cols - 1; c++) {
+        const a = r * cols + c;
+        const b = a + 1;
+        const d = (r + 1) * cols + c;
+        const e = d + 1;
+        indices.push(a, d, b, b, d, e);
+      }
+    }
+    geometry.setIndex(indices);
+    geometry.computeBoundingSphere();
+
+    const mesh = new Mesh(geometry, this.waterMaterial);
+    mesh.name = `river-${index}`;
+    mesh.castShadow = false;
+    mesh.receiveShadow = this.castShadows;
+
+    const palette = paletteFor(biomeAt(this.road, s0 + CHUNK_LENGTH / 2));
+    const field: WaterField = {
+      mesh,
+      toward: new Color().setHex(palette.waterDeep),
+      mix,
+      // Floored against the shallow tone rather than against the grass: it is
+      // the palette's own statement of how bright this water is allowed to
+      // get, and flooring against a *ground* colour would tie the river's
+      // night value to a ground albedo that has been retuned twice.
+      floorFrom: new Color().setHex(palette.waterShallow),
+      floorScale: 0.62,
+    };
+    this.paintWater(field);
+    return { mesh, field };
   }
 
   /**
@@ -1717,6 +2643,19 @@ export class WorldStreamer {
     let bandWidth = 0;
     for (const zone of zones) bandWidth += zone[1] - zone[0];
 
+    if (kind.riverBand) {
+      // Same cheap gate the water surface uses: a kind that grows on a
+      // riverbank costs nothing at all in the two bands that have no river.
+      if (
+        this.riverStrengthAt(s0) <= 0 &&
+        this.riverStrengthAt(s0 + CHUNK_LENGTH / 2) <= 0 &&
+        this.riverStrengthAt(s0 + CHUNK_LENGTH) <= 0
+      ) {
+        return [];
+      }
+      bandWidth = (kind.riverBand[1] - kind.riverBand[0]) * RIVER_BANK_M;
+    }
+
     const area = CHUNK_LENGTH * bandWidth * 2;
     const count = Math.max(
       0,
@@ -1738,6 +2677,9 @@ export class WorldStreamer {
     let clumpMagnitude = 0;
     let clumpSide = 1;
     let clumpZone = zones[0];
+    let clumpScale = 1;
+    let clumpDropped = false;
+    let clumpRiver: RiverProfile | null = null;
     let remaining = 0;
 
     for (let i = 0; i < count; i++) {
@@ -1748,12 +2690,38 @@ export class WorldStreamer {
         const t = bias === 1 ? rand() : Math.pow(rand(), bias);
         clumpMagnitude = clumpZone[0] + t * (clumpZone[1] - clumpZone[0]);
         remaining = clump > 0 ? 1 + Math.floor(rand() * clump * 1.5) : 1;
+        // One size per patch, on top of the per-plant variation below. A
+        // clump whose members are drawn independently from the full range has
+        // the same average size as its neighbours; one that is small all over
+        // reads as younger, thinner ground, and that difference between
+        // patches is a second axis of variation for one random draw.
+        clumpScale = randRange(rand, 0.82, 1.16);
+        clumpRiver = kind.riverBand ? this.riverAt(clumpS) : null;
+        if (kind.riverBand) {
+          const profile = clumpRiver as RiverProfile;
+          clumpDropped = profile.strength <= 0.2;
+          const lo = profile.half + kind.riverBand[0] * RIVER_BANK_M;
+          const hi = profile.half + kind.riverBand[1] * RIVER_BANK_M;
+          clumpMagnitude = lo + t * (hi - lo);
+          clumpZone = [lo, hi];
+        } else if (kind.thin) {
+          // Thinned against the ground's own lushness field, not against a
+          // fresh noise: the pale ground and the bare ground have to be the
+          // same ground or the cover argues with what it is standing on.
+          const centre = sampleRoad(this.road, clumpS, this.riverScratch);
+          const cx = centre.x + Math.cos(centre.heading) * clumpSide * clumpMagnitude;
+          const cz = roadZ(centre) - Math.sin(centre.heading) * clumpSide * clumpMagnitude;
+          clumpDropped = rand() < meadowDryness(cx, cz) * kind.thin;
+        } else {
+          clumpDropped = false;
+        }
       }
       remaining--;
+      if (clumpDropped) continue;
 
-      // The clump radius grows with the plant: a patch of grass is a metre
-      // across, a stand of ferns two.
-      const spreadIn = clump > 0 ? 0.55 + clump * 0.22 : 0;
+      // The clump radius grows with the plant unless the kind says otherwise:
+      // a stand of ferns is two metres across, a patch of grass is not.
+      const spreadIn = clump > 0 ? (kind.clumpRadius ?? 0.55 + clump * 0.22) : 0;
       // Sideways, a clump can never be wider than the band it grows in. Let
       // it be, and every member lands on one edge or the other and the band
       // fills with two lines instead of a patch — which is what the crown of
@@ -1761,33 +2729,68 @@ export class WorldStreamer {
       // fit in a quarter-metre strip. The meadow bands are tens of metres
       // across and never reach this.
       const lateral = Math.min(spreadIn, (clumpZone[1] - clumpZone[0]) * 0.5);
-      const s = clumpS + (clump > 0 ? randRange(rand, -spreadIn, spreadIn) : 0);
+      /*
+       * Members fall on a *radius* with density falling off from the middle,
+       * not on a square of uniform jitter.
+       *
+       * This is the second half of "clump, don't scatter", and without it the
+       * first half buys almost nothing: a uniform box of jitter is an even
+       * scatter over a small area, so a clump of seven reads as seven separate
+       * plants that happen to be near each other. `pow(rand, 0.8)` on the
+       * radius puts the density highest at the centre and trailing off at the
+       * rim, which is a patch with a middle — and a patch with a middle is
+       * what the eye reads as one plant colony rather than as debris.
+       */
+      const spin = rand() * Math.PI * 2;
+      const reach = clump > 0 ? Math.pow(rand(), 0.8) : 0;
+      const s = clumpS + Math.cos(spin) * reach * spreadIn;
       // Held inside the band it was drawn from, rather than merely pushed
       // off the centreline. That is how a tuft used to end up growing in a
       // wheel rut: the jitter is free to leave the band, so the only
       // correction that works is one the band itself defines.
       const magnitude = clamp(
-        clumpMagnitude + (clump > 0 ? randRange(rand, -lateral, lateral) : 0),
+        clumpMagnitude + Math.sin(spin) * reach * lateral,
         clumpZone[0],
         clumpZone[1],
       );
-      const u = clumpSide * magnitude;
 
       const sample = sampleRoad(this.road, s);
       const nx = Math.cos(sample.heading);
       const nz = -Math.sin(sample.heading);
+      // A riverbank kind measures its offset from the channel's centreline;
+      // everything else measures it from the road's.
+      const river = clumpRiver ?? this.riverAt(s);
+      const u = clumpRiver ? river.u + clumpSide * magnitude : clumpSide * magnitude;
       const x = sample.x + nx * u;
       const z = roadZ(sample) + nz * u;
-      // Carriageway kinds stand on the graded surface, rut and all. Off the
-      // road `rutDrop` is zero, so this is `terrainHeight` for everything
-      // else — and a puddle, which is the one kind placed *in* the rut, now
-      // sits on its floor instead of hovering where the flat road used to be.
-      const y = terrainHeight(this.road, x, z) + rutDrop(u) + (kind.lift ?? 0);
+      // Carriageway kinds stand on the graded surface, rut and all; anything
+      // in the channel stands on the carved bank. Off the road `rutDrop` is
+      // zero and away from the river `riverShape` is the identity, so for most
+      // of the world this is still plainly `terrainHeight` — and a puddle,
+      // which is the one kind placed *in* the rut, sits on its floor instead
+      // of hovering where the flat road used to be.
+      const riverD = Math.abs(u - river.u);
+      const ground = riverShape(river, riverD, terrainHeight(this.road, x, z));
+      const y = ground + rutDrop(u) + (kind.lift ?? 0);
+      // Nothing that is not a reed grows under water. Tested here rather than
+      // by narrowing every kind's band, because the waterline is a property of
+      // the ground and not of the scatter: it moves with the terrain, and a
+      // band wide enough to be safe everywhere would be a bare margin around
+      // the whole river.
+      // The bank belongs to the kinds placed for it. A meadow tuft on a silt
+      // bank is not merely wrong about the ground it is standing on — it is
+      // what closed the one value break the waterline has to hold, because the
+      // cover carried its own colour over the top of the mud.
+      const drowned =
+        !kind.riverBand &&
+        river.strength > 0 &&
+        riverD < river.reach &&
+        (ground < river.surfaceY + 0.12 || riverD < river.half + RIVER_BANK_M * 1.5);
 
       this.scratchPos.set(x, y, z);
       this.scratchQuat.setFromAxisAngle(this.upAxis, rand() * Math.PI * 2);
       if (kind.bedded) this.bedInGround(this.scratchQuat, x, z);
-      const scale = randRange(rand, kind.scale[0], kind.scale[1]);
+      const scale = randRange(rand, kind.scale[0], kind.scale[1]) * clumpScale;
       // Non-uniform scaling on the vertical axis: a field where every tuft
       // is a scaled copy of one tuft reads as wallpaper. Kept narrow —
       // at 1.3 the tallest grass came out half again as tall as the
@@ -1810,6 +2813,7 @@ export class WorldStreamer {
       // giving a shadow map is a thing big enough to stand in front of a
       // campfire, and grass and flowers growing up to the stone ring are
       // exactly what a camp in a meadow should look like.
+      if (drowned) continue;
       if (kind.castShadow && (this.inClearing(x, z) || insideLandmark(landmarks, x, z))) continue;
       buckets[variant].push({
         matrix: new Matrix4().compose(this.scratchPos, this.scratchQuat, this.scratchScale),
@@ -1835,10 +2839,13 @@ export class WorldStreamer {
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       mesh.computeBoundingSphere();
       if (kind.skyLit) {
+        const road = new Color().setHex(palette.road);
         const field: WaterField = {
           mesh,
-          road: new Color().setHex(palette.road),
-          variation: new Float32Array(list.map((entry) => entry.variation)),
+          toward: road,
+          mix: new Float32Array(list.map((entry) => 0.72 + entry.variation * 0.14)),
+          floorFrom: road,
+          floorScale: 1.75,
         };
         water.push(field);
         this.paintWater(field);
@@ -1890,7 +2897,13 @@ export class WorldStreamer {
       const nz = -Math.sin(sample.heading);
       const x = sample.x + nx * u;
       const z = roadZ(sample) + nz * u;
-      const y = terrainHeight(this.road, x, z);
+      const river = this.riverAt(s);
+      const riverD = Math.abs(u - river.u);
+      const y = riverShape(river, riverD, terrainHeight(this.road, x, z));
+      // Willows lean over water; nothing grows *in* it. A tree standing on the
+      // bed with its trunk through the surface is the single most obvious way
+      // to make a river read as a texture rather than as a place.
+      const drowned = river.strength > 0 && riverD < river.reach && y < river.surfaceY + 0.4;
 
       const kind = weightedPick(rand, palette.trees, (entry) => entry.weight).kind;
       const variant = Math.floor(rand() * TREE_VARIANTS);
@@ -1915,7 +2928,7 @@ export class WorldStreamer {
             : 0.3 + rand() * 0.7;
       const color = mixColor(canopyTint, 0xffffff, shade);
       // Last, after every draw, for the reason given in `buildScatter`.
-      if (this.inClearing(x, z) || insideLandmark(landmarks, x, z)) continue;
+      if (drowned || this.inClearing(x, z) || insideLandmark(landmarks, x, z)) continue;
       const list = buckets.get(key);
       if (list) list.push({ matrix, color });
       else buckets.set(key, [{ matrix, color }]);
@@ -2234,7 +3247,9 @@ export class WorldStreamer {
       // Terrain geometry is unique per chunk and must go. Scatter geometry
       // is shared out of the cache and must NOT — disposing it would blank
       // every other chunk using the same grass tuft.
-      if (mesh.name.startsWith('terrain-')) mesh.geometry.dispose();
+      if (mesh.name.startsWith('terrain-') || mesh.name.startsWith('river-')) {
+        mesh.geometry.dispose();
+      }
       if (mesh instanceof InstancedMesh) mesh.dispose();
     }
     chunk.meshes.length = 0;
@@ -2247,6 +3262,7 @@ export class WorldStreamer {
     this.terrainMaterial.dispose();
     this.foliageMaterial.dispose();
     this.solidMaterial.dispose();
+    this.waterMaterial.dispose();
     this.landmarkMaterial.dispose();
     for (const material of this.trunkMaterials.values()) material.dispose();
     this.trunkMaterials.clear();

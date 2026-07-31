@@ -58,6 +58,8 @@ export interface HudChrome {
   coins: HudBox;
   /** The instrument in hand. Bottom leading corner, and likewise. */
   instrument: HudBox;
+  /** The song being learnt. Bottom trailing corner, mirroring the instrument. */
+  song: HudBox;
   /** The journal card: what the road just said. Up in the sky — see `hudChrome`. */
   journal: HudBox;
 }
@@ -114,6 +116,15 @@ const COINS_WIDTH_TIGHT = 108;
 const INSTRUMENT_WIDTH_ROOMY = 200;
 const INSTRUMENT_WIDTH_TIGHT = 164;
 
+/**
+ * Room for a song title. The longest in the book ("Twinkle Twinkle Little
+ * Star") does not fit the tight width and ellipsises, which is fine — the
+ * corner is a handle first and a label second, and the open book shows the
+ * full titles.
+ */
+const SONG_WIDTH_ROOMY = 220;
+const SONG_WIDTH_TIGHT = 168;
+
 export function hudChrome(viewport: HudViewport): HudChrome {
   const width = size(viewport?.width);
   const height = size(viewport?.height);
@@ -165,6 +176,21 @@ export function hudChrome(viewport: HudViewport): HudChrome {
     left: innerLeft,
     top: innerBottom - rowHeight,
     width: instrumentWidth,
+    height: rowHeight,
+  };
+
+  // The songbook mirrors the instrument in the opposite bottom corner, and
+  // gives ground first when the two would meet: its width is whatever the
+  // instrument and a gutter have left, so on a narrow portrait screen the
+  // title ellipsises rather than the two corners overlapping.
+  const songWidth = Math.max(
+    0,
+    Math.min(compact ? SONG_WIDTH_TIGHT : SONG_WIDTH_ROOMY, innerWidth - instrumentWidth - gutter),
+  );
+  const song: HudBox = {
+    left: innerRight - songWidth,
+    top: innerBottom - rowHeight,
+    width: songWidth,
     height: rowHeight,
   };
 
@@ -222,7 +248,7 @@ export function hudChrome(viewport: HudViewport): HudChrome {
     height: journalHeight,
   };
 
-  return { safe, gutter, compact, coins, instrument, journal };
+  return { safe, gutter, compact, coins, instrument, song, journal };
 }
 
 /**
@@ -263,6 +289,30 @@ export function instrumentCaseBox(chrome: HudChrome, count: number): HudBox {
     left: instrument.left,
     top: instrument.top - height,
     width: instrument.width,
+    height,
+  };
+}
+
+/**
+ * The open songbook: what the road could be playing instead.
+ *
+ * `instrumentCaseBox`'s twin, rising out of the song corner with the same
+ * ceiling (the journal card's foot) and the same whole-rows-only rule, for
+ * the same reasons — see that function. The one difference is which corner
+ * it grows from.
+ */
+export function songBookBox(chrome: HudChrome, count: number): HudBox {
+  const rows = Math.max(0, Math.floor(Number.isFinite(count) ? count : 0));
+  const { song, safe, gutter, journal } = chrome;
+  const ceiling = Math.max(safe.top + gutter, journal.top + journal.height + gutter);
+  const room = Math.max(0, song.top - ceiling);
+  const row = song.height;
+  const fit = row > 0 ? Math.min(rows, Math.floor(room / row)) : 0;
+  const height = fit * row;
+  return {
+    left: song.left,
+    top: song.top - height,
+    width: song.width,
     height,
   };
 }

@@ -8,24 +8,28 @@
  * what a busk is worth comes from `core/performance`. If a rule appears in
  * this file it is in the wrong place and the tests cannot see it.
  *
- * The walk itself is auto-forward. That is a design decision, not a
- * shortcut: this is a game about looking at things while music plays, and
- * asking a player to hold a key to keep walking taxes exactly the attention
- * the scenery is asking for. The player's input goes into the *music*.
+ * The walk is steered by the tune, not by a key (v0.8). The player's input
+ * goes into the *music*, and the music is what keeps the bard moving: notes
+ * scroll toward the barline while he walks, exactly as they do at a busk,
+ * and the song meter those taps feed is what sets the stride. Nobody holds
+ * a key to walk — but nobody walks for free either, because a walk that
+ * plays itself is a walk being watched, and DESIGN.md's core-mechanic
+ * section never sanctioned that.
  *
  * ## The one verb
  *
  * Tap, or press anything. That is the entire input surface, and it means
- * different things in only two places: during a busk it plays the note that
- * has reached the barline, and while the road is holding on something —
- * a vista, somebody met at a crossroads — it means "walk on". Nothing else
- * in the game is clickable, so nothing has to be found.
+ * different things in only two places: while a tune is running — walking or
+ * busking — it plays the note that has reached the barline, and while the
+ * road is holding on something — a vista, somebody met at a crossroads — it
+ * means "walk on". Nothing else in the game is clickable, so nothing has to
+ * be found.
  *
  * ## Two clocks
  *
- * A busk is scheduled on the *audio* clock whenever there is one, and on the
+ * A tune is scheduled on the *audio* clock whenever there is one, and on the
  * simulation clock before the player has touched the screen (browsers will
- * not give out an AudioContext until then). `buskNowMs` is the only place
+ * not give out an AudioContext until then). `tuneNowMs` is the only place
  * that knows which, and everything downstream — the judge, the notes, the
  * adaptive backing — reads that one number. The two clocks drift by a
  * measurable amount over a session and a rhythm game is where that is
@@ -60,6 +64,7 @@ import {
   advance,
   canEnter,
   chooseInstrument,
+  chooseSong,
   createJourney,
   earn,
   enterPhase,
@@ -78,7 +83,14 @@ import {
 } from '../core/instruments';
 import { beatIntervalMs } from '../core/beats';
 import { expandSong, songDurationMs, type SongBeat } from '../core/song';
-import { songForBiome } from '../core/songs';
+import { SONGS } from '../core/songs';
+import { songForPass } from '../core/songChoice';
+import {
+  extendWalkTune,
+  startWalkTune as newWalkTune,
+  walkPaceFactor,
+  type WalkTune,
+} from '../core/walk';
 import {
   applyJudgement,
   createPerformance,
@@ -91,13 +103,16 @@ import {
 } from '../core/performance';
 import { rollEncounter } from '../core/encounters';
 import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
-import { Ambience, dayShape, type AmbienceWeather } from '../audio/ambience';
+import { Ambience, dayShape } from '../audio/ambience';
 import {
+  adaptiveDrive,
   initialAdaptiveState,
   updateAdaptive,
   type AdaptiveLayerId,
+  type AdaptiveMode,
   type AdaptiveState,
 } from '../audio/adaptive';
+import { ambienceBusGain, melodyGain, musicBusGain, type MixInput } from '../audio/mix';
 import { AUDIO_MANIFEST } from '../audio/manifest';
 import { semitoneToFrequency } from '../audio/baseLoop';
 import { playVoiceNote } from '../audio/instrumentVoice';
@@ -147,9 +162,6 @@ const BUSK_TAIL_MS = 1400;
 /** How long the road holds on a vista or on somebody met, unless tapped. */
 const VISTA_HOLD_SEC = 6;
 const ENCOUNTER_HOLD_SEC = 7;
-
-/** Level the bard's own notes sound at. Everything else is mixed under this. */
-const MELODY_GAIN = 0.22;
 
 const PHASE_TO_MOOD: Record<Phase, CameraMood> = {
   waking: 'walking',
@@ -221,16 +233,24 @@ export class RoadStage implements Stage {
   private readonly subject = { position: new Vector3(), heading: 0 };
   private readonly sample: RoadSample = { s: 0, x: 0, y: 0, heading: 0 };
 
-  // --- the busk ----------------------------------------------------------
+  // --- the tune (the busk's, or the walk's) -------------------------------
+  //
+  // One performance at a time, whichever kind it is: `tuneMode` says whether
+  // the notes in the air belong to a busk or to the walk itself (v0.8 — the
+  // walk carries the tune too). The clock, the judge and the staff are
+  // shared; what differs is what a note is worth (a busk pays coins, the
+  // walk moves the bard) and how the schedule ends (a busk ends, the walk's
+  // is extended for ever).
   private performance: PerformanceState | null = null;
+  private tuneMode: 'busk' | 'walk' | null = null;
   private beats: SongBeat[] = [];
-  private buskBpm = BASE_BPM;
-  private buskBeatsPerBar = 4;
+  private tuneBpm = BASE_BPM;
+  private tuneBeatsPerBar = 4;
   private buskEndMs = 0;
-  /** Simulation-clock fallback for the busk, used before audio exists. */
-  private buskSimMs = 0;
+  /** Simulation-clock fallback for the tune, used before audio exists. */
+  private tuneSimMs = 0;
   /**
-   * Audio-clock time of busk-clock zero, or NaN when there is no audio yet.
+   * Audio-clock time of tune-clock zero, or NaN when there is no audio yet.
    *
    * NaN rather than a negative sentinel, which is what this was first and
    * which was wrong: a busk that started before the audio did anchors at
@@ -238,12 +258,26 @@ export class RoadStage implements Stage {
    * perfectly ordinary *negative* number. With -1 as the sentinel the busk
    * silently stayed on the simulation clock for the rest of the tune.
    */
-  private buskAnchorSec = Number.NaN;
+  private tuneAnchorSec = Number.NaN;
   private creditedCoins = 0;
   private creditedDelight = 0;
   private busksToday = 0;
-  private everBusked = false;
+  private everHinted = false;
   private readonly metToday: string[] = [];
+
+  // --- the walk's own tune -----------------------------------------------
+  private walkTune: WalkTune | null = null;
+  /** Rotation cursor for the wandering songbook, one step per walking stretch. */
+  private walkPasses = 0;
+  /**
+   * Smoothed walking-speed multiplier. The *target* is `walkPaceFactor` of
+   * the meter — instant, so recovery is instant — and this eases toward it
+   * over a fraction of a second purely so the bard decelerates rather than
+   * freezing mid-stride. Presentation, not rules.
+   */
+  private pace = 1;
+  /** Whether the bard is stood playing in place because the tune lapsed. */
+  private halted = false;
 
   // --- the camp ----------------------------------------------------------
   private campfire: Campfire | null = null;
@@ -254,6 +288,7 @@ export class RoadStage implements Stage {
   // --- audio -------------------------------------------------------------
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
+  private musicBus: GainNode | null = null;
   private ambience: Ambience | null = null;
   private adaptive: AdaptiveState = initialAdaptiveState();
   private readonly layers = new Map<AdaptiveLayerId, LayerVoice>();
@@ -362,12 +397,18 @@ export class RoadStage implements Stage {
     this.hud.setCoins(this.journey.coins);
     this.hud.setInstrument(this.instrument().name);
     this.hud.onInstrumentChosen((id) => this.takeOut(id));
+    this.hud.onSongChosen((id) => this.pinSong(id));
     this.hud.setMode(this.journey.phase === 'resting' ? 'resting' : 'walking');
     if (this.journey.phase === 'resting') this.makeCamp();
     this.collectIdle();
     // After the camp, which is where an unlock is named and where the case
     // therefore gains its entries.
     this.refreshCase();
+    this.refreshSongbook();
+    // A day loaded mid-road opens with its tune already in the air: the
+    // constructor never goes through `setPhase`, so the walk's tune has to
+    // be raised here or the road is silent until the first stop.
+    if (this.journey.phase === 'walking') this.startWalkingTune();
 
     app.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
     window.addEventListener('keydown', this.onKeyDown);
@@ -418,7 +459,23 @@ export class RoadStage implements Stage {
     const before = this.journey.s;
 
     if (this.walking && this.journey.phase === 'walking') {
-      this.journey = advance(this.journey, WALK_SPEED * dt, this.road.lengthM);
+      // The tune gates the stride (v0.8): a healthy meter is a full walk, a
+      // drained one slows the bard to a stop where he plays quietly in place.
+      // The target is a pure function of the meter, so the first hit out of
+      // a stall moves him on the same frame; the easing below is only so the
+      // stop is a wind-down rather than a freeze. No tune — a hold, a phase
+      // the walk passes through — means a full stride, never a penalty.
+      const target =
+        this.tuneMode === 'walk' && this.performance
+          ? walkPaceFactor(this.performance.meter)
+          : 1;
+      this.pace += (target - this.pace) * Math.min(1, dt * 2.5);
+      const stopped = this.tuneMode === 'walk' && target === 0 && this.pace < 0.05;
+      if (stopped !== this.halted) {
+        this.halted = stopped;
+        this.bard.setPose(stopped ? 'playing' : 'walking', 0.8);
+      }
+      this.journey = advance(this.journey, WALK_SPEED * this.pace * dt, this.road.lengthM);
       this.checkArrivals();
     }
 
@@ -432,8 +489,15 @@ export class RoadStage implements Stage {
       if (this.holdSec <= 0) this.resume();
     }
 
-    this.buskSimMs += dt * 1000;
-    if (this.performance) this.updateBusk();
+    if (this.performance) {
+      if (this.tuneMode === 'busk') {
+        this.tuneSimMs += dt * 1000;
+        this.updateBusk();
+      } else if (this.tuneMode === 'walk' && this.walking && this.journey.phase === 'walking') {
+        this.tuneSimMs += dt * 1000;
+        this.updateWalkTune();
+      }
+    }
 
     this.updateAudio();
 
@@ -483,7 +547,11 @@ export class RoadStage implements Stage {
       case 'vista':
         // A vista is a place you look at, not a state the game enters. The
         // walk simply stops for a moment and the camera hands the frame to
-        // the landscape.
+        // the landscape. The tune rests with it — a bar of silence with a
+        // view — so that the one tap the moment accepts means "walk on"
+        // rather than being spent on a note.
+        this.closeWalkTune();
+        this.fadeLayers();
         this.walking = false;
         this.rig.setMood('vista', 1.8);
         this.holdSec = VISTA_HOLD_SEC;
@@ -525,6 +593,7 @@ export class RoadStage implements Stage {
     // and committing afterwards would throw that write away.
     this.journey = next;
     if (previous === 'busking') this.closeBusk();
+    if (previous === 'walking') this.closeWalkTune();
     if (previous === 'resting') this.strikeCamp();
     this.disperse();
 
@@ -544,9 +613,16 @@ export class RoadStage implements Stage {
     if (phase === 'encounter') {
       this.startEncounter();
       this.placeMeeting();
+      this.fadeLayers();
     }
-    if (phase === 'resting') this.makeCamp();
-    if (phase === 'walking') this.hud.clearSay();
+    if (phase === 'resting') {
+      this.makeCamp();
+      this.fadeLayers();
+    }
+    if (phase === 'walking') {
+      this.hud.clearSay();
+      this.startWalkingTune();
+    }
   }
 
   /** Leave the current stop and start walking again. */
@@ -560,10 +636,12 @@ export class RoadStage implements Stage {
     }
     if (this.journey.phase === 'walking') {
       // A vista never left `walking`, so there is no transition to make —
-      // only the pause to lift and the camera to hand back.
+      // only the pause to lift, the camera to hand back, and the tune to
+      // pick up again.
       this.walking = true;
       this.holdSec = 0;
       this.rig.setMood('walking', 1.8);
+      this.startWalkingTune();
       return;
     }
     this.setPhase('walking');
@@ -580,17 +658,19 @@ export class RoadStage implements Stage {
    */
   private tap(): void {
     this.startAudio();
-    if (this.performance) {
-      this.playNote();
+    // A held moment answers first: while the road is holding on a vista or
+    // on somebody met there is no tune running, and the tap means "walk on".
+    if (this.holdSec > 0) {
+      this.resume();
       return;
     }
-    if (this.holdSec > 0) this.resume();
+    if (this.performance) this.playNote();
   }
 
   private playNote(): void {
     const performance = this.performance;
     if (!performance) return;
-    const now = this.buskNowMs();
+    const now = this.tuneNowMs();
     const beat = pickBeat(performance, this.beats, now);
     // A tap between notes is not charged and not answered. There is no
     // penalty for drumming along, and no sound either — a click with no
@@ -615,15 +695,15 @@ export class RoadStage implements Stage {
   private startBusk(): void {
     const instrument = this.instrument();
     const biome = biomeAt(this.road, this.journey.s);
-    const song = songForBiome(biome, this.busksToday);
+    const song = songForPass(this.journey.songChoice, biome, this.busksToday);
     this.busksToday += 1;
 
     // The instrument bends the clock around the songbook rather than the
     // other way about: the tune is the tune, and a bell plays it slowly.
-    this.buskBpm = BASE_BPM * instrument.tempoFeel;
-    this.buskBeatsPerBar = song.beatsPerBar;
+    this.tuneBpm = BASE_BPM * instrument.tempoFeel;
+    this.tuneBeatsPerBar = song.beatsPerBar;
 
-    const passLength = songDurationMs(song, this.buskBpm);
+    const passLength = songDurationMs(song, this.tuneBpm);
     const passes = Math.max(
       MIN_BUSK_PASSES,
       Math.min(MAX_BUSK_PASSES, Math.ceil(MIN_BUSK_MS / Math.max(1, passLength))),
@@ -631,15 +711,17 @@ export class RoadStage implements Stage {
     this.beats = [];
     for (let pass = 0; pass < passes; pass++) {
       this.beats.push(
-        ...expandSong(song, this.buskBpm, passLength * pass, song.notes.length * pass),
+        ...expandSong(song, this.tuneBpm, passLength * pass, song.notes.length * pass),
       );
     }
 
     this.performance = createPerformance();
+    this.tuneMode = 'busk';
+    this.walkTune = null;
     this.creditedCoins = 0;
     this.creditedDelight = 0;
-    this.buskSimMs = 0;
-    this.buskAnchorSec = this.ctx ? this.ctx.currentTime + 0.2 : Number.NaN;
+    this.tuneSimMs = 0;
+    this.tuneAnchorSec = this.ctx ? this.ctx.currentTime + 0.2 : Number.NaN;
     this.buskEndMs = this.beats[this.beats.length - 1].hitTimeMs + lateWindowMs() + BUSK_TAIL_MS;
 
     this.notes.setInstrument(instrument);
@@ -648,8 +730,8 @@ export class RoadStage implements Stage {
     this.notes.setActive(true);
     this.bard.setWarmth(0);
 
-    if (!this.everBusked) {
-      this.everBusked = true;
+    if (!this.everHinted) {
+      this.everHinted = true;
       this.hud.say('Tap as each note reaches the barline. Nothing here can be failed.', 9);
     } else {
       this.hud.say(song.title, 4);
@@ -660,7 +742,7 @@ export class RoadStage implements Stage {
     const performance = this.performance;
     if (!performance) return;
 
-    const now = this.buskNowMs();
+    const now = this.tuneNowMs();
     const result = tickPerformance(performance, now, this.beats);
     for (const index of result.missed) this.notes.soften(index);
 
@@ -709,17 +791,117 @@ export class RoadStage implements Stage {
       if (owed > 0) this.journey = earn(this.journey, owed, 0);
     }
     this.performance = null;
+    this.tuneMode = null;
     this.beats = [];
     this.notes.setActive(false);
     this.bard.setWarmth(0);
-    this.fadeLayers();
+    // The band plays on. The walk picks the tune straight back up, and the
+    // mode flip trims the busk-only layers on the next bar line — fading
+    // everything here was what made leaving a busk sound like the game
+    // switching off (see audio/mix.ts's bus layout).
   }
 
-  private buskNowMs(): number {
-    if (this.ctx && Number.isFinite(this.buskAnchorSec)) {
-      return (this.ctx.currentTime - this.buskAnchorSec) * 1000;
+  private tuneNowMs(): number {
+    if (this.ctx && Number.isFinite(this.tuneAnchorSec)) {
+      return (this.ctx.currentTime - this.tuneAnchorSec) * 1000;
     }
-    return this.buskSimMs;
+    return this.tuneSimMs;
+  }
+
+  // --- the walk's tune ----------------------------------------------------
+
+  /**
+   * Put the current song's notes in the air over the road (v0.8 item 1).
+   *
+   * The walk is played, not watched: the same staff, the same generous
+   * windows and the same one tap as a busk, running continuously while the
+   * bard walks. What differs from a busk is what it is *for* — no coins, no
+   * crowd to gather, no end. The meter is the whole readout, and the stride
+   * is the meter's (see `update`).
+   *
+   * The song comes from the player's pinned choice when there is one, and
+   * from the biome rotation when they are wandering, one song per stretch of
+   * walking. A pinned song repeats for as long as it is pinned, which is the
+   * point — repetition is how the letters come off the notes.
+   */
+  private startWalkingTune(): void {
+    // Never stomp a running tune: entering `walking` twice, or from a pose,
+    // must not restart the schedule under the notes already flying.
+    if (this.performance) return;
+    const instrument = this.instrument();
+    const biome = biomeAt(this.road, this.journey.s);
+    const song = songForPass(this.journey.songChoice, biome, this.walkPasses);
+    this.walkPasses += 1;
+
+    this.tuneBpm = BASE_BPM * instrument.tempoFeel;
+    this.tuneBeatsPerBar = song.beatsPerBar;
+    this.walkTune = newWalkTune(song, this.tuneBpm);
+    this.beats = this.walkTune.beats;
+
+    this.performance = createPerformance();
+    this.tuneMode = 'walk';
+    this.tuneSimMs = 0;
+    this.tuneAnchorSec = this.ctx ? this.ctx.currentTime + 0.2 : Number.NaN;
+
+    this.notes.setInstrument(instrument);
+    this.notes.setBeats(this.beats);
+    this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
+    this.notes.setActive(true);
+    this.bard.setWarmth(0);
+
+    if (!this.everHinted) {
+      this.everHinted = true;
+      this.hud.say(
+        'Tap as each note reaches the barline — the tune is what keeps the walk going. Nothing here can be failed.',
+        9,
+      );
+    }
+  }
+
+  /**
+   * One frame of the walking tune: keep the endless schedule ahead of the
+   * clock, charge lapsed notes to the meter (and to nothing else), and move
+   * the staff along the road with the bard.
+   */
+  private updateWalkTune(): void {
+    const performance = this.performance;
+    const tune = this.walkTune;
+    if (!performance || !tune) return;
+
+    const now = this.tuneNowMs();
+    // In place, so the judge and the staff keep reading the same array.
+    extendWalkTune(tune, now);
+
+    const result = tickPerformance(performance, now, this.beats);
+    for (const index of result.missed) this.notes.soften(index);
+
+    this.bard.setWarmth(performance.warmth);
+    this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
+    this.notes.update(now);
+  }
+
+  /**
+   * Take the walk's notes out of the air, without judging anything.
+   *
+   * Runs whenever the walk hands the frame to something else — a busk, an
+   * encounter, a vista, the camp. Nothing is banked because the walk banks
+   * nothing: its tune pays in stride, and the stride has already happened.
+   */
+  private closeWalkTune(): void {
+    if (this.tuneMode !== 'walk') return;
+    this.performance = null;
+    this.tuneMode = null;
+    this.walkTune = null;
+    this.beats = [];
+    this.halted = false;
+    this.pace = 1;
+    this.notes.setActive(false);
+    this.bard.setWarmth(0);
+    // Deliberately no `fadeLayers()` here: a pin-swap or an arriving busk
+    // closes this tune and raises another within a frame, and the band
+    // should carry across that seam. The moments that really are tune-less
+    // — a vista, somebody met, the camp — fade the band at their own call
+    // sites, where the decision reads as what it is.
   }
 
   // --- the people on the road ---------------------------------------------
@@ -947,7 +1129,11 @@ export class RoadStage implements Stage {
    * survive the tab being closed a second later.
    */
   private takeOut(id: string): void {
-    if (this.performance) return;
+    // Only a busk locks the case (see the doc above). The walk's own tune is
+    // restarted below instead: unlike a busk it has no crowd, no takings and
+    // no end to protect, so the kind answer to "new instrument, new tempo"
+    // is a fresh schedule rather than a refusal.
+    if (this.tuneMode === 'busk') return;
     const before = this.journey.instrumentId;
     this.journey = chooseInstrument(this.journey, id);
     if (this.journey.instrumentId === before) return;
@@ -958,6 +1144,39 @@ export class RoadStage implements Stage {
     this.hud.setInstrument(instrument.name);
     this.refreshCase();
     saveJourney(this.journey, true);
+    if (this.tuneMode === 'walk') {
+      this.closeWalkTune();
+      this.startWalkingTune();
+    }
+  }
+
+  /**
+   * Pin one song for the road to play, or hand the rotation back (v0.8
+   * item 3 — the songbook choice, made diegetic). Refused mid-busk for the
+   * same reason the case is: the tune in the air is the tune being judged.
+   * The walking tune restarts at once on the new song, because a choice
+   * that only takes effect at the next stop reads as a broken button.
+   */
+  private pinSong(id: string | null): void {
+    if (this.tuneMode === 'busk') return;
+    const before = this.journey.songChoice;
+    this.journey = chooseSong(this.journey, id);
+    if (this.journey.songChoice === before) return;
+
+    this.refreshSongbook();
+    saveJourney(this.journey, true);
+    if (this.tuneMode === 'walk') {
+      this.closeWalkTune();
+      this.startWalkingTune();
+    }
+  }
+
+  /** Hand the HUD the songbook and which tune is pinned. */
+  private refreshSongbook(): void {
+    this.hud.setSongbook(
+      SONGS.map((song) => ({ id: song.id, name: song.title })),
+      this.journey.songChoice,
+    );
   }
 
   private strikeCamp(): void {
@@ -992,7 +1211,10 @@ export class RoadStage implements Stage {
     saveIdle({
       since: Date.now(),
       instrumentId: this.journey.instrumentId,
-      quality: this.performance ? this.performance.peakWarmth : 0.5,
+      // The busk's crowd, when there is one. The walk's tune also carries a
+      // warmth, but it has no crowd, and letting it stand in here would
+      // quietly halve the idle yield of anyone who closed the tab mid-road.
+      quality: this.tuneMode === 'busk' && this.performance ? this.performance.peakWarmth : 0.5,
     });
   }
 
@@ -1078,13 +1300,25 @@ export class RoadStage implements Stage {
       master.connect(ctx.destination);
       this.ctx = ctx;
       this.master = master;
-      this.ambience = new Ambience(ctx, master, { seed: this.road.seed, masterGain: 0.75 });
-      this.buildLayers(ctx, master);
+      // The music and the outdoors are separate buses on purpose: the whole
+      // "the walk sounds like white noise" failure was ambience sharing a
+      // level with a music bed that was not there. `ambienceBusGain` is the
+      // enforced ceiling (never more than half the music bus) and the only
+      // legal way to set the ambience level — see audio/mix.ts.
+      const musicBus = ctx.createGain();
+      musicBus.gain.value = musicBusGain();
+      musicBus.connect(master);
+      this.musicBus = musicBus;
+      this.ambience = new Ambience(ctx, master, {
+        seed: this.road.seed,
+        masterGain: ambienceBusGain(this.mixInput()),
+      });
+      this.buildLayers(ctx, musicBus);
       if (this.performance) {
         // A busk already running keeps its clock: the anchor is set so that
         // the audio clock agrees with the simulation clock the notes have
         // been flying on, rather than restarting the tune.
-        this.buskAnchorSec = ctx.currentTime - this.buskSimMs / 1000;
+        this.tuneAnchorSec = ctx.currentTime - this.tuneSimMs / 1000;
       }
       if (ctx.state === 'suspended') void ctx.resume().catch(() => undefined);
     } catch {
@@ -1130,26 +1364,59 @@ export class RoadStage implements Stage {
     }
   }
 
+  /**
+   * The one description of the moment the whole mix keys off — mode, drive,
+   * scene. `adaptiveDrive` picks the mode's own signal (crowd warmth in the
+   * square, song meter on the road) so no second file re-invents the ternary.
+   */
+  private mixInput(): MixInput {
+    const mode: AdaptiveMode = this.journey.phase === 'busking' ? 'busking' : 'walking';
+    return {
+      mode,
+      drive: adaptiveDrive({
+        mode,
+        warmth: this.performance?.warmth ?? 0,
+        meter: this.performance?.meter ?? 0,
+      }),
+      instrument: this.instrument(),
+      dayFraction: this.shownDayFraction,
+      biomeId: biomeAt(this.road, this.journey.s),
+      weather: this.app.globals.uWindStrength.value > 0.95 ? 'breezy' : 'clear',
+    };
+  }
+
   private updateAudio(): void {
     const ctx = this.ctx;
     if (!ctx) return;
 
-    const biome = biomeAt(this.road, this.journey.s);
-    const weather: AmbienceWeather = this.app.globals.uWindStrength.value > 0.95 ? 'breezy' : 'clear';
-    this.ambience?.setScene({ biomeId: biome, dayFraction: this.shownDayFraction, weather });
+    const mix = this.mixInput();
+    this.ambience?.setScene({
+      biomeId: mix.biomeId,
+      dayFraction: mix.dayFraction,
+      weather: mix.weather,
+    });
     this.ambience?.update(ctx.currentTime);
+    // Ducked, not fixed: as the arrangement fills, the outdoors steps back;
+    // when the bard stops playing, the outdoors comes up. Safe every frame —
+    // setMasterGain no-ops on sub-1e-4 changes.
+    this.ambience?.setMasterGain(ambienceBusGain(mix));
 
-    if (!this.performance || !Number.isFinite(this.buskAnchorSec)) return;
+    // The arrangement runs in every phase — gating it on a live performance
+    // was exactly the "walk is silent" bug. The only real requirement is a
+    // bar grid for layers to enter on.
+    const barSec = (beatIntervalMs(this.tuneBpm) * this.tuneBeatsPerBar) / 1000;
+    if (!Number.isFinite(this.tuneAnchorSec) || !(barSec > 0)) return;
 
-    const barSec = (beatIntervalMs(this.buskBpm) * this.buskBeatsPerBar) / 1000;
     const update = updateAdaptive(this.adaptive, {
-      warmth: this.performance.warmth,
-      biomeId: biome,
-      instrument: this.instrument(),
-      dayFraction: this.shownDayFraction,
+      mode: mix.mode,
+      meter: this.performance?.meter ?? 0,
+      warmth: this.performance?.warmth ?? 0,
+      biomeId: mix.biomeId,
+      instrument: mix.instrument,
+      dayFraction: mix.dayFraction,
       nowSec: ctx.currentTime,
       barSec,
-      barAnchorSec: this.buskAnchorSec,
+      barAnchorSec: this.tuneAnchorSec,
     });
     this.adaptive = update.state;
 
@@ -1172,20 +1439,24 @@ export class RoadStage implements Stage {
   /** One played note, at the pitch the staff is showing. */
   private sound(beat: SongBeat): void {
     const ctx = this.ctx;
-    const master = this.master;
-    if (!ctx || !master || beat.rest) return;
+    const destination = this.musicBus ?? this.master;
+    if (!ctx || !destination || beat.rest) return;
     const instrument = this.instrument();
-    const holdSec = (beat.beats * beatIntervalMs(this.buskBpm)) / 1000;
+    const holdSec = (beat.beats * beatIntervalMs(this.tuneBpm)) / 1000;
+    const mix = this.mixInput();
     try {
       playVoiceNote(
         ctx,
-        master,
+        destination,
         instrument.voice,
         semitoneToFrequency(AUDIO_MANIFEST.rootFrequencyHz, beat.semitone),
         // A hair ahead of now: a note asked to sound in the past is a note
         // some browsers drop outright.
         ctx.currentTime + 0.005,
-        { holdSec, gain: MELODY_GAIN },
+        // `melodyGain` is what makes a stopped bard noodle quietly in place:
+        // 0.10 at an empty meter, 0.22 in full stride, smoothstepped so a
+        // jittering meter does not tremolo the tune.
+        { holdSec, gain: melodyGain(mix.mode, mix.drive) },
       );
     } catch {
       // A voice that will not build is one silent note, not a broken busk.
@@ -1264,6 +1535,10 @@ export class RoadStage implements Stage {
     // `FRAMINGS[undefined]` is a poor way to explain the distinction.
     if (options.phase === 'vista') {
       this.setPhase('walking');
+      // A posed vista matches a real one: the tune rests while the camera
+      // hands the frame to the landscape (see `arriveAt`).
+      this.closeWalkTune();
+      this.fadeLayers();
       this.walking = false;
       this.rig.setMood('vista', 0);
     } else if (options.phase !== undefined) {
@@ -1275,9 +1550,9 @@ export class RoadStage implements Stage {
     // clock to the second bar puts a full staff of notes on screen without
     // touching anything a player would experience differently.
     if (options.phase === 'busking' && this.performance) {
-      this.buskSimMs = beatIntervalMs(this.buskBpm) * 3;
-      if (this.ctx) this.buskAnchorSec = this.ctx.currentTime - this.buskSimMs / 1000;
-      this.notes.update(this.buskNowMs());
+      this.tuneSimMs = beatIntervalMs(this.tuneBpm) * 3;
+      if (this.ctx) this.tuneAnchorSec = this.ctx.currentTime - this.tuneSimMs / 1000;
+      this.notes.update(this.tuneNowMs());
     }
     // Land the pose and the framing, rather than starting them easing.
     //

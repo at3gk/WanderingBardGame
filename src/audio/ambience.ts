@@ -92,10 +92,41 @@ export interface AmbienceLayerDef {
   everywhere?: boolean;
   /** Gain at this layer's own best moment. Its mix gain never exceeds this. */
   gain: number;
-  filter?: { type: BiquadFilterType; frequencyHz: number; q: number };
+  /**
+   * Filter cascade, source into `filters[0]` into `filters[1]` and so on. One
+   * biquad lowpass is a 12 dB/octave slope, which leaves a noise bed's corner
+   * only lightly attenuated an octave up — plenty of sibilance-band energy
+   * survives, and that band is exactly what a listener labels "hiss" rather
+   * than "air". Two cascaded stages give 24 dB/octave, steep enough that a
+   * filter actually removes a band instead of merely tilting it.
+   */
+  filters?: readonly FilterSpec[];
   /** Slow amplitude wander as `[rate Hz, depth 0..1]`. Wind is never steady. */
   swell?: [number, number];
+  /**
+   * Slow wander of the first filter's corner, as `[rate Hz, depth as a
+   * fraction of the corner]`. A noise bed behind a fixed filter is
+   * spectrally frozen, and the ear identifies a frozen spectrum as a machine
+   * within a second or two — real wind changes *colour* as it gusts, not
+   * just loudness, so this is what keeps a bed from sounding synthesised.
+   */
+  sweep?: [number, number];
   grain?: GrainDef;
+}
+
+export interface FilterSpec {
+  type: BiquadFilterType;
+  frequencyHz: number;
+  q: number;
+}
+
+/** The range the first filter's corner wanders over, `[minHz, maxHz]`. */
+export function sweepRangeHz(layer: AmbienceLayerDef): [number, number] {
+  const frequencyHz = layer.filters?.[0]?.frequencyHz ?? 0;
+  if (!layer.sweep || !layer.filters?.length) return [frequencyHz, frequencyHz];
+  const [, depth] = layer.sweep;
+  const span = frequencyHz * depth;
+  return [frequencyHz - span, frequencyHz + span];
 }
 
 /**
@@ -106,6 +137,14 @@ export interface AmbienceLayerDef {
  * broad low shelf that moves, water is a narrower band an octave up that
  * barely moves at all. Getting those two confused is why so much generated
  * ambience sounds like the same hiss wearing different labels.
+ *
+ * A retuning pass (the one that added the filter cascades and sweeps below)
+ * also pulled every bed and grain layer's `gain` down by roughly a third
+ * across the board. The individual filter changes fix *what band* survives;
+ * this fixes *how much of it* does — the whole bed was originally mixed to
+ * be heard on its own, but its job is to sit deliberately under the music
+ * rather than beside it, so the headroom has to be given back deliberately
+ * too.
  */
 export const AMBIENCE_LAYERS: readonly AmbienceLayerDef[] = [
   {
@@ -113,78 +152,144 @@ export const AMBIENCE_LAYERS: readonly AmbienceLayerDef[] = [
     kind: 'bed',
     biomes: AMBIENCE_BIOMES,
     everywhere: true,
-    gain: 0.06,
-    // Very low and very quiet. Nobody hears this; they hear its absence, and
-    // a scene with true digital silence under it sounds broken.
-    filter: { type: 'lowpass', frequencyHz: 220, q: 0.6 },
+    gain: 0.045,
+    // Nobody hears this layer; they hear its absence. The old single-pole
+    // lowpass at 220 Hz still passed enough mid content past its shallow
+    // 12 dB/octave slope to read as a hiss under everything else, which
+    // defeats the point of a layer that is supposed to be inaudible as
+    // itself. Below roughly 150 Hz the ear stops parsing pitch and starts
+    // reading pressure, so the corner drops to 140 Hz and gets a second
+    // identical stage so the rolloff actually means it — 24 dB/octave, not
+    // 12.
+    filters: [
+      { type: 'lowpass', frequencyHz: 140, q: 0.7 },
+      { type: 'lowpass', frequencyHz: 140, q: 0.7 },
+    ],
     swell: [0.05, 0.25],
   },
   {
     id: 'wind-open',
     kind: 'bed',
     biomes: ['village', 'riverside'],
-    gain: 0.1,
-    filter: { type: 'lowpass', frequencyHz: 700, q: 0.7 },
+    gain: 0.06,
+    // Wind, at its core, is a low-frequency pressure fluctuation; anything
+    // above about a kilohertz in a "wind" bed is really the sound of the
+    // object the wind is moving through, and open ground barely has one.
+    // Two lowpass stages at 520 Hz keep the bed's top end genuinely gone
+    // rather than merely tilted, and the slow sweep of that corner — roughly
+    // 312 to 728 Hz on a 23-second cycle — gives the bed the colour change
+    // of an actual gust instead of a hiss with a fixed shape.
+    filters: [
+      { type: 'lowpass', frequencyHz: 520, q: 0.6 },
+      { type: 'lowpass', frequencyHz: 520, q: 0.6 },
+    ],
     swell: [0.07, 0.55],
+    sweep: [0.043, 0.4],
   },
   {
     id: 'wind-canopy',
     kind: 'bed',
     biomes: ['forest'],
-    gain: 0.13,
-    // Leaves are the high end open wind does not have; a bandpass rather than
-    // a lowpass is the whole difference between "a field" and "under trees".
-    filter: { type: 'bandpass', frequencyHz: 1600, q: 0.5 },
+    gain: 0.075,
+    // The old single bandpass at 1600 Hz Q 0.5 is nearly flat from 800 Hz to
+    // 3.2 kHz — three octaves centred squarely on the sibilance band, which
+    // is close to a textbook definition of white noise. Leaf rustle needs a
+    // defined top edge the way real foliage has one: a tighter band at
+    // 1 kHz (Q 0.8) for the rustle itself, then a lowpass at 2.4 kHz so the
+    // band's own skirt cannot reopen the top end.
+    filters: [
+      { type: 'bandpass', frequencyHz: 1000, q: 0.8 },
+      { type: 'lowpass', frequencyHz: 2400, q: 0.7 },
+    ],
     swell: [0.09, 0.7],
+    sweep: [0.055, 0.45],
   },
   {
     id: 'water',
     kind: 'bed',
     biomes: ['riverside'],
-    gain: 0.16,
-    filter: { type: 'bandpass', frequencyHz: 900, q: 0.35 },
-    // Barely any swell: a river is the steadiest thing in this catalogue, and
-    // giving it wind's breathing makes it sound like wind.
+    gain: 0.085,
+    // The same fault as the old canopy filter, in a different register: a
+    // river's audible energy peaks around 400-800 Hz (the bubble resonance
+    // of moving water) and falls away quickly above 2 kHz, but a single wide
+    // bandpass at 900 Hz Q 0.35 left the top end essentially unfiltered. The
+    // highpass at 240 Hz keeps the band out from under the air layer's
+    // drone; the lowpass at 1250 Hz gives it the fast-but-not-instant
+    // falloff a river actually has above its resonance.
+    filters: [
+      { type: 'highpass', frequencyHz: 240, q: 0.7 },
+      { type: 'lowpass', frequencyHz: 1250, q: 0.7 },
+    ],
+    // Barely any swell or sweep: a river is the steadiest thing in this
+    // catalogue, and giving it wind's breathing or wind's colour change
+    // makes it sound like wind.
     swell: [0.13, 0.12],
+    sweep: [0.09, 0.18],
   },
   {
     id: 'hearth',
     kind: 'bed',
     biomes: ['village'],
-    gain: 0.09,
+    gain: 0.05,
     // Voices and doors and a dog, heard from far enough away that all that
-    // survives is a low murmur with a slow shape to it.
-    filter: { type: 'lowpass', frequencyHz: 400, q: 1.1 },
+    // survives is a low murmur with a slow shape to it. The added highpass
+    // at 90 Hz keeps this layer's own low end from crowding the air layer's
+    // drone, which shares that register; the lowpass at 380 Hz (Q 1.0, a
+    // gentle resonant lift right at the corner) is what turns filtered noise
+    // into something that reads as distant speech rather than distant
+    // static.
+    filters: [
+      { type: 'highpass', frequencyHz: 90, q: 0.7 },
+      { type: 'lowpass', frequencyHz: 380, q: 1.0 },
+    ],
     swell: [0.16, 0.45],
+    sweep: [0.11, 0.25],
   },
   {
     id: 'rain',
     kind: 'bed',
     biomes: AMBIENCE_BIOMES,
     everywhere: true,
-    gain: 0.22,
-    filter: { type: 'highpass', frequencyHz: 800, q: 0.4 },
+    gain: 0.09,
+    // The worst offender in the old catalogue: a bare highpass at 800 Hz
+    // leaves the entire 8-20 kHz band sitting at full level, and full-level
+    // energy above 8 kHz is precisely the signature the ear calls static.
+    // Rain heard from any real distance has its energy concentrated between
+    // roughly 1 and 5 kHz and essentially nothing above 8 kHz, so the
+    // highpass moves down to 600 Hz — which still keeps it out of the low
+    // end — and a lowpass at 4.2 kHz finally does the shaping the old single
+    // filter never did.
+    filters: [
+      { type: 'highpass', frequencyHz: 600, q: 0.7 },
+      { type: 'lowpass', frequencyHz: 4200, q: 0.7 },
+    ],
     swell: [0.05, 0.2],
+    sweep: [0.05, 0.15],
   },
   {
     id: 'birds',
     kind: 'grain',
     biomes: ['village', 'forest'],
-    gain: 0.1,
+    gain: 0.07,
     grain: { perMinute: 26, voice: 'chirp', pitchHz: [1800, 3400] },
   },
   {
     id: 'crickets',
     kind: 'grain',
     biomes: AMBIENCE_BIOMES,
-    gain: 0.09,
-    grain: { perMinute: 70, voice: 'tick', pitchHz: [3800, 5200] },
+    gain: 0.05,
+    // The old 3.8-5.2 kHz range sits in the ear's single most sensitive
+    // band and is piercing enough, night after night, to read as tinnitus
+    // rather than wildlife. Real field crickets sing nearer 3-4 kHz; the
+    // range moves down to match and lands comfortably clear of the top-end
+    // static the rest of this pass is trying to remove.
+    grain: { perMinute: 70, voice: 'tick', pitchHz: [3000, 4200] },
   },
   {
     id: 'owl',
     kind: 'grain',
     biomes: ['forest', 'riverside'],
-    gain: 0.07,
+    gain: 0.055,
     // Rare on purpose. An owl every ten seconds is a menagerie; an owl twice
     // a minute is a wood at night.
     grain: { perMinute: 2.2, voice: 'hoot', pitchHz: [330, 460] },
@@ -193,7 +298,7 @@ export const AMBIENCE_LAYERS: readonly AmbienceLayerDef[] = [
     id: 'frogs',
     kind: 'grain',
     biomes: ['riverside'],
-    gain: 0.08,
+    gain: 0.05,
     grain: { perMinute: 24, voice: 'croak', pitchHz: [180, 300] },
   },
 ];
@@ -357,6 +462,7 @@ interface BedNodes {
   gain: GainNode;
   source: AudioBufferSourceNode;
   swell: OscillatorNode | null;
+  sweep: OscillatorNode | null;
   nodes: AudioNode[];
 }
 
@@ -378,6 +484,8 @@ export class Ambience {
   private rand: Rand;
   private fadeSec: number;
   private disposed = false;
+  /** Last value requested of `setMasterGain`, including the constructor's. */
+  private masterGainTarget: number;
 
   constructor(
     private ctx: AudioContext,
@@ -387,7 +495,8 @@ export class Ambience {
     this.fadeSec = Math.max(0.25, options.fadeSec ?? DEFAULT_FADE_SEC);
     this.rand = mulberry32(options.seed ?? 0x5eed1e);
     this.master = ctx.createGain();
-    this.master.gain.value = options.masterGain ?? 1;
+    this.masterGainTarget = clamp01(options.masterGain ?? 1);
+    this.master.gain.value = this.masterGainTarget;
     this.master.connect(destination);
 
     this.mix = silentMix();
@@ -428,6 +537,27 @@ export class Ambience {
       param.setValueAtTime(param.value, now);
       param.linearRampToValueAtTime(next, now + this.fadeSec);
     }
+  }
+
+  /**
+   * Move the whole bed's level. The mix module decides this value per frame
+   * from how full the arrangement is: when the band fills its register the
+   * bed should duck out from underneath it, and when the arrangement thins
+   * the bed should breathe back up. This method only moves the number — the
+   * decision of what to ask for lives outside this file, so `ambience.ts`
+   * stays a shell that has never had to know what "full" means. Guarded the
+   * same way `setMix` guards each layer, since the mix module is expected to
+   * call this every frame regardless of whether the value actually moved.
+   */
+  setMasterGain(value: number, rampSec = 1.5): void {
+    if (this.disposed) return;
+    const next = clamp01(value);
+    if (Math.abs(next - this.masterGainTarget) < 1e-4) return;
+    this.masterGainTarget = next;
+    const now = this.ctx.currentTime;
+    this.master.gain.cancelScheduledValues(now);
+    this.master.gain.setValueAtTime(this.master.gain.value, now);
+    this.master.gain.linearRampToValueAtTime(next, now + rampSec);
   }
 
   /**
@@ -475,6 +605,7 @@ export class Ambience {
       try {
         bed.source.stop(now + 0.45);
         bed.swell?.stop(now + 0.45);
+        bed.sweep?.stop(now + 0.45);
       } catch {
         // Already stopped; there is nothing left to silence.
       }
@@ -512,14 +643,16 @@ export class Ambience {
 
     const nodes: AudioNode[] = [gain];
     let tail: AudioNode = source;
-    if (layer.filter) {
+    const filters: BiquadFilterNode[] = [];
+    for (const spec of layer.filters ?? []) {
       const filter = ctx.createBiquadFilter();
-      filter.type = layer.filter.type;
-      filter.frequency.value = layer.filter.frequencyHz;
-      filter.Q.value = layer.filter.q;
+      filter.type = spec.type;
+      filter.frequency.value = spec.frequencyHz;
+      filter.Q.value = spec.q;
       tail.connect(filter);
       nodes.push(filter);
       tail = filter;
+      filters.push(filter);
     }
 
     let swell: OscillatorNode | null = null;
@@ -542,9 +675,28 @@ export class Ambience {
       tail = swellGain;
     }
 
+    let sweep: OscillatorNode | null = null;
+    if (layer.sweep && filters.length > 0) {
+      const [rateHz, depth] = layer.sweep;
+      const firstFilter = filters[0];
+      // Modulates the corner frequency directly, in parallel with the swell
+      // modulating level — spectral movement and amplitude movement are two
+      // different things and wind needs both, not one standing in for the
+      // other. Random start phase (up to 8 seconds in) so two beds sharing a
+      // scene never gust in lockstep.
+      const sweepDepthGain = ctx.createGain();
+      sweepDepthGain.gain.value = firstFilter.frequency.value * depth;
+      sweep = ctx.createOscillator();
+      sweep.type = 'sine';
+      sweep.frequency.value = rateHz;
+      sweep.connect(sweepDepthGain).connect(firstFilter.frequency);
+      sweep.start(nowSec + this.rand() * 8);
+      nodes.push(sweepDepthGain);
+    }
+
     tail.connect(gain);
     source.start(nowSec, this.rand() * 1.5);
-    return { gain, source, swell, nodes };
+    return { gain, source, swell, sweep, nodes };
   }
 }
 

@@ -108,7 +108,17 @@ const SHOULDER_Y = 0.9;
 const CHEST_TOP = 0.98;
 const HEAD_Y = 0.97;
 const HEAD_HEIGHT = 0.28;
-const HAT_Y = HEAD_Y + HEAD_HEIGHT - 0.06;
+/**
+ * Two and a half centimetres higher than it sat, and the reason is the face.
+ *
+ * The brim is what shades the face, and once its dip was turned the right way
+ * round (see `hatGeometry`) the front edge came down across the eye line.
+ * Riding the whole hat up until the brim clears the eyes by about a
+ * centimetre and a half keeps the shade — a brim that overhangs the eyes is
+ * the whole idea — without cutting the one band of the head that has anything
+ * in it.
+ */
+const HAT_Y = HEAD_Y + HEAD_HEIGHT - 0.035;
 
 /** Hip to knee, and knee to ankle. They sum to the old one-piece leg. */
 const THIGH_LEN = 0.22;
@@ -145,7 +155,7 @@ const NECK_GRIP_MAX = 0.2;
  * the shoulders, which is where the neck starts.
  */
 const STRUM_GRIP_MIN = -0.25;
-const STRUM_GRIP_MAX = -0.11;
+const STRUM_GRIP_MAX = -0.1;
 
 /**
  * The playing carry: where the instrument sits, in torso space, while it is
@@ -429,7 +439,17 @@ function hatGeometry(): BufferGeometry {
     // The brim dips at the front and lifts at the back; a flat disc reads
     // as a lampshade. The dip is deep enough to shade the face, which is
     // what makes the hat look worn rather than balanced on top.
-    const dip = (a: number) => Math.sin(a) * 0.06 - 0.045;
+    //
+    // **The sign was wrong for the whole life of this file, and it is the
+    // reason the head disappeared.** Local +Z is forward, so `sin(a)` is the
+    // *front* of the brim: `sin(a) * 0.06 - 0.045` lifted the front by 1.5 cm
+    // and hung the back down by 10.5 cm — the exact opposite of the sentence
+    // above it. From the three-quarter rear the walking and busking cameras
+    // hold, that back edge came down over the hair, the nape and the collar,
+    // and the figure read as a hat on a cloak with no head between them. It
+    // was diagnosed twice as a hair-value problem and painted lighter twice.
+    // It was never an albedo problem; the head was behind a plank.
+    const dip = (a: number) => -Math.sin(a) * 0.038 - 0.022;
     const rim = (a: number) => brim * (0.86 + Math.abs(Math.cos(a)) * 0.22);
     const c0 = [Math.cos(a0) * crownRadius, 0, Math.sin(a0) * crownRadius];
     const c1 = [Math.cos(a1) * crownRadius, 0, Math.sin(a1) * crownRadius];
@@ -493,25 +513,155 @@ function hatBandGeometry(): BufferGeometry {
 }
 
 /**
- * The instrument. One shape, recoloured and reproportioned per instrument,
- * because six modelled instruments is six times the geometry for something
- * carried on the bard's back and seen mostly in silhouette.
+ * The plane the soundboard lies in, in the instrument's own build space.
  *
- * Silhouette is the whole job here, and the previous proportions failed it
- * badly: a body 0.28 tall and 0.14 deep under a neck only 0.32 long is, at
- * any distance the camera actually holds, a mallet. From the side it read as
- * a handbag on a strap. What makes a lute a lute at forty pixels is one
- * ratio — a *short* body under a *long thin* neck — so the body is now a
- * third of the length and the neck two thirds, and the body is flattened in
- * depth so it lies against the bard's back instead of bulging off it.
+ * A real lute has a flat top and a round back, and building it that way round
+ * matters here for a reason beyond accuracy: the strings, the bridge and the
+ * soundhole all have to sit on one plane a few millimetres proud of the
+ * timber, and the neck's own front face has to be level with it or the
+ * strings visibly float off the fingerboard at the nut.
+ */
+const SOUNDBOARD_Z = 0.023;
+
+/**
+ * The body of the lute, as rings up its length: height, half-width, and how
+ * far the bowl bulges behind the soundboard.
+ *
+ * **This replaced four stacked tapered boxes, and the reason is the frame.**
+ * Slung on the bard's back the camera looks straight at the *back* of the
+ * instrument, and a stack of boxes seen from behind presents the top face of
+ * every box in the stack as a separate bright rung. Shot and measured, the
+ * walking postcard's instrument read as a golden rake: four flat tines and a
+ * handle. No amount of recolouring fixes that, because the rungs are the
+ * geometry.
+ *
+ * So the body is one hull. The widest ring still sits low — a third of the
+ * way up, which is what makes a teardrop rather than a mallet — and the taper
+ * into the neck still takes three rings rather than one step. What is new is
+ * that there are no horizontal faces anywhere on it.
+ */
+const BODY_RINGS: readonly (readonly [number, number, number])[] = [
+  [0.0, 0.062, 0.046],
+  [0.03, 0.098, 0.068],
+  [0.072, 0.122, 0.083],
+  [0.118, 0.128, 0.086],
+  [0.17, 0.11, 0.076],
+  [0.222, 0.076, 0.054],
+  [0.276, 0.032, 0.032],
+];
+
+/**
+ * The body's cross-section, as fractions of a ring's half-width and of its
+ * bowl depth. The first two entries are the flat soundboard; the other five
+ * are the staves of the bowl behind it.
+ *
+ * Five staves rather than a smooth curve on purpose. Flat-shaded, each stave
+ * takes its own value, so the back of the instrument — the side the walking
+ * camera actually sees — reads as the ribbed bowl of a lute instead of as a
+ * plain lozenge. It is the cheapest identifying mark the shape has from that
+ * angle and it costs nothing but winding.
+ */
+const BODY_SECTION: readonly (readonly [number, number])[] = [
+  [0.7, 1],
+  [-0.7, 1],
+  [-1, -0.22],
+  [-0.72, -0.75],
+  [-0.3, -1.1],
+  [0.3, -1.1],
+  [0.72, -0.75],
+  [1, -0.22],
+];
+
+/** A hull through `BODY_RINGS`, wound so its faces point outward. */
+function luteBodyGeometry(): BufferGeometry {
+  const verts: number[] = [];
+  const n = BODY_SECTION.length;
+  const point = (ring: readonly [number, number, number], k: number): number[] => {
+    const [y, w, d] = ring;
+    const [sx, sz] = BODY_SECTION[k];
+    // A positive depth marks the soundboard, which is a plane and not a
+    // profile — the whole point of it is that the strings, the bridge and the
+    // soundhole all lie on one flat surface.
+    return [sx * w, y, sz > 0 ? SOUNDBOARD_Z : SOUNDBOARD_Z + sz * d];
+  };
+  for (let i = 0; i < BODY_RINGS.length - 1; i++) {
+    for (let k = 0; k < n; k++) {
+      const k1 = (k + 1) % n;
+      const p = point(BODY_RINGS[i], k);
+      const q = point(BODY_RINGS[i], k1);
+      const pUp = point(BODY_RINGS[i + 1], k);
+      const qUp = point(BODY_RINGS[i + 1], k1);
+      verts.push(...p, ...pUp, ...qUp, ...p, ...qUp, ...q);
+    }
+  }
+  // The two ends. The bottom is seen — it is the lowest point of the whole
+  // instrument in every carry — and an open hull there would show the inside
+  // of the bowl, which under a front-face-only material is a hole.
+  const low = BODY_RINGS[0];
+  const high = BODY_RINGS[BODY_RINGS.length - 1];
+  for (let k = 1; k < n - 1; k++) {
+    verts.push(...point(low, 0), ...point(low, k), ...point(low, k + 1));
+    verts.push(...point(high, 0), ...point(high, k + 1), ...point(high, k));
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+  return geometry;
+}
+
+/** A flat disc facing +Z. The soundhole, and nothing else needs one. */
+function discGeometry(radius: number, sides: number): BufferGeometry {
+  const verts: number[] = [];
+  for (let i = 0; i < sides; i++) {
+    const a0 = (i / sides) * Math.PI * 2;
+    const a1 = ((i + 1) / sides) * Math.PI * 2;
+    verts.push(
+      0, 0, 0,
+      Math.cos(a0) * radius, Math.sin(a0) * radius, 0,
+      Math.cos(a1) * radius, Math.sin(a1) * radius, 0,
+    );
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+  return geometry;
+}
+
+/**
+ * The instrument, in three value tiers rather than one.
+ *
+ * One shape, recoloured and reproportioned per instrument, because six
+ * modelled instruments is six times the geometry for something carried on the
+ * bard's back and seen mostly in silhouette. What is *not* shared is the
+ * value: a lute the player cannot identify is the standing complaint about
+ * this game's own subject, and a single flat timber colour is most of why.
+ * The timber carries the shape, a dark tier carries the soundhole and the
+ * bridge — the two marks that say the thing is hollow — and a bright tier
+ * carries the strings and the nut.
+ *
+ * That split is also the figure-to-ground lever. At the hour the busk frames
+ * are shot the sun is behind the bard, so the instrument is on the shade side
+ * and renders within a couple of levels of the ground behind it; three thin
+ * bright edges running the length of the neck put a hard value break inside
+ * the silhouette that survives being twenty pixels tall, which no amount of
+ * albedo on one flat material can.
  *
  * Built with its base at local zero and translated so the finished shape is
  * centred on its own middle; the carrying pivot then only has to rotate it,
  * and a drum and a lute of different lengths hang from the same pivot
  * without each needing its own offset.
  */
-function instrumentGeometry(kind: string): BufferGeometry {
+interface InstrumentParts {
+  /** The timber. Carries the name every headless check looks the shape up by. */
+  body: BufferGeometry;
+  /** Soundhole and bridge. */
+  dark: BufferGeometry | null;
+  /** Strings and nut. */
+  bright: BufferGeometry | null;
+}
+
+function instrumentGeometry(kind: string): InstrumentParts {
   const parts: BufferGeometry[] = [];
+  const dark: BufferGeometry[] = [];
+  const bright: BufferGeometry[] = [];
   const isDrum = kind === 'drum' || kind === 'bodhran';
   const isFlute = kind === 'flute' || kind === 'reedflute' || kind === 'pipe';
   let length: number;
@@ -524,6 +674,13 @@ function instrumentGeometry(kind: string): BufferGeometry {
     const lip = boxPart(0.062, 0.075, 0.062, 0.9);
     translate(lip, 0, length - 0.075, 0);
     parts.push(lip);
+    // Finger holes, in the one tier that reads at distance. A pipe with no
+    // holes is a stick, which is the same complaint the lute had.
+    for (let i = 0; i < 4; i++) {
+      const hole = discGeometry(0.011, 6);
+      translate(hole, 0, 0.2 + i * 0.075, 0.024);
+      dark.push(hole);
+    }
   } else if (isDrum) {
     length = 0.34;
     parts.push(boxPart(0.34, 0.1, 0.34, 1));
@@ -531,42 +688,41 @@ function instrumentGeometry(kind: string): BufferGeometry {
     translate(rim, 0, 0.035, 0);
     parts.push(rim);
   } else {
-    // Bowl, belly, waist, shoulders, neck, pegbox. Lute, harp, hurdy-gurdy
-    // and bells all read acceptably from this: what the eye picks up is the
-    // teardrop-under-a-stick, not which of them it is.
-    //
-    // Slung, this is seen from directly behind with its soundboard square to
-    // the camera, so the body's *outline* is doing all the work and two
-    // things decide whether that outline is a lute or a garden tool. The
-    // widest ring sits low, a third of the way up rather than at the top; and
-    // two rings are spent on a long taper into the neck rather than one short
-    // abrupt step. Widest-at-the-top with an abrupt step is a mallet, which
-    // is what the first version was.
-    //
-    // The body is also nearly as deep as it is wide. A plate presented
-    // face-on has no volume at all, and a flat plate on the end of a shaft is
-    // a spade whatever its outline.
-    const bowl = boxPart(0.128, 0.055, 0.086, 1.53, 1.34);
-    parts.push(bowl);
-    const belly = boxPart(0.196, 0.07, 0.115, 1.07, 1.08);
-    translate(belly, 0, 0.055, 0);
-    parts.push(belly);
-    const waist = boxPart(0.21, 0.075, 0.124, 0.74, 0.81);
-    translate(waist, 0, 0.125, 0);
-    parts.push(waist);
-    const shoulders = boxPart(0.155, 0.075, 0.1, 0.4, 0.5);
-    translate(shoulders, 0, 0.2, 0);
-    parts.push(shoulders);
-    // Long, thin, and a touch tapered. This one part is most of why the
-    // shape reads as an instrument at all.
-    const neck = boxPart(0.042, 0.31, 0.036, 0.82);
+    parts.push(luteBodyGeometry());
+    // Long, thin, and untapered in depth so its front face stays level with
+    // the soundboard the strings are stretched over. This one part is most of
+    // why the shape reads as an instrument at all.
+    const neck = boxPart(0.042, 0.31, 0.05, 0.82, 1);
     translate(neck, 0, 0.245, 0);
     parts.push(neck);
     // The pegbox is angled back off the neck in a real lute. Faking that
     // with a wider, shallower block is enough at this size and costs nothing.
-    const pegbox = boxPart(0.068, 0.085, 0.031, 0.8);
-    translate(pegbox, 0, 0.535, -0.011);
+    const pegbox = boxPart(0.072, 0.085, 0.038, 0.8);
+    translate(pegbox, 0, 0.535, -0.014);
     parts.push(pegbox);
+
+    // The soundhole. A round dark facet in the middle of a pale board is the
+    // single mark that turns a wooden shape into an instrument, and it is
+    // worth twelve triangles at any distance the camera holds.
+    const rose = discGeometry(0.04, 10);
+    translate(rose, 0, 0.104, SOUNDBOARD_Z + 0.0015);
+    dark.push(rose);
+    const bridge = boxPart(0.074, 0.011, 0.008, 1);
+    translate(bridge, 0, 0.046, SOUNDBOARD_Z + 0.001);
+    dark.push(bridge);
+
+    // Three courses, from the bridge to the nut. Deliberately thicker than a
+    // real string: at the size this is seen a physically-scaled string is a
+    // third of a pixel and simply is not there.
+    for (const x of [-0.014, 0, 0.014]) {
+      const string = boxPart(0.008, 0.492, 0.006, 1);
+      translate(string, x, 0.052, SOUNDBOARD_Z + 0.005);
+      bright.push(string);
+    }
+    const nut = boxPart(0.046, 0.012, 0.012, 1);
+    translate(nut, 0, 0.545, SOUNDBOARD_Z - 0.002);
+    bright.push(nut);
+
     // Kept to 0.62 rather than the 0.72 of the first attempt. Length is set
     // by where the bowl lands, not by the instrument: slung, the bowl has to
     // sit high enough up the back that the cloak has not yet flared past it,
@@ -574,10 +730,41 @@ function instrumentGeometry(kind: string): BufferGeometry {
     length = 0.62;
   }
 
-  const merged = concat(parts);
-  translate(merged, 0, -length / 2, 0);
-  merged.computeVertexNormals();
-  return merged;
+  /**
+   * How far the built shape has to move to sit where the carrying pivot's
+   * offsets expect it in depth.
+   *
+   * Every one of those offsets was solved against the old body, which was
+   * four boxes centred on z zero and reaching 0.062 behind the axis; slung,
+   * that 0.062 is what put the bowl on the camera's side of the cloak. This
+   * body is built forward of its axis instead — a soundboard plane at +0.023
+   * with the bowl hanging behind it — so without a shift its deepest point
+   * lands somewhere else entirely, and the first build of it disappeared
+   * into the cloth in the walking frame. Measured with the geometry as
+   * built: the bowl bottoms out at `SOUNDBOARD_Z - 1.1 * 0.086`, and this is
+   * the number that brings that back to the old 0.062.
+   */
+  const depthCentre = isFlute || isDrum ? 0 : -0.062 - (SOUNDBOARD_Z - 1.1 * 0.086);
+  const finish = (pieces: BufferGeometry[]): BufferGeometry | null => {
+    if (pieces.length === 0) return null;
+    const merged = concat(pieces);
+    translate(merged, 0, -length / 2, depthCentre);
+    merged.computeVertexNormals();
+    return merged;
+  };
+
+  return {
+    body: finish(parts) as BufferGeometry,
+    dark: finish(dark),
+    bright: finish(bright),
+  };
+}
+
+/** Move a colour's value without moving its hue. */
+function scaleHex(hex: number, k: number): number {
+  const ch = (shift: number) =>
+    Math.min(255, Math.round(((hex >> shift) & 0xff) * k)) << shift;
+  return ch(16) | ch(8) | ch(0);
 }
 
 function translate(geometry: BufferGeometry, dx: number, dy: number, dz: number): void {
@@ -616,7 +803,8 @@ export class Bard {
   /** Knees, in the same left-then-right order as `boots`. */
   private readonly knees: Group[] = [];
   private readonly instrumentPivot = new Group();
-  private instrumentMesh: Mesh | null = null;
+  /** Timber, dark facets and strings. Swapped together, disposed together. */
+  private readonly instrumentMeshes: Mesh[] = [];
   /** Ankles, so the foot can stay flatter than the leg it hangs off. */
   private readonly boots: Mesh[] = [];
   /** The cloak mesh, so the walk can trail it without moving the torso. */
@@ -812,7 +1000,15 @@ export class Bard {
         colorVariant: colors.cloakLining,
         grain: 0.45,
         grainScale: 1.2,
-        rim: 0.34,
+        // Half again what it was. The cloak is the largest single area on the
+        // figure and at the hour the busk frames are shot it is on the sun's
+        // far side, where it measured two sRGB levels off the ground behind
+        // it at twenty pixels. Rim does not care where the sun is; it lights
+        // the grazing edge, which for a cone-shaped cloth is its whole
+        // outline. Kept well under the hat's 0.6 because the cloak is broad
+        // and softly curved, and a hard rim on a broad curve reads as a
+        // plastic highlight rather than as an edge.
+        rim: 0.5,
         rimPower: 1.9,
         sway: 0.12,
         swaySpeed: 1.35,
@@ -846,7 +1042,21 @@ export class Bard {
       const hand = new Mesh(handGeo, solid(colors.skin, 0.55));
       hand.position.y = -0.43;
       hand.castShadow = false;
-      pivot.add(arm, hand);
+      // A cuff, and it is a joint rather than a decoration.
+      //
+      // The sleeve ends at -0.36 and the hand begins at -0.43, so between
+      // them is two and a half centimetres of nothing. Standing, the arm hangs
+      // straight and the gap is invisible; the moment a pose swings the arm —
+      // the seated carry sends both hands back and out — the hand separates
+      // from the sleeve on screen and reads as a loose skin-coloured block
+      // beside the hip, which is one of the three "geometry decomposes at
+      // inspection distance" faults named against this figure. A band that
+      // overlaps both ends closes it in every pose at once, which a tuned
+      // offset for one pose would not.
+      const cuff = new Mesh(boxPart(0.1, 0.062, 0.108, 0.95), solid(colors.boots, 0.4));
+      cuff.position.y = -0.408;
+      cuff.castShadow = false;
+      pivot.add(arm, cuff, hand);
       // Slightly narrower and set forward. The cloak's radius grows as it
       // falls, so an arm hanging at a fixed 0.18 started outside the cloth at
       // the shoulder and passed through it at the elbow, stitching a bright
@@ -864,15 +1074,54 @@ export class Bard {
     // three-quarter read than anything else on the figure, because it is
     // the only thing that tells you which way the head is facing once the
     // hat brim has put the face in shadow.
-    const nose = new Mesh(boxPart(0.05, 0.055, 0.05, 0.7), underBrim(colors.skin, 0.6));
-    nose.position.set(0, HEAD_Y + 0.11, 0.108);
+    //
+    // Dropped five centimetres and given a sharper taper, to make room above
+    // it for the eyes. A nose set level with the eyes is a snout.
+    const nose = new Mesh(boxPart(0.048, 0.062, 0.058, 0.52, 0.6), underBrim(colors.skin, 0.6));
+    nose.position.set(0, HEAD_Y + 0.052, 0.104);
     nose.castShadow = false;
+
+    /**
+     * Two eyes, and they are the largest single thing this figure was
+     * missing.
+     *
+     * Every critique of this game has ranked "the character never becomes a
+     * person" first, and the specific complaint is that the near-profile
+     * campfire frame — the one shot where the face is square to the lens —
+     * shows a blank tan plane. The references it is judged against sell an
+     * entire character on two dots and a beak, and this figure had the beak.
+     *
+     * Geometry, not a texture: the art direction forbids image maps and one
+     * lighting model means a painted face would have to be a second one. Two
+     * small blocks set five millimetres proud of the face plane cost twenty-
+     * four triangles, read as dark facets at portrait distance, and at
+     * twenty pixels vanish into the shade under the brim, which is exactly
+     * what a face should do at twenty pixels.
+     *
+     * Not black — the shadow floor under the brim is already lifted for
+     * everything up here, and the eyes take the same floor, so they stay a
+     * warm dark rather than punching two holes through the head.
+     */
+    const eyeGeo = boxPart(0.044, 0.036, 0.014, 0.92);
+    const eyeMaterial = underBrim(0x33241d, 0.16);
+    const eyes: Mesh[] = [];
+    for (const side of [-1, 1]) {
+      const eye = new Mesh(eyeGeo, eyeMaterial);
+      // Set very slightly asymmetrically, like everything else on him.
+      eye.position.set(side * 0.056, HEAD_Y + 0.118 + side * 0.002, 0.1);
+      eye.rotation.z = side * 0.06;
+      eye.castShadow = false;
+      eyes.push(eye);
+    }
     // Hair sits low at the back so it shows under the brim; without it the
     // gap between hat and collar reads as a bare tan column, which from
     // behind — the angle the walking camera holds — is most of what you see
     // of the head.
-    const hair = new Mesh(boxPart(0.255, 0.115, 0.235, 1.02), underBrim(colors.hair, 0.4));
-    hair.position.set(0, HEAD_Y + 0.145, -0.012);
+    //
+    // Raised two centimetres so its front edge is a hairline above the eyes
+    // rather than a fringe across them.
+    const hair = new Mesh(boxPart(0.255, 0.095, 0.235, 1.02), underBrim(colors.hair, 0.4));
+    hair.position.set(0, HEAD_Y + 0.165, -0.012);
     hair.castShadow = false;
     // The nape reaches down to the collar. It is the surface the player
     // actually looks at for most of the game — the back of a head under a
@@ -903,13 +1152,18 @@ export class Bard {
     hat.position.y = HAT_Y;
     // Worn at an angle. Nothing about a bard should be square to the world.
     hat.rotation.z = 0.13;
-    hat.rotation.x = -0.07;
+    // Tipped *back*, not forward. Together with the brim's own dip this
+    // raises the rear edge about three centimetres clear of the crown of the
+    // head, which is what lets the hair and the nape survive the rear
+    // three-quarter the walking and busking cameras hold; the old -0.07
+    // pushed the same edge down into them.
+    hat.rotation.x = 0.085;
     hat.castShadow = true;
     const band = new Mesh(hatBandGeometry(), solid(colors.hatBand, 0.5));
     band.position.copy(hat.position);
     band.rotation.copy(hat.rotation);
     band.castShadow = false;
-    this.headPivot.add(head, nose, hair, nape, hat, band);
+    this.headPivot.add(head, nose, ...eyes, hair, nape, hat, band);
     this.torso.add(this.headPivot);
 
     // --- instrument ----------------------------------------------------
@@ -927,46 +1181,119 @@ export class Bard {
 
   /** Swap the carried instrument. Colour and shape both change. */
   setInstrument(instrument: Instrument | null): void {
-    if (this.instrumentMesh) {
-      this.instrumentPivot.remove(this.instrumentMesh);
-      this.instrumentMesh.geometry.dispose();
+    for (const mesh of this.instrumentMeshes) {
+      this.instrumentPivot.remove(mesh);
+      mesh.geometry.dispose();
       // The outgoing material has to leave the tracking list as well as be
       // disposed. Left in, every instrument swap in a session accumulated a
       // compiled shader program that nothing would free until the bard did.
-      const stale = this.instrumentMesh.material as ShaderMaterial;
+      const stale = mesh.material as ShaderMaterial;
       const at = this.materials.indexOf(stale);
       if (at >= 0) this.materials.splice(at, 1);
       stale.dispose();
-      this.instrumentMesh = null;
     }
+    this.instrumentMeshes.length = 0;
+
     const id = instrument?.id ?? 'lute';
-    const material = this.track(
+    const color = instrument?.color ?? 0xb5773f;
+    const accent = instrument?.accent ?? 0xe8c98a;
+    const parts = instrumentGeometry(id);
+
+    /**
+     * The timber.
+     *
+     * `rim` is nearly three times what it was, and it is the one dial STATE
+     * names as the lever for the frame this game is about. At day 0.82 the
+     * sun stands on the far side of the bard from the busking camera, so the
+     * only side of him an instrument can be carried on and still be seen is
+     * his shade side — the lute rendered L49 against a backdrop of L36-45,
+     * two levels of separation at twenty pixels. A rim term is the only part
+     * of the lighting model that does not care which way the sun is: it
+     * fires on the grazing edges, which for a body held out from the torso
+     * are exactly the edges that have to survive.
+     */
+    const bodyMaterial = this.track(
       createPainterlyMaterial(this.globals, {
-        color: instrument?.color ?? 0xb5773f,
-        colorVariant: instrument?.accent ?? 0xe8c98a,
-        grain: 0.35,
+        color,
+        colorVariant: accent,
+        grain: 0.28,
         grainScale: 2.2,
-        rim: 0.32,
-        rimPower: 2.0,
+        rim: 0.9,
+        rimPower: 1.7,
         flatShading: true,
         swayAttribute: false,
         sway: 0,
+        shadowDepth: 0.6,
       }),
     );
-    const mesh = new Mesh(instrumentGeometry(id), material);
+    const body = new Mesh(parts.body, bodyMaterial);
     // Named for the same reason every other prop in this project is: a
     // headless check has to be able to find one object in the scene graph
     // and ask what it looks like on screen. The occlusion measurement that
     // fixed the playing carry floods *this* mesh with a flat colour and
     // counts the pixels that survive the depth test, which is the only way
     // to tell "the instrument projects 150 px" from "you can see it".
-    mesh.name = 'bard-instrument';
-    mesh.castShadow = true;
+    body.name = 'bard-instrument';
+    body.castShadow = true;
     // The pivot handles carrying angle and slinging; the geometry is already
     // centred on its own middle, so the two can be animated independently
     // and a drum can replace a lute without the pose changing.
-    this.instrumentPivot.add(mesh);
-    this.instrumentMesh = mesh;
+    this.instrumentPivot.add(body);
+    this.instrumentMeshes.push(body);
+
+    if (parts.dark) {
+      // A third of the timber's value, hue kept. Not black: this is a hole
+      // into a lit box, and cosy games do not use black for holes.
+      const hole = new Mesh(
+        parts.dark,
+        this.track(
+          createPainterlyMaterial(this.globals, {
+            color: scaleHex(color, 0.34),
+            colorVariant: scaleHex(color, 0.5),
+            grain: 0.2,
+            grainScale: 2.6,
+            rim: 0.12,
+            rimPower: 2.4,
+            flatShading: true,
+            swayAttribute: false,
+            sway: 0,
+            shadowDepth: 0.55,
+          }),
+        ),
+      );
+      hole.name = 'bard-instrument-voice';
+      hole.castShadow = false;
+      this.instrumentPivot.add(hole);
+      this.instrumentMeshes.push(hole);
+    }
+
+    if (parts.bright) {
+      const strings = new Mesh(
+        parts.bright,
+        this.track(
+          createPainterlyMaterial(this.globals, {
+            color: accent,
+            colorVariant: 0xfff0d6,
+            grain: 0.12,
+            grainScale: 3,
+            // The hardest rim on the figure, on the thinnest geometry there
+            // is. Strings seen nearly edge-on are almost entirely grazing
+            // angle, so this is what makes them a line of light rather than
+            // three slivers of the same value as the board behind them.
+            rim: 1.15,
+            rimPower: 1.3,
+            flatShading: true,
+            swayAttribute: false,
+            sway: 0,
+            shadowDepth: 0.75,
+          }),
+        ),
+      );
+      strings.name = 'bard-instrument-strings';
+      strings.castShadow = false;
+      this.instrumentPivot.add(strings);
+      this.instrumentMeshes.push(strings);
+    }
   }
 
   setPose(pose: BardPose, seconds = 0.45): void {
@@ -1080,6 +1407,15 @@ export class Bard {
       -leftSwing * legSwing * 0.55 - Math.min(0, leftSwing) * 0.3 - sitAmount * SIT_SHIN[0];
     this.boots[1].rotation.x =
       -rightSwing * legSwing * 0.55 - Math.min(0, rightSwing) * 0.3 - sitAmount * SIT_SHIN[1];
+    // Seated, the feet go forward six centimetres, and that is a clearance
+    // rather than a pose. The seat log is a cylinder of 0.115 m radius lying
+    // under the bard's own origin; the boot is 0.185 m deep and standing at
+    // z 0.16, so its heel sat at z 0.07 — four and a half centimetres *inside*
+    // the log it is supposed to be sitting in front of. Nobody saw it in a
+    // frame because the log occludes the feet from the resting camera, which
+    // is exactly why it is worth writing down rather than left for the first
+    // camera that does not.
+    for (const boot of this.boots) boot.position.z = -0.04 + sitAmount * 0.06;
 
     // --- body bob ------------------------------------------------------
     // Twice step frequency, and skewed: the rise is quicker than the fall.
@@ -1212,9 +1548,43 @@ export class Bard {
       Math.sin(armPhase + Math.PI) * armSwing * slung - carryPose * playAmount - 0.1 + lap * 0.45;
     this.leftArm.rotation.z = 0.11 + playAmount * 0.32 - armCross - lap * 0.15;
 
-    const strumMotion = Math.sin(this.elapsed * 7.5) * 0.1 * playAmount * (0.4 + this.warmth * 0.6);
     this.rightArm.rotation.x = Math.sin(armPhase) * armSwing * slung - carryPose * playAmount + lap * 0.45;
     this.rightArm.rotation.z = -0.11 - playAmount * 0.28 - armCross + lap * 0.15;
+
+    // --- the strum ------------------------------------------------------
+    //
+    // **The busking bard has to be visibly playing in a still frame**, and
+    // this is what makes that true. What was here before was a six-degree
+    // sine added *after* the grip solve had already pinned the hand on the
+    // belly, so the arm was, to any frame that caught it, hanging. Every
+    // postcard of the one moment this game is about showed a musician not
+    // playing.
+    //
+    // Two decisions, both forced.
+    //
+    // The gesture is made by moving the SHOULDER rather than the hand. There
+    // is no elbow on this figure, so the hand can only ever lie on a sphere
+    // of `ARM_REACH` about the shoulder; with the shoulder fixed, a hand
+    // solved onto the strings has at most two legal positions on them and
+    // physically cannot travel. Lift and drop the shoulder and the sphere
+    // travels with it, `gripLine` slides its intersection along the
+    // soundboard, and the arm rakes across the strings while the hand stays
+    // on them — which is what a strumming arm does and the only version of
+    // it this rig can express honestly.
+    //
+    // And the wave is a triangle, not a sine. A sine spends most of its
+    // period near the two ends of the stroke, so a frame shot at a random
+    // instant catches the arm parked at the top or the bottom; a triangle is
+    // uniform over the sweep, which is the property that actually matters
+    // when the thing being judged is a photograph.
+    const strumCycle = this.elapsed * 2.1;
+    const stroke = Math.abs((strumCycle - Math.floor(strumCycle)) * 2 - 1) * 2 - 1;
+    const strumSwing = stroke * playAmount * (0.6 + this.warmth * 0.4);
+    this.rightArm.position.set(
+      0.172,
+      SHOULDER_Y + strumSwing * 0.085,
+      0.035 + strumSwing * 0.055,
+    );
 
     // --- instrument ----------------------------------------------------
     // Two poses, blended rather than switched. Slung it rides across the
@@ -1251,7 +1621,16 @@ export class Bard {
     this.instrumentPivot.position.set(
       playAmount * PLAY_CARRY_POS[0] - slung * 0.03 + lap * 0.045,
       SHOULDER_Y + playAmount * PLAY_CARRY_POS[1] - slung * 0.12 - lap * 0.219,
-      playAmount * PLAY_CARRY_POS[2] - slung * 0.285 + lap * 0.187,
+      // Six centimetres further off the spine than it hung, and the reason is
+      // a depth test rather than a taste. The old body was four boxes, so its
+      // rear face was a flat slab a hand's width across sitting at one depth;
+      // it won the depth test against the cloak over that whole area even
+      // though it barely cleared it. A bowl only touches its deepest point
+      // along one ridge and curves away either side, so the same offset put
+      // ninety per cent of it inside the cloth. Measured: at 0.285 the
+      // instrument projected 100 px wide against a cloak 138 px wide and ten
+      // of those pixels were outside it.
+      playAmount * PLAY_CARRY_POS[2] - slung * 0.345 + lap * 0.187,
     );
     // Thirty degrees across the back, not forty. The steeper tilt threw the
     // bowl clear of the cloak's outline with daylight showing between the
@@ -1283,10 +1662,43 @@ export class Bard {
     // of the frame where the shape has something to be seen against. These
     // three numbers are the Euler angles that put it there once the seated
     // torso's own forward lean is paid back.
+    //
+    // **The playing and lap carries are spun a half turn about the neck, so
+    // the soundboard faces the camera instead of the bard.** This is the
+    // difference between an instrument that can be identified and one that
+    // cannot, and it is worth stating exactly what it does and does not
+    // change.
+    //
+    // Every camera in this game stands behind the bard. Carried the way a
+    // player really holds a lute — face outward, away from the chest — the
+    // side presented to the lens is therefore always the back of the bowl,
+    // and the three marks that say "lute" rather than "wooden object" (the
+    // soundhole, the bridge, the strings) all live on the face. Four rounds
+    // of critique in a row have said the instrument is unidentifiable in a
+    // game about one instrument. It is unidentifiable because it is facing
+    // away.
+    //
+    // The spin is exact rather than approximate, and that is what makes it
+    // safe: adding pi to the Y term while negating the Z term leaves the
+    // instrument's own +Y — the neck axis, which every solved number in this
+    // file is expressed against — bit-for-bit where it was, and flips only
+    // which face is outward. `Rz(c)·(0,1,0) = (-sin c, cos c, 0)` and
+    // `Ry(pi)·Rz(-c)·(0,1,0) = Ry(pi)·(sin c, cos c, 0) = (-sin c, cos c, 0)`.
+    // So the lap carry's three solved angles still lay the neck across the
+    // resting camera exactly as their note describes, the pegbox still ends
+    // up below the hat brim, and the grip solves still find the same points.
+    //
+    // The slung carry is deliberately NOT spun. The bowl has to lie against
+    // the small of the back — the cloak's rear surface is only 0.29 m off the
+    // spine there — and turning the face outward would either bury the bowl
+    // inside the cloth as a ghost or stand the whole instrument off the back
+    // like a knapsack, which is a failure this file already records. Slung,
+    // the identification is carried by the outline and by the bowl's five
+    // staves instead.
     this.instrumentPivot.rotation.set(
       this.strum * 0.07 + slung * 0.15 + playAmount * PLAY_CARRY_ROT[0] + lap * 0.54,
-      playAmount * PLAY_CARRY_ROT[1] + slung * 0.08 - lap * 0.889,
-      -slung * 0.52 + playAmount * PLAY_CARRY_ROT[2] - lap * 0.62,
+      playAmount * (PLAY_CARRY_ROT[1] + Math.PI) + slung * 0.08 + lap * (Math.PI - 0.889),
+      -slung * 0.52 - playAmount * PLAY_CARRY_ROT[2] + lap * 0.62,
     );
 
     // Both hands go on the instrument, and both are solved rather than
@@ -1295,17 +1707,26 @@ export class Bard {
     // only while playing, because the seated bard's right hand belongs on the
     // log beside him and not on the strings.
     const fret = Math.min(1, lap + playAmount);
-    if (fret > 0) this.gripLine(this.leftArm, NECK_GRIP_MIN, NECK_GRIP_MAX, fret, true);
+    if (fret > 0) this.gripLine(this.leftArm, NECK_GRIP_MIN, NECK_GRIP_MAX, fret, true, 0.035);
     if (playAmount > 0) {
-      this.gripLine(this.rightArm, STRUM_GRIP_MIN, STRUM_GRIP_MAX, playAmount, false);
+      // The strum grip is a moving target rather than a range: the triangle
+      // above walks it from the bowl end of the soundboard to the shoulders
+      // and back, and the pair of bounds is kept an inch wide so the solve
+      // still lands the hand on the line rather than snapping to an end.
+      const reach = STRUM_GRIP_MIN + (STRUM_GRIP_MAX - STRUM_GRIP_MIN) * (0.5 + stroke * 0.5);
+      this.gripLine(this.rightArm, reach - 0.012, reach + 0.012, playAmount, false, 0.05);
     }
-    // The strum kick rides on top of whatever the solve produced, rather than
+    // The pluck kick rides on top of whatever the solve produced, rather than
     // inside it. Folded into the base angles it would be diluted by the
     // solve's own lerp exactly when the bard is playing, which is the one
     // time it exists for: `pluck` is what makes a note land visually at the
     // same instant it lands audibly.
-    this.rightArm.rotation.x += strumMotion - this.strum * 0.5;
-    this.rightArm.rotation.z -= this.strum * 0.16;
+    //
+    // Smaller than it was, because the sweep above now carries the gesture.
+    // At 0.5 a full-strength pluck threw the hand thirty centimetres clear of
+    // an instrument the rest of this file works hard to keep it on.
+    this.rightArm.rotation.x -= this.strum * 0.24;
+    this.rightArm.rotation.z -= this.strum * 0.1;
   }
 
   /**
@@ -1360,13 +1781,25 @@ export class Bard {
     tMax: number,
     weight: number,
     preferFar: boolean,
+    /**
+     * How far in front of the instrument's own axis the hand should land,
+     * along its local +Z — which, since the playing and lap carries are spun
+     * face-out, is the soundboard side.
+     *
+     * Zero was the old behaviour and it aimed the hand at the *middle* of the
+     * instrument, so a hand solved onto the belly was buried up to the wrist
+     * in the body it was supposed to be strumming. It did not show while the
+     * bowl faced the camera; it shows immediately now that the face does.
+     */
+    offset = 0,
   ): void {
     this.instrumentPivot.updateMatrix();
     const m = this.instrumentPivot.matrix.elements;
-    // Origin and local +Y of the instrument, in torso space.
-    const ax = m[12];
-    const ay = m[13];
-    const az = m[14];
+    // Origin and local +Y of the instrument, in torso space, with the origin
+    // lifted off the axis toward the soundboard.
+    const ax = m[12] + m[8] * offset;
+    const ay = m[13] + m[9] * offset;
+    const az = m[14] + m[10] * offset;
     const bx = m[4];
     const by = m[5];
     const bz = m[6];

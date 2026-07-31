@@ -9,6 +9,7 @@ import {
   instrumentCaseBox,
   isTouchable,
   overlaps,
+  songBookBox,
   type HudBox,
   type HudViewport,
 } from './hudLayout';
@@ -39,6 +40,7 @@ function boxes(chrome: ReturnType<typeof hudChrome>): Array<[string, HudBox]> {
   return [
     ['coins', chrome.coins],
     ['instrument', chrome.instrument],
+    ['song', chrome.song],
     ['journal', chrome.journal],
   ];
 }
@@ -71,6 +73,14 @@ describe('hudChrome', () => {
       const chrome = hudChrome(viewport);
       expect(isTouchable(chrome.coins), `coins on ${name}`).toBe(true);
       expect(isTouchable(chrome.instrument), `instrument on ${name}`).toBe(true);
+      expect(isTouchable(chrome.song), `song on ${name}`).toBe(true);
+    }
+  });
+
+  it('keeps the two bottom corners off each other on every screen', () => {
+    for (const { name, viewport } of SCREENS) {
+      const chrome = hudChrome(viewport);
+      expect(overlaps(chrome.instrument, chrome.song), name).toBe(false);
     }
   });
 
@@ -204,6 +214,30 @@ describe('hudChrome', () => {
       expect(box.width, `case width on ${name}`).toBeGreaterThanOrEqual(HUD_TOUCH_TARGET);
       expect(overlaps(box, chrome.journal), `case and card on ${name}`).toBe(false);
       expect(overlaps(box, chrome.coins), `case and purse on ${name}`).toBe(false);
+    }
+  });
+
+  it('opens the songbook out of the song corner, exactly as the case opens', () => {
+    // Twelve rows is the most the book can ask for: eleven songs plus the
+    // wander row. Screens without the room show fewer, whole rows only.
+    for (const { name, viewport } of SCREENS) {
+      const chrome = hudChrome(viewport);
+      const box = songBookBox(chrome, 12);
+      expect(contains(chrome.safe, box), `book on ${name}`).toBe(true);
+      expect(box.left, `book left on ${name}`).toBe(chrome.song.left);
+      expect(box.top + box.height, `book foot on ${name}`).toBeCloseTo(chrome.song.top, 6);
+      expect(box.height % chrome.song.height, `whole rows on ${name}`).toBeCloseTo(0, 6);
+      expect(box.height / chrome.song.height, `rows on ${name}`).toBeGreaterThanOrEqual(2);
+      expect(overlaps(box, chrome.journal), `book and card on ${name}`).toBe(false);
+    }
+  });
+
+  it('gives the book no height at all when there is nothing to choose', () => {
+    const chrome = hudChrome({ width: 1600, height: 900 });
+    for (const count of [0, -3, Number.NaN]) {
+      const box = songBookBox(chrome, count);
+      expect(box.height, String(count)).toBe(0);
+      expect(box.top, String(count)).toBe(chrome.song.top);
     }
   });
 

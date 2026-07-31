@@ -1468,6 +1468,60 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     wiring `shader-check` in for the first time found. This was the item
     STATE.md had flagged as "first on the v0.6 queue" since the v0.6 merge.
 
+## The v0.8 queue: "the walk is played, not watched" (human-set, 2026-07-31)
+
+Set by a human watching the live game on a real GPU. DESIGN.md's v0.8
+section is the contract. Wave 1 (tasks 129-132) landed in one interactive
+session; the open tasks follow.
+
+129. ~~**The walk carries the tune.**~~ Done (2026-07-31, interactive):
+    `core/walk.ts` (pace = pure function of meter, 13 tests), walking notes
+    through the same SongNotes/judge/audio pipeline busks use, songbook
+    pinning as a HUD corner + persisted `songChoice` (v0.5's choice, made
+    diegetic), and the two observed trigger anomalies explained (4 m
+    approach radius is deliberate; the "skipped" encounter was same-day
+    visited-list dedup). Verified live: empty meter freezes s, taps restore
+    stride same-frame.
+130. ~~**Walking music.**~~ Done (2026-07-31, interactive): adaptive gains a
+    'walking' mode (3-layer ceiling, +0.12 thresholds, 0.62 gain scale —
+    sparser than the busk on purpose), `audio/mix.ts` hard-caps the ambience
+    bus at half the music bus across ~9,000 tested scenes, ambience beds
+    re-filtered (two-stage, defined top edges — the "white noise" fix),
+    per-partial decay envelopes make each instrument's spectrum move like a
+    real one. RoadStage wiring: music bus, per-frame ambience duck,
+    arrangement running in every phase, melodyGain noodling at 0.10 when
+    the meter is empty. fadeLayers now only at vista/encounter/camp.
+131. ~~**The riverside has a river.**~~ Done (2026-07-31, interactive): a
+    road-space ribbon carved relative to a level water surface (terrain
+    averaged over ~96 m along the course), 17 extra terrain columns around
+    the channel, per-side irregular waterline, paintWater generalised to
+    vertex-coloured meshes, bank reeds/silt, 55 m band-edge fades, all
+    deterministic from the daily seed. Plus: foliage flatShading bug found
+    (see STATE), meadow clumping, boulder/log/bush silhouette grammar.
+132. ~~**Figures become people.**~~ Done (2026-07-31, interactive): faces
+    (eyes/nose under the brim — whose dip had an inverted sign), the lute
+    rebuilt as bowl+soundhole+strings with a triangle-wave strum, wrist
+    cuffs closing the "detached blocks", travellers get faces/raised brims/
+    attention nods, camp's propped instrument rebuilt. Figure-ground at
+    20 px: busk median step 16.0 → 20.1 sRGB.
+133. **The songboard as presentation, not billboard.** With notes in every
+    walking frame, the board is now the composition's biggest problem: a
+    beige plank sitting on the vanishing point. Rework toward diegetic
+    lightness — size to the live note span, off-axis placement scaling with
+    aspect, material that belongs to the world (parchment translucency?),
+    straighter staff rules (the hand-drawn wobble reads as damage at DSF2).
+    The staff must stay musically correct and legible at phone sizes.
+134. **Light and air, second pass.** Items 9/10 (golden-hour shadow hue,
+    grey haze) plus critique gap 2 (no warm bounce on upward faces at
+    golden hour) and gap 3 (caster-less shadow smudges). painterly.ts/
+    sky.ts owners; use tools/land-histogram.mjs before and after.
+135. **Camera variety and phone framing.** Critique gap 9 (one composition
+    for every road shot) and gap 11 (phone-portrait dead thirds). CameraRig
+    owns both.
+136. **Blind re-critique, then reassess.** Re-run the six-lens panel vs the
+    reference frames on post-wave-2 postcards; re-derive scores rather than
+    inheriting the 3-of-10 count.
+
 ## The v0.7 queue: "human eyes on it" (human-set, 2026-07-31)
 
 The v0.6 queue above is superseded. A human is taking the repo local, where

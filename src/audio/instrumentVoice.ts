@@ -35,6 +35,29 @@
  *    `performance.now()`. The two clocks are driven by different hardware and
  *    drift apart by a measurable amount over a session (see the note in
  *    `AudioEngine.schedule`), and a rhythm game is where that is audible.
+ *
+ * ## Why an additive stack sounds like a synthesiser, and what fixes it
+ *
+ * `instruments.ts` specifies six spectra with real care, and a first
+ * implementation can follow it to the letter and still produce six variations
+ * on "beep". The reason is that a spectrum is only half of a timbre. In every
+ * real instrument the partials *do not die together*: damping rises steeply
+ * with frequency, so the top of a plucked note is gone in a fifth of a second
+ * while the fundamental rings for a second more, and the note gets darker as
+ * it sounds. A stack whose ninth harmonic decays at exactly the fundamental's
+ * rate has a frozen spectrum, and a frozen spectrum is the single most
+ * reliable giveaway of synthesis there is — the ear identifies it inside one
+ * note.
+ *
+ * So every partial here gets *its own envelope*, scaled by
+ * `partialDecayScale`, and on blown and bowed voices the upper partials also
+ * arrive slightly late (`partialAttackScale`), because a bow or a breath
+ * builds the fundamental first. Neither costs a node: each partial already
+ * had a gain to be scaled by, and the envelope is simply written onto it.
+ *
+ * The other half of "six audibly distinct instruments" is register — see
+ * `voiceRegisterOctaves`. Six timbres crowded into one octave are six
+ * variations on a theme; the same six spread over three are six instruments.
  */
 
 import type { InstrumentVoice } from '../core/instruments';
@@ -75,6 +98,19 @@ export interface PartialPlan {
   detuneCents: number;
 }
 
+/** A partial together with the envelope it will actually be played through. */
+export interface VoicedPartial extends PartialPlan {
+  envelope: EnvelopePlan;
+}
+
+/** Multipliers on an envelope's segments. See `partialDecayScale`. */
+export interface EnvelopeShaping {
+  /** Multiplier on the decay and the release, which share a damping mechanism. */
+  decayScale?: number;
+  /** Multiplier on the attack. */
+  attackScale?: number;
+}
+
 export type RampShape = 'step' | 'linear' | 'exponential';
 
 /** One breakpoint of the amplitude envelope, in seconds from note start. */
@@ -107,8 +143,17 @@ export interface VibratoPlan {
 }
 
 export interface VoicePlan {
-  partials: PartialPlan[];
+  partials: VoicedPartial[];
+  /**
+   * The fundamental's envelope. Every partial carries its own — this is the
+   * reference one, the longest in the stack for a normal voice, and what the
+   * note's nominal length means.
+   */
   envelope: EnvelopePlan;
+  /** Semitone-free octave shift applied to the written pitch. See `voiceRegisterOctaves`. */
+  registerOctaves: number;
+  /** The pitch actually sounded, after `registerOctaves`. */
+  soundingHz: number;
   /** Null when the voice has no noise in it at all. */
   transient: TransientPlan | null;
   vibrato: VibratoPlan | null;
@@ -129,6 +174,12 @@ export interface VoiceNoteOptions {
   maxOscillators?: number;
   /** Partials above this are dropped as inaudible or aliasing. */
   nyquistHz?: number;
+  /**
+   * Set false to sound the written pitch exactly, ignoring the voice's own
+   * register. For callers that have already placed the note in an octave —
+   * the notation preview, say — and would otherwise displace it twice.
+   */
+  register?: boolean;
 }
 
 /** A note that has been handed to the audio clock and can still be taken back. */
@@ -167,6 +218,105 @@ export function voiceInharmonicity(voice: InstrumentVoice): number {
     if (Math.abs(ratio - Math.round(ratio)) > 0.02) off += amp;
   }
   return total > 0 ? off / total : 0;
+}
+
+/**
+ * Where the weight of a voice's spectrum sits, as a multiple of the
+ * fundamental.
+ *
+ * 1.0 is a pure sine; the hurdy-gurdy's near-saw comes out around 3.1. One
+ * number for "how bright is this", derived rather than declared so that a
+ * seventh instrument is covered the day it is added.
+ */
+export function spectralCentroidRatio(voice: InstrumentVoice): number {
+  let weighted = 0;
+  let total = 0;
+  for (const [ratio, amplitude] of voice.partials) {
+    if (!(ratio > 0)) continue;
+    const amp = Math.max(0, safe(amplitude));
+    weighted += ratio * amp;
+    total += amp;
+  }
+  return total > 0 ? weighted / total : 1;
+}
+
+/**
+ * The octave this instrument actually lives in, relative to the written pitch.
+ *
+ * The songbook is one range because it is a *reading* exercise — the staff
+ * has to stay where a child can read it — but real instruments are not one
+ * range, and six timbres all sounding middle C is six timbres that blur
+ * together. Displacing by whole octaves is the one transposition that changes
+ * nothing about the notation's truthfulness: an octave keeps the letter name,
+ * so the note drawn, the note named and the note heard are still the same
+ * note. (DESIGN.md already sanctions this — the player's own pluck sounds an
+ * octave above the written pitch.)
+ *
+ * Derived from what the voice *is* rather than from a table of ids, so it
+ * cannot go stale:
+ *
+ * - **Inharmonic or very long-ringing goes down.** A circular membrane and a
+ *   bell are both physically large objects, and both are already listed by
+ *   `instruments.ts` as having no clear pitch or an enormous one. A hand drum
+ *   at middle C is a bongo; a bell at middle C is a bicycle bell. Down an
+ *   octave each and they become the instruments they are named after.
+ * - **A near-sine with a slow attack goes up.** That combination only
+ *   describes a blown pipe, and blown pipes are soprano instruments — a reed
+ *   flute sounding at middle C is a hum, and the whole point of the voice is
+ *   the clean line above everything else.
+ * - **Everything else stays.** The lute is the instrument the songbook was
+ *   authored against, and the harp and the hurdy-gurdy sit in the same range
+ *   as it in life.
+ */
+export function voiceRegisterOctaves(voice: InstrumentVoice): number {
+  if (voiceInharmonicity(voice) >= 0.25 || voiceRingSec(voice) >= 3.5) return -1;
+  if (safe(voice.attackMs) >= 60 && spectralCentroidRatio(voice) <= 1.6) return 1;
+  return 0;
+}
+
+/** The pitch a voice sounds for a written pitch, after its register shift. */
+export function soundingFrequencyHz(voice: InstrumentVoice, writtenHz: number): number {
+  return writtenHz * Math.pow(2, voiceRegisterOctaves(voice));
+}
+
+/**
+ * How much faster a partial at `ratio` dies away than the fundamental does.
+ *
+ * The physics: a vibrating string or membrane loses energy to air damping,
+ * internal friction and the bridge, and all three rise with frequency. For a
+ * plucked string the measured decay time of the nth partial goes roughly as
+ * n^-0.6 to n^-0.7 — the sixth harmonic of a lute note is gone three to four
+ * times sooner than the fundamental — which is why a real pluck starts bright
+ * and *becomes* mellow. A bowed or blown note is driven continuously, so its
+ * partials are held up by the excitation and the disparity is much smaller;
+ * only its release shows it.
+ *
+ * The clamp at the top is what makes a bell a bell. Its hum partial sits at
+ * ratio 0.5, so this returns about 1.6 for it — the hum outlasts everything
+ * above it, which is exactly what a real bell does and exactly what a shared
+ * envelope makes impossible. Capped at 1.35 so a note's tail stays bounded:
+ * an unbounded low partial would keep oscillator nodes alive for a long time
+ * on a voice that already rings for four seconds.
+ */
+export function partialDecayScale(voice: InstrumentVoice, ratio: number): number {
+  if (!(ratio > 0)) return 1;
+  const exponent = safe(voice.sustain) > 0 ? 0.35 : 0.65;
+  return clamp(Math.pow(ratio, -exponent), 0.15, 1.35);
+}
+
+/**
+ * How much later a partial at `ratio` arrives than the fundamental.
+ *
+ * Only for voices with an attack slow enough to have an inside — a bow
+ * catching a string or breath filling a pipe establishes the fundamental
+ * first and fills the harmonics in over the following tens of milliseconds.
+ * That spectral flux across the attack is most of what separates a note
+ * someone *played* from a note that was switched on. A pluck excites the
+ * whole stack in one event, so anything under 25 ms is exempt.
+ */
+export function partialAttackScale(voice: InstrumentVoice, ratio: number): number {
+  if (safe(voice.attackMs) < 25 || !(ratio > 1)) return 1;
+  return Math.min(1.8, 1 + 0.35 * Math.log2(ratio));
 }
 
 /**
@@ -244,10 +394,19 @@ export function planPartials(
  * starts from a true zero (no click, and no illegal exponential-from-zero),
  * and an exponential decay is what a struck thing actually does.
  */
-export function planEnvelope(voice: InstrumentVoice, holdSec: number): EnvelopePlan {
-  const attackSec = Math.max(MIN_ATTACK_SEC, safe(voice.attackMs) / 1000);
-  const decaySec = Math.max(MIN_SEGMENT_SEC, safe(voice.decayMs) / 1000);
-  const releaseSec = Math.max(MIN_SEGMENT_SEC, safe(voice.releaseMs) / 1000);
+export function planEnvelope(
+  voice: InstrumentVoice,
+  holdSec: number,
+  shaping: EnvelopeShaping = {}
+): EnvelopePlan {
+  // Defaults of 1 mean an unshaped call is the voice exactly as declared, so
+  // every caller that predates per-partial damping still gets what it asked
+  // for and this stays one envelope routine rather than two.
+  const decayScale = positive(shaping.decayScale, 1);
+  const attackScale = positive(shaping.attackScale, 1);
+  const attackSec = Math.max(MIN_ATTACK_SEC, (safe(voice.attackMs) / 1000) * attackScale);
+  const decaySec = Math.max(MIN_SEGMENT_SEC, (safe(voice.decayMs) / 1000) * decayScale);
+  const releaseSec = Math.max(MIN_SEGMENT_SEC, (safe(voice.releaseMs) / 1000) * decayScale);
   const sustain = clamp01(safe(voice.sustain));
 
   const attackEndSec = attackSec;
@@ -302,9 +461,21 @@ export function planTransient(
   // both live over the note rather than under it, then held under the voice's
   // own lowpass so the drum's dark corner still governs the drum's slap.
   const ceilingHz = Math.min(safe(voice.cutoffHz) * 1.6, nyquistHz * 0.45);
-  const centreHz = clamp(frequencyHz * 3, 320, Math.max(360, ceilingHz));
+  // How far above, and how tightly, is a question about what struck the
+  // thing. A plectrum on a stretched string is a small hard object hitting a
+  // small hard object: a narrow click well above the pitch. A hand on a skin
+  // is a large soft object hitting a large soft one: a broad thump barely
+  // above it. Inharmonicity is already the file's measure of "membrane or
+  // bell rather than string", so the same number decides both.
+  const inharmonic = clamp01(voiceInharmonicity(voice));
+  const multiple = 3 - 1.6 * inharmonic;
+  // The floor keeps a plectrum's click out of the mud. A membrane's slap
+  // *is* low, though, and a drum whose transient is forced above 320 Hz
+  // stops being a hand drum and becomes a bongo.
+  const floorHz = 320 - 300 * inharmonic;
+  const centreHz = clamp(frequencyHz * multiple, floorHz, Math.max(floorHz + 40, ceilingHz));
 
-  return { gain: 0.9 * amount, durationSec, centreHz, q: 0.7 };
+  return { gain: 0.9 * amount, durationSec, centreHz, q: 0.9 - 0.5 * inharmonic };
 }
 
 /** Everything `playVoiceNote` needs, decided without an AudioContext. */
@@ -315,16 +486,37 @@ export function planVoice(
 ): VoicePlan {
   const nyquistHz = options.nyquistHz ?? 20000;
   const holdSec = options.holdSec ?? defaultHoldSec(voice);
+  const registerOctaves = options.register === false ? 0 : voiceRegisterOctaves(voice);
+  const soundingHz = frequencyHz * Math.pow(2, registerOctaves);
   const envelope = planEnvelope(voice, holdSec);
-  const transient = planTransient(voice, frequencyHz, nyquistHz);
+  const transient = planTransient(voice, soundingHz, nyquistHz);
   const amount = clamp01(safe(voice.transient));
 
+  // Each partial gets its own envelope, keyed on its ratio to the *sounding*
+  // fundamental rather than to the raw frequency, so the damping curve says
+  // the same thing about a note wherever the register put it.
+  const partials: VoicedPartial[] = planPartials(voice, soundingHz, {
+    maxOscillators: options.maxOscillators,
+    nyquistHz,
+  }).map((partial) => {
+    const ratio = soundingHz > 0 ? partial.frequencyHz / soundingHz : 1;
+    return {
+      ...partial,
+      envelope: planEnvelope(voice, holdSec, {
+        decayScale: partialDecayScale(voice, ratio),
+        attackScale: partialAttackScale(voice, ratio),
+      }),
+    };
+  });
+
+  let partialEndSec = 0;
+  for (const partial of partials) partialEndSec = Math.max(partialEndSec, partial.envelope.endSec);
+
   return {
-    partials: planPartials(voice, frequencyHz, {
-      maxOscillators: options.maxOscillators,
-      nyquistHz,
-    }),
+    partials,
     envelope,
+    registerOctaves,
+    soundingHz,
     transient,
     // The noise takes its share out of the pitched part rather than being
     // added on top, so a hand drum reads as mostly slap (which it is) and a
@@ -335,7 +527,10 @@ export function planVoice(
       : null,
     cutoffHz: Math.max(80, Math.min(safe(voice.cutoffHz) || 20000, nyquistHz)),
     gain: options.gain ?? 0.2,
-    endSec: Math.max(envelope.endSec, transient ? transient.durationSec : 0),
+    // The stack's longest partial, not the nominal envelope: a bell's hum
+    // outlives its own reference envelope, and stopping the oscillators at
+    // the reference end would cut the one partial the instrument is for.
+    endSec: Math.max(envelope.endSec, partialEndSec, transient ? transient.durationSec : 0),
   };
 }
 
@@ -388,8 +583,8 @@ export function applyEnvelope(param: AudioParam, plan: EnvelopePlan, whenSec: nu
  * `whenSec` is an `AudioContext.currentTime`, not a wall-clock time, and
  * everything in the note is scheduled relative to it. The graph is:
  *
- *     partials -> partial gains -> envelope -> tonal gain ┐
- *     noise -> bandpass -> transient envelope ────────────┴> lowpass -> out
+ *     partials -> per-partial envelopes -> tonal gain ┐
+ *     noise -> bandpass -> transient envelope ────────┴> lowpass -> out
  *
  * with the vibrato LFO wired into every oscillator's `detune`. The transient
  * deliberately bypasses the ADSR: a flute's chiff has to be audible *during*
@@ -421,11 +616,8 @@ export function playVoiceNote(
   if (plan.partials.length > 0) {
     const tonal = ctx.createGain();
     tonal.gain.value = plan.tonalGain;
-    const envelope = ctx.createGain();
-    envelope.gain.value = 0;
-    applyEnvelope(envelope.gain, plan.envelope, whenSec);
-    envelope.connect(tonal).connect(lowpass);
-    nodes.push(tonal, envelope);
+    tonal.connect(lowpass);
+    nodes.push(tonal);
 
     let vibratoDepth: GainNode | null = null;
     if (plan.vibrato) {
@@ -453,9 +645,14 @@ export function playVoiceNote(
       osc.detune.value = partial.detuneCents;
       if (vibratoDepth) vibratoDepth.connect(osc.detune);
 
+      // The envelope goes on this partial's own gain rather than on a shared
+      // one downstream. Same node count, and it is the whole difference
+      // between a stack that dies together (a synthesiser) and one whose top
+      // dies first (an instrument). See the header.
       const level = ctx.createGain();
-      level.gain.value = partial.gain;
-      osc.connect(level).connect(envelope);
+      level.gain.value = 0;
+      applyEnvelope(level.gain, partial.envelope, whenSec, partial.gain);
+      osc.connect(level).connect(tonal);
       osc.start(whenSec);
       sources.push(osc);
       nodes.push(level);
@@ -537,4 +734,9 @@ function clamp01(value: number): number {
 /** Non-finite numbers from a malformed voice become zero rather than NaN. */
 function safe(value: number): number {
   return Number.isFinite(value) ? value : 0;
+}
+
+/** A scaling factor that is neither missing, negative nor NaN. */
+function positive(value: number | undefined, fallback: number): number {
+  return Number.isFinite(value) && (value as number) > 0 ? (value as number) : fallback;
 }
