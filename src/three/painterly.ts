@@ -493,88 +493,8 @@ const FRAGMENT = /* glsl */ `
  * scatter, which is not scaled), a near silhouette keeps its rim so the tier
  * cannot swallow an edge, and the anti-soot floor still fires underneath, so
  * this can darken the foreground without ever crushing it to black.
- *
- * --- a correction, and then the term's own shape ------------------------
- *
- * The paragraph above used to end by saying the term is "arithmetically absent
- * from dawn, dusk and night". It is absent from dusk and night and it is NOT
- * absent from dawn. sunHeight is smoothstep(-0.05, 0.32, sunY), and
- * 01-dawn-road is posed at dayFraction 0.24, which sits exactly half way
- * between the first light and dawn keys — elevation 0.06 rad after the
- * blend's own easing, so sunY 0.0600 and sunHeight 0.2125. The tier therefore
- * runs at a fifth of full strength on that frame and takes about six per cent
- * off the near ground of the one dawn picture in the sheet. Small, but the
- * comment claimed zero, and a claim of zero is what stops the next person
- * checking.
- *
- * --- and the fault that correction led to, which is the real one ---------
- *
- * THE TIER WAS A FLAT MULTIPLY OVER SUN AND SHADE ALIKE, and that is the
- * arithmetic standing between this game's ground and the light third of its
- * own value range. Read next to palette.ts, which in the very next wave lifted
- * the ground's pale end specifically so a bleached patch could reach L170-190:
- * that lift is calibrated on the *lit* ground, and 0.70 of it is what the
- * near band — 51 to 66 per cent of every land pixel in the six measured poses
- * — was actually given. Two constants that had to agree, written a wave apart,
- * never compared.
- *
- * Priced on a control build with FG_TIER_DEPTH zeroed and the land-masked,
- * depth-banded histogram both halves were read with (linear luminance):
- *
- *   03-noon        land share above L170   18.5 → 32.1 per cent
- *                  near band p90            0.384 → 0.496
- *   02-morning     near band p90            0.0965 → 0.1406
- *   08-portrait    near band p90            0.117 → 0.180
- *
- * So the tier was worth a THIRD of the near ground's own pale end, and the
- * project's gate stayed green without it (worst pose 2.73 against a floor of
- * 2.5) — which means the tier is no longer what is holding that gate up, and
- * paying for it out of the sunlit ground is no longer buying anything the
- * frame cannot get another way.
- *
- * The shape it should have had all along. This term is the near field's
- * MISSING VEIL: haze between the eye and a surface adds a roughly constant
- * veiling luminance per metre, so taking the veil away — which is what being
- * three metres from the camera instead of forty means — subtracts the same
- * small absolute amount from everything. Against a shadow that is a large
- * fraction; against a sunlit crest it is a rounding error. A flat multiply is
- * the one shape that gets that backwards, taking the largest absolute bite out
- * of the brightest thing in the band. It is also, precisely, what palette.ts's
- * own replacement rule says makes a landscape read front to back: the SHADOWS
- * are three stops down, not the lit ground one stop down.
- *
- * So the tier now rides 1 - sunAmount, with FG_TIER_SUN_SHARE as the floor
- * under it so a fully sunlit fragment keeps a quarter of the tier rather than
- * none — an edge of the term has to survive into the light or the near ground
- * stops being a band at all. Nothing in the frame gets darker for this change:
- * FG_TIER_DEPTH is untouched, so shade is tiered exactly as it was and only
- * the lit end is handed back.
- *
- * WHAT THIS IS COUPLED TO, and it was checked rather than assumed. The
- * songboard's glyphs run their own material and SongNotes.updateLight
- * evaluates this model on the CPU for them, mirroring the tier as
- * 1 - FG_TIER_DEPTH * nearness * sunHeight. It PARSES FG_TIER_DEPTH out of
- * this shader's source, so the number cannot drift — but the formula is
- * copied, so a factor added here is a factor it does not know about. Measured
- * in the live scene at both poses that show the board (05-golden-busk,
- * 09-phone-landscape): the board is placed facing the camera and the camera
- * stands between it and a low sun, so its own ndl is -0.887 and -0.833 and
- * its sunAmount is exactly 0.000. mix(FG_TIER_SUN_SHARE, 1.0, 1 - 0) is
- * 1.0, so the plank's tier is bit-identical to what SongNotes computes —
- * 0.8700 at 05-golden-busk, which is the figure that file's own comment
- * records. The divergence is zero TODAY and it is zero because of where the
- * board stands, not by construction: if a busk is ever staged with the sun on
- * the board's face, the plank would lighten under notes that did not, and this
- * is the note that says so.
  */
-#define FG_TIER_DEPTH 0.60
-/**
- * What a fully sunlit near fragment keeps of the tier. See above: a veil's
- * absence is an absolute subtraction, so it is nearly all of a shadow and
- * nearly none of a highlight, and this is the floor that keeps "nearly none"
- * from being "none".
- */
-#define FG_TIER_SUN_SHARE 0.13
+#define FG_TIER_DEPTH 0.30
 #define FG_TIER_NEAR_M 4.0
 #define FG_TIER_FAR_M 45.0
 #include <packing>
@@ -939,12 +859,9 @@ void main() {
   vec3 lighting = ambient + uSunColor * sunAmount * SUN_STRENGTH;
 
   // See FG_TIER_DEPTH: the near ground's own value, and the only thing in
-  // this shader that tells five metres from thirty-five. Weighted toward the
-  // shade, because the veil this term models the absence of is an absolute
-  // amount of light and not a fraction of the surface's own.
+  // this shader that tells five metres from thirty-five.
   float foreground = 1.0 - smoothstep(FG_TIER_NEAR_M, FG_TIER_FAR_M, viewDepth);
-  float foregroundTier =
-    1.0 - FG_TIER_DEPTH * foreground * sunHeight * mix(FG_TIER_SUN_SHARE, 1.0, 1.0 - sunAmount);
+  float foregroundTier = 1.0 - FG_TIER_DEPTH * foreground * sunHeight;
 
   vec3 color = albedo * lighting * foregroundTier;
 

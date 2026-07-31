@@ -151,22 +151,6 @@ const ENCOUNTER_HOLD_SEC = 7;
 /** Level the bard's own notes sound at. Everything else is mixed under this. */
 const MELODY_GAIN = 0.22;
 
-/*
- * --- the back-light gate ------------------------------------------------
- *
- * `updateBacklight` has the measurements these four numbers are placed from
- * and the reason the gate exists at all. In short: -0.40 to -0.78 is the gap
- * between the postcards that read (-0.31 and above) and the ones that do not
- * (-0.71 and below), and 0.20 to 0.45 brackets noon's sun height (0.64) above
- * golden hour's (0.12) and dusk's (-0.07).
- */
-const BACKLIT_ONSET = -0.4;
-const BACKLIT_FULL = -0.78;
-const BACKLIT_SUN_LOW = 0.2;
-const BACKLIT_SUN_HIGH = 0.45;
-/** Chest height on a 1.7 m figure, for aiming the camera vector. */
-const BACKLIT_CHEST_M = 1.2;
-
 const PHASE_TO_MOOD: Record<Phase, CameraMood> = {
   waking: 'walking',
   walking: 'walking',
@@ -1240,64 +1224,6 @@ export class RoadStage implements Stage {
     this.rig.update(this.subject, frameDt, (x, z) => terrainHeight(this.road, x, z));
     this.app.aimSunAt(this.subject.position);
     this.sky.mesh.position.copy(this.rig.camera.position);
-    // After the rig, because it reads the camera the rig has just placed, and
-    // after applyTimeOfDay, because it reads the sun that has just moved.
-    this.updateBacklight();
-  }
-
-  /**
-   * How back-lit the figures are, and the one place the camera's bearing and
-   * the sun's azimuth are compared.
-   *
-   * Every structural fault this project has found came from two constants
-   * that had to agree and never met, and this is another: `CameraRig`'s
-   * `FRAMINGS` place the camera in the *subject's* frame — behind and to its
-   * right — while `SKY_KEYS` place the sun in the *world's*, so whether a
-   * given moment is front-lit or back-lit is a fact neither file can state.
-   * Measured here, in the subject's own frame, on the postcard set:
-   *
-   *   frame                 sun·toCamera   sun.y
-   *   07-night-campfire         +0.09      -0.30
-   *   01-dawn-road              -0.17      +0.07
-   *   03-noon-forest            -0.31      +0.64
-   *   06-dusk-encounter (bard)  -0.71      -0.07
-   *   05-golden-busk            -0.84      +0.12
-   *   06-dusk-encounter (child) -0.88      -0.07
-   *
-   * +1 is the sun directly behind the camera and -1 directly behind the
-   * subject. The three frames the critique calls unreadable sit at -0.71 and
-   * below and the three it calls fine sit at -0.31 and above, with a clear
-   * gap between; ONSET and FULL are placed in that gap, so the boost is
-   * arithmetically zero on every frame that currently works and the rim each
-   * material was authored with is what those frames still render.
-   *
-   * The second gate is the sun's height, and it is not belt-and-braces. The
-   * bearing alone would let a *midday* back-lit moment take a full rim, and
-   * an overhead sun does not put a light around a silhouette's edge — it puts
-   * one on its shoulders. The thresholds bracket noon's own elevation
-   * (sin 0.64) well above dusk's (-0.07) and golden hour's (+0.12), so the
-   * hours this is for keep all of it and noon can never claim any of it
-   * however the road happens to bend.
-   */
-  private updateBacklight(): void {
-    const sun = this.app.globals.uSunDirection.value;
-    const camera = this.rig.camera.position;
-    // From the subject's chest rather than its feet: at four metres the
-    // difference is a couple of degrees, but the feet are the one point on a
-    // figure whose direction to the camera is least like the rest of it.
-    const dx = camera.x - this.subject.position.x;
-    const dy = camera.y - (this.subject.position.y + BACKLIT_CHEST_M);
-    const dz = camera.z - this.subject.position.z;
-    const length = Math.hypot(dx, dy, dz) || 1;
-    const facing = (dx * sun.x + dy * sun.y + dz * sun.z) / length;
-    const behind = smoothstep(BACKLIT_ONSET, BACKLIT_FULL, facing);
-    const low = 1 - smoothstep(BACKLIT_SUN_LOW, BACKLIT_SUN_HIGH, sun.y);
-    const backlight = behind * low;
-    this.bard.setBacklight(backlight);
-    // Every traveller, not only the shown ones: a figure that is stood up
-    // mid-frame by `stand()` would otherwise render one frame at its authored
-    // rim before this ran again.
-    for (const person of this.people) person.setBacklight(backlight);
   }
 
   resize(width: number, height: number): void {

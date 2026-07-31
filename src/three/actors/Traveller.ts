@@ -149,13 +149,6 @@ const PALETTES: Record<TravellerKind, TravellerPalette> = {
   },
 };
 
-/**
- * What a traveller's authored `rim` is multiplied by under a full back sun.
- * One, not three, and `setBacklight` has the measurement that sets it apart
- * from the bard's.
- */
-const BACKLIT_RIM_GAIN = 2;
-
 /** A flat-ish low-poly disc, for cart wheels. Eight sides is plenty at this size. */
 function wheelGeometry(radius: number, thickness: number): BufferGeometry {
   const sides = 8;
@@ -475,39 +468,6 @@ export class Traveller {
   /** 0 is minding their own business, 1 is watching the bard play. */
   setAttention(attention: number): void {
     this.attention = Math.min(1, Math.max(0, attention));
-  }
-
-  /**
-   * Turn the rim up when the sun is behind this figure. See
-   * `Bard.setBacklight` for the measurement and `RoadStage.updateBacklight`
-   * for the gate; only the gain differs, and it differs for a measured
-   * reason.
-   *
-   * **A traveller takes a third of the bard's gain.** On 06-dusk-encounter,
-   * with the same uniform multiplied by the same factor, the bard's own
-   * pixels go L21.4 -> L27.0 at * 2 while the child's go L33.7 -> L52.6 —
-   * two and a half times the response per unit of rim. The reason is not the
-   * albedos, it is screen size: the child stands 8.9 m from the camera and
-   * 122 px tall against the bard's 5.0 m and 321 px, so a far larger share of
-   * its pixels sit inside the fresnel band that the rim term lives in. It is
-   * the same effect `createFoliageMaterial` already documents for leaves —
-   * "the same rim figure that reads as a delicate edge on a rock reads as a
-   * light bulb here" — arriving through distance rather than through
-   * thinness. At the bard's gain of 3 the child renders L82 against an L35
-   * ground and stops being a person standing at dusk.
-   *
-   * Measured at this gain: separation from its own ground 1.2 -> 17.6 sRGB
-   * levels, which is the campfire frame's 16.4 — the silhouette every
-   * critique of this game has named as the best in the set.
-   */
-  setBacklight(backlight: number): void {
-    const gain = 1 + (BACKLIT_RIM_GAIN - 1) * Math.min(1, Math.max(0, backlight));
-    for (const material of this.materials) {
-      const uniform = material.uniforms.uRim;
-      if (!uniform) continue;
-      const base = (material.userData.authoredRim ??= uniform.value as number) as number;
-      uniform.value = base * gain;
-    }
   }
 
   /**
