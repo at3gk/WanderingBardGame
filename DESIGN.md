@@ -394,6 +394,30 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
 
 ## Changelog
 
+- 2026-07-31 — Twelve interactive critique waves (human-directed, not
+  scheduled runs). No vision change: the game is still the v0.6 concept, the
+  core mechanic is untouched, and nothing was cut from the Definition of Done.
+  What changed is entirely execution — the road corridor stopped grading flat
+  the ground the camera looks at, the shader gained a foreground value tier
+  where it had no depth term inside 40 m, the songboard moved off the
+  vanishing point, the seated pose and the held lute were fixed, and pitch
+  contrast was put on a floor that holds at every hour.
+  ONE DESIGN RULE WAS DELIBERATELY OVERTURNED, and it is recorded here because
+  it contradicts the art-direction section below: "nothing on the ground comes
+  within a stop of the sky" is struck. It was a rule about ALBEDO written as
+  though it were a rule about rendered value. A sky is bright because it is a
+  large dim emitter; the sun is a small ferocious one, and sunlit grass at
+  0.22 albedo sits near 7000 cd/m^2 against a clear sky around 5000 — a
+  sunlit field is level with the sky it stands under, and what makes a
+  photograph of one read front-to-back is that the SHADOWS are three stops
+  down. The replacement rule is about spread, not ceiling: the ground's dark
+  end stays, its pale end may come within half a stop of the sky. The full
+  argument and its measurements are in `src/three/world/palette.ts`.
+  NOTHING WAS CUT. The clef on the songboard remains unbuilt and is now
+  understood to be blocked on placement rather than merely unchosen (both ends
+  of the staff are at their arithmetic floor); that was already true before
+  this session.
+
 - 2026-07-15 — Run 0. Initial vision: single-lane rhythm-walking bard game.
   DESIGN.md and ROADMAP.md authored from the seed prompt.
 - 2026-07-18 — Run 10 (consolidation pass). No vision drift found — the game

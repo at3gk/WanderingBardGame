@@ -8,8 +8,10 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the **v0.6 queue**, task 115 onward, right below
-  this list. It supersedes the numbered entries below: a human reset the
+- **What to do next** is the **v0.7 queue**, task 120 onward, right below
+  this list — it supersedes the v0.6 queue, which follows it. Read STATE.md's
+  HANDOFF block first.
+- The **v0.6 queue**, task 115 onward, sits below v0.7. It supersedes the numbered entries below: a human reset the
   direction on 2026-07-28 and the game is now a 3D one (DESIGN.md, "The
   road in three dimensions"). Entries up to 113 remain the record of how
   the 2D game was built and are still worth reading for *why* something is
@@ -1465,6 +1467,66 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     match. See STATE.md's Run 44 note for the full detail, including what
     wiring `shader-check` in for the first time found. This was the item
     STATE.md had flagged as "first on the v0.6 queue" since the v0.6 merge.
+
+## The v0.7 queue: "human eyes on it" (human-set, 2026-07-31)
+
+The v0.6 queue above is superseded. A human is taking the repo local, where
+the game runs on a real GPU and can actually be played and compared against
+the reference games. That changes what is worth doing here: the cheap
+measurable bugs have largely been found, and the remaining questions are ones
+no agent in this environment can answer.
+
+Read STATE.md's HANDOFF block before picking any of these up.
+
+120. **Verify the land actually got lighter.** Commit `f510ab4` lifted each
+    biome's `*Dry` tone and widened the pale ground ramp, claiming a land-
+    masked p90 in L170-190. THAT CLAIM IS UNVERIFIED — the agent died before
+    reporting. Build a land-masked histogram (hide the sky dome, set the clear
+    colour to a sentinel, so "land" is every pixel of real geometry) and
+    measure p90 on 02-morning and 03-noon. Whole-frame p90 is dominated by sky
+    and proves nothing. If it did not move, the albedo lift is cosmetic and
+    the item is still open.
+
+121. **Explain noon and night losing value in the same commit.** noon 3.66 ->
+    3.08 stops, night 7.06 -> 6.65, hue spread at golden 0.024 -> 0.185 and
+    phone-landscape 0.021 -> 0.212. All still pass the gate. A dry-grass
+    albedo lift should not obviously do any of that. Bisect it.
+
+122. **Figure-to-ground separation at the busk.** Measured: the bard separates
+    from the ground behind him by 2.0 sRGB levels at 20 px and the dusk
+    traveller by 0.4, against 16.4 for the campfire frame. Cause is diagnosed
+    and should not be re-diagnosed: at day 0.82 the sun is on the FAR side
+    from the busk camera, so the only side an instrument can be carried on and
+    be seen is the shade side (busking lute L49 against L36-45; walking lute,
+    sunlit, L132 against L95). It is a VALUE problem, not a pose problem.
+    Levers in order: `uRim` on the figure and instrument materials (0.32
+    today); `grain` (0.35) so more pale colorVariant mixes in; or accept that a
+    busk at a low back-sun is a rim-light shot and light it as one. The
+    instrument albedo lives in `core/instruments`.
+
+123. **The gate rewards darkening and should not.** `tools/frame-quality.mjs`
+    measures whole-frame stops, so a wave that darkens the near ground passes
+    it while making nothing lighter — which is exactly what happened in wave
+    11 and was only caught by a critic building a control tree. Add a
+    land-masked p90 floor alongside the existing stops floor, so the gate can
+    tell "more range" from "darker darks".
+
+124. **Play it.** Nobody ever has. The busking mechanic is the core of the
+    design and has never been judged for feel: whether the timing window is
+    forgiving enough, whether the letter-fading scaffold teaches, whether idle
+    busking is satisfying or just idle. `tools/autoplay.mjs` proves the notes
+    are right and structurally cannot answer any of this.
+
+125. **Check the performance tiers on real mobile hardware.** `detectQuality()`
+    has three tiers that have never run on a phone. Logged under "Blocked on
+    human" in STATE.md since the v0.6 merge.
+
+126. **Re-baseline the critique against real reference frames.** Every "not
+    shippable" verdict in this project was scored against a written rubric by
+    an agent that has never seen A Short Hike or Spiritfarer. With reference
+    screenshots available locally, a genuine side-by-side becomes possible for
+    the first time — and the standing 3-of-10 count should be re-derived
+    rather than inherited.
 
 ## The v0.6 queue: "the road in three dimensions" (human-set, 2026-07-28)
 

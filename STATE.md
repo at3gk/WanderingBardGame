@@ -6,6 +6,92 @@ Run counter: 47
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-07-31 — twelve interactive critique waves, and the honest
+  state of the game.** A human is about to pull this repo down and look at it
+  on a real GPU. Read this block first; it is the short version.
+
+  **What is verifiably true.** `npm test` 790 green, `npx tsc --noEmit` clean,
+  `npm run build` clean, and `tools/frame-quality.mjs` PASSES all six poses
+  (morning 3.79, noon 3.08, golden 5.11, night 6.65, phone-portrait 3.30,
+  phone-landscape 5.19, floor 2.5). Pitch readability holds at 5.93:1 at every
+  hour, which is within a whisker of its arithmetic ceiling of 6.46 (see
+  below).
+
+  **What is NOT true, and matters most: nobody has ever looked at this game
+  with human eyes.** Twelve waves of agents graded it against a written rubric
+  and pixel statistics. No human has played it, and the busking mechanic —
+  the core of the design — has never been judged for whether it is *fun*.
+  Every frame was shot through SwiftShader at 12-21 s a frame, which is itself
+  the cause of at least one bug class (see the pose-blend race below).
+
+  **The count that never moved.** Ten successive visual critics scored the
+  ten postcard framings: 2, 2, 4, 5, 5, 3, 3, 3, 3 of 10 holding, and every
+  one said "not shippable" against an A Short Hike / Spiritfarer bar. The
+  measurements underneath improved a great deal over the same period. Treat
+  the count as unreliable rather than as a verdict: it is a binary applied by
+  an agent that has never seen the reference games, and it stopped
+  distinguishing progress from shippability around wave 9. A tenth critic was
+  briefed to add a 0-10 per-frame score for exactly this reason and did not
+  get to run.
+
+  **The two structural fixes that actually changed the picture**, both found
+  by comparing constants rather than by looking at frames:
+  1. `road.ts` `CORRIDOR_FALLOFF_M` 18 -> 7. The corridor graded the ground
+     flat across a 23 m strip centred on the centreline — the entire near and
+     mid third of every walking frame — over a landform already tuned to 15 m
+     of cross-road relief. Relief within 10 m of the lane went 0.29 m -> 1.14 m
+     against a 1.35 m ceiling. The lane gradient is provably unchanged (mean
+     0.029, p95 0.071) and there is now a test asserting it.
+  2. `painterly.ts` gained a foreground value tier over 4-45 m. There had been
+     NO depth-dependent value term inside 40 m: the fog defaults are dead
+     constants that `RoadStage` overwrites, and `distanceFog` runs them through
+     a second smoothstep, so `fogAmount` was 0.001 at 40 m. Nothing separated
+     five metres from sixty.
+
+  **The oldest open item, and where it actually stands.** STATE item 8 — "the
+  land never carries a light value" — was open from Run 45 through wave 11.
+  The ninth critic proved it: with wave 11's headline constant zeroed in a
+  control build, `p90` was byte-identical in all six gate poses, so the entire
+  green-gate gain had come from DARKENING. Wave 12's last landed commit
+  (`f510ab4`) is the first attempt to move it the other way — it lifts only
+  each biome's `*Dry` tone and widens the pale ground ramp, and it overturns
+  a rule this codebase carried for months ("nothing on the ground comes within
+  a stop of the sky") with a photometric argument that is worth reading in
+  `palette.ts`. **Its land-masked p90 claim is UNVERIFIED** — the agent that
+  wrote it died when the container suspended, before reporting. Whole-frame
+  p90 is dominated by sky and is not evidence. MEASURE THIS FIRST.
+
+  **Two unexplained numbers from that same commit, flagged not diagnosed:**
+  noon lost 0.58 stops (3.66 -> 3.08) and night 0.41 (7.06 -> 6.65), while hue
+  spread jumped at golden (0.024 -> 0.185) and phone-landscape (0.021 ->
+  0.212). All still pass. A large hue-spread move at golden hour is not
+  obviously something a dry-grass albedo lift should cause.
+
+  **The biggest lesson of the twelve waves, stated plainly for whoever is
+  next.** Every structural fix came from two constants that had to agree and
+  had never been compared — the road corridor against the camera's band; a
+  barline offset smaller than the plank it positions; a `reset` that snapped
+  every camera channel except FOV; a shutter shorter than a pose blend; fog
+  defaults overwritten at startup; a rut column at 0.55 against paint at 0.58;
+  a pale ramp described as "narrower" that was wider. NOT ONE came from
+  looking harder at a screenshot. Conversely, four confident "regressions"
+  reported by critics turned out to be instrument artefacts. **When a critique
+  names a symptom, go read the constants that bound it before acting on the
+  prescribed fix.**
+
+  **Known-good discarded work.** Wave 12's compose agent (figure-to-ground
+  separation in `Bard.ts`/`Traveller.ts`/`RoadStage.ts`) and a second value
+  round (`FG_TIER_DEPTH` 0.30 -> 0.60) were in flight when this session ended
+  and were discarded unmeasured rather than committed. The problem they were
+  aimed at is real and measured: on 05-golden-busk the bard separates from the
+  ground behind him by 2.0 sRGB levels at 20 px, and the dusk traveller by
+  0.4, against 16.4 for the campfire frame. Diagnosed cause: at day 0.82 the
+  sun is on the far side from the busk camera, so the only side an instrument
+  can be carried on and be seen is the shade side (busking lute L49 on a
+  backdrop of L36-45; walking lute, sunlit, L132 on L95). It is a value
+  problem, not a pose problem — do not re-diagnose the pose.
+
+
 - **CORRECTION TO COMMIT 5c7fb07's MESSAGE.** That message says the songboard's
   pitch contrast broke because wave 11's foreground tier darkened the plank
   while the glyphs, drawn by a different material, did not follow. The tier
