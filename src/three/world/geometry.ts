@@ -441,7 +441,28 @@ export function grassTuftGeometry(seed = 7): BufferGeometry {
   merged.computeVertexNormals();
   // Strongly skyward: grass is the one prop that should be lit as ground
   // rather than as a set of little walls. See `skywardNormals`.
-  skywardNormals(merged, 0.72);
+  //
+  /*
+   * 0.92, up from 0.72, in two steps and with the arithmetic written down
+   * because the first step was not enough and it was not obvious why.
+   *
+   * At 0.72 a blade keeps 0.28 of its true, near-horizontal normal. Take a
+   * golden-hour sun a few degrees above the horizon, so `L` is nearly
+   * horizontal: a blade turned toward it lands at `ndl` ~ 0.27 and one turned
+   * away at ~ -0.09, which the shader's three bands turn into a sun term of
+   * 0.55 against 0.25. That is a factor of two BETWEEN TWO BLADES OF THE SAME
+   * TUFT, at the hour with the warmest and strongest sun in the game — pale
+   * straw beside near-black, which is exactly what every critique has meant by
+   * calling the meadow litter. Softening the band edges (see the foliage
+   * material) halves the harshness of the step and cannot touch its size.
+   *
+   * At 0.92 the same two blades land at 0.168 and 0.008, and the sun term goes
+   * to 0.44 against 0.33 — a third rather than a factor of two. What is given
+   * up is modelling within the tuft, and for grass specifically that is the
+   * right trade and always was: a lawn is lit as a surface, not as twenty
+   * thousand little walls each arguing with the sun.
+   */
+  skywardNormals(merged, 0.92);
   paintGradient(merged, 0xb2ab8b, 0xffffff, 0, tallest * 0.85);
   // Grass sways from the very base — it has no stiff trunk to resist.
   addSway(merged, 0, tallest, 1);
@@ -716,11 +737,88 @@ function lumpDome(
  * surface. The vertical gradient is doing the rest of that work: the
  * underside is painted well down, which fakes the occlusion where stone
  * meets turf.
+ *
+ * **It is not a dome, and that is the point.** A critique of the mid-distance
+ * found bush, boulder and log sharing one silhouette: all three were rounded
+ * lumps at different tints, so at forty metres the field read as a scattering
+ * of identical blobs and the eye could not tell scrub from stone. `lumpDome`
+ * is right for a bush — a bush *is* a soft mass — and wrong for rock, which
+ * splits along flat planes and sits on the ground with its weight low.
+ *
+ * So this is three irregular rings joined by flat quads: a base a little
+ * narrower than the shoulder, the shoulder at two fifths of the height (which
+ * is what "weighted base" means arithmetically — the widest section is in the
+ * bottom half), and a small tilted cap. The cap is the whole silhouette cue.
+ * A dome's outline is an arc from any angle; this one has a shoulder, a
+ * slanted top plane and a corner between them, and it holds all three at the
+ * distance where the dome had already collapsed to a semicircle.
+ *
+ * Deliberately *not* the other failure the same critique named — a crumpled
+ * pancake of independent per-vertex spikes, which has no readable outline at
+ * all. Every facet here is a whole quad between two rings.
  */
 export function rockGeometry(seed = 17): BufferGeometry {
   const rand = mulberry32(seed);
-  const geometry = lumpDome(0.72, 7, 3, 0.62, 0.22, rand);
-  translateY(geometry, 0.2);
+  const sides = 6;
+  const baseY = -0.26;
+  const topY = 0.66;
+
+  const angles: number[] = [];
+  const radii: number[] = [];
+  const twist = rand() * Math.PI * 2;
+  for (let i = 0; i < sides; i++) {
+    // Angles jittered as well as radii: an even hexagon reads as a primitive
+    // however irregular its radius is, because the eye reads the corners.
+    angles.push(twist + (i / sides) * Math.PI * 2 + (rand() - 0.5) * 0.44);
+    radii.push(0.58 + rand() * 0.28);
+  }
+
+  // Where the cap sits, and how it leans. A cap centred and level is a
+  // pedestal; offset and tilted, the stone reads as having settled.
+  const capX = (rand() - 0.5) * 0.34;
+  const capZ = (rand() - 0.5) * 0.34;
+  const tiltX = (rand() - 0.5) * 0.34;
+  const tiltZ = (rand() - 0.5) * 0.34;
+
+  const ring = (y: number, shrink: number, offset: number, tilt: number): number[][] =>
+    angles.map((a, i) => {
+      const r = radii[i] * shrink;
+      const x = Math.cos(a) * r + capX * offset;
+      const z = Math.sin(a) * r + capZ * offset;
+      return [x, y + (tiltX * x + tiltZ * z) * tilt, z];
+    });
+
+  const span = topY - baseY;
+  // Top to bottom, because that is the order the winding convention below
+  // (shared with `lumpDome`) expects.
+  const rings = [
+    ring(topY, 0.46, 1, 1),
+    ring(baseY + span * 0.42, 1.0, 0.3, 0.35),
+    ring(baseY, 0.86, 0, 0),
+  ];
+
+  const verts: number[] = [];
+  // The cap: a fan around the ring's own centre rather than a raised apex, so
+  // the top is a plane and not a point.
+  const capCentre = [capX, topY + (tiltX * capX + tiltZ * capZ), capZ];
+  for (let s = 0; s < sides; s++) {
+    verts.push(...capCentre, ...rings[0][(s + 1) % sides], ...rings[0][s]);
+  }
+  for (let r = 0; r < rings.length - 1; r++) {
+    const upper = rings[r];
+    const lower = rings[r + 1];
+    for (let s = 0; s < sides; s++) {
+      const s1 = (s + 1) % sides;
+      verts.push(...upper[s], ...upper[s1], ...lower[s]);
+      verts.push(...upper[s1], ...lower[s1], ...lower[s]);
+    }
+  }
+  const floor = [0, baseY, 0];
+  for (let s = 0; s < sides; s++) {
+    verts.push(...floor, ...rings[2][s], ...rings[2][(s + 1) % sides]);
+  }
+
+  const geometry = fromPositions(verts);
   geometry.computeVertexNormals();
   paintGradient(geometry, 0x8b877d, 0xffffff, -0.3, 0.5);
   // Rocks do not sway. The attribute still has to exist so this geometry can
@@ -737,6 +835,14 @@ export function rockGeometry(seed = 17): BufferGeometry {
  * is wide standing at the roadside is a wall, and a line of them is a
  * hedge you cannot see the country over — which defeats the point of the
  * verge existing at all.
+ *
+ * Lowered again (`flatten` 0.58 -> 0.40, lobes seated at 0.28 of their own
+ * radius rather than 0.5) when a critique found bush, boulder and log sharing
+ * one blob silhouette. The bush is the one of the three that *should* stay
+ * soft — the separation has to be bought somewhere else, and height is where
+ * it is cheapest: a rounded mass that sits down in the grass and a faceted
+ * stone that stands up out of it are two shapes at forty metres, where a
+ * waist-high dome and a knee-high dome were one.
  */
 export function shrubGeometry(seed = 23): BufferGeometry {
   const rand = mulberry32(seed);
@@ -744,13 +850,13 @@ export function shrubGeometry(seed = 23): BufferGeometry {
   const lobes = 3;
   for (let i = 0; i < lobes; i++) {
     const a = (i / lobes) * Math.PI * 2 + rand() * 0.9;
-    const r = 0.42 + rand() * 0.24;
+    const r = 0.46 + rand() * 0.26;
     // Seven segments and three rings, not six and two. Two rings puts the
     // pole facet straight onto the widest ring, which gives a hexagonal
     // top and a bush that reads as a pitched tent from any angle.
-    const lobe = lumpDome(r, 7, 3, 0.58, 0.26, rand);
-    translateY(lobe, r * 0.5 + rand() * 0.1);
-    translateXZ(lobe, Math.cos(a) * r * 0.7, Math.sin(a) * r * 0.7);
+    const lobe = lumpDome(r, 7, 3, 0.47, 0.26, rand);
+    translateY(lobe, r * 0.36 + rand() * 0.09);
+    translateXZ(lobe, Math.cos(a) * r * 0.78, Math.sin(a) * r * 0.78);
     parts.push(paint(lobe, 0xffffff, 0.18, rand));
   }
   const merged = mergeGeometries(parts);
@@ -765,31 +871,80 @@ export function shrubGeometry(seed = 23): BufferGeometry {
  * Built upright and then rotated a quarter turn, because a tapered cylinder
  * is far easier to reason about along +Y and the rotation is proper (it
  * preserves handedness), so the outward winding survives it.
+ *
+ * **The cut ends are the whole silhouette.** `taperedCylinder` draws sides and
+ * nothing else, so for as long as this shape has existed both ends of every
+ * log in the world have been open tubes — and `solidMaterial` is front-face
+ * only, so what an open end actually rendered was a hole with the ground
+ * showing through it. That is most of why a critique found bush, boulder and
+ * log reading as one rounded blob at mid distance: from the side a capless
+ * tapered tube has exactly a dome's outline, and the one feature that says
+ * *log* rather than *lump* — a flat disc of pale sawn timber at each end —
+ * was missing.
+ *
+ * So the ends are capped, painted separately from the bark (heartwood is much
+ * lighter than a weathered trunk, and that value break is what carries at
+ * distance), and the taper is pulled in from 0.72 to 0.88 so the shape reads
+ * as a cylinder rather than as a carrot.
  */
 export function fallenLogGeometry(seed = 29): BufferGeometry {
   const rand = mulberry32(seed);
-  const parts: BufferGeometry[] = [];
+  const bark: BufferGeometry[] = [];
+  const cuts: BufferGeometry[] = [];
   const length = 2.2 + rand() * 1.6;
   const radius = 0.19 + rand() * 0.09;
+  const segments = 6;
 
-  const trunk = taperedCylinder(radius * 0.72, radius, length, 6, rand);
+  const twist = rand() * Math.PI * 2;
+  const topRadius = radius * 0.88;
+  const trunk = taperedCylinder(topRadius, radius, length, segments, rand, twist);
   layDown(trunk, radius);
-  parts.push(trunk);
+  bark.push(trunk);
+
+  for (const [r, y, up] of [
+    [radius, 0, false],
+    [topRadius, length, true],
+  ] as Array<[number, number, boolean]>) {
+    const cap = polyDisc(r, y, segments, twist, up);
+    layDown(cap, radius);
+    cuts.push(cap);
+  }
 
   // One or two broken-off limbs, which is what tells the eye this is a
   // fallen tree rather than a length of pipe.
   const stubs = 1 + Math.floor(rand() * 2);
   for (let i = 0; i < stubs; i++) {
-    const stub = taperedCylinder(radius * 0.24, radius * 0.42, 0.4 + rand() * 0.3, 4, rand);
-    layDown(stub, radius * 0.42);
-    rotateY(stub, 0.7 + rand() * 1.4);
-    translateXZ(stub, length * (0.2 + rand() * 0.6), 0);
-    parts.push(stub);
+    const stubTwist = rand() * Math.PI * 2;
+    const stubLength = 0.4 + rand() * 0.3;
+    const stubTop = radius * 0.24;
+    const stubBottom = radius * 0.42;
+    const swing = 0.7 + rand() * 1.4;
+    const along = length * (0.2 + rand() * 0.6);
+    const place = (geometry: BufferGeometry): void => {
+      layDown(geometry, stubBottom);
+      rotateY(geometry, swing);
+      translateXZ(geometry, along, 0);
+    };
+    const stub = taperedCylinder(stubTop, stubBottom, stubLength, 4, rand, stubTwist);
+    place(stub);
+    bark.push(stub);
+    const snap = polyDisc(stubTop, stubLength, 4, stubTwist, true);
+    place(snap);
+    cuts.push(snap);
   }
 
-  const merged = mergeGeometries(parts);
-  merged.computeVertexNormals();
-  paintGradient(merged, 0x6e6a5c, 0xffffff, 0, radius * 2.1);
+  const sides = mergeGeometries(bark);
+  sides.computeVertexNormals();
+  paintGradient(sides, 0x6e6a5c, 0xffffff, 0, radius * 2.1);
+
+  const ends = mergeGeometries(cuts);
+  ends.computeVertexNormals();
+  // Sawn or snapped timber, well above the bark's own value. Painted flat
+  // rather than graded: an end grain is one plane and a gradient across it
+  // would only argue with the flat shading.
+  paint(ends, 0xcbb289, 0.08, rand);
+
+  const merged = mergeGeometries([sides, ends]);
   addSway(merged, 0, 1, 0);
   return merged;
 }
@@ -1349,11 +1504,13 @@ function taperedCylinder(
   height: number,
   segments: number,
   rand: Rand,
+  fixedTwist?: number,
 ): BufferGeometry {
   const verts: number[] = [];
   // A per-instance twist so two trunks built from the same call do not line
-  // their facets up when they happen to stand next to each other.
-  const twist = rand() * Math.PI * 2;
+  // their facets up when they happen to stand next to each other. Passed in
+  // by the one caller that has to build a matching end cap.
+  const twist = fixedTwist ?? rand() * Math.PI * 2;
   for (let s = 0; s < segments; s++) {
     const a0 = (s / segments) * Math.PI * 2 + twist;
     const a1 = ((s + 1) / segments) * Math.PI * 2 + twist;
@@ -1367,6 +1524,34 @@ function taperedCylinder(
     const t1z = Math.sin(a1) * topRadius;
     verts.push(b0x, 0, b0z, t0x, height, t0z, b1x, 0, b1z);
     verts.push(b1x, 0, b1z, t0x, height, t0z, t1x, height, t1z);
+  }
+  return fromPositions(verts);
+}
+
+/**
+ * A flat polygonal disc in the XZ plane, wound to face up or down.
+ *
+ * Built to line up with `taperedCylinder`'s facets, which is why both take
+ * the same twist: a cap whose corners miss the tube's corners leaves a
+ * hairline of background showing at every seam.
+ */
+function polyDisc(
+  radius: number,
+  y: number,
+  segments: number,
+  twist: number,
+  up: boolean,
+): BufferGeometry {
+  const verts: number[] = [];
+  for (let s = 0; s < segments; s++) {
+    const a0 = (s / segments) * Math.PI * 2 + twist;
+    const a1 = ((s + 1) / segments) * Math.PI * 2 + twist;
+    const p0 = [Math.cos(a0) * radius, y, Math.sin(a0) * radius];
+    const p1 = [Math.cos(a1) * radius, y, Math.sin(a1) * radius];
+    // (centre, p1, p0) is the order whose face normal works out to +Y; see
+    // the same note in `puddleGeometry`.
+    if (up) verts.push(0, y, 0, ...p1, ...p0);
+    else verts.push(0, y, 0, ...p0, ...p1);
   }
   return fromPositions(verts);
 }

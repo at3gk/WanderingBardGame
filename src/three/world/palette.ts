@@ -55,6 +55,32 @@ export interface BiomePalette {
    */
   grass: number;
   grassVariant: number;
+  /*
+   * The dark end, deepened about a third on 2026-07-31, and the reason is
+   * worth reading before anything here is tuned again.
+   *
+   * Task 121 raised `grass`, `grassVariant`, `grassDry`, `road` and
+   * `roadShoulder` 35 per cent to close a bimodal land/sky histogram, and
+   * deliberately left this one alone — correctly, since the fault it was
+   * fixing was a missing *light* end. What went unnoticed is that the ground's
+   * own spread had therefore narrowed by the whole of that raise, and the
+   * frames were quietly making the difference up with near-black grass
+   * scatter. When the ground cover was finally pulled into the ground's own
+   * value neighbourhood (see `WorldStreamer`'s grass `colorOf`, and the
+   * flat-shading note beside its foliage material) the noon pose lost half a
+   * stop of range and `tools/frame-quality.mjs` went red — a measurement that
+   * was, read correctly, the gauge counting the litter as value structure.
+   *
+   * The darks still have to come from somewhere, and this file's own
+   * photometric note below already says where: a landscape reads front to back
+   * because its SHADOWS are three stops down, not because it is speckled with
+   * dark objects. So they come back as hollows in the field, as deeper wheel
+   * ruts and as darker canopy — three large shapes — rather than as twenty
+   * thousand small ones. Noon measures 2.59 stops against a 2.5 floor with all
+   * six poses passing, and modal share across the set fell from 0.26-0.32 to
+   * 0.07-0.13 in the same pass, which is the near ground finally not being one
+   * uninterrupted wash.
+   */
   grassShade: number;
   grassDry: number;
   /** Packed earth of the road itself, and its worn shoulder. */
@@ -68,6 +94,31 @@ export interface BiomePalette {
   /** The dissenting accent — flowers, roofs, water, whatever is not green. */
   accent: number;
   accentAlt: number;
+  /**
+   * The two tones open water is pulled toward, deep and shallow.
+   *
+   * Neither is an albedo in the way everything else here is one. Water has no
+   * albedo — it is a mirror — so what the shader is actually handed is the
+   * sky's own horizon colour pulled some of the way toward these, further in
+   * the middle of the channel than at its edges. See `paintWater`. They are
+   * here rather than as two constants because a forest brook and a riverside
+   * river are not the same water: one runs under a closed canopy over leaf
+   * litter and the other is open to the whole sky.
+   *
+   * Riverside's pair is the one that matters, since that is the only band
+   * that carries a river. The other two exist so the key means something in
+   * every biome rather than being a riverside special case with a fallback.
+   */
+  waterDeep: number;
+  waterShallow: number;
+  /**
+   * Wet ground at the waterline: silt, shingle and trodden mud.
+   *
+   * The bank has to be a different *material* from the meadow it interrupts,
+   * or a river reads as a blue ribbon laid on a lawn. This is what the ground
+   * inside the channel and the first metres of its bank are painted with.
+   */
+  bank: number;
   /** Which tree silhouettes belong here, and in what proportion. */
   trees: Array<{ kind: TreeKind; weight: number }>;
   /** Which landmarks may be raised on a ridge in this band. */
@@ -199,7 +250,7 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     // poses, so it is where the missing mid-tone showed up worst.
     grass: 0xb1cc63,
     grassVariant: 0xdfdc8b,
-    grassShade: 0x566c34,
+    grassShade: 0x3c4a23,
     grassDry: 0xefe1a3,
     // Kept a little under the grass rather than over it. The claim on this
     // colour is not that it is the right colour for dust but that it holds a
@@ -250,6 +301,10 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     // flowers are small and a cool note reads best as a dark speck rather
     // than competing with the sky for the light end.
     accentAlt: 0xa9a6d8,
+    // Open pasture: whatever water is here is a pond under a wide sky.
+    waterDeep: 0x51757f,
+    waterShallow: 0x9fbfc6,
+    bank: 0x9a8a6b,
     trees: [
       { kind: 'broadleaf', weight: 9 },
       { kind: 'conifer', weight: 1 },
@@ -286,7 +341,7 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     // biome and had the least of the fault.
     grass: 0x568752,
     grassVariant: 0x82a55c,
-    grassShade: 0x243f30,
+    grassShade: 0x162720,
     grassDry: 0xa9ad65,
     road: 0x8f785d,
     roadShoulder: 0x6c7f50,
@@ -298,6 +353,11 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     canopyVariant: 0x335930,
     accent: 0xc4763a,
     accentAlt: 0xd9b06a,
+    // Under a closed canopy, over leaf litter: darker and greener than the
+    // open water of the riverside band.
+    waterDeep: 0x2f4a46,
+    waterShallow: 0x7c9a95,
+    bank: 0x6f6248,
     trees: [
       { kind: 'conifer', weight: 7 },
       { kind: 'broadleaf', weight: 3 },
@@ -334,7 +394,7 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     id: 'riverside',
     grass: 0x8bbd93,
     grassVariant: 0xb8d19d,
-    grassShade: 0x3d6358,
+    grassShade: 0x27403a,
     grassDry: 0xd8ddb5,
     // Same problem as village, milder: 0xa89a80 against a `grassDry` of
     // 0xccd2ac was not enough of a break to survive fog at thirty metres.
@@ -342,17 +402,36 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     roadShoulder: 0x84957b,
     rock: 0xa2a8ae,
     trunk: 0x746459,
-    // Darkened twice: from 0x6c9a76 / 0x9ac093 because the willows were the
-    // palest foliage in the game and put the brightest object in a wide frame
-    // out on the horizon, and again from 0x568170 / 0x7aa87f for the reason
-    // given under village — the variant still measured above the grass. A
-    // riverside canopy should be cool and slightly sombre anyway; it is the
-    // biome whose whole character is that its accent is cooler than its
-    // greens.
-    canopy: 0x3a594d,
-    canopyVariant: 0x517154,
+    // Darkened three times: from 0x6c9a76 / 0x9ac093 because the willows were
+    // the palest foliage in the game and put the brightest object in a wide
+    // frame out on the horizon; again from 0x568170 / 0x7aa87f for the reason
+    // given under village — the variant still measured above the grass; and
+    // again from 0x3a594d / 0x517154 on 2026-07-31, this time as one of the
+    // three places the frame's darks were moved to once they stopped being
+    // carried by black grass (see the note on `grassShade` above). A treeline
+    // is the largest dark mass a flat midday landscape has, and this is the
+    // band that carries the noon pose. A riverside canopy should be cool and
+    // slightly sombre anyway; it is the biome whose whole character is that
+    // its accent is cooler than its greens.
+    canopy: 0x2f4a40,
+    canopyVariant: 0x436248,
     accent: 0x5fa6c8,
     accentAlt: 0xe4e8d2,
+    /*
+     * The river's own two tones, and the reason this biome has a name.
+     *
+     * Deep is a cool blue-green well under every ground tone here — it is the
+     * one thing in the band allowed to be darker than the shade grass —
+     * because the middle of a channel is where the least light comes back.
+     * Shallow is a pale eau-de-nil that sits *above* the grass: the rim of a
+     * river is where the sky's own light is returned most directly, and a
+     * river whose edges are darker than its banks reads as a trench.
+     */
+    waterDeep: 0x3f6f7d,
+    waterShallow: 0xa8cdc9,
+    // Silt and shingle. Well warmer than the greens either side of it, so the
+    // bank reads as bare wet ground rather than as more meadow in shadow.
+    bank: 0x8d8161,
     trees: [
       { kind: 'willow', weight: 7 },
       { kind: 'broadleaf', weight: 3 },
@@ -370,7 +449,13 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
       flower: 0.8,
       fern: 0.6,
       shrub: 0.5,
-      reed: 0.9,
+      // Cut from 0.9 now that the band has an actual river in it. This key is
+      // the reeds in the *roadside ditch*, and at 0.9 they were standing in
+      // for the water — a hedge of dark verticals crowding the lane, which is
+      // most of what made the near ground read as litter in the riverside
+      // frames. The river's own fringe (`bankreed` in `WorldStreamer`) is
+      // where reeds belong and is now much denser than this ever was.
+      reed: 0.3,
       log: 0.2,
       road: 1.15,
       // Low, flat and closest to the water table of anywhere the road

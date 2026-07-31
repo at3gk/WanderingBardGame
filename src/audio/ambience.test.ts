@@ -4,6 +4,7 @@ import {
   AMBIENCE_BIOMES,
   AMBIENCE_LAYERS,
   type AmbienceBiomeId,
+  type AmbienceLayerDef,
   type AmbienceLayerId,
   type AmbienceMix,
   type AmbienceWeather,
@@ -11,6 +12,7 @@ import {
   blendMixes,
   dayShape,
   mixTotal,
+  sweepRangeHz,
 } from './ambience';
 
 const WEATHERS: AmbienceWeather[] = ['clear', 'breezy', 'overcast', 'rain'];
@@ -217,5 +219,86 @@ describe('blendMixes', () => {
       expect(total).toBeGreaterThan(Math.min(mixTotal(village), mixTotal(riverside)) - 1e-12);
       expect(total).toBeLessThan(Math.max(mixTotal(village), mixTotal(riverside)) + 1e-12);
     }
+  });
+});
+
+describe('the beds', () => {
+  const bedLayers = AMBIENCE_LAYERS.filter((layer) => layer.kind === 'bed');
+
+  it('steeply filters every bed — a single-pole cascade reads as hiss, not air', () => {
+    for (const layer of bedLayers) {
+      expect(layer.filters?.length ?? 0, layer.id).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('leaves no bed cascade with significant energy above 5 kHz', () => {
+    for (const layer of bedLayers) {
+      const shaping = (layer.filters ?? []).filter((f) => f.type === 'lowpass' || f.type === 'bandpass');
+      // A cascade of highpasses only, with nothing ever narrowing the top
+      // end, is exactly the "bare highpass" bug this pass exists to fix.
+      expect(shaping.length, layer.id).toBeGreaterThan(0);
+      const highestCorner = Math.max(...shaping.map((f) => f.frequencyHz));
+      expect(highestCorner, layer.id).toBeLessThanOrEqual(4200);
+    }
+  });
+
+  it('never sweeps a filter corner across zero or past 8 kHz', () => {
+    for (const layer of AMBIENCE_LAYERS) {
+      const [minHz, maxHz] = sweepRangeHz(layer);
+      expect(minHz, layer.id).toBeGreaterThanOrEqual(0);
+      expect(maxHz, layer.id).toBeLessThanOrEqual(8000);
+    }
+  });
+
+  it('widens the sweep range strictly as depth grows, on a synthetic layer', () => {
+    const layerAt = (depth: number): AmbienceLayerDef => ({
+      id: 'air',
+      kind: 'bed',
+      biomes: AMBIENCE_BIOMES,
+      gain: 0.05,
+      filters: [{ type: 'lowpass', frequencyHz: 1000, q: 0.7 }],
+      sweep: [0.05, depth],
+    });
+    let previousWidth = -Infinity;
+    for (const depth of [0, 0.1, 0.25, 0.4, 0.6]) {
+      const [minHz, maxHz] = sweepRangeHz(layerAt(depth));
+      const width = maxHz - minHz;
+      expect(width).toBeGreaterThan(previousWidth);
+      previousWidth = width;
+    }
+  });
+
+  it('returns a flat range when a layer has no sweep or no filter', () => {
+    const noSweep: AmbienceLayerDef = {
+      id: 'air',
+      kind: 'bed',
+      biomes: AMBIENCE_BIOMES,
+      gain: 0.05,
+      filters: [{ type: 'lowpass', frequencyHz: 500, q: 0.7 }],
+    };
+    expect(sweepRangeHz(noSweep)).toEqual([500, 500]);
+    const noFilter: AmbienceLayerDef = { id: 'air', kind: 'bed', biomes: AMBIENCE_BIOMES, gain: 0.05 };
+    expect(sweepRangeHz(noFilter)).toEqual([0, 0]);
+  });
+
+  it('never sweeps faster than one cycle per six-plus seconds — faster reads as an effect, not weather', () => {
+    for (const layer of bedLayers) {
+      if (!layer.sweep) continue;
+      const [rateHz] = layer.sweep;
+      expect(rateHz, layer.id).toBeLessThan(0.15);
+    }
+  });
+
+  it('keeps the loudest possible mix materially under the old ceiling', () => {
+    let worst = 0;
+    everyScene((mix) => {
+      worst = Math.max(worst, mixTotal(mix));
+    });
+    expect(worst).toBeLessThanOrEqual(0.42);
+  });
+
+  it('keeps crickets below the range that reads as tinnitus', () => {
+    const crickets = AMBIENCE_LAYERS.find((layer) => layer.id === 'crickets');
+    expect(crickets?.grain?.pitchHz[1]).toBeLessThanOrEqual(4500);
   });
 });

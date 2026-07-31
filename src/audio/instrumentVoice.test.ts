@@ -3,11 +3,16 @@ import { INSTRUMENTS, type InstrumentVoice } from '../core/instruments';
 import {
   VOICE_SILENCE,
   defaultHoldSec,
+  partialAttackScale,
+  partialDecayScale,
   planEnvelope,
   planPartials,
   planTransient,
   planVoice,
+  soundingFrequencyHz,
+  spectralCentroidRatio,
   voiceInharmonicity,
+  voiceRegisterOctaves,
   voiceRingSec,
 } from './instrumentVoice';
 
@@ -208,6 +213,177 @@ describe('planVoice', () => {
     const short = planVoice(sustained, 440, { holdSec: 0.5 });
     const long = planVoice(sustained, 440, { holdSec: 2 });
     expect(long.endSec - short.endSec).toBeCloseTo(1.5, 6);
+  });
+});
+
+const voiceOf = (id: string): InstrumentVoice => INSTRUMENTS.find((i) => i.id === id)!.voice;
+
+describe('the stack does not die together', () => {
+  it('kills the top of a plucked note well before its fundamental', () => {
+    const lute = voiceOf('lute');
+    expect(partialDecayScale(lute, 1)).toBeCloseTo(1, 12);
+    // The sixth harmonic of a lute note is gone three to four times sooner
+    // than the fundamental; that is what makes a pluck start bright and
+    // become mellow instead of sitting there.
+    expect(partialDecayScale(lute, 6)).toBeLessThan(0.4);
+    expect(partialDecayScale(lute, 6)).toBeGreaterThan(0.2);
+  });
+
+  it('lets a bell hum outlast everything above it', () => {
+    const bells = voiceOf('bells');
+    // The hum sits an octave *below* the prime and is the last thing you hear
+    // from a real bell. A shared envelope makes that impossible.
+    expect(partialDecayScale(bells, 0.5)).toBeGreaterThan(1.3);
+    expect(partialDecayScale(bells, 4.2)).toBeLessThan(0.5);
+    expect(partialDecayScale(bells, 0.5)).toBeGreaterThan(partialDecayScale(bells, 2));
+  });
+
+  it('spreads a driven voice much less than a struck one', () => {
+    // A bow or a wheel holds the harmonics up; only a struck thing lets them go.
+    expect(partialDecayScale(voiceOf('hurdy-gurdy'), 8)).toBeGreaterThan(
+      partialDecayScale(voiceOf('harp'), 8)
+    );
+  });
+
+  it('is monotonic and bounded for every instrument across a wide ratio range', () => {
+    for (const instrument of INSTRUMENTS) {
+      let previous = Infinity;
+      for (const ratio of [0.5, 1, 1.19, 2, 3, 5, 9, 16]) {
+        const scale = partialDecayScale(instrument.voice, ratio);
+        expect(scale, `${instrument.id} @ ${ratio}`).toBeGreaterThanOrEqual(0.15);
+        expect(scale, `${instrument.id} @ ${ratio}`).toBeLessThanOrEqual(1.35);
+        expect(scale, `${instrument.id} @ ${ratio}`).toBeLessThanOrEqual(previous);
+        previous = scale;
+      }
+    }
+  });
+
+  it('brings the harmonics of a blown or bowed note in behind the fundamental', () => {
+    // Breath and bow build the fundamental first; the flux across the attack
+    // is most of what separates a note played from a note switched on.
+    expect(partialAttackScale(voiceOf('reed-flute'), 4)).toBeGreaterThan(1);
+    expect(partialAttackScale(voiceOf('hurdy-gurdy'), 8)).toBeGreaterThan(1);
+    // A pluck excites the whole stack in one event.
+    expect(partialAttackScale(voiceOf('lute'), 8)).toBe(1);
+    expect(partialAttackScale(voiceOf('bells'), 4)).toBe(1);
+    expect(partialAttackScale(voiceOf('reed-flute'), 1)).toBe(1);
+  });
+
+  it('gives every partial of every instrument its own finite, forward-running envelope', () => {
+    for (const instrument of INSTRUMENTS) {
+      const plan = planVoice(instrument.voice, 261.63, { nyquistHz: 24000 });
+      expect(plan.partials.length, instrument.id).toBeGreaterThan(0);
+      for (const partial of plan.partials) {
+        const { points, endSec } = partial.envelope;
+        expect(endSec, instrument.id).toBeGreaterThan(0);
+        expect(plan.endSec, instrument.id).toBeGreaterThanOrEqual(endSec);
+        for (let i = 1; i < points.length; i++) {
+          expect(points[i].timeSec, instrument.id).toBeGreaterThanOrEqual(points[i - 1].timeSec);
+        }
+        expect(points[points.length - 1].value).toBe(0);
+      }
+    }
+  });
+
+  it('actually differs across the stack rather than repeating one envelope', () => {
+    const plan = planVoice(voiceOf('harp'), 261.63);
+    const ends = plan.partials.map((p) => p.envelope.endSec);
+    expect(new Set(ends.map((e) => e.toFixed(4))).size).toBeGreaterThan(1);
+    // Ordered: the higher the partial, the sooner it is gone.
+    for (let i = 1; i < plan.partials.length; i++) {
+      if (plan.partials[i].frequencyHz <= plan.partials[i - 1].frequencyHz) continue;
+      expect(ends[i]).toBeLessThanOrEqual(ends[i - 1] + 1e-9);
+    }
+  });
+
+  it('leaves an unshaped envelope exactly as the voice declares it', () => {
+    expect(planEnvelope(plain, 0.4)).toEqual(planEnvelope(plain, 0.4, {}));
+    expect(planEnvelope(plain, 0.4, { decayScale: 1, attackScale: 1 })).toEqual(planEnvelope(plain, 0.4));
+    // Nonsense scaling falls back to the declared voice rather than to silence.
+    expect(planEnvelope(plain, 0.4, { decayScale: Number.NaN, attackScale: -2 })).toEqual(
+      planEnvelope(plain, 0.4)
+    );
+  });
+});
+
+describe('register', () => {
+  it('puts each of the six where the real instrument lives', () => {
+    expect(voiceRegisterOctaves(voiceOf('hand-drum'))).toBe(-1);
+    expect(voiceRegisterOctaves(voiceOf('bells'))).toBe(-1);
+    expect(voiceRegisterOctaves(voiceOf('reed-flute'))).toBe(1);
+    expect(voiceRegisterOctaves(voiceOf('lute'))).toBe(0);
+    expect(voiceRegisterOctaves(voiceOf('harp'))).toBe(0);
+    expect(voiceRegisterOctaves(voiceOf('hurdy-gurdy'))).toBe(0);
+  });
+
+  it('spreads the six over three octaves, so no two share a register and a family', () => {
+    const octaves = INSTRUMENTS.map((i) => voiceRegisterOctaves(i.voice));
+    expect(Math.max(...octaves) - Math.min(...octaves)).toBe(2);
+  });
+
+  it('only ever moves by whole octaves, so the letter on the staff stays true', () => {
+    for (const instrument of INSTRUMENTS) {
+      const ratio = soundingFrequencyHz(instrument.voice, 261.63) / 261.63;
+      expect(Math.log2(ratio) % 1, instrument.id).toBeCloseTo(0, 12);
+    }
+  });
+
+  it('reads brightness off the stack rather than off a table of ids', () => {
+    // A sine is 1; a near-saw is around three.
+    expect(spectralCentroidRatio(plain)).toBeGreaterThan(1);
+    expect(spectralCentroidRatio(voiceOf('reed-flute'))).toBeLessThan(1.6);
+    expect(spectralCentroidRatio(voiceOf('hurdy-gurdy'))).toBeGreaterThan(2.5);
+    expect(spectralCentroidRatio({ ...plain, partials: [[1, 1]] })).toBeCloseTo(1, 12);
+  });
+
+  it('sounds the shifted pitch, and can be told not to', () => {
+    const flute = voiceOf('reed-flute');
+    const shifted = planVoice(flute, 261.63);
+    expect(shifted.soundingHz).toBeCloseTo(523.26, 6);
+    expect(shifted.partials[0].frequencyHz).toBeCloseTo(523.26, 6);
+    const exact = planVoice(flute, 261.63, { register: false });
+    expect(exact.registerOctaves).toBe(0);
+    expect(exact.soundingHz).toBeCloseTo(261.63, 6);
+  });
+
+  it('keeps every shifted voice inside the nyquist across the songbook', () => {
+    for (const instrument of INSTRUMENTS) {
+      for (const frequencyHz of [130.81, 261.63, 523.25, 1046.5]) {
+        const plan = planVoice(instrument.voice, frequencyHz, { nyquistHz: 22050 });
+        expect(plan.partials.length, `${instrument.id} @ ${frequencyHz}`).toBeGreaterThan(0);
+        for (const partial of plan.partials) {
+          expect(partial.frequencyHz, instrument.id).toBeLessThan(22050);
+          expect(partial.frequencyHz, instrument.id).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+});
+
+describe('the transient says what struck the thing', () => {
+  it('gives a string a narrow click well above the pitch', () => {
+    const pluck = planTransient({ ...plain, transient: 0.3 }, 440);
+    expect(pluck?.centreHz).toBeCloseTo(1320, 6);
+    expect(pluck?.q).toBeCloseTo(0.9, 6);
+  });
+
+  it('gives a membrane a broad thump close to it', () => {
+    const drum = planTransient(voiceOf('hand-drum'), 130.81);
+    const lute = planTransient(voiceOf('lute'), 130.81);
+    expect(drum?.q).toBeLessThan(lute?.q ?? 0);
+    expect(drum?.centreHz).toBeLessThan(lute?.centreHz ?? 0);
+  });
+
+  it('still keeps every burst inside its own voice and inside the nyquist', () => {
+    for (const instrument of INSTRUMENTS) {
+      for (const frequencyHz of [130.81, 1046.5]) {
+        const plan = planTransient(instrument.voice, frequencyHz, 22050);
+        if (!plan) continue;
+        expect(plan.centreHz, instrument.id).toBeGreaterThan(100);
+        expect(plan.centreHz, instrument.id).toBeLessThan(11025);
+        expect(plan.q, instrument.id).toBeGreaterThan(0.3);
+      }
+    }
   });
 });
 

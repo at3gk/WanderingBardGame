@@ -78,6 +78,16 @@ export interface JourneyState {
   instrumentId: string;
   /** Every instrument the player may choose. Always contains `instrumentId`. */
   unlockedInstruments: string[];
+  /**
+   * The song pinned for the walk, or null to wander the songbook's rotation.
+   *
+   * A plain id rather than anything from the songbook, for the same reason
+   * `instrumentId` is a plain string: this module must stay loadable without
+   * the catalogue behind it. An id this build has never heard of is kept as
+   * written and simply falls back to rotation downstream (`songForPass`),
+   * so a save from a newer build does not lose the player's choice.
+   */
+  songChoice: string | null;
   /** Ids of road stops already played or resolved today, in the order they were reached. */
   visited: string[];
 
@@ -206,6 +216,7 @@ export function createJourney(dayKey: string, roadLengthM: number): JourneyState
     delight: 0,
     instrumentId: DEFAULT_INSTRUMENT_ID,
     unlockedInstruments: [DEFAULT_INSTRUMENT_ID],
+    songChoice: null,
     visited: [],
     totalMetres: 0,
     totalCoins: 0,
@@ -404,6 +415,20 @@ export function chooseInstrument(state: object, instrumentId: string): JourneySt
   return next;
 }
 
+/**
+ * Pin one song for the walk, or hand the rotation back with `null`.
+ *
+ * Unlike `chooseInstrument` there is no unlock list to check against — every
+ * song in the book is the player's to learn from the first step, because
+ * choosing what to learn is the point (DESIGN.md, "Choose a song"). Anything
+ * that is not a non-empty string is read as "wander".
+ */
+export function chooseSong(state: object, songId: string | null): JourneyState {
+  const next = normalize(state);
+  next.songChoice = typeof songId === 'string' && songId !== '' ? songId : null;
+  return next;
+}
+
 // ---------------------------------------------------------------------------
 // The day rollover
 // ---------------------------------------------------------------------------
@@ -432,6 +457,9 @@ export function startNewDay(state: object, dayKey: string): JourneyState {
     delight: 0,
     instrumentId: previous.instrumentId,
     unlockedInstruments: previous.unlockedInstruments.slice(),
+    // The song being learnt describes the bard, not the road: repetition
+    // across days is the whole mechanism, so a new dawn keeps the choice.
+    songChoice: previous.songChoice,
     visited: [],
     totalMetres: previous.totalMetres,
     totalCoins: previous.totalCoins,
@@ -457,6 +485,8 @@ interface Stored {
   delight: number;
   instrument: string;
   unlocked: string[];
+  /** Pinned song id, or null while wandering. Absent in pre-v0.8 saves, which reads as null. */
+  song?: string | null;
   visited: string[];
   metres: number;
   earned: number;
@@ -504,6 +534,7 @@ export function saveJourney(state: object, force = false, nowMs: number = Date.n
       delight: round(j.delight, 2),
       instrument: j.instrumentId,
       unlocked: j.unlockedInstruments,
+      song: j.songChoice,
       visited: j.visited,
       metres: round(j.totalMetres, 1),
       earned: round(j.totalCoins, 2),
@@ -562,6 +593,7 @@ export function loadJourney(dayKey: string): JourneyState | null {
       delight: parsed.delight,
       instrumentId: parsed.instrument,
       unlockedInstruments: parsed.unlocked,
+      songChoice: parsed.song,
       visited: parsed.visited,
       totalMetres: parsed.metres,
       totalCoins: parsed.earned,
@@ -627,6 +659,8 @@ function normalize(input: unknown): JourneyState {
     delight: Math.max(0, finiteOr(raw.delight, 0)),
     instrumentId,
     unlockedInstruments: unlocked,
+    songChoice:
+      typeof raw.songChoice === 'string' && raw.songChoice !== '' ? raw.songChoice : null,
     visited: stringList(raw.visited, MAX_VISITED),
     totalMetres: Math.max(0, finiteOr(raw.totalMetres, 0)),
     totalCoins: Math.max(0, finiteOr(raw.totalCoins, 0)),

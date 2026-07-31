@@ -23,7 +23,7 @@
  */
 
 import type { HudBox, HudChrome, SafeAreaInsets } from './hudLayout';
-import { hudChrome, instrumentCaseBox } from './hudLayout';
+import { hudChrome, instrumentCaseBox, songBookBox } from './hudLayout';
 
 /** Where the chrome rests when nothing has happened for a while. */
 const IDLE_OPACITY = 0.36;
@@ -48,6 +48,17 @@ export interface CaseEntry {
   id: string;
   name: string;
 }
+
+/** A song the book can offer: its id and its title. */
+export interface SongEntry {
+  id: string;
+  name: string;
+}
+
+/** What the song corner says while no song is pinned. */
+const WANDERING_LABEL = 'Wandering';
+/** The row that hands the rotation back. */
+const WANDER_ROW_LABEL = 'Wander the songbook';
 
 /**
  * The face stack.
@@ -108,6 +119,10 @@ export class Hud {
   private readonly instrumentName: HTMLSpanElement;
   private readonly caseCatch: SVGSVGElement;
   private readonly caseBox: HTMLDivElement;
+  private readonly songBox: HTMLDivElement;
+  private readonly songName: HTMLSpanElement;
+  private readonly songCatch: SVGSVGElement;
+  private readonly bookBox: HTMLDivElement;
   private readonly journalBox: HTMLDivElement;
   private readonly journalLine: HTMLParagraphElement;
 
@@ -123,9 +138,17 @@ export class Hud {
   private caseHold = 0;
   private chosen: ((id: string) => void) | null = null;
 
+  /** Every song the road could play, and which one is pinned (or null). */
+  private songEntries: SongEntry[] = [];
+  private pinnedSongId: string | null = null;
+  private bookOpen = false;
+  private bookHold = 0;
+  private songChosen: ((id: string | null) => void) | null = null;
+
   /** Seconds of brightness left on each piece. */
   private coinsAttention = 0;
   private instrumentAttention = 0;
+  private songAttention = 0;
   private journalHold = 0;
   /** Last sky colour the wash was built from, quantised. See `setTone`. */
   private toneKey = -1;
@@ -195,11 +218,17 @@ export class Hud {
     // that can hold the name that has to be there anyway, and the corner
     // stops taking taps entirely during a busk, which is the moment where a
     // swallowed tap is a missed note rather than a second attempt.
+    // `flex-start`, not `flex-end`, though the rows grow up from the bottom:
+    // the box is sized by the layout to exactly the rows that fit, so there
+    // is never free space to justify away — and when more rows are given
+    // than fit, `flex-end` puts the overflow *above* the box, where CSS
+    // provides no way to scroll to it. Found live: a 12-row songbook on a
+    // desktop rendered its first four rows over the sky, untappable.
     this.caseBox = element('div', {
       position: 'absolute',
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'flex-end',
+      justifyContent: 'flex-start',
       boxSizing: 'border-box',
       overflowY: 'auto',
       overflowX: 'hidden',
@@ -241,6 +270,57 @@ export class Hud {
       this.setCaseOpen(!this.caseOpen);
     });
     this.root.appendChild(this.instrumentBox);
+
+    // --- the song being learnt, and the rest of the songbook ---------------
+    //
+    // The instrument corner's mirror image, in the opposite bottom corner and
+    // built by exactly the same rules: a readout that is also the handle, a
+    // stack of rows that reads as the corner opened, and no scrim. The one
+    // structural difference is that the book always has somewhere to go —
+    // "wander" is a choice too — so its catch shows whenever the moment
+    // allows choosing at all, rather than waiting for a second entry.
+    this.bookBox = element('div', {
+      position: 'absolute',
+      display: 'flex',
+      flexDirection: 'column',
+      // See the case above for why this is not `flex-end`.
+      justifyContent: 'flex-start',
+      boxSizing: 'border-box',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      pointerEvents: 'none',
+      background: JOURNAL_WASH,
+      opacity: '0',
+      transition: 'opacity 320ms ease',
+    });
+    this.root.appendChild(this.bookBox);
+
+    this.songBox = element('div', {
+      position: 'absolute',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      gap: '8px',
+      transition: 'opacity 900ms ease',
+      textShadow: '0 1px 3px rgba(20, 14, 18, 0.75)',
+    });
+    this.songName = element('span', {
+      fontStyle: 'italic',
+      color: INK_SOFT,
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+    });
+    this.songName.textContent = WANDERING_LABEL;
+    this.songBox.appendChild(this.songName);
+    this.songCatch = caseMark();
+    this.songCatch.style.display = 'none';
+    this.songBox.appendChild(this.songCatch);
+    this.songBox.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      this.setBookOpen(!this.bookOpen);
+    });
+    this.root.appendChild(this.songBox);
 
     // --- the journal ------------------------------------------------------
     this.journalBox = element('div', {
@@ -319,6 +399,34 @@ export class Hud {
   }
 
   /**
+   * The songbook, and which tune is pinned for the walk (null while
+   * wandering). The corner names the pinned song, or says "Wandering"; the
+   * open book lists everything else, with the wander row on top whenever a
+   * song is pinned.
+   */
+  setSongbook(entries: readonly SongEntry[], pinnedId: string | null): void {
+    this.songEntries = Array.isArray(entries)
+      ? entries.filter((e) => e && typeof e.id === 'string' && typeof e.name === 'string')
+      : [];
+    this.pinnedSongId = typeof pinnedId === 'string' && pinnedId !== '' ? pinnedId : null;
+    const pinned = this.songEntries.find((e) => e.id === this.pinnedSongId);
+    const label = pinned ? pinned.name : WANDERING_LABEL;
+    if (label !== this.songName.textContent) {
+      this.songName.textContent = label;
+      this.songAttention = ATTENTION_SEC;
+    }
+    this.buildBook();
+    if (this.bookRows().length === 0) this.setBookOpen(false);
+    this.layoutBook();
+    this.applyPickable();
+  }
+
+  /** Called with a song id when the player pins one, or null for wander. */
+  onSongChosen(handler: (id: string | null) => void): void {
+    this.songChosen = handler;
+  }
+
+  /**
    * Put a line in the journal.
    *
    * The line is written by whoever knows what happened —
@@ -355,6 +463,7 @@ export class Hud {
     const wash = journalWash(quantise(r) + 8, quantise(g) + 6, quantise(b) + 8);
     this.journalBox.style.background = wash;
     this.caseBox.style.background = wash;
+    this.bookBox.style.background = wash;
   }
 
   /** Take the card down early, when the moment it described has passed. */
@@ -377,16 +486,20 @@ export class Hud {
     // open would leave a column of names over the road for as long as the
     // timer had left, and it is the wrong moment to be choosing anyway.
     this.setCaseOpen(false);
+    this.setBookOpen(false);
     this.applyPickable();
     this.applyOpacity();
   }
 
   update(dt: number): void {
     const step = Number.isFinite(dt) && dt > 0 ? dt : 0;
-    const before = this.coinsAttention > 0 || this.instrumentAttention > 0;
+    const before =
+      this.coinsAttention > 0 || this.instrumentAttention > 0 || this.songAttention > 0;
     this.coinsAttention = Math.max(0, this.coinsAttention - step);
     this.instrumentAttention = Math.max(0, this.instrumentAttention - step);
-    if (before || this.coinsAttention > 0 || this.instrumentAttention > 0) this.applyOpacity();
+    this.songAttention = Math.max(0, this.songAttention - step);
+    if (before || this.coinsAttention > 0 || this.instrumentAttention > 0 || this.songAttention > 0)
+      this.applyOpacity();
 
     if (this.journalHold > 0) {
       this.journalHold -= step;
@@ -396,6 +509,11 @@ export class Hud {
     if (this.caseHold > 0) {
       this.caseHold -= step;
       if (this.caseHold <= 0) this.setCaseOpen(false);
+    }
+
+    if (this.bookHold > 0) {
+      this.bookHold -= step;
+      if (this.bookHold <= 0) this.setBookOpen(false);
     }
   }
 
@@ -408,14 +526,18 @@ export class Hud {
 
     place(this.coinsBox, this.chrome.coins);
     place(this.instrumentBox, this.chrome.instrument);
+    place(this.songBox, this.chrome.song);
     place(this.journalBox, this.chrome.journal);
 
     const scale = this.chrome.compact ? 0.88 : 1;
     this.coinsBox.style.fontSize = `${Math.round(20 * scale)}px`;
     this.instrumentBox.style.fontSize = `${Math.round(15 * scale)}px`;
     this.caseBox.style.fontSize = `${Math.round(15 * scale)}px`;
+    this.songBox.style.fontSize = `${Math.round(15 * scale)}px`;
+    this.bookBox.style.fontSize = `${Math.round(15 * scale)}px`;
     this.journalLine.style.fontSize = `${Math.round(17 * scale)}px`;
     this.layoutCase();
+    this.layoutBook();
     this.applyOpacity();
   }
 
@@ -492,11 +614,19 @@ export class Hud {
     this.instrumentBox.style.pointerEvents = handle ? 'auto' : 'none';
     this.instrumentBox.style.cursor = handle ? 'pointer' : 'default';
     this.caseCatch.style.display = handle ? 'block' : 'none';
+
+    const book = this.bookPickable();
+    this.songBox.style.pointerEvents = book ? 'auto' : 'none';
+    this.songBox.style.cursor = book ? 'pointer' : 'default';
+    this.songCatch.style.display = book ? 'block' : 'none';
   }
 
   private setCaseOpen(open: boolean): void {
     const next = open && this.pickable();
     if (next === this.caseOpen) return;
+    // One stack at a time: a case and a book both open is two columns of
+    // choices over the road, which is a menu by another name.
+    if (next) this.setBookOpen(false);
     this.caseOpen = next;
     this.caseHold = next ? CASE_HOLD_SEC : 0;
     this.caseBox.style.opacity = next ? '1' : '0';
@@ -508,6 +638,76 @@ export class Hud {
     this.applyOpacity();
   }
 
+  /** What the open book would list: wander (when pinned), then every other song. */
+  private bookRows(): Array<{ id: string | null; name: string }> {
+    const rows: Array<{ id: string | null; name: string }> = [];
+    if (this.pinnedSongId !== null) rows.push({ id: null, name: WANDER_ROW_LABEL });
+    for (const entry of this.songEntries) {
+      if (entry.id !== this.pinnedSongId) rows.push(entry);
+    }
+    return rows;
+  }
+
+  private buildBook(): void {
+    this.bookBox.replaceChildren();
+    for (const entry of this.bookRows()) {
+      const row = element('div', {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        flex: '0 0 auto',
+        boxSizing: 'border-box',
+        padding: '0',
+        fontStyle: 'italic',
+        color: INK_SOFT,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        cursor: 'pointer',
+        textShadow: '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 12px rgba(20, 14, 18, 0.7)',
+      });
+      row.textContent = entry.name;
+      row.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        this.setBookOpen(false);
+        this.songChosen?.(entry.id);
+      });
+      this.bookBox.appendChild(row);
+    }
+    this.layoutBook();
+  }
+
+  private layoutBook(): void {
+    const rows = this.bookBox.children;
+    place(this.bookBox, songBookBox(this.chrome, rows.length));
+    const height = this.chrome.song.height;
+    for (const row of Array.from(rows)) {
+      (row as HTMLElement).style.height = `${height}px`;
+    }
+  }
+
+  /**
+   * Whether the song corner is a handle at the moment. Same moments as the
+   * case — never during a busk, where a swallowed tap is a missed note —
+   * but with no two-entry requirement, because wandering is always on offer.
+   */
+  private bookPickable(): boolean {
+    if (this.songEntries.length === 0) return false;
+    return this.mode === 'walking' || this.mode === 'resting';
+  }
+
+  private setBookOpen(open: boolean): void {
+    const next = open && this.bookPickable();
+    if (next === this.bookOpen) return;
+    if (next) this.setCaseOpen(false);
+    this.bookOpen = next;
+    this.bookHold = next ? CASE_HOLD_SEC : 0;
+    this.bookBox.style.opacity = next ? '1' : '0';
+    this.bookBox.style.pointerEvents = next ? 'auto' : 'none';
+    this.songAttention = next ? Math.max(this.songAttention, CASE_HOLD_SEC) : 0;
+    this.applyOpacity();
+  }
+
   private applyOpacity(): void {
     // During a busk the corners get out of the way entirely but do not
     // vanish: a player checking their takings mid-tune should not have to
@@ -515,6 +715,7 @@ export class Hud {
     const floor = this.mode === 'busking' ? IDLE_OPACITY * 0.5 : IDLE_OPACITY;
     this.coinsBox.style.opacity = String(this.coinsAttention > 0 ? 1 : floor);
     this.instrumentBox.style.opacity = String(this.instrumentAttention > 0 ? 0.9 : floor);
+    this.songBox.style.opacity = String(this.songAttention > 0 ? 0.9 : floor);
   }
 
   private readInsets(): Partial<SafeAreaInsets> {

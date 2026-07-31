@@ -3,15 +3,21 @@ import { INSTRUMENTS, instrumentById } from '../core/instruments';
 import { BIOMES } from '../core/biome';
 import {
   ADAPTIVE_LAYERS,
+  ADAPTIVE_MODES,
   type AdaptiveInput,
   type AdaptiveLayerId,
+  type AdaptiveMode,
   type AdaptiveState,
   activeLayerIds,
+  adaptiveDrive,
   adaptiveTotal,
+  effectiveLayerDef,
+  guaranteedTotal,
   initialAdaptiveState,
   instrumentTrim,
   layerGain,
   layerSemitone,
+  modeCeilingTotal,
   nextBarAt,
   updateAdaptive,
 } from './adaptive';
@@ -271,6 +277,186 @@ describe('instrument voicing', () => {
         const trim = instrumentTrim(instrument.voice, def.id);
         expect(trim, `${instrument.id}/${def.id}`).toBeGreaterThan(0.15);
         expect(trim, `${instrument.id}/${def.id}`).toBeLessThan(1.2);
+      }
+    }
+  });
+});
+
+describe('walking', () => {
+  const MODES: AdaptiveMode[] = ['walking', 'busking'];
+
+  /** Hold a walking meter for a stretch of seconds. */
+  function walk(state: AdaptiveState, meter: number, fromSec: number, seconds: number): AdaptiveState {
+    let next = state;
+    for (let t = fromSec; t <= fromSec + seconds + 1e-9; t += 0.5) {
+      next = updateAdaptive(next, input({ mode: 'walking', meter, warmth: 0, nowSec: t })).state;
+    }
+    return next;
+  }
+
+  function walkingAt(meter: number): AdaptiveLayerId[] {
+    return activeLayerIds(
+      updateAdaptive(initialAdaptiveState(), input({ mode: 'walking', meter, warmth: 0 })).state
+    );
+  }
+
+  it('reads the meter on the road and the warmth in the square', () => {
+    expect(adaptiveDrive({ mode: 'walking', meter: 0.8, warmth: 0.1 })).toBeCloseTo(0.8, 12);
+    expect(adaptiveDrive({ mode: 'busking', meter: 0.8, warmth: 0.1 })).toBeCloseTo(0.1, 12);
+    // No mode is the busk, which is what every caller meant before the walk
+    // had music in it.
+    expect(adaptiveDrive({ warmth: 0.3 })).toBeCloseTo(0.3, 12);
+  });
+
+  it('clamps and defuses whatever nonsense the meter hands it', () => {
+    for (const meter of [Number.NaN, Infinity, -Infinity, -4, 9, undefined]) {
+      const drive = adaptiveDrive({ mode: 'walking', meter });
+      expect(Number.isFinite(drive), String(meter)).toBe(true);
+      expect(drive).toBeGreaterThanOrEqual(0);
+      expect(drive).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('never leaves the road silent: the bard is playing at a dead meter', () => {
+    expect(walkingAt(0)).toEqual(['drone']);
+    const update = updateAdaptive(initialAdaptiveState(), input({ mode: 'walking', meter: 0, warmth: 0 }));
+    expect(adaptiveTotal(update)).toBeGreaterThan(0);
+  });
+
+  it('never fields the top of the arrangement, however well the walk is going', () => {
+    for (let meter = 0; meter <= 1.0001; meter += 0.02) {
+      const active = walkingAt(meter);
+      expect(active, `meter ${meter}`).not.toContain('counter');
+      expect(active, `meter ${meter}`).not.toContain('shimmer');
+    }
+    expect(walkingAt(1)).toEqual(['drone', 'pulse', 'harmony']);
+  });
+
+  it('is quieter than the same moment at a busk stop, layer for layer', () => {
+    const walking = updateAdaptive(initialAdaptiveState(), input({ mode: 'walking', meter: 1, warmth: 1 }));
+    const busking = updateAdaptive(initialAdaptiveState(), input({ mode: 'busking', warmth: 1 }));
+    expect(adaptiveTotal(walking)).toBeLessThan(0.55 * adaptiveTotal(busking));
+    for (const id of ['drone', 'pulse', 'harmony'] as AdaptiveLayerId[]) {
+      const onRoad = walking.layers.find((l) => l.id === id)?.targetGain ?? 0;
+      const inSquare = busking.layers.find((l) => l.id === id)?.targetGain ?? 0;
+      expect(onRoad, id).toBeGreaterThan(0);
+      expect(onRoad, id).toBeLessThan(inSquare);
+    }
+  });
+
+  it('answers a dropped meter inside a phrase or two, not inside half a minute', () => {
+    let state = walk(initialAdaptiveState(), 1, 0, 1);
+    expect(activeLayerIds(state)).toEqual(['drone', 'pulse', 'harmony']);
+    // A bar at walking tempo is a couple of seconds; four seconds is under
+    // two bars, and the harmony has to have noticed by then.
+    state = walk(state, 0, 1.5, 4);
+    expect(activeLayerIds(state)).not.toContain('harmony');
+    // And the drone is still there, because there is always the bard.
+    expect(activeLayerIds(state)).toContain('drone');
+  });
+
+  it('still forgives a single fumbled bar', () => {
+    let state = walk(initialAdaptiveState(), 1, 0, 1);
+    state = walk(state, 0, 1.5, 1);
+    expect(activeLayerIds(state)).toEqual(['drone', 'pulse', 'harmony']);
+  });
+
+  it('keeps leaving slower than arriving in both modes', () => {
+    for (const mode of MODES) {
+      for (const def of ADAPTIVE_LAYERS) {
+        const effective = effectiveLayerDef(def, ADAPTIVE_MODES[mode]);
+        expect(effective.fadeOutSec, `${mode}/${def.id}`).toBeGreaterThan(effective.fadeInSec);
+        expect(effective.fadeInSec, `${mode}/${def.id}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('keeps the drone unconditional in every mode, shift or no shift', () => {
+    for (const mode of MODES) {
+      const drone = effectiveLayerDef(ADAPTIVE_LAYERS[0], ADAPTIVE_MODES[mode]);
+      expect(drone.enterAt, mode).toBe(0);
+      expect(drone.leaveAt, mode).toBeLessThan(0);
+    }
+  });
+
+  it('keeps the join/leave gap open after the threshold shift', () => {
+    for (const mode of MODES) {
+      for (const def of ADAPTIVE_LAYERS) {
+        if (def.id === 'drone') continue;
+        const effective = effectiveLayerDef(def, ADAPTIVE_MODES[mode]);
+        expect(effective.enterAt - effective.leaveAt, `${mode}/${def.id}`).toBeGreaterThanOrEqual(0.1);
+        expect(effective.enterAt, `${mode}/${def.id}`).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it('hands the walk back its two extra voices when a busk starts, on a bar', () => {
+    let state = walk(initialAdaptiveState(), 1, 0, 2);
+    const arriving = updateAdaptive(state, input({ mode: 'busking', warmth: 1, nowSec: 2.6 }));
+    state = arriving.state;
+    expect(activeLayerIds(state)).toEqual(ADAPTIVE_LAYERS.map((d) => d.id));
+    for (const change of arriving.changes) {
+      expect(change.startAtSec % BAR_SEC).toBeCloseTo(0, 12);
+      expect(change.rampSec).toBeGreaterThan(0);
+    }
+  });
+
+  it('takes them away again when the busk ends, without waiting out their patience', () => {
+    let state = hold(initialAdaptiveState(), 1, 0, 2);
+    expect(activeLayerIds(state)).toHaveLength(5);
+    // One update in walking mode is enough to commit the departure; the top
+    // two layers do not follow the player up the road for another six seconds.
+    const leaving = updateAdaptive(state, input({ mode: 'walking', meter: 1, warmth: 0, nowSec: 2.5 }));
+    state = leaving.state;
+    expect(activeLayerIds(state)).toEqual(['drone', 'pulse', 'harmony']);
+    const shimmer = leaving.changes.find((c) => c.id === 'shimmer');
+    expect(shimmer?.targetGain).toBe(0);
+    // Still a fade, still on a bar. Nothing in this file cuts.
+    expect(shimmer?.rampSec).toBeGreaterThan(1);
+    expect((shimmer?.startAtSec ?? 0) % BAR_SEC).toBeCloseTo(0, 12);
+  });
+});
+
+describe('the bounds the mix leans on', () => {
+  it('never lets the real arrangement exceed the ceiling the mix assumes', () => {
+    for (const mode of ['walking', 'busking'] as AdaptiveMode[]) {
+      for (const instrument of INSTRUMENTS) {
+        for (const dayFraction of [0, 0.25, 0.5, 0.75]) {
+          const update = updateAdaptive(
+            initialAdaptiveState(),
+            input({ mode, warmth: 1, meter: 1, instrument, dayFraction })
+          );
+          expect(adaptiveTotal(update), `${mode}/${instrument.id}`).toBeLessThanOrEqual(
+            modeCeilingTotal(mode) + 1e-12
+          );
+        }
+      }
+    }
+  });
+
+  it('never claims more is guaranteed than is actually playing', () => {
+    for (const mode of ['walking', 'busking'] as AdaptiveMode[]) {
+      for (const instrument of INSTRUMENTS) {
+        for (let drive = 0; drive <= 1.0001; drive += 0.05) {
+          const update = updateAdaptive(
+            initialAdaptiveState(),
+            input({ mode, warmth: drive, meter: drive, instrument, dayFraction: 0.4 })
+          );
+          expect(
+            guaranteedTotal(mode, drive, instrument, 0.4),
+            `${mode}/${instrument.id} @ ${drive}`
+          ).toBeLessThanOrEqual(adaptiveTotal(update) + 1e-12);
+        }
+      }
+    }
+  });
+
+  it('guarantees the bard at every drive, in both modes', () => {
+    for (const mode of ['walking', 'busking'] as AdaptiveMode[]) {
+      for (const instrument of INSTRUMENTS) {
+        for (const dayFraction of [0, 0.3, 0.55, 0.9]) {
+          expect(guaranteedTotal(mode, 0, instrument, dayFraction), `${mode}/${instrument.id}`).toBeGreaterThan(0);
+        }
       }
     }
   });

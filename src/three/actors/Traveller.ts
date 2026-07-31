@@ -35,6 +35,12 @@ import { BufferAttribute, BufferGeometry, Group, Mesh, type ShaderMaterial } fro
 import { createPainterlyMaterial, type PainterlyGlobals } from '../painterly';
 import { boxPart } from './Bard';
 
+/** Move a colour's value without moving its hue. */
+function scaleHex(hex: number, k: number): number {
+  const ch = (shift: number) => Math.min(255, Math.round(((hex >> shift) & 0xff) * k)) << shift;
+  return ch(16) | ch(8) | ch(0);
+}
+
 export type TravellerKind = 'walker' | 'elder' | 'child' | 'pedlar';
 
 /** The four kinds, in the order a seeded pick walks them. */
@@ -193,7 +199,7 @@ export class Traveller {
     this.group.name = `traveller-${kind}`;
 
     const palette = PALETTES[kind];
-    const solid = (color: number, rim = 0.4) => {
+    const solid = (color: number, rim = 0.4, shadowDepth = 0.55) => {
       const material = createPainterlyMaterial(globals, {
         color,
         colorVariant: 0xf0e0cc,
@@ -207,7 +213,7 @@ export class Traveller {
         sway: 0,
         // The same lifted shadow floor the bard's head uses. These figures
         // are small in frame and a crushed-black one is a hole, not a person.
-        shadowDepth: 0.55,
+        shadowDepth,
       });
       this.materials.push(material);
       return material;
@@ -215,10 +221,33 @@ export class Traveller {
 
     const cloth = solid(palette.cloth, 0.45);
     const under = solid(palette.under, 0.32);
-    const skin = solid(palette.skin, 0.5);
+    /**
+     * The face, and it gets its own settings rather than the general ones.
+     *
+     * Every moment in this game that puts a traveller on screen turns them to
+     * face the bard, and every camera in the game stands behind the bard — so
+     * the side of these figures the lens sees is always the front, and the
+     * front is always the side away from a sun that is low and behind. Shot
+     * and measured, the head came back as a black box under a lit brim: the
+     * ranked complaint against them is that they read as rocks, and a person
+     * whose head is a hole is a rock. A lifted shadow floor and a harder rim
+     * are what put light back on a face that no `dot(N,L)` term will ever
+     * reach at this hour.
+     */
+    const skin = solid(palette.skin, 0.72, 0.72);
     const crown = solid(palette.crown, 0.45);
     const carried = solid(carriedTone(palette.cloth, palette.carried), 0.4);
     const seat = solid(palette.seat ?? palette.carried, 0.4);
+    /**
+     * Eyes. Two dark facets, and they are the whole difference between a
+     * figure and a prop at the distance these are seen.
+     *
+     * Set five millimetres proud of the face so they catch their own edge,
+     * and taken off the figure's own skin rather than painted black, so a
+     * traveller in shade keeps a warm dark face rather than gaining two
+     * punched holes.
+     */
+    const gaze = solid(scaleHex(palette.skin, 0.24), 0.14);
 
     const add = (geometry: BufferGeometry, material: ShaderMaterial, x: number, y: number, z: number) => {
       const mesh = new Mesh(geometry, material);
@@ -249,7 +278,10 @@ export class Traveller {
       // small light note it should be.
       const head = add(boxPart(0.185, 0.19, 0.18, 0.86), crown, 0, 0.67, 0.01);
       const face = add(boxPart(0.1, 0.09, 0.05, 0.95), skin, 0, 0.73, 0.085);
-      this.headPivot.add(head, face);
+      const eyes = [-1, 1].map((side) =>
+        add(boxPart(0.026, 0.022, 0.012, 0.9), gaze, side * 0.024, 0.775, 0.106),
+      );
+      this.headPivot.add(head, face, ...eyes);
       // The staff. Everything else about this figure is horizontal — a low
       // wide triangle is the whole idea — and a shape made only of horizontals
       // has nothing that reads at distance except its width, which is the one
@@ -339,15 +371,45 @@ export class Traveller {
       // three standing kinds get one; the four silhouettes stay distinct on
       // what is *above* and *beside* them (a bedroll standing proud, a
       // satchel, a handcart) rather than on having no head.
+      //
+      // Raised from 0.66 to 0.82 of a head, because the mark had started
+      // eating the thing it was meant to mark. Set at 0.66 the brim's
+      // underside sat level with the eye line, so the one band of the head
+      // with anything in it was permanently in the brim's own shade, and the
+      // measured result was a lit plank with a black box under it — the
+      // "headless box stack" the critique named. A brim belongs *above* the
+      // eyes; it shades them, it does not replace them.
       const brim = add(
-        boxPart(headSize * 2.05, headSize * 0.1, headSize * 1.85, 1),
+        boxPart(headSize * 1.9, headSize * 0.1, headSize * 1.72, 1),
         crown,
         0,
-        headSize * 0.66,
+        headSize * 0.82,
         -0.005,
       );
+      /**
+       * A face. Two eyes and a nose, twenty-four triangles between them.
+       *
+       * These figures were built to be legible as people and then to stop
+       * asking for attention, and the first half quietly failed: a column of
+       * boxes with a hat on it is a scarecrow, and every critique of this
+       * game has said so — the busk audience "reads as rocks", the dusk
+       * encounter as "a headless box stack". Nothing about the silhouette was
+       * wrong. What was missing is the mark that says *person* rather than
+       * *object*, and it is the same two dots the bard just got.
+       */
+      const eyeGeo = boxPart(headSize * 0.19, headSize * 0.16, headSize * 0.05, 0.9);
+      const eyes = [-1, 1].map((side) =>
+        add(eyeGeo, gaze, side * headSize * 0.21, headSize * 0.53, headSize * 0.465),
+      );
+      const nose = add(
+        boxPart(headSize * 0.15, headSize * 0.15, headSize * 0.11, 0.55),
+        skin,
+        0,
+        headSize * 0.34,
+        headSize * 0.47,
+      );
       this.headPivot.position.y = shoulder + 0.06 * tall;
-      this.headPivot.add(head, hair, brim);
+      this.headPivot.add(head, hair, brim, nose, ...eyes);
       this.body.add(this.headPivot);
 
       if (kind === 'walker') {
@@ -406,8 +468,16 @@ export class Traveller {
         // slightly wider hip.
         const satchel = add(boxPart(0.17, 0.15, 0.11, 0.92), carried, 0.155, hip - 0.02, 0.03);
         satchel.rotation.z = -0.1;
-        const strap = add(boxPart(0.04, 0.42, 0.025, 1), crown, 0.02, shoulder + 0.02, 0.05);
-        strap.rotation.z = 0.36;
+        // The strap runs *down* from the shoulder to the bag, which is not
+        // what it did. `boxPart` grows along +Y from its origin, so a strap
+        // placed at the shoulder and merely rolled stood forty centimetres
+        // straight up out of it — clear over the top of the child's head and,
+        // shot from the front, drawn as a diagonal plank across the face. It
+        // has been in every encounter frame this project has taken, and it is
+        // half of why these figures read as scarecrows.
+        const strap = add(boxPart(0.04, 0.31, 0.025, 1), crown, 0.02, shoulder + 0.02, 0.05);
+        strap.rotation.x = Math.PI;
+        strap.rotation.z = -0.45;
         this.body.add(satchel, strap);
       }
 
@@ -484,9 +554,25 @@ export class Traveller {
     this.body.position.y = breathe * 0.008;
     // Weight shifts between the feet on a much slower cycle than the breath,
     // so the two never line up into a single bounce.
-    this.body.rotation.z = Math.sin(t * 0.37) * 0.035;
+    //
+    // The second term only exists while somebody is listening, and it is
+    // deliberately the largest thing this file does. A crowd standing
+    // perfectly square while a bard plays is the reason these figures were
+    // called rocks: a still frame has no way to tell a person who is not
+    // moving from a stone that cannot. Rocking does not need to be big to
+    // read — it needs to be *off vertical*, and four degrees is enough for
+    // that while staying under the two-degree-per-figure budget the rest of
+    // this idle keeps for anyone merely standing about.
+    this.body.rotation.z =
+      Math.sin(t * 0.37) * 0.035 + Math.sin(t * 0.93 + this.phase) * 0.038 * this.attention;
     this.headPivot.rotation.y = Math.sin(t * 0.29 + 1.3) * 0.14 * (1 - this.attention * 0.7);
-    this.headPivot.rotation.x = -this.attention * 0.06 + Math.sin(t * 0.83) * 0.012;
+    // A nod, on a slower cycle than the rock so the two do not lock into one
+    // bob. Nothing here is on the beat: the music is the bard's, and a crowd
+    // nodding in time with it would read as choreography.
+    this.headPivot.rotation.x =
+      -this.attention * 0.06 +
+      Math.sin(t * 0.83) * 0.012 +
+      Math.sin(t * 1.37 + this.phase * 0.6) * 0.05 * this.attention;
   }
 
   dispose(): void {

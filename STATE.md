@@ -6,6 +6,59 @@ Run counter: 50
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-07-31 (second interactive session, local machine, real
+  GPU) — v0.8 wave 1 landed.** A human watched the live game and reset
+  direction (DESIGN.md "The walk is played, not watched"): notes existed only
+  at busk stops, the walk's audio was literally noise ambience, and the
+  riverside had no river. Four parallel agents fixed all of it in one wave,
+  plus the top figure/ground-cover gaps from a six-lens blind critique run
+  against actual A Short Hike / Spiritfarer press-kit frames (ROADMAP task
+  128, finally possible on a machine with eyes).
+
+  **What is verifiably true now:** `npm test` 873 green (was 790),
+  `npm run build` green (743.05 kB), `frame-quality` PASS all six poses,
+  `shader-check` PASS. Verified live on a real GPU (100 fps at 730k
+  triangles): walking notes render and judge taps, an empty meter freezes
+  `s` (0.000 m over 5 s) and tapping restores stride same-frame, song
+  pinning survives reload, the audio graph builds with a music bus and the
+  drone joining on a bar line at low drive.
+
+  **The four builds, in one line each** (full detail in ROADMAP tasks
+  129-132): core — walking tune + `core/walk.ts` pace gating + songbook
+  pinning in the HUD; audio — walking adaptive mode, ambience bus hard-capped
+  at half the music bus (worst-case bed total 0.85 → 0.31), per-partial
+  decay envelopes per voice; world — a carved, level, seeded river with
+  banks and reeds, meadow clumping, three distinct prop silhouettes; figures
+  — faces, a bowled lute (the "golden rake" was stacked box top-faces), a
+  triangle-wave strum, listeners that face the bard and nod.
+
+  **Two load-bearing rendering bugs, same class as the v0.6 trio (invisible
+  to every check, found by looking):** (1) the foliage material ran
+  `flatShading: true`, deriving normals from screen-space derivatives on
+  2-px blades — `skywardNormals` and `bandSoftness` were both being thrown
+  away before lighting; this owned nearly all of the "dark shard litter"
+  critique. (2) `Bard.ts`'s hat-brim dip had an inverted sign — lifting the
+  front and hanging the back 10.5 cm — which is why the head never survived
+  the three-quarter-rear camera.
+
+  **Instrument notes:** `tools/land-histogram.mjs` is new (task 122's
+  land-masked p10/p50/p90; morning land p90 measured 149 pre-wave — the
+  "land never carries a light value" item is real at morning, fine at noon
+  at 193). `frame-quality`'s noon stops dipped 0.26 when the litter died —
+  the gauge was counting noise as value structure; the world agent recovered
+  it with three large dark shapes instead (its report explains the
+  photometric argument).
+
+  **Known-open after wave 1, queued as the next wave:** the songboard now
+  sits in every walking frame and reads as a beige billboard on the
+  vanishing point (composition, critique gap 6 — presentation, not
+  mechanic); daylight fog still cancels to grey (item 10); caster-less
+  shadow smudge bands (critique gap 3); phone-portrait framing dead thirds
+  (critique gap 11); golden-hour busk figure-ground is better (median step
+  16 → 20 sRGB at 20 px) but the frame is still dark overall. A blind
+  re-critique against the reference frames should re-derive scores before
+  wave 2 fixes are chosen.
+
 - **HANDOFF, 2026-07-31 — twelve interactive critique waves, and the honest
   state of the game.** A human is about to pull this repo down and look at it
   on a real GPU. Read this block first; it is the short version.

@@ -1392,10 +1392,69 @@ function bedrollGeometry(length: number, width: number, height: number): BufferG
  * player has to recognise it as *their* instrument sitting there.
  */
 function luteGeometry(): BufferGeometry {
+  /**
+   * The body, as a hull rather than as a box.
+   *
+   * A tapered box seen from any of the angles the resting camera holds is a
+   * blade on a shaft, and that is exactly what this prop read as in every
+   * campfire frame: a spade stood beside the fire. The bard's own instrument
+   * had the same fault and was rebuilt for the same reason; the two have to
+   * agree, because the whole point of this prop is that the player
+   * recognises it as *their* instrument put down for the night. Rings and a
+   * section, in the same language as `BODY_RINGS` in `Bard.ts`, and the five
+   * staves of the bowl are what carry it once the silhouette is round.
+   */
+  const rings: [number, number, number][] = [
+    [0.0, 0.072, 0.05],
+    [0.034, 0.114, 0.076],
+    [0.082, 0.142, 0.092],
+    [0.134, 0.148, 0.096],
+    [0.194, 0.128, 0.085],
+    [0.252, 0.088, 0.06],
+    [0.31, 0.038, 0.036],
+  ];
+  const section: [number, number][] = [
+    [0.7, 1],
+    [-0.7, 1],
+    [-1, -0.22],
+    [-0.72, -0.75],
+    [-0.3, -1.1],
+    [0.3, -1.1],
+    [0.72, -0.75],
+    [1, -0.22],
+  ];
+  const board = 0.026;
+  const at = (ring: [number, number, number], k: number): number[] => {
+    const [y, w, d] = ring;
+    const [sx, sz] = section[k];
+    return [sx * w, y, sz > 0 ? board : board + sz * d];
+  };
+  const hull: number[] = [];
+  for (let i = 0; i < rings.length - 1; i++) {
+    for (let k = 0; k < section.length; k++) {
+      const k1 = (k + 1) % section.length;
+      hull.push(...at(rings[i], k), ...at(rings[i + 1], k), ...at(rings[i + 1], k1));
+      hull.push(...at(rings[i], k), ...at(rings[i + 1], k1), ...at(rings[i], k1));
+    }
+  }
+  for (let k = 1; k < section.length - 1; k++) {
+    hull.push(...at(rings[0], 0), ...at(rings[0], k), ...at(rings[0], k + 1));
+  }
+  const bodyGeometry = new BufferGeometry();
+  bodyGeometry.setAttribute('position', new BufferAttribute(new Float32Array(hull), 3));
+
   const parts = [
-    taperedBox(0.3, 0.3, 0.17, 0.6, 0.66),
-    translated(taperedBox(0.07, 0.46, 0.055, 0.86), 0, 0.28, 0),
-    translated(taperedBox(0.1, 0.11, 0.055, 0.72), 0, 0.72, 0),
+    bodyGeometry,
+    translated(taperedBox(0.07, 0.46, 0.055, 0.86), 0, 0.28, board - 0.0275),
+    translated(taperedBox(0.1, 0.11, 0.055, 0.72), 0, 0.72, board - 0.038),
+    // Three strings and the nut, standing a few millimetres off the board.
+    // They are the same mark the carried instrument has, and at this size
+    // they are the only thing that separates a lute from a mandolin-shaped
+    // lump of timber once the soundhole is on the side facing the fire.
+    ...[-0.017, 0, 0.017].map((x) =>
+      translated(taperedBox(0.009, 0.66, 0.006), x, 0.06, board + 0.006),
+    ),
+    translated(taperedBox(0.055, 0.014, 0.014), 0, 0.715, board + 0.002),
   ];
   const verts: number[] = [];
   for (const part of parts) {

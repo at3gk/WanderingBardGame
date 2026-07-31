@@ -27,6 +27,15 @@
  * caller to schedule. It creates no nodes and reads no clock — `nowSec` is
  * passed in, and it is an `AudioContext.currentTime`, because a layer that
  * enters on a bar line has to enter on the *audio* clock's idea of that bar.
+ *
+ * ## Two modes, one machine (v0.8)
+ *
+ * The bard is always playing, so this arrangement exists during the *walk* as
+ * well as at a busk stop — DESIGN.md, "the walk is played, not watched". The
+ * two are the same music heard from different distances, so they are the same
+ * state machine with a different *profile* rather than two files: a walk is a
+ * person playing to themselves on a road, a busk is the same person with a
+ * crowd around them. See `ADAPTIVE_MODES` for what separates them.
  */
 
 import type { Instrument, InstrumentVoice } from '../core/instruments';
@@ -77,6 +86,99 @@ export const ADAPTIVE_LAYERS: readonly AdaptiveLayerDef[] = [
 ];
 
 /**
+ * Whether this is the road or the square.
+ *
+ * `busking` is the arrangement as it has always been: the crowd's warmth
+ * decides membership and the whole table plays at its declared level.
+ * `walking` is the same band heard from inside the bard's own head, driven by
+ * the song meter instead — how well the player is keeping the tune as they
+ * walk.
+ */
+export type AdaptiveMode = 'walking' | 'busking';
+
+/**
+ * What a mode does to the layer table.
+ *
+ * Four multipliers, applied to every layer, rather than a second table of
+ * five layers. A second table would be five more pairs of thresholds to keep
+ * ordered, five more gains to keep under the melody, and — the real cost —
+ * two places to get the hysteresis right instead of one. Everything the walk
+ * needs is expressible as "the same band, further away and fewer of them".
+ */
+export interface AdaptiveModeProfile {
+  id: AdaptiveMode;
+  /** Multiplier on every layer's settled gain. */
+  gainScale: number;
+  /** Added to every *positive* enter and leave threshold. */
+  thresholdShift: number;
+  /** How many of `ADAPTIVE_LAYERS`, from the bottom of the stack up, may sound. */
+  maxLayers: number;
+  /** Multiplier on how long a layer waits in the cold before it goes. */
+  patienceScale: number;
+  /** Multiplier on both fades. Applied to both, so the asymmetry survives. */
+  fadeScale: number;
+}
+
+/**
+ * The busk is the crescendo; the walk is what it is a crescendo *from*.
+ *
+ * That relationship is the whole reason the walk is throttled on four axes at
+ * once rather than simply turned down:
+ *
+ * - **`maxLayers: 3`.** The walk gets the drone, the foot and one harmony
+ *   voice, and never the counter-melody or the shimmer. A cap rather than a
+ *   raised threshold, because the top two layers are the sound of *other
+ *   people joining in*, and there is nobody on the road. This is also what
+ *   makes arriving at a busk stop an event: two voices the walk cannot
+ *   produce at any meter arrive at once.
+ * - **`gainScale: 0.62`.** About four decibels down. The melody the player is
+ *   actually tapping stays the loudest thing on the road.
+ * - **`thresholdShift: 0.12`.** The walk's meter sits high most of the time
+ *   (it is full whenever the player is in rhythm), so unshifted thresholds
+ *   would put the whole walking band in permanently and there would be
+ *   nothing left to respond with.
+ * - **`patienceScale: 0.45` and `fadeScale: 0.6`.** The one place the walk is
+ *   *quicker* than the busk. DESIGN.md asks for music that responds to the
+ *   bard's playing, and a response that takes eight seconds to begin and six
+ *   more to complete is not one a player can connect to the phrase they just
+ *   fumbled. At walking tempo this puts a layer's departure a bar and a half
+ *   after the meter drops and finishes it two bars later — inside the phrase
+ *   or the next one. Both fades scale together, so leaving still takes twice
+ *   as long as arriving and a fumble still costs nothing.
+ */
+export const ADAPTIVE_MODES: Record<AdaptiveMode, AdaptiveModeProfile> = {
+  walking: { id: 'walking', gainScale: 0.62, thresholdShift: 0.12, maxLayers: 3, patienceScale: 0.45, fadeScale: 0.6 },
+  busking: { id: 'busking', gainScale: 1, thresholdShift: 0, maxLayers: 5, patienceScale: 1, fadeScale: 1 },
+};
+
+export const DEFAULT_ADAPTIVE_MODE: AdaptiveMode = 'busking';
+
+export function adaptiveProfile(mode: AdaptiveMode | undefined): AdaptiveModeProfile {
+  return ADAPTIVE_MODES[mode ?? DEFAULT_ADAPTIVE_MODE] ?? ADAPTIVE_MODES[DEFAULT_ADAPTIVE_MODE];
+}
+
+/**
+ * The layer table as a mode sees it.
+ *
+ * The drone's two special values survive untouched: it enters at 0 and its
+ * leave threshold is negative, which is how "there is always at least the
+ * bard" is expressed. Shifting either would put the walk's first few seconds
+ * in silence, which is the exact bug this whole file is being extended to
+ * fix. Only strictly positive thresholds move.
+ */
+export function effectiveLayerDef(def: AdaptiveLayerDef, profile: AdaptiveModeProfile): AdaptiveLayerDef {
+  return {
+    ...def,
+    enterAt: def.enterAt > 0 ? def.enterAt + profile.thresholdShift : def.enterAt,
+    leaveAt: def.leaveAt > 0 ? def.leaveAt + profile.thresholdShift : def.leaveAt,
+    patienceSec: def.patienceSec * profile.patienceScale,
+    fadeInSec: def.fadeInSec * profile.fadeScale,
+    fadeOutSec: def.fadeOutSec * profile.fadeScale,
+    gain: def.gain * profile.gainScale,
+  };
+}
+
+/**
  * Where each biome's drone sits.
  *
  * The songbook is C major in the village, G major in the forest and C major
@@ -105,8 +207,20 @@ export const BAR_LEAD_SEC = 0.08;
 const GAIN_EPSILON = 0.005;
 
 export interface AdaptiveInput {
-  /** How warmed-up the crowd is, 0..1. The only signal that decides membership. */
-  warmth: number;
+  /**
+   * The road or the square. Omitted means `busking`, which is what every
+   * caller meant before the walk had music in it.
+   */
+  mode?: AdaptiveMode;
+  /** How warmed-up the crowd is, 0..1. Read in `busking` mode. */
+  warmth?: number;
+  /**
+   * How well the tune is being kept on the walk, 0..1. Read in `walking`
+   * mode. This is the core loop's song meter — the same number that decides
+   * whether the bard is still walking — so the arrangement and the legs come
+   * apart and back together for the same reason at the same moment.
+   */
+  meter?: number;
   biomeId: string;
   instrument: Instrument;
   /** 0..1 from midnight, wrapping. Same parameter the sky is keyed on. */
@@ -253,7 +367,8 @@ export function layerSemitone(def: AdaptiveLayerDef, biomeId: string): number {
  * `changes` straight to Web Audio every frame without re-ramping anything.
  */
 export function updateAdaptive(state: AdaptiveState, input: AdaptiveInput): AdaptiveUpdate {
-  const warmth = clamp(Number.isFinite(input.warmth) ? input.warmth : 0, 0, 1);
+  const profile = adaptiveProfile(input.mode);
+  const drive = adaptiveDrive(input);
   // A clock that went backwards is a re-anchored schedule or a resumed
   // context, not a reason to expire everybody's patience at once.
   const nowSec = Math.max(Number.isFinite(input.nowSec) ? input.nowSec : state.lastSec, state.lastSec);
@@ -263,7 +378,13 @@ export function updateAdaptive(state: AdaptiveState, input: AdaptiveInput): Adap
   const all: AdaptiveCommand[] = [];
   const changes: AdaptiveCommand[] = [];
 
-  for (const def of ADAPTIVE_LAYERS) {
+  for (let index = 0; index < ADAPTIVE_LAYERS.length; index++) {
+    const def = effectiveLayerDef(ADAPTIVE_LAYERS[index], profile);
+    // Beyond the mode's cap the layer behaves exactly as though the drive had
+    // never reached it. Capping by position rather than by id is what makes
+    // the table's assembly order — hum, foot, second voice, player, sparkle —
+    // do double duty as the order a thinner arrangement is built from.
+    const allowed = index < profile.maxLayers;
     const previous = state.layers[def.id];
     const semitoneOffset = layerSemitone(def, input.biomeId);
     let present = previous.present;
@@ -272,10 +393,16 @@ export function updateAdaptive(state: AdaptiveState, input: AdaptiveInput): Adap
     let startAtSec = previous.startAtSec;
     let rampSec = previous.rampSec;
 
-    if (warmth >= def.leaveAt) coldSinceSec = null;
+    if (drive >= def.leaveAt) coldSinceSec = null;
     else if (coldSinceSec === null) coldSinceSec = nowSec;
 
-    if (!present && warmth >= def.enterAt) {
+    // A layer the mode has ruled out goes without waiting out its patience:
+    // that is not a room cooling, it is the player walking away from the
+    // square, and the counter-melody should not follow them up the road for
+    // another six seconds. It still leaves on a bar and still takes its full
+    // fade, because nothing in this file is allowed to cut.
+    const capped = present && !allowed;
+    if (!present && allowed && drive >= def.enterAt) {
       // Committed the moment the threshold is crossed, even though the sound
       // does not start until the bar. Someone who has stood up to join in
       // does not sit back down because the next phrase wobbled.
@@ -283,7 +410,7 @@ export function updateAdaptive(state: AdaptiveState, input: AdaptiveInput): Adap
       coldSinceSec = null;
       startAtSec = barLineSec;
       rampSec = def.fadeInSec;
-    } else if (present && coldSinceSec !== null && nowSec - coldSinceSec >= def.patienceSec) {
+    } else if (capped || (present && coldSinceSec !== null && nowSec - coldSinceSec >= def.patienceSec)) {
       present = false;
       startAtSec = barLineSec;
       rampSec = def.fadeOutSec;
@@ -311,6 +438,69 @@ export function updateAdaptive(state: AdaptiveState, input: AdaptiveInput): Adap
   }
 
   return { state: { layers, lastSec: nowSec }, layers: all, changes };
+}
+
+/**
+ * The one number that decides membership, whichever mode is running.
+ *
+ * Kept as a named function rather than inlined because everything downstream
+ * — the mix's ducking, the walk's melody level, the tests — has to agree with
+ * this file about what "how well it is going" means right now, and a second
+ * copy of `mode === 'walking' ? meter : warmth` somewhere else is a bug
+ * waiting for the day the two signals diverge.
+ */
+export function adaptiveDrive(input: Pick<AdaptiveInput, 'mode' | 'warmth' | 'meter'>): number {
+  const raw = (input.mode ?? DEFAULT_ADAPTIVE_MODE) === 'walking' ? input.meter : input.warmth;
+  return clamp(Number.isFinite(raw as number) ? (raw as number) : 0, 0, 1);
+}
+
+/**
+ * The most the arrangement can ask for in this mode.
+ *
+ * An upper bound rather than a measurement — it ignores the instrument and
+ * day trims, both of which only ever pull a layer down further. The mix uses
+ * it as the denominator when it works out how full the band is, and a
+ * denominator that could be exceeded would let the ambience duck past its
+ * own floor.
+ */
+export function modeCeilingTotal(mode: AdaptiveMode | undefined): number {
+  const profile = adaptiveProfile(mode);
+  let total = 0;
+  for (let i = 0; i < ADAPTIVE_LAYERS.length && i < profile.maxLayers; i++) {
+    total += ADAPTIVE_LAYERS[i].gain * profile.gainScale * MAX_INSTRUMENT_TRIM;
+  }
+  return total;
+}
+
+/**
+ * The largest `instrumentTrim` can return. Stated here so `modeCeilingTotal`
+ * stays a true bound; `adaptive.test.ts` holds every instrument to it.
+ */
+const MAX_INSTRUMENT_TRIM = 1.25;
+
+/**
+ * The layers guaranteed to be sounding at this drive, and their settled level.
+ *
+ * The floor, not the state: hysteresis means the real arrangement is usually
+ * *fuller* than this, because layers linger. That is exactly the property the
+ * mix wants — a level the music is never quieter than, whatever the player
+ * has just done, so that the ambience can be pinned underneath it without
+ * having to be re-derived from a live state machine.
+ */
+export function guaranteedTotal(
+  mode: AdaptiveMode | undefined,
+  drive: number,
+  instrument: Instrument,
+  dayFraction: number
+): number {
+  const profile = adaptiveProfile(mode);
+  const level = clamp(Number.isFinite(drive) ? drive : 0, 0, 1);
+  let total = 0;
+  for (let i = 0; i < ADAPTIVE_LAYERS.length && i < profile.maxLayers; i++) {
+    const def = effectiveLayerDef(ADAPTIVE_LAYERS[i], profile);
+    if (level >= def.enterAt) total += layerGain(def, instrument, dayFraction);
+  }
+  return total;
 }
 
 /** Which layers are currently in the arrangement. A readout, and a test seam. */

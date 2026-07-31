@@ -12,6 +12,7 @@ import {
   advance,
   canEnter,
   chooseInstrument,
+  chooseSong,
   createJourney,
   dayFractionAt,
   earn,
@@ -826,5 +827,55 @@ describe('saveJourney / loadJourney', () => {
     const before = deepFreeze(spentDay());
     expect(() => saveJourney(before, true)).not.toThrow();
     expect(before.journal).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The song being learnt (v0.8)
+// ---------------------------------------------------------------------------
+
+describe('chooseSong', () => {
+  it('starts wandering, pins a song, and hands the rotation back with null', () => {
+    const j = createJourney(DAY, LENGTH);
+    expect(j.songChoice).toBeNull();
+    const pinned = chooseSong(j, 'twinkle');
+    expect(pinned.songChoice).toBe('twinkle');
+    expect(chooseSong(pinned, null).songChoice).toBeNull();
+  });
+
+  it('reads anything that is not a real id as wander', () => {
+    const pinned = chooseSong(walking(), 'twinkle');
+    expect(chooseSong(pinned, '').songChoice).toBeNull();
+    expect(chooseSong(pinned, 42 as unknown as string).songChoice).toBeNull();
+  });
+
+  it('does not mutate its argument', () => {
+    const before = deepFreeze(walking());
+    expect(() => chooseSong(before, 'twinkle')).not.toThrow();
+    expect(before.songChoice).toBeNull();
+  });
+
+  it('survives the day rollover: the tune being learnt describes the bard, not the road', () => {
+    const yesterday = chooseSong(spentDay(), 'twinkle');
+    expect(startNewDay(yesterday, NEXT_DAY).songChoice).toBe('twinkle');
+  });
+
+  it('round-trips through the save, pinned or wandering', () => {
+    installStorage(memoryStorage());
+    const pinned = chooseSong(spentDay(), 'twinkle');
+    saveJourney(pinned, true);
+    expect(loadJourney(DAY)?.songChoice).toBe('twinkle');
+    saveJourney(chooseSong(pinned, null), true);
+    expect(loadJourney(DAY)?.songChoice).toBeNull();
+  });
+
+  it('reads a pre-v0.8 save, which has no song field, as wandering', () => {
+    installStorage(memoryStorage());
+    saveJourney(spentDay(), true);
+    const store = globalThis.localStorage;
+    const raw = JSON.parse(store.getItem(JOURNEY_STORAGE_KEY) ?? '{}') as Record<string, unknown>;
+    delete raw.song;
+    store.setItem(JOURNEY_STORAGE_KEY, JSON.stringify(raw));
+    expect(loadJourney(DAY)?.songChoice).toBeNull();
   });
 });

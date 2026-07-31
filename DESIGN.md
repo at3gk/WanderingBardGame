@@ -145,6 +145,40 @@ The standing rules for the 3D world:
 - Runs smoothly in a browser on a mid-range phone; bundle well under 5 MB.
 - `npm test` and `npm run build` green; deploys via the existing CI.
 
+## The walk is played, not watched (v0.8, human-set, 2026-07-31)
+
+A human watched the 3D game live and set the next direction with three
+observations and two goals. The observations: during the walk there are no
+notes anywhere (they exist only at busk stops), the walk's audio is
+literally filtered noise (the adaptive music only exists while busking),
+and the riverside has no river. The goals: *"the goal should be being
+active to be able to move, and other side quest things as you're moving"*,
+and *"a game where kids/users can learn the songs they want"*.
+
+This is not a new mechanic — it is v0.1's core mechanic restored in 3D.
+v0.6 quietly made walking automatic and inputless, which DESIGN.md's own
+"one core mechanic" section never sanctioned. The corrections:
+
+1. **The walk carries the tune.** Notes scroll along the songboard *during
+   the walk*, not only at busk stops. Tapping in time keeps the tune alive;
+   the tune keeps the bard walking. Stop playing and the bard slows to a
+   stop and noodles quietly in place — no fail, no punishment, walking
+   resumes the moment the rhythm does. Busk stops remain as denser social
+   moments (audience, coins, delight), not as the only place music exists.
+2. **The bard is always playing.** Walking music = the player's melody on
+   the current instrument plus the adaptive layers, with ambience mixed
+   *underneath* as air, never as the foreground. A game about a bard in
+   which the default soundscape is noise is broken by definition.
+3. **Choose the song you're learning.** The songbook choice (v0.5) comes to
+   the 3D game: a diegetic song pick pins the tune the road plays, because
+   repetition is how the letters come off the note. Wander gives rotation
+   back. Same rules as v0.5: free choice never feeds the learning model.
+4. **The riverside has a river.** Real water in the world, not just rut
+   puddles.
+5. **Encounters are small side quests.** Travellers and moments along the
+   road can ask something tiny of the player and pay off in delight —
+   optional, missable, never gating the walk.
+
 ## The one core mechanic
 
 **Single-lane rhythm tapping.** Beat markers scroll toward a hit line at a
@@ -393,6 +427,22 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   game opens directly into the walk.
 
 ## Changelog
+
+- 2026-07-31 (second interactive session the same day) — **v0.8, the walk is
+  played, not watched** (human-set, watching the live game). New section above.
+  Four parallel builds landed in one wave: the walk carries the tune (notes
+  during walking, meter-gated stride, song pinning in the HUD — restoring
+  v0.1's core mechanic in 3D); walking music exists (adaptive arrangement in a
+  sparser walking mode, ambience hard-capped under the music bus, per-partial
+  instrument envelopes); the riverside has a river (carved channel, level
+  water, banked reeds, deterministic per daily seed); and the figures became
+  people (faces, a readable bowled lute, a real strum, listeners that face the
+  performance). Two load-bearing rendering bugs found on the way, recorded in
+  STATE.md: the foliage material's flatShading was discarding every blade
+  normal (the entire "dark shard litter" critique), and the hat brim's dip had
+  an inverted sign (why the head vanished from behind).
+  NOTHING WAS CUT. The busk remains the social crescendo; vistas still rest
+  the tune.
 
 - 2026-07-31 — Twelve interactive critique waves (human-directed, not
   scheduled runs). No vision change: the game is still the v0.6 concept, the
