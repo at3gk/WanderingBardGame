@@ -33,7 +33,7 @@
 
 import { BufferAttribute, BufferGeometry, Group, Mesh, type Object3D, type ShaderMaterial } from 'three';
 import { createPainterlyMaterial, type PainterlyGlobals } from '../painterly';
-import { boxPart } from './Bard';
+import { boxPart, faceMarkGeometry } from './Bard';
 
 /** Move a colour's value without moving its hue. */
 function scaleHex(hex: number, k: number): number {
@@ -347,10 +347,15 @@ export class Traveller {
       // small light note it should be.
       const head = add(boxPart(0.185, 0.19, 0.18, 0.86), crown, 0, 0.67, 0.01);
       const face = add(boxPart(0.1, 0.09, 0.05, 0.95), skin, 0, 0.73, 0.085);
+      // The same rounded eye the standing kinds get, and set further proud:
+      // at z 0.106 on a face whose front is at 0.110 these stood two
+      // millimetres out, which under the brim's shade is not enough relief to
+      // catch an edge. See `faceMarkGeometry`.
       const eyes = [-1, 1].map((side) =>
-        add(boxPart(0.026, 0.022, 0.012, 0.9), gaze, side * 0.024, 0.775, 0.106),
+        add(faceMarkGeometry(0.028, 0.019, 0.014), gaze, side * 0.024, 0.786, 0.114),
       );
-      this.headPivot.add(head, face, ...eyes);
+      const mouth = add(faceMarkGeometry(0.032, 0.011, 0.012), gaze, 0, 0.751, 0.113);
+      this.headPivot.add(head, face, mouth, ...eyes);
       // The staff. Everything else about this figure is horizontal — a low
       // wide triangle is the whole idea — and a shape made only of horizontals
       // has nothing that reads at distance except its width, which is the one
@@ -553,19 +558,41 @@ export class Traveller {
        * wrong. What was missing is the mark that says *person* rather than
        * *object*, and it is the same two dots the bard just got.
        */
-      const eyeGeo = boxPart(headSize * 0.19, headSize * 0.16, headSize * 0.05, 0.9);
+      // Smaller than they were, and rounded. At 0.19 by 0.16 of a head each,
+      // set 0.21 apart, the pair covered better than a fifth of the face in
+      // two hard rectangles — a mark loud enough that the panel stopped
+      // reading these as people and started reading them as lanterns. Two
+      // thirds the width and two thirds the height puts them back at the size
+      // a pair of eyes is on a face, and `faceMarkGeometry` takes the corners off.
+      // The relief is unchanged, because relief is what makes them survive
+      // the shade under the brim.
+      const eyeGeo = faceMarkGeometry(headSize * 0.165, headSize * 0.125, headSize * 0.05);
+      // `faceMarkGeometry` is centred on its own origin where `boxPart` grows up
+      // from it, so the height here is the eye's *centre* — the old 0.53 was
+      // a box base whose middle sat at 0.61.
       const eyes = [-1, 1].map((side) =>
-        add(eyeGeo, gaze, side * headSize * 0.21, headSize * 0.53, headSize * 0.465),
+        add(eyeGeo, gaze, side * headSize * 0.19, headSize * 0.605, headSize * 0.465),
       );
       const nose = add(
-        boxPart(headSize * 0.15, headSize * 0.15, headSize * 0.11, 0.55),
+        boxPart(headSize * 0.13, headSize * 0.13, headSize * 0.1, 0.55),
         skin,
         0,
-        headSize * 0.34,
-        headSize * 0.47,
+        headSize * 0.36,
+        headSize * 0.465,
+      );
+      // A mouth, on the same argument the bard's got one: two dots and a beak
+      // reads as a face at a glance and as a mask on inspection, and the busk
+      // audience is the one set of figures a player has time to inspect. The
+      // same lozenge, laid on its side and kept narrower than the eye span.
+      const mouth = add(
+        faceMarkGeometry(headSize * 0.19, headSize * 0.055, headSize * 0.04),
+        gaze,
+        0,
+        headSize * 0.3,
+        headSize * 0.462,
       );
       this.headPivot.position.y = shoulder + 0.06 * tall;
-      this.headPivot.add(head, hair, brim, nose, ...eyes);
+      this.headPivot.add(head, hair, brim, nose, mouth, ...eyes);
       this.body.add(this.headPivot);
 
       if (kind === 'walker') {

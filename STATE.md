@@ -7,6 +7,64 @@ Run counter: 50
 **At a glance** — read this, then only the sections you need.
 
 - **HANDOFF, 2026-07-31 (second interactive session, continued) — v0.8
+  wave 4 landed: every disputed symptom traced to its real cause.** 1000
+  tests green (37 files), build 815.02 kB, all gates PASS, morning land
+  p90 165. Five agents, five root causes that had each survived multiple
+  critique rounds:
+  1. The "casterless shadow bands" are the TERRAIN SHADOWING ITSELF at a
+     low sun (proven by ablation difference-images — they follow the
+     landform, hence sun-invariant; the caster is a rise 40 m back). The
+     grey was arithmetic: adding a near-complement skylight to a warm
+     surface lands on neutral. New CAST_SHADOW_HUE mixes toward a
+     luminance-matched sky colour — provably value-gate-safe; shadows now
+     GAIN chroma (noon S +0.088 where they lost it before).
+  2. The milk sky was the SKY: sky.ts's own air()/chroma correction had
+     only ever been applied to the two ridge bands, never the dome or
+     cloud. One SKY_CHROMA push over the whole dome: morning sky S 9.6 →
+     17.3. The panel's "fog brighter than sky" inversion measured as NOT
+     REAL (fog band is 46 levels darker) — panels can hallucinate a
+     structure; measure before obeying.
+  3. The ribbon's sixth line (second appearance) was THE ROAD'S WHEEL RUT
+     showing through the paper's translucent bottom margin — the ribbon
+     was innocent both times. Lane lifted clear; note-collisions were the
+     lane FOLDING OVER ITSELF on road bends, cut by a closed-loop
+     visible-length governor with truncation semantics.
+  4. The fire's light had been centred on the ROAD ANCHOR, not the fire,
+     for two waves (uHearthPosition from the group, fire 6-7 m away
+     inside it) — every prior hearth tuning was against a mislocated
+     light. The clipped patch was the coal-bed slab; now discrete
+     instanced embers.
+  5. The bard's eyes were 2.7 mm INSIDE the head (drawn every frame,
+     culled every frame, since wave 1), the face has never pointed at any
+     camera (seated torso twist 0.46 + head yaw fixes it and frees the
+     lap lute), the shoulder joints sat OUTSIDE the torso's surface, and
+     the seated strum was proven geometrically impossible (elbow-less
+     rig; the visible hand is the fretting hand, made visible instead).
+     Also: staging's "waist-deep listener" was the seated elder (legless
+     by construction) — the real faults were a bearing sign error putting
+     listeners behind the ribbon and a slot band projecting onto the
+     bard's own screen column. New pure roadStaging module, camera-driven
+     tests; the bard turns to face who he meets.
+  **Wave-4 blind panel: mean ~5.5, best frames 6.5 (01-dawn) and 6.25
+  (04-vista), 07 at 5.88; weakest 03 at 4.25.** The trajectory across the
+  session: ~4.3 → ~5.4 → ~5.5 → ~5.5 — the easy point came from wave 1;
+  the later waves each fixed real, deep faults (see the five root causes
+  above) while the panel's top complaint has now survived three fix
+  rounds: the TERRAIN SELF-SHADOW at low sun still reads as "casterless
+  plaid bands" to fresh eyes even with hard frayed edges and correct
+  chroma. That is no longer an execution bug — it is a PRESENTATION
+  DECISION to remake (see task 144). Two panel claims to treat with
+  suspicion next session, per this session's pattern: "noteheads ignore
+  pitch height" (anchors measured exact twice; likely the depth-makeup
+  again or a framing artifact) and "fire glow is a perfect circle" (the
+  rim is per-vertex jittered; check exposure clipping before geometry).
+  Panels reliably see true SYMPTOMS and unreliably attribute CAUSES —
+  the whole session in one sentence.
+  Mutation-testing note: two test helpers that sample vertices "near a
+  height" passed vacuously on ringed geometry (vertices only exist at
+  rings) — interpolate between rings; the mutation run caught it.
+
+- **HANDOFF, 2026-07-31 (second interactive session, continued) — v0.8
   wave 3 landed: winding, stakes, wisps, and the staff settled twice.**
   978 tests green, build 795.17 kB, all gates PASS. Five parallel builds
   (ROADMAP 137-142 done-entries carry the detail). The headline finds:

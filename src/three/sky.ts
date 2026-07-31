@@ -566,6 +566,9 @@ void main() {
 `;
 
 const SKY_FRAGMENT = /* glsl */ `
+/** See the note at the point of use: how far the dome is pushed off its own
+ *  grey axis to pay back what ACES takes off the brightest area in the frame. */
+#define SKY_CHROMA 2.30
 uniform vec3 uZenith;
 uniform vec3 uHorizon;
 uniform vec3 uSunColor;
@@ -641,9 +644,24 @@ float ridgeMask(vec2 ring, float height, float base, float amp, float seed) {
  * darker than the air it meets by construction, and a saturation pass must
  * not quietly become a value change.
  */
-vec3 air(vec3 c) {
+vec3 chroma(vec3 c, float k) {
   float luma = dot(c, vec3(0.2126, 0.7152, 0.0722));
-  return max(vec3(0.0), mix(vec3(luma), c, 1.35));
+  return max(vec3(0.0), mix(vec3(luma), c, k));
+}
+
+/**
+ * Kept as the identity, and kept as a named call rather than deleted.
+ *
+ * This was a 1.35 chroma push applied to the ridge bands alone, and the long
+ * note below the cloud block records what measuring it found: the correction
+ * was right and was reaching a tenth of the surface it was written about,
+ * while the bands it did reach still came back three and a half times flatter
+ * than the hazed terrain they are supposed to meet. The whole dome now takes
+ * one correction at one strength, after the bands are drawn, so a second push
+ * here would land on them twice.
+ */
+vec3 air(vec3 c) {
+  return c;
 }
 
 /**
@@ -780,6 +798,47 @@ void main() {
     color = mix(color, cloudColor, cover * cloudBand);
   }
 
+  /*
+   * --- the sky's own hue, put back after the tone mapper takes it ---------
+   *
+   * The one correction in this file that was written down, argued for, and
+   * then applied to a tenth of the frame it was about. air() above carries
+   * the whole case: the dome runs the same ACES pass the world does, ACES
+   * desaturates its shoulder by design, and the sky is the brightest large
+   * area in a daylight frame. That case is about the SKY, and until now the
+   * correction was reaching only the two ridge bands drawn on it.
+   *
+   * Measured on the shipped wave-3 build, in the frame a blind panel called
+   * a milk-grey upper half: the morning sky's own band came back at
+   * saturation 0.062 immediately above the skyline and 0.096 at the top of
+   * the frame, against a horizon key committed at S0.259 and a zenith at
+   * S0.391. Nearly two thirds of the hue this file's keys declare was being
+   * taken off between the uniform and the pixel, which is why every round
+   * spent re-picking those hexes measured no better: the keys were never the
+   * thing that was wrong.
+   *
+   * The cloud is the worse half of it and is corrected here rather than at
+   * the crown, deliberately. A cloud crown at mix(uHorizon * 1.15, uSunColor,
+   * 0.45) goes into the tone mapper at a linear 0.74/0.82/0.85 and comes out
+   * within a few levels of white, and the daylight keys ask for rather over
+   * half the visible band to be covered — so half the upper frame was paper.
+   * Dimming the crown would fix the saturation by taking the sky's VALUE
+   * down, and every note in this file about the horizon key says what that
+   * costs: this is the band the far land is hazed toward and the value order
+   * front to back is the property worth guarding. A chroma push holds
+   * dot(c, luma) exactly, so the sky keeps its place in that order to the
+   * level and only its colour moves.
+   *
+   * Above air()'s own 1.35 because it is correcting a larger loss: air() was
+   * fitted to the ridge bands, which sit at 0.64 and 0.79 of the sky's value
+   * and are only part-way up the shoulder, and it left them at a measured
+   * S0.064 against the hazed terrain standing in front of them at S0.211 —
+   * the two things this file's ridgeTint note says must arrive at the same
+   * colour from opposite directions, three and a half times apart. So the
+   * bands take this correction too and air() steps out of their way; see the
+   * call site below the ridges.
+   */
+
   // --- distance ----------------------------------------------------------
   // The world streams out to a hundred and sixty-five metres and then
   // simply stops, so every daylight frame had a hard straight seam where a
@@ -818,6 +877,31 @@ void main() {
     color = mix(color, ridgeTint(skyBase, ring, 0.36, 0.64, 0.20), nearRidge);
   }
   float ridge = max(farRidge, nearRidge);
+
+  /*
+   * See the long note in the cloud block above. One chroma correction for
+   * everything drawn ON the dome — gradient, cloud and the two bands of
+   * distant land — applied once, here, where they are all present and none of
+   * them has been corrected separately. Before the sun and the stars, which
+   * are added at the colour they are meant to be and must not be pushed off
+   * it. Luminance-preserving, so the value order this file spends most of its
+   * length arguing for is untouched to the level.
+   *
+   * Ramped on the fragment's own value rather than applied flat, because the
+   * loss it repays is. The renderer runs ACES at an exposure that multiplies
+   * by 1.75 before the curve, and the curve's desaturating shoulder begins to
+   * bite around half of its input and owns everything past about 1.2 — which
+   * is a pre-tonemap luminance of roughly 0.20 to 0.60 here. A flat push
+   * would hand the same correction to the parts of the sky that never reach
+   * the shoulder and therefore never lost anything: measured across the day,
+   * the three daylight keys' skies come back at S0.10-0.15 and golden hour's
+   * at S0.29, and it is the first set that needs rescuing. This ramp gives
+   * morning and noon effectively all of it, golden hour about half, and deep
+   * night — whose sky is four per cent of full scale and nowhere near the
+   * curve — none at all.
+   */
+  float shoulder = smoothstep(0.20, 0.60, dot(color, vec3(0.2126, 0.7152, 0.0722)));
+  color = chroma(color, mix(1.0, SKY_CHROMA, shoulder));
 
   // Sun: a soft disc plus a wide bloom. No hard edge — a crisp disc reads
   // as a decal pasted on a painting. The disc goes behind the ridge and the

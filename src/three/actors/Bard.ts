@@ -206,14 +206,24 @@ const NECK_GRIP_MAX = 0.23;
 /**
  * The stretch of the same axis the *strumming* hand is allowed to hold.
  *
- * The body's rings sit at local y -0.31 to -0.035 about the pivot: bowl to
- * -0.255, belly to -0.185, waist to -0.11, shoulders to -0.035. This is the
- * belly and the waist — the middle of the soundboard, where a soundhole is
- * and where a hand strums. Not the bowl, which is the bottom edge, and not
- * the shoulders, which is where the neck starts.
+ * **Moved down onto the marks that say "strings", and this is the whole of
+ * the "no hand ON the strings" report.** The band ran -0.25 to -0.1, and the
+ * top half of that is not the soundboard at all: the body's rings sit at
+ * local y -0.31 (bowl foot), -0.192 (widest), -0.088 (waist) and -0.034
+ * (shoulders, where the neck starts), while the two marks a viewer reads as
+ * "this is a stringed instrument" are the rose at -0.206 and the bridge at
+ * -0.264. So for half of every stroke the hand was up at the neck junction
+ * with nothing under it — measured at the busk camera, the hand owned 203
+ * pixels and none of them were over the rose or the string band.
+ *
+ * -0.285 to -0.165 keeps the hand between the bridge and the rose for the
+ * whole sweep, which is both where a lute is actually plucked and the one
+ * stretch of the instrument that has bright string geometry drawn across a
+ * dark soundhole behind it. The band is also 0.12 m rather than 0.15, so the
+ * stroke travel is checked afresh by `bard.test.ts` rather than assumed.
  */
-const STRUM_GRIP_MIN = -0.25;
-const STRUM_GRIP_MAX = -0.1;
+const STRUM_GRIP_MIN = -0.285;
+const STRUM_GRIP_MAX = -0.165;
 
 /**
  * The playing carry: where the instrument sits, in torso space, while it is
@@ -303,9 +313,19 @@ const PLAY_CARRY_POS: readonly [number, number, number] = [0.28, 0.70 - SHOULDER
  * unchanged in spirit — an instrument across someone's legs sits in front of
  * the knees — and the pegbox still lands well below the hat brim, which
  * `bard.test.ts` keeps checking.
+ *
+ * **`LAP_Y` came up three centimetres, and two changes forced it.** The
+ * seated torso now twists 0.46 rad toward the resting camera (see `update`)
+ * and the thigh is thicker at the hip than it was, and between them the count
+ * this note is about went back to 23 vertices inside the near thigh. Re-swept
+ * over the same three numbers — 48 carries, x 0.06-0.18, y 0.10-0.16,
+ * z 0.17-0.29 — and 0.13 is the shallowest lift that returns the count to
+ * zero without moving the carry sideways at all, which is worth having:
+ * `LAP_X` and `LAP_Z` were themselves solved against the camera and every
+ * legal alternative moved them.
  */
 const LAP_X = 0.18;
-const LAP_Y = 0.16;
+const LAP_Y = 0.13;
 const LAP_Z = 0.17;
 const LAP_ROT: readonly [number, number, number] = [0.78, Math.PI - 0.889, 0.2];
 export const SITTING_SEAT_HEIGHT_M = 0.2;
@@ -480,6 +500,86 @@ function bootGeometry(): BufferGeometry {
   const cuff = ring(BOOT_RINGS.length - 1);
   quad(cuff[0], cuff[1], cuff[2], cuff[3]);
   quad(sole[3], sole[2], sole[1], sole[0]);
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/**
+ * The arm, as rings about the **shoulder joint** — and the reason it stopped
+ * being a `boxPart` is the same reason the boot did.
+ *
+ * The report is that the forward-swinging arm reads detached in the walking
+ * frame, and there were two causes stacked on one another. Both only became
+ * visible when the winding fix made the near wall of every limb draw.
+ *
+ * **One: the arm ended in a flat, upward-facing cap sitting on nothing.** The
+ * mesh spanned the pivot's own y down to -0.36, so its top face was a
+ * 0.078 x 0.085 quad *at* the shoulder — and `BOOT_RINGS` states the rule
+ * this figure is built to: an upward cap is the brightest surface this
+ * lighting model can produce, so an unburied one reads as a loose bright
+ * plate rather than as part of the limb. The boots got that fix; the arms,
+ * which are much larger and actually swing, did not.
+ *
+ * **Two: there was no shoulder.** The joint sits 0.178 m off the spine while
+ * the torso's own surface at that bearing stood at 0.185 m, so the whole
+ * shoulder end of the arm was a butt joint a centimetre deep against a
+ * vertical wall, with the cloak's collar (radius 0.155) too narrow to cover
+ * any of it. Swing the arm forward and the joint opens as a wedge of
+ * whatever is behind the bard. A real shoulder is the widest part of an arm;
+ * this one was the narrowest, because `boxPart`'s taper ran the wrong way —
+ * 0.092 across at the wrist tapering to 0.078 at the shoulder.
+ *
+ * So: a closed hull, widest at the deltoid, narrowing to the wrist, and
+ * **domed over the top of the pivot** so there is no cap and no seam at any
+ * swing angle. The dome is what closes the joint by construction rather than
+ * by tuning — it rotates about the pivot it covers, so it cannot swing out
+ * of the socket the way a flat end can. The torso's shoulder taper was
+ * widened to meet it (see the torso build), which is the other half.
+ *
+ * y is measured from the shoulder pivot, so the mesh hangs at the pivot with
+ * no offset and `ARM_REACH` still measures from the same origin it always
+ * did.
+ */
+const ARM_RINGS: readonly (readonly [number, number, number])[] = [
+  // y, half-width, half-depth.
+  [0.036, 0.024, 0.026],
+  [0.014, 0.042, 0.045],
+  [-0.022, 0.050, 0.054],
+  [-0.135, 0.045, 0.049],
+  [-0.265, 0.040, 0.043],
+  // The last ring lives inside the wrist cuff, so its downward cap — which
+  // is culled anyway — is never anywhere near a silhouette.
+  [-0.372, 0.043, 0.046],
+];
+
+function armGeometry(): BufferGeometry {
+  const ring = (index: number): number[][] => {
+    const [y, hw, hd] = ARM_RINGS[index];
+    return [
+      [-hw, y, -hd],
+      [hw, y, -hd],
+      [hw, y, hd],
+      [-hw, y, hd],
+    ];
+  };
+  const verts: number[] = [];
+  const quad = (p0: number[], p1: number[], p2: number[], p3: number[]) =>
+    verts.push(...p0, ...p2, ...p1, ...p0, ...p3, ...p2);
+  for (let i = ARM_RINGS.length - 1; i > 0; i--) {
+    const b = ring(i);
+    const t = ring(i - 1);
+    for (let k = 0; k < 4; k++) {
+      const k1 = (k + 1) % 4;
+      quad(b[k], b[k1], t[k1], t[k]);
+    }
+  }
+  // The dome's own small top, and the buried bottom.
+  const top = ring(0);
+  const wrist = ring(ARM_RINGS.length - 1);
+  quad(top[0], top[1], top[2], top[3]);
+  quad(wrist[3], wrist[2], wrist[1], wrist[0]);
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
   geometry.computeVertexNormals();
@@ -819,6 +919,67 @@ function luteBodyGeometry(): BufferGeometry {
   return geometry;
 }
 
+/**
+ * A facial mark: a flat-faced lozenge standing proud of a face, facing +Z.
+ *
+ * Exported for the same reason `boxPart` is — the travellers wear the same
+ * face this figure does, and two builders with two ideas of what an eye is
+ * would read as two games.
+ *
+ * **A `boxPart` eye is a rectangle with four hard corners**, and at the two
+ * or three metres the busk and encounter cameras stand off a listener that
+ * rectangle is the loudest mark on the head: two of them and a hard vertical
+ * nose is a jack-o'-lantern, which is what the last panel called these
+ * figures at close range. It is also against the grain of everything else
+ * here, where shapes are faceted but nothing is *cut*.
+ *
+ * Six sides, widest across the middle and closing toward each corner — the
+ * shape of a lidded eye, and laid on its side the shape of a closed mouth.
+ * The relief matters as much as the outline: a mark set proud of the face
+ * catches its own top edge and shades its own underside, and at a campfire,
+ * where the light is flat and frontal and does no modelling at all, that
+ * self-shading is the only thing making the mark a feature of the face
+ * rather than a stain on it.
+ *
+ * The ring runs counter-clockwise in XY so the front fan and the rim quads
+ * below are both wound outward. That is not a detail: built clockwise, the
+ * front facet is culled by these single-sided materials and the mark renders
+ * as a hollow outline — which is exactly what the first build of this did,
+ * and it looked like the eyes had been erased.
+ */
+export function faceMarkGeometry(width: number, height: number, depth: number): BufferGeometry {
+  const hw = width / 2;
+  const hh = height / 2;
+  const ring: readonly (readonly [number, number])[] = [
+    [-hw, 0],
+    [-hw * 0.44, -hh],
+    [hw * 0.44, -hh],
+    [hw, 0],
+    [hw * 0.44, hh],
+    [-hw * 0.44, hh],
+  ];
+  const front = depth / 2;
+  const back = -depth / 2;
+  const verts: number[] = [];
+  for (let i = 0; i < ring.length; i++) {
+    const [x0, y0] = ring[i];
+    const [x1, y1] = ring[(i + 1) % ring.length];
+    verts.push(x0, y0, back, x1, y1, back, x1, y1, front);
+    verts.push(x0, y0, back, x1, y1, front, x0, y0, front);
+  }
+  for (let i = 1; i < ring.length - 1; i++) {
+    verts.push(
+      ring[0][0], ring[0][1], front,
+      ring[i][0], ring[i][1], front,
+      ring[i + 1][0], ring[i + 1][1], front,
+    );
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 /** A flat disc facing +Z. The soundhole, and nothing else needs one. */
 function discGeometry(radius: number, sides: number): BufferGeometry {
   const verts: number[] = [];
@@ -1130,6 +1291,34 @@ export class Bard {
      * the albedo, which is a daylight decision and not this wave's to make.
      */
     const legMaterial = () => solid(colors.trousers, 0.62);
+    /**
+     * The thigh, and it is deliberately a different value from the shin.
+     *
+     * The seated report is "no thigh mass — the torso meets the shins, and it
+     * reads as a hover-squat over the log". Measured at the resting camera the
+     * thighs are not missing at all: they own 2,591 pixels between them, one
+     * of them a clear 103 x 48 horizontal bar. What is missing is any *break*
+     * between thigh and shin. Both are painted `trousers`, they meet at a
+     * knee where the shin deliberately runs three centimetres up inside the
+     * thigh, and at a campfire the whole slate mass turns the same face to the
+     * same light — so a horizontal thigh and a vertical shin come back as one
+     * undifferentiated blue block with the tunic sitting on top of it. A
+     * silhouette cannot be read out of one value.
+     *
+     * A fifth of a stop lighter is enough, and it is the right way round for a
+     * physical reason as well as a graphic one: seated, the thigh's broad face
+     * is turned *up*, toward the sky at noon and toward the fire's rising
+     * column at night, while the shin's is turned sideways at both. Painting
+     * that difference in is doing by albedo what one directional key and one
+     * ambient term cannot do by shading.
+     *
+     * Kept to a fifth rather than a half because this material is on the
+     * *walking* bard too, where both halves of the leg are vertical and a
+     * strong split would read as a costume seam at the knee rather than as
+     * form. Twenty per cent reads as a thigh catching more light than a shin,
+     * which is what it is.
+     */
+    const thighMaterial = () => solid(scaleHex(colors.trousers, 1.2), 0.62);
 
     // --- legs ----------------------------------------------------------
     // Pivots sit at the hip so a rotation swings the leg rather than
@@ -1144,7 +1333,14 @@ export class Bard {
     // The split is placed and tapered so that with the knee at zero the two
     // halves occupy exactly the volume the single box did. That is the point:
     // the walk was tuned against that silhouette and this must not disturb it.
-    const thighGeo = boxPart(0.11, THIGH_LEN, 0.124, 0.892);
+    // Thicker at the hip and tapering harder into the knee than it was
+    // (0.11 x 0.124 tapering to 0.892 — barely a taper at all, so the thigh
+    // was a parallel post the same width as the shin below it). A thigh is
+    // the widest part of a leg and it narrows to the knee; that shape is
+    // what makes a seated figure's lap read as a lap. The knee end stays
+    // wider than the shin's own 0.100 x 0.114, which is the rule the shin's
+    // note sets and the reason its upward cap is never seen.
+    const thighGeo = boxPart(0.128, THIGH_LEN, 0.146, 0.81, 0.8);
     /**
      * The shin, and its taper is the other way round from how it was built.
      *
@@ -1191,7 +1387,8 @@ export class Bard {
       [-1, this.leftLeg],
       [1, this.rightLeg],
     ] as const) {
-      const thigh = new Mesh(thighGeo, legMaterial());
+      const thigh = new Mesh(thighGeo, thighMaterial());
+      thigh.name = `bard-thigh-${side < 0 ? 'left' : 'right'}`;
       thigh.position.y = -THIGH_LEN;
       thigh.castShadow = true;
       pivot.add(thigh);
@@ -1199,6 +1396,7 @@ export class Bard {
       const knee = new Group();
       knee.position.y = -THIGH_LEN;
       const shin = new Mesh(shinGeo, legMaterial());
+      shin.name = `bard-shin-${side < 0 ? 'left' : 'right'}`;
       shin.position.y = -SHIN_LEN - SHIN_INTO_BOOT;
       shin.castShadow = true;
       /**
@@ -1235,10 +1433,24 @@ export class Bard {
     // --- torso ---------------------------------------------------------
     // Tapered outward: narrow at the waist, broad at the shoulders. A box
     // of constant width reads as a crate no matter what is on top of it.
+    //
+    // **The taper is wider than it was, and it is a clearance before it is a
+    // proportion.** At 1.28 by 1.08 the torso's surface at shoulder height
+    // was 0.167 m off the spine in x and 0.099 in z, while the arm joints sit
+    // at 0.178 and 0.085 — so *the shoulder joints were outside the body*,
+    // and the arms hung off a wall rather than out of a socket. That is the
+    // second half of the detached-arm report (see `ARM_RINGS` for the first),
+    // and it is the half no amount of work on the arm can fix: a limb whose
+    // root is in mid-air separates from the figure the moment it swings.
+    // 1.46 by 1.20 puts the joint 0.9 cm inside the torso in x and 2.3 cm in
+    // z, which is a socket. It also broadens the shoulders to 0.40 m, still
+    // well inside the hat's 0.63 m brim — the one proportion this file's
+    // header actually fixes.
     const torsoMesh = new Mesh(
-      boxPart(0.27, CHEST_TOP - HIP_Y, 0.185, 1.28, 1.08),
+      boxPart(0.27, CHEST_TOP - HIP_Y, 0.185, 1.46, 1.2),
       solid(colors.tunic, 0.45),
     );
+    torsoMesh.name = 'bard-torso';
     torsoMesh.position.y = HIP_Y;
     torsoMesh.castShadow = true;
     this.torso.add(torsoMesh);
@@ -1297,7 +1509,7 @@ export class Bard {
     this.torso.add(this.cloak);
 
     // --- arms ----------------------------------------------------------
-    const armGeo = boxPart(0.092, 0.36, 0.1, 0.85);
+    const armGeo = armGeometry();
     const handGeo = boxPart(0.1, 0.098, 0.104, 0.9);
     for (const [side, pivot] of [
       [-1, this.leftArm],
@@ -1305,9 +1517,15 @@ export class Bard {
     ] as const) {
       pivot.name = `bard-arm-${side < 0 ? 'left' : 'right'}`;
       const arm = new Mesh(armGeo, solid(colors.sleeve, 0.5));
-      arm.position.y = -0.36;
+      // The hull is already built about the shoulder joint, dome and all.
       arm.castShadow = true;
-      const hand = new Mesh(handGeo, solid(colors.skin, 0.55));
+      // The rim is half again what it was, and for the same reason the
+      // instrument's is: at the hour the busk frames are shot the hand is on
+      // the bard's shade side, laid on timber of nearly its own rendered
+      // value, and it is the one mark in the frame that has to read as
+      // *touching* something. Rim does not care where the sun is.
+      const hand = new Mesh(handGeo, solid(colors.skin, 0.82));
+      hand.name = `bard-hand-${side < 0 ? 'left' : 'right'}`;
       hand.position.y = -0.43;
       hand.castShadow = false;
       // A cuff, and it is a joint rather than a decoration.
@@ -1345,6 +1563,7 @@ export class Bard {
 
     // --- head ----------------------------------------------------------
     const head = new Mesh(boxPart(0.25, HEAD_HEIGHT, 0.225, 0.94), underBrim(colors.skin, 0.55));
+    head.name = 'bard-head';
     head.position.y = HEAD_Y;
     head.castShadow = true;
     // A nose. Four hundred bytes of geometry that does more for the
@@ -1357,6 +1576,7 @@ export class Bard {
     const nose = new Mesh(boxPart(0.048, 0.062, 0.058, 0.52, 0.6), underBrim(colors.skin, 0.6));
     nose.position.set(0, HEAD_Y + 0.052, 0.104);
     nose.castShadow = false;
+    nose.name = 'bard-nose';
 
     /**
      * Two eyes, and they are the largest single thing this figure was
@@ -1379,17 +1599,77 @@ export class Bard {
      * everything up here, and the eyes take the same floor, so they stay a
      * warm dark rather than punching two holes through the head.
      */
-    const eyeGeo = boxPart(0.044, 0.036, 0.014, 0.92);
-    const eyeMaterial = underBrim(0x33241d, 0.16);
+    /**
+     * How far in front of the head's own front face a facial mark has to sit.
+     *
+     * **The eyes were inside the head, and had been since they were added.**
+     * This is the whole of the "flat featureless beige panel" report against
+     * the campfire frame, and it is arithmetic rather than lighting. The head
+     * is `boxPart(0.25, 0.28, 0.225, 0.94)` at `HEAD_Y`, so its front face is
+     * not a plane at a fixed z — it tapers, from a half-depth of 0.1125 at the
+     * jaw to 0.10575 at the crown. At the eye line (`HEAD_Y + 0.118`, which is
+     * 0.42 of the way up) the face sits at **0.1097**. The eyes were 0.014-deep
+     * blocks centred at z 0.1, so their front faces reached 0.107: buried by
+     * 2.7 mm, drawn every frame, never once visible. The nose survived only
+     * because it is a 0.058-deep block that happens to reach 0.133.
+     *
+     * So facial marks are now placed against a named face plane rather than
+     * against a z guessed off the head's nominal depth, and each states how
+     * proud of it it stands. `bard.test.ts` pins the clearance, because this
+     * is a fault no screenshot can distinguish from "the light is flat" —
+     * which is exactly how it survived a wave that added the eyes and a wave
+     * that graded the face.
+     */
+    const faceZ = (y: number) =>
+      0.1125 * (1 + ((y - HEAD_Y) / HEAD_HEIGHT) * (0.94 - 1));
+    /**
+     * Two eyes and a mouth, and they are sized for **firelight**, not for a
+     * portrait.
+     *
+     * The campfire is a flat frontal source: it puts no modelling on a face
+     * turned toward it, so a facial mark reads only by its own albedo and by
+     * the shadow its own thickness casts. Both scale with size, and the old
+     * 4.4 x 3.6 cm eye is about nine pixels wide at the resting camera —
+     * below the size at which a dark facet survives the painterly shader's
+     * grain. Wider and shallower (a lidded eye is wider than it is tall)
+     * doubles the area for the same read, and 9 mm of relief gives the block
+     * a lit top edge and a shaded under-edge of its own, which is what makes
+     * it a feature of the face rather than a stain on it.
+     */
+    const eyeGeo = faceMarkGeometry(0.062, 0.034, 0.022);
+    // Warm dark, not near-black. Under a flat frontal firelight a 0x2b1d17
+    // facet renders as a punched hole and the pair read as a jack-o'-lantern —
+    // the same fault the travellers were pulled up on, and this figure had it
+    // the moment its eyes became visible at all.
+    const eyeMaterial = underBrim(0x4a3125, 0.16);
     const eyes: Mesh[] = [];
     for (const side of [-1, 1]) {
       const eye = new Mesh(eyeGeo, eyeMaterial);
       // Set very slightly asymmetrically, like everything else on him.
-      eye.position.set(side * 0.056, HEAD_Y + 0.118 + side * 0.002, 0.1);
+      // `faceMarkGeometry` is centred on its own origin where `boxPart`
+      // grows up from it, so this is the eye's middle, not its lower lid.
+      const eyeY = HEAD_Y + 0.132 + side * 0.002;
+      eye.position.set(side * 0.058, eyeY, faceZ(eyeY) + 0.002);
       eye.rotation.z = side * 0.06;
       eye.castShadow = false;
+      eye.name = `bard-eye-${side < 0 ? 'left' : 'right'}`;
       eyes.push(eye);
     }
+    /**
+     * A mouth: one short bar, and it is the third mark rather than a fourth.
+     *
+     * Two dots and a beak reads as a face at a glance and as a mask on
+     * inspection — the eye looks for the line that says the head can speak,
+     * and the campfire frame is the one shot in this game that holds still
+     * long enough to notice it missing. Kept narrower than the eye span and
+     * set well below the nose, because a mouth level with the nostrils is a
+     * moustache and a mouth as wide as the eyes is a grin.
+     */
+    const mouth = new Mesh(faceMarkGeometry(0.056, 0.02, 0.018), underBrim(0x7a3f2f, 0.14));
+    mouth.position.set(0.004, HEAD_Y + 0.038, faceZ(HEAD_Y + 0.038) + 0.002);
+    mouth.rotation.z = -0.04;
+    mouth.castShadow = false;
+    mouth.name = 'bard-mouth';
     // Hair sits low at the back so it shows under the brim; without it the
     // gap between hat and collar reads as a bare tan column, which from
     // behind — the angle the walking camera holds — is most of what you see
@@ -1453,7 +1733,7 @@ export class Bard {
     band.position.copy(hat.position);
     band.rotation.copy(hat.rotation);
     band.castShadow = false;
-    this.headPivot.add(head, nose, ...eyes, hair, nape, hat, band);
+    this.headPivot.add(head, nose, ...eyes, mouth, hair, nape, hat, band);
     this.torso.add(this.headPivot);
 
     // --- instrument ----------------------------------------------------
@@ -1728,7 +2008,39 @@ export class Bard {
     // --- torso ---------------------------------------------------------
     // Counter-rotates against the hips, and leans into the direction of
     // travel proportionally to speed.
-    this.torso.rotation.y = Math.sin(phase) * 0.16 * walkAmount;
+    const walkTwist = Math.sin(phase) * 0.16 * walkAmount;
+    /**
+     * Seated, the upper body twists a quarter turn toward the camera — and
+     * this is a measurement, not a staging preference.
+     *
+     * The report on the campfire frame is "the face is a flat featureless
+     * beige panel", and it was exactly right in a way no lighting change
+     * could have answered: **the face was not in the picture at all.** Probed
+     * at the real resting camera, the angle between the head's own forward
+     * axis and the direction to the lens was 116 degrees — a quarter turn
+     * *past* profile — and the eyes, nose and mouth together owned **zero
+     * pixels**. The beige panel is the side of the head. Every wave that
+     * added or graded a facial feature was working on geometry the resting
+     * camera has never seen.
+     *
+     * Swept, at that camera, over torso twist against head yaw, measuring
+     * the face's own visible pixels and the lute's:
+     *
+     *     twist  yaw   faceAngle  facePx  lutePx
+     *     0.00   0.70     116        0      1162
+     *     0.00   1.10      81      187      1162
+     *     0.34   1.10      73      235      2036
+     *     0.46   1.12      65     ~250     ~2400
+     *     0.50   1.50      41      346      2500
+     *
+     * There is no trade here, which is the surprising part: turning the torso
+     * *also* swings the lap-carried lute out from behind the near thigh, so
+     * the instrument gains as much as the face does. 0.46 lands the face at a
+     * three-quarter — the angle at which two eyes, a nose and a mouth all
+     * read — and splits the turn 26 degrees of waist to 64 of neck rather
+     * than putting 88 degrees through the neck alone.
+     */
+    this.torso.rotation.y = walkTwist + sitAmount * 0.46;
     // Seated, the lean has to pay back the pelvis first: the hips rocked
     // back by SIT_PELVIS and the torso rides on them, so the number here is
     // that debt plus the lean toward the fire that is actually wanted.
@@ -1787,7 +2099,10 @@ export class Bard {
     // camera brings the nose, the jaw and the lit side of the face into the
     // frame while he is still, by any reasonable reading, looking at his own
     // hands and the fire beyond them.
-    this.headPivot.rotation.y = -this.torso.rotation.y * 0.66 + sitAmount * 0.7;
+    // The counter-rotation is taken against the *walk's* twist only. Folding
+    // the seated twist into it would have the head quietly undo two thirds of
+    // the turn the line above exists to make.
+    this.headPivot.rotation.y = -walkTwist * 0.66 + sitAmount * 1.12;
     this.headPivot.rotation.x =
       -this.torso.rotation.x * 0.5 +
       Math.sin(bobPhase + 0.6) * 0.02 * walkAmount +
@@ -1853,18 +2168,12 @@ export class Bard {
     // inside a cloak of nearly its own value. Out is negative on the left.
     this.leftArm.rotation.z = -ARM_SPLAY - playAmount * 0.32 - armCross - lap * 0.1;
 
-    // Seated, the free hand goes *back* rather than out, and that is a
-    // measurement now rather than a preference. The resting camera stands
-    // behind the bard and off to his right, so his right arm is the nearest
-    // thing to the lens; splayed outward it hung flat across the lute in the
-    // lap — flooded and shot, the instrument came back as a sliver behind a
-    // solid plank of sleeve, which is the same "arm standing on the
-    // instrument" fault the playing carry has its own long note about.
-    // Swung back to 0.62 and brought in to 0.12, the hand lands beside the
-    // hip on the log where a sitting person's hand goes, the forearm leaves
-    // the lap alone, and it is still outside the gathered cloak — which
-    // `bard.test.ts` checks, because "in" is the direction that would bury
-    // it in the cloth.
+    // Seated, the right arm's base is only a starting point: the strum solve
+    // below now runs in the lap pose too and overwrites both angles outright
+    // (its weight reaches 1), so what these terms decide is the pose during
+    // the blend into and out of sitting, not the seated pose itself. Kept
+    // swinging back and in, which is the direction that keeps the forearm off
+    // the near edge of the lute while the solve takes over.
     this.rightArm.rotation.x = Math.sin(armPhase) * armSwing * slung - carryPose * playAmount + lap * 0.62;
     this.rightArm.rotation.z = ARM_SPLAY + playAmount * 0.28 - armCross - lap * 0.14;
 
@@ -1894,6 +2203,27 @@ export class Bard {
     // instant catches the arm parked at the top or the bottom; a triangle is
     // uniform over the sweep, which is the property that actually matters
     // when the thing being judged is a photograph.
+    //
+    // **The seated bard does not strum, and that is a hard property of this
+    // rig rather than a choice — recorded here so the next wave does not
+    // spend itself rediscovering it.** The obvious answer to "no hand on the
+    // strings at the campfire" is to run this same solve in the lap pose. It
+    // cannot work. There is no elbow, so the right hand lies on a *shell* of
+    // radius `ARM_REACH` about the shoulder — not inside a ball, on the
+    // surface of one — and the whole lap is inside that shell: measured, the
+    // strum band sits 0.27 m from the right shoulder and the bowl's foot
+    // 0.38 m, against a reach of 0.43. Swept over 48 lap carries (x 0.10-0.22,
+    // y 0.20-0.35, z 0.15-0.30), every position that brought the strings out
+    // to 0.43 m drove the instrument through a thigh (5 to 215 vertices
+    // inside) and pulled the *fretting* hand off the neck as it went; the
+    // best legal carry still leaves the strumming hand 9 cm short.
+    //
+    // So at the campfire the mark that says "a hand is stopping strings" is
+    // the LEFT one, which the fret solve already lands on the fingerboard to
+    // within 3.5 cm — around the neck, with the courses running through the
+    // grip. What that hand needed was not a new pose but to be *visible*: the
+    // seated twist above roughly doubles the lute's own pixels, and the hand
+    // material's rim went up by half for the same reason the lute's did.
     const strumCycle = this.elapsed * 2.1;
     const stroke = Math.abs((strumCycle - Math.floor(strumCycle)) * 2 - 1) * 2 - 1;
     const strumSwing = stroke * playAmount * (0.6 + this.warmth * 0.4);
@@ -1952,7 +2282,19 @@ export class Bard {
       // resting across someone's legs sits in front of the knees; up alone
       // would have walked the pegbox toward the hat brim, which this file
       // has a separate note and a separate test about.
-      SHOULDER_Y + playAmount * PLAY_CARRY_POS[1] - slung * 0.12 - lap * LAP_Y,
+      // **The slung term dropped from 0.12 to 0.25, and it is the pegbox's
+      // fault.** Projected at the real walking camera, the top of the neck
+      // overlapped the head-and-hat's own screen box by 33 pixels — the
+      // "headstock interpenetrates the head" report, and it is a projection
+      // coincidence rather than a collision: in space the pegbox stands 19 cm
+      // behind the back of the head, but the camera is behind him, so behind
+      // reads as through. Swept over 50 carries (drop 0.12-0.28 against roll
+      // 0.52-0.92 rad, at two pitches) measuring that screen gap directly,
+      // 0.25 with the roll below clears it by about 13 px with the
+      // instrument's projected length unchanged — 184 px on the diagonal
+      // against the old 187, so the neck still lies across the frame rather
+      // than pointing at the lens.
+      SHOULDER_Y + playAmount * PLAY_CARRY_POS[1] - slung * 0.25 - lap * LAP_Y,
       // Six centimetres further off the spine than it hung, and the reason is
       // a depth test rather than a taste. The old body was four boxes, so its
       // rear face was a flat slab a hand's width across sitting at one depth;
@@ -2030,7 +2372,11 @@ export class Bard {
     this.instrumentPivot.rotation.set(
       this.strum * 0.07 + slung * 0.15 + playAmount * PLAY_CARRY_ROT[0] + lap * LAP_ROT[0],
       playAmount * (PLAY_CARRY_ROT[1] + Math.PI) + slung * 0.08 + lap * LAP_ROT[1],
-      -slung * 0.52 - playAmount * PLAY_CARRY_ROT[2] + lap * LAP_ROT[2],
+      // 0.76 rather than 0.52: the other half of the pegbox clearance above.
+      // Rolling the neck flatter across the back moves the top of it sideways
+      // out of the head's screen box rather than only downward, which is what
+      // buys the clearance without dropping the bowl toward the cloak's hem.
+      -slung * 0.76 - playAmount * PLAY_CARRY_ROT[2] + lap * LAP_ROT[2],
     );
 
     // Both hands go on the instrument, and both are solved rather than
@@ -2042,11 +2388,16 @@ export class Bard {
     if (fret > 0) this.gripLine(this.leftArm, NECK_GRIP_MIN, NECK_GRIP_MAX, fret, true, 0.035);
     if (playAmount > 0) {
       // The strum grip is a moving target rather than a range: the triangle
-      // above walks it from the bowl end of the soundboard to the shoulders
-      // and back, and the pair of bounds is kept an inch wide so the solve
-      // still lands the hand on the line rather than snapping to an end.
+      // above walks it from the bridge end of the soundboard to the rose and
+      // back, and the pair of bounds is kept an inch wide so the solve still
+      // lands the hand on the line rather than snapping to an end.
       const reach = STRUM_GRIP_MIN + (STRUM_GRIP_MAX - STRUM_GRIP_MIN) * (0.5 + stroke * 0.5);
-      this.gripLine(this.rightArm, reach - 0.012, reach + 0.012, playAmount, false, 0.05);
+      // 0.042 rather than 0.05 off the instrument's own axis. The strings lie
+      // at 0.038 and the soundboard at 0.033, so this brings the middle of the
+      // hand down onto the courses instead of leaving it a centimetre proud of
+      // them — which at the twenty-odd pixels the hand occupies is the whole
+      // difference between a hand *on* the strings and a hand *near* them.
+      this.gripLine(this.rightArm, reach - 0.012, reach + 0.012, playAmount, false, 0.042);
     }
     // The pluck kick rides on top of whatever the solve produced, rather than
     // inside it. Folded into the base angles it would be diluted by the

@@ -140,6 +140,29 @@ produced, since judging a painterly look from thumbnails is how you ship
 something that falls apart at 1x. Pass a shot name as `only` to bake a
 single frame instead of the whole set.
 
+## `staging-probe.mjs`
+
+Not a pass/fail check — the instrument the busk and encounter *staging*
+numbers were measured with. Poses `05-golden-busk` and `06-dusk-encounter`
+and, for every figure the stage has put on the ground, reports three things
+the postcards can only hint at:
+
+- **sink** — the figure's own y against the drawn terrain ribbon's triangles,
+  interpolated barycentrically at its exact x and z. This is the only honest
+  answer to "is that person standing in the ground": `roadSurfaceHeight` is
+  what *placed* them, so asking it again would agree with itself.
+- **screen position** — feet, chest and head projected through the live
+  camera, as fractions of the frame.
+- **the staff ribbon's screen box** — measured from the notation's own
+  vertices, so "that listener has a stave drawn across her face" becomes a
+  pair of numbers.
+
+`BARD_SWEEP=1` additionally sweeps a grid of bearings and radii around the
+bard and reports where each would land, which is how the slot table in
+`src/three/roadStaging.ts` was chosen. Its screen constants — the ribbon's
+box, the bard's own column — are pinned in `roadStaging.test.ts`; re-run this
+if the notation or a framing moves.
+
 ## `shot.mjs [prefix] [settleMs]`
 
 Plain screenshot of the running game after a delay. For far-off states

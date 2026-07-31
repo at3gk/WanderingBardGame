@@ -1585,6 +1585,47 @@ from the wave-2 blind re-critique and the human's stakes direction.
     coins+delight settled early; fumbled passes with a warm line and
     costs nothing. Not persisted — a reload lets the moment go quietly.
     +20 tests (performance 79, encounters 55).
+The wave-5 queue, from the wave-4 panel (mean ~5.5; take these next):
+
+144. **Remake the terrain self-shadow as a presentation decision.** Three
+    fix rounds (edges, fray, chroma) and fresh eyes still read the low-sun
+    terrain self-shadowing as "casterless plaid bands". Options to
+    evaluate: suppress terrain self-shadow bands at grazing sun and keep
+    only object shadows; break the bands' uniform width with the landform
+    (they are currently map-resolution uniform); or lean in and paint them
+    as deliberate cloud-shadow shapes. ALSO REAL: the bard and props cast
+    NO shadow ("the world casts, the bard doesn't") — give figures cast
+    shadows; a shadowless hero reads as pasted.
+145. **Anchor the anchorless frames.** 03/08/10 are one chalky plane: no
+    dark mass, no authored landmark inside the first third. Noon and the
+    phone framings need a composed anchor (landmark placement bias near
+    postcard s-positions, a darker canopy mass, or a mid-frame prop).
+146. **Portrait ribbon legibility, round three.** 08/10 still clump D-E-F-G
+    into a blob (the governor's hard floor is not enough at 390 px).
+    DISPUTED and must be measured first: "noteheads ride above the top
+    line on lollipop stems" — anchors measured exact twice before; check
+    the depth-makeup and the specific pose before re-fixing pitch.
+147. **Commit to night.** 07: ring stones stay daylight-grey inches from
+    flame, nothing throws radiating shadows from the fire, off-fire land
+    sits within a stop of the sky. Needs the palette-side night ambient
+    drop (the campfire agent's recorded ceiling), fire-warmed ring
+    stones, and possibly cheap radial blob shadows from fire-lit props.
+148. **The postcard must catch the verb.** 05's busker reads as standing
+    idle (the strum exists — the postcard shutter catches the arm at
+    rest; consider posing the strum mid-sweep for the busk framing) and
+    06 reads as a walking shot mislabeled (the encounter framing needs
+    its own identity: two figures, mutual facing, closer camera — the
+    staging landed but the postcard pose may predate arrival).
+149. **Ground cover, round three: patches over specks.** The read is still
+    "debris": individuated dark-stemmed spikes and litter-like pebble
+    decals. References do broad tonal patches that disappear. Consider
+    fewer, larger, softer tufts; merge pebble scatter into ground-tone
+    variation; break 04's visible clone repetition.
+150. **Close-range character pass.** Near-frontal face is eyeless in 06
+    (face marks exist — check angles/culling), rear head reads as a void
+    cube (hair mass value), hat crown-brim gap leaks background in 02,
+    NPC limb joins still gap at close range.
+
 143. **The road's soft edge.** Wave 3's ablation identified the road's
     soft-blended boundary against the grass as the biggest remaining
     soft-shape offender in 01/02/03 (it reads as part of the "smear"

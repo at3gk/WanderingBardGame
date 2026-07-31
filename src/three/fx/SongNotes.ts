@@ -205,18 +205,27 @@ const MIDDLE_STEP = 6;
  * Height of the middle line above the road, in metres.
  *
  * The lane floats: it is not standing on anything, so this is a clearance as
- * much as a composition choice. At 1.55 the bottom of the paper clears the
- * road by about two thirds of a metre at the near end even when the tune is
- * using its lowest ledger, which is enough that a rise in the road ahead does
- * not eat the staff (the base height is taken as the *highest* road point the
- * lane spans, see `samplePath`, so a lane crossing a crest floats over the
- * crest rather than through it).
+ * much as a composition choice (the base height is taken as the *highest*
+ * road point the lane spans, see `samplePath`, so a lane crossing a crest
+ * floats over the crest rather than through it).
  *
  * It is also just under the busking camera's own eye line, which is what
  * makes the lane read as receding *away and slightly down* toward the horizon
  * rather than as a banner hung overhead.
+ *
+ * 1.05 to 1.17, and the reason is the wave-3 panel's sixth line — the one
+ * that came back at the BOTTOM after the top boundary was fixed. Pixel-scan
+ * plus ablation settled its identity: the ribbon's geometry carries exactly
+ * five ink bands (hide the ribbon and the stroke is still there, same row,
+ * same darkness — it is the road's dark wheel-rut), but at 1.05 the paper's
+ * translucent bottom margin reached down far enough that the rut showed
+ * *through* it. A dark stroke wrapped in pale ruled paper IS a rule, whatever
+ * drew it. Raising the lane 12 cm lifts the margin's frame clear of the rut
+ * band, so the rut reads as road below the staff rather than as a line on
+ * it. `songNotes.test.ts` pins the bottom edge's clearance over the road so
+ * nobody trades this back for composition.
  */
-const LANE_LIFT_M = 1.05;
+const LANE_LIFT_M = 1.17;
 
 /**
  * Where the barline stands, in metres along the road ahead of the bard.
@@ -370,6 +379,51 @@ const LANE_EDGE_MARGIN = 0.22;
  * suits the screen: a portrait frame has no width to spend on distance.
  */
 const LENGTH_SHARE_MIN = 0.62;
+
+/**
+ * The closed-loop visible-length governor, and why the open-loop share above
+ * stopped being enough.
+ *
+ * `LENGTH_SHARE_MIN` knows the aspect ratio and nothing else. The wave-3
+ * panel photographed what it cannot see: on 390x844 the ROAD ITSELF curves
+ * out of the frame a few metres ahead, so the lane following it was born
+ * against the bezel — closing the fan cannot fix a road that has left the
+ * picture. And on the walking framings the road bends the other way, so the
+ * lane's far stretch FOLDED BACK over itself on screen: measured, two notes
+ * a full flight apart sat thirty pixels from each other, which is the
+ * "adjacent notes blob" and the "far third is illegible" complaint in one
+ * mechanism. Both are properties of this frame's camera against this frame's
+ * road, so the answer has to be closed-loop, like `fitShare`.
+ *
+ * Each frame the projected path is walked outward from the barline and the
+ * lane keeps only the stretch that is worth drawing: it stops where a
+ * glyph-padded point would cross `LANE_EDGE_MARGIN`, where the screen
+ * direction reverses (the fold), or where a metre of arc is worth fewer than
+ * `VISIBLE_PX_PER_M` pixels — the compression at which notes stack into a
+ * blob and nothing out there can be read anyway. Shrink is a step per frame;
+ * growth waits `GROW_HOLD_FRAMES` of comfortable clearance, because a lane
+ * that breathes while a child reads it is worse than a short one.
+ *
+ * The hard floor is the notation's own: at 0.4 of the full length the
+ * songbook's tightest pair of heads still clears by the margin
+ * `narrowGapAtWhichHeadsTouchMs` pins. The floor may not go below what that
+ * test can prove.
+ *
+ * The loop's two speeds are asymmetric on purpose. A violation is cut a step
+ * a frame, because a note against the bezel is a live fault; growth waits
+ * `GROW_HOLD_FRAMES` of legality per step, and legality is asked of a
+ * one-step EXTENSION of the path rather than of the current end — on some
+ * framings the projection flattens so much toward the far end that a comfort
+ * band read off the end itself either never clears (the lane stays trapped
+ * wherever the camera's settling swing cut it, measured on the busk framing)
+ * or clears everywhere (the lane saws). The extension is held to the cut
+ * thresholds plus `GROW_MARGIN_NDC` of clearance, which leaves a thin stable
+ * band between "grow" and "cut" for the equilibrium to rest in.
+ */
+const LENGTH_SHARE_HARD_MIN = 0.4;
+const VISIBLE_PX_PER_M = 8;
+const GROW_HOLD_FRAMES = 6;
+const GROW_MARGIN_NDC = 0.004;
 
 /**
  * The screen width the notation's world size was chosen against, in CSS
@@ -692,6 +746,21 @@ const PAPER_CLEAR_STEPS = 1.15;
 const PAPER_FADE_STEPS = 2.1;
 
 /**
+ * The bottom margin's own fade, shorter than the top's.
+ *
+ * The two margins dissolve over different worlds. The top dissolves into sky
+ * and hills, where nothing has ink of its own and a long gradient is free.
+ * The bottom dissolves toward the road, and the road carries genuine dark
+ * strokes — ruts, edge shadow — that show through any translucent paper laid
+ * over them and read as rules when they do (see `LANE_LIFT_M`). So the
+ * bottom margin is as short as the no-counterfeit pin allows: at 1.85 steps
+ * the steepest alpha gradient is 0.63 per step against the 0.65 the test
+ * holds, and the paper gives up ~2 cm of reach toward the road that it had
+ * no safe use for.
+ */
+const PAPER_FADE_BOTTOM_STEPS = 1.85;
+
+/**
  * Where along the lane the paper starts to dissolve, as a share of the arc,
  * and how far past the barline the near end takes to go.
  *
@@ -976,6 +1045,8 @@ export class SongNotes {
   private laneArcM = arcForLength(LANE_LENGTH_M);
   /** The quantised length share the current geometry was built for. */
   private builtLengthStep = 20;
+  /** Frames the visible-length governor has judged the far end comfortable. */
+  private growHold = 0;
   /**
    * How much bigger the notation is drawn than its world size, to hold a
    * letter legible on a small screen. See `NOTATION_REFERENCE_PX`.
@@ -1361,11 +1432,24 @@ export class SongNotes {
     // Third pass: push each point out to the lane's own side of the road, and
     // measure the arc as we go. The fan is closed against the frame's own
     // edge first — see `fitShare`.
-    const fit = this.fitShare(nearSide, farSide);
+    //
+    // The ease runs over the FULL lane's parameter, so a shortened lane is a
+    // TRUNCATION of the full lane's shape — the near stretch, cut — rather
+    // than the whole fan squeezed into less road. The squeeze was the bug
+    // that made the visible-length governor chase its own tail: the fold it
+    // cut at reappeared, in miniature, on every shorter lane it built,
+    // because the shape was self-similar. A truncated lane keeps its near
+    // geometry identical at every length, so a cut at the fold stays a cut
+    // at the fold.
+    const shape = this.laneLengthM / LANE_LENGTH_M;
+    const fit = this.fitShare(
+      nearSide,
+      nearSide + (farSide - nearSide) * sideEase(shape),
+    );
     let prevX = 0;
     let prevZ = 0;
     for (let i = 0; i < PATH_SAMPLES; i++) {
-      const side = (nearSide + (farSide - nearSide) * sideEase(pathT(i))) * fit;
+      const side = (nearSide + (farSide - nearSide) * sideEase(pathT(i) * shape)) * fit;
       const x = this.pathX[i] + this.pathLeftX[i] * side;
       const z = this.pathZ[i] + this.pathLeftZ[i] * side;
       this.pathX[i] = x;
@@ -1409,20 +1493,156 @@ export class SongNotes {
    * not otherwise.
    */
   private fitScreen(): void {
-    const share = LENGTH_SHARE_MIN + (1 - LENGTH_SHARE_MIN) * this.fanShare();
-    const step = Math.round(clamp(share, LENGTH_SHARE_MIN, 1) * 20);
-    if (step !== this.builtLengthStep) {
-      this.builtLengthStep = step;
-      this.laneLengthM = LANE_LENGTH_M * (step / 20);
-      this.laneArcM = arcForLength(this.laneLengthM);
-      this.buildRibbon();
-    }
     this.notationScale = clamp(
       Math.pow(NOTATION_REFERENCE_PX / Math.max(this.viewportPx, 1), NOTATION_SCALE_FALLOFF),
       1,
       NOTATION_SCALE_MAX,
     );
     this.glyphMaterial.uniforms.uSize.value = glyphWorldSize() * this.notationScale;
+
+    const aspectShare = LENGTH_SHARE_MIN + (1 - LENGTH_SHARE_MIN) * this.fanShare();
+    const aspectStep = Math.round(clamp(aspectShare, LENGTH_SHARE_MIN, 1) * 20);
+    const floorStep = Math.round(LENGTH_SHARE_HARD_MIN * 20);
+
+    // The closed loop: how much of last frame's path was actually worth
+    // drawing. Shrink one step per frame toward its answer; grow one step
+    // only after it has reported the far end comfortable for a while. The
+    // aspect share is an immediate upper bound either way. See
+    // LENGTH_SHARE_HARD_MIN for why all of this exists.
+    const seen = this.visibleStep();
+    let target = this.builtLengthStep;
+    if (seen.step < this.builtLengthStep) {
+      target = this.builtLengthStep - 1;
+      this.growHold = 0;
+    } else if (this.builtLengthStep < aspectStep && seen.comfortable) {
+      this.growHold++;
+      if (this.growHold > GROW_HOLD_FRAMES) {
+        target = this.builtLengthStep + 1;
+        this.growHold = 0;
+      }
+    } else {
+      this.growHold = 0;
+    }
+    target = clamp(Math.min(target, aspectStep), floorStep, 20);
+
+    if (target !== this.builtLengthStep) {
+      this.builtLengthStep = target;
+      this.laneLengthM = LANE_LENGTH_M * (target / 20);
+      this.laneArcM = arcForLength(this.laneLengthM);
+      this.buildRibbon();
+    }
+  }
+
+  /**
+   * Walk last frame's projected path from the barline outward and answer how
+   * much of the lane is readable on this camera, as a quantised length step.
+   *
+   * Three stop conditions, each a photographed failure (see
+   * LENGTH_SHARE_HARD_MIN): a glyph-padded point past the frame margin, the
+   * screen direction reversing — the far stretch folding over itself on a
+   * road bend — and arc so compressed a metre buys almost no pixels.
+   * `comfortable` is the growth gate: the walk reached the current far end
+   * with all three conditions clear by a wide margin, so a longer lane is
+   * worth trying.
+   *
+   * The path is one frame stale, exactly like `this.camera`, and for the
+   * same reason: `update` runs before the render that would refresh both.
+   */
+  private visibleStep(): { step: number; comfortable: boolean } {
+    const camera = this.camera;
+    if (!camera) return { step: this.builtLengthStep, comfortable: false };
+    const zeroIndex = Math.round(((PATH_SAMPLES - 1) * PATH_TAIL_T) / (1 + PATH_TAIL_T));
+    const margin = -1 + LANE_EDGE_MARGIN;
+    const pad = (glyphWorldSize() * this.notationScale) / 2;
+    const pxX = this.viewportPx / 2;
+    const pxY = pxX / Math.max(camera.aspect, 0.1);
+    const project = (wx: number, wz: number) =>
+      this.scratchB.set(wx, this.middleY, wz).project(camera);
+    /** Is the padded point at sample geometry (x, z, left) on the picture? */
+    const paddedX = (x: number, z: number, lx: number, lz: number) =>
+      project(x + lx * pad, z + lz * pad).x;
+    // A segment is judged against the direction the lane LEFT the barline
+    // in, not only against its neighbour: the wave-3 walking frames folded
+    // back through a slow hairpin whose successive segments never disagreed
+    // by ninety degrees while the far end quietly returned over the near
+    // stretch. Heading back relative to the whole run is the fold, however
+    // gradually it is entered.
+    let baseX = 0;
+    let baseY = 0;
+    let hasBase = false;
+
+    let prevX = 0;
+    let prevY = 0;
+    let stopArc = this.pathArc[PATH_SAMPLES - 1];
+    let broke = false;
+    for (let i = zeroIndex; i < PATH_SAMPLES; i++) {
+      const ndc = project(this.pathX[i], this.pathZ[i]);
+      const sx = ndc.x * pxX;
+      const sy = ndc.y * pxY;
+      // The margin has to fit the notation, not the centreline — same rule
+      // as fitShare, and every sample carries notes, so every sample is
+      // padded.
+      if (paddedX(this.pathX[i], this.pathZ[i], this.pathLeftX[i], this.pathLeftZ[i]) < margin) {
+        stopArc = this.pathArc[Math.max(zeroIndex, i - 1)];
+        broke = true;
+        break;
+      }
+      if (i > zeroIndex) {
+        const dx = sx - prevX;
+        const dy = sy - prevY;
+        const dArc = this.pathArc[i] - this.pathArc[i - 1];
+        const px = Math.hypot(dx, dy);
+        if (this.pathArc[i] > 1 && dArc > 1e-4) {
+          if (px / dArc < VISIBLE_PX_PER_M || (hasBase && dx * baseX + dy * baseY < 0)) {
+            stopArc = this.pathArc[i - 1];
+            broke = true;
+            break;
+          }
+        }
+        if (!hasBase && px > 0.5) {
+          baseX = dx;
+          baseY = dy;
+          hasBase = true;
+        }
+      }
+      prevX = sx;
+      prevY = sy;
+    }
+
+    // Whether one more step of lane would also be legal — the growth gate.
+    // Asked of an extrapolated point rather than of the current end's own
+    // clearances, because on some framings the far end sits a hair inside
+    // whatever limit stopped it at EVERY length (the projection flattens out
+    // there), and a comfort band read off the current end just traps the
+    // lane at wherever the camera's settling swing happened to cut it.
+    let comfortable = false;
+    if (!broke) {
+      const last = PATH_SAMPLES - 1;
+      const ex = this.pathX[last] - this.pathX[last - 1];
+      const ez = this.pathZ[last] - this.pathZ[last - 1];
+      const elen = Math.hypot(ex, ez) || 1;
+      const extM = (LANE_LENGTH_M / 20) * 1.05;
+      const nx = this.pathX[last] + (ex / elen) * extM;
+      const nz = this.pathZ[last] + (ez / elen) * extM;
+      const endNdc = project(this.pathX[last], this.pathZ[last]);
+      const endX = endNdc.x * pxX;
+      const endY = endNdc.y * pxY;
+      const extNdc = project(nx, nz);
+      const dx = extNdc.x * pxX - endX;
+      const dy = extNdc.y * pxY - endY;
+      comfortable =
+        paddedX(nx, nz, this.pathLeftX[last], this.pathLeftZ[last]) >= margin + GROW_MARGIN_NDC &&
+        Math.hypot(dx, dy) / extM >= VISIBLE_PX_PER_M &&
+        (!hasBase || dx * baseX + dy * baseY >= 0);
+    }
+
+    const lengthAtStop = this.laneLengthM * clamp(stopArc / this.laneArcM, 0, 1);
+    // The epsilon keeps a clean walk from flooring 13.0-minus-rounding down
+    // to 12 and shrinking a lane that measured exactly fine.
+    return {
+      step: Math.max(1, Math.floor((lengthAtStop / LANE_LENGTH_M) * 20 + 1e-6)),
+      comfortable,
+    };
   }
 
   /**
@@ -1895,13 +2115,17 @@ export class SongNotes {
  */
 export function arcForLength(lengthM: number): number {
   const spread = SIDE_FAR_M - SIDE_NEAR_M;
+  // A short lane is a truncation of the full lane's shape, not a rescale of
+  // it — see the note in `samplePath` — so the ease runs over the share of
+  // the full length this lane reaches.
+  const shape = lengthM / LANE_LENGTH_M;
   let arc = 0;
   let px = 0;
   let pz = 0;
   const steps = 240;
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
-    const x = SIDE_NEAR_M + spread * sideEase(t);
+    const x = SIDE_NEAR_M + spread * sideEase(t * shape);
     const z = lengthM * t;
     if (i > 0) arc += Math.hypot(x - px, z - pz);
     px = x;
@@ -2006,7 +2230,7 @@ export function ribbonLayout(
 
   // --- rows, in steps from the middle line ---
   const rowSet = new Set<number>();
-  const bottom = printedLow - PAPER_FADE_STEPS - MIDDLE_STEP;
+  const bottom = printedLow - PAPER_FADE_BOTTOM_STEPS - MIDDLE_STEP;
   const top = printedHigh + PAPER_FADE_STEPS - MIDDLE_STEP;
   rowSet.add(bottom);
   rowSet.add(top);
@@ -2059,7 +2283,7 @@ export function ribbonLayout(
   /** How present the paper is at a height, in steps from the middle line. */
   const fadeV = (y: number): number => {
     const step = y + MIDDLE_STEP;
-    if (step < printedLow) return smoothstep(printedLow - PAPER_FADE_STEPS, printedLow, step);
+    if (step < printedLow) return smoothstep(printedLow - PAPER_FADE_BOTTOM_STEPS, printedLow, step);
     if (step > printedHigh) return 1 - smoothstep(printedHigh, printedHigh + PAPER_FADE_STEPS, step);
     return 1;
   };
@@ -2091,6 +2315,23 @@ export function ribbonLayout(
  */
 export function headHalfSteps(): number {
   return ((HEAD_RY / ATLAS_CELL_PX) * glyphWorldSize()) / STEP_M;
+}
+
+/**
+ * How far above the road the paper's bottom edge floats, in metres, for a
+ * tune whose lowest pitch sits at `lowestStep` — at the notation scale the
+ * screen is drawing (phones draw the staff up to `NOTATION_SCALE_MAX`
+ * larger, which reaches proportionally further down).
+ *
+ * Exported for the test that pins the wave-3 bottom "sixth line" closed: the
+ * stroke the panel counted was never the ribbon's — it was the road's dark
+ * wheel-rut showing through the translucent bottom margin, and a dark stroke
+ * framed by ruled paper reads as a rule. The paper therefore may not reach
+ * near enough to the road to wrap the road's own ink. See `LANE_LIFT_M`.
+ */
+export function paperBottomClearanceM(lowestStep: number, notationScale = 1): number {
+  const low = paperEdges(lowestStep, lowestStep).low;
+  return LANE_LIFT_M + (low - PAPER_FADE_BOTTOM_STEPS - MIDDLE_STEP) * STEP_M * notationScale;
 }
 
 /**
@@ -2168,12 +2409,14 @@ export function laneSpan(): {
 } {
   const headWidth = ((HEAD_RX * 2) / ATLAS_CELL_PX) * glyphWorldSize();
   const arc = arcForLength(LANE_LENGTH_M);
-  // The worst case a small screen can produce: the shortest lane the aspect
-  // fan allows, carrying notation drawn as large as the pixel floor allows.
+  // The worst case any screen can produce: the shortest lane the visible-
+  // length governor's hard floor allows — shorter than the aspect fan's own
+  // minimum, because the governor may cut past it on a road that curves out
+  // of frame — carrying notation drawn as large as the pixel floor allows.
   // Both push the same way — heads closer together on a shorter run — so this
   // is the pair of numbers the songbook's tightest bar has to survive, and it
   // is not the pair any screenshot is ever taken at.
-  const narrowArc = arcForLength(LANE_LENGTH_M * LENGTH_SHARE_MIN);
+  const narrowArc = arcForLength(LANE_LENGTH_M * LENGTH_SHARE_HARD_MIN);
   const narrowHead = headWidth * NOTATION_SCALE_MAX;
   const spread = (SIDE_FAR_M - SIDE_NEAR_M) / LANE_LENGTH_M;
   const d = 1e-5;
