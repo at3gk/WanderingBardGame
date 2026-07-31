@@ -207,7 +207,7 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     // value break against every ground tone in its own biome, in both
     // directions: a road lighter than the field reads as a river of milk and
     // one the same value as the field is not a road at all.
-    road: 0x836b4b,
+    road: 0xbc9a6f, // A/B TRIAL, shipped value is 0x836b4b
     roadShoulder: 0x797350,
     /*
      * A cool slate, where this was a warm grey-tan (0xbcb39d).
@@ -292,7 +292,7 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     // smallest absolute lift of the three because it starts darkest and its
     // canopy is what the light has to get past.
     grassDry: 0x919457,
-    road: 0x6a5945,
+    road: 0x89775a, // A/B TRIAL, shipped value is 0x6a5945
     roadShoulder: 0x505e3b,
     rock: 0x8b9490,
     trunk: 0x655344,
@@ -343,7 +343,7 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     grassDry: 0xbabe9b,
     // Same problem as village, milder: 0xa89a80 against a `grassDry` of
     // 0xccd2ac was not enough of a break to survive fog at thirty metres.
-    road: 0x736553,
+    road: 0x9f8c75, // A/B TRIAL, shipped value is 0x736553
     roadShoulder: 0x626e5b,
     rock: 0xa2a8ae,
     trunk: 0x746459,

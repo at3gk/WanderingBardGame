@@ -110,6 +110,22 @@ const HEAD_Y = 0.97;
 const HEAD_HEIGHT = 0.28;
 const HAT_Y = HEAD_Y + HEAD_HEIGHT - 0.06;
 
+/**
+ * What every material's authored `rim` is multiplied by when the sun is
+ * fully behind the figure. See `setBacklight` for the measurement.
+ *
+ * Three, and it is chosen from the two frames that fail rather than from
+ * taste. Measured on 05-golden-busk / 06-dusk-encounter with the figure's own
+ * pixels isolated, whole-figure separation from the ground it stands in front
+ * of goes 1.6 -> 8.7 at * 2 and 1.6 -> 20.3 at * 4; on 06-dusk the bard's own
+ * separation is 3.9 at * 1, *falls* to 1.8 at * 2 — the figure crosses the
+ * ground's value on the way up — and reaches 6.8 at * 3. So * 2 is not enough
+ * to clear the crossing on the frame that has one, and * 4 puts the near
+ * child of `06-dusk-encounter` at L136 against an L35 ground, which is not a
+ * rim light, it is a lamp. Three clears the crossing on both.
+ */
+const BACKLIT_RIM_GAIN = 3;
+
 /** Hip to knee, and knee to ankle. They sum to the old one-piece leg. */
 const THIGH_LEN = 0.22;
 const SHIN_LEN = 0.18;
@@ -1019,6 +1035,69 @@ export class Bard {
 
   setWarmth(warmth: number): void {
     this.warmth = Math.min(1, Math.max(0, warmth));
+  }
+
+  /**
+   * Turn the figure's rim up when the sun is behind it.
+   *
+   * **Why this exists, with the arithmetic.** A figure in this game separates
+   * from its ground by being DARKER than it — measured with the figure's own
+   * pixels isolated (render the frame, render it again with the figure
+   * hidden, and the difference is the mask, so the region is pinned in world
+   * space by construction):
+   *
+   *   frame                sun·cam   figure L   ground L   separation
+   *   03-noon-forest        -0.31      70.9      126.8       55.9
+   *   07-night-campfire     +0.09      47.5       93.8       46.4
+   *   05-golden-busk        -0.84      34.8       33.1        1.6
+   *   06-dusk-encounter     -0.88      33.7       34.9        1.2
+   *
+   * The two frames the critique calls unreadable are the two where the sun
+   * is *behind the subject from the camera* — and there the ground has fallen
+   * to the figure's own value, so there is nothing left to be darker than.
+   * That is the constant nobody had compared: `FRAMINGS.busking` puts the
+   * camera behind and to the subject's right, `SKY_KEYS`' golden-hour azimuth
+   * is -1.05 rad, and at the busk stop those two point 147 degrees apart.
+   *
+   * **Why rim and not the other three dials.** All measured live on one
+   * build, one uniform at a time, with the mask pinned from the baseline:
+   *
+   *   uShadowDepth 0.45 -> 1.0   figure 34.77 -> 34.77   exactly no change.
+   *     The near side is not in a cast shadow at all; its faces are turned
+   *     away from the light, which is a dot(N,L) term no shadow dial reaches.
+   *     Same finding as the seated thigh above, on a different frame.
+   *   uGrain 0.30 -> 0.60        figure 34.77 -> 33.67   separation 1.6 -> 0.5.
+   *     Raising the grain is the obvious lever and it goes the WRONG WAY.
+   *     `painterly.ts` mixes toward `albedo * uColorVariant`, a MULTIPLY, and
+   *     no hex colour has a channel above 1.0 — so the "pale" variant can
+   *     only ever darken. 0xffe0c0 is 0.895 of the albedo in luminance.
+   *   uColor * 1.5               figure 34.77 -> 39.68   separation 1.6 -> 6.6,
+   *     but the albedos are a daylight decision and this is a dusk problem.
+   *   uRim * 2 / * 4             figure 34.77 -> 41.8 / 53.4, separation
+   *     1.6 -> 8.7 / 20.3. The one dial that moves it, and it moves it a lot.
+   *
+   * **Why it is gated and not just turned up.** A flat rim raise is a
+   * straight loss on the two frames that already work: at * 2 noon falls
+   * 55.9 -> 44.8 and the campfire 46.4 -> 41.6, because brightening a figure
+   * that separates by being dark walks it toward its ground. So the gain is
+   * multiplied by how back-lit the subject actually is, which is the honest
+   * reading anyway — a rim light IS a back light. `RoadStage.updateBacklight`
+   * owns the gate and the numbers behind its two thresholds.
+   *
+   * `backlight` is 0..1. At 0 every material sits at exactly the rim it was
+   * authored with, so every front- and side-lit frame in the game is
+   * bit-identical to before this method existed.
+   */
+  setBacklight(backlight: number): void {
+    const gain = 1 + (BACKLIT_RIM_GAIN - 1) * Math.min(1, Math.max(0, backlight));
+    for (const material of this.materials) {
+      const uniform = material.uniforms.uRim;
+      if (!uniform) continue;
+      // The authored value, captured once. Reading it back off the uniform
+      // after the first call would compound the gain every frame.
+      const base = (material.userData.authoredRim ??= uniform.value as number) as number;
+      uniform.value = base * gain;
+    }
   }
 
   /**
