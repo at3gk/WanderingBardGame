@@ -1526,13 +1526,48 @@ if a bug turns up that matters more.
     chapel/stones/trilithon/tree geometry) are fully wired into chunk
     building, not stubs — worth a screenshot check before assuming task 119
     means starting from nothing.
-116. **Fix the campfire sitting pose.** `resting` calls `setPose('sitting')`
-    and the bard stands upright anyway.
-117. **The camp lantern.** Reads as a bright quad beside a bare post, not a
-    light source.
-118. **Busk caption vs. top note collision** on phone landscape (844x390).
-    Needs a considered change to `hudLayout.ts` — its own test constrains
-    the top slot, which exists to keep the card off the bard mid-busk.
+116. ~~**Fix the campfire sitting pose.**~~ Done — already built, closed here
+    rather than by new code (Run 50, scheduled consolidation). Task's own
+    claim ("`resting` calls `setPose('sitting')` and the bard stands upright
+    anyway") doesn't match `Bard.ts`: `update()` already blends a full seated
+    rig off `sitAmount` — bent knees with the shin composed from
+    `SIT_SHIN`/`SIT_PELVIS`/`SIT_THIGH`, a dropped hip, a torso lean that pays
+    back the pelvis rotation before leaning toward the fire, and — the part
+    the file's own comments call load-bearing — the cloak's hem is
+    *shortened*, not just slid, so it doesn't swallow the lap or drag the
+    collar up over the head the way a naive fix did first. All of this has
+    been in the file since the v0.6 initial commit (`3ef8d0c`), the same
+    commit this task's own text describes as broken. Fourth instance of the
+    "already built, never marked" pattern tasks 115/119/120 flagged.
+    Verified visually rather than trusting the code read alone (STATE.md's
+    standing lesson): `tools/postcard.mjs`'s `07-night-campfire` shot (fresh
+    this run) shows the bard seated on the ground at the fire, knees bent,
+    torso leaned in, cloak gathered — not standing.
+117. ~~**The camp lantern.**~~ Done — already built, closed here rather than
+    by new code (Run 50, scheduled consolidation). `Campfire.ts`'s
+    `buildLantern` already carries a full housing — a roofed cap that
+    overhangs the glass so the lit pane doesn't run out into the sky, a
+    base, a hook and bail so the lantern hangs rather than sits — and its own
+    header comment narrates fixing *exactly* this task's complaint ("the
+    version before this one was a bare post with a bright cube... a stray
+    primitive"). Same commit (`3ef8d0c`) as the task text describing the bug
+    it had already fixed. Verified in the same `07-night-campfire` postcard:
+    the lantern reads as a small warm housing on a post to the bard's right,
+    not a bare glowing quad.
+118. ~~**Busk caption vs. top note collision.**~~ Done — already built, closed
+    here rather than by new code (Run 50, scheduled consolidation).
+    `hudLayout.ts`'s `hudChrome` already handles the exact 844x390 case this
+    task names: `JOURNAL_SKY_FRACTION` keeps the journal card's bottom edge
+    above the line the staff's top note reaches, and where the roomy
+    placement (card under the purse row) would break that on a short screen,
+    the card moves beside the purse instead — the file's own comment walks
+    through the 390-tall/72px-purse/92px-card/109px-note arithmetic that
+    makes that necessary. `hudLayout.test.ts` pins it directly: a case named
+    "phone landscape, no notch" at `{844, 390}` with a comment noting it's
+    "the one the collision was found in", asserting `journal`/`instrument`
+    and `journal`/`coins` never overlap. Verified visually too: a fresh
+    `09-phone-landscape` postcard shows the busk caption clear at the top,
+    no overlap with the songboard below it.
 119. ~~**Skyline landmarks.**~~ Done — already built before this task was
     ever started, and closed here rather than by new code (Run 47,
     scheduled). Task 115's done-entry flagged this in advance: `Landmark`,
@@ -1622,32 +1657,18 @@ the one-mechanic rule and the art direction (notation icons,
 warm-vs-cool palette).
 
 - ~~**Signposts at transitions**~~ — shipped as task 53 above.
-- **Sharper mobile rendering** — *measured 2026-07-26, real finding, not
-  yet acted on.* On an iPhone 12 viewport (`devicePixelRatio` 3) the canvas
-  backing store is 390×664 — exactly the CSS size, ratio 1.0. So the game
-  renders at a **third** of device resolution and the browser upscales it.
-  Everything is softer than it could be on a phone, and the worst-affected
-  thing is the smallest thing: the letter inside a note head, which is the
-  entire teaching surface.
-
-  The recipe, if taken up: `zoom: 1 / dpr` in the `scale` config makes
-  Phaser size the backing store in device pixels while keeping the CSS size
-  correct. `this.scale.width/height` then return *device* pixels, so every
-  **proportional** layout read (`width * 0.25`, `height / 2` — most of the
-  28 usages) keeps working untouched, while every **absolute** constant
-  (`STAFF_LINE_GAP`, note texture dimensions, font sizes, margins, bard
-  scale, tile sizes) must be multiplied by dpr, and the baked textures
-  redrawn at that size.
-
-  Why it was NOT done on the night it was found: rendering at 3× costs
-  roughly 9× the fill rate, and this scene has several full-width
-  TileSprites plus a starfield. That is a genuine performance trade, and
-  Phaser's DPR-1 default is a deliberate choice rather than a bug. It
-  cannot be judged from a headless browser on a server — the honest test is
-  frame rate on a real phone. Do this one *with a device in hand*, consider
-  capping at `Math.min(dpr, 2)` for most of the sharpness at 4× rather than
-  9× the cost, and check `tools/autoplay.mjs`'s fps sample before and after
-  on that device rather than in headless (where it means nothing).
+- ~~**Sharper mobile rendering**~~ — stale, struck without action (Run 50,
+  scheduled consolidation). Measured 2026-07-26 against the Phaser renderer:
+  the canvas backing store matched CSS size 1:1 regardless of
+  `devicePixelRatio`, so a phone rendered at a third of its native
+  resolution. The recipe wanted a Phaser-specific fix (`zoom: 1 / dpr` in
+  the scale config). v0.6 replaced Phaser with Three.js entirely (2026-07-28)
+  and the new renderer already does the capped version of this: `App.ts`
+  calls `renderer.setPixelRatio(quality.pixelRatio)` with
+  `Math.min(dpr, 1.5)` or `Math.min(dpr, 2)` depending on the device's
+  quality tier, since `3ef8d0c`. Nothing here to port — the finding and its
+  recipe were about a renderer that no longer exists, and the Three.js one
+  already ships the resolution/performance trade this item was asking for.
 - ~~**Coin chime cap**~~ — shipped as task 78 above.
 - ~~**Stylized treble clef**~~ — shipped (2026-07-25, second overnight
   session) at the staff's left edge, where real sheet music puts it: a

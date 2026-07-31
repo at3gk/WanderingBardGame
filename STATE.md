@@ -1,11 +1,53 @@
 # STATE
 
-Run counter: 49
+Run counter: 50
 
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
 
+- **Run 50 (scheduled): consolidation, per CLAUDE.md's every-10th-run rule
+  (run counter was 49, so this one is the 10th) — no code changed.** Read
+  DESIGN.md, STATE.md and ROADMAP.md in full, then played the build through
+  mentally against the next three queued tasks (116 campfire sitting pose,
+  117 camp lantern, 118 busk-caption collision) before writing anything.
+  All three turned out to be the fifth, sixth and seventh instance of the
+  "already built, task never marked" pattern tasks 115/119/120 flagged:
+  `Bard.ts`'s seated-pose blend, `Campfire.ts`'s housed lantern, and
+  `hudLayout.ts`'s phone-landscape card placement are all fully built and
+  have all been in the codebase since the v0.6 initial commit (`3ef8d0c`) —
+  the same commit each task's own text describes as still broken. Confirmed
+  each with fresh evidence rather than trusting the code read alone
+  (standing lesson, this file): `tools/postcard.mjs`'s `07-night-campfire`
+  shot shows the bard seated (not standing) beside a properly housed lantern
+  (not a bare quad), and `09-phone-landscape` shows the busk caption clear of
+  the songboard, matching what `hudLayout.test.ts` already pins by name
+  ("phone landscape, no notch", with a comment noting it's the viewport the
+  collision was found in). See ROADMAP tasks 116/117/118's done-entries for
+  the full detail.
+  Also found and fixed while reading the idea backlog for staleness: **the
+  "Sharper mobile rendering" item was Phaser-specific** (recipe: `zoom: 1 /
+  dpr` in Phaser's `scale` config) and the game has had no Phaser renderer
+  since v0.6. Checked whether the underlying problem (rendering below native
+  resolution on a phone) still exists in the Three.js renderer before
+  striking it — it doesn't: `App.ts` already calls
+  `renderer.setPixelRatio(quality.pixelRatio)` capped at `Math.min(dpr,
+  1.5)` or `Math.min(dpr, 2)` by quality tier, since the same initial
+  commit. Struck rather than rewritten, since there's no open problem left
+  to describe.
+  Also struck the same four now-resolved items from the older "still wrong"
+  numbered list further down this file (items 2, 3, 4 — the sitting pose,
+  the lantern, the busk caption — plus item 6, the instrument picker, which
+  Run 48 had already closed via ROADMAP task 120 without this list being
+  told).
+  No rough edges worth fixing turned up in a read of `src/` for stray
+  `TODO`/`FIXME`/`HACK` markers (none exist) or obviously oversized files
+  (the largest, `WorldStreamer.ts` at 1899 lines and `SongNotes.ts` at 1849,
+  are both single-purpose Three.js modules with the established
+  no-unit-test-coverage precedent, not RoadScene-style grab-bags — no
+  extraction candidate the way `RoadScene.ts` was pre-v0.6).
+  `npm test` 753 green (unchanged, no code touched), `npm run build` green
+  (696.77 kB, unchanged).
 - **Run 49 (scheduled): ROADMAP task 121, time-of-day lighting — closed the
   real fault (STATE.md item 8, below) rather than the stale one the task
   text named.** The task's own premise ("`shader-check` measures a luminance
@@ -394,21 +436,39 @@ Run counter: 49
      reads: what is left is that on a phone in portrait the carriageway is
      still the largest single area in the frame, and it has no wet/dry
      variation across it.
-  2. The bard stands upright at his own campfire. `resting` calls
-     `setPose('sitting')` and the pose does not look like sitting.
-  3. The camp lantern reads as a bright quad beside a bare post.
-  4. The busk caption still collides with the top note on phone landscape
-     (844x390). Moving it means a considered change to `hudLayout.ts`, which
-     its own test constrains — the top slot exists to keep the card off the
-     bard mid-busk.
+  2. ~~The bard stands upright at his own campfire.~~ **Done and stale
+     (confirmed Run 50).** `Bard.ts`'s `update()` already carries a full
+     seated blend (`sitAmount` driving bent knees, dropped hips, a torso
+     lean, and — the load-bearing part — a shortened rather than merely
+     raised cloak hem) since the v0.6 initial commit, the same commit this
+     item describes as broken. Fresh `07-night-campfire` postcard shows the
+     bard clearly seated at the fire. See ROADMAP task 116's done-entry.
+  3. ~~The camp lantern reads as a bright quad beside a bare post.~~ **Done
+     and stale (confirmed Run 50).** `Campfire.ts`'s `buildLantern` already
+     builds a roofed housing, hook and bail — its own header comment
+     narrates fixing this exact complaint, in the same v0.6 initial commit.
+     Same postcard confirms it reads as a small lit housing, not a bare quad.
+     See ROADMAP task 117's done-entry.
+  4. ~~The busk caption still collides with the top note on phone landscape
+     (844x390).~~ **Done and stale (confirmed Run 50).** `hudLayout.ts`'s
+     `hudChrome` already moves the journal card beside the purse row rather
+     than under it exactly on this viewport, keyed off `JOURNAL_SKY_FRACTION`;
+     `hudLayout.test.ts` pins the case by name ("phone landscape, no notch")
+     with a comment noting it's the one the collision was found in. A fresh
+     `09-phone-landscape` postcard shows the caption clear of the songboard.
+     See ROADMAP task 118's done-entry.
   5. ~~No landmarks on the skyline.~~ **Done and stale (confirmed Run 45).**
      `WorldStreamer.ts` places standing stones, trilithons and chapels on
      ridges with a view bias, and `geometry.ts` builds all three; a chapel
      spire is visible on the ridge in the re-shot dawn frame. This list was
      written before that landed and never updated — per CLAUDE.md, when STATE
      and the code disagree the code wins.
-  6. No instrument picker, and `journey.unlockedInstruments` is never
-     appended to — an earned instrument is playable but not choosable.
+  6. ~~No instrument picker, and `journey.unlockedInstruments` is never
+     appended to.~~ **Done and stale (confirmed Run 48).** See the Run 48
+     note above and ROADMAP task 120's done-entry — `noteUnlocks()` already
+     appends to `journey.unlockedInstruments`, and the HUD case is fully
+     wired. This item was left unstruck here when Run 48 closed it; fixed
+     now.
   7. ~~Time-of-day lighting is nearly inert.~~ **Struck (Run 45): this was
      a broken gauge, not a broken game.** `shader-check.mjs` was never
      moving the clock at all; with it fixed the luminance range is ~102 and
