@@ -471,11 +471,15 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     /**
      * Turn the frame toward whoever has been met.
      *
-     * `RoadStage.placeMeeting` stands the traveller at a bearing between
-     * -0.95 and -0.7 radians from the bard's heading, 4.2 to 5.2 m out —
-     * a band narrow enough to aim at from here without the rig needing to
-     * be told where anybody is. This is a bit over a quarter of the way
-     * round to the middle of that band.
+     * `RoadStage.placeMeeting` stands the traveller inside `roadStaging`'s
+     * `MEETING_BEARING` and `MEETING_RADIUS` — currently -1.15 to -0.85
+     * radians from the bard's heading, 2.7 to 3.2 m out — a band narrow
+     * enough to aim at from here without the rig needing to be told where
+     * anybody is. This is about a fifth of the way round to the middle of
+     * that band. (The band was -0.95..-0.7 at 4.2..5.2 m when this number
+     * was chosen. Pulling the traveller in to conversational distance moved
+     * their screen position by 0.02 of the frame's width, which is why the
+     * yaw did not have to move with it — see `roadStaging`.)
      *
      * A quarter and not a half. Aiming *at* the traveller centres them, and
      * two figures either side of the axis are closer together on screen

@@ -30,6 +30,7 @@ import {
   headHalfSteps,
   laneSpan,
   painterlyConstant,
+  paperBottomClearanceM,
   paperEdges,
   ribbonLayout,
   sideEase,
@@ -256,12 +257,26 @@ describe('the paper is present for as much of the flight as the scaffold promise
  * pixel-counted SIX staff lines on the shipped build, with coordinates, and
  * three counted five. Both were looking at real pixels. The geometry was the
  * only witness that could rule — so it is walked here, for every tune the
- * songbook can put on the road, and asserted to carry exactly five ink
- * bands, each centred on a printed line step. The sixth "line" turned out to
- * be the paper's own dissolve boundary rendered crisp enough to counterfeit
- * a rule (for a G5 tune it sat almost exactly one staff space above the top
- * line); the last test in this block is the one that keeps any fade from
- * ever being that steep again.
+ * songbook can put on the road, at EVERY column of the ribbon and through
+ * both margins, and asserted to carry exactly five ink bands, each centred
+ * on a printed line step.
+ *
+ * The sixth "line" has now been settled twice, and the two verdicts differ,
+ * which is why this block grew:
+ *
+ * - At the TOP it was the paper's own dissolve boundary rendered crisp
+ *   enough to counterfeit a rule (for a G5 tune it sat almost exactly one
+ *   staff space above the top line). The slope test keeps any fade from
+ *   ever being that steep again.
+ * - At the BOTTOM, the wave-3 panel counted six while every test here
+ *   passed — because the stroke was never the ribbon's. Ablation proved it:
+ *   hide the ribbon and the stroke stays, same row, same darkness. It is
+ *   the road's dark wheel-rut, WRAPPED by the translucent bottom margin,
+ *   and a dark stroke framed by ruled paper reads as a rule whoever drew
+ *   it. No walk of this geometry can see that composite — what it CAN see
+ *   is the reach that made it possible, so the clearance test at the end
+ *   pins the paper's bottom edge clear of the road and the strokes the road
+ *   carries.
  */
 describe('the ribbon prints exactly five staff lines', () => {
   /** B4, the middle line — rows are measured in steps from it. */
@@ -301,27 +316,29 @@ describe('the ribbon prints exactly five staff lines', () => {
   }
 
   for (const [name, edges] of cases) {
-    it(`draws five rules and only five for ${name}`, () => {
+    it(`draws five rules and only five for ${name}, at every column of the run`, () => {
+      // Every column, not a sampled one: the wave-3 bottom stroke taught
+      // that a test which walks less than the eye sees settles nothing.
+      // Each column is either open run — exactly five bands, each centred
+      // on a printed line — or the barline, one band spanning the staff
+      // and stopping at its outer lines. There is no third shape a column
+      // is allowed to have.
       const layout = ribbonLayout(edges.low, edges.high, arcM);
-      // A column in the open run: past the barline's ink, before the far fade.
-      const c = colNear(layout.cols, arcM * 0.3);
-      const bands = inkBands(layout, c);
-      expect(bands.length).toBe(5);
-      for (let b = 0; b < 5; b++) {
-        const centre = (bands[b][0] + bands[b][1]) / 2 + MIDDLE;
-        expect(centre).toBeCloseTo(LINE_STEPS[b], 5);
-      }
-    });
-
-    it(`confines the barline to the staff for ${name} — nothing prints past the outer lines`, () => {
-      // The barline's ink spans the five rules and stops. Ink above the top
-      // line or below the bottom one, at any column, would BE a sixth line.
-      const layout = ribbonLayout(edges.low, edges.high, arcM);
-      const c = colNear(layout.cols, 0);
-      for (let r = 0; r < layout.rows.length; r++) {
-        if (!layout.ink(r, c)) continue;
-        expect(layout.rows[r]).toBeGreaterThanOrEqual(LINE_STEPS[0] - MIDDLE - 0.2);
-        expect(layout.rows[r]).toBeLessThanOrEqual(LINE_STEPS[4] - MIDDLE + 0.2);
+      for (let c = 0; c < layout.cols.length; c++) {
+        const bands = inkBands(layout, c);
+        if (bands.length === 1) {
+          // The barline. Ink past the outer lines would BE a sixth line.
+          expect(bands[0][0]).toBeGreaterThanOrEqual(LINE_STEPS[0] - MIDDLE - 0.2);
+          expect(bands[0][1]).toBeLessThanOrEqual(LINE_STEPS[4] - MIDDLE + 0.2);
+          expect(bands[0][0]).toBeLessThanOrEqual(LINE_STEPS[0] - MIDDLE + 0.2);
+          expect(bands[0][1]).toBeGreaterThanOrEqual(LINE_STEPS[4] - MIDDLE - 0.2);
+        } else {
+          expect(bands.length).toBe(5);
+          for (let b = 0; b < 5; b++) {
+            const centre = (bands[b][0] + bands[b][1]) / 2 + MIDDLE;
+            expect(centre).toBeCloseTo(LINE_STEPS[b], 5);
+          }
+        }
       }
     });
 
@@ -329,18 +346,61 @@ describe('the ribbon prints exactly five staff lines', () => {
       // A rule's shoulder climbs about 18 units of alpha per step; the fade
       // that once read as a sixth line climbed 1.2. Everything outside the
       // ink must stay an order of magnitude below the shoulder — a gradient
-      // the eye reads as dissolve, never as mark.
+      // the eye reads as dissolve, never as mark. Checked at every column,
+      // both margins: the bottom fade is shorter than the top's and has to
+      // clear the same pin.
+      const layout = ribbonLayout(edges.low, edges.high, arcM);
+      for (let c = 0; c < layout.cols.length; c++) {
+        for (let r = 0; r + 1 < layout.rows.length; r++) {
+          if (layout.ink(r, c) || layout.ink(r + 1, c)) continue;
+          const dy = layout.rows[r + 1] - layout.rows[r];
+          if (dy < 1e-6) continue;
+          const slope = Math.abs(layout.alpha(r + 1, c) - layout.alpha(r, c)) / dy;
+          expect(slope).toBeLessThanOrEqual(0.65);
+        }
+      }
+    });
+
+    it(`fades both margins monotonically for ${name} — no structure out there to count`, () => {
+      // A margin that dipped and recovered would put a dark band over a
+      // bright sky, or a bright band over dark ground — either is a mark,
+      // and a mark parallel to the staff is a line. Above the top rule the
+      // paper may only ever get thinner going up; below the bottom rule,
+      // only thinner going down.
       const layout = ribbonLayout(edges.low, edges.high, arcM);
       const c = colNear(layout.cols, arcM * 0.3);
+      const topRule = LINE_STEPS[4] - MIDDLE;
+      const bottomRule = LINE_STEPS[0] - MIDDLE;
       for (let r = 0; r + 1 < layout.rows.length; r++) {
-        if (layout.ink(r, c) || layout.ink(r + 1, c)) continue;
-        const dy = layout.rows[r + 1] - layout.rows[r];
-        if (dy < 1e-6) continue;
-        const slope = Math.abs(layout.alpha(r + 1, c) - layout.alpha(r, c)) / dy;
-        expect(slope).toBeLessThanOrEqual(0.65);
+        if (layout.rows[r] >= topRule) {
+          expect(layout.alpha(r + 1, c)).toBeLessThanOrEqual(layout.alpha(r, c) + 1e-9);
+        }
+        if (layout.rows[r + 1] <= bottomRule) {
+          expect(layout.alpha(r, c)).toBeLessThanOrEqual(layout.alpha(r + 1, c) + 1e-9);
+        }
       }
     });
   }
+
+  it('keeps the paper\'s bottom edge clear of the road, at every notation scale', () => {
+    // The wave-3 "sixth line at the bottom" was the road's own dark
+    // wheel-rut showing through the translucent bottom margin — the ribbon's
+    // geometry was clean both times it was put on the witness stand, and no
+    // walk of it can see a composite of paper over world. What the geometry
+    // CAN promise is reach: the paper's lowest dissolving row stays high
+    // enough above the road that the road's ink is never wrapped in ruled
+    // paper. Measured on the wave-3 frames, the rut band the panel counted
+    // sat in the screen band the margin vacates at 0.40 m of clearance.
+    const { lowest } = songbookRange();
+    // Desktop draws the notation at scale 1; the pin is against the frames
+    // the panel actually photographs.
+    expect(paperBottomClearanceM(lowest, 1)).toBeGreaterThanOrEqual(0.4);
+    // A phone's enlarged staff reaches proportionally further down. It may
+    // come nearer the road than the desktop staff, but never touch it —
+    // paper meeting the ground would read as a fence with its feet in the
+    // mud, and would wrap every stroke the roadside carries.
+    expect(paperBottomClearanceM(lowest, 1.3)).toBeGreaterThanOrEqual(0.15);
+  });
 });
 
 /**

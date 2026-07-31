@@ -48,6 +48,14 @@ import { Campfire } from './scenes/Campfire';
 import { ParticleField, fallingLeaves, fireflies, seedFluff, sunDust } from './fx/Particles';
 import { SongNotes } from './fx/SongNotes';
 import { BIOME_PALETTES, DEFAULT_PALETTE } from './world/palette';
+import {
+  BUSK_FACING_OFFSET,
+  BUSK_LISTENER_SLOTS,
+  BUSK_SLOT_JITTER,
+  MEETING_BEARING,
+  MEETING_RADIUS,
+  withinBand,
+} from './roadStaging';
 import { Hud } from '../ui/Hud';
 import { dailySeed, dayKey, mulberry32, randRange, subSeed } from '../core/rng';
 import {
@@ -239,6 +247,18 @@ export class RoadStage implements Stage {
 
   private readonly subject = { position: new Vector3(), heading: 0 };
   private readonly sample: RoadSample = { s: 0, x: 0, y: 0, heading: 0 };
+  /**
+   * How far the bard's *figure* is turned off the road, and how far it has
+   * actually got.
+   *
+   * Deliberately not part of `subject`: the rig builds its entire pose from
+   * the subject's heading, so putting the turn there would swing the camera,
+   * the road and the bard together and the frame would read exactly as it did
+   * before. See `roadStaging.BUSK_FACING_OFFSET` for why the two moments that
+   * use this want very different amounts of it.
+   */
+  private facing = 0;
+  private shownFacing = 0;
 
   // --- the tune (the busk's, or the walk's) -------------------------------
   //
@@ -483,7 +503,7 @@ export class RoadStage implements Stage {
       this.subject.heading = this.sample.heading;
     }
     this.bard.group.position.copy(this.subject.position);
-    this.bard.setHeading(this.subject.heading);
+    this.bard.setHeading(this.subject.heading + this.shownFacing);
   }
 
   update(dt: number): void {
@@ -511,6 +531,10 @@ export class RoadStage implements Stage {
     }
 
     const travelled = this.journey.s - before;
+    // A turn of the head and shoulders, not a snap. Fast enough to have
+    // happened by the time a stranger has finished their first sentence,
+    // slow enough to read as somebody turning round.
+    this.shownFacing += (this.facing - this.shownFacing) * Math.min(1, dt * 3.2);
     this.syncSubject();
     this.bard.update(dt, travelled);
     for (const person of this.shown) person.update(dt);
@@ -631,6 +655,9 @@ export class RoadStage implements Stage {
     this.rig.setMood(PHASE_TO_MOOD[phase], 1.6);
     this.walking = phase === 'walking';
     this.holdSec = 0;
+    // Square back onto the road by default. The two moments that turn him off
+    // it say so below, and both are moments he is *with* somebody.
+    this.facing = 0;
     this.bard.setPose(
       phase === 'busking' ? 'playing' : phase === 'resting' ? 'sitting' : 'walking',
       0.6,
@@ -1021,6 +1048,13 @@ export class RoadStage implements Stage {
    * describe it out loud — "one at four metres, half a turn to the left" —
    * rather than in world coordinates that stop meaning anything the moment
    * the road bends.
+   *
+   * The height comes from `roadSurfaceHeight` **at the figure's own x and z**
+   * and never from the bard's, which is the only version that survives a
+   * slope: a listener four metres off a road climbing at a tenth would
+   * otherwise stand forty centimetres in the air or forty into the hill.
+   * Measured against the drawn terrain ribbon's own triangles at the busking
+   * pose, every staged figure sits within a millimetre of the surface.
    */
   private stand(person: Traveller, bearing: number, radius: number, attention: number): void {
     const angle = this.subject.heading + bearing;
@@ -1045,12 +1079,16 @@ export class RoadStage implements Stage {
   /**
    * Who stopped to listen.
    *
-   * Placed in a loose arc in front of the bard rather than a ring around
-   * him: the busking camera sits behind and to his right, so anyone directly
-   * behind would be a shoulder in the lens and anyone directly ahead would
-   * stand in the staff. The bearings below keep the road's centreline — where
-   * the notation runs — clear, and they are deliberately uneven, because
-   * evenly-spaced listeners read as a chorus line.
+   * The arrangement itself — which bearing, which radius, and why those and
+   * not others — lives in `roadStaging`, where it can be swept against the
+   * real camera by a test. All this does is deal the shuffled figures into it
+   * and hand the crowd model the count.
+   *
+   * The one thing worth restating here: the slots are ordered the way the
+   * crowd model counts, so slot 0 is the listener who stopped first and would
+   * be the last to leave, and the arc **grows outward** as warmth adds people
+   * rather than being rearranged. A two-listener busk is one either side of
+   * the bard and still reads as an audience.
    *
    * The arrangement is seeded from the stop, so the same square draws the
    * same crowd for every player on the same day. That matters more than it
@@ -1066,18 +1104,18 @@ export class RoadStage implements Stage {
       const j = Math.floor(rand() * (i + 1));
       [order[i], order[j]] = [order[j], order[i]];
     }
-    const count = 2 + Math.floor(rand() * 3);
-    // Left of the road first: that is the side of the frame the camera's own
-    // offset leaves empty, and filling it is what turns a busk from a figure
-    // in a field into a scene.
-    const slots = [-0.62, 0.72, -1.15, 1.25];
+    const count = Math.min(
+      BUSK_LISTENER_SLOTS.length,
+      Math.min(this.people.length, 2 + Math.floor(rand() * 3)),
+    );
     this.listenerSlots.length = 0;
     for (let i = 0; i < count; i++) {
-      const bearing = slots[i] + randRange(rand, -0.14, 0.14);
-      const radius = randRange(rand, 3.2, 5.0);
+      const slot = BUSK_LISTENER_SLOTS[i];
+      const bearing =
+        slot.bearing + randRange(rand, -BUSK_SLOT_JITTER.bearing, BUSK_SLOT_JITTER.bearing);
+      const radius =
+        slot.radius + randRange(rand, -BUSK_SLOT_JITTER.radius, BUSK_SLOT_JITTER.radius);
       this.stand(this.people[order[i]], bearing, radius, 1);
-      // Recorded in gather order, which is also the crowd model's order of
-      // faithfulness: the widest, latest slot is the first to drift.
       this.listenerSlots.push({
         person: this.people[order[i]],
         angle: this.subject.heading + bearing,
@@ -1087,6 +1125,10 @@ export class RoadStage implements Stage {
       });
     }
     this.buskCrowd = createBuskCrowd(count);
+    // Angled into the group rather than square down the road. Small on
+    // purpose — see `BUSK_FACING_OFFSET`, where the arithmetic that says a
+    // bigger turn would cost the lute is written down.
+    this.facing = BUSK_FACING_OFFSET;
   }
 
   /**
@@ -1126,28 +1168,28 @@ export class RoadStage implements Stage {
   /**
    * Somebody met at a crossroads.
    *
-   * One figure, standing a little further up the road than the bard has got
-   * to and turned back toward him, so the frame reads as two people who have
-   * just stopped walking rather than as a person and a bystander.
+   * One figure, stood at the distance two people actually stop at to talk and
+   * turned back toward the bard — and, the half of it that was missing, **the
+   * bard turned toward them**. A frame in which one person is facing another
+   * who is facing up the road is not a meeting; it is a stranger being
+   * ignored, which is what every encounter postcard this game has taken had
+   * in it.
+   *
+   * The band itself is in `roadStaging`, on the same side of the road the
+   * encounter camera already swings its look toward, so the figure arrives
+   * where the frame is already pointed.
    */
   private placeMeeting(): void {
     const rand = mulberry32(
       subSeed(this.currentStop ? this.currentStop.seed : this.road.seed, 'meeting'),
     );
     const person = this.people[Math.floor(rand() * this.people.length)];
-    // Well out to the bard's left. The encounter camera sits behind him and
-    // off to the *right*, so a figure only a fifth of a radian off the road's
-    // centreline stands directly behind his hat and is not in the picture at
-    // all — which was the first tuning, and it wasted the whole point of
-    // putting somebody there. Two metres of clear air is the minimum.
-    // Widened after a frame showed the traveller's shoulder touching the
-    // bard's. The bands were independent, so the unlucky corner — the
-    // shallowest angle at the nearest distance — left only about 1.78 m of
-    // lateral clearance, and because the camera is behind and to the right, a
-    // figure ahead-and-left at that clearance projects almost onto him. Both
-    // ends move rather than one: pushing the distance alone would have put
-    // the shallow-angle case further away without separating it.
-    this.stand(person, randRange(rand, -0.95, -0.7), randRange(rand, 4.2, 5.2), 1);
+    const bearing = withinBand(MEETING_BEARING, rand());
+    this.stand(person, bearing, withinBand(MEETING_RADIUS, rand()), 1);
+    // The whole way round, not part of it. See `BUSK_FACING_OFFSET`: a half
+    // turn from this camera is the one angle that hides the instrument, and a
+    // full one comes out the other side at the same three-quarter view.
+    this.facing = bearing;
   }
 
   // --- meetings and camp -------------------------------------------------
@@ -1732,6 +1774,12 @@ export class RoadStage implements Stage {
     // most of the way back at the walking framing, and it means any earlier
     // sweep of a `resting` framing constant was measured through the wrong
     // lens as well as at the wrong pose.
+    // The turn toward whoever he is with lands too, and for exactly the
+    // reason the pose blend does: it eases at 3.2 per second and the harness
+    // buys about three quarters of a second of simulation, so a posed
+    // encounter would otherwise be shot a third of the way through it.
+    this.shownFacing = this.facing;
+    this.syncSubject();
     this.bard.settlePose();
     this.rig.reset();
   }

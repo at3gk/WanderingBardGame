@@ -180,17 +180,21 @@ const POOL_RADIUS_M = 4.4;
  *
  * The fix is not more light — that undoes the darkness the frame needs. It
  * is to strip the green out earlier, while there is still enough of the pool
- * left to be seen doing it. Red arrives at 0.36 of the radius here, about a
- * metre and a half from the coals.
+ * left to be seen doing it. Red arrives at 0.28 of the radius here — a metre
+ * and a quarter from the coals — and everything past 0.46 belongs to the
+ * deep-red-to-violet leg, which is what "widen the red band" means in
+ * numbers: the wave-3 panel read the measured ramp as flat orange because
+ * the orange leg owned most of the pool the frame actually shows, and the
+ * red/violet legs lived in the outer metre the frame crops off.
  */
 const POOL_TINT: readonly (readonly [number, number, number, number])[] = [
   [0.0, 1.14, 1.36, 1.66],
-  [0.08, 1.06, 1.08, 0.98],
-  [0.2, 1.0, 0.78, 0.55],
-  [0.36, 0.99, 0.44, 0.2],
-  [0.55, 0.95, 0.21, 0.1],
-  [0.75, 0.78, 0.11, 0.16],
-  [1.0, 0.5, 0.07, 0.32],
+  [0.07, 1.06, 1.05, 0.9],
+  [0.16, 1.0, 0.7, 0.42],
+  [0.28, 0.98, 0.38, 0.16],
+  [0.46, 0.9, 0.17, 0.09],
+  [0.66, 0.66, 0.09, 0.22],
+  [1.0, 0.38, 0.06, 0.42],
 ];
 
 /**
@@ -206,14 +210,31 @@ const POOL_TINT: readonly (readonly [number, number, number, number])[] = [
  * carries fifteen per cent of its strength twelve metres out — past the
  * camp, past the road, out to the frame edge — so every olive-grey mid-value
  * in the picture was being lifted warm and there was nothing dark left for
- * the fire to be precious against. At 3.0 the same distance carries six per
- * cent. The cost is at the bard, two metres away, who loses about a sixth of
- * his firelight; `HEARTH_GAIN` hands that back, and only that, so the trade
- * is local warmth kept and distant wash removed.
+ * the fire to be precious against.
+ *
+ * Retuned again (3.0 → 1.4) when the hearth's *position* bug was found: the
+ * light had been centred on the road anchor, so every previous radius was
+ * chosen against a falloff measured from the wrong place. The number is set
+ * by the far field, not the near one. `1/(1+d²/r²)` has a long tail, and an
+ * ambient-floor probe (hearth and pool both zeroed) measured the night
+ * surround's own value at luminance ~36-44 — while the live frame sat at
+ * ~80, meaning the tail alone was *doubling* the night. At 1.4 the term
+ * carries 32% at the bard two metres away but 5% at six metres and 3% at
+ * eight, and on grazing ground (wrap ≈ 0.45) that last is a few points of
+ * luminance rather than forty. The bard keeps his firelight because he is
+ * the one thing standing *inside* the radius with surfaces facing the
+ * flame, and `HEARTH_GAIN` hands back what the shorter reach costs at his
+ * two metres.
  */
-const HEARTH_RADIUS_M = 3.0;
-/** Restores the near-field loss from the tighter radius above. Nothing more. */
-const HEARTH_GAIN = 1.18;
+const HEARTH_RADIUS_M = 1.4;
+/**
+ * Was 1.18, which existed to hand the bard back what a tighter radius had
+ * cost him — measured against the misplaced hearth. With the light actually
+ * at the fire the gain serves the same trade honestly: the radius above is
+ * chosen for the far field, and this scales the whole term back up so the
+ * one figure inside the radius still reads warm without the tail returning.
+ */
+const HEARTH_GAIN = 0.75;
 
 /** Irrational, so sums built from them have no period. */
 const PHI = 1.618033988749895;
@@ -262,6 +283,7 @@ export class Campfire {
   private readonly flameGroup = new Group();
   private readonly segments: Mesh[] = [];
   private readonly coalMaterial: ShaderMaterial;
+  private readonly emberMaterial: ShaderMaterial;
   private readonly glowMaterial: ShaderMaterial;
   private readonly emberField: ParticleField;
 
@@ -311,6 +333,7 @@ export class Campfire {
     this.buildRing(palette, rand, groundHeightAt);
     this.buildScatter(palette, rand, groundHeightAt);
     this.coalMaterial = this.buildCoals(rand);
+    this.emberMaterial = this.buildEmbers(rand);
     this.buildLaidFire(rand);
     this.buildFlame();
     this.buildCamp(rand, groundHeightAt, fireY);
@@ -445,9 +468,18 @@ export class Campfire {
     // driving it from here rather than from the road stage keeps the fire's
     // light and the fire's flicker as one number: they cannot drift apart,
     // and there is no second lighting model.
+    //
+    // From `fireGroup`, NOT `group`. The camp's group sits on the road
+    // anchor and the fire sits `layout.fire` inside it — six to seven metres
+    // off the road. For two waves this line read `group.getWorldPosition`,
+    // which put the shader's fire on the *road*: the night surround toward
+    // the camera sat at dusk brightness (the hearth was centred in it), and
+    // the bard — seated between road and fire — was lit on his back and dark
+    // on the side actually facing the flames. Every retune of radius and
+    // strength was fighting a light that was not where the fire is.
     const hearth = this.globals.uHearthPosition.value;
-    this.group.getWorldPosition(hearth);
-    hearth.y += 0.35;
+    this.fireGroup.getWorldPosition(hearth);
+    hearth.y += 0.55;
     this.globals.uHearthColor.value.copy(this.lightColor);
     this.globals.uHearthRadius.value = HEARTH_RADIUS_M;
     this.globals.uHearthStrength.value = (0.25 + flame * 1.15) * pulse * HEARTH_GAIN;
@@ -455,21 +487,33 @@ export class Campfire {
     // The pool is a shade more responsive than the light, because it is the
     // part anyone actually sees move.
     //
-    // Cut from (0.3 + 0.7·flame), and the cut is what lets the ramp read.
-    // Measured on `07-night-campfire` with the shader's hearth term switched
-    // off, the pool alone was pinning the red channel at 255 across roughly a
-    // metre and a half of ground either side of the coals — and a clipped
-    // channel has no hue, so the brightest, most-looked-at part of the pool
-    // was the part with the least colour in it. The spike in the falloff
-    // above gives the coals their heat back over a much smaller area.
+    // Cut twice. First from (0.3 + 0.7·flame): measured on
+    // `07-night-campfire` with the shader's hearth term switched off, the
+    // pool alone was pinning the red channel at 255 across roughly a metre
+    // and a half of ground either side of the coals — and a clipped channel
+    // has no hue, so the brightest, most-looked-at part of the pool was the
+    // part with the least colour in it. Then again when the hearth moved to
+    // the actual fire: the shader's own term now lights the same ground the
+    // pool paints, so the pool's job shrinks to hue — the warmth of the
+    // ground is the hearth's business and two full-strength sources on one
+    // square metre is how the patch clipped in the first place.
     this.glowMaterial.uniforms.uStrength.value =
-      (0.22 + flame * 0.5) * (0.82 + (this.lit - 1) * 0.7 + sparkle * 0.06);
+      (0.15 + flame * 0.34) * (0.82 + (this.lit - 1) * 0.7 + sparkle * 0.06);
     this.glowMaterial.uniforms.uColor.value.copy(this.lightColor);
 
     // Coals are brightest when the flame is low — that is when you can see
     // them at all — so their emissive runs opposite to it, not with it.
+    //
+    // The bed itself is held down to an ash-glow: the slab under the logs
+    // used to carry the whole ember statement as one flat emissive, and at
+    // full burn — with the pool and the hearth added over it — it clipped to
+    // a V=1.0 patch that four critique lenses independently read as spilled
+    // paint. The heat now lives in the discrete coals below, which can be
+    // bright *somewhere* without being bright everywhere.
     this.coalMaterial.uniforms.uEmissiveStrength.value =
-      (0.34 + (1 - flame) * 0.26) * (0.9 + sparkle * 0.12);
+      (0.15 + (1 - flame) * 0.18) * (0.9 + sparkle * 0.12);
+    this.emberMaterial.uniforms.uEmissiveStrength.value =
+      (0.62 + (1 - flame) * 0.35) * (0.85 + sparkle * 0.18);
 
     this.emberField.setOpacity(0.25 + flame * 0.75);
   }
@@ -633,7 +677,7 @@ export class Campfire {
       color: COAL_COLOR,
       colorVariant: 0x7a4a30,
       emissive: COAL_EMISSIVE,
-      emissiveStrength: 0.34,
+      emissiveStrength: 0.12,
       rim: 0.2,
       grain: 0.6,
       grainScale: 3.2,
@@ -643,6 +687,73 @@ export class Campfire {
     mesh.position.y = -0.02;
     mesh.castShadow = false;
     mesh.receiveShadow = true;
+    this.fireGroup.add(mesh);
+    return material;
+  }
+
+  /**
+   * The embers: a scatter of small glowing coals on the ash bed.
+   *
+   * These exist because of what the ash bed must *not* do. The slab under
+   * the logs used to carry one flat emissive term, and at full burn — with
+   * the pool and the hearth term stacked over it — it clipped to a
+   * saturated V=1.0 patch with the slab's own hard polygon edge, which four
+   * blind-critique lenses independently read as spilled paint rather than
+   * heat. A clipped channel has no hue and a flat patch has no structure,
+   * so no retune of the slab's single number could fix it.
+   *
+   * Discrete chunks can. Each coal is a small rock with its own heat drawn
+   * per instance — a few burning bright, most charred dark — so the bed
+   * reads as *coals*: bright somewhere, dark right next to it, with lit
+   * faces and gaps. The per-instance colour multiplies the shader's
+   * emissive term as well as the albedo, which is what lets one draw call
+   * carry the whole range from live orange down to spent black.
+   */
+  private buildEmbers(rand: Rand): ShaderMaterial {
+    const count = 12;
+    const geometry = this.keep(rockGeometry(Math.floor(rand() * 0xffff) + 1));
+    const material = this.solid({
+      color: 0x55403a,
+      colorVariant: 0x2a1c16,
+      emissive: COAL_EMISSIVE,
+      emissiveStrength: 0.55,
+      rim: 0.12,
+      grain: 0.4,
+      grainScale: 4.0,
+    });
+    const mesh = new InstancedMesh(geometry, material, count);
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    mesh.name = 'campfire-embers';
+    this.instanced.push(mesh);
+
+    const dummy = new Object3D();
+    const tint = new Color();
+    const char = new Color(0x2e211c);
+    const live = new Color(0xffe2b8);
+    for (let i = 0; i < count; i++) {
+      const angle = rand() * Math.PI * 2;
+      // sqrt for an even spread over the disc; capped just past half the
+      // ring so every coal stays under or beside the logs, inside the ring.
+      const radius = Math.sqrt(rand()) * this.layout.ringRadius * 0.55;
+      const scale = randRange(rand, 0.05, 0.1);
+      dummy.position.set(
+        Math.sin(angle) * radius,
+        // On the ash bed's crown, sunk a little, so they read as lying in
+        // the ash rather than floating on it.
+        0.075 + scale * 0.2,
+        Math.cos(angle) * radius,
+      );
+      dummy.rotation.set(rand() * Math.PI, rand() * Math.PI * 2, rand() * Math.PI);
+      dummy.scale.set(scale, scale * randRange(rand, 0.55, 0.85), scale);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      // Squared, so the scatter skews charred: a bed that is mostly bright
+      // is the slab problem again, in pieces.
+      const heat = rand();
+      tint.copy(char).lerp(live, heat * heat);
+      mesh.setColorAt(i, tint);
+    }
     this.fireGroup.add(mesh);
     return material;
   }
@@ -1434,19 +1545,30 @@ export class Campfire {
       // it put nine tenths of its light inside half the radius and left the
       // outer half nothing to grade *with*, so however the colours were
       // ramped there was no alpha out there to show them. This one falls
-      // gently (1.7, not 3), which keeps enough light in the outer half for
-      // the reds and the violet to register, and takes the brightness back at
-      // the middle with an eighth-power spike that is gone within half a
-      // metre — a bright core without a broad blown-out plateau, which is the
-      // other half of why the pool used to have no hue: a clipped red channel
-      // is the same colour everywhere.
+      // gently, which keeps enough light in the outer half for the reds and
+      // the violet to register, and takes the brightness back at the middle
+      // with an eighth-power spike — a bright core without a broad blown-out
+      // plateau, which is the other half of why the pool used to have no
+      // hue: a clipped red channel is the same colour everywhere. The spike
+      // was cut from 1.0 to 0.35 when the coals became discrete embers: the
+      // pool's core no longer has to *be* the heat, it only has to sit the
+      // ground tone under it, and at 1.0 it was a third of the clipped patch.
       // One shallow bump where the ramp turns red. Not brightness for its own
       // sake: the red band is the part of the journey with the least alpha
       // behind it and the most ground showing through, so without a little
       // extra presence exactly there the pool goes gold, orange, and then
       // straight back to the colour of the field.
-      const band = Math.max(0, 1 - Math.abs(t - 0.52) / 0.3);
-      const eased = Math.pow(f, 1.35) * (1 + 1.0 * Math.pow(f, 8) + 0.42 * band * band);
+      const band = Math.max(0, 1 - Math.abs(t - 0.45) / 0.3);
+      // The outer half steps down a further half of its value, eased in from
+      // 0.45 out. The falloff alone was leaving the crimson-violet leg
+      // nearly as bright as the orange one, and a hue journey between two
+      // patches of the same value is a thing a measurement can see and an
+      // eye cannot — the eye reads the ladder by value first, so the reds
+      // have to be dimmer than the golds, not merely redder.
+      const out = Math.min(1, Math.max(0, (t - 0.45) / 0.5));
+      const damp = 1 - 0.7 * out * out * (3 - 2 * out);
+      const eased =
+        Math.pow(f, 1.5) * (1 + 0.35 * Math.pow(f, 8) + 0.3 * band * band) * damp;
       // And a smootherstep over the last fifth, so the outermost ring reaches
       // zero flat instead of arriving at it with a slope still on.
       const close = Math.min(1, f / 0.2);

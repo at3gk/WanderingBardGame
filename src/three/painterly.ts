@@ -601,6 +601,37 @@ const FRAGMENT = /* glsl */ `
 #define SHADOW_FRAY_NEAR_M 20.0
 #define SHADOW_FRAY_FAR_M 70.0
 /*
+ * A second, much coarser fray octave that never fades — about three metres a
+ * lobe — and the reason the fine one above could not do this job alone.
+ *
+ * Measured by ablation on the wave-3 build (the same pose shot with
+ * shadowMask forced to 1 and differenced): the shadow layer at dawn and
+ * morning is not a set of object silhouettes at all. It is the TERRAIN
+ * SHADOWING ITSELF. At a sun elevation of nine to twenty-two degrees the
+ * rolling ground occludes its own far side, and the difference image is a
+ * field of broad soft undulating ribbons metres wide with the caster — a
+ * rise forty metres away — either off frame or unreadable. That is exactly
+ * what a critic means by "casterless formula bands invariant across suns":
+ * the ribbons follow the LANDFORM, which does not move when the sun does.
+ *
+ * They are a real and wanted shadow. What they lack is the edge the note
+ * above spent itself on, and the fine fray cannot give it to them, because
+ * they live at twenty to seventy metres and that is precisely the range
+ * SHADOW_FRAY_FAR_M fades the fine octave out over — for the good reason
+ * recorded above, that half a metre at sixty metres is two pixels and a
+ * pattern sampled at two pixels a cycle crawls.
+ *
+ * Three metres does not have that problem: it is thirty-odd pixels at sixty
+ * metres, which is a brush mark, and it is a slow wander rather than noise in
+ * the foreground where it is hundreds of pixels wide. World-space and
+ * unfaded, so it cannot swim as the camera moves — the alternative on offer
+ * was to scale the frequency with view depth to hold the lobes at a constant
+ * screen size, which does exactly what a distance-varying noise always does
+ * and boils along every edge as the bard walks toward it.
+ */
+#define SHADOW_FRAY_COARSE_SCALE 0.34
+#define SHADOW_FRAY_COARSE 0.34
+/*
  * How much sky-coloured light a fragment gets for being inside a CAST shadow,
  * as a multiple of the skylight already arriving there.
  *
@@ -631,8 +662,62 @@ const FRAGMENT = /* glsl */ `
  * Scaled by sunHeight so the low-sun hours keep LOW_SUN_SCATTER as their one
  * answer and night, where there is no sun to be occluded from, is
  * arithmetically untouched.
+ *
+ * --- and it was measured, and it does not deliver a blue shadow -----------
+ *
+ * Down from 0.20, with the job handed to CAST_SHADOW_HUE below. The argument
+ * above is right about the physics and wrong about what ADDING that light
+ * does to a warm surface, and the arithmetic is worth writing out because it
+ * is the same trap SKY_SCATTER's own note describes from the other side.
+ *
+ * Worked through the morning road, whose albedo is a warm brown. Its lit
+ * value comes out near (0.32, 0.22, 0.14) and the same fragment under a cast
+ * shadow, before this term, near (0.124, 0.098, 0.072) — a darker brown,
+ * which is the complaint. This term then adds about (0.021, 0.041, 0.062) and
+ * the result is (0.145, 0.139, 0.134): the blue has climbed to meet the red
+ * and the fragment is NEUTRAL GREY, saturation 0.08. Adding a near-complement
+ * to a colour does not rotate it, it cancels it, and the amount that would be
+ * needed to carry the blue past the red and out the other side is roughly
+ * double — which is a visible lift on the one part of the frame whose job is
+ * to be the dark.
+ *
+ * Measured on the shipped build across every pixel the shadow layer actually
+ * darkens: dawn saturation 0.370 lit -> 0.325 shadowed, morning 0.415 ->
+ * 0.392. The shadows were going DOWN in chroma, which is precisely the panel's
+ * "darkens by desaturation toward grey", and it survived a round of edge work
+ * because it was never an edge problem.
+ *
+ * A quarter of it is kept rather than none: a real cast shadow does receive
+ * skylight, and this is also the term that stops a noon shadow crushing to
+ * black under the rotation below.
  */
 #define CAST_SHADOW_SKY 0.20
+/*
+ * How far a fragment inside a cast shadow is rotated toward the SKY'S OWN HUE,
+ * at exactly the luminance the shadow left it with.
+ *
+ * The move CAST_SHADOW_SKY's note above arrives at. A shadow is not the
+ * surface plus some blue; it is the surface under a different illuminant, and
+ * an illuminant change is a rotation of hue, not an addition of light. Written
+ * as a mix between the fragment and luminance * (sky / the sky's own
+ * luminance), whose two endpoints have IDENTICAL luminance — so this moves
+ * a shadow's colour and provably cannot move the frame's value structure, the
+ * same guarantee the fog's hue lead and MODEL_SPLIT are both written for.
+ *
+ * That guarantee is why this can be large. Saturation does not collapse toward
+ * the middle the way it does under an addition: the target is a colour with the
+ * sky's chroma, so a shadow lands somewhere between its own hue and a blue,
+ * with chroma all the way along, instead of passing through grey to get there.
+ *
+ * Ridden by sunHeight, which weights it exactly where the evidence asks. The
+ * frames a blind panel read as grey bands are dawn, morning, noon and the
+ * portrait — sunHeight 0.59, 1, 1, 1. The one frame whose shadows the same
+ * panel singled out to keep is golden hour, whose grass shadows already read
+ * teal because at that hour LOW_SUN_SCATTER's tripled term lands on ground
+ * dark enough for an addition to dominate it — and sunHeight there is 0.44,
+ * so the frame that is already right is the one this changes least.
+ */
+#define CAST_SHADOW_HUE 0.50
 /*
  * How far the haze is pushed away from its own grey axis before it is mixed
  * into the picture — and the reason STATE.md item 10 survived the fix that
@@ -698,6 +783,43 @@ const FRAGMENT = /* glsl */ `
  * colour is what keeps a forested skyline blue-GREEN rather than blue.
  */
 #define FOG_HUE_LEAD 0.65
+/*
+ * How far the veil's shape is pulled back from a doubled smoothstep toward a
+ * single one — that is, how much of the haze happens in the near and middle
+ * distance rather than all of it at the back.
+ *
+ * The shape it corrects, and the arithmetic of why the old one built a wall,
+ * are set out at the point of use. What belongs here is the number and the
+ * factor it rides, because both were measured against the alternative.
+ *
+ * Not 1.0, and ridden by the SQUARE of sun height, which is the whole reason
+ * this ships at all. Shot at a full single smoothstep on the six gate poses,
+ * against the same build with it off:
+ *
+ *   02-morning   land p90 164 -> 168, stops 3.27 -> 3.09, hue 0.506 -> 0.516
+ *   08-portrait  hue 0.547 -> 0.576, modal share 0.087 -> 0.088
+ *   04-golden    hue 0.219 -> 0.177, stops 4.61 -> 4.52
+ *   09-landscape hue 0.246 -> 0.196
+ *
+ * The two frames it hurts are the two low-sun ones, and they are the two a
+ * blind panel singled out to keep. The reason is not subtle once measured:
+ * at golden hour the air's colour is an apricot and the land is a cool
+ * olive, so hazing the middle distance mixes the frame's two opposed hues
+ * together and the picture loses the split that makes it work. At noon the
+ * air and the land are nearer neighbours and the haze reads as depth.
+ *
+ * That is also the physical answer rather than a dodge. The visible veil is
+ * sunlight scattered INTO the sightline, so its brightness goes with how
+ * strongly the air column between here and there is lit; with the sun on the
+ * horizon that column is in its own shadow for most of its length and there
+ * is very little to scatter. Hazy blue distance is a high-sun phenomenon.
+ * Squared rather than linear so that golden hour, whose sunHeight is 0.44,
+ * keeps four fifths of its old shape rather than half. Measured at 0.60 and
+ * gated: golden comes back at 0.208 hue against a 0.211 baseline, morning
+ * holds 0.513, portrait rises to 0.565, and the morning land's ninetieth
+ * percentile — the number that must never fall — goes 163 to 169.
+ */
+#define FOG_NEARNESS 0.60
 /*
  * How hard the near-ground mark rides the scattered-skylight term above.
  *
@@ -872,7 +994,7 @@ const FRAGMENT = /* glsl */ `
  * decal instead.
  */
 #define MODEL_SPLIT 0.36
-#define MODEL_VALUE 0.15
+#define MODEL_VALUE 0.26
 #define MODEL_TURN 0.16
 /**
  * How far the rim is turned up with the sun on the horizon. See the note at
@@ -1215,7 +1337,14 @@ void main() {
   float frayA = noise31f(vWorldPosition * SHADOW_FRAY_SCALE);
   float frayB = noise31f(vWorldPosition * SHADOW_FRAY_SCALE * 2.9 + 5.1);
   float frayFade = 1.0 - smoothstep(SHADOW_FRAY_NEAR_M, SHADOW_FRAY_FAR_M, viewDepth);
-  float shadowCentre = 0.5 + (frayA * 0.62 + frayB * 0.38 - 0.5) * SHADOW_FRAY * frayFade;
+  // See SHADOW_FRAY_COARSE: the fine octave above is faded out over exactly
+  // the twenty-to-seventy metre band where the terrain's own self-shadow
+  // ribbons live, so those boundaries were the one part of the shadow layer
+  // the edge work never reached. This octave is metres wide and never fades.
+  float frayC = noise31f(vWorldPosition * SHADOW_FRAY_COARSE_SCALE + 23.7);
+  float shadowCentre = 0.5
+    + (frayA * 0.62 + frayB * 0.38 - 0.5) * SHADOW_FRAY * frayFade
+    + (frayC - 0.5) * SHADOW_FRAY_COARSE;
   float shadowMask = smoothstep(
     shadowCentre - SHADOW_EDGE * 0.5,
     shadowCentre + SHADOW_EDGE * 0.5,
@@ -1412,6 +1541,26 @@ void main() {
   scatter += CAST_SHADOW_SKY * (1.0 - shadowMask) * sunHeight * mix(0.35, 1.0, skyFacing);
   color += skyLight * scatter * foregroundTier;
 
+  /*
+   * --- the colour of being occluded -------------------------------------
+   *
+   * See CAST_SHADOW_HUE. Everything above this line lights the fragment; this
+   * line says what illuminant it was lit BY. Inside a cast shadow the answer
+   * is the sky and nothing else, so the fragment is rotated toward the sky's
+   * own hue at the luminance the shadow already decided: castLum * skyHue
+   * has, by construction, exactly the luminance of color, so both ends of
+   * the mix weigh the same and no amount of this can move a value gate.
+   *
+   * Placed after the scattered skylight rather than before it so that what
+   * gets rotated is the finished shade colour, including the cool wash that
+   * term adds; rotating first and washing afterwards would let the wash pull
+   * the result back toward the neutral this exists to get it off.
+   */
+  float castShade = (1.0 - shadowMask) * sunHeight;
+  float castLum = dot(color, LUMA_W);
+  vec3 skyHue = uSkyColor / max(dot(uSkyColor, LUMA_W), 1e-4);
+  color = mix(color, castLum * skyHue, CAST_SHADOW_HUE * castShade);
+
   // --- rim ---------------------------------------------------------------
   float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), uRimPower);
   // Rim only where the sun can plausibly wrap around, plus a constant sliver
@@ -1557,8 +1706,39 @@ void main() {
   // most of the change into the first stretch beyond the treeline, which is
   // where the eye reads distance from, and leaves the tail to separate the
   // ridge from the sky.
+  /*
+   * --- and the second smoothstep is most of why it arrived as a wall -------
+   *
+   * The paragraph above is the argument for a steep near ramp and a long
+   * tail, and it is right about wanting one. What it built was a smoothstep
+   * through a smoothstep, and those are the numbers the FG_TIER note above
+   * had to quote in order to justify inventing a depth cue from nothing:
+   *
+   *     depth      40 m    60 m    90 m   120 m   146 m   165 m
+   *     doubled    0.001   0.013   0.084   0.233   0.60*   0.60*
+   *     single     0.023   0.086   0.235   0.446   0.586   0.60*
+   *                                                (* at the cap)
+   *
+   * Squaring an S-curve does not steepen its near half, it FLATTENS it — the
+   * curve is already near zero there and squaring a small number makes it
+   * smaller. So every scrap of the veil was pushed into the last third of
+   * the range, where it then ran into the 0.60 cap at about a hundred and
+   * forty-six metres in a world that streams to a hundred and sixty-five:
+   * the far eighth of the depth range all arrived at one value. Measured on
+   * the morning frame's land row profile that is a ninety-row plateau at
+   * L153-157 with no structure in it, standing over a foreground at L90 — a
+   * flat pale curtain beginning at a depth plane, which is the complaint
+   * word for word.
+   *
+   * Pulled most of the way to the single curve, and only where a high sun
+   * makes the veil real: see FOG_NEARNESS for the measured table that says
+   * why the two low-sun frames must keep the old shape. The far end is
+   * deliberately unmoved either way — both curves reach the cap before the
+   * world ends, so the value that sky.ts's horizon and fog notes spend their
+   * length protecting is exactly where they left it.
+   */
   float fogRaw = smoothstep(uFogNear, uFogFar, depth);
-  float distanceFog = fogRaw * fogRaw * (3.0 - 2.0 * fogRaw);
+  float distanceFog = mix(fogRaw * fogRaw * (3.0 - 2.0 * fogRaw), fogRaw, FOG_NEARNESS * sunHeight * sunHeight);
   float heightFalloff = uFogHeight > 0.0
     ? exp(-max(vWorldPosition.y, 0.0) / uFogHeight)
     : 1.0;

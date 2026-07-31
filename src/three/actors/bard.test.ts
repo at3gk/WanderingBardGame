@@ -305,4 +305,330 @@ describe('the playing bard', () => {
     // which this project already shipped once at the campfire.
     expect(pivotPoint(bard, 0.31).y).toBeLessThan(1.05);
   });
+
+  /**
+   * The strumming hand is on the **strings**, not merely near the instrument.
+   *
+   * The check that was here measured the hand against the instrument's own
+   * *axis*, which runs down the middle of a body 0.17 m thick — so a hand
+   * buried in the bowl and a hand laid on the soundboard score the same, and
+   * so does a hand up at the neck junction where there is no soundboard at
+   * all. Measured at the busk camera before this wave, the hand owned 203
+   * pixels and not one of them was over the rose or the courses: for half of
+   * every stroke the grip band walked it up past the shoulders of the body.
+   *
+   * So this measures the thing the frame is judged on: the distance from the
+   * middle of the hand to the nearest point on the *string plane* — the line
+   * the three courses actually lie along, 0.0376 off the axis toward the
+   * soundboard — over the stretch between the bridge and the rose. The hand
+   * is a 0.1 m block, so anything under half of that has string running
+   * through the grip.
+   */
+  it('lands the strumming hand on the courses, not beside them', () => {
+    const bard = seated('playing');
+    const pivot = part(bard, 'instrumentPivot');
+    let worst = 0;
+    // A whole strum cycle: the band is walked by a triangle wave, and the
+    // failure this replaces was at one end of that walk rather than at both.
+    for (let step = 0; step < 24; step++) {
+      bard.update(1 / 2.1 / 24, 0);
+      bard.object.updateMatrixWorld(true);
+      const hand = worldPoint(part(bard, 'rightArm'), new Vector3(0, -0.43, 0));
+      let best = Infinity;
+      for (let t = -0.285; t <= -0.165; t += 0.004) {
+        best = Math.min(best, hand.distanceTo(worldPoint(pivot, new Vector3(0, t, 0.0376))));
+      }
+      worst = Math.max(worst, best);
+    }
+    expect(worst).toBeLessThan(0.04);
+  });
+});
+
+/**
+ * The shoulder, pinned as *"the joint is inside the body and the arm has no
+ * cap on it"*.
+ *
+ * The report was a forward-swinging arm that reads detached, and it had two
+ * causes that no screenshot separates. Both are geometry, both are checkable,
+ * and both were true for the whole life of the file — invisible until the
+ * winding fix made near walls draw.
+ */
+describe('the arm is joined to the shoulder', () => {
+  /** The torso mesh's own half-extent in x and z at a height, in torso space. */
+  function torsoHalfAt(bard: Bard, y: number): { x: number; z: number } {
+    let mesh: Mesh | null = null;
+    part(bard, 'group').traverse((child) => {
+      if (child instanceof Mesh && child.name === 'bard-torso') mesh = child;
+    });
+    if (!mesh) throw new Error('no torso mesh');
+    const torso = mesh as Mesh;
+    const position = torso.geometry.attributes.position as BufferAttribute;
+    const point = new Vector3();
+    // A tapered box has vertices only on its two rings, so the half-extent at
+    // any height between them has to be interpolated rather than sampled —
+    // sampling returns nothing and the check passes vacuously.
+    let low = Infinity;
+    let high = -Infinity;
+    for (let i = 0; i < position.count; i++) {
+      point
+        .set(position.getX(i), position.getY(i), position.getZ(i))
+        .applyMatrix4(torso.matrix);
+      low = Math.min(low, point.y);
+      high = Math.max(high, point.y);
+    }
+    const ring = (at: number) => {
+      let x = 0;
+      let z = 0;
+      for (let i = 0; i < position.count; i++) {
+        point
+          .set(position.getX(i), position.getY(i), position.getZ(i))
+          .applyMatrix4(torso.matrix);
+        if (Math.abs(point.y - at) > 1e-4) continue;
+        x = Math.max(x, Math.abs(point.x));
+        z = Math.max(z, Math.abs(point.z));
+      }
+      return { x, z };
+    };
+    const bottom = ring(low);
+    const top = ring(high);
+    const t = Math.min(1, Math.max(0, (y - low) / (high - low)));
+    return {
+      x: bottom.x + (top.x - bottom.x) * t,
+      z: bottom.z + (top.z - bottom.z) * t,
+    };
+  }
+
+  it('puts both shoulder joints inside the torso', () => {
+    const bard = seated('walking');
+    for (const side of ['leftArm', 'rightArm'] as const) {
+      const pivot = part(bard, side) as unknown as { position: Vector3 };
+      const half = torsoHalfAt(bard, pivot.position.y);
+      // A joint outside the body is a limb hanging off a wall, and it opens a
+      // wedge of background every time the arm swings. The torso taper was
+      // widened to 1.46 by 1.20 to close this; at 1.28 by 1.08 the x check
+      // below failed by a centimetre.
+      expect(Math.abs(pivot.position.x)).toBeLessThan(half.x);
+      expect(Math.abs(pivot.position.z)).toBeLessThan(half.z);
+    }
+  });
+
+  it('domes the arm over its own pivot instead of capping it', () => {
+    const bard = seated('walking');
+    let arm: Mesh | null = null;
+    (part(bard, 'leftArm') as unknown as Object3D).traverse((child) => {
+      if (child instanceof Mesh && !child.name) arm = arm ?? child;
+    });
+    expect(arm).not.toBeNull();
+    const mesh = arm as unknown as Mesh;
+    const position = mesh.geometry.attributes.position as BufferAttribute;
+    let top = -Infinity;
+    for (let i = 0; i < position.count; i++) top = Math.max(top, position.getY(i));
+    // The hull closes *above* the joint it hangs from, in the arm pivot's own
+    // space. A mesh that stops at y 0 — which is what a `boxPart` arm hung at
+    // -0.36 did — presents a flat upward face exactly at the shoulder, and an
+    // exposed upward cap is the brightest surface this lighting model makes.
+    expect(top).toBeGreaterThan(0.02);
+    // And that closing ring has to be small enough to live inside the torso,
+    // or the fix is a bright plate three centimetres higher up.
+    let widest = 0;
+    for (let i = 0; i < position.count; i++) {
+      if (position.getY(i) < top - 0.005) continue;
+      widest = Math.max(widest, Math.abs(position.getX(i)), Math.abs(position.getZ(i)));
+    }
+    expect(widest).toBeLessThan(0.03);
+  });
+
+  it('gives the thigh mass at the hip and a real taper into the knee', () => {
+    const bard = seated('walking');
+    /** A leg part's half-extents at its widest and at its narrowest ring. */
+    const spanOf = (name: string) => {
+      let mesh: Mesh | null = null;
+      part(bard, 'group').traverse((child) => {
+        if (child instanceof Mesh && child.name === name) mesh = child;
+      });
+      const found = mesh as unknown as Mesh;
+      const position = found.geometry.attributes.position as BufferAttribute;
+      let low = Infinity;
+      let high = -Infinity;
+      for (let i = 0; i < position.count; i++) {
+        low = Math.min(low, position.getY(i));
+        high = Math.max(high, position.getY(i));
+      }
+      const ring = (at: number) => {
+        let x = 0;
+        let z = 0;
+        for (let i = 0; i < position.count; i++) {
+          if (Math.abs(position.getY(i) - at) > 1e-4) continue;
+          x = Math.max(x, Math.abs(position.getX(i)));
+          z = Math.max(z, Math.abs(position.getZ(i)));
+        }
+        return { x, z };
+      };
+      // `boxPart` grows along +Y and the thigh hangs from the hip, so its
+      // base ring is the hip and its top ring is the knee; the shin is built
+      // the other way up, knee at the top.
+      return { base: ring(low), top: ring(high) };
+    };
+    const thigh = spanOf('bard-thigh-left');
+    const shin = spanOf('bard-shin-left');
+    // A thigh is the widest part of a leg and narrows to the knee. Without
+    // that taper it is a post the same width as the shin below it, and a
+    // seated figure whose leg is one parallel column has no lap in it — the
+    // "no thigh mass, reads as a hover-squat" report.
+    expect(thigh.base.x / thigh.top.x).toBeGreaterThan(1.15);
+    expect(thigh.base.z / thigh.top.z).toBeGreaterThan(1.15);
+    // And the knee end still buries the shin's own top ring, which is the
+    // rule `BOOT_RINGS` sets and the reason no upward cap is ever seen.
+    expect(thigh.top.x).toBeGreaterThan(shin.top.x);
+    expect(thigh.top.z).toBeGreaterThan(shin.top.z);
+  });
+});
+
+/**
+ * The face, pinned as *"the marks are outside the head"*.
+ *
+ * This is the check that would have saved two waves. The eyes were added in
+ * wave 1, graded in wave 3, and reported as "a flat featureless beige panel"
+ * in the blind panel — and the reason is that they were **2.7 mm inside the
+ * skull**. The head tapers, so its front face is not at a fixed z; the eyes
+ * were placed against the nominal depth instead of the tapered one, and every
+ * frame since has drawn them and culled them. Nothing about a screenshot can
+ * tell that apart from flat lighting, which is exactly how it survived.
+ */
+describe('the face is on the outside of the head', () => {
+  /**
+   * How far forward the head's own front face reaches at a height.
+   *
+   * Interpolated between the box's two rings rather than sampled near the
+   * height asked about, and that is the whole point: **the head has no
+   * vertices in the middle**, so a sampling version of this helper finds
+   * nothing, compares against -Infinity, and passes for an eye buried
+   * anywhere at all. The first draft of this file did exactly that and the
+   * mutation run caught it — which is the same class of mistake as the bug
+   * being pinned, one level up.
+   */
+  function headFrontAt(bard: Bard, y: number): number {
+    let mesh: Mesh | null = null;
+    part(bard, 'group').traverse((child) => {
+      if (child instanceof Mesh && child.name === 'bard-head') mesh = child;
+    });
+    const head = mesh as unknown as Mesh;
+    const position = head.geometry.attributes.position as BufferAttribute;
+    const point = new Vector3();
+    let low = Infinity;
+    let high = -Infinity;
+    for (let i = 0; i < position.count; i++) {
+      point
+        .set(position.getX(i), position.getY(i), position.getZ(i))
+        .applyMatrix4(head.matrix);
+      low = Math.min(low, point.y);
+      high = Math.max(high, point.y);
+    }
+    const ringFront = (at: number) => {
+      let front = -Infinity;
+      for (let i = 0; i < position.count; i++) {
+        point
+          .set(position.getX(i), position.getY(i), position.getZ(i))
+          .applyMatrix4(head.matrix);
+        if (Math.abs(point.y - at) > 1e-4) continue;
+        front = Math.max(front, point.z);
+      }
+      return front;
+    };
+    const bottom = ringFront(low);
+    const top = ringFront(high);
+    const t = Math.min(1, Math.max(0, (y - low) / (high - low)));
+    return bottom + (top - bottom) * t;
+  }
+
+  for (const name of ['bard-eye-left', 'bard-eye-right', 'bard-nose', 'bard-mouth']) {
+    it(`stands ${name} proud of the face`, () => {
+      const bard = seated('sitting');
+      let mesh: Mesh | null = null;
+      part(bard, 'group').traverse((child) => {
+        if (child instanceof Mesh && child.name === name) mesh = child;
+      });
+      expect(mesh).not.toBeNull();
+      const mark = mesh as unknown as Mesh;
+      const position = mark.geometry.attributes.position as BufferAttribute;
+      const point = new Vector3();
+      let front = -Infinity;
+      let midY = 0;
+      for (let i = 0; i < position.count; i++) {
+        point
+          .set(position.getX(i), position.getY(i), position.getZ(i))
+          .applyMatrix4(mark.matrix);
+        front = Math.max(front, point.z);
+        midY += point.y / position.count;
+      }
+      // Five millimetres, which is the point at which a mark has an edge of
+      // its own to catch light on. The failure was negative.
+      expect(front - headFrontAt(bard, midY)).toBeGreaterThan(0.005);
+    });
+  }
+
+  it('turns the seated face far enough round to be seen from behind him', () => {
+    const bard = seated('sitting');
+    const head = part(bard, 'headPivot');
+    // The head's own forward axis against the bard's heading, in degrees.
+    // Every camera in this game stands behind him, so a seated head pointing
+    // down the heading shows the side of a skull: probed at the real resting
+    // camera before this wave, the face sat 116 degrees off the direction to
+    // the lens and its eyes, nose and mouth owned ZERO pixels between them.
+    // The turn is split between a waist twist and the neck, so the check is
+    // written against the total rather than against either one.
+    const forward = new Vector3(0, 0, 1).transformDirection(head.matrixWorld);
+    const degrees = (Math.atan2(forward.x, forward.z) * 180) / Math.PI;
+    expect(degrees).toBeGreaterThan(70);
+    // And not so far that his neck is on backwards.
+    expect(degrees).toBeLessThan(105);
+  });
+
+  it('leaves the walking head pointed down the road', () => {
+    const bard = seated('walking');
+    const head = part(bard, 'headPivot');
+    const forward = new Vector3(0, 0, 1).transformDirection(head.matrixWorld);
+    expect(Math.abs((Math.atan2(forward.x, forward.z) * 180) / Math.PI)).toBeLessThan(10);
+  });
+});
+
+/**
+ * The slung carry, pinned as *"the pegbox is not level with the head"*.
+ *
+ * Projected at the real walking camera, the top of the neck overlapped the
+ * head-and-hat's own screen box by 33 pixels — the "headstock interpenetrates
+ * the head" report. In space it never touched: the pegbox stood 19 cm behind
+ * the back of the head, and the camera is behind him, so *behind* reads as
+ * *through*. The body-space property that makes the overlap impossible from
+ * any camera in that arc is simply that the pegbox is below the head, so that
+ * is what is pinned rather than the screen measurement it came from.
+ */
+describe('the slung instrument', () => {
+  it('carries the pegbox below the base of the head', () => {
+    const bard = seated('walking');
+    const pegbox = worldPoint(part(bard, 'instrumentPivot'), new Vector3(0, 0.31, 0));
+    // HEAD_Y is 0.97, and the head runs up from there.
+    expect(pegbox.y).toBeLessThan(0.95);
+    // But still up near the shoulders rather than down at the hem, or the
+    // strap across his chest stops explaining anything.
+    expect(pegbox.y).toBeGreaterThan(0.78);
+  });
+
+  it('still lays the instrument across the frame rather than along the view', () => {
+    const bard = seated('walking');
+    const pivot = part(bard, 'instrumentPivot');
+    const foot = worldPoint(pivot, new Vector3(0, -0.31, 0));
+    const pegbox = worldPoint(pivot, new Vector3(0, 0.31, 0));
+    // The instrument is 0.62 m long; a carry that points it at a camera
+    // standing behind the bard collapses it to a blob, and the way that shows
+    // up in body space is that the neck stops having lateral run. Rolling it
+    // flatter to clear the head is exactly the change that could overdo this.
+    // 0.38 of lateral run out of a 0.62 m instrument, which is a roll of
+    // rather more than a third of a radian. It is also the half of the
+    // pegbox clearance that dropping the carry does not buy: at the old
+    // 0.52 rad the run is 0.31, and the top of the neck sits back inside the
+    // hat brim's screen box however far down the bowl has gone.
+    expect(Math.abs(pegbox.x - foot.x)).toBeGreaterThan(0.38);
+    expect(pegbox.y - foot.y).toBeGreaterThan(0.3);
+  });
 });
