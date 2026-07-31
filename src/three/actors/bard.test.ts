@@ -15,7 +15,7 @@
  * angle to fix a pose problem that a check like this would have shown was
  * not there.
  */
-import { Object3D, Vector3 } from 'three';
+import { Box3, BufferAttribute, Matrix4, Mesh, Object3D, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { Bard, SITTING_SEAT_HEIGHT_M } from './Bard';
 import { createPainterlyGlobals } from '../painterly';
@@ -95,15 +95,126 @@ describe('the seated bard', () => {
     expect(best).toBeLessThan(0.05);
   });
 
+  /**
+   * The lute rests *on* the lap rather than *in* it.
+   *
+   * Two waves of critique in a row reported the seated instrument sinking
+   * into a knee, and both times it was diagnosed off a screenshot, where the
+   * only thing visible is a notch bitten out of the bowl and no way to tell
+   * whether the fault is the carry, the pose or the camera. It was the
+   * carry, by a centimetre. This measures it directly: every vertex of the
+   * instrument, in each leg mesh's own space, against that mesh's own box.
+   * A screenshot cannot answer this and a constant cannot be trusted to, so
+   * the check is the geometry.
+   */
+  it('rests the instrument clear of both legs', () => {
+    const bard = seated();
+    let lute: Mesh | null = null;
+    bard.object.traverse((child) => {
+      if (child instanceof Mesh && child.name === 'bard-instrument') lute = child;
+    });
+    expect(lute).not.toBeNull();
+    const instrument = lute as unknown as Mesh;
+    const legs: Mesh[] = [];
+    for (const name of ['knees', 'leftLeg', 'rightLeg']) {
+      const found = part(bard, name) as unknown as Object3D | Object3D[];
+      for (const root of Array.isArray(found) ? found : [found]) {
+        root.traverse((child) => {
+          if (child instanceof Mesh) legs.push(child);
+        });
+      }
+    }
+    const point = new Vector3();
+    const toLeg = new Matrix4();
+    let inside = 0;
+    const position = instrument.geometry.attributes.position as BufferAttribute;
+    for (const leg of legs) {
+      const box = new Box3().setFromBufferAttribute(
+        leg.geometry.attributes.position as BufferAttribute,
+      );
+      toLeg.copy(leg.matrixWorld).invert().multiply(instrument.matrixWorld);
+      for (let i = 0; i < position.count; i++) {
+        point
+          .set(position.getX(i), position.getY(i), position.getZ(i))
+          .applyMatrix4(toLeg);
+        if (box.containsPoint(point)) inside++;
+      }
+    }
+    expect(inside).toBe(0);
+  });
+
   it('leaves the walking arms alone', () => {
     const walking = seated('walking');
     const arm = part(walking, 'leftArm') as unknown as { rotation: { x: number; z: number } };
     // The slung carry's own numbers, with no walk swing at zero speed:
-    // rotation.x = -0.1, rotation.z = 0.11. If a grip solve ever starts
+    // rotation.x = -0.1, rotation.z = -ARM_SPLAY. If a grip solve ever starts
     // running outside the sitting and playing blends, these move.
     expect(arm.rotation.x).toBeCloseTo(-0.1, 5);
-    expect(arm.rotation.z).toBeCloseTo(0.11, 5);
+    expect(arm.rotation.z).toBeCloseTo(-0.26, 5);
   });
+});
+
+/**
+ * The arms, pinned as *"the cloak is not in front of them"*.
+ *
+ * This is the check that would have caught the fault three rounds of critique
+ * reported and two waves of work missed: the bard had no visible arms in the
+ * walking frame, the busking frame or the encounter frame, while a close-up
+ * at the campfire showed hands and a strum working perfectly. Nothing was
+ * wrong with the arms. They were inside the cloak.
+ *
+ * Every camera this game has stands behind the bard and off to his right
+ * (`CameraRig`'s `side` is positive in all five moods), which is inside the
+ * arc of cloth the cloak covers. So for those cameras there is one question
+ * that decides whether an arm is in the picture at all: is the arm further
+ * from the spine than the cloak is, at the arm's own height? If it is, the
+ * cloth cannot be between it and a camera outside the cone. If it is not,
+ * no amount of colour, thickness or animation will help.
+ *
+ * The cloak's radius is measured off the shipped geometry rather than off the
+ * constants that built it, and through the mesh's live scale and offset —
+ * the sitting pose gathers the skirt by scaling it, so the constants alone
+ * would answer for a pose the bard is not in.
+ */
+describe('the arms clear the cloak', () => {
+  /** The cloak's outer radius about the torso axis at a height, in torso space. */
+  function cloakRadiusAt(bard: Bard, y: number): number {
+    let mesh: Mesh | null = null;
+    part(bard, 'group').traverse((child) => {
+      if (child instanceof Mesh && child.name === 'bard-cloak') mesh = child;
+    });
+    if (!mesh) throw new Error('no cloak mesh');
+    const cloak = mesh as Mesh;
+    const position = cloak.geometry.attributes.position as BufferAttribute;
+    const point = new Vector3();
+    // The widest ring of cloth within a hand's width of the height asked
+    // about: the hem is ragged and the panels are flat, so a single exact
+    // height would sample whichever panel edge happened to land there.
+    let radius = 0;
+    for (let i = 0; i < position.count; i++) {
+      point
+        .set(position.getX(i), position.getY(i), position.getZ(i))
+        .applyMatrix4(cloak.matrix);
+      if (Math.abs(point.y - y) > 0.06) continue;
+      radius = Math.max(radius, Math.hypot(point.x, point.z));
+    }
+    return radius;
+  }
+
+  for (const pose of ['walking', 'playing', 'sitting'] as const) {
+    it(`keeps the hand outside the cloth when ${pose}`, () => {
+      const bard = seated(pose);
+      for (const side of ['leftArm', 'rightArm']) {
+        // The hand's own centre, in torso space. Both the arm pivot and the
+        // cloak are direct children of the torso, so their own local
+        // matrices put the two in one frame with no world transforms and no
+        // dependence on which way the bard happens to be facing.
+        const hand = new Vector3(0, -0.43, 0).applyMatrix4(part(bard, side).matrix);
+        const reach = Math.hypot(hand.x, hand.z);
+        expect(reach).toBeGreaterThan(cloakRadiusAt(bard, hand.y) + 0.02);
+      }
+    });
+  }
 });
 
 /**
@@ -152,6 +263,39 @@ describe('the playing bard', () => {
     // The fretting hand on the neck, the strumming hand on the belly.
     expect(nearest('leftArm', -0.065, 0.245)).toBeLessThan(0.05);
     expect(nearest('rightArm', -0.25, -0.11)).toBeLessThan(0.06);
+  });
+
+  /**
+   * The strumming hand has to *move*, and by enough to see.
+   *
+   * The gesture is made by lifting and dropping the shoulder, because a
+   * rigid arm with its hand solved onto the strings physically cannot travel
+   * otherwise (see the long note on the strum). That means the whole
+   * gesture is one step removed from anything a reader of this file can
+   * check by eye, and it has already been silently cancelled once: an
+   * earlier version added the swing *after* the grip solve had pinned the
+   * hand, so the arm did not move at all and every busking postcard showed a
+   * musician not playing.
+   *
+   * So: run a whole strum cycle and measure how far the hand actually goes.
+   * The bard is 1.4 m tall and reads about 380 px in the busking frame, so a
+   * centimetre is roughly two and a half pixels; eight centimetres of travel
+   * is a stroke you can see in a still.
+   */
+  it('rakes the strumming hand across the soundboard', () => {
+    const bard = seated('playing');
+    const low = new Vector3(Infinity, Infinity, Infinity);
+    const high = new Vector3(-Infinity, -Infinity, -Infinity);
+    // One full period of the triangle: `strumCycle = elapsed * 2.1`.
+    const steps = 40;
+    for (let i = 0; i < steps; i++) {
+      bard.update(1 / 2.1 / steps, 0);
+      bard.object.updateMatrixWorld(true);
+      const hand = worldPoint(part(bard, 'rightArm'), new Vector3(0, -0.43, 0));
+      low.min(hand);
+      high.max(hand);
+    }
+    expect(high.distanceTo(low)).toBeGreaterThan(0.08);
   });
 
   it('keeps the pegbox below the brim of his hat', () => {

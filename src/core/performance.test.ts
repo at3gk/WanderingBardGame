@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BuskCrowd,
+  CROWD_DRIFT_GRACE_MS,
+  CROWD_RETURN_GRACE_MS,
+  CROWD_RETURN_MARGIN,
   DEFAULT_PERFORMANCE_CONFIG,
   JudgeableBeat,
   Judgement,
@@ -8,14 +12,18 @@ import {
   PerformanceState,
   START_METER,
   applyJudgement,
+  createBuskCrowd,
   createPerformance,
+  crowdFarewellLine,
   crowdFor,
+  crowdKeepThreshold,
   isBardWalking,
   judge,
   lateWindowMs,
   performanceSummary,
   pickBeat,
   streakBonus,
+  tickBuskCrowd,
   tickPerformance,
   warmthLayers,
 } from './performance';
@@ -819,5 +827,172 @@ describe('performanceSummary', () => {
     expect(summary.coins).toBe(0);
     expect(summary.hits).toBe(0);
     expect(summary.notes).toBe(0);
+  });
+});
+
+describe('the crowd as individuals (stakes, not failure)', () => {
+  /** Feed a steady warmth from `fromMs` to `toMs`, counting events. */
+  function drive(
+    crowd: BuskCrowd,
+    warmth: number,
+    fromMs: number,
+    toMs: number,
+    stepMs = 250,
+  ): { departed: number; returned: number } {
+    const events = { departed: 0, returned: 0 };
+    for (let t = fromMs; t <= toMs; t += stepMs) {
+      const tick = tickBuskCrowd(crowd, warmth, t);
+      if (tick.departed) events.departed += 1;
+      if (tick.returned) events.returned += 1;
+    }
+    return events;
+  }
+
+  it('gathers everyone and keeps them on a warm night', () => {
+    const crowd = createBuskCrowd(4);
+    expect(crowd.present).toBe(4);
+    const events = drive(crowd, 0.8, 0, 60_000);
+    expect(events.departed).toBe(0);
+    expect(crowd.present).toBe(4);
+    expect(crowd.departures).toBe(0);
+  });
+
+  it('asks nothing of the first listener and a little more of each later one', () => {
+    expect(crowdKeepThreshold(1, 4)).toBe(0);
+    expect(crowdKeepThreshold(2, 4)).toBeGreaterThan(0);
+    expect(crowdKeepThreshold(3, 4)).toBeGreaterThan(crowdKeepThreshold(2, 4));
+    expect(crowdKeepThreshold(4, 4)).toBeGreaterThan(crowdKeepThreshold(3, 4));
+    // Below the 'crowd' warmth step: a full house must be holdable by a
+    // player who is merely doing well, not only by a perfect one.
+    expect(crowdKeepThreshold(4, 4)).toBeLessThan(0.5);
+  });
+
+  it('loses listeners one at a time, each after a full grace period', () => {
+    const crowd = createBuskCrowd(4);
+    // Nobody leaves inside the grace window, however cold it is.
+    const early = drive(crowd, 0, 0, CROWD_DRIFT_GRACE_MS - 250);
+    expect(early.departed).toBe(0);
+    expect(crowd.present).toBe(4);
+    // The first departure lands once the grace has fully run...
+    const first = drive(crowd, 0, CROWD_DRIFT_GRACE_MS, CROWD_DRIFT_GRACE_MS);
+    expect(first.departed).toBe(1);
+    expect(crowd.present).toBe(3);
+    // ...and the next needs its own whole grace period, not the tail of the
+    // first: a cold spell thins the crowd, it does not rout it.
+    const soon = drive(crowd, 0, CROWD_DRIFT_GRACE_MS + 250, CROWD_DRIFT_GRACE_MS * 2 - 250);
+    expect(soon.departed).toBe(0);
+    const second = drive(crowd, 0, CROWD_DRIFT_GRACE_MS * 2, CROWD_DRIFT_GRACE_MS * 2 + 500);
+    expect(second.departed).toBe(1);
+    expect(crowd.present).toBe(2);
+  });
+
+  it('never plays to nobody: the first listener stays to the end', () => {
+    const crowd = createBuskCrowd(4);
+    drive(crowd, 0, 0, 300_000);
+    expect(crowd.present).toBe(1);
+    expect(crowd.departures).toBe(3);
+  });
+
+  it('forgives a bad bar: warmth recovered inside the grace resets it', () => {
+    const crowd = createBuskCrowd(4);
+    drive(crowd, 0, 0, CROWD_DRIFT_GRACE_MS / 2);
+    // The tune comes back before anyone has actually turned to go.
+    const events = drive(crowd, 0.6, CROWD_DRIFT_GRACE_MS / 2 + 250, CROWD_DRIFT_GRACE_MS * 3);
+    expect(events.departed).toBe(0);
+    expect(crowd.present).toBe(4);
+  });
+
+  it('is recoverable mid-busk: warmth won back brings them back', () => {
+    const crowd = createBuskCrowd(4);
+    drive(crowd, 0, 0, CROWD_DRIFT_GRACE_MS * 2 + 500);
+    expect(crowd.present).toBe(2);
+    const events = drive(crowd, 0.9, CROWD_DRIFT_GRACE_MS * 2 + 750, CROWD_DRIFT_GRACE_MS * 2 + 750 + CROWD_RETURN_GRACE_MS * 4);
+    expect(events.returned).toBe(2);
+    expect(crowd.present).toBe(4);
+    expect(crowd.returns).toBe(2);
+    // The record keeps both halves of the story for the closing line.
+    expect(crowd.departures).toBe(2);
+  });
+
+  it('holds the return line above the keep line, so the edge cannot churn', () => {
+    const crowd = createBuskCrowd(4);
+    drive(crowd, 0, 0, CROWD_DRIFT_GRACE_MS * 2 + 500);
+    expect(crowd.present).toBe(2);
+    // Warmth exactly at the third listener's keep threshold: enough to stop
+    // the bleeding, not enough to bring anyone back.
+    const onTheLine = crowdKeepThreshold(3, 4);
+    const events = drive(crowd, onTheLine, CROWD_DRIFT_GRACE_MS * 3, CROWD_DRIFT_GRACE_MS * 6);
+    expect(events.departed).toBe(0);
+    expect(events.returned).toBe(0);
+    expect(crowd.present).toBe(2);
+    // A margin over the line is what opens the way back.
+    const above = onTheLine + CROWD_RETURN_MARGIN;
+    const back = drive(crowd, above, CROWD_DRIFT_GRACE_MS * 6 + 250, CROWD_DRIFT_GRACE_MS * 6 + 250 + CROWD_RETURN_GRACE_MS * 2);
+    expect(back.returned).toBe(1);
+  });
+
+  it('reads unusable warmth and clocks as cold and still, never as a crash', () => {
+    const crowd = createBuskCrowd(3);
+    expect(() => tickBuskCrowd(crowd, Number.NaN, Number.NaN)).not.toThrow();
+    expect(crowd.present).toBe(3);
+    const empty = createBuskCrowd(0);
+    const tick = tickBuskCrowd(empty, 0.5, 1000);
+    expect(tick).toEqual({ departed: false, returned: false });
+  });
+
+  it('says one kind sentence about the crowd, or nothing', () => {
+    // The earned contrast: a big crowd, nobody left.
+    const full = createBuskCrowd(4);
+    expect(crowdFarewellLine(full)).toMatch(/Nobody who stopped left/);
+    // Two listeners staying is ordinary and stays unremarked.
+    expect(crowdFarewellLine(createBuskCrowd(2))).toBeNull();
+    expect(crowdFarewellLine(createBuskCrowd(0))).toBeNull();
+    // Drifted and came back.
+    const mended = createBuskCrowd(4);
+    mended.departures = 2;
+    mended.returns = 2;
+    expect(crowdFarewellLine(mended)).toMatch(/drifted back/);
+    // Ended thinner than it began.
+    const thinned = createBuskCrowd(4);
+    thinned.present = 2;
+    thinned.departures = 2;
+    expect(crowdFarewellLine(thinned)).toMatch(/heard it through/);
+  });
+
+  it('keeps the no-fail language out of every farewell', () => {
+    const shapes: BuskCrowd[] = [
+      createBuskCrowd(4),
+      { ...createBuskCrowd(4), present: 1, departures: 3 },
+      { ...createBuskCrowd(4), departures: 1, returns: 1 },
+    ];
+    for (const crowd of shapes) {
+      const line = crowdFarewellLine(crowd);
+      if (line === null) continue;
+      expect(line).not.toContain('!');
+      expect(line).not.toMatch(/fail|lose|lost|badly|poor/i);
+      expect(line.endsWith('.')).toBe(true);
+    }
+  });
+
+  it('tells the whole poor-then-mended trajectory as departure events', () => {
+    // The integration shape RoadStage leans on: a warmth trajectory in,
+    // a sparse stream of single departures and returns out.
+    const crowd = createBuskCrowd(4);
+    const log: Array<{ t: number; event: 'left' | 'back' }> = [];
+    for (let t = 0; t <= 60_000; t += 250) {
+      const warmth = t < 20_000 ? 0.02 : 0.85;
+      const tick = tickBuskCrowd(crowd, warmth, t);
+      if (tick.departed) log.push({ t, event: 'left' });
+      if (tick.returned) log.push({ t, event: 'back' });
+    }
+    const departures = log.filter((e) => e.event === 'left');
+    const returns = log.filter((e) => e.event === 'back');
+    expect(departures.length).toBe(2);
+    expect(returns.length).toBe(2);
+    // Every departure precedes every return in this trajectory.
+    expect(Math.max(...departures.map((e) => e.t))).toBeLessThan(
+      Math.min(...returns.map((e) => e.t)),
+    );
+    expect(crowd.present).toBe(4);
   });
 });

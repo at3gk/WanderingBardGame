@@ -630,6 +630,131 @@ export function rollEncounter(
   return { def, coins, delight, gift, variant };
 }
 
+// ---------------------------------------------------------------------------
+// Asks (v0.8 item 8 — stakes, not failure)
+// ---------------------------------------------------------------------------
+//
+// Some travellers want something: the next stretch of the tune, played with
+// care. This is the game's one missable side quest, and it is built exactly
+// on DESIGN.md's contract — the *moment* can be failed, the player cannot.
+// Play the asked notes well and the traveller pays for them; fumble them and
+// the traveller smiles, wishes you well, and the moment passes. Missing pays
+// nothing and costs nothing: no coins leave the purse, no warmth, no meter,
+// no journal scolding. The passed line is written to be true and kind at
+// once, because "you lost a chance" and "you were punished" are different
+// sentences and this module only ever says the first.
+//
+// Only travellers ask. A fox does not commission music and a rain shower
+// cannot, and keeping the ask on the one kind that carries money (see
+// `KIND_TILT`) means the payoff reads as what it is: a person paying a
+// musician for a request.
+//
+// Deterministic per seed, on its *own* sub-stream. `rollEncounter` draws a
+// fixed sequence from `subSeed(seed, 'encounter')`, and the realised rarity
+// shares of that stream are pinned by tests; the ask drawing from the same
+// stream would have shifted every roll in the game. `subSeed(seed,
+// 'encounter/ask')` is a different stream by construction, so adding an ask
+// to a stop changes nothing about who you meet there.
+
+/** How many of the walk's next notes the ask covers. About six seconds at walking tempo. */
+export const ASK_NOTES = 8;
+/** Hits (of any judgement) among those notes for the moment to land. Generous: two of eight can go astray. */
+export const ASK_NEEDED = 6;
+/** How often a traveller has an ask in them. */
+export const ASK_CHANCE = 0.35;
+
+export interface EncounterAsk {
+  /** The window, in resolved notes of the tune that follows. */
+  notes: number;
+  /** Hits needed within the window. Always <= notes. */
+  needed: number;
+  /** The request, one diegetic line shown while the notes fly. */
+  line: string;
+  /** Paid only if the moment lands. */
+  coins: number;
+  delight: number;
+  /** The journal line either way. Both are kind; only one pays. */
+  fulfilledLine: string;
+  passedLine: string;
+}
+
+/**
+ * The writing, same rules as the encounter table: no exclamation marks, no
+ * adjectives doing a noun's work. The passed lines get the extra rule from
+ * DESIGN.md's pedagogy section — no-fail language everywhere. The moment
+ * passes; nothing and nobody fails.
+ */
+const ASK_LINES: readonly string[] = [
+  'They ask, before the road takes them, for the next few notes played true, just for them.',
+  'One request, they say: the next stretch of the tune, played with care.',
+  'They stop a moment longer and ask for the next few bars the way they are written.',
+];
+
+const FULFILLED_LINES: readonly string[] = [
+  'You play it true. They stand a moment with their eyes shut, then press a few coins on you.',
+  'It comes out whole. They pay for it the way you pay for bread, and go on humming it.',
+];
+
+const PASSED_LINES: readonly string[] = [
+  'The tune wanders a little. They smile, wish you a good road, and walk on; the moment goes with them.',
+  'It comes out a little sideways tonight. They wave anyway and take the rest of the road gently.',
+];
+
+/**
+ * Whether this encounter carries an ask, and what it is. Null for most.
+ *
+ * The payout is drawn from the same tier profile as the encounter itself so
+ * a rare traveller's request is worth more than a common one's, tilted
+ * toward coins because a request honoured is a transaction, not a mood. It
+ * is a *bonus* on top of the encounter's own roll — the roll was already
+ * paid on meeting; the ask is the part that can be missed.
+ */
+export function rollAsk(seed: number, def: EncounterDef): EncounterAsk | null {
+  if (def.kind !== 'traveller') return null;
+  const rand = mulberry32(subSeed(seed, 'encounter/ask'));
+  if (!chance(rand, ASK_CHANCE)) return null;
+
+  const profile = PAYOUTS[def.rarity];
+  const value = profile.floor + profile.spread * triangular(rand);
+  return {
+    notes: ASK_NOTES,
+    needed: ASK_NEEDED,
+    line: pick(rand, ASK_LINES),
+    coins: Math.max(1, Math.round(value * 1.1)),
+    delight: Math.max(1, Math.round(value * 0.7)),
+    fulfilledLine: pick(rand, FULFILLED_LINES),
+    passedLine: pick(rand, PASSED_LINES),
+  };
+}
+
+export interface AskOutcome {
+  fulfilled: boolean;
+  /** Zero when the moment passed. Never negative: nothing is ever taken. */
+  coins: number;
+  delight: number;
+  /** The journal line for what happened. */
+  line: string;
+}
+
+/**
+ * Settle an ask against how the asked notes went.
+ *
+ * Pure and total: `hits` is however many of the window's notes landed (any
+ * judgement — a late note answered is a note played), and the only question
+ * is whether it reached the ask's bar. A passed ask pays nothing and costs
+ * nothing, and says so in the tone it happened in.
+ */
+export function resolveAsk(ask: EncounterAsk, hits: number): AskOutcome {
+  const landed = Math.max(0, Math.floor(Number.isFinite(hits) ? hits : 0));
+  const fulfilled = landed >= ask.needed;
+  return {
+    fulfilled,
+    coins: fulfilled ? Math.max(0, ask.coins) : 0,
+    delight: fulfilled ? Math.max(0, ask.delight) : 0,
+    line: fulfilled ? ask.fulfilledLine : ask.passedLine,
+  };
+}
+
 function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(1, value));

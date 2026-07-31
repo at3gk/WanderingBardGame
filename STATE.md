@@ -7,6 +7,44 @@ Run counter: 50
 **At a glance** — read this, then only the sections you need.
 
 - **HANDOFF, 2026-07-31 (second interactive session, continued) — v0.8
+  wave 3 landed: winding, stakes, wisps, and the staff settled twice.**
+  978 tests green, build 795.17 kB, all gates PASS. Five parallel builds
+  (ROADMAP 137-142 done-entries carry the detail). The headline finds:
+  `boxPart` had been wound INSIDE-OUT since the file was written (0% of
+  normals outward — the player was looking at the inside of the bard;
+  one line explained three critique cycles of "decomposing geometry");
+  the morning/noon "shadow smears" mostly SURVIVE shadow ablation (they
+  are the foreground tier + the road's soft edge — task 143); and the
+  six-line staff dispute was settled once (paper's top dissolve boundary)
+  and then REAPPEARED at the bottom in the next panel — see below.
+  Stakes landed kindly: one-at-a-time crowd dispersal with an 8 s grace
+  (the first listener never leaves), and ~35% of travellers carry a
+  playable request that passes warmly when fumbled; a test bans
+  fail/lose/wrong vocabulary from every journal line.
+
+  **Wave-3 blind panel: mean ~5.5 (was ~5.4 nominal, but tougher frames —
+  up a full point from wave 1's ~4.3).** 04-golden-vista 6.75 — verdict:
+  "the lone frame a store page could use today." 01 5.75, 07 5.75,
+  09 6.0, 02 4.9, 03 4.5 (weakest). Verdict line: art direction now
+  touches the bar; every frame still ships at least one execution
+  accident. The keeps list is long and specific for the first time
+  (skies, costume, lute, ribbon concept, camera variety all "do not
+  touch").
+
+  **Panel-vs-measurement disputes a wave 4 must resolve, not re-litigate:**
+  (1) the "casterless shadow bands invariant across suns" match the
+  depth-keyed FG tier treads by that very invariance — the panel reads
+  the tier as weather, which may mean the tier has stopped earning its
+  keep now that MODEL_SPLIT models form; (2) the campfire pool measured
+  a real R/G hue ladder but four lenses still read flat orange — the
+  clipped V=1.0 patch under the logs and the too-bright night surround
+  are what the eye actually reports; (3) the ribbon's sixth line is now
+  a BOTTOM stroke (the top boundary was fixed and tested — the bottom
+  edge needs the same gradient); (4) the bard's new winding exposed a
+  detached-arm gap at the shoulder in 02 and a thighless seat in 07 —
+  real, new, and camera-dependent.
+
+- **HANDOFF, 2026-07-31 (second interactive session, continued) — v0.8
   wave 2 landed: the notes come at you, the light got honest, the camera
   learned moods, stops telegraph themselves.** Read the wave-1 entry below
   first. Wave 2 was four more parallel builds plus two orchestrator fixes,

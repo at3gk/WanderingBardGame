@@ -31,7 +31,7 @@
  * Local +Z is forward, matching `Bard` and the road's heading convention.
  */
 
-import { BufferAttribute, BufferGeometry, Group, Mesh, type ShaderMaterial } from 'three';
+import { BufferAttribute, BufferGeometry, Group, Mesh, type Object3D, type ShaderMaterial } from 'three';
 import { createPainterlyMaterial, type PainterlyGlobals } from '../painterly';
 import { boxPart } from './Bard';
 
@@ -154,6 +154,75 @@ const PALETTES: Record<TravellerKind, TravellerPalette> = {
     carried: 0x8a7355,
   },
 };
+
+/**
+ * A limb that grows *downward* from its origin, so a rotation on it is an
+ * aim rather than a correction to an aim.
+ *
+ * `boxPart` grows along +Y, and these figures used to hang an arm by rolling
+ * the mesh a half turn about X and then dialling a roll on top. That composed
+ * two rotations whose signs nobody could read, and the signs were wrong: with
+ * the flip in place a positive roll carries the hand toward **+x**, so the
+ * left arm's -0.12 and the right arm's +0.12 both pulled the hand *into* the
+ * chest. Four centimetres of arm, tucked against a torso of exactly its own
+ * colour, on a figure forty pixels tall — which is the whole of why the blind
+ * critique reported these as "armless cones". Built hanging, the rotation
+ * means what it says and `aimLimb` can solve it.
+ */
+function hangingLimb(width: number, length: number, depth: number, taper: number): BufferGeometry {
+  const geometry = boxPart(width, length, depth, taper, taper);
+  const position = geometry.attributes.position as BufferAttribute;
+  for (let i = 0; i < position.count; i++) position.setY(i, -position.getY(i));
+  // Mirroring one axis reverses the winding, and `boxPart` is wound outward.
+  const array = position.array as Float32Array;
+  for (let i = 0; i < position.count; i += 3) {
+    for (let k = 0; k < 3; k++) {
+      const a = (i + 1) * 3 + k;
+      const b = (i + 2) * 3 + k;
+      const swap = array[a];
+      array[a] = array[b];
+      array[b] = swap;
+    }
+  }
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/**
+ * Point a hanging limb from a shoulder at a target, and answer where its far
+ * end lands so a hand can be put there.
+ *
+ * These figures have no elbows, exactly like the bard, so a hand can only lie
+ * on a sphere of the limb's length about the shoulder: the target sets the
+ * *direction* and the length sets the distance. Written as a solve rather
+ * than as two dialled Euler angles because the gestures below are described
+ * in the same space as the props they touch — the walker's staff, the
+ * elder's lap — and a pair of angles tuned against today's prop separates
+ * from it the moment the prop moves, which is a trap `Bard.gripLine`'s note
+ * already records from the other side of it.
+ *
+ * The inverse is the same one `Bard.gripLine` derives: with the limb hanging
+ * along local -Y and Euler order XYZ with no yaw, the direction is
+ * `(sin z, -cos z·cos x, -cos z·sin x)`, so `z = asin(dx)` and
+ * `x = atan2(-dz, -dy)`.
+ */
+function aimLimb(
+  limb: Object3D,
+  shoulder: readonly [number, number, number],
+  target: readonly [number, number, number],
+  length: number,
+): [number, number, number] {
+  const dx = target[0] - shoulder[0];
+  const dy = target[1] - shoulder[1];
+  const dz = target[2] - shoulder[2];
+  const d = Math.hypot(dx, dy, dz) || 1;
+  const ux = dx / d;
+  const uy = dy / d;
+  const uz = dz / d;
+  limb.position.set(shoulder[0], shoulder[1], shoulder[2]);
+  limb.rotation.set(Math.atan2(-uz, -uy), 0, Math.asin(Math.min(1, Math.max(-1, ux))));
+  return [shoulder[0] + ux * length, shoulder[1] + uy * length, shoulder[2] + uz * length];
+}
 
 /** A flat-ish low-poly disc, for cart wheels. Eight sides is plenty at this size. */
 function wheelGeometry(radius: number, thickness: number): BufferGeometry {
@@ -294,7 +363,38 @@ export class Traveller {
       // behind an old woman rather than as something she is holding.
       const staff = add(boxPart(0.05, 1.06, 0.05, 0.84), carried, 0.33, 0, 0.05);
       staff.rotation.z = 0.19;
-      this.body.add(stone, torso, lap, neck, staff, this.headPivot);
+      /**
+       * Both hands, clasped in her lap — the gesture, and the first arms
+       * this figure has ever had.
+       *
+       * She was built as a shawl, a lap and a head, on the reasoning that a
+       * low wide triangle is the whole read at eighty metres. That is true
+       * of the *outline* and it is why the outline is untouched here; what
+       * it missed is that a seated shape with nothing human inside it is a
+       * rock with a hood on, which is the word three critiques have used.
+       * Two forearms running down into a pair of hands that meet costs
+       * forty-eight triangles and is the single clearest "this person is
+       * attending to something" a still frame can carry.
+       *
+       * The hands stop just above the lap rather than on it, and just apart
+       * rather than merged: two blocks that intersect read as one lump, and
+       * the point of a clasp is that you can see it is two hands.
+       */
+      const elderArm = hangingLimb(0.072, 0.26, 0.08, 0.82);
+      const elderHand = boxPart(0.078, 0.072, 0.082, 0.92);
+      const hands: Mesh[] = [];
+      for (const side of [-1, 1]) {
+        const arm = new Mesh(elderArm, under);
+        arm.castShadow = true;
+        // Forward of the shawl, not inside it. The shawl flares to a half
+        // depth of 0.14 by the time it reaches lap height, so hands clasped
+        // at z 0.16 — which is where they went first — are buried in the
+        // cloth and the gesture is invisible. Five centimetres proud of the
+        // front face is what puts them in the picture.
+        const at = aimLimb(arm, [side * 0.115, 0.56, 0.055], [side * 0.035, 0.34, 0.235], 0.26);
+        hands.push(arm, add(elderHand, skin, at[0], at[1] - 0.036, at[2]));
+      }
+      this.body.add(stone, torso, lap, neck, staff, ...hands, this.headPivot);
       // Leaning forward toward whatever she is listening to.
       this.body.rotation.x = 0.12;
     } else {
@@ -329,16 +429,72 @@ export class Traveller {
         0,
       );
       this.body.add(torso);
-      const armGeo = boxPart(0.075 * tall, 0.34 * tall, 0.085 * tall, 0.85);
-      const leftArm = add(armGeo, cloth, -0.15 * tall, shoulder, 0.01);
-      const rightArm = add(armGeo, cloth, 0.15 * tall, shoulder, 0.01);
-      // Hanging: the geometry grows upward from its origin, so the arm is
-      // flipped rather than offset, which keeps the shoulder as the pivot.
-      leftArm.rotation.x = Math.PI;
-      rightArm.rotation.x = Math.PI;
-      leftArm.rotation.z = -0.12;
-      rightArm.rotation.z = 0.12;
-      this.body.add(leftArm, rightArm);
+      /**
+       * Arms, and one gesture that says the figure is *listening*.
+       *
+       * Two separate faults are being fixed here and they compound. The arms
+       * were pressed inward against the torso (see `hangingLimb`), and they
+       * were painted in `cloth` — the torso's own colour — so even the part
+       * that did clear the body had nothing to separate it from what was
+       * behind it. Between them the standing kinds read as columns: "plank
+       * easels and armless cones", three critiques running.
+       *
+       * So the sleeves take `under`, which the palettes already keep a stop
+       * below `cloth` for exactly this kind of job, and every arm ends in a
+       * `skin` hand. Sleeve, then hand, is two values and a joint in the
+       * outer twelve centimetres of the silhouette — the cheapest mark there
+       * is that says *arm* rather than *edge of a box*.
+       *
+       * And each kind gets one gesture, aimed at a real point on a real prop
+       * rather than dialled: the walker leans a hand on his staff, the child
+       * has one hand up, the pedlar shades his eyes to watch. A person who
+       * has *stopped and turned to something* is what a listener looks like,
+       * and none of these figures had a single line of that.
+       */
+      const armLen = 0.34 * tall;
+      const armGeo = hangingLimb(0.076 * tall, armLen, 0.086 * tall, 0.84);
+      const handGeo = boxPart(0.08 * tall, 0.078 * tall, 0.086 * tall, 0.92);
+      const shoulderX = 0.158 * tall;
+      const reach = (side: -1 | 1, target: readonly [number, number, number]) => {
+        const arm = new Mesh(armGeo, under);
+        arm.castShadow = true;
+        // A hand's width short of the sleeve's end, so the two overlap: a
+        // butt joint between two boxes opens into a visible seam the moment
+        // the figure sways, which is the "loose blocks" fault the bard's own
+        // wrist cuff exists to close.
+        const at = aimLimb(arm, [side * shoulderX, shoulder, 0.012], target, armLen - 0.03 * tall);
+        const hand = add(handGeo, skin, at[0], at[1] - 0.039 * tall, at[2]);
+        hand.castShadow = false;
+        this.body.add(arm, hand);
+      };
+
+      // Where each hand goes. Directions rather than reachable points: the
+      // limb is rigid, so only the bearing matters and the length decides
+      // the rest. See each kind's own note for what it is holding.
+      let leftTarget: readonly [number, number, number] = [-0.34 * tall, shoulder - 0.5, 0.06];
+      let rightTarget: readonly [number, number, number] = [0.34 * tall, shoulder - 0.5, 0.06];
+      if (kind === 'walker') {
+        // Halfway up the staff, which leans in at 0.16 rad off vertical from
+        // a foot at x 0.33 — so at hip height it has come in to x 0.25. The
+        // hand meets it there rather than the staff being a post he happens
+        // to stand beside, which is the failure the elder's own staff note
+        // records from the other end and which this figure had too: the old
+        // pose rolled the arm *away* from the staff by eight centimetres.
+        rightTarget = [0.2496, 0.4985, 0.0702];
+      } else if (kind === 'child') {
+        // One hand up beside the head. The clearest of the three gestures at
+        // twenty pixels, and the right one for the child: an adult listens,
+        // a child points.
+        rightTarget = [0.42 * tall, shoulder + 0.42, 0.3 * tall];
+      } else if (kind === 'pedlar') {
+        // A hand up at the brow, watching. He is the one kind whose hands
+        // are otherwise busy — and the barrow's grip is half a metre past
+        // the end of his reach anyway, so a hand *on* it was never available
+        // without rebuilding the cart.
+        rightTarget = [-0.045, shoulder + 0.2, 0.13];
+      }
+      reach(-1, leftTarget);
+      reach(1, rightTarget);
 
       // The head is proportionally larger on the child, which is the entire
       // difference between a child and a distant adult.
@@ -450,14 +606,11 @@ export class Traveller {
         // Deliberately not a second vertical of the same height: it finishes
         // above the hat, so the top of the silhouette gains a notch on one
         // side as well as a bump at the hip.
-        const staff = add(boxPart(0.038, 1.26, 0.038, 0.86), under, 0.33, 0, 0.05);
+        const staff = add(boxPart(0.038, 1.26, 0.038, 0.86), carried, 0.33, 0, 0.05);
         staff.rotation.z = 0.16;
         staff.rotation.x = -0.04;
         this.body.add(staff);
-        // And the hand goes out to meet it. A staff the figure is not holding
-        // is a fence post it is standing beside — the elder's note records the
-        // same trap from the other end.
-        rightArm.rotation.z = 0.24;
+        // The hand that goes out to meet it is solved above, in `reach`.
       }
 
       if (kind === 'child') {

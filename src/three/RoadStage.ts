@@ -93,18 +93,22 @@ import {
 } from '../core/walk';
 import {
   applyJudgement,
+  createBuskCrowd,
+  crowdFarewellLine,
   DEFAULT_PERFORMANCE_CONFIG,
   WALK_PERFORMANCE_CONFIG,
+  type BuskCrowd,
   type PerformanceConfig,
   createPerformance,
   judge,
   lateWindowMs,
   performanceSummary,
   pickBeat,
+  tickBuskCrowd,
   tickPerformance,
   type PerformanceState,
 } from '../core/performance';
-import { rollEncounter } from '../core/encounters';
+import { resolveAsk, rollAsk, rollEncounter, type EncounterAsk } from '../core/encounters';
 import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
 import { Ambience, dayShape } from '../audio/ambience';
 import {
@@ -267,6 +271,30 @@ export class RoadStage implements Stage {
   private busksToday = 0;
   private everHinted = false;
   private readonly metToday: string[] = [];
+  /**
+   * The busk's crowd as individuals (core/performance's `BuskCrowd`), and
+   * where each of them is standing. `listenerSlots` is ordered the way the
+   * model counts: index 0 is the first to have stopped and the last who
+   * would ever leave, so the model's `present` is always a prefix of it.
+   */
+  private buskCrowd: BuskCrowd | null = null;
+  private readonly listenerSlots: Array<{
+    person: Traveller;
+    /** World bearing from the bard, fixed at gather time. */
+    angle: number;
+    /** Where they listen from. */
+    radius: number;
+    /** Where they are drawn right now — eases out when leaving, in when returning. */
+    shownRadius: number;
+    away: boolean;
+  }> = [];
+  /**
+   * A traveller's request, carried from the encounter into the walk that
+   * follows and settled against its first notes. Deliberately not
+   * persisted: a reload mid-ask lets the moment go quietly, which costs
+   * nothing and claims nothing.
+   */
+  private pendingAsk: EncounterAsk | null = null;
 
   // --- the walk's own tune -----------------------------------------------
   private walkTune: WalkTune | null = null;
@@ -495,7 +523,7 @@ export class RoadStage implements Stage {
     if (this.performance) {
       if (this.tuneMode === 'busk') {
         this.tuneSimMs += dt * 1000;
-        this.updateBusk();
+        this.updateBusk(dt);
       } else if (this.tuneMode === 'walk' && this.walking && this.journey.phase === 'walking') {
         this.tuneSimMs += dt * 1000;
         this.updateWalkTune();
@@ -619,6 +647,10 @@ export class RoadStage implements Stage {
       this.fadeLayers();
     }
     if (phase === 'resting') {
+      // A request still open at the fire goes quietly with the day. No
+      // journal line: an opportunity that passed unplayed is not an event,
+      // and writing it down would make silence read as a verdict.
+      this.pendingAsk = null;
       this.makeCamp();
       this.fadeLayers();
     }
@@ -741,13 +773,31 @@ export class RoadStage implements Stage {
     }
   }
 
-  private updateBusk(): void {
+  private updateBusk(dt: number): void {
     const performance = this.performance;
     if (!performance) return;
 
     const now = this.tuneNowMs();
     const result = tickPerformance(performance, now, this.beats, this.judgingConfig());
     for (const index of result.missed) this.notes.soften(index);
+
+    // The crowd as individuals: sustained low warmth loses the marginal
+    // listener, warmth recovered brings them back. The model owns the when;
+    // this scene only walks the figures (see `updateListeners`). After a
+    // departure the model's `present` is the index of the one now leaving,
+    // and after a return it is one past the one coming back.
+    if (this.buskCrowd) {
+      const drift = tickBuskCrowd(this.buskCrowd, performance.warmth, now);
+      if (drift.departed) {
+        const slot = this.listenerSlots[this.buskCrowd.present];
+        if (slot) slot.away = true;
+      }
+      if (drift.returned) {
+        const slot = this.listenerSlots[this.buskCrowd.present - 1];
+        if (slot) slot.away = false;
+      }
+    }
+    this.updateListeners(dt);
 
     this.bard.setWarmth(performance.warmth);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
@@ -774,9 +824,14 @@ export class RoadStage implements Stage {
     const performance = this.performance;
     if (!performance) return;
     const summary = performanceSummary(performance);
-    this.journey = recordEntry(this.journey, { kind: 'busk', line: summary.line });
+    // The crowd's own half-sentence, when it has one: who drifted, who
+    // stayed. Read before `resume` tears the busk down and the record with
+    // it. Same kindness rules as the summary — see `crowdFarewellLine`.
+    const farewell = this.buskCrowd ? crowdFarewellLine(this.buskCrowd) : null;
+    const line = farewell ? `${summary.line} ${farewell}` : summary.line;
+    this.journey = recordEntry(this.journey, { kind: 'busk', line });
     this.resume();
-    this.hud.say(summary.line, 9);
+    this.hud.say(line, 9);
   }
 
   /**
@@ -796,6 +851,8 @@ export class RoadStage implements Stage {
     this.performance = null;
     this.tuneMode = null;
     this.beats = [];
+    this.buskCrowd = null;
+    this.listenerSlots.length = 0;
     this.notes.setActive(false);
     this.bard.setWarmth(0);
     // The band plays on. The walk picks the tune straight back up, and the
@@ -860,7 +917,12 @@ export class RoadStage implements Stage {
     this.notes.setActive(true);
     this.bard.setWarmth(0);
 
-    if (!this.everHinted) {
+    if (this.pendingAsk) {
+      // The traveller's request, restated over the notes it is about. It
+      // survives interruptions (a vista, a stop) with a fresh window each
+      // time, which is the generous reading of "the next few notes".
+      this.hud.say(this.pendingAsk.line, 8);
+    } else if (!this.everHinted) {
       this.everHinted = true;
       this.hud.say(
         'Tap as each note reaches the barline — the tune is what keeps the walk going. Nothing here can be failed.',
@@ -886,9 +948,43 @@ export class RoadStage implements Stage {
     const result = tickPerformance(performance, now, this.beats, this.judgingConfig());
     for (const index of result.missed) this.notes.soften(index);
 
+    // A traveller's request rides the walk's first notes. It settles early
+    // the moment enough have landed — a request granted should not wait for
+    // the window to close — and otherwise when the window has been used up.
+    // The walk's performance is fresh each stretch, so the counts *are* the
+    // window.
+    if (this.pendingAsk) {
+      const done =
+        performance.hits >= this.pendingAsk.needed ||
+        performance.hits + performance.misses >= this.pendingAsk.notes;
+      if (done) this.settleAsk(performance.hits);
+    }
+
     this.bard.setWarmth(performance.warmth);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.update(now);
+  }
+
+  /**
+   * Settle a traveller's request, either way.
+   *
+   * The two outcomes differ only in what is added: a granted request pays
+   * and a passed one does not, and both write one true, kind line. Nothing
+   * is subtracted anywhere — that is DESIGN.md item 8's whole contract, and
+   * `resolveAsk` (which owns the judgement) is tested to keep it.
+   */
+  private settleAsk(hits: number): void {
+    const ask = this.pendingAsk;
+    if (!ask) return;
+    this.pendingAsk = null;
+    const outcome = resolveAsk(ask, hits);
+    if (outcome.coins > 0 || outcome.delight > 0) {
+      this.journey = earn(this.journey, outcome.coins, outcome.delight);
+      this.hud.setCoins(this.journey.coins);
+    }
+    this.journey = recordEntry(this.journey, { kind: 'encounter', line: outcome.line });
+    this.hud.say(outcome.line, 8);
+    saveJourney(this.journey, true);
   }
 
   /**
@@ -975,9 +1071,55 @@ export class RoadStage implements Stage {
     // offset leaves empty, and filling it is what turns a busk from a figure
     // in a field into a scene.
     const slots = [-0.62, 0.72, -1.15, 1.25];
+    this.listenerSlots.length = 0;
     for (let i = 0; i < count; i++) {
       const bearing = slots[i] + randRange(rand, -0.14, 0.14);
-      this.stand(this.people[order[i]], bearing, randRange(rand, 3.2, 5.0), 1);
+      const radius = randRange(rand, 3.2, 5.0);
+      this.stand(this.people[order[i]], bearing, radius, 1);
+      // Recorded in gather order, which is also the crowd model's order of
+      // faithfulness: the widest, latest slot is the first to drift.
+      this.listenerSlots.push({
+        person: this.people[order[i]],
+        angle: this.subject.heading + bearing,
+        radius,
+        shownRadius: radius,
+        away: false,
+      });
+    }
+    this.buskCrowd = createBuskCrowd(count);
+  }
+
+  /**
+   * Walk the listeners to wherever the crowd model says they should be.
+   *
+   * A departing listener turns and strolls off up their own bearing at an
+   * unhurried pace — somewhere to be, not offence taken — and disappears a
+   * few metres out; a returning one strolls back in and turns to listen.
+   * Nothing here flashes, hurries, or reddens: the whole consequence is a
+   * person quietly deciding, which is the honest size of it.
+   */
+  private updateListeners(dt: number): void {
+    /** How far out a leaver walks before they are simply gone. */
+    const DRIFT_OUT_M = 7;
+    /** A stroll. The bard can watch them go and win them back. */
+    const DRIFT_SPEED = 1.1;
+    for (const slot of this.listenerSlots) {
+      const target = slot.away ? slot.radius + DRIFT_OUT_M : slot.radius;
+      const gap = target - slot.shownRadius;
+      if (gap !== 0) {
+        const step = Math.min(Math.abs(gap), DRIFT_SPEED * dt);
+        slot.shownRadius += Math.sign(gap) * step;
+      }
+      const gone = slot.away && slot.shownRadius >= slot.radius + DRIFT_OUT_M - 0.05;
+      slot.person.group.visible = !gone;
+      if (gone) continue;
+      const x = this.subject.position.x + Math.sin(slot.angle) * slot.shownRadius;
+      const z = this.subject.position.z + Math.cos(slot.angle) * slot.shownRadius;
+      slot.person.group.position.set(x, roadSurfaceHeight(this.road, x, z), z);
+      // Leaving, they face out along their own bearing; listening (or on
+      // the way back), they face the bard, which is back down it.
+      slot.person.setHeading(slot.away ? slot.angle : slot.angle + Math.PI);
+      slot.person.setAttention(slot.away ? 0 : 1);
     }
   }
 
@@ -1024,6 +1166,10 @@ export class RoadStage implements Stage {
     this.hud.setCoins(this.journey.coins);
     this.hud.say(roll.gift ? `${roll.def.line} ${roll.gift}` : roll.def.line, ENCOUNTER_HOLD_SEC + 2);
     this.holdSec = ENCOUNTER_HOLD_SEC;
+    // Some travellers want something (v0.8 item 8). The request shows when
+    // the walk resumes and its tune is in the air — see `startWalkingTune`
+    // — and settles against that tune's first notes in `updateWalkTune`.
+    this.pendingAsk = rollAsk(stop ? stop.seed : this.road.seed, roll.def);
   }
 
   private makeCamp(): void {
