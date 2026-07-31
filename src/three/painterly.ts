@@ -112,7 +112,7 @@ export interface PainterlyOptions {
    * Strength of the ground's own colour drift, 0 disables it.
    *
    * Only the terrain sets this. It turns on a pair of extra vertex
-   * attributes, `aToneLo` and `aToneHi`, which give this fragment the dark
+   * attributes, aToneLo and aToneHi, which give this fragment the dark
    * and pale ends of the ground palette it is standing on; the shader then
    * drifts between them with world-space noise. See the note by the drift
    * itself for why this cannot live in vertex colour.
@@ -685,9 +685,33 @@ void main() {
      * Asymmetric: the pale tone comes in over a narrower range than the dark
      * one, so bleached ground reads as patches and damp ground reads as most
      * of the field.
+     *
+     * --- and the pale half did neither of those things ---------------------
+     *
+     * The paragraph above describes what these two lines are meant to do; the
+     * numbers used to say something else, and nobody had put them next to the
+     * noise field's own deviation.
+     *
+     *   dark ramp  0.50 -> 0.27   full at 1.84 sd below the mean, span 0.23
+     *   pale ramp  0.56 -> 0.82   full at 2.56 sd ABOVE it,       span 0.26
+     *
+     * So the pale ramp was the WIDER of the two where the comment claims it is
+     * the narrower, and it topped out two and a half deviations up, which on a
+     * field of this size is a patch every few hundred metres. Between that and
+     * a reach of 0.62, the pale tone in palette.ts was a colour the ground
+     * could not actually arrive at: measured with a land-masked histogram, the
+     * only pixels in a daylight frame above L170 were fog.
+     *
+     * 0.55 -> 0.73 is the same 1.84 deviations out as the dark ramp, mirrored,
+     * with a span of 0.18 — genuinely narrower than the dark one, which is
+     * what makes bleached ground read as patches. The reach goes to 0.85 so a
+     * patch reaches most of the way to the tone rather than two thirds. Both
+     * ends still stop short of 1.0 on purpose: a patch that hits the pale tone
+     * exactly is a flat area of one colour, and the last sixth of raw noise is
+     * what keeps its interior alive.
      */
     albedo = mix(albedo, vToneLo, smoothstep(0.50, 0.27, drift) * uGroundTones * 0.72);
-    albedo = mix(albedo, vToneHi, smoothstep(0.56, 0.82, drift) * uGroundTones * 0.62);
+    albedo = mix(albedo, vToneHi, smoothstep(0.55, 0.73, drift) * uGroundTones * 0.85);
 
     /*
      * --- and then the same thing again at a metre, for the near ground ----
@@ -1053,7 +1077,7 @@ void main() {
  * Create a painterly material bound to a scene's shared globals.
  *
  * The returned material shares the global uniform *objects*, so a single
- * write to `globals.uSunDirection.value` moves the sun for the whole world.
+ * write to globals.uSunDirection.value moves the sun for the whole world.
  * Per-material uniforms (colour, rim, sway) are private to each instance.
  */
 export function createPainterlyMaterial(
@@ -1150,7 +1174,7 @@ export function bindGlobals(material: ShaderMaterial, globals: PainterlyGlobals)
 
 /**
  * A double-sided cutout variant for billboarded foliage. Split out because
- * getting `side` and `alphaTest` wrong on grass is the single most common
+ * getting side and alphaTest wrong on grass is the single most common
  * way stylised foliage ends up looking like cardboard.
  */
 export function createFoliageMaterial(

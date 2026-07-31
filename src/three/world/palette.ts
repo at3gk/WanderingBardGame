@@ -124,7 +124,59 @@ export interface BiomePalette {
  * a screen will always make them look too dark — they are albedos, and the
  * sun and sky multiply them back up. What matters is the ratios: within a
  * biome the canopy sits at roughly half the grass, the road a little under
- * it, and nothing on the ground comes within a stop of the sky.
+ * it.
+ *
+ * --- and where that argument stopped being true, measured ---------------
+ *
+ * The paragraph above used to end "and nothing on the ground comes within a
+ * stop of the sky." That clause is struck, and the `*Dry` tones below are
+ * lifted, because a land-masked histogram finally showed what obeying it
+ * costs. With the sky dome hidden and the clear colour set to a sentinel —
+ * so "land" is every pixel of real geometry and nothing else — the shipped
+ * frames measured, in linear luminance:
+ *
+ *   02-morning   land p90 0.211 (L127)   sky p50 0.582 (L201)
+ *                mid band (15-60 m) p99 0.303 (L149)
+ *   noon         mid band p99 0.380 (L166)
+ *
+ * The only land in the game above L170 was HAZE: on the morning frame the
+ * only band that reached it was the ground past sixty metres, 2 per cent of
+ * the land, and it got there by being mixed most of the way to the fog
+ * colour. So the frame really did read as sky plus one mass, and the one-stop
+ * rule is why: it is a rule about the ALBEDO written as though it were a rule
+ * about the rendered value, and the two are not the same claim.
+ *
+ * The physics the old clause got backwards. A sky is bright because it is a
+ * large dim emitter; the SUN is a small ferocious one, and a diffuse surface
+ * in direct sun is lit by both. Sunlit grass at a 0.22 albedo sits at roughly
+ * 0.22 x 100000 lux / pi ~ 7000 cd/m^2, against a clear blue sky away from
+ * the sun at around 5000. A sunlit field is *not* a stop below the sky it
+ * stands under — it is level with it or a little above, and the reason a
+ * photograph of one still reads as ordered front to back is that the SHADOWS
+ * are three stops down, not that the lit ground is one stop down.
+ *
+ * So the rule that replaces it is about spread rather than about ceiling:
+ * the ground's *dark* end stays where it is, and its *pale* end is allowed
+ * up to within half a stop of the sky. That is the only version of the rule
+ * that can produce the light-sky / mid-land / dark-accent structure the art
+ * direction is aiming at, because a band of land that never crosses L128
+ * cannot be the middle of anything.
+ *
+ * What actually moved, and what deliberately did not. Only `grassDry` — the
+ * bleached, worn, sun-baked end of each family — is lifted, by about a sixth
+ * in each channel at held hue. `grass`, `grassVariant`, `grassShade`, the
+ * canopies and the roads are all untouched, so the frame's dark end and its
+ * median are where they were and the value RANGE widens rather than sliding.
+ * The lifted tone is still an honest albedo: dry blond grass, straw and baked
+ * earth measure 0.35-0.50 reflectance, and these land at about 0.52 relative
+ * luminance, at the top of that range rather than past it. Anything that
+ * needed to go higher would have to become chalk or dust and say so.
+ *
+ * Two dials in `painterly.ts` had to move with these or the lift would have
+ * been invisible: the ground's pale drift only reached 62 per cent of the way
+ * to `grassDry`, and its ramp did not top out until 2.6 standard deviations
+ * of a noise field that has about 0.125 — that is, almost never. See the
+ * ground-drift note there.
  */
 export const BIOME_PALETTES: Record<string, BiomePalette> = {
   // Open, cultivated, gentle. The lightest and most golden of the three —
@@ -145,7 +197,11 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     grass: 0x839749,
     grassVariant: 0xa5a367,
     grassShade: 0x566c34,
-    grassDry: 0xb1a779,
+    // Up from 0xb1a779, at held hue. This is the tone a sunlit crest, a worn
+    // path across a field and a bleached patch of pasture reach, and it is
+    // the one that has to carry the light third of the picture. See the
+    // struck one-stop clause above for the measurement that moved it.
+    grassDry: 0xcdc28c,
     // Kept a little under the grass rather than over it. The claim on this
     // colour is not that it is the right colour for dust but that it holds a
     // value break against every ground tone in its own biome, in both
@@ -232,7 +288,10 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     grass: 0x40643d,
     grassVariant: 0x607a44,
     grassShade: 0x243f30,
-    grassDry: 0x7d804b,
+    // Lifted with village's, at the same ratio and held hue. Forest keeps the
+    // smallest absolute lift of the three because it starts darkest and its
+    // canopy is what the light has to get past.
+    grassDry: 0x919457,
     road: 0x6a5945,
     roadShoulder: 0x505e3b,
     rock: 0x8b9490,
@@ -280,7 +339,8 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     grass: 0x678c6d,
     grassVariant: 0x889b74,
     grassShade: 0x3d6358,
-    grassDry: 0xa0a486,
+    // Lifted with village's, at the same ratio and held hue.
+    grassDry: 0xbabe9b,
     // Same problem as village, milder: 0xa89a80 against a `grassDry` of
     // 0xccd2ac was not enough of a break to survive fog at thirty metres.
     road: 0x736553,
