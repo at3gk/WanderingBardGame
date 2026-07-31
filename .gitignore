@@ -5,3 +5,11 @@ dist
 # so their screenshots and proof sheets land in the working tree rather than
 # wherever Playwright happened to be installed.
 *.png
+
+# Agents' throwaway measuring instruments. Waves 9-12 each built several
+# (depth probes, band histograms, glyph contrast readers) and the convention
+# is that they live in the scratchpad so tools/ and package.json stay clean —
+# but an agent working in the repo naturally reaches for tools/. Underscore
+# them and they stay out of the commit rather than being noticed three
+# commits later.
+tools/_*.mjs
