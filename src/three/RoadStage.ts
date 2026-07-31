@@ -93,6 +93,9 @@ import {
 } from '../core/walk';
 import {
   applyJudgement,
+  DEFAULT_PERFORMANCE_CONFIG,
+  WALK_PERFORMANCE_CONFIG,
+  type PerformanceConfig,
   createPerformance,
   judge,
   lateWindowMs,
@@ -679,7 +682,7 @@ export class RoadStage implements Stage {
     if (!beat) return;
 
     const judgement = judge(beat, now);
-    applyJudgement(performance, judgement, undefined, { beatIndex: beat.index });
+    applyJudgement(performance, judgement, this.judgingConfig(), { beatIndex: beat.index });
     if (judgement === 'miss') {
       this.notes.soften(beat.index);
       return;
@@ -743,7 +746,7 @@ export class RoadStage implements Stage {
     if (!performance) return;
 
     const now = this.tuneNowMs();
-    const result = tickPerformance(performance, now, this.beats);
+    const result = tickPerformance(performance, now, this.beats, this.judgingConfig());
     for (const index of result.missed) this.notes.soften(index);
 
     this.bard.setWarmth(performance.warmth);
@@ -799,6 +802,14 @@ export class RoadStage implements Stage {
     // mode flip trims the busk-only layers on the next bar line — fading
     // everything here was what made leaving a busk sound like the game
     // switching off (see audio/mix.ts's bus layout).
+  }
+
+  /**
+   * The judging contract for whichever tune is in the air. One place, so a
+   * tap and a lapsed note can never be charged against different meters.
+   */
+  private judgingConfig(): PerformanceConfig {
+    return this.tuneMode === 'walk' ? WALK_PERFORMANCE_CONFIG : DEFAULT_PERFORMANCE_CONFIG;
   }
 
   private tuneNowMs(): number {
@@ -872,7 +883,7 @@ export class RoadStage implements Stage {
     // In place, so the judge and the staff keep reading the same array.
     extendWalkTune(tune, now);
 
-    const result = tickPerformance(performance, now, this.beats);
+    const result = tickPerformance(performance, now, this.beats, this.judgingConfig());
     for (const index of result.missed) this.notes.soften(index);
 
     this.bard.setWarmth(performance.warmth);

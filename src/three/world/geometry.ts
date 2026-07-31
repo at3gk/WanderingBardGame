@@ -1441,6 +1441,397 @@ export function chapelGeometry(options: LandmarkOptions): BufferGeometry {
   return merged;
 }
 
+// --- stop dressing -----------------------------------------------------
+
+/*
+ * Dressing that announces a stop from down the road.
+ *
+ * DESIGN.md v0.8 item 7: "A stop should announce itself down the road before
+ * you reach it ... so walking toward something is anticipation, not surprise."
+ * Everything in this section is therefore designed backwards from a single
+ * viewing condition — **a hundred and twenty metres of road, at a 42-degree
+ * vertical field of view** — rather than from how it looks in a turntable.
+ *
+ * Two numbers fall out of that and they set every dimension below. One pixel
+ * of a 900-line frame is 0.098 m at that range, so anything under about a
+ * third of a metre does not exist; and the horizon sits at the walking
+ * camera's own eye height, about 2.2 m, so anything shorter than that is read
+ * against ground and anything taller is read against sky. A marker meant to
+ * be seen from far away has to cross that line — which is why the busk pole
+ * is 3.6 m and the wayside marker is 1.95 m and neither is a round number.
+ *
+ * The kinds are deliberately unlike each other in silhouette *and* in
+ * loudness, because they are announcing different promises: a busk pitch is a
+ * stage and gets a banner and a lit lantern, an encounter is a meeting and
+ * gets a cool stone that barely clears the eye line, and the camp gets no
+ * object at all — only its smoke, which is the one thing here that can be
+ * read from four hundred metres.
+ */
+
+export interface StopMarkerOptions {
+  /** Post, crates, barrel: the worked wood of a pitch somebody plays at. */
+  timber: number;
+  /** The one dissenting colour, the banner cloth. */
+  cloth: number;
+  /** Fittings: the crossbar, the lantern's frame, the barrel's hoops. */
+  iron: number;
+  seed?: number;
+}
+
+/**
+ * The busk pole's height.
+ *
+ * **This was 3.6 m and 3.6 m did not work, and the reason is the one thing
+ * the eye-line arithmetic above leaves out: the road goes downhill.** Shot at
+ * 120 m on today's road, the stop sat 7.1 m below the camera — a 3.2 degree
+ * drop, which puts the marker's whole 33 pixels seventy pixels *under* the
+ * horizon, against hazed field rather than against sky. It was not faint. It
+ * was not there.
+ *
+ * A stop is where the day's seed put it and cannot be moved onto a brow the
+ * way a landmark can (see `findCrest`), so the only levers left are size and
+ * contrast. 5.4 m is what the frame asked for: it is fairground scale rather
+ * than fencepost scale, which is what a banner pole at a pitch actually is,
+ * and it puts fifty pixels of pole and twenty-four of banner into the frame
+ * at the range this exists for.
+ */
+export const BUSK_POLE_HEIGHT_M = 5.4;
+const BUSK_BAR_Y = 5.05;
+const BUSK_BANNER_X = -0.42;
+const BUSK_BANNER_TOP_Y = 5.0;
+const BUSK_BANNER_H = 2.6;
+/**
+ * Where the lantern hangs, in the pole's own frame.
+ *
+ * Exported so `lanternGlowGeometry` and the pitch agree without either owning
+ * the other: the glow is a *separate mesh* because it is the only thing in
+ * this world lit from inside, and a second material is the cheapest way to
+ * say that. Baking the anchor into both geometries means the two meshes share
+ * one transform and cannot drift apart.
+ */
+export const BUSK_LANTERN_X = 0.68;
+export const BUSK_LANTERN_Y = 4.35;
+/**
+ * The lit glass, as a radius.
+ *
+ * 0.19 m puts about four pixels of warm light on the screen at 120 m. That
+ * sounds like nothing and is in fact the entire signal — at dusk it is the
+ * only warm mark in a cool frame, and the eye finds a warm dot on a blue road
+ * long before it resolves what is holding it up. Bigger and a roadside
+ * lantern starts reading as a bonfire, which would break the rule that the
+ * warmest light in the frame belongs to the music or the fire.
+ */
+export const BUSK_LANTERN_R = 0.26;
+
+/**
+ * A busking pitch: a banner pole with a lantern on its crossbar, and the
+ * crates and barrel of somewhere people put their things down.
+ *
+ * The crates are not filler. A bare pole beside a road is a boundary marker;
+ * a pole with things stacked at its foot is a place someone *uses*, and the
+ * difference costs six boxes. They also give the base of the pole a mass to
+ * sit on, so the silhouette is a shape rather than a line.
+ */
+export function buskPitchGeometry(options: StopMarkerOptions): BufferGeometry {
+  const rand = mulberry32(options.seed ?? 211);
+  const parts: BufferGeometry[] = [];
+
+  const poleTwist = rand() * Math.PI * 2;
+  parts.push(
+    paint(taperedCylinder(0.07, 0.115, BUSK_POLE_HEIGHT_M, 6, rand, poleTwist), options.timber, 0.1, rand),
+  );
+  parts.push(paint(polyDisc(0.07, BUSK_POLE_HEIGHT_M, 6, poleTwist, true), options.timber, 0, rand));
+
+  const bar = box(1.42, 0.09, 0.1);
+  translateY(bar, BUSK_BAR_Y);
+  translateXZ(bar, (BUSK_BANNER_X + BUSK_LANTERN_X) * 0.5, 0);
+  parts.push(paint(bar, options.iron, 0.08, rand));
+
+  // A thin prism rather than a plane: the banner has to read from both ends
+  // of the road, and a single quad is invisible from behind.
+  const banner = box(0.86, BUSK_BANNER_H, 0.06);
+  translateY(banner, BUSK_BANNER_TOP_Y - BUSK_BANNER_H);
+  translateXZ(banner, BUSK_BANNER_X, 0);
+  parts.push(paint(banner, options.cloth, 0.16, rand));
+
+  const hangerH = BUSK_BAR_Y - (BUSK_LANTERN_Y + BUSK_LANTERN_R * 1.15);
+  const hanger = box(0.035, hangerH, 0.035);
+  translateY(hanger, BUSK_LANTERN_Y + BUSK_LANTERN_R * 1.15);
+  translateXZ(hanger, BUSK_LANTERN_X, 0);
+  parts.push(paint(hanger, options.iron, 0.05, rand));
+
+  const cap = pyramid(0.2, 0.16, BUSK_LANTERN_Y + BUSK_LANTERN_R * 0.9);
+  translateXZ(cap, BUSK_LANTERN_X, 0);
+  parts.push(paint(cap, options.iron, 0.06, rand));
+
+  const foot = box(0.26, 0.06, 0.26);
+  translateY(foot, BUSK_LANTERN_Y - BUSK_LANTERN_R * 1.4);
+  translateXZ(foot, BUSK_LANTERN_X, 0);
+  parts.push(paint(foot, options.iron, 0.06, rand));
+
+  const crate = box(0.66, 0.5, 0.5);
+  rotateY(crate, 0.3 + rand() * 0.5);
+  translateXZ(crate, -1.02, 0.44);
+  parts.push(paint(crate, options.timber, 0.13, rand));
+
+  const stacked = box(0.42, 0.34, 0.4);
+  rotateY(stacked, -0.7 + rand() * 0.5);
+  translateY(stacked, 0.5);
+  translateXZ(stacked, -0.92, 0.3);
+  parts.push(paint(stacked, options.timber, 0.13, rand));
+
+  const barrelTwist = rand() * Math.PI * 2;
+  const barrel = taperedCylinder(0.21, 0.25, 0.76, 8, rand, barrelTwist);
+  translateXZ(barrel, 0.88, -0.55);
+  parts.push(paint(barrel, options.timber, 0.11, rand));
+  const lid = polyDisc(0.21, 0.76, 8, barrelTwist, true);
+  translateXZ(lid, 0.88, -0.55);
+  parts.push(paint(lid, options.iron, 0.06, rand));
+
+  const merged = mergeGeometries(parts);
+  merged.computeVertexNormals();
+  addSway(merged, 0, 1, 0);
+  return merged;
+}
+
+/**
+ * The lantern's lit glass, already sitting at its anchor on the pole.
+ *
+ * A squat octahedron — eight triangles — because the shape is irrelevant at
+ * the range this exists for and what matters is that it is *closed and
+ * correctly wound*: it is drawn with an emissive material, and a face turned
+ * inside out is a face that gets culled, which would put a hole in the one
+ * warm mark in the frame.
+ */
+export function lanternGlowGeometry(): BufferGeometry {
+  const r = BUSK_LANTERN_R;
+  const top = BUSK_LANTERN_Y + r * 1.15;
+  const bottom = BUSK_LANTERN_Y - r * 1.15;
+  const ring: number[][] = [];
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    ring.push([BUSK_LANTERN_X + Math.cos(a) * r, BUSK_LANTERN_Y, Math.sin(a) * r]);
+  }
+  const verts: number[] = [];
+  for (let i = 0; i < 4; i++) {
+    const p0 = ring[i];
+    const p1 = ring[(i + 1) % 4];
+    // (p1, p0, apex) is the winding whose normal points out and up; (p0, p1,
+    // apex) is its mirror and points down. Same lesson as `polyDisc`.
+    verts.push(...p1, ...p0, BUSK_LANTERN_X, top, 0);
+    verts.push(...p0, ...p1, BUSK_LANTERN_X, bottom, 0);
+  }
+  const geometry = fromPositions(verts);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/**
+ * The wayside marker's height.
+ *
+ * The smallest mark that can still be *resolved* from a hundred metres, which
+ * is a lower bar than the busk pole's and a much higher one than "waist
+ * high". 1.95 m was tried first, on the reasoning that just clearing a
+ * walker's eye line was enough; it is not, for the same reason the pole's own
+ * note records — the road falls away, so the marker is read against hazed
+ * field and not against sky, and at that range twenty pixels of grey stone on
+ * grey-green field is nothing at all.
+ *
+ * 2.9 m is a wayside menhir rather than a milestone, and it keeps the ladder
+ * the two kinds are supposed to make: a little over half the busk pole, no
+ * banner, no light, no colour that dissents from the rock it is cut from. An
+ * encounter is somebody you meet, not a stage.
+ */
+export const CAIRN_MARKER_HEIGHT_M = 2.9;
+
+/**
+ * A wayside cairn under a leaning marker slab.
+ *
+ * Boxes throughout, and that is not laziness: a stack of open cylinders is
+ * open at the top, and this is looked *down* on from a camera 2.2 m up on the
+ * road beside it, so the one shape whose interior would show is exactly the
+ * one a walker sees. `box` is closed on all six faces and a stack of flat
+ * rotated slabs is what a cairn is anyway.
+ */
+export function waysideCairnGeometry(options: LandmarkOptions): BufferGeometry {
+  const rand = mulberry32(options.seed ?? 223);
+  const parts: BufferGeometry[] = [];
+
+  const layers = 4 + Math.floor(rand() * 2);
+  let y = 0;
+  for (let i = 0; i < layers; i++) {
+    const t = i / (layers - 1);
+    const w = 0.52 * (1 - t * 0.55);
+    const stone = box(w, 0.12 + rand() * 0.07, w * (0.72 + rand() * 0.25));
+    rotateY(stone, rand() * Math.PI);
+    translateY(stone, y);
+    translateXZ(stone, (rand() - 0.5) * 0.07, (rand() - 0.5) * 0.07);
+    // The top stone takes the dissenting colour — moss, on the one face of
+    // this that has been open to the weather longest.
+    parts.push(paint(stone, i === layers - 1 ? options.roof : options.stone, 0.13, rand));
+    y += 0.115 + rand() * 0.06;
+  }
+
+  /*
+   * The marker is a tapered pentagon flattened into a slab, not a box.
+   *
+   * A box was tried and the frame called it: at twelve metres a square prism
+   * with a pyramid on top reads as a *chimney*, because right angles and a
+   * constant cross-section are what building materials have and split rock
+   * does not. Tapering it and squashing the plan is the whole difference, and
+   * it is the same treatment `standingStoneGeometry` gives its menhirs.
+   *
+   * The cap disc is not decoration either — this is 2.9 m of stone looked
+   * down on from a camera 2.2 m up, so the open top of a tube is exactly what
+   * a walker beside it would see through.
+   */
+  const lean = 0.05 + rand() * 0.05;
+  const turn = 0.2 + rand() * 0.6;
+  const twist = rand() * Math.PI * 2;
+  const topR = 0.17 + rand() * 0.04;
+  const botR = 0.27 + rand() * 0.05;
+  const place = (piece: BufferGeometry): BufferGeometry => {
+    scaleXZ(piece, 1.25, 0.62);
+    shearX(piece, lean);
+    rotateY(piece, turn);
+    translateXZ(piece, 0.46, -0.18);
+    return piece;
+  };
+  parts.push(
+    paint(
+      place(taperedCylinder(topR, botR, CAIRN_MARKER_HEIGHT_M, 5, rand, twist)),
+      options.stone,
+      0.11,
+      rand,
+    ),
+  );
+  parts.push(
+    paint(place(polyDisc(topR, CAIRN_MARKER_HEIGHT_M, 5, twist, true)), options.roof, 0.07, rand),
+  );
+
+  const merged = mergeGeometries(parts);
+  merged.computeVertexNormals();
+  addSway(merged, 0, 1, 0);
+  return merged;
+}
+
+export interface SmokeColumnOptions {
+  /** Colour at the fire's mouth, where the plume is dense and fire-lit. */
+  base: number;
+  /** Colour where it gives out into the sky. */
+  tip: number;
+  height?: number;
+  /** Which way the plume leans off vertical, radians in the XZ plane. */
+  lean?: number;
+  seed?: number;
+}
+
+/**
+ * How high the plume climbs, and how many puffs it climbs in.
+ *
+ * Eleven metres is the number that makes the camp legible from four hundred
+ * metres away — the chunk streamer's whole reach — because at that range the
+ * camp itself is two pixels of ground and its smoke is a mark a hundred
+ * pixels tall standing on the horizon. It is also the height at which the
+ * plume stops competing: at dusk the top of it sits high in the frame, in the
+ * empty part of the sky, rather than across the road it is announcing.
+ */
+export const SMOKE_HEIGHT_M = 11;
+/**
+ * Twelve, not the nine first built.
+ *
+ * Nine was enough at a hundred and twenty metres and not at thirty: shot on
+ * the approach to camp, the plume came back visibly *beaded* — a stack of
+ * separate hexagons with their edges showing, which is a diagram of smoke
+ * rather than smoke. Three more puffs at the same total height is purely
+ * overlap, so the column merges into one soft mass where it is dense and
+ * still comes apart where it is thinning. It costs 96 triangles.
+ */
+export const SMOKE_PUFFS = 12;
+/** Sides per puff. Eight rather than six for the same reason. */
+const SMOKE_PUFF_SIDES = 8;
+
+/**
+ * A smoke column, as a stack of crossed polygonal puffs.
+ *
+ * Three decisions, and the second is the one that makes it read.
+ *
+ * **Crossed planes, not billboards.** A billboard has to be turned toward the
+ * camera every frame by something that knows where the camera is, and nothing
+ * in the world streamer does. Two octagons at right angles give a shape with
+ * no silhouette worth speaking of from any horizontal direction, which is all
+ * a plume needs — and it costs nothing per frame.
+ *
+ * **The plume breaks up as it climbs.** The puffs grow *and* their spacing
+ * grows, so the bottom of the column is a solid overlapping mass and the top
+ * is separated blobs with sky between them. That is the only fade available:
+ * the painterly shader carries one opacity for a whole material and no
+ * per-vertex alpha, so a continuous tapering ribbon would end in a hard flat
+ * edge eleven metres up, which reads as a grey obelisk. Dissolving it
+ * *geometrically* costs eight extra triangles and needs no shader at all.
+ *
+ * **Every face is doubled and reversed.** The material is front-faced, so of
+ * each coincident pair exactly one passes the winding test from any viewpoint
+ * — which means the puff is lit as though facing the viewer wherever the
+ * viewer stands, and no `DoubleSide` flag (which would light the back faces
+ * by the front's normals) is needed.
+ */
+export function smokeColumnGeometry(options: SmokeColumnOptions): BufferGeometry {
+  const rand = mulberry32(options.seed ?? 233);
+  const height = options.height ?? SMOKE_HEIGHT_M;
+  const lean = options.lean ?? rand() * Math.PI * 2;
+  const lx = Math.cos(lean);
+  const lz = Math.sin(lean);
+
+  const verts: number[] = [];
+  const baseY = 0.85;
+  for (let i = 0; i < SMOKE_PUFFS; i++) {
+    const t = i / (SMOKE_PUFFS - 1);
+    // Linear near the fire, quadratic above it: smoke leaves the flame as a
+    // rope and only opens out once it has lost the heat driving it.
+    const y = baseY + (height - baseY) * (t * 0.5 + t * t * 0.5);
+    const halfW = 0.34 + 1.75 * Math.pow(t, 0.72);
+    const halfH = halfW * (0.92 - 0.24 * t);
+    const drift = height * 0.16 * Math.pow(t, 1.7);
+    const cx = lx * drift + (rand() - 0.5) * halfW * 0.55;
+    const cz = lz * drift + (rand() - 0.5) * halfW * 0.55;
+    puffPlane(verts, cx, y, cz, halfW, halfH, false);
+    puffPlane(verts, cx, y, cz, halfW, halfH, true);
+  }
+
+  const geometry = fromPositions(verts);
+  paintGradient(geometry, options.base, options.tip, baseY, height);
+  geometry.computeVertexNormals();
+  // Rooted at the fire and loose at the top, so the world's own wind bends
+  // the plume over instead of sliding the whole column sideways.
+  addSway(geometry, baseY, height, 1);
+  return geometry;
+}
+
+/** One puff face and its mirror, in the XY or the ZY plane. */
+function puffPlane(
+  out: number[],
+  cx: number,
+  cy: number,
+  cz: number,
+  halfW: number,
+  halfH: number,
+  acrossZ: boolean,
+): void {
+  const n = SMOKE_PUFF_SIDES;
+  const pts: number[][] = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + Math.PI / n;
+    const px = Math.cos(a) * halfW;
+    const py = Math.sin(a) * halfH;
+    pts.push(acrossZ ? [cx, cy + py, cz + px] : [cx + px, cy + py, cz]);
+  }
+  for (let i = 1; i < n - 1; i++) {
+    out.push(...pts[0], ...pts[i], ...pts[i + 1]);
+    out.push(...pts[0], ...pts[i + 1], ...pts[i]);
+  }
+}
+
 // --- primitives --------------------------------------------------------
 
 /**
@@ -1678,6 +2069,9 @@ export const GEOMETRY_BUILDERS = {
   standingStoneGeometry,
   trilithonGeometry,
   chapelGeometry,
+  buskPitchGeometry,
+  waysideCairnGeometry,
+  smokeColumnGeometry,
   coniferGeometry,
   broadleafGeometry,
   willowGeometry,

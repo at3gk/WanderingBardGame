@@ -1504,23 +1504,94 @@ session; the open tasks follow.
     cuffs closing the "detached blocks", travellers get faces/raised brims/
     attention nods, camp's propped instrument rebuilt. Figure-ground at
     20 px: busk median step 16.0 → 20.1 sRGB.
-133. **The songboard as presentation, not billboard.** With notes in every
+133-136 landed 2026-07-31 (same interactive session, wave 2); 137+ queued
+from the wave-2 blind re-critique and the human's stakes direction.
+
+137. **Replace the cast-shadow layer's read.** Five of six lenses: soft
+    caster-less grey-brown smears own the dark end of every daytime frame.
+    Hard-edged shapes matching the low-poly vocabulary, tied to visible
+    casters, hue-shifted never neutral. (painterly.ts, RoadStage.ts,
+    palette.ts.)
+138. **Notes must sit on the staff.** At range, note heads read ABOVE the
+    top line at similar heights (pitch contradicted); tokens clip at the
+    portrait edge with no runway; a ghost duplicate rendered in 09; the
+    barline note is the LEAST legible on the ribbon (urgency inverted).
+    Plus the DISPUTED six-line count — two critics counted six lines with
+    coordinates, three counted five; settle it with a code-level rendered
+    line-count check before believing either. (SongNotes.ts.)
+139. **Every mass gets a lit side and a shade side, and the midground gets
+    a tinted rung.** Sun direction currently exists only in cast shadows;
+    references split warm/cool per form. One tinted value rung between
+    full local colour and the haze. (painterly.ts, sky.ts, palette.ts.)
+140. **Character construction at hero scale.** Arms/hands visibly holding
+    the lute in travel and busk poses from the game's real cameras (07
+    proves the rig has them); rebuild boot geometry (reads as z-fighting
+    debris); one listening gesture per NPC; fix the 07 hair-plane and
+    lute-knee interpenetrations. (Bard.ts, Traveller.ts.)
+141. **Campfire light and smoke.** Fire pool needs a hue journey (orange →
+    deep red/violet → dark night rim, not a hard-edged orange decal);
+    rebuild the smoke as a dim tapering off-centre wisp — the current
+    stacked translucent octagons read as shattered glass. (Campfire.ts,
+    smoke.ts, world/geometry.ts smoke column.)
+142. **Stakes, not failure** (DESIGN v0.8 item 8, human-set). Failable
+    moments: a side quest can be missed, a crowd disperses from a
+    poorly-kept busk, an opportunity passes. Nothing is ever taken away;
+    the walk never fails. (core/encounters.ts, core/performance.ts,
+    RoadStage.ts.)
+
+133. ~~**The songboard as presentation, not billboard.**~~ Done
+    (2026-07-31, wave 2 — superseded mid-task by the human's "notes coming
+    at you from the front"): the plank is gone; SongNotes draws a
+    translucent parchment ribbon leaving a barline beside the bard,
+    fanning off the road and dissolving before its own vanishing point,
+    notes riding it toward the player. Ink more opaque than paper (the
+    rules survive a bright sky; the paper gives way to the world); straight
+    staff rules (the wobble was painterly band-noise, not geometry — the
+    ribbon runs its own shader with per-vertex alpha, sharing the painterly
+    light via a GLSL chunk); paper sized per song; closed-loop frame fit
+    (`fitShare`) after the camera moved mid-task; pitch contrast re-floored
+    at LIGHT_FLOOR 0.34, worst hour 5.74 WCAG measured on rendered pixels.
+    Lane width in the walking frame: 29% → 12%. With notes in every
     walking frame, the board is now the composition's biggest problem: a
     beige plank sitting on the vanishing point. Rework toward diegetic
     lightness — size to the live note span, off-axis placement scaling with
     aspect, material that belongs to the world (parchment translucency?),
     straighter staff rules (the hand-drawn wobble reads as damage at DSF2).
     The staff must stay musically correct and legible at phone sizes.
-134. **Light and air, second pass.** Items 9/10 (golden-hour shadow hue,
-    grey haze) plus critique gap 2 (no warm bounce on upward faces at
-    golden hour) and gap 3 (caster-less shadow smudges). painterly.ts/
-    sky.ts owners; use tools/land-histogram.mjs before and after.
-135. **Camera variety and phone framing.** Critique gap 9 (one composition
-    for every road shot) and gap 11 (phone-portrait dead thirds). CameraRig
-    owns both.
-136. **Blind re-critique, then reassess.** Re-run the six-lens panel vs the
-    reference frames on post-wave-2 postcards; re-derive scores rather than
-    inheriting the 3-of-10 count.
+134. ~~**Light and air, second pass.**~~ Done (2026-07-31, wave 2). The
+    grey haze was never the fog keys (STATE item 10's hexes had been
+    rotated rounds ago): ACES tone mapping desaturates the haze on its
+    shoulder (S0.274 in → S0.122 out, measured), and the 60/40
+    warm-olive/cool-blue mix cancels toward neutral. Fixed with
+    FOG_CHROMA/FOG_HUE_LEAD — value blends as before, hue blends most of
+    the way to the air's own. Golden-hour shadows: LOW_SUN_SCATTER 3.0
+    gated by a lowSun term (0.05 → meaningful cool component; night gated
+    off after measuring a 0.77-stop cost ungated). Warm bounce: the
+    critique's own prescription (warm upward faces) MEASURED WORSE
+    (hueSpread 0.167 → 0.106 — at low sun everything faces up); replaced
+    with warmth along the sun's horizontal bearing (0.182). Shadow
+    smudges: edges restored with SHADOW_EDGE 0.34 (the penumbra was
+    map-texel stretch ~8× along a 7° sun). All six gates PASS; morning
+    land p90 held at 145 (did not fall; raising it toward 170 is task
+    122's pale-ramp re-derivation, deliberately not half-done here).
+135. ~~**Camera variety and phone framing.**~~ Done (2026-07-31, wave 2).
+    Per-mood framings through the existing damping: vista rebuilt as a
+    TALL shot (horizon 0.32 → 0.25, bard 0.42 → 0.24 of frame height —
+    distance/fov deliberately unchanged, see below); encounter in, down
+    and turned (lookYaw −0.22 rad toward placeMeeting's fixed bearing
+    band; bard 0.41 of frame, hat breaks the skyline); walking gains
+    imperceptible drift/sway (~3%/min) so consecutive moments differ;
+    posed shots zero both (postcards stay deterministic). Phone:
+    WIDEN_RISE_SHARE is gone — replaced by TALL_LIFT_MAX camera-height
+    ramp (skyline 0.29 → 0.21 on 390x844, midground band 1/14 → 1/4 of
+    frame). Finding recorded in the vista comment: frame-quality shoots
+    every pose through the vista mood, whose noon has 0.10 stops of
+    headroom — distance and fov cost stops, height is free.
+136. ~~**Blind re-critique, then reassess.**~~ Done (2026-07-31, wave 2):
+    same six-lens panel, same references, fresh frames. Mean 4.3 → 5.4;
+    04-golden-vista 6.75 and 07-night-campfire ~6.5 brushing the bar;
+    03-noon-forest weakest at 4.25. Verdict: "one focused wave below
+    shippable." Re-derived gaps became tasks 137-141 above.
 
 ## The v0.7 queue: "human eyes on it" (human-set, 2026-07-31)
 

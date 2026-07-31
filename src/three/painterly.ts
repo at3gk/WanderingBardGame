@@ -418,6 +418,199 @@ const FRAGMENT = /* glsl */ `
  */
 #define SKY_SCATTER 0.09
 /*
+ * What that term is multiplied by when the sun is on the horizon.
+ *
+ * STATE.md item 9 was left half-open by the commit that added SKY_SCATTER:
+ * the general fix worked (morning hue spread 0.208 -> 0.356) and golden hour
+ * did not move at all (0.036 -> 0.031). The note filed it as "treat golden
+ * hour as its own case" without saying why the term misses it. It is
+ * arithmetic, and it is worth writing down because the number above looks
+ * like it should apply everywhere.
+ *
+ * Worked through at day 0.82 for flat ground: the sun sits at 0.12 rad, so
+ * ndl is 0.12, lit is 0.56, and sunAmount comes out at 0.425. The
+ * scatter is scaled by 1 - sunAmount, which leaves 0.57 of 0.09 — about
+ * 0.05 — against a direct term of 0.425 * 0.92 = 0.39. The cool addition
+ * is a seventieth of the ambient it rides and a thirtieth of the sun. There
+ * is nothing to see. At noon the same reasoning gives a bigger sunAmount
+ * and a smaller multiplier, but the SHADE side there has sunAmount near
+ * zero and the term lands with its full weight; at a low sun there is barely
+ * any shade side to land on, because almost the whole frame is lit.
+ *
+ * The physical case for scaling it up rather than adding a golden-hour-only
+ * term: skylight and sunlight do not fall off together as the sun drops. The
+ * direct beam crosses ten to forty air masses at these elevations and is
+ * attenuated by most of a stop per air mass in the blue, while the sky's own
+ * scattered light is what that attenuation TURNS INTO. The ratio of skylight
+ * to sunlight climbs steeply toward the horizon; it is the whole reason a
+ * photograph taken an hour before sunset has blue shadows and one taken at
+ * noon has grey ones. So this is not a new lighting model, it is the one
+ * term in the existing model whose real-world magnitude actually depends on
+ * sun height, finally saying so.
+ *
+ * Driven by lowSun (see its note at the point it is computed), which is 0
+ * from mid-morning onward — so morning, noon and afternoon are
+ * arithmetically untouched by this and cannot regress from it — and 0 again
+ * once the sun is well below the horizon, so deep night is untouched too. It
+ * reaches full strength at first light, dawn, golden hour and dusk, which is
+ * exactly the set of hours the ratio argument above is about.
+ */
+#define LOW_SUN_SCATTER 3.0
+/*
+ * How far an upward-facing surface's ambient swings from the zenith toward
+ * the horizon as the sun drops.
+ *
+ * The gap this closes: at golden hour an apricot sky sits over cool olive
+ * grass, and the sun side and the sky side of every canopy read as the same
+ * value in the same hue. The cause is one line below — ambient mixes
+ * uGroundBounce to uSkyColor by how skyward the normal is, and
+ * uSkyColor is the ZENITH. At noon that is right: the zenith is the
+ * brightest part of the hemisphere and a flat field's ambient really is
+ * mostly zenith. At an elevation of seven degrees it is badly wrong. The
+ * bright band of a golden-hour sky is the twenty degrees above the horizon,
+ * which is where the light that has not yet been scattered out is piling up;
+ * the zenith at that hour is the DIMMEST part of the sky and about four
+ * stops under the horizon band. An upward face integrating that hemisphere
+ * takes most of its light from the warm band, not from the blue overhead.
+ *
+ * So the warm bounce on upward faces is not a new term either — it is the
+ * existing ambient finally pointing at the right part of the sky. The
+ * sideways-facing horizon leak on the line after it stays exactly as it was:
+ * that one is about grazing incidence and is a separate claim.
+ *
+ * Note what this does NOT touch. The scattered-skylight term above keeps its
+ * own carrier (skyLight, computed before this warming), because that term
+ * is the blue of the air between the surface and the eye and handing it the
+ * horizon's apricot would cancel the very thing LOW_SUN_SCATTER exists to
+ * buy. The result is the split the frames were missing: a face turned into
+ * the light goes warm, and the same face inside a cast shadow goes cool.
+ *
+ * --- and it is weighted by the sun's BEARING, which the critique's own
+ * prescription was not, because that version measured as the fault ---------
+ *
+ * Gap 2 is worded as "no warm bounce on upward faces", and the first build
+ * here did exactly that: warmed the ambient by how skyward the normal is.
+ * Measured on the six gate poses it made every low-sun frame MORE monochrome,
+ * which is the opposite complaint from the same critique — golden hour's hue
+ * spread fell 0.167 -> 0.106 and phone-landscape's 0.182 -> 0.097 — and it
+ * cost golden 0.2 stops as well. Isolated by building each term alone: with
+ * the scattered skylight and the haze change in and this one out, golden read
+ * 0.184; with this one in and the skylight out, 0.080. The warming was not
+ * merely failing to help, it was swamping the cool shadows the term beside it
+ * had just bought.
+ *
+ * The reason is geometry, and it is the same shape of mistake as the one
+ * sky.ts records about the zenith. At golden hour nearly every surface the
+ * camera can see is upward-facing — it is a road across a meadow — so
+ * "warm the upward faces" is "warm the frame", and a frame warmed uniformly
+ * has no more colour in it than one that was not, only a different average.
+ * What gap 2 is actually describing is a LOCAL difference: the sun side and
+ * the sky side of one canopy reading alike. So the warmth is delivered along
+ * the sun's own horizontal bearing instead, which is where a low sun's bright
+ * band of sky actually is. A canopy now has a warm side and a cool side; a
+ * flat field, whose normal is perpendicular to that bearing, is left alone,
+ * which is why the whole-frame numbers hold. Same term, same physics, one
+ * more factor — golden hour comes back at 0.182 against a baseline of 0.167.
+ */
+#define LOW_SUN_HORIZON 0.60
+/*
+ * How much of the shadow map's penumbra survives into the picture.
+ *
+ * Critique gap 3: broad soft dark ribbons rake the road with no visible
+ * caster and their edges dissolve into blur. Measured by ablation — the same
+ * pose rendered with uShadowDepth forced to 1, which is the only reliable
+ * way to remove cast shadows at runtime (switching shadowMap.enabled off
+ * leaves every material still sampling the now-stale map, and the frame
+ * comes back byte-identical, which reads as "cast shadows do nothing") —
+ * the ribbons ARE cast shadows and they do have casters: the roadside trees
+ * at golden hour and the songboard itself in the morning frame.
+ *
+ * What they do not have is an EDGE. The shadow camera is 220 m across a 2048
+ * map, so a texel is 10.7 cm and three's PCF kernel spans a few of them; at
+ * a sun elevation of seven degrees that penumbra is projected along the
+ * light direction and arrives on the ground stretched by a factor of eight.
+ * A boundary that is 30 cm wide in the map is two and a half metres wide on
+ * the road, which at these camera distances is a couple of hundred pixels of
+ * gradient. A gradient that wide is not a shadow edge, it is a stain — and
+ * the header of this file already makes the same argument about the light
+ * bands: a gradient reads as untextured 3D and an edge broken up by noise
+ * reads as a brush.
+ *
+ * The fix is a remap rather than a smaller kernel, because the kernel is
+ * what stops the shadow aliasing into stair-steps in the first place and a
+ * shadow map cannot be made sharper from inside a fragment shader anyway.
+ * Centred on 0.5 so the shadow's AREA is unchanged — this narrows the
+ * penumbra, it does not grow or shrink the shadow, which matters because the
+ * long-shadow ladder at dawn and dusk is load-bearing for those frames and
+ * must not be traded away for an edge.
+ */
+#define SHADOW_EDGE 0.34
+/*
+ * How far the haze is pushed away from its own grey axis before it is mixed
+ * into the picture — and the reason STATE.md item 10 survived the fix that
+ * was supposed to close it.
+ *
+ * Item 10 prescribed committing the daylight fog keys to a hue at S~0.25-0.35
+ * because they were near-neutral (it quotes morning 0xb2c1cc at S0.13). That
+ * was done: sky.ts now ships morning 0xa4c3e3 at S0.278, high day
+ * 0xa9c8e8 at S0.272, afternoon 0xd2c299 at S0.271, and the horizon keys
+ * they are mixed with are saturated too. The distance still came back grey.
+ *
+ * The step nobody had put a number on is the tone mapper. The renderer runs
+ * ACES filmic at an exposure of 1.05, and three's implementation multiplies
+ * by toneMappingExposure / 0.6 first — so the real multiplier is 1.75, and
+ * the haze is the BRIGHTEST large area in the frame after the sky. Worked
+ * through the actual fit for the morning frame's fully-hazed distance: the
+ * pre-tonemap fogTint is sRGB-equivalent S0.274, and it leaves the tone
+ * mapper at S0.122. ACES desaturates its highlight shoulder by design — that
+ * is what makes it look photographic — and it took more than half the hue
+ * this file had just been given. Measured on the shipped build, the morning
+ * frame's skyline band reads S0.121 and its far band S0.195; with the fog
+ * switched off entirely the same bands read S0.273 and S0.377, so the haze
+ * is cutting the distance's saturation almost exactly in half.
+ *
+ * So the correction has to be applied where the loss happens rather than at
+ * the palette, and it has to be a HUE change and nothing else — see the note
+ * on morning's horizon key in sky.ts for what happened the last time the
+ * distance was reached for and its value moved: fog is applied after
+ * uExposure, so anything taken out of the far land here cannot be paid
+ * back by any later dial. mix(vec3(luma), c, k) at k > 1 pushes a colour
+ * away from the grey axis and preserves its luminance EXACTLY, which is the
+ * whole reason it is written that way rather than as a saturation curve.
+ */
+#define FOG_CHROMA 1.45
+/*
+ * How much further the haze carries the air's HUE than it carries its value,
+ * and the second half of why item 10 outlived the fix aimed at it.
+ *
+ * fogAmount is capped at 0.60 — see the long note at the point of use for
+ * why, and it is a good reason: a silhouette that dissolves completely into
+ * the sky reads as a draw-distance failure. But the cap applies to the whole
+ * mix, so the fully-hazed distance is still four tenths the terrain's own
+ * colour, and the terrain's own colour is a warm olive. Four parts warm olive
+ * to six parts cool blue is not a pale blue, it is a grey: the two hues are
+ * near enough complementary that the average lands on the neutral axis. That
+ * is item 10's own sentence — "a low-saturation cool mixed 60/40 into a
+ * saturated warm lands on grey" — and the prescription it drew from it was to
+ * saturate the cool, which does not help, because the arithmetic that
+ * cancels is the MIX and not the endpoint.
+ *
+ * Real aerial perspective does not work that way either. A ridge eight miles
+ * off has not become 60 per cent sky; it has lost its own colour almost
+ * entirely while keeping a value distinctly below the sky's. Chroma is
+ * scattered out of the sightline far faster than radiance is added to it,
+ * which is exactly why a distant wood is BLUE and not a paler green. So the
+ * blend is split: value blends at fogAmount and keeps every argument the cap
+ * exists to protect, and hue blends most of the rest of the way to the air's
+ * own, at the value the fog left it with.
+ *
+ * Not 1.0. At a full replacement the far land is one flat wash of air colour
+ * with no trace of what it is made of, and the ridge's own comment in sky.ts
+ * makes the matching point from the other side — a trace of the ground's own
+ * colour is what keeps a forested skyline blue-GREEN rather than blue.
+ */
+#define FOG_HUE_LEAD 0.65
+/*
  * How hard the near-ground mark rides the scattered-skylight term above.
  *
  * A relative swing on SKY_SCATTER, not an amplitude in its own right — see
@@ -623,6 +816,24 @@ void main() {
    */
   float sunHeight = smoothstep(-0.05, 0.32, uSunDirection.y);
 
+  /*
+   * The twilight band: 0 with the sun high, 1 with it on the horizon, and 0
+   * again once it is well below.
+   *
+   * Two terms below are about what happens when the sun is LOW, and the
+   * obvious driver for both is 1 - sunHeight. It is wrong at the bottom end
+   * and the frames said so: driven that way, the night pose lost 0.77 stops
+   * (6.18 -> 5.41) and every low-sun frame's hue spread fell — golden 0.167
+   * -> 0.100, phone-landscape 0.182 -> 0.097 — because 1 - sunHeight is 1 at
+   * midnight, so a deep-night frame was being handed the full golden-hour
+   * treatment. Both claims are specifically about the RATIO of skylight to
+   * sunlight and about where in the sky the bright band sits, and at midnight
+   * there is no sunlight to have a ratio to and no bright band. Fading back
+   * out below the horizon puts the terms where the argument for them holds
+   * and leaves deep night arithmetically untouched.
+   */
+  float lowSun = (1.0 - sunHeight) * smoothstep(-0.22, 0.0, uSunDirection.y);
+
   // --- world-space grain -------------------------------------------------
   // Sampled in world space so it belongs to the *scene*, like paper
   // texture under the whole painting, rather than sliding around on each
@@ -804,7 +1015,10 @@ void main() {
 
   // --- banded diffuse ----------------------------------------------------
   float ndl = dot(N, L);
-  float shadowMask = getShadowMask();
+  // See SHADOW_EDGE: three hands back a penumbra that a low sun stretches
+  // into a stain metres wide. Narrowed about the middle of its own range, so
+  // the shadow keeps its place and its area and gains a boundary.
+  float shadowMask = smoothstep(0.5 - SHADOW_EDGE * 0.5, 0.5 + SHADOW_EDGE * 0.5, getShadowMask());
 
   // Nudging the band edges with the grain is what keeps the terminator from
   // looking like a contour line on a map.
@@ -865,7 +1079,19 @@ void main() {
   // first version added them at full strength on top of a sun term and the
   // entire world came out as white paper.
   float skyFacing = N.y * 0.5 + 0.5;
-  vec3 ambient = mix(uGroundBounce, uSkyColor, skyFacing);
+  // The sky's own colour arriving here, kept before any horizon warming.
+  // This is the carrier for the scattered-skylight term further down and for
+  // nothing else: see LOW_SUN_HORIZON for why that term must not be handed
+  // the warm end of the sky.
+  vec3 skyLight = mix(uGroundBounce, uSkyColor, skyFacing) * AMBIENT_STRENGTH;
+  // See LOW_SUN_HORIZON: an upward face takes the zenith at noon and the
+  // horizon band at golden hour, because that is where the light is.
+  // Weighted by how far the surface turns toward the sun's own bearing, and
+  // that clause is the whole difference between this term working and this
+  // term being the monochrome fault. See LOW_SUN_HORIZON.
+  float sunBearing = clamp(dot(N, normalize(vec3(L.x, 0.0, L.z) + vec3(1e-5))), 0.0, 1.0);
+  vec3 upperSky = mix(uSkyColor, uHorizonColor, lowSun * LOW_SUN_HORIZON * sunBearing);
+  vec3 ambient = mix(uGroundBounce, upperSky, skyFacing);
   // Horizon warmth leaks into faces pointing sideways, which is what makes
   // dawn and dusk read as dawn and dusk.
   ambient = mix(ambient, uHorizonColor, (1.0 - abs(N.y)) * 0.35);
@@ -883,7 +1109,11 @@ void main() {
   // The one light term that does not pass through the albedo. See
   // SKY_SCATTER: a warm albedo cannot be multiplied into a cool shadow, so
   // the shade side is given its colour additively instead.
-  float scatter = SKY_SCATTER * (1.0 - sunAmount) * mix(0.25, 1.0, skyFacing);
+  // See LOW_SUN_SCATTER for why the strength depends on sun height: skylight
+  // and sunlight do not fall off together, and this term was a seventieth of
+  // the light at golden hour, which is why item 9 stayed open there.
+  float scatter = SKY_SCATTER * (1.0 + lowSun * (LOW_SUN_SCATTER - 1.0))
+    * (1.0 - sunAmount) * mix(0.25, 1.0, skyFacing);
   /*
    * --- the near-ground mark's second carrier -----------------------------
    *
@@ -921,7 +1151,7 @@ void main() {
    * there is.
    */
   scatter *= clamp(1.0 + nearMark * NEAR_SHADE_MARK * nearWeight, 0.0, 2.0);
-  color += ambient * scatter * foregroundTier;
+  color += skyLight * scatter * foregroundTier;
 
   // --- rim ---------------------------------------------------------------
   float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), uRimPower);
@@ -1075,7 +1305,20 @@ void main() {
   // below is right for scenery and wrong for a destination.
   float fogAmount = clamp(distanceFog * mix(0.45, 1.0, heightFalloff) * uFogScale, 0.0, 0.60);
   vec3 fogTint = mix(uFogColor, uHorizonColor, clamp(0.55 - vWorldPosition.y * 0.02, 0.0, 0.6));
-  color = mix(color, fogTint, fogAmount);
+  vec3 hazed = mix(color, fogTint, fogAmount);
+
+  // See FOG_HUE_LEAD and FOG_CHROMA. The value of the distance is whatever
+  // the mix above made it and is not touched here — that is the whole point,
+  // since fog is applied after uExposure and nothing downstream can pay this
+  // band back. What moves is only its hue: most of the way to the air's own,
+  // pre-compensated for the saturation ACES will take off it, and held at the
+  // luminance the haze already decided.
+  const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
+  float hazedLuma = dot(hazed, LUMA);
+  float airLuma = dot(fogTint, LUMA);
+  float hazeDepth = clamp(fogAmount * (1.0 / 0.60), 0.0, 1.0);
+  vec3 airChroma = (fogTint - airLuma) * FOG_CHROMA;
+  color = max(vec3(0.0), hazedLuma + mix(hazed - hazedLuma, airChroma, hazeDepth * FOG_HUE_LEAD));
 
   gl_FragColor = vec4(color, uOpacity);
 

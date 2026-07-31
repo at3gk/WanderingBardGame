@@ -47,6 +47,12 @@ export interface PerformanceConfig {
   goodWindowMs: number;
   /** Warmth lost by one missed note. See `DEFAULT_PERFORMANCE_CONFIG`. */
   missPenalty: number;
+  /**
+   * The meter this performance's hits and misses move. Omitted, the busk
+   * meter (`PERFORMANCE_METER_CONFIG`). The walk passes its own — see
+   * `WALK_PERFORMANCE_CONFIG` for why the two must differ.
+   */
+  meterConfig?: SongMeterConfig;
 }
 
 /**
@@ -101,6 +107,38 @@ export function lateWindowMs(config: PerformanceConfig = DEFAULT_PERFORMANCE_CON
  * scale-free and therefore preserved exactly.
  */
 export const PERFORMANCE_METER_CONFIG: SongMeterConfig = normaliseMeter(DEFAULT_SONG_METER_CONFIG);
+
+/**
+ * The walk's meter: same gains, less than half the drain.
+ *
+ * The default meter (hit +12, miss −14 before normalising) was human-tuned
+ * for the 2D game, where tapping was the entire activity and "about three
+ * misses to stop from full" felt right. On the v0.8 road it is the wrong
+ * contract: a miss out-costs a hit, so holding any stride at all demands
+ * better than 54% accuracy at ninety-two notes a minute — and DESIGN.md's
+ * own brief for the walk is that a player looking at the *scenery* should
+ * be able to keep it alive with casual timing.
+ *
+ * With the drain at 6, one hit buys two misses: a player answering every
+ * third note holds a slow walk, every other note a comfortable one, and the
+ * band between `WALK_STOP_METER` and the walking threshold does what it was
+ * built for — the stride eases instead of snapping. The busk keeps the
+ * original meter on purpose: it is a short social set a player leans into,
+ * not twenty minutes of road, and its stakes (warmth, coins) already carry
+ * their own forgiveness.
+ */
+export const WALK_METER_CONFIG: SongMeterConfig = normaliseMeter({
+  max: 100,
+  hitGain: 12,
+  missDrain: 6,
+  walkingThreshold: 40,
+});
+
+/** The walk's judging contract: default windows, the walk's gentler meter. */
+export const WALK_PERFORMANCE_CONFIG: PerformanceConfig = {
+  ...DEFAULT_PERFORMANCE_CONFIG,
+  meterConfig: WALK_METER_CONFIG,
+};
 
 function normaliseMeter(config: SongMeterConfig): SongMeterConfig {
   // Divided rather than multiplied by a precomputed reciprocal: `x * (1 / x)`
@@ -393,7 +431,10 @@ export function applyJudgement(
   if (judgement === 'miss') {
     state.misses += 1;
     state.streak = 0;
-    state.meter = applyMiss(clamp01(finiteOr(state.meter, START_METER)), PERFORMANCE_METER_CONFIG);
+    state.meter = applyMiss(
+      clamp01(finiteOr(state.meter, START_METER)),
+      config.meterConfig ?? PERFORMANCE_METER_CONFIG
+    );
     state.warmth = clamp01(warmth - Math.max(0, finiteOr(config.missPenalty, 0)));
     return state;
   }
@@ -403,7 +444,10 @@ export function applyJudgement(
   if (judgement === 'late') state.lates += 1;
   state.streak += 1;
   state.bestStreak = Math.max(state.bestStreak, state.streak);
-  state.meter = applyHit(clamp01(finiteOr(state.meter, START_METER)), PERFORMANCE_METER_CONFIG);
+  state.meter = applyHit(
+    clamp01(finiteOr(state.meter, START_METER)),
+    config.meterConfig ?? PERFORMANCE_METER_CONFIG
+  );
   state.warmth = clamp01(warmth + WARMTH_GAIN[judgement] * (1 - warmth));
   state.peakWarmth = Math.max(state.peakWarmth, state.warmth);
 

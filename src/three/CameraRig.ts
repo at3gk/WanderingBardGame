@@ -25,10 +25,16 @@
  *   corner, and damping a raw angle spins the long way round at ±π.
  * - A gentle idle drift — a slow, low-amplitude figure-of-eight — keeps
  *   the frame alive when the bard stands still busking. Without it a
- *   stopped camera looks like a crashed game.
+ *   stopped camera looks like a crashed game. A second, even slower term
+ *   (`sway`) swings the camera a couple of degrees *around* the bard, so
+ *   two moments a minute apart on the same straight road are not the same
+ *   photograph. Both are held at zero while posed for a screenshot.
  * - Framing shifts with the phase: walking sits back and high, busking
  *   comes in closer and lower to put the crowd in frame, resting pulls
  *   right in on the fire. Transitions are eased over seconds, never cut.
+ *   The moods are meant to be *different pictures*, not one picture at
+ *   different times of day — see `FRAMINGS`, where the vista and the
+ *   encounter were rebuilt for exactly that reason.
  *
  * Shake is deliberately absent. There is nothing in this game that should
  * shake a camera.
@@ -49,6 +55,16 @@ interface MoodFraming {
   lead: number;
   /** Lateral offset, metres. A little off-centre is friendlier than dead-on. */
   side: number;
+  /**
+   * Radians to swing the *look target* off the subject's own heading.
+   *
+   * Zero everywhere except `encounter`, which turns the frame toward
+   * whoever has been met. The rig is given a subject, not a scene, so it
+   * cannot be told where that person is standing — but `RoadStage.stand`
+   * places them in a fixed band of bearings, and half of that band's
+   * middle is a perfectly good thing to aim at. See `encounter`.
+   */
+  lookYaw: number;
   fov: number;
   /** Seconds for the position to close most of the gap to its goal. */
   positionSmoothing: number;
@@ -56,6 +72,17 @@ interface MoodFraming {
   targetSmoothing: number;
   /** Idle drift amplitude in metres. */
   drift: number;
+  /**
+   * Idle *orbit* amplitude, radians, added to the camera's goal heading.
+   *
+   * Distinct from `drift`, which slides the camera in world space. This one
+   * arcs it around the subject, so the road's vanishing point and the
+   * bard's offset from it both move a little — which is what makes two
+   * moments differ *compositionally* rather than just by a few centimetres.
+   * A couple of degrees over a minute and a half is well under the
+   * threshold where a slow camera move becomes a camera move you notice.
+   */
+  sway: number;
 }
 
 /**
@@ -162,10 +189,20 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     // number and this framing — it is the one the player is in while a
     // landmark is being approached — so the two move together or not at all.
     side: 1.2,
+    lookYaw: 0,
     fov: 42,
     positionSmoothing: 0.55,
     targetSmoothing: 0.85,
-    drift: 0.06,
+    // Was 0.06. The walk is the framing the player spends nearly all of
+    // their time in, and it was the one shot with nothing to distinguish
+    // one minute of it from the next: fixed distance, fixed side, a dead
+    // straight relationship to the road. Ten centimetres of breathing plus
+    // the sway below moves the bard about three per cent of the frame's
+    // width and the vanishing point about twice that, over a minute — too
+    // slow to read as motion, fast enough that two screenshots taken a
+    // little apart are not the same picture.
+    drift: 0.1,
+    sway: 0.05,
   },
   // Closer, lower, and swung further round to the side so the bard is in
   // three-quarter view rather than seen from behind — you want to see the
@@ -176,10 +213,15 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     lookHeight: 1.1,
     lead: 1.6,
     side: 2.7,
+    lookYaw: 0,
     fov: 43,
     positionSmoothing: 0.75,
     targetSmoothing: 1.0,
     drift: 0.11,
+    // Small: the staff is a *readable object* in this framing and the
+    // listeners are arranged around a camera that is assumed to be where
+    // `side` puts it. Two degrees is all the life this shot needs.
+    sway: 0.035,
   },
   // In on the fire, low, wide-ish. This is the one moment the game asks you
   // to stop moving, so the camera stops too — and it has to hold two things
@@ -229,16 +271,92 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     // screen position moves by under thirty pixels across the whole sweep,
     // so it is not the binding constraint anywhere in this range.
     side: 2.6,
+    lookYaw: 0,
     fov: 43,
     positionSmoothing: 1.1,
     targetSmoothing: 1.3,
     drift: 0.14,
+    // Smallest of the five. `campfireLayout` chooses where every prop
+    // stands by sighting along the line from this camera to the seat, and
+    // an orbit large enough to see is an orbit large enough to swing a
+    // bedroll into that line.
+    sway: 0.02,
   },
   // Pulled well back to hand the landscape the frame. Narrower FOV compresses
   // the distance and makes the hills read as bigger. The bard is small here on
   // purpose, but he is kept well off-centre so he still reads as the figure in
   // the landscape rather than a speck in the middle of it.
+  //
+  // **Rebuilt, because it was not a different picture.** Measured off the
+  // postcards, the old vista put the bard at 0.22 of the frame's height with
+  // his chest at 0.70 and the road's vanishing point at 0.36 of its width;
+  // the walk put him at 0.42, chest 0.67, vanishing point 0.36. Change the
+  // hour and recolour and the two frames are the same photograph — which is
+  // exactly what the critique said when it called every road shot one
+  // composition. Three numbers of the five that matter were within a few per
+  // cent of the walking framing's, and a "vista" that differs from a walk
+  // only by lens length is a zoom, not a shot.
+  //
+  // What separates them now, in the order the eye notices:
+  //
+  // - **How much of the frame is land.** The horizon goes from 0.32 — the
+  //   walking composition, which this shot simply inherited — to 0.25. Three
+  //   quarters of a vista is now the country it is named after. This is the
+  //   biggest single change and it is bought with camera height, which tips
+  //   the view down without moving the camera an inch further away.
+  // - **Size.** 3.5 m up rather than 2.9 takes the true range from 7.96 m to
+  //   8.45 and the figure from 0.26 of frame height to 0.24, against the
+  //   walk's 0.42. Not the halving the first draft of this framing went for
+  //   — see the constraint below.
+  // - **Where he sits in the frame.** He no longer spans the middle of it.
+  //   The walk gives him 0.40 to 0.82, top to bottom of the central band;
+  //   this gives him 0.60 to 0.87, entirely inside the lower third, with the
+  //   whole middle of the picture handed to land seen from above.
+  // - **Where he sits across it.** 0.63 of the frame's width against the
+  //   walk's 0.58, which is less than it sounds and is bought entirely by
+  //   the long lead — see the header's arithmetic, where `side` is diluted
+  //   by `lead / (distance * (distance + lead))`.
+  //
+  // **The constraint that shaped all of the above, which is not obvious from
+  // anywhere else in this file.** `tools/frame-quality.mjs` holds every one
+  // of its six poses in `phase: 'vista'` — not because a vista is
+  // representative, but because it is the only mood that stops the walk and
+  // therefore the only one that lets a posed time of day survive. So these
+  // constants are the lens the game's whole tonal gate is shot through, and
+  // the gate's tightest pose (noon, 2.60 stops against a 2.5 floor) has ten
+  // hundredths of headroom. Measured, one change at a time, off that pose:
+  //
+  // | change                        | stops | p10   |
+  // | ----------------------------- | ----- | ----- |
+  // | unchanged                     | 2.60  | 0.103 |
+  // | distance 7.5 -> 9.0, alone    | 2.42  | 0.117 |
+  // | fov 38 -> 44, alone           | 2.43  | 0.115 |
+  // | height 2.9 -> 3.9, in context | 2.30  | 0.126 |
+  // | ... and back to 3.3           | 2.31  | 0.126 |
+  // | side 3.2 -> 1.5, in context   | +0.08 |       |
+  //
+  // The first three rows are single changes off the unchanged framing; the
+  // last three were taken while the rest of a much larger rewrite was in the
+  // tree, so read them as deltas rather than as absolutes. What they say
+  // together is unambiguous. Every way of showing *more world* — further
+  // back, wider lens — raises the darkest tenth of the frame, because what
+  // leaves the picture is near shadowed undergrowth and what arrives is
+  // haze-lit distance. Camera height alone costs nothing at all: it changes
+  // the *angle* on the same slab of world rather than trading near for far.
+  // That is why this framing is now a tall shot from where it always stood
+  // rather than the long pull-back the composition notes above were first
+  // written for, and it is the reason to reach for `height` and not
+  // `distance` if a later wave wants more of this.
+  //
+  // A note on the landmark bias, since the header makes a promise about it:
+  // this camera's axis sits atan(2.6 / 14.5) = 10.2 degrees off the road,
+  // against the walk's atan(1.2 / 6.4) = 10.6, where the old vista sat at
+  // 6.8. `WorldStreamer.LANDMARK_VIEW_BIAS` is one constant measured from
+  // the walking framing, so it is more nearly right during a vista than it
+  // has ever been — which matters, because the vista is the one shot whose
+  // subject is the skyline that constant places.
   vista: {
+    // Unchanged, and see the table above before changing it.
     distance: 7.5,
     // Was 3.6 m, and that was the worst offender in the game: at seven and a
     // half metres back it put the bard's chest at 0.82 of the frame with an
@@ -246,35 +364,94 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     // the frame handed it to nothing in particular. The distance is what
     // makes a vista, not the altitude — pulling the height down to 2.9 keeps
     // every hill and every landmark in shot and moves him to 0.70.
-    height: 2.9,
-    // Low for the distance: the look target has to sit *below* the bard's
-    // chest here or the long lead drops him onto the bottom edge of the frame.
-    lookHeight: 1.05,
-    // Shortened with the height so the camera still tips far enough down to
-    // hold the horizon near 0.29; a six-metre lead at 2.9 m would have
-    // levelled it out and given half the frame to sky.
-    lead: 5.0,
-    // Was 3.2. A little more than walking's, because a vista is the one shot
-    // where the figure is meant to be small in the land and so has to be
-    // firmly out of the middle to be found at all; the long lead dilutes it
-    // anyway, so 1.5 here reads about as far off-centre as 1.2 does walking.
-    side: 1.5,
+    //
+    // 3.5 now, which is most of the way back to the number that paragraph
+    // rejected — and it is right this time for a reason that paragraph did
+    // not have. 3.6 failed *with a 1.05 m look target*: the camera rose and
+    // its aim did not, so it tipped down and dropped the bard to 0.82 while
+    // leaving the middle of the frame empty field. The two numbers move
+    // together here, and it is the pair that composes, not either alone.
+    // At 3.5 looking at 1.0 the horizon comes up to 0.25 and the bard sits
+    // at 0.60 to 0.87 — the tip is the *point*, and what fills the middle is
+    // the land it uncovers.
+    //
+    // 4.5 was tried and cannot be had at this distance: the feet reach the
+    // bottom edge at 1.005 of frame height. Height and distance are a pair
+    // too, and this distance is fixed by the tonal gate above.
+    height: 3.5,
+    // Up from 0.85, which put the horizon at 0.21 — under a fifth of the
+    // frame for the sky, which stops reading as a wide view of somewhere and
+    // starts reading as a camera pointed at the ground.
+    lookHeight: 1.0,
+    // Was 5.0. It is the only lever that moves the bard off the middle of
+    // the frame — his offset from the axis is atan(side/distance) minus
+    // atan(side/(distance + lead)), which goes to zero as the lead shortens
+    // — and it also holds the horizon up while the camera climbs.
+    lead: 7.0,
+    // Was 1.5. Most of the increase is paid straight back to the lead
+    // dilution above: 2.6 at this lead buys 8.9 degrees off the axis where
+    // 1.5 at the old lead bought 4.9. It costs 0.08 stops on the noon gate
+    // (table above), which is the largest bill this framing pays for
+    // composition and the only one worth paying.
+    side: 2.6,
+    lookYaw: 0,
+    // Unchanged, and deliberately so: the narrowest lens in the set is what
+    // compresses the distance and makes the hills read big, and every
+    // degree of widening costs the tonal gate about 0.03 stops.
     fov: 38,
-    positionSmoothing: 1.2,
-    targetSmoothing: 1.4,
+    // Slower than the old 1.2. Coming here from a walk is 3.5 m back, 1.65 m
+    // up and 1.4 m across — half a metre more of climb and swing than it used
+    // to be — and the whole point of a vista is that the camera *withdraws*
+    // to show you something. Damping it harder turns the 1.8-second mood
+    // blend into a three-second reveal, comfortably inside the six seconds
+    // `RoadStage.VISTA_HOLD_SEC` holds the moment for.
+    positionSmoothing: 1.4,
+    targetSmoothing: 1.6,
     drift: 0.1,
+    // Long lens, small subject: a degree here is worth more screen than a
+    // degree anywhere else in the set.
+    sway: 0.02,
   },
   // Slightly further back than walking and led less, so the thing you have
   // met shares the frame instead of sliding out of it.
+  //
+  // **That description was the whole problem.** "Slightly further back than
+  // walking" is a walking shot, and that is what the frames showed: the same
+  // camera, the same horizon at 0.34, the same figure at 0.37 of frame
+  // height, with a stranger the size of a thumbnail out near the right edge.
+  // Nothing in the picture said a meeting was happening.
+  //
+  // This one now goes the other way — in, down, and turned. In and down
+  // because that is what a camera does when two people stop to talk; turned
+  // because the person met is not on the road and the road is no longer the
+  // subject. The measured result: the bard grows to 0.41 of frame height,
+  // the camera drops to 1.65 m so his hat breaks the skyline instead of
+  // sitting a tenth of a frame below it, and the axis swings 12 degrees off
+  // the road so the traveller comes in from 0.71 of the frame's width toward
+  // 0.70 with a great deal more of the frame between them and the edge.
+  //
+  // The move is deliberately small in metres — 0.7 m in, 0.25 m down — for
+  // the reason the old comment gives below and which still holds: an
+  // encounter arrives *during* a walk and eases over a second and a half, so
+  // whatever this framing does it must be able to do without the player
+  // feeling the camera relocate. Almost all of the difference above is
+  // bought with the lens and the yaw, which cost no travel at all.
   encounter: {
-    distance: 4.3,
-    // Follows walking's down, and for the same reason it followed walking's
-    // `side` down: an encounter arrives during a walk and eases over a second
-    // and a half, so a framing that differed here by a quarter of a metre of
-    // camera height would be a visible lift every time the bard met somebody.
-    height: 1.9,
-    lookHeight: 1.05,
-    lead: 2.0,
+    distance: 3.6,
+    // Below walking's rather than following it. The original argument — that
+    // a quarter of a metre of camera height would read as a visible lift —
+    // is right about the *rate* and wrong about the conclusion: a quarter of
+    // a metre eased over a second and a half is 17 cm/s, which is slower
+    // than the bard's own bob. What it buys is the one thing that makes this
+    // read as a meeting rather than a walk with a bystander: from 1.65 m the
+    // camera is at the bard's own eye level, so both figures stand *against
+    // the sky* instead of against the ground plane.
+    height: 1.65,
+    lookHeight: 0.9,
+    // Longer than walking's, not shorter. A short lead here would swing the
+    // road's vanishing point off the left edge — see the note on `side` — and
+    // it is also what stops `lookYaw` below from taking the road with it.
+    lead: 2.4,
     // Was 2.4, and had to come down with walking's whether or not the two
     // are the same shot. An encounter arrives during a walk and the mood
     // eases over a second and a half; leaving this one at the old offset
@@ -283,22 +460,105 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     // it is a lopsided frame you can watch the camera arrive at. A little
     // above walking's, because the traveller stands off the road and the
     // wider angle is what keeps both of them in shot.
-    side: 1.6,
-    fov: 44,
+    //
+    // 1.5, a shade under walking's, because the yaw below is now doing the
+    // work `side` was being asked to do and doing it better. Swinging the
+    // camera further round moves the bard right and the traveller *left*,
+    // toward each other — at side 2.2 the two overlap. Turning the look
+    // instead moves them together across the frame without closing the gap
+    // between them.
+    side: 1.5,
+    /**
+     * Turn the frame toward whoever has been met.
+     *
+     * `RoadStage.placeMeeting` stands the traveller at a bearing between
+     * -0.95 and -0.7 radians from the bard's heading, 4.2 to 5.2 m out —
+     * a band narrow enough to aim at from here without the rig needing to
+     * be told where anybody is. This is a bit over a quarter of the way
+     * round to the middle of that band.
+     *
+     * A quarter and not a half. Aiming *at* the traveller centres them, and
+     * two figures either side of the axis are closer together on screen
+     * than the same two off to one side of it — tan is convex, so the
+     * separation the shot depends on is largest when the pair sits off
+     * centre. Measured across the traveller's whole placement band, this
+     * value keeps them between 0.65 and 0.77 of the frame's width with the
+     * bard at 0.54, and it leaves the road's vanishing point at 0.27
+     * rather than pushing it off the edge, which a half turn does.
+     */
+    lookYaw: -0.22,
+    // Widest in the set. Two figures 4.7 m apart, a camera 3.6 m from one of
+    // them, and a road that still has to be in the picture: this is the one
+    // framing with three things to fit rather than one.
+    fov: 46,
     positionSmoothing: 0.7,
     targetSmoothing: 0.9,
     drift: 0.09,
+    // Smaller than walking's. The traveller's screen position is not under
+    // this file's control and the placement band is already 0.12 of the
+    // frame's width wide; an orbit on top of that is variance nobody asked
+    // for.
+    sway: 0.015,
   },
 };
 
 /**
- * How much of the narrow-screen widening is handed back to the sky rather
- * than to the ground. See `widenRise`, which is where the number is argued.
+ * Metres the camera rises on the tallest screen this game will meet.
  *
- * Negative, which is not a typo. It used to be +0.25 — a quarter of the added
- * angle given to the sky — and going the other way is the change.
+ * This replaces `WIDEN_RISE_SHARE`, and the replacement is the answer to a
+ * question that constant was asked twice and correctly refused twice: stop
+ * spending the narrow-screen FOV widening on empty sky and bare road, and
+ * give it to the middle of the picture instead.
+ *
+ * The refusal was sound and is worth keeping. The widening adds angle at the
+ * top and bottom *edges* of the frustum; the mid band is by definition at
+ * neither edge, so no setting of a constant that divides the added angle
+ * between sky and road can send any of it to the middle. Both extremes were
+ * shot — all to the sky, then all to the road — and there is nothing hiding
+ * between them.
+ *
+ * What that argument then said, in a sentence, and never acted on: *"what
+ * would grow the mid band is a higher camera, which spreads the same slab of
+ * world over more angle."* That is this constant. It is not a share of
+ * anything; it is a tripod, raised as the screen gets taller.
+ *
+ * The arithmetic, on the walking framing at 390x844 (the frame the phone
+ * complaint is about). Raising the camera by 0.45 m and leaving the look
+ * target where it is tips the view down by 3.9 degrees, because the pitch is
+ * `atan((height - lookHeight) / Rt)` and only the numerator moved. Every
+ * boundary in the frame then moves, and they do not move together:
+ *
+ * | band                       | before      | after       |
+ * | -------------------------- | ----------- | ----------- |
+ * | sky, top of frame to horizon | 0 .. 0.32 | 0 .. 0.26   |
+ * | midground, horizon to hat  | 0.32 .. 0.39 | 0.26 .. 0.46 |
+ * | the bard                   | 0.39 .. 0.82 | 0.46 .. 0.86 |
+ * | near ground, below his feet | 0.82 .. 1  | 0.86 .. 1   |
+ *
+ * The midground — the band that carries the road's convergence, the
+ * treeline, the landmark and everything else a player actually looks at —
+ * goes from a seventh of the frame to a fifth, and it takes it from the two
+ * bands the critique called dead. The bard does not shrink to pay for it: the
+ * true camera-to-subject range goes 4.22 m to 4.34, three per cent.
+ *
+ * That table is arithmetic on flat ground. Measured off `08-phone-portrait`,
+ * where the road is on a slope and the far land is raised, the skyline went
+ * 0.29 to 0.21 and the midground band from about a fourteenth of the frame to
+ * a quarter of it — the same trade, a little larger, because real ground
+ * amplifies a downward tilt. If a later wave finds a fifth of the frame too
+ * little sky for a phone, this constant is the one dial: it is very nearly
+ * linear, a tenth of a metre being worth about 0.015 of frame height.
+ *
+ * Note what is *not* claimed. The bottom of a portrait frame is still ground
+ * seen from close up, because a camera four metres behind a walking figure
+ * has ground under it however high it stands; the near edge of the view moves
+ * out only from 2.91 m to 3.22, a third of a metre. What changed is how much
+ * of the frame that slab is allowed to have.
+ *
+ * Applied through the goal position, so it damps with everything else and a
+ * device rotation eases rather than cuts.
  */
-const WIDEN_RISE_SHARE = -0.35;
+const TALL_LIFT_MAX = 0.45;
 
 /**
  * Ceiling on the narrow-screen FOV widening, in tangent space.
@@ -321,10 +581,12 @@ function blendFraming(a: MoodFraming, b: MoodFraming, t: number): MoodFraming {
     lookHeight: mix(a.lookHeight, b.lookHeight),
     lead: mix(a.lead, b.lead),
     side: mix(a.side, b.side),
+    lookYaw: mix(a.lookYaw, b.lookYaw),
     fov: mix(a.fov, b.fov),
     positionSmoothing: mix(a.positionSmoothing, b.positionSmoothing),
     targetSmoothing: mix(a.targetSmoothing, b.targetSmoothing),
     drift: mix(a.drift, b.drift),
+    sway: mix(a.sway, b.sway),
   };
 }
 
@@ -394,10 +656,16 @@ export class CameraRig {
   private fovWiden = 1;
 
   /**
-   * Multiplier on every framing's `side`, set from the screen's aspect.
-   * 1 on anything 16:9 or wider. See `applyAspect`.
+   * Multiplier on every framing's `side` and `lookYaw`, set from the
+   * screen's aspect. 1 on anything 16:9 or wider. See `applyAspect`.
    */
   private sideNarrow = 1;
+
+  /**
+   * How tall the screen is, 0 on 16:9 and 1 on a phone held upright.
+   * Scales `TALL_LIFT_MAX`. See `applyAspect`.
+   */
+  private tallness = 0;
 
   private readonly scratchGoal = new Vector3();
   private readonly scratchTarget = new Vector3();
@@ -455,7 +723,21 @@ export class CameraRig {
     // Damp the heading first: the goal position is derived from it, so a
     // damped heading means the camera arcs around the subject on a bend
     // rather than sliding sideways through the world.
-    this.heading = dampAngle(this.heading, subject.heading, framing.positionSmoothing * 1.35, dt);
+    //
+    // The sway rides on the *goal*, not on the result, so it goes through
+    // the same damping as a real bend and can never outrun it. Two periods,
+    // 88 s and 33 s, neither a multiple of the other or of the drift's, so
+    // the combined figure never repeats and no beat frequency appears.
+    const sway = this.posed
+      ? 0
+      : (Math.sin(this.elapsed * 0.071) * 0.7 + Math.sin(this.elapsed * 0.19 + 2.1) * 0.3) *
+        framing.sway;
+    this.heading = dampAngle(
+      this.heading,
+      subject.heading + sway,
+      framing.positionSmoothing * 1.35,
+      dt,
+    );
 
     const sin = Math.sin(this.heading);
     const cos = Math.cos(this.heading);
@@ -464,19 +746,24 @@ export class CameraRig {
     const side = framing.side * this.sideNarrow;
     this.scratchGoal.set(
       subject.position.x - sin * framing.distance + cos * side,
-      subject.position.y + framing.height,
+      subject.position.y + framing.height + TALL_LIFT_MAX * this.tallness,
       subject.position.z - cos * framing.distance - sin * side,
     );
 
     // Goal look target: ahead of the subject along its *own* heading, not
     // the camera's. That difference is what makes the camera look into a
     // bend rather than at the outside of it.
-    const subjectSin = Math.sin(subject.heading);
-    const subjectCos = Math.cos(subject.heading);
+    //
+    // `lookYaw` turns it off that heading — only the encounter does, and
+    // only by a fifth of a radian. It is narrowed with `side` on a tall
+    // screen for exactly the reason `side` is: a degree of yaw is worth
+    // three times as much screen offset on a portrait phone, and the road
+    // has already left the frame by the time it has been paid twice.
+    const aim = subject.heading + framing.lookYaw * this.sideNarrow;
     this.scratchTarget.set(
-      subject.position.x + subjectSin * framing.lead,
-      subject.position.y + framing.lookHeight + this.widenRise(framing),
-      subject.position.z + subjectCos * framing.lead,
+      subject.position.x + Math.sin(aim) * framing.lead,
+      subject.position.y + framing.lookHeight,
+      subject.position.z + Math.cos(aim) * framing.lead,
     );
 
     // Idle drift. Two incommensurable frequencies so it never visibly
@@ -532,86 +819,6 @@ export class CameraRig {
     }
   }
 
-  /**
-   * How far to lift the look target to pay for the narrow-screen widening.
-   *
-   * `applyAspect` buys back the width a phone crops away by opening the
-   * vertical FOV, and that added angle arrives split evenly above and below
-   * the view axis. Neither half is worth much: below is more of the road
-   * surface the bard is already standing on, above is more empty sky.
-   *
-   * This used to tilt up by *exactly* the angle the widening added, which
-   * put the bottom edge back where the unwidened framing had it and handed
-   * the entire gain to the sky. The arithmetic of what that did is worth
-   * writing down, because it is not visible in the code: the horizon sits at
-   * `(1 - tan(d)/tan(halfFov)) / 2` of the way down the frame, where `d` is
-   * how far the camera is pitched below horizontal. On a desktop 16:9 that
-   * is 0.32 — a third sky, two thirds land, which is the composition every
-   * framing here was tuned for. Full compensation dropped `d` from eight
-   * degrees to under three and pushed the horizon to 0.45, so a portrait
-   * phone — the framing most players see first — was very nearly half empty
-   * sky with everything of interest squeezed into a band at the skyline.
-   *
-   * A quarter share, with the widening itself pulled back to 1.14, landed the
-   * horizon at 0.35 on both phone portrait and tablet: still a little more
-   * sky than the desktop framing, which is right for a tall frame, and
-   * nowhere near half of it. The bottom edge picked up about two degrees more
-   * road, which read as a price worth paying and much the smaller of the two.
-   *
-   * **That last judgement was wrong, and the share is now negative.** The
-   * reason is a measurement the argument above never made: how big the largest
-   * *connected* patch of one value in the frame is. On the tall aspects it was
-   * the sky, and the sky is not a price worth paying, because a flat sky is
-   * flat everywhere while a flat road has grass, ruts, stones and a shadow
-   * across it and therefore breaks into small patches at the same bucket
-   * share. Measured on 08-phone-portrait, largest flat region as a share of
-   * frame: 12.1 per cent at +0.25, 10.6 per cent at -0.35, against 8 to 13.5
-   * per cent on the desktop frames — so a tall frame stops being the outlier.
-   * The treeline band, which is the one carrying the midground, went from 61
-   * per cent of its pixels in a single ten-level bucket to 49; the near road
-   * gave up 25 to 30 the other way, which is the trade being made on purpose.
-   *
-   * A note on what this fixes and what it does not. The critique that prompted
-   * it asked for the skyline to sit *nearer 0.45* of frame height rather than
-   * 0.37 — that is, for more sky, not less — while also naming the flat sky as
-   * a quarter of the frame and the answer as "not more scatter". Those two
-   * cannot both be had, and the arithmetic above says which one to keep. The
-   * bottom third of a portrait frame is still one brown plane; that is the
-   * ground's own business and not something a camera can fix.
-   *
-   * **And a third option that has been asked for twice does not exist.** The
-   * standing note on this constant is to stop spending the widening on road
-   * and sky and "bias it toward the mid band" instead. It cannot be done from
-   * here, and the reason is geometry rather than tuning: the widening adds
-   * angle at the top and bottom EDGES of the frustum, and the mid band is by
-   * definition the part that is at neither edge. Whatever this constant is
-   * set to, every degree the widening adds arrives as more sky, more road, or
-   * some split of the two — the middle of the picture cannot receive any of
-   * it. The two extremes have both now been shot (+0.25 gave it all to the
-   * sky, -0.35 all to the road) and there is no third setting hiding between
-   * them.
-   *
-   * What *would* grow the mid band is a narrower FOV, which magnifies
-   * everything and is the opposite of what a phone needs, or a higher camera,
-   * which spreads the same slab of world over more angle. Measured on the
-   * frames as they stand: the horizon sits at 0.316 of frame height on the
-   * 1600x900 walking shot and 0.382 on phone portrait, so the tall frame is
-   * already giving only six and a half points more of its height to sky than
-   * the desktop composition it is derived from. The portrait frame's real
-   * problem is what is IN its bottom half, not how much of it there is.
-   *
-   * It is done by moving the *look target*, not by adding a pitch offset, so
-   * it damps with everything else and cannot fight the target smoothing. That
-   * is also why a negative value is safe: it is a look target a little below
-   * the one the desktop framing uses, not a rotation bolted on afterwards.
-   */
-  private widenRise(framing: MoodFraming): number {
-    if (this.fovWiden <= 1) return 0;
-    const half = MathUtils.degToRad(framing.fov) * 0.5;
-    const widened = Math.atan(Math.tan(half) * this.fovWiden);
-    return Math.tan(widened - half) * (framing.distance + framing.lead) * WIDEN_RISE_SHARE;
-  }
-
   /** A framing's vertical FOV after the narrow-screen widening. */
   private goalFov(base: number): number {
     if (this.fovWiden <= 1) return base;
@@ -638,6 +845,11 @@ export class CameraRig {
    * cropping by making the bard forty pixels tall and bending every straight
    * edge in the world. See `FOV_WIDEN_MAX` for where the ceiling sits and
    * why it came down.
+   *
+   * The widening is only half the tall-screen story and the smaller half.
+   * The other is `TALL_LIFT_MAX`, which raises the tripod as the screen gets
+   * taller — that is what decides how much of a portrait frame is worth
+   * looking at, and the argument is there rather than here.
    */
   applyAspect(width: number, height: number): void {
     const aspect = width / Math.max(1, height);
@@ -653,8 +865,28 @@ export class CameraRig {
     // bends. The square root rather than the full ratio on purpose: full
     // compensation puts the camera directly behind him, and a portrait frame
     // still wants him out of the middle, just not by as many metres.
+    //
+    // The floor was 0.6, which is above what the square root asks for on a
+    // 9:19.5 phone (0.51) and so was the number actually in force there. It
+    // came down because it stopped being one framing's business: the vista's
+    // `side` is now 3.2 m, and a multiplier tuned against the walk's 1.2 put
+    // that shot's bard at 0.78 of the frame's width on a phone — a hand's
+    // breadth from the edge. Letting the square root apply as written puts
+    // him at 0.72 and, incidentally, brings the walking framing's own
+    // vanishing point back from 0.22 of the frame to 0.26, which was the
+    // other half of the same complaint. 0.42 is left as a guard for aspects
+    // narrower than anything sold.
     this.sideNarrow =
-      aspect < reference ? MathUtils.clamp(Math.sqrt(aspect / reference), 0.6, 1) : 1;
+      aspect < reference ? MathUtils.clamp(Math.sqrt(aspect / reference), 0.42, 1) : 1;
+    // How tall the screen is, on a scale where 16:9 is 0 and a phone held
+    // upright is 1. Linear in aspect rather than in the FOV ratio, because
+    // the thing being scaled is a camera height and not an angle, and
+    // because the FOV ratio is clamped at 1.14 — every aspect from 4:3 down
+    // would otherwise get the same lift. The 0.55 puts the top of the ramp a
+    // little past the narrowest phone in circulation, so nothing real sits
+    // on the clamp.
+    this.tallness =
+      aspect < reference ? MathUtils.clamp((reference - aspect) / (reference - 0.55), 0, 1) : 0;
     // Before the first update there is nothing to ease from, and a rotate
     // or a first paint should not be watched zooming into place.
     if (!this.initialised) this.camera.fov = this.goalFov(this.blendedFraming().fov);

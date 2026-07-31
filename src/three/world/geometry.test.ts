@@ -28,12 +28,24 @@
 import { describe, expect, it } from 'vitest';
 import type { BufferAttribute, BufferGeometry } from 'three';
 import {
+  BUSK_LANTERN_R,
+  BUSK_LANTERN_X,
+  BUSK_LANTERN_Y,
+  BUSK_POLE_HEIGHT_M,
+  CAIRN_MARKER_HEIGHT_M,
+  SMOKE_HEIGHT_M,
+  SMOKE_PUFFS,
+  buskPitchGeometry,
   fallenLogGeometry,
   fernGeometry,
   grassTuftGeometry,
+  lanternGlowGeometry,
+  outwardFraction,
   reedClumpGeometry,
   rockGeometry,
   shrubGeometry,
+  smokeColumnGeometry,
+  waysideCairnGeometry,
 } from './geometry';
 
 /**
@@ -395,5 +407,155 @@ describe('props keep three separate silhouettes', () => {
       // one shape at forty metres.
       expect(maxY - minY).toBeLessThan(radius);
     }
+  });
+});
+
+/**
+ * Stop dressing, pinned against the one thing it is for: being read from a
+ * hundred metres of road away.
+ *
+ * The walking camera's eye sits about 2.2 m up and the horizon sits at eye
+ * level, so that height is the line between "silhouetted against sky" and
+ * "lost in the meadow". Every pin below is some version of that sentence —
+ * they do not fix a single dimension, they fix which side of the eye line
+ * each shape lands on, and the loudness ladder between the three kinds.
+ */
+describe('stop dressing', () => {
+  const EYE_LINE_M = 2.2;
+  const MARKER_SEEDS = [211, 223, 233, 359, 601, 749];
+  const MARKER_OPTIONS = { timber: 0x6b543a, cloth: 0xc4653a, iron: 0x4a4a48 };
+  const STONE_OPTIONS = { stone: 0x8a8f8a, roof: 0x5c6b52 };
+
+  it('stands the busk pole well clear of a walker s eye line', () => {
+    for (const seed of MARKER_SEEDS) {
+      const { maxY } = bounds(buskPitchGeometry({ ...MARKER_OPTIONS, seed }));
+      expect(maxY).toBeCloseTo(BUSK_POLE_HEIGHT_M, 5);
+      // A metre of clearance, not a centimetre. The banner and the lantern
+      // both hang below the top, so the pole has to overshoot the eye line by
+      // enough that they are drawn against sky too.
+      expect(maxY).toBeGreaterThan(EYE_LINE_M + 1);
+    }
+  });
+
+  it('gives the pitch a base with mass in it, not just a line', () => {
+    for (const seed of MARKER_SEEDS) {
+      const geometry = buskPitchGeometry({ ...MARKER_OPTIONS, seed });
+      const position = geometry.attributes.position as BufferAttribute;
+      // Something standing away from the pole in the first half-metre of
+      // height: the crates and the barrel. A pole on its own is a boundary
+      // marker; a pole with things stacked at it is a pitch.
+      let wide = 0;
+      for (let i = 0; i < position.count; i++) {
+        if (position.getY(i) < 0.55 && Math.hypot(position.getX(i), position.getZ(i)) > 0.5) wide++;
+      }
+      expect(wide).toBeGreaterThan(30);
+    }
+  });
+
+  it('builds the lantern glass closed and facing outward', () => {
+    const glass = lanternGlowGeometry();
+    // An emissive mesh with a face turned inside out is a face that gets
+    // culled, which puts a hole in the one warm mark in the frame.
+    expect(outwardFraction(glass)).toBe(1);
+    const { minY, maxY } = bounds(glass);
+    expect((minY + maxY) / 2).toBeCloseTo(BUSK_LANTERN_Y, 5);
+    expect(maxY - minY).toBeCloseTo(BUSK_LANTERN_R * 2.3, 5);
+  });
+
+  it('hangs the glass on the pole s own crossbar, not beside it', () => {
+    const glass = lanternGlowGeometry();
+    const pitch = buskPitchGeometry({ ...MARKER_OPTIONS, seed: 211 });
+    const position = pitch.attributes.position as BufferAttribute;
+    // Ironwork within a hand's breadth of the glass, above and below it: the
+    // cap and the foot. The two geometries carry no shared transform, so
+    // this is the only thing keeping them from drifting apart.
+    let above = 0;
+    let below = 0;
+    for (let i = 0; i < position.count; i++) {
+      if (Math.abs(position.getX(i) - BUSK_LANTERN_X) > 0.25) continue;
+      const dy = position.getY(i) - BUSK_LANTERN_Y;
+      if (dy > 0.1 && dy < 0.5) above++;
+      if (dy < -0.1 && dy > -0.5) below++;
+    }
+    expect(above).toBeGreaterThan(0);
+    expect(below).toBeGreaterThan(0);
+    expect(bounds(glass).maxY).toBeLessThan(BUSK_POLE_HEIGHT_M);
+  });
+
+  it('keeps the wayside marker quieter than the busk pitch', () => {
+    for (const seed of MARKER_SEEDS) {
+      const cairn = bounds(waysideCairnGeometry({ ...STONE_OPTIONS, seed }));
+      // Clears the eye line, so it has sky behind its top and can be resolved
+      // at a hundred metres...
+      expect(cairn.maxY).toBeGreaterThan(EYE_LINE_M * 0.8);
+      expect(cairn.maxY).toBeCloseTo(CAIRN_MARKER_HEIGHT_M, 5);
+      // ...and no further. An encounter is a meeting, not a stage, and the
+      // ladder between the two kinds is the whole of how a player tells at
+      // distance which one they are walking toward.
+      expect(cairn.maxY).toBeLessThan(BUSK_POLE_HEIGHT_M * 0.65);
+    }
+  });
+
+  it('opens the smoke plume out and breaks it up as it climbs', () => {
+    const geometry = smokeColumnGeometry({ base: 0xf0e8dc, tip: 0xe4e8ec, seed: 233 });
+    const position = geometry.attributes.position as BufferAttribute;
+    // Two crossed octagons per puff, each face doubled and reversed: six
+    // triangles a fan, twelve a plane, twenty-four a puff.
+    const perPuff = 72;
+    expect(position.count).toBe(SMOKE_PUFFS * perPuff);
+
+    const centres: number[] = [];
+    const widths: number[] = [];
+    for (let p = 0; p < SMOKE_PUFFS; p++) {
+      let minY = Infinity;
+      let maxY = -Infinity;
+      let minX = Infinity;
+      let maxX = -Infinity;
+      for (let i = p * perPuff; i < (p + 1) * perPuff; i++) {
+        minY = Math.min(minY, position.getY(i));
+        maxY = Math.max(maxY, position.getY(i));
+        minX = Math.min(minX, position.getX(i));
+        maxX = Math.max(maxX, position.getX(i));
+      }
+      centres.push((minY + maxY) / 2);
+      widths.push(maxX - minX);
+    }
+
+    for (let p = 1; p < SMOKE_PUFFS; p++) {
+      // Rises, and each puff is wider than the one under it.
+      expect(centres[p]).toBeGreaterThan(centres[p - 1]);
+      expect(widths[p]).toBeGreaterThan(widths[p - 1]);
+      if (p < 2) continue;
+      // And the gaps open out. This is the only fade the plume has: the
+      // shader carries one opacity for the whole material and no per-vertex
+      // alpha, so a column that stayed evenly stacked would end in a hard
+      // flat edge eleven metres up and read as a grey monument.
+      expect(centres[p] - centres[p - 1]).toBeGreaterThan(centres[p - 1] - centres[p - 2]);
+    }
+    expect(bounds(geometry).maxY).toBeGreaterThan(SMOKE_HEIGHT_M * 0.9);
+  });
+
+  it('roots the plume at the fire and leaves its top free to wander', () => {
+    const geometry = smokeColumnGeometry({ base: 0xf0e8dc, tip: 0xe4e8ec, seed: 359 });
+    const position = geometry.attributes.position as BufferAttribute;
+    const sway = geometry.attributes.aSway as BufferAttribute;
+    expect(sway).toBeDefined();
+    let lowest = Infinity;
+    let highest = -Infinity;
+    let atLowest = 0;
+    let atHighest = 0;
+    for (let i = 0; i < position.count; i++) {
+      const y = position.getY(i);
+      if (y < lowest) {
+        lowest = y;
+        atLowest = sway.getX(i);
+      }
+      if (y > highest) {
+        highest = y;
+        atHighest = sway.getX(i);
+      }
+    }
+    expect(atLowest).toBeLessThan(0.05);
+    expect(atHighest).toBeGreaterThan(0.8);
   });
 });
