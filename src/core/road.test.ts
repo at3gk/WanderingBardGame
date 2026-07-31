@@ -213,20 +213,97 @@ describe('terrainHeight', () => {
     // *slope*: it jumps by (lane - natural) / falloff at the edge of the
     // verge and again where the falloff ends, and low-poly flat shading draws
     // those two jumps as a pair of hard lines running the length of the road.
-    // A second difference sees the jump; the height difference alone does not.
-    // Measured: smoothstep peaks around 0.005 here, a linear ramp around 0.17.
-    const step = 0.5;
+    //
+    // This used to be asserted as an absolute second difference at a half
+    // metre step, under 0.02, and that gate went stale without failing.
+    // Its own comment recorded "smoothstep peaks around 0.005 here"; by
+    // 2026-07-30 the shipped generator measured 0.0177 against the 0.02
+    // gate, because the landform retune of 2026-07-28 doubled the surface
+    // hummocks and the metric cannot tell ground curvature from a crease —
+    // wild ground the corridor never touches reads 0.007 on the same metric.
+    // So the gate was 89% spent on something it was not testing, and it
+    // forbade curvature the renderer cannot even draw: the terrain mesh
+    // samples this band at 1.7 to 3.0 m and shades from normals taken at a
+    // metre, so a half-metre wiggle is below its resolution.
+    //
+    // What is asserted instead is the property itself, through how the
+    // second difference *scales* with the step. It approximates h^2 * f'',
+    // so on a surface whose slope is continuous, halving the step quarters
+    // it and the ratio is 4. A slope *jump* of size j contributes j * h
+    // instead, which only halves, and the ratio falls to 2. That is exactly
+    // the difference between a smoothstep and a linear ramp, it needs no
+    // tuned magnitude, and unlike the old gate it does not move an inch when
+    // the landform amplitude is retuned. Measured: smoothstep 3.6-3.9 across
+    // every falloff from 6 m to 18 m; the linear-ramp mutation 1.98-2.02.
+    const worstSecondDifference = (step: number): number => {
+      let worst = 0;
+      for (const r of sweep(20)) {
+        for (let s = 200; s < r.lengthM; s += 173) {
+          const cx = sampleRoad(r, s).x;
+          const at = (d: number): number => terrainHeight(r, cx + d, s);
+          for (let d = step; d < CORRIDOR_HALF_WIDTH_M + CORRIDOR_FALLOFF_M + 10; d += step) {
+            worst = Math.max(worst, Math.abs(at(d - step) - 2 * at(d) + at(d + step)));
+          }
+        }
+      }
+      return worst;
+    };
+    expect(worstSecondDifference(0.5) / worstSecondDifference(0.25)).toBeGreaterThan(3);
+  });
+
+  it('keeps the bank inside the angle a bank of earth can hold', () => {
+    // The other half of what the old absolute gate was doing by accident:
+    // stopping the corridor from becoming a wall. Stated as a grade because
+    // that is a thing about the world rather than about a sampling step —
+    // soil stands at an angle of repose of roughly 30-35 degrees, 0.58 to
+    // 0.70, and slumps past it, so a grass bank steeper than the top of that
+    // range is a cliff face wearing grass.
+    //
+    // Measured at the falloffs either side of the shipped one: 0.36 at 18 m,
+    // 0.52 at 9 m, 0.64 at 7 m, 0.74 at 6 m. The gate is set at the physics
+    // and not at the shipped value, so it has real margin in one direction
+    // and genuinely bites in the other — a falloff of 6 fails it.
     let worst = 0;
     for (const r of sweep(20)) {
-      for (let s = 200; s < r.lengthM; s += 173) {
+      for (let s = 200; s < r.lengthM; s += 71) {
         const cx = sampleRoad(r, s).x;
-        const at = (d: number): number => terrainHeight(r, cx + d, s);
-        for (let d = step; d < CORRIDOR_HALF_WIDTH_M + CORRIDOR_FALLOFF_M + 10; d += step) {
-          worst = Math.max(worst, Math.abs(at(d - step) - 2 * at(d) + at(d + step)));
+        for (let d = CORRIDOR_HALF_WIDTH_M; d <= CORRIDOR_HALF_WIDTH_M + CORRIDOR_FALLOFF_M; d += 0.25) {
+          for (const side of [1, -1]) {
+            const x = cx + side * d;
+            worst = Math.max(worst, Math.abs(terrainHeight(r, x + 0.5, s) - terrainHeight(r, x - 0.5, s)));
+          }
         }
       }
     }
-    expect(worst).toBeLessThan(0.02);
+    expect(worst).toBeLessThan(0.7);
+  });
+
+  it('leaves the gradient the player actually walks alone', () => {
+    // The lane's height is `hills` at the centreline and never consults the
+    // corridor, so no corridor retune can steepen the walk. Asserted rather
+    // than assumed because it is the standing reason a falloff change is
+    // cheap, and because the two earlier terrain retunes that this suite
+    // caught were both caught on the walk.
+    let total = 0;
+    let n = 0;
+    let steepest = 0;
+    for (const r of sweep(12)) {
+      let previous = terrainHeight(r, sampleRoad(r, 0).x, 0);
+      for (let s = 0.5; s <= r.lengthM; s += 0.5) {
+        const h = terrainHeight(r, sampleRoad(r, s).x, s);
+        const grade = Math.abs(h - previous) / 0.5;
+        total += grade;
+        steepest = Math.max(steepest, grade);
+        n++;
+        previous = h;
+      }
+    }
+    // Measured at both an 18 m and a 7 m falloff, identical to three
+    // decimals: mean 0.029, worst 0.119. A country lane climbs at a few per
+    // cent and tops out near twelve; anything approaching 0.3 is the 30%
+    // grade an earlier along-road retune produced and this suite rejected.
+    expect(total / n).toBeLessThan(0.05);
+    expect(steepest).toBeLessThan(0.2);
   });
 
   it('has no cliff along the direction of travel either', () => {
@@ -521,6 +598,14 @@ describe('the road is the same road', () => {
   // one only asks whether it is the *same* road, and a deliberate change to
   // the generator is expected to update it in the same commit.
   //
+  // Updated a third time on 2026-07-30, deliberately: `CORRIDOR_FALLOFF_M`
+  // came in from 18 m to 7 m, so the ground within twenty metres of the road
+  // is no longer graded flat and every player's road changes shape beside
+  // the lane. The lane itself is untouched — `laneHeight` never reads the
+  // corridor — so the stop placement above, which is derived from the
+  // elevation profile of the lane, did not move a metre and is unchanged
+  // from the entry below.
+  //
   // Updated twice on 2026-07-28. The second time: a frame-by-frame critique
   // found the land reading as a plate with no midground, so the cross-road
   // hills went from 9 m to 15 m and the surface hummocks roughly doubled.
@@ -576,7 +661,20 @@ describe('the road is the same road', () => {
       [-6.453527006656186, -9.099596530541028, -0.2522464440326799],
     ]);
     expect([[0, 0], [40, 250], [-120, 900], [12, 1500]].map(([x, z]) => terrainHeight(pinned, x, z))).toEqual([
-      -1.4152063112379198, -9.307262736356128, 3.5418769765363303, -9.977719550029818,
+      -1.4645869882622113, -9.307262736356128, 3.5418769765363303, -9.977719550029818,
+    ]);
+    // Three of those four probes sit on wild ground, and the 2026-07-30
+    // falloff change moved only the first — which is a pin that would sleep
+    // through most of what this file can get wrong. These are stated as
+    // offsets from the centreline instead, one on the carriageway and two on
+    // the bank, so the corridor's own shape is pinned and not merely the
+    // noise underneath it. Not 8 m: that is the exact midpoint of the
+    // falloff, where a smoothstep and a linear ramp both weigh 0.5 and agree
+    // to the last bit — a pin placed there sleeps through the one mutation
+    // this file most wants to catch.
+    const cx = sampleRoad(pinned, 600).x;
+    expect([2, 7, 11].map((d) => terrainHeight(pinned, cx + d, 600))).toEqual([
+      -9.873596482697042, -10.393452566715732, -12.005888379150749,
     ]);
   });
 });

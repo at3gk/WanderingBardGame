@@ -126,6 +126,99 @@ export const ROAD_HALF_WIDTH = 1.7;
 const SHOULDER = 2.9;
 
 /**
+ * Where the wheels have been, as a lateral offset and a half-width.
+ *
+ * Defined here rather than beside the scatter bands that used to own them,
+ * because the mesh needs them before `NEAR_OFFSETS` is built: the rut is now
+ * a shape in the ground and not only a stripe painted on it, so the ribbon
+ * has to put a column on its floor and one on each of its lips.
+ *
+ * `0.58`, and the ribbon's own rut column used to be `0.55`. That is the
+ * whole reason the rut never quite read: the darkest point of the painted
+ * ramp sat 5 cm off the nearest vertex, so the tent the mesh interpolated
+ * peaked at 88 per cent of the ramp's depth and a little to the inside of
+ * where the scatter's keep-out band and the puddles thought the rut was.
+ * Three constants for one rut; they agree now.
+ */
+export const RUT_CENTRE = ROAD_HALF_WIDTH * 0.58;
+export const RUT_HALF = 0.42;
+
+/**
+ * How deep the worn rut is cut into the carriageway, metres.
+ *
+ * The arithmetic that sets it, because the obvious instinct is to make it
+ * bigger and the obvious instinct is wrong twice over.
+ *
+ * What a rut is for here is a *normal*, not a hole. The profile below is a
+ * raised cosine, so its steepest wall has slope `pi * depth / (2 * half)` =
+ * 0.26 at 7 cm, which tilts the ground 14.7 degrees away from flat — enough
+ * to move a fragment across one of the shader's diffuse band edges, which is
+ * how a low-poly world shows form at all. Doubling the depth would double
+ * the tilt and start reading as a trench dug across the country rather than
+ * as a lane two carts a day have worn.
+ *
+ * And it must stay small next to what walks on it. The bard walks the crown
+ * (`FOOTFALL_HALF` = 0.29 m either side of the centreline) and the ruts
+ * start at 0.57, so his feet never enter one — but the camera does pass over
+ * them, and a 7 cm dip under a camera 1.9 m up is invisible as a *bump* and
+ * visible only as shading, which is exactly the division of labour wanted.
+ */
+export const RUT_DEPTH_M = 0.07;
+
+/** The steepest a bedded prop is laid over, as a slope. tan(30 deg). */
+const BEDDED_MAX_SLOPE = 0.577;
+
+/**
+ * The rut's profile: how far the carriageway drops at lateral offset `u`,
+ * and the slope of that drop.
+ *
+ * A raised cosine rather than a linear V, for the reason this file has now
+ * learned twice about clamped ramps: a V has a corner at its floor and two
+ * more at its lips, and a corner in a height field sampled at vertices is a
+ * crease that survives every amount of tuning. The cosine meets flat ground
+ * with zero slope at both lips and has zero slope at its floor, so the rut
+ * has no edge anywhere except the one its own shading draws.
+ *
+ * `rutSlope` is `d(drop)/du` and exists because the ribbon's normals are
+ * taken by central difference at a one-metre step — which is wider than the
+ * whole rut, and would therefore smooth a feature 0.84 m across into
+ * precisely nothing. The rut's contribution to the normal is added
+ * analytically instead. See `buildTerrain`.
+ */
+export function rutDrop(u: number): number {
+  const d = Math.abs(Math.abs(u) - RUT_CENTRE);
+  if (d >= RUT_HALF) return 0;
+  return -RUT_DEPTH_M * 0.5 * (1 + Math.cos((Math.PI * d) / RUT_HALF));
+}
+
+/**
+ * The height of the ground *as drawn*, at any world point.
+ *
+ * `terrainHeight` stays the one authority on the landform and is what places
+ * the bard, the camera and everything off the road. This is that plus the
+ * rut, and it is what anything standing on the carriageway has to use — a
+ * figure who stops in a wheel rut is otherwise standing 7 cm above the ground
+ * the player can see under their boots.
+ *
+ * The lateral offset is taken as the horizontal distance from the centreline,
+ * which is the same approximation `terrainHeight` makes for the corridor: it
+ * differs from the true perpendicular by cos(heading), a couple of per cent
+ * through the sharpest bend this road can make.
+ */
+export function roadSurfaceHeight(road: DailyRoad, x: number, z: number): number {
+  return terrainHeight(road, x, z) + rutDrop(x - sampleRoad(road, z).x);
+}
+
+export function rutSlope(u: number): number {
+  const au = Math.abs(u);
+  const d = Math.abs(au - RUT_CENTRE);
+  if (d >= RUT_HALF) return 0;
+  // d(drop)/dd, then chained through the two absolute values.
+  const dDrop = RUT_DEPTH_M * 0.5 * (Math.PI / RUT_HALF) * Math.sin((Math.PI * d) / RUT_HALF);
+  return dDrop * Math.sign(au - RUT_CENTRE) * Math.sign(u || 1);
+}
+
+/**
  * Lateral sample offsets, precomputed once.
  *
  * The near half is a hand-placed list, not a curve. The road's colour is
@@ -151,10 +244,25 @@ const SHOULDER = 2.9;
  */
 const NEAR_OFFSETS = [
   0,
-  0.6,
-  // the wheel ruts
-  ROAD_HALF_WIDTH * 0.55,
-  1.3,
+  // The wheel rut: lip, wall, floor, wall, lip. All five are derived from the
+  // same two constants the rut's own profile uses, so the ribbon cannot drift
+  // away from the shape it is meant to be carrying.
+  //
+  // The two WALL columns are the ones that matter and they are the ones the
+  // first version left out. A raised cosine has zero slope at its floor and
+  // zero slope at both lips — those are exactly the three places a rut's
+  // shading has nothing to say — so a ribbon sampled only there carries a
+  // 7 cm dip in its positions and a dead flat normal everywhere, and renders
+  // as ground that is not there. Measured off the live scene before the walls
+  // went in: every column across the carriageway reported the same 5.3 degree
+  // normal tilt, in the build with the rut and in the build without it, while
+  // the positions differed by the full 7 cm. The walls are where the slope
+  // reaches its maximum, 0.26, and they are the whole feature.
+  RUT_CENTRE - RUT_HALF,
+  RUT_CENTRE - RUT_HALF * 0.5,
+  RUT_CENTRE,
+  RUT_CENTRE + RUT_HALF * 0.5,
+  RUT_CENTRE + RUT_HALF,
   // the edge of the packed surface, and the worn shoulder beyond it
   ROAD_HALF_WIDTH,
   2.1,
@@ -177,7 +285,7 @@ const FAR_SAMPLES = 12;
  */
 const FAR_FALLOFF = 1.8;
 
-const ACROSS_OFFSETS = (() => {
+export const ACROSS_OFFSETS = (() => {
   const half = NEAR_OFFSETS.slice();
   const last = half[half.length - 1];
   for (let i = 1; i <= FAR_SAMPLES; i++) {
@@ -222,6 +330,18 @@ function channelRatio(a: number, b: number): number {
     return Math.max(0, Math.min(255, Math.round((((a >> shift) & 0xff) / denominator) * 255)));
   };
   return (channel(16) << 16) | (channel(8) << 8) | channel(0);
+}
+
+/**
+ * Relative luminance of a colour whose channels are already linear.
+ *
+ * Rec. 709 weights, and linear rather than the eye-matched sRGB version on
+ * purpose: this is used to compare a mirror's brightness against the ground's,
+ * which is a question about light arriving and not about how a screen encodes
+ * it.
+ */
+function luminanceOf(c: Color): number {
+  return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
 }
 
 /**
@@ -274,16 +394,13 @@ const VERGE = {
   tree: ROAD_HALF_WIDTH + 5.5,
 };
 
-/**
- * Where the wheels have been.
- *
- * The terrain shader darkens a rut centred on `ROAD_HALF_WIDTH * 0.58`, and
- * these two numbers are the same rut expressed as a keep-out band. Nothing
- * grows in a wheel rut and nothing loose stays in one, so anything the
- * scatter puts there reads as the bard wading rather than walking.
+/*
+ * The rut the scatter keeps out of is the same rut the ground is cut into
+ * and the same rut the shader darkens: `RUT_CENTRE` and `RUT_HALF` are
+ * defined once, up beside `rutDrop`. Nothing grows in a wheel rut and
+ * nothing loose stays in one, so anything the scatter puts there reads as
+ * the bard wading rather than walking.
  */
-const RUT_CENTRE = ROAD_HALF_WIDTH * 0.58;
-const RUT_HALF = 0.42;
 /**
  * Where the bard's boots fall.
  *
@@ -291,7 +408,7 @@ const RUT_HALF = 0.42;
  * own `x` with no lateral offset — so the middle of the crown is the one
  * strip of road that must stay bare however much the rest of it gains.
  */
-const FOOTFALL_HALF = 0.29;
+export const FOOTFALL_HALF = 0.29;
 
 /**
  * The carriageway, as the bands that are left once the ruts and the bard's
@@ -311,15 +428,20 @@ const EDGE_BAND: [number, number] = [RUT_CENTRE + RUT_HALF, VERGE.grass];
 /** Loose stone spills a little further onto the shoulder than grass does. */
 const STONE_BAND: [number, number] = [RUT_CENTRE + RUT_HALF, SHOULDER - 0.35];
 /**
- * The rut itself, as a band a puddle may sit in.
+ * The floor of the rut, the one part of the carriageway a puddle sits in.
  *
- * Every other kind on the carriageway treats this as a keep-out zone — a
- * wheel rut is where nothing grows and nothing loose stays put. Standing
- * water is the one exception, because a wheel rut is exactly where real
- * rain collects: it is the lowest ground on the whole cross-section, worn
- * in by the same wheels that keep it bare of everything else.
+ * Every other kind here treats the rut as a keep-out zone — a wheel rut is
+ * where nothing grows and nothing loose stays put. Standing water is the
+ * exception, because a wheel rut is exactly where real rain collects: it is
+ * the lowest ground on the whole cross-section, worn in by the same wheels
+ * that keep it bare of everything else.
+ *
+ * The band used to be the whole rut, and that was right while the rut was a
+ * stripe of paint on flat ground. Now that it is a shape, a puddle placed
+ * halfway up a wall would be a level surface on a 15-degree slope: buried on
+ * one side, in the air on the other. Water finds the bottom.
  */
-const RUT_BAND: [number, number] = [RUT_CENTRE - RUT_HALF, RUT_CENTRE + RUT_HALF];
+const RUT_FLOOR_BAND: [number, number] = [RUT_CENTRE - 0.12, RUT_CENTRE + 0.12];
 
 interface ScatterKind {
   key: string;
@@ -370,12 +492,55 @@ interface ScatterKind {
    * up following the road instead of speckling the field.
    */
   edgeBias?: number;
+  /**
+   * Lay this kind along the ground rather than standing it upright.
+   *
+   * For the flat-bottomed things only. A tree, a tuft and a fern grow
+   * vertically whatever the hillside does — that is what "grows" means — but
+   * a fallen trunk and a bedded boulder take the slope they are lying on,
+   * and until this existed every one of them was placed with its own up
+   * pointing at the sky and one end left in the air.
+   *
+   * The arithmetic that made it worth doing, measured against the ground the
+   * road corridor actually produces since its falloff came in from 18 m to
+   * 7 m: at 7 to 9 m off the centreline — which is where `VERGE.log` puts
+   * the first logs — the tilt is 8 degrees at the median and 19 at the 95th
+   * percentile, against 1.5 degrees on the flat inside the corridor. A log
+   * is 2.2 to 3.8 m long before its 0.8-1.4 scale and 0.19-0.28 m in radius,
+   * so a median bank lifts one end 0.33 m clear of the ground and a bad one
+   * 0.78 m: two-thirds of a diameter and a diameter and a half. That is a
+   * floating log, and it is not something the eye forgives.
+   */
+  bedded?: boolean;
+  /**
+   * Metres above the ground surface this kind's origin sits.
+   *
+   * One user: standing water, which is a *level* surface in a hollow and not
+   * a decal on the ground. Left at the floor of the rut a puddle would be
+   * cut away by the rut's own walls within 12 cm of its centre — the walls
+   * climb 1 cm in the first 10 cm — so what shipped as a lozenge would come
+   * back as a sliver. Filled to 0.7 of the rut's depth it reaches 0.27 m
+   * either side of the floor before the earth rises through it, which is a
+   * puddle half a metre across lying the length of the groove.
+   */
+  lift?: number;
   scale: [number, number];
   /** Only drawn on chunks within this many metres of the bard. */
   lodRange: number;
   castShadow: boolean;
   material: 'foliage' | 'solid';
-  colorOf: (palette: BiomePalette, rand: Rand) => number;
+  colorOf?: (palette: BiomePalette, rand: Rand) => number;
+  /**
+   * This kind's colour comes from the sky, not from the palette.
+   *
+   * Standing water is the only surface in the world that is a mirror, and a
+   * mirror has no albedo of its own — so it is the one kind whose instance
+   * colours have to be rewritten as the day turns rather than baked when the
+   * chunk is built. A kind with this set has no `colorOf`; `paintWater`
+   * supplies its colours instead, and the one random draw `colorOf` would
+   * have made is still made, so placement is untouched.
+   */
+  skyLit?: boolean;
 }
 
 /** Seeds for the four grass silhouettes and the four ferns. Arbitrary primes. */
@@ -465,18 +630,33 @@ const SCATTER_KINDS: ScatterKind[] = [
     clump: 2,
     perSquareMetre: 0.12,
     densityKey: 'puddle',
-    zones: [RUT_BAND],
-    clearance: RUT_BAND[0],
-    spread: RUT_BAND[1],
+    zones: [RUT_FLOOR_BAND],
+    clearance: RUT_FLOOR_BAND[0],
+    spread: RUT_FLOOR_BAND[1],
+    // Filled to 0.7 of the rut's depth: see `lift`.
+    lift: RUT_DEPTH_M * 0.7,
     scale: [0.7, 1.3],
     lodRange: CHUNK_LENGTH * 2.6,
     castShadow: false,
     material: 'solid',
-    // A cool, sky-reflecting grey-blue rather than a literal reflection —
-    // the world has one shared shader and no real-time reflections in it.
-    // Mixed toward the road colour so it reads as *this biome's* water
-    // sitting in *this biome's* earth, not a decal dropped on top of it.
-    colorOf: (p, rand) => mixColor(0x3c4d54, p.road, 0.2 + rand() * 0.25),
+    /*
+     * Was a fixed cool grey-blue mixed toward the road, and that was the
+     * wrong lever. Measured off the frames it shipped in: at dusk the puddle
+     * read L18.8 against a carriageway of L22.6 beside it — darker than the
+     * earth — and on the tablet frame L74.5 against a road whose own sunlit
+     * patches reach L118. A dark blue lozenge on brown ground is a hole, or
+     * a shard of something; standing water is the one thing on a road that
+     * is *lighter* than the road, at every hour, because it is not showing
+     * you its own colour at all. It is showing you the sky.
+     *
+     * There is still no real-time reflection here and there does not need to
+     * be. A puddle two or three metres from a walking camera is seen at
+     * fifteen or twenty degrees off flat, and what a horizontal mirror
+     * returns at that angle is the sky just above the horizon — which is a
+     * uniform the shader already carries. So the colour is derived from
+     * `uHorizonColor` in `paintWater` and rewritten as the day turns.
+     */
+    skyLit: true,
   },
   {
     key: 'grass',
@@ -608,6 +788,7 @@ const SCATTER_KINDS: ScatterKind[] = [
     densityKey: 'log',
     spread: 44,
     clearance: VERGE.log,
+    bedded: true,
     scale: [0.8, 1.4],
     lodRange: 120,
     castShadow: true,
@@ -623,6 +804,7 @@ const SCATTER_KINDS: ScatterKind[] = [
     clearance: VERGE.rock,
     // A boulder taller than the bard is a landmark, not scatter, and three
     // of them per chunk turned every field into a quarry.
+    bedded: true,
     scale: [0.45, 1.25],
     lodRange: 150,
     castShadow: true,
@@ -744,10 +926,23 @@ function insideLandmark(landmarks: Landmark[], x: number, z: number): boolean {
   return false;
 }
 
+/**
+ * One instanced mesh of standing water, with what `paintWater` needs to
+ * recolour it: the road tone it is lying in, and the per-instance random draw
+ * that gives one puddle a slightly different mix from the next.
+ */
+interface WaterField {
+  mesh: InstancedMesh;
+  road: Color;
+  variation: Float32Array;
+}
+
 interface Chunk {
   index: number;
   group: Group;
   meshes: Array<Mesh | InstancedMesh>;
+  /** Standing water in this chunk, empty for all but a few. */
+  water: WaterField[];
   /**
    * Which scatter kinds this chunk was built with, one bit each.
    *
@@ -806,8 +1001,12 @@ export class WorldStreamer {
   private readonly scratchScale = new Vector3();
   private readonly scratchColor = new Color();
   private readonly upAxis = new Vector3(0, 1, 0);
+  private readonly scratchNormal = new Vector3();
+  private readonly scratchTilt = new Quaternion();
 
   private lastCentre = Number.NaN;
+  /** The horizon colour the standing water was last painted for. */
+  private readonly paintedHorizon = new Color(-1, -1, -1);
 
   /**
    * Patches of ground the scatter keeps out of.
@@ -1006,6 +1205,37 @@ export class WorldStreamer {
     this.lastCentre = Number.NaN;
   }
 
+  /**
+   * Tilt an instance's rotation from "up" to the ground's own normal.
+   *
+   * Two details worth stating, because both were choices.
+   *
+   * The normal comes from `terrainHeight` by central difference at the same
+   * one-metre step the terrain ribbon's own normals use. That is not an
+   * approximation of the mesh, it *is* what the mesh is shaded by, so a log
+   * lying here is lit as though it belongs to the ground under it rather
+   * than to a slightly different surface.
+   *
+   * And the tilt is capped. The bank the road cuts reaches 32 degrees at its
+   * very worst, and while a trunk really does lie at whatever angle it fell
+   * on, past about a third of a right angle a low-poly log stops reading as
+   * lying and starts reading as sliding. The cap costs nothing on the ground
+   * that actually exists — the 95th percentile is 19 degrees — and bounds
+   * what happens if the landform is ever made wilder than it is today.
+   */
+  private bedInGround(quat: Quaternion, x: number, z: number): void {
+    const eps = 1;
+    const dhdx = (terrainHeight(this.road, x + eps, z) - terrainHeight(this.road, x - eps, z)) / (2 * eps);
+    const dhdz = (terrainHeight(this.road, x, z + eps) - terrainHeight(this.road, x, z - eps)) / (2 * eps);
+    const slope = Math.hypot(dhdx, dhdz);
+    if (slope < 1e-4) return;
+    const capped = Math.min(slope, BEDDED_MAX_SLOPE);
+    const k = capped / slope;
+    this.scratchNormal.set(-dhdx * k, 1, -dhdz * k).normalize();
+    this.scratchTilt.setFromUnitVectors(this.upAxis, this.scratchNormal);
+    quat.premultiply(this.scratchTilt);
+  }
+
   private inClearing(x: number, z: number): boolean {
     for (const c of this.clearings) {
       const dx = x - c.x;
@@ -1054,6 +1284,81 @@ export class WorldStreamer {
     // same frame is a visible stall on a phone; spread over three frames it
     // is three ordinary chunk builds, which the walk already does.
     this.promoteOne(centre);
+
+    this.refreshWater();
+  }
+
+  /**
+   * Standing water, repainted when the sky it is reflecting has moved.
+   *
+   * A chunk bakes its instance colours once, and for everything else in the
+   * world that is right — a tuft of grass has the same albedo all day and the
+   * shader does the rest. Water does not: it has no albedo, and a puddle built
+   * at golden hour and still on screen at dusk would be reflecting an hour
+   * that has gone. The visible puddles are never more than about two and a
+   * half chunks old, which at this road's pace is enough of the day for a
+   * dusk sky to move a long way.
+   *
+   * Gated on the horizon colour actually having changed rather than run every
+   * frame, so a walk at a steady hour costs one colour comparison per frame
+   * and nothing else. The threshold is a quarter of a level in eight-bit
+   * terms, well below anything visible, so this repaints often enough that
+   * no two puddles on screen disagree about the hour.
+   */
+  private refreshWater(): void {
+    const horizon = this.globals.uHorizonColor.value;
+    const moved =
+      Math.abs(horizon.r - this.paintedHorizon.r) +
+      Math.abs(horizon.g - this.paintedHorizon.g) +
+      Math.abs(horizon.b - this.paintedHorizon.b);
+    if (moved < 0.001) return;
+    this.paintedHorizon.copy(horizon);
+    for (const chunk of this.chunks.values()) {
+      for (const field of chunk.water) this.paintWater(field);
+    }
+  }
+
+  /**
+   * The colour of standing water at this hour.
+   *
+   * Two rules, and the second is the one that matters. First, the hue is the
+   * sky's: a horizontal mirror seen from a walking camera returns the band of
+   * sky just above the horizon, so this starts at `uHorizonColor` and is
+   * pulled a little way back toward the road so that a puddle still belongs
+   * to the earth it is lying in. Second, and regardless of what the first
+   * rule produced, it is never dark: a puddle is the lightest thing on the
+   * carriageway at every hour of the day, and the floor here is what
+   * guarantees that at the hours when the sky itself has gone dim. Without
+   * it, dusk and night hand back exactly the navy shard this replaced.
+   *
+   * The two numbers turn out to divide the day cleanly between them, which is
+   * why both are here rather than one being tuned to cover both cases. At the
+   * bright hours the mix sets the value and the floor never binds: shot at
+   * 0.34 the tablet frame's puddle came back at L135.9 against a road of
+   * L68.4, which reads less as water than as a spill of milk, so the mix is
+   * most of the way to the earth now and lands the same puddle at about half
+   * again the road rather than double it. At dusk the horizon has so little
+   * value left that the mix falls below the floor and the floor sets the
+   * value instead — measured, a dusk puddle sits at 1.3 times its road before
+   * the floor and 1.75 after. So the mix is the bright hours' dial and the
+   * floor is the dark hours', and neither reaches into the other's half of
+   * the day.
+   */
+  private paintWater(field: WaterField): void {
+    const horizon = this.globals.uHorizonColor.value;
+    const floor = luminanceOf(field.road) * 1.75;
+    for (let i = 0; i < field.variation.length; i++) {
+      const water = this.scratchColor
+        .copy(horizon)
+        .lerp(field.road, 0.72 + field.variation[i] * 0.14);
+      const lum = luminanceOf(water);
+      if (lum < floor) water.multiplyScalar(floor / Math.max(lum, 0.0001));
+      water.r = Math.min(1, water.r);
+      water.g = Math.min(1, water.g);
+      water.b = Math.min(1, water.b);
+      field.mesh.setColorAt(i, water);
+    }
+    if (field.mesh.instanceColor) field.mesh.instanceColor.needsUpdate = true;
   }
 
   private promoteOne(centre: number): void {
@@ -1083,9 +1388,10 @@ export class WorldStreamer {
     // trees all have to keep out of the same patches of ground.
     const landmarks = this.landmarksNear(index);
 
+    const water: WaterField[] = [];
     for (const kind of SCATTER_KINDS) {
       if (distanceM > kind.lodRange) continue;
-      for (const mesh of this.buildScatter(index, kind, landmarks)) {
+      for (const mesh of this.buildScatter(index, kind, landmarks, water)) {
         group.add(mesh);
         meshes.push(mesh);
       }
@@ -1103,7 +1409,7 @@ export class WorldStreamer {
     }
 
     this.group.add(group);
-    return { index, group, meshes, detail: detailAt(distanceM) };
+    return { index, group, meshes, water, detail: detailAt(distanceM) };
   }
 
   /**
@@ -1136,6 +1442,10 @@ export class WorldStreamer {
     const colors = new Float32Array(vertexCount * 3);
     const toneLo = new Float32Array(vertexCount * 3);
     const toneHi = new Float32Array(vertexCount * 3);
+    /** `d(rut drop)/du` per vertex, and the road's lateral direction per row. */
+    const lateralSlope = new Float32Array(vertexCount);
+    const rowNx = new Float32Array(rows);
+    const rowNz = new Float32Array(rows);
 
     for (let r = 0; r < rows; r++) {
       // Overlap the last row of one chunk with the first of the next by
@@ -1147,6 +1457,8 @@ export class WorldStreamer {
       // the normal is that rotated a quarter turn.
       const nx = Math.cos(sample.heading);
       const nz = -Math.sin(sample.heading);
+      rowNx[r] = nx;
+      rowNz[r] = nz;
 
       const palette = paletteFor(biomeAt(this.road, s));
       // Blend toward the neighbouring band's palette across the boundary.
@@ -1205,12 +1517,21 @@ export class WorldStreamer {
         const u = ACROSS_OFFSETS[c];
         const x = sample.x + nx * u;
         const z = roadZ(sample) + nz * u;
-        const y = terrainHeight(this.road, x, z);
+        // The rut is cut into the graded surface rather than into
+        // `terrainHeight`, which stays the one authority on where the ground
+        // is: the bard's footing, the camera's clearance and every prop in
+        // the world are placed by it. Everything that stands *in* the rut
+        // band is placed through `roadSurfaceAt` instead, which is this same
+        // sum — see `scatterFor`.
+        const y = terrainHeight(this.road, x, z) + rutDrop(u);
 
         const i = (r * cols + c) * 3;
         positions[i] = x;
         positions[i + 1] = y;
         positions[i + 2] = z;
+        // Kept for the normal pass below, where the rut has to be added
+        // analytically because the pass's own step is wider than the rut.
+        lateralSlope[r * cols + c] = rutSlope(u);
 
         const absU = Math.abs(u);
 
@@ -1327,8 +1648,21 @@ export class WorldStreamer {
       // Gradient of the height field. The normal is (-dh/dx, 1, -dh/dz),
       // normalised — the standard result for a heightfield, and the reason
       // a flat plain gives exactly (0, 1, 0) however the ribbon is cut.
-      const dhdx = (terrainHeight(this.road, x + eps, z) - terrainHeight(this.road, x - eps, z)) / (2 * eps);
-      const dhdz = (terrainHeight(this.road, x, z + eps) - terrainHeight(this.road, x, z - eps)) / (2 * eps);
+      //
+      // The rut cannot come through this difference and must not be asked
+      // to: the step is a metre and the whole rut is 0.84 m across, so a
+      // central difference straddles it and reports the flat ground on
+      // either side. Its slope is added analytically instead — the drop is a
+      // function of the lateral offset alone, so its gradient is
+      // `d(drop)/du` pointed along the road's own lateral direction.
+      const slope = lateralSlope[i];
+      const row = Math.floor(i / cols);
+      const dhdx =
+        (terrainHeight(this.road, x + eps, z) - terrainHeight(this.road, x - eps, z)) / (2 * eps) +
+        slope * rowNx[row];
+      const dhdz =
+        (terrainHeight(this.road, x, z + eps) - terrainHeight(this.road, x, z - eps)) / (2 * eps) +
+        slope * rowNz[row];
       const inv = 1 / Math.sqrt(dhdx * dhdx + 1 + dhdz * dhdz);
       normals[i * 3] = -dhdx * inv;
       normals[i * 3 + 1] = inv;
@@ -1373,6 +1707,7 @@ export class WorldStreamer {
     index: number,
     kind: ScatterKind,
     landmarks: Landmark[],
+    water: WaterField[],
   ): InstancedMesh[] {
     const s0 = index * CHUNK_LENGTH;
     const rand = mulberry32(subSeed(this.road.seed, `scatter:${kind.key}:${index}`));
@@ -1392,7 +1727,7 @@ export class WorldStreamer {
     const variants = Math.max(1, kind.variants ?? 1);
     const bias = kind.edgeBias ?? 1;
     const clump = kind.clump ?? 0;
-    const buckets: Array<Array<{ matrix: Matrix4; color: number }>> = [];
+    const buckets: Array<Array<{ matrix: Matrix4; color: number; variation: number }>> = [];
     for (let v = 0; v < variants; v++) buckets.push([]);
 
     // Clump state: where the current group is centred, which side and which
@@ -1443,10 +1778,15 @@ export class WorldStreamer {
       const nz = -Math.sin(sample.heading);
       const x = sample.x + nx * u;
       const z = roadZ(sample) + nz * u;
-      const y = terrainHeight(this.road, x, z);
+      // Carriageway kinds stand on the graded surface, rut and all. Off the
+      // road `rutDrop` is zero, so this is `terrainHeight` for everything
+      // else — and a puddle, which is the one kind placed *in* the rut, now
+      // sits on its floor instead of hovering where the flat road used to be.
+      const y = terrainHeight(this.road, x, z) + rutDrop(u) + (kind.lift ?? 0);
 
       this.scratchPos.set(x, y, z);
       this.scratchQuat.setFromAxisAngle(this.upAxis, rand() * Math.PI * 2);
+      if (kind.bedded) this.bedInGround(this.scratchQuat, x, z);
       const scale = randRange(rand, kind.scale[0], kind.scale[1]);
       // Non-uniform scaling on the vertical axis: a field where every tuft
       // is a scaled copy of one tuft reads as wallpaper. Kept narrow —
@@ -1455,7 +1795,11 @@ export class WorldStreamer {
       // up at the bard's knee.
       this.scratchScale.set(scale, scale * randRange(rand, 0.85, 1.15), scale);
       const variant = variants === 1 ? 0 : Math.floor(rand() * variants);
-      const color = kind.colorOf(palette, rand);
+      // One draw either way, so a sky-lit kind places exactly where it placed
+      // when it had a colorOf. White is a placeholder: paintWater writes the
+      // real instance colours before the mesh is ever drawn.
+      const variation = kind.skyLit ? rand() : 0;
+      const color = kind.colorOf ? kind.colorOf(palette, rand) : 0xffffff;
       // Tested last, after every draw this instance was going to make, so a
       // clearing removes plants without moving the ones around it. Skipping
       // earlier would leave the random stream short and reshuffle the whole
@@ -1470,6 +1814,7 @@ export class WorldStreamer {
       buckets[variant].push({
         matrix: new Matrix4().compose(this.scratchPos, this.scratchQuat, this.scratchScale),
         color,
+        variation,
       });
     }
 
@@ -1489,6 +1834,15 @@ export class WorldStreamer {
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       mesh.computeBoundingSphere();
+      if (kind.skyLit) {
+        const field: WaterField = {
+          mesh,
+          road: new Color().setHex(palette.road),
+          variation: new Float32Array(list.map((entry) => entry.variation)),
+        };
+        water.push(field);
+        this.paintWater(field);
+      }
       meshes.push(mesh);
     }
     return meshes;
@@ -1884,6 +2238,7 @@ export class WorldStreamer {
       if (mesh instanceof InstancedMesh) mesh.dispose();
     }
     chunk.meshes.length = 0;
+    chunk.water.length = 0;
   }
 
   dispose(): void {

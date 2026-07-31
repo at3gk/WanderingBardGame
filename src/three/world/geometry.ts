@@ -1104,10 +1104,36 @@ export function puddleGeometry(seed = 71): BufferGeometry {
   }
   const geometry = fromPositions(verts);
   geometry.computeVertexNormals();
-  // A gentle per-face wobble rather than a flat fill — a dead-uniform colour
-  // on a shape this simple reads as a sticker; the wobble is what gives it
-  // the faint unevenness of a real puddle's surface.
-  paint(geometry, 0xf2f4f0, 0.08, rand);
+  /*
+   * Bright at the middle, dark at the rim, rather than a flat fill.
+   *
+   * The fill version read as a plate laid on the road: a hard pale edge all
+   * the way round, which is the one thing standing water does not have. A
+   * real puddle is deep enough to mirror the sky in the middle and shallow
+   * enough at the edge that you are looking at wet earth through a film, so
+   * the edge is the earth's value and the transition is where the water gets
+   * thin. Every triangle here is (centre, ring, ring), so darkening the two
+   * ring vertices gives exactly that gradient for the cost of writing the
+   * colours directly instead of calling `paint`.
+   *
+   * The per-face wobble `paint` was doing is kept — a dead-uniform surface on
+   * a shape this simple reads as a sticker — and applied to both ends of the
+   * gradient so a facet stays one facet.
+   */
+  const count = (geometry.attributes.position as BufferAttribute).count;
+  const colors = new Float32Array(count * 3);
+  for (let v = 0; v < count; v += 3) {
+    const wobble = 1 + (rand() - 0.5) * 0.08;
+    for (let k = 0; k < 3; k++) {
+      // k === 0 is the fan's centre vertex; the other two are on the rim.
+      const shade = (k === 0 ? 1 : 0.6) * wobble;
+      const i = (v + k) * 3;
+      colors[i] = shade;
+      colors[i + 1] = shade;
+      colors[i + 2] = shade;
+    }
+  }
+  geometry.setAttribute('color', new BufferAttribute(colors, 3));
   addSway(geometry, 0, 1, 0);
   return geometry;
 }

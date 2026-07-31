@@ -53,8 +53,51 @@ interface TravellerPalette {
   skin: number;
   /** Hair, hood or cap — whatever breaks the top of the silhouette. */
   crown: number;
-  /** Pack, shawl, cart. The one part allowed to disagree with the rest. */
+  /**
+   * Pack, satchel, staff, cart. Written as the colour the *thing* wants; what
+   * is actually used is `carriedTone`, which forces it off the figure's own
+   * value. See that function for why it cannot be left to taste.
+   */
   carried: number;
+  /**
+   * What the elder is sitting on, and the reason it is not `carried`.
+   *
+   * A stone is not a thing she is carrying, and the one-stop rule that pulls a
+   * load away from its owner is wrong for it: applied to the stone it produced
+   * a dark seat under a dark figure, which is the opposite of what a seat is
+   * for. Only the elder has one.
+   */
+  seat?: number;
+}
+
+/**
+ * Force a value break between a traveller and whatever they carry.
+ *
+ * Measured on a golden-hour busk, the pedlar's cloth and his handcart were at
+ * luminance 115 and 118 — three levels apart out of 255. At that separation
+ * the man and the cart are one lump with no silhouette between them, and a
+ * pedlar whose cart is not a separate shape is not a pedlar, he is a
+ * rectangular blob beside a road. The bard reads instantly at the same size
+ * because every part of him is a stop off its neighbour.
+ *
+ * The break is always taken *downward*. A load is a dusty thing in the shade
+ * of the person carrying it, so darker is what it looks like anyway; and this
+ * file has already learned twice (see the elder's `cloth` and `crown` notes)
+ * that lightening a traveller's part turns it into the brightest object on its
+ * side of the frame, which takes the picture off the bard.
+ *
+ * Hue is preserved: the three channels are scaled together, so a warm cart
+ * stays warm and only its value moves.
+ */
+function carriedTone(cloth: number, carried: number): number {
+  const lum = (hex: number) =>
+    0.2126 * ((hex >> 16) & 0xff) + 0.7152 * ((hex >> 8) & 0xff) + 0.0722 * (hex & 0xff);
+  const ceiling = lum(cloth) / 2;
+  const own = lum(carried);
+  if (own <= ceiling) return carried;
+  const k = ceiling / own;
+  const ch = (shift: number) => Math.round(((carried >> shift) & 0xff) * k) << shift;
+  return ch(16) | ch(8) | ch(0);
 }
 
 /**
@@ -88,6 +131,7 @@ const PALETTES: Record<TravellerKind, TravellerPalette> = {
     // with a pale top into a lamp rather than a person.
     crown: 0x6e6a61,
     carried: 0x6a6a63,
+    seat: 0x8b8579,
   },
   child: {
     cloth: 0x7f9a86,
@@ -173,7 +217,8 @@ export class Traveller {
     const under = solid(palette.under, 0.32);
     const skin = solid(palette.skin, 0.5);
     const crown = solid(palette.crown, 0.45);
-    const carried = solid(palette.carried, 0.4);
+    const carried = solid(carriedTone(palette.cloth, palette.carried), 0.4);
+    const seat = solid(palette.seat ?? palette.carried, 0.4);
 
     const add = (geometry: BufferGeometry, material: ShaderMaterial, x: number, y: number, z: number) => {
       const mesh = new Mesh(geometry, material);
@@ -188,7 +233,7 @@ export class Traveller {
       // in silhouette at eighty metres.
       // A low stone, not a stool. Sat on a tall box the figure reads as
       // enthroned; sat almost on the ground she reads as resting.
-      const stone = add(boxPart(0.46, 0.17, 0.4, 0.88), carried, 0, 0, 0);
+      const stone = add(boxPart(0.46, 0.17, 0.4, 0.88), seat, 0, 0, 0);
       // The shawl widens downward and the head sits clear above it, so the
       // outline is a triangle with a pale dot on top — the one shape in the
       // set that cannot be confused with a standing figure.
@@ -274,8 +319,35 @@ export class Traveller {
         headSize * 0.86,
         -0.01,
       );
+      // A brim, and it is the single most valuable twelve triangles in this
+      // file, because it is the one mark the bard has that these did not.
+      //
+      // The critique's suggestion was a shoulder cape instead, and a cape was
+      // built and thrown away, correctly. These figures are a column of boxes
+      // and every box's top face catches a light-value edge, so the outline
+      // already reads as a ladder of horizontal rungs; a cape at the shoulder
+      // adds a rung, and in the re-shot frame it made the walker *more* of a
+      // totem, not less. The head-to-shoulder step the critique blamed is not
+      // the fault either — the torso tapers out to 1.52 of its waist, so the
+      // shoulders are already wider than the head.
+      //
+      // What was actually missing is a mark that says "person" before any
+      // proportion is read at all, and at twenty pixels that mark is a hat.
+      // Twice the head's width, a tenth of its height, and set just above the
+      // eye line so the face sits under it in shade — which is how a brim
+      // works and why the bard's is the first thing anyone sees of him. All
+      // three standing kinds get one; the four silhouettes stay distinct on
+      // what is *above* and *beside* them (a bedroll standing proud, a
+      // satchel, a handcart) rather than on having no head.
+      const brim = add(
+        boxPart(headSize * 2.05, headSize * 0.1, headSize * 1.85, 1),
+        crown,
+        0,
+        headSize * 0.66,
+        -0.005,
+      );
       this.headPivot.position.y = shoulder + 0.06 * tall;
-      this.headPivot.add(head, hair);
+      this.headPivot.add(head, hair, brim);
       this.body.add(this.headPivot);
 
       if (kind === 'walker') {
@@ -295,6 +367,35 @@ export class Traveller {
         const roll = add(boxPart(0.36, 0.13, 0.15, 1), under, 0, hip + 0.72, -0.12);
         roll.rotation.z = 0.13;
         this.body.add(pack, roll);
+
+        // A walking staff, and the point of it is that it is on ONE side.
+        //
+        // Measured before it existed: reduced to twenty pixels the walker is
+        // twenty cells wide and forty-four tall, and its width per row runs
+        // 9,9,9,9,9,10,10,11,11,12,12,12 — the same nine to twelve cells from
+        // the boots to the shoulders, with a straight left edge at cell 4-6 on
+        // thirty-eight of forty-four rows. That is a bar, and the pack and the
+        // bedroll cannot fix it: both sit on the centreline, so the pack adds
+        // depth the camera cannot see and the roll adds height, and neither
+        // adds a side.
+        //
+        // A staff does, for twelve triangles. It stands outboard of the boots,
+        // leans its head back in over the shoulder, and passes the hanging
+        // hand on the way — so it reads as *held* rather than as a post the
+        // figure happens to be standing next to, which is the failure the
+        // elder's staff note already records from the other direction.
+        //
+        // Deliberately not a second vertical of the same height: it finishes
+        // above the hat, so the top of the silhouette gains a notch on one
+        // side as well as a bump at the hip.
+        const staff = add(boxPart(0.038, 1.26, 0.038, 0.86), under, 0.33, 0, 0.05);
+        staff.rotation.z = 0.16;
+        staff.rotation.x = -0.04;
+        this.body.add(staff);
+        // And the hand goes out to meet it. A staff the figure is not holding
+        // is a fence post it is standing beside — the elder's note records the
+        // same trap from the other end.
+        rightArm.rotation.z = 0.24;
       }
 
       if (kind === 'child') {

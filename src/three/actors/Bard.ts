@@ -49,6 +49,7 @@ import {
   Group,
   Mesh,
   Object3D,
+  Vector3,
   type ShaderMaterial,
 } from 'three';
 import { createFoliageMaterial, createPainterlyMaterial, type PainterlyGlobals } from '../painterly';
@@ -112,6 +113,93 @@ const HAT_Y = HEAD_Y + HEAD_HEIGHT - 0.06;
 /** Hip to knee, and knee to ankle. They sum to the old one-piece leg. */
 const THIGH_LEN = 0.22;
 const SHIN_LEN = 0.18;
+
+/**
+ * Shoulder pivot to the middle of the hand, in metres.
+ *
+ * There is no elbow on this figure, so this is a hard constraint rather than
+ * a starting length: the hand can only ever be on a sphere of this radius
+ * about the shoulder. `gripNeck` solves against that sphere, which is why
+ * the number lives here instead of inline — it has to stay equal to the
+ * hand mesh's own offset in the constructor or the hand grips thin air.
+ */
+const ARM_REACH = 0.43;
+/**
+ * The stretch of the instrument's own +Y axis a hand is allowed to hold.
+ *
+ * `instrumentGeometry` builds the neck from y 0.245 to 0.555 and then slides
+ * the whole instrument down by half its 0.62 length, so the neck ends up
+ * spanning -0.065 to 0.245 about the pivot. These are that span pulled in at
+ * both ends: off the shoulder joint at the bottom, short of the pegbox at
+ * the top, which is where a hand actually goes on a lute.
+ */
+const NECK_GRIP_MIN = -0.02;
+const NECK_GRIP_MAX = 0.2;
+/**
+ * The stretch of the same axis the *strumming* hand is allowed to hold.
+ *
+ * The body's rings sit at local y -0.31 to -0.035 about the pivot: bowl to
+ * -0.255, belly to -0.185, waist to -0.11, shoulders to -0.035. This is the
+ * belly and the waist — the middle of the soundboard, where a soundhole is
+ * and where a hand strums. Not the bowl, which is the bottom edge, and not
+ * the shoulders, which is where the neck starts.
+ */
+const STRUM_GRIP_MIN = -0.25;
+const STRUM_GRIP_MAX = -0.11;
+
+/**
+ * The playing carry: where the instrument sits, in torso space, while it is
+ * being played, and the Euler angles that put it there.
+ *
+ * **This is the fix for the frame the whole game is about.** The busking
+ * postcards showed a red cone with a hat and a brown stick emerging from
+ * behind its left edge; reduced to twenty pixels the figure was a traffic
+ * cone, while the *walking* bard at the same twenty pixels reads instantly.
+ * So the fault was the pose, not the model, and it is an occlusion fault
+ * rather than a contrast one. Measured on the shipped build, flooding this
+ * one mesh and differencing the frame with it shown against the frame with
+ * it hidden: **19.4 per cent of the instrument's own footprint changed a
+ * single pixel.** The other four fifths were behind the bard.
+ *
+ * Why. The camera stands *behind* him — `FRAMINGS.busking` is 3.9 m back
+ * against 2.7 m of side, which is 35 degrees off his spine, a rear
+ * three-quarter — and the old carry brought the instrument round to the
+ * front of his chest at z +0.30 with the body swung to x -0.14, his far
+ * side. His own torso and the cloak were between it and the lens. Nothing
+ * about the instrument's own angles could fix that; a shape held in front of
+ * a figure photographed from behind is not visible, however well it is
+ * posed.
+ *
+ * These numbers are therefore solved against that camera, the way the lap
+ * carry is solved against the resting one, and the working is worth keeping
+ * because it is the only reason they are not round numbers. Projected on the
+ * busk shot, the cloak's own silhouette occupies screen x >= 920 at every
+ * row of the torso and the hat brim reaches 897; screen x runs
+ * `962 - 200·x - 121·z` px in torso space there. So an instrument is clear
+ * of the figure's near edge when `200·x + 121·z > 47`. This carry puts the
+ * body of the lute at x 0.29, z 0.14 — screen 887, thirty-three pixels
+ * outside the cloak — and the pegbox at screen 920, which is the edge
+ * itself. The whole instrument is on the camera's side of the cloth.
+ *
+ * The handedness flipped with it, and that was free: the body now sits at
+ * the *right* hip under the strumming hand with the neck rising across to
+ * the left, which is how a right-handed player holds a lute and is also the
+ * arrangement that puts the big end of the shape on the near side.
+ *
+ * The height is the one number that was swept rather than solved, and it was
+ * worth the sweep: at 0.592 the instrument sits at the hip, where the near
+ * backdrop measures L36-45 and reads as a bag being carried; 18 cm higher it
+ * crosses the chest, and 20 px cells changed against the old build went 5 to
+ * 30 of 660 for the same visible fraction. Lower again by 8 cm and it falls
+ * back to 28. Above this the pegbox climbs behind the hat brim, which is the
+ * "stick growing out of his hat" failure this project already has once, at
+ * the campfire.
+ *
+ * The `y` here is an offset from `SHOULDER_Y`, matching the slung and lap
+ * terms it is summed against.
+ */
+const PLAY_CARRY_POS: readonly [number, number, number] = [0.198, 0.772 - SHOULDER_Y, 0.192];
+const PLAY_CARRY_ROT: readonly [number, number, number] = [0.557, -0.373, 0.566];
 
 /**
  * How far the seated bard's boots reach below his own origin.
@@ -533,6 +621,8 @@ export class Bard {
   private readonly boots: Mesh[] = [];
   /** The cloak mesh, so the walk can trail it without moving the torso. */
   private readonly cloak: Mesh;
+  /** Scratch for `gripNeck`, so the solve allocates nothing per frame. */
+  private readonly grip = new Vector3();
 
   private readonly materials: ShaderMaterial[] = [];
   private readonly globals: PainterlyGlobals;
@@ -598,6 +688,50 @@ export class Bard {
      */
     const underBrim = (color: number, rim = 0.5) => solid(color, rim, 0.72);
 
+    /**
+     * The legs, which have the same problem the head has and worse.
+     *
+     * Measured on `07-night-campfire` with the seated pose actually settled:
+     * the thighs came back at luminance 21.3 and 17.6 against ground at
+     * 41.8-49.1 and the seat log they rest on at 60.8. The one shape in the
+     * figure whose job is to say "this person is sitting down" — a
+     * horizontal bar of thigh against the log — was the darkest object
+     * anywhere near him, more than a stop below everything it had to read
+     * against, which is a silhouette you cannot see rather than one that is
+     * wrong.
+     *
+     * The cause is not the pose and not the camera. `trousers` is 0x4a5a6b,
+     * a cool slate, deliberately: it is the one cool note on a warm figure
+     * and it earns its place in daylight. A campfire is a warm source, and a
+     * warm light on a cool albedo cancels — sampled, the rendered pixel was
+     * (43,15,17), keeping 58 per cent of the albedo's red and 16 per cent of
+     * its green and blue. Repainting the trousers warm would fix the fire
+     * and lose the daylight, so the fix is the same one the head already
+     * uses: add enough rim that the limb keeps an edge when its faces are
+     * turned away from the only light in the scene. Rim is hue-neutral, so
+     * the slate stays slate.
+     *
+     * **The shadow floor was tried here and does nothing — do not try it
+     * again.** Measured same-frame, with the thigh's own pixels isolated by
+     * flooding its albedo and keeping the mask: `shadowDepth` 0.45 -> 0.72
+     * -> 0.90 leaves the thigh at 22.9, 22.9, 22.9. That is the right answer
+     * and it says what the real cause is. The head's dark band is genuinely
+     * *in shadow* — the brim casts one — so lifting the shadow floor pays
+     * there. A seated thigh at a campfire is not in anyone's shadow; its
+     * faces are simply turned away from the only light in the scene, which
+     * is a `dot(N,L)` term no shadow dial touches. Rim is the one dial that
+     * moves it: 0.35 -> 0.62 takes the thigh from 19.3 to 22.9, and 0.90
+     * would reach 26.3.
+     *
+     * 0.62 rather than 0.90 because this material is on the *walking* bard
+     * in daylight too, where the legs have no legibility problem and a hard
+     * rim on a near-frontlit limb reads as a plastic outline. It buys a
+     * quarter of a stop, which is honest but small: the thigh is still 0.85
+     * of a stop under the ground behind it, and closing that properly means
+     * the albedo, which is a daylight decision and not this wave's to make.
+     */
+    const legMaterial = () => solid(colors.trousers, 0.62);
+
     // --- legs ----------------------------------------------------------
     // Pivots sit at the hip so a rotation swings the leg rather than
     // sliding it. This is the one thing that has to be right or the walk
@@ -621,14 +755,14 @@ export class Bard {
       [-1, this.leftLeg],
       [1, this.rightLeg],
     ] as const) {
-      const thigh = new Mesh(thighGeo, solid(colors.trousers, 0.35));
+      const thigh = new Mesh(thighGeo, legMaterial());
       thigh.position.y = -THIGH_LEN;
       thigh.castShadow = true;
       pivot.add(thigh);
 
       const knee = new Group();
       knee.position.y = -THIGH_LEN;
-      const shin = new Mesh(shinGeo, solid(colors.trousers, 0.35));
+      const shin = new Mesh(shinGeo, legMaterial());
       shin.position.y = -SHIN_LEN;
       shin.castShadow = true;
       const boot = new Mesh(bootGeo, solid(colors.boots, 0.3));
@@ -690,6 +824,7 @@ export class Bard {
       }),
     );
     this.cloak = new Mesh(cloakGeometry(), cloakMaterial);
+    this.cloak.name = 'bard-cloak';
     // High enough that the collar tucks under the jaw. Two centimetres
     // lower and a strip of sky-lit shoulder shows between the hat brim and
     // the cloak, which from behind reads as a gap straight through the
@@ -819,6 +954,13 @@ export class Bard {
       }),
     );
     const mesh = new Mesh(instrumentGeometry(id), material);
+    // Named for the same reason every other prop in this project is: a
+    // headless check has to be able to find one object in the scene graph
+    // and ask what it looks like on screen. The occlusion measurement that
+    // fixed the playing carry floods *this* mesh with a flat colour and
+    // counts the pixels that survive the depth test, which is the only way
+    // to tell "the instrument projects 150 px" from "you can see it".
+    mesh.name = 'bard-instrument';
     mesh.castShadow = true;
     // The pivot handles carrying angle and slinging; the geometry is already
     // centred on its own middle, so the two can be animated independently
@@ -833,6 +975,39 @@ export class Bard {
     this.pose = pose;
     this.poseBlend = 0;
     this.poseBlendRate = 1 / Math.max(0.001, seconds);
+  }
+
+  /**
+   * Finish whatever pose transition is in flight, now.
+   *
+   * Nothing in the game calls this: a pose that cut would look like a
+   * dropped frame. It exists for `RoadStage.pose`, the handle the postcard
+   * tool drives, and it exists because **every campfire postcard this
+   * project has ever shot caught this figure part-way out of a walk.**
+   *
+   * The arithmetic, because it is not obvious and it cost a wave. `App`
+   * runs a fixed step with `MAX_CATCHUP_MS = 250`, so one *rendered* frame
+   * advances the simulation by at most a quarter second no matter how long
+   * the frame took. Under SwiftShader — no GPU, a few hundred thousand
+   * triangles — a 1600x900 night frame takes the better part of a second,
+   * measured here at about one frame per 600 ms. `setPhase` blends a pose
+   * over 0.6 s, which is four sim steps, which is between two and four
+   * whole seconds of wall clock; `postcard.mjs` waits 1800 ms. Measured
+   * across that wait the blend read 0.417 on one run and 1.0 on the next.
+   *
+   * At 0.417 the figure is not a seated bard at all. It is 42 per cent of
+   * one and 58 per cent of a walker: thighs at 42 per cent of their seated
+   * angle so there is no horizontal in the silhouette, the cloak only
+   * two-fifths gathered so the hem still swallows the lap, and — this is
+   * the one the critics kept describing — the instrument 58 per cent
+   * *slung across the back*, where its neck rises past the shoulder on a
+   * strap. "A hunched red mass with the lute neck floating detached above
+   * his left shoulder" is a literal description of a half-finished blend,
+   * and no amount of moving the camera or re-solving the pose can fix a
+   * frame that is not showing the pose.
+   */
+  settlePose(): void {
+    this.poseBlend = 1;
   }
 
   private poseBlendRate = 1;
@@ -1037,17 +1212,9 @@ export class Bard {
       Math.sin(armPhase + Math.PI) * armSwing * slung - carryPose * playAmount - 0.1 + lap * 0.45;
     this.leftArm.rotation.z = 0.11 + playAmount * 0.32 - armCross - lap * 0.15;
 
-    // The right hand strums. The kick from `pluck` is what makes a note
-    // land visually at the same instant it lands audibly.
     const strumMotion = Math.sin(this.elapsed * 7.5) * 0.1 * playAmount * (0.4 + this.warmth * 0.6);
-    this.rightArm.rotation.x =
-      Math.sin(armPhase) * armSwing * slung -
-      carryPose * playAmount -
-      this.strum * 0.5 +
-      strumMotion +
-      lap * 0.45;
-    this.rightArm.rotation.z =
-      -0.11 - playAmount * 0.28 - this.strum * 0.16 - armCross + lap * 0.15;
+    this.rightArm.rotation.x = Math.sin(armPhase) * armSwing * slung - carryPose * playAmount + lap * 0.45;
+    this.rightArm.rotation.z = -0.11 - playAmount * 0.28 - armCross + lap * 0.15;
 
     // --- instrument ----------------------------------------------------
     // Two poses, blended rather than switched. Slung it rides across the
@@ -1070,10 +1237,11 @@ export class Bard {
     // altogether: from the side it read as a bag being carried rather than
     // an instrument being worn.
     //
-    // Played, it has to come well clear in front instead. The chest reaches
-    // z 0.10 and the instrument is 0.12 deep, so anything nearer than about
-    // 0.26 buries the bowl in the ribs — 0.22 did, and brought the neck up
-    // through the jaw with it.
+    // Played, it comes round to the bard's own right rather than round to the
+    // front of his chest — see `PLAY_CARRY_POS`, which carries the measurement
+    // and the arithmetic. The short version: the busking camera stands behind
+    // him, so "clear in front" is the far side of the figure, and the version
+    // that put it there had four fifths of the instrument behind his own back.
     //
     // In the lap it comes down to just above the thighs and forward of them,
     // which in this frame is the hip line and a hand's width out. It is not
@@ -1081,9 +1249,9 @@ export class Bard {
     // toward them, and that lean is most of what says "resting" rather than
     // "balanced there".
     this.instrumentPivot.position.set(
-      playAmount * 0.02 - slung * 0.03 + lap * 0.045,
-      SHOULDER_Y - (playAmount * 0.28 + slung * 0.12) - lap * 0.219,
-      playAmount * 0.3 - slung * 0.285 + lap * 0.187,
+      playAmount * PLAY_CARRY_POS[0] - slung * 0.03 + lap * 0.045,
+      SHOULDER_Y + playAmount * PLAY_CARRY_POS[1] - slung * 0.12 - lap * 0.219,
+      playAmount * PLAY_CARRY_POS[2] - slung * 0.285 + lap * 0.187,
     );
     // Thirty degrees across the back, not forty. The steeper tilt threw the
     // bowl clear of the cloak's outline with daylight showing between the
@@ -1116,10 +1284,119 @@ export class Bard {
     // three numbers are the Euler angles that put it there once the seated
     // torso's own forward lean is paid back.
     this.instrumentPivot.rotation.set(
-      this.strum * 0.07 + slung * 0.15 + playAmount * 0.18 + lap * 0.54,
-      playAmount * -0.5 + slung * 0.08 - lap * 0.889,
-      -slung * 0.52 - playAmount * 0.62 - lap * 0.62,
+      this.strum * 0.07 + slung * 0.15 + playAmount * PLAY_CARRY_ROT[0] + lap * 0.54,
+      playAmount * PLAY_CARRY_ROT[1] + slung * 0.08 - lap * 0.889,
+      -slung * 0.52 + playAmount * PLAY_CARRY_ROT[2] - lap * 0.62,
     );
+
+    // Both hands go on the instrument, and both are solved rather than
+    // dialled — see `gripLine`. The fretting hand takes the neck in the lap
+    // pose *and* the playing pose; the strumming hand takes the belly, and
+    // only while playing, because the seated bard's right hand belongs on the
+    // log beside him and not on the strings.
+    const fret = Math.min(1, lap + playAmount);
+    if (fret > 0) this.gripLine(this.leftArm, NECK_GRIP_MIN, NECK_GRIP_MAX, fret, true);
+    if (playAmount > 0) {
+      this.gripLine(this.rightArm, STRUM_GRIP_MIN, STRUM_GRIP_MAX, playAmount, false);
+    }
+    // The strum kick rides on top of whatever the solve produced, rather than
+    // inside it. Folded into the base angles it would be diluted by the
+    // solve's own lerp exactly when the bard is playing, which is the one
+    // time it exists for: `pluck` is what makes a note land visually at the
+    // same instant it lands audibly.
+    this.rightArm.rotation.x += strumMotion - this.strum * 0.5;
+    this.rightArm.rotation.z -= this.strum * 0.16;
+  }
+
+  /**
+   * Put a hand *on the instrument the bard is holding*, by solving for it
+   * rather than by dialling an angle.
+   *
+   * The problem this fixes, measured: seated, the left hand sat 0.61 m from
+   * the middle of the neck — 132 px apart in a 1600 px frame, on an
+   * instrument whose whole neck projects 96 px. The hand was further from
+   * the neck than the neck is long, and it was down beside the *body* of the
+   * lute, which is the wrong end for a left hand anyway. Four critiques in a
+   * row said the instrument looked detached, and it was.
+   *
+   * Why a solve and not a number. The lap pose's three Euler angles are
+   * solved against the resting camera (see the long note above) and they are
+   * allowed to keep moving; an arm angle tuned by eye against today's
+   * instrument angles separates again the moment either changes, which is
+   * how this drifted apart in the first place. Here the arm is aimed at the
+   * neck every frame, so the two cannot come apart by construction.
+   *
+   * How. Both the arm pivot and the instrument pivot are children of the
+   * torso, so the whole thing is solvable in torso space with no world
+   * matrices. The stretch of instrument being held is the segment `A + t·B`
+   * for `t` in `[tMin, tMax]`, `A` being the instrument pivot's origin and
+   * `B` its local +Y in torso space. The arm is a rigid rod of `ARM_REACH`
+   * from a fixed shoulder `S`, so the hand can only ever land on a sphere of
+   * that radius: intersect the sphere with the line, which is a quadratic in
+   * `t`, and take the root inside the allowed stretch. If the line misses the
+   * sphere entirely — it does not today, but the pose is allowed to move —
+   * fall back to the point nearest the shoulder, so the hand still points at
+   * the instrument instead of snapping somewhere absurd.
+   *
+   * `preferFar` breaks the tie when both roots are legal. The fretting hand
+   * takes the one further *up* the neck, which is where a fretting hand goes;
+   * the strumming hand takes the one further down, which is the near edge of
+   * the belly rather than the far one, and keeps the forearm off the
+   * soundboard.
+   *
+   * Then the two Euler angles. With the arm's default hanging direction
+   * `(0,-1,0)` and Euler order XYZ with no yaw, the hand direction is
+   * `(sin z, -cos x·cos z, -sin x·cos z)`, which inverts in closed form:
+   * `z = asin(dx)` and `x = atan2(-dz, -dy)`.
+   *
+   * Weighted, so a pose that does not hold the instrument does not get its
+   * arms moved. The walking arms are still bit-for-bit what they were — the
+   * weights are the sitting and playing blends, and both are zero on the
+   * road. `bard.test.ts` pins that.
+   */
+  private gripLine(
+    arm: Group,
+    tMin: number,
+    tMax: number,
+    weight: number,
+    preferFar: boolean,
+  ): void {
+    this.instrumentPivot.updateMatrix();
+    const m = this.instrumentPivot.matrix.elements;
+    // Origin and local +Y of the instrument, in torso space.
+    const ax = m[12];
+    const ay = m[13];
+    const az = m[14];
+    const bx = m[4];
+    const by = m[5];
+    const bz = m[6];
+    const sx = arm.position.x;
+    const sy = arm.position.y;
+    const sz = arm.position.z;
+    const ux = ax - sx;
+    const uy = ay - sy;
+    const uz = az - sz;
+    const ub = ux * bx + uy * by + uz * bz;
+    const uu = ux * ux + uy * uy + uz * uz;
+    const disc = ub * ub - uu + ARM_REACH * ARM_REACH;
+    let t: number;
+    if (disc >= 0) {
+      const root = Math.sqrt(disc);
+      const first = preferFar ? -ub + root : -ub - root;
+      const second = preferFar ? -ub - root : -ub + root;
+      const inRange = (v: number) => v >= tMin && v <= tMax;
+      t = inRange(first) ? first : inRange(second) ? second : Math.min(tMax, Math.max(tMin, first));
+    } else {
+      t = Math.min(tMax, Math.max(tMin, -ub));
+    }
+    this.grip.set(ax + bx * t - sx, ay + by * t - sy, az + bz * t - sz);
+    const d = this.grip.length();
+    if (d < 1e-5) return;
+    this.grip.multiplyScalar(1 / d);
+    const rz = Math.asin(Math.min(1, Math.max(-1, this.grip.x)));
+    const rx = Math.atan2(-this.grip.z, -this.grip.y);
+    arm.rotation.x += (rx - arm.rotation.x) * weight;
+    arm.rotation.z += (rz - arm.rotation.z) * weight;
   }
 
   /** How much a pose contributes right now, accounting for the blend. */

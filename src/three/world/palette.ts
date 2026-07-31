@@ -126,6 +126,35 @@ export interface BiomePalette {
  * "as bright as the ground gets", so the mid grey a real lit meadow needs
  * simply was not in the palette to reach.
  *
+ *
+ * --- why the one-stop rule was wrong, not merely inconvenient -----------
+ *
+ * (Added when an interactive wave reached this same conclusion independently
+ * and by a different route; task 121 above is the change that shipped, and
+ * this is the physics behind it, kept because the file should say why.)
+ *
+ * The struck clause was "nothing on the ground comes within a stop of the
+ * sky". It is a rule about ALBEDO written as though it were a rule about
+ * rendered value, and the two are not the same claim. A sky is bright because
+ * it is a large DIM emitter; the sun is a small ferocious one, and a diffuse
+ * surface in direct sun is lit by both. Sunlit grass at 0.22 albedo sits near
+ * 0.22 x 100000 lux / pi ~ 7000 cd/m^2 against a clear blue sky away from the
+ * sun at around 5000. A sunlit field is NOT a stop below the sky it stands
+ * under — it is level with it or a little above. What makes a photograph of
+ * one still read as ordered front to back is that the SHADOWS are three stops
+ * down, not that the lit ground is one stop down.
+ *
+ * So the replacement rule is about spread rather than ceiling: the ground's
+ * dark end stays where it is, and its pale end may come within half a stop of
+ * the sky. A band of land that never crosses L128 cannot be the middle of
+ * anything, which is why the histogram was bimodal.
+ *
+ * Corroborating measurement from the interactive wave, taken with a
+ * land-masked histogram (sky dome hidden, clear colour set to a sentinel, so
+ * "land" is every pixel of real geometry): before the lift, 02-morning read
+ * land p90 0.211 (L127) against sky p50 0.582 (L201), and the ONLY land in
+ * the game above L170 was haze — the ground past sixty metres, 2 per cent of
+ * the land, which got there by being mixed most of the way to the fog colour.
  * The fix taken here is the one the critique named as one of two valid
  * levers (raise the land or lower the sky, not a third lighting term): grass,
  * grassVariant, grassDry, road and roadShoulder in all three biomes are

@@ -6,6 +6,228 @@ Run counter: 50
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-07-31 — twelve interactive critique waves, and the honest
+  state of the game.** A human is about to pull this repo down and look at it
+  on a real GPU. Read this block first; it is the short version.
+
+  **What is verifiably true.** `npm test` 790 green, `npx tsc --noEmit` clean,
+  `npm run build` clean, and `tools/frame-quality.mjs` PASSES all six poses —
+  AFTER merging main, morning 3.24, noon 2.73, golden 4.73, night 6.10,
+  phone-portrait 2.78, phone-landscape 4.80. Note these are LOWER than the
+  branch measured before the merge (3.79 / 3.08 / 5.11 / 6.65 / 3.30 / 5.19):
+  ROADMAP task 121 landed on main in parallel and raised ground albedo 35 per
+  cent, which lifts p10 (morning 0.043 -> 0.063) and therefore compresses the
+  stops even as the land gets lighter. Both changes are wanted; the
+  compression is the cost and phone-portrait now sits 0.28 above its floor
+  rather than 0.80. Watch it. Pitch readability holds at 5.93:1 at every
+  hour, which is within a whisker of its arithmetic ceiling of 6.46 (see
+  below).
+
+  **What is NOT true, and matters most: nobody has ever looked at this game
+  with human eyes.** Twelve waves of agents graded it against a written rubric
+  and pixel statistics. No human has played it, and the busking mechanic —
+  the core of the design — has never been judged for whether it is *fun*.
+  Every frame was shot through SwiftShader at 12-21 s a frame, which is itself
+  the cause of at least one bug class (see the pose-blend race below).
+
+  **The count that never moved.** Ten successive visual critics scored the
+  ten postcard framings: 2, 2, 4, 5, 5, 3, 3, 3, 3 of 10 holding, and every
+  one said "not shippable" against an A Short Hike / Spiritfarer bar. The
+  measurements underneath improved a great deal over the same period. Treat
+  the count as unreliable rather than as a verdict: it is a binary applied by
+  an agent that has never seen the reference games, and it stopped
+  distinguishing progress from shippability around wave 9. A tenth critic was
+  briefed to add a 0-10 per-frame score for exactly this reason and did not
+  get to run.
+
+  **The two structural fixes that actually changed the picture**, both found
+  by comparing constants rather than by looking at frames:
+  1. `road.ts` `CORRIDOR_FALLOFF_M` 18 -> 7. The corridor graded the ground
+     flat across a 23 m strip centred on the centreline — the entire near and
+     mid third of every walking frame — over a landform already tuned to 15 m
+     of cross-road relief. Relief within 10 m of the lane went 0.29 m -> 1.14 m
+     against a 1.35 m ceiling. The lane gradient is provably unchanged (mean
+     0.029, p95 0.071) and there is now a test asserting it.
+  2. `painterly.ts` gained a foreground value tier over 4-45 m. There had been
+     NO depth-dependent value term inside 40 m: the fog defaults are dead
+     constants that `RoadStage` overwrites, and `distanceFog` runs them through
+     a second smoothstep, so `fogAmount` was 0.001 at 40 m. Nothing separated
+     five metres from sixty.
+
+  **The oldest open item, and where it actually stands.** STATE item 8 — "the
+  land never carries a light value" — was open from Run 45 through wave 11.
+  The ninth critic proved it: with wave 11's headline constant zeroed in a
+  control build, `p90` was byte-identical in all six gate poses, so the entire
+  green-gate gain had come from DARKENING. Wave 12's last landed commit
+  (`f510ab4`) is the first attempt to move it the other way — it lifts only
+  each biome's `*Dry` tone and widens the pale ground ramp, and it overturns
+  a rule this codebase carried for months ("nothing on the ground comes within
+  a stop of the sky") with a photometric argument that is worth reading in
+  `palette.ts`. **Its land-masked p90 claim is UNVERIFIED** — the agent that
+  wrote it died when the container suspended, before reporting. Whole-frame
+  p90 is dominated by sky and is not evidence. MEASURE THIS FIRST.
+
+  **Two unexplained numbers from that same commit, flagged not diagnosed:**
+  noon lost 0.58 stops (3.66 -> 3.08) and night 0.41 (7.06 -> 6.65), while hue
+  spread jumped at golden (0.024 -> 0.185) and phone-landscape (0.021 ->
+  0.212). All still pass. A large hue-spread move at golden hour is not
+  obviously something a dry-grass albedo lift should cause.
+
+  **The biggest lesson of the twelve waves, stated plainly for whoever is
+  next.** Every structural fix came from two constants that had to agree and
+  had never been compared — the road corridor against the camera's band; a
+  barline offset smaller than the plank it positions; a `reset` that snapped
+  every camera channel except FOV; a shutter shorter than a pose blend; fog
+  defaults overwritten at startup; a rut column at 0.55 against paint at 0.58;
+  a pale ramp described as "narrower" that was wider. NOT ONE came from
+  looking harder at a screenshot. Conversely, four confident "regressions"
+  reported by critics turned out to be instrument artefacts. **When a critique
+  names a symptom, go read the constants that bound it before acting on the
+  prescribed fix.**
+
+  **Known-good discarded work.** Wave 12's compose agent (figure-to-ground
+  separation in `Bard.ts`/`Traveller.ts`/`RoadStage.ts`) and a second value
+  round (`FG_TIER_DEPTH` 0.30 -> 0.60) were in flight when this session ended
+  and were discarded unmeasured rather than committed. The problem they were
+  aimed at is real and measured: on 05-golden-busk the bard separates from the
+  ground behind him by 2.0 sRGB levels at 20 px, and the dusk traveller by
+  0.4, against 16.4 for the campfire frame. Diagnosed cause: at day 0.82 the
+  sun is on the far side from the busk camera, so the only side an instrument
+  can be carried on and be seen is the shade side (busking lute L49 on a
+  backdrop of L36-45; walking lute, sunlit, L132 on L95). It is a value
+  problem, not a pose problem — do not re-diagnose the pose.
+
+
+- **CORRECTION TO COMMIT 5c7fb07's MESSAGE.** That message says the songboard's
+  pitch contrast broke because wave 11's foreground tier darkened the plank
+  while the glyphs, drawn by a different material, did not follow. The tier
+  mismatch is REAL and is fixed in that commit, but it is NOT what produced
+  the reported 3.67:1 — the agent reproduced 3.67:1 byte-identically on a
+  control build of 62ea1b6, long before the tier existed. So nothing regressed;
+  a long-standing number was measured for the first time in WCAG terms. I wrote
+  that causal claim from the diff plus my own brief's hypothesis, before the
+  agent reported. **Rule that follows: when committing an agent's tree before
+  its report arrives, describe WHAT changed and not WHY it was broken.** This
+  is the second commit message in two waves to assert a cause the measurement
+  later contradicted.
+
+- **THE 7:1 PITCH HOLD WAS ARITHMETICALLY UNREACHABLE, and every critique that
+  judged against it was scoring against an impossible target.** WCAG contrast
+  is `(L1+0.05)/(L2+0.05)`, and the note head's luminance is 0.0058 against
+  that constant 0.05, so even a perfectly black head buys about 11 per cent and
+  the whole letter-to-head curve PEAKS AT 6.46 across all light levels. The
+  ninth critic's `pitchReadable: false` was therefore half right — the number
+  was real and worth fixing, the bar it was compared to was not achievable. It
+  now reads 5.93:1, within a whisker of the 6.46 ceiling, and holds at every
+  hour (noon 6.14, golden 5.93, dusk 5.93, midnight 5.94) where before it moved
+  with the light. Also note the older figures in this file's comments (5.29,
+  1.27) are NOT WCAG ratios and have cost a round each; the file now says so.
+
+- **Wave 11 (interactive, 2026-07-30): the near ground finally got a value
+  tier, and the project's own gate went green.** `tools/frame-quality.mjs` had
+  gone RED on phone-portrait (2.36 stops against a 2.5 floor) after wave 10
+  brightened the land; it is green again at 2.88, with every other pose up too
+  (morning 3.24 -> 3.74, noon 3.22 -> 3.63, golden 4.76 -> 5.03, landscape
+  4.87 -> 5.10). Verified independently of the agent that did it.
+  - **The lever, and it was the same shape of bug as the road corridor.** There
+    was no depth-dependent value term anywhere inside 40 m. Worse than that:
+    `painterly.ts`'s `uFogNear`/`uFogFar` defaults are DEAD — `RoadStage.ts:355`
+    overwrites them with 19.8 m and 242.5 m — and `distanceFog` puts the
+    smoothstep through a SECOND smoothstep, so `fogAmount` is 0.001 at 40 m and
+    0.013 at 60 m. Nothing separated five metres from sixty. A foreground tier
+    now darkens 4-45 m, gated by `sunHeight` so it lands on the high-sun frames
+    that are flat and is arithmetically absent from dawn, dusk and night, which
+    already get a ladder from long cast shadows.
+  - **A class bug fixed at last: the light floor was ADDED, not multiplied.**
+    `color += uEmissive * uEmissiveStrength` is a constant added to every
+    fragment, which compresses every ratio between them — it was flattening
+    every albedo field on the material at the hours the game looks best, and on
+    the songboard it had not merely flattened the ink but INVERTED it, drawing
+    the five staff rules LIGHTER than the timber they are printed on. Now
+    multiplied by the vertex/instance colour field. Ink-to-paper at night
+    3.10 -> 16.49.
+  - **Cloud shadows rebuilt and rejected AGAIN, for a new reason.** The old
+    recorded objection turned out to be an additive-dilution artefact of the
+    same class as the emissive bug, so it should never have been trusted. The
+    real reason is scale and the road change does not touch it: the 0-8 m band
+    is about 7.5 m x 4 m, so a 55 m cloud feature covers it entirely, and more
+    relief cannot help because relief changes the NORMAL while the term
+    multiplies `sunAmount` irrespective of normal.
+  - Also: the lute is visible while playing (18.6 -> 45.8 per cent of its
+    projected area), the camp's propped instrument is off the sightline to the
+    bard's head (265 px gap, 0 violations across 3600 layouts), and travellers
+    carry something on one side to break the 20 px vertical bar.
+  - **Still open, with a named cause:** at 20 px the busking bard is still a
+    dark red cone. The fix that shipped was a SILHOUETTE change and this is a
+    VALUE problem — at day 0.82 the sun is on the FAR side from the busk camera,
+    so the only side an instrument can be carried on and be seen is the shade
+    side. The lute renders L49 against a backdrop of L36-45; the walking lute,
+    sunlit, renders L132 against L95. Treat it as a rim/grain question on the
+    instrument material, not as a pose question.
+
+- **CORRECTION TO COMMIT 8ca52c7's MESSAGE.** That message claims "the fire's
+  glow pool is draped over the terrain rather than laid down as a flat disc."
+  That change is NOT in the commit and was never needed: the pool has been
+  draped since before wave 11 (`Campfire.ts:1099` writes each vertex at
+  `groundHeightAt(...)`; measured, the mesh spans 0.527 m of y over a 4.87 m
+  radius). The only Campfire.ts change in that commit is a stale comment
+  corrected from 0.9 m to 0.72-0.82 m. The description was inferred from the
+  task brief rather than read off the diff. History is not rewritten in this
+  project, so the correction lives here. The pool does read as an airbrushed
+  wash, but that is because the ground inside it carries little modelled form —
+  a scatter question, not a drape question.
+
+- **Wave 9 (interactive, 2026-07-30): seven fixes off a sixth visual
+  critique, and five of that critique's own prescribed fixes rejected on
+  measurement.** Two fixers split by file ownership so they could not fight
+  over one file — one owning `painterly.ts`/`sky.ts`/`world/*`, the other
+  owning `SongNotes.ts`/`CameraRig.ts`/`actors/*`. The rejections are the
+  part worth reading, because every one of them was a plausible fix that
+  measured worse:
+  - **The near ground's third octave** (as prescribed, 4.5 m into `drift`)
+    made noon *worse*, 46.9 to 50.1 per cent modal share. Two reasons: the
+    claim that reweighting to sum to 1.0 "keeps the calibration" is false —
+    weights preserve the mean, not the deviation — and the finding's premise
+    that the near ground is ten metres deep is wrong for the strip it
+    measures. The bottom fifth of a 1600 px frame shows under two metres of
+    world across its whole width. What shipped is multiplicative instead of
+    additive, because the carriageway's tone ramps are deliberately close to
+    the road's own colour and leave an additive term only ~30 albedo levels
+    to work in.
+  - **Dropping the daylight horizons** made its own target worse: morning's
+    share above L170 fell 0.89 to 0.09 per cent. The horizon key also feeds
+    `fogTint`, and fog is applied *after* `uExposure`, so darkening it pulls
+    the whole distance down and no later dial can pay it back.
+  - **The songboard margin split** would have shipped a clipped note. `SONGS`
+    spans steps 0–12 with `needsLedger` true at *both* ends, so the margin
+    derivation is symmetric, not bottom-only; a 1.5-step top margin puts the
+    plank edge at 5.5 steps while Old MacDonald's A5 sits at 6. Now pinned by
+    `songNotes.test.ts`, written against the songbook rather than a hardcoded
+    range and mutation-tested (at margin 1.5, two of its three tests go red).
+  - **The travellers' shoulder cape** was built, shot and thrown away: these
+    figures are a column of boxes whose top faces each catch a light edge, so
+    the silhouette is already a ladder of rungs and a wide flat plate adds a
+    rung. Its premise was also wrong — the torso already tapers to 1.52 of
+    its waist, so the shoulders are wider than the head. A hat shipped
+    instead, which is the mark the bard actually has.
+  - **The campfire seat log** needed no change at all: measured, its top
+    surface already sits at exactly `SITTING_SEAT_HEIGHT_M` and its axis
+    already projects 97 per cent across the camera.
+  One item's real cause was below where the critique looked: the daylight
+  haze cancelling to grey was not only the fog keys but `ridgeTint` in the sky
+  dome, which mixed a third of the way toward `uZenith` — and at an hour whose
+  horizon is warm cream and zenith cool blue, a third of the way between them
+  *is* the grey axis. Fixing that one line lifted golden hour's skyline
+  saturation 0.302 to 0.438 with its keys untouched.
+  **Still open after this wave:** the near ground is improved but not closed
+  (modal share 26–32 per cent against a 25 target, and it still reads as broad
+  soft fields rather than as cover); the seated bard reads as sitting because
+  of the *log*, not the figure, which is a value problem in his leg albedos
+  against the fire rather than a framing one; there is still no clef, and the
+  critique's proposed home for it does not exist (left of the barline is the
+  tail, where past notes drift to rest); and `06-dusk-encounter` promises two
+  figures in prose while `RoadStage.placeMeeting` deliberately stands one —
+  a content mismatch, not a model fault, and both sides are deliberate.
 - **Run 50 (scheduled): consolidation, per CLAUDE.md's every-10th-run rule
   (run counter was 49, so this one is the 10th) — no code changed.** Read
   DESIGN.md, STATE.md and ROADMAP.md in full, then played the build through
@@ -1309,6 +1531,34 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   its own CPU contention. Every one produced a confident, specific,
   plausible failure. None of them was the game. Before changing code to fix
   a failing check, make the check prove it can see its own success case.
+- **Do not commit an agent's working tree while it is measuring.** Two
+  concrete costs, both from 2026-07-30. A songboard agent's `WEATHER_DEPTH = 0`
+  was committed and described as cautious groundwork; it was the *control* half
+  of an A/B, so the commit shipped the feature switched off under
+  documentation saying it was on. And a figure agent's baseline was silently
+  corrupted — it read its "before" state with `git show HEAD:...`, and HEAD had
+  moved under it, so its control returned byte-identical numbers to its
+  variant. It caught that; it might not have. If a tree must be committed
+  mid-run, diff it and describe only what the diff shows, and name any constant
+  that is an A/B control so a reader cannot mistake it for a shipped value.
+- **Describe a commit from its diff, not from the brief that requested it.**
+  Commit 8ca52c7's message claims a glow-pool fix that is not in the commit and
+  was never needed. The work had already shipped; the agent measured it and
+  correctly refused to redo it. Writing the message from the task description
+  rather than from `git diff` put a false statement in permanent history.
+- **A pinned scanline is a check that goes stale silently.** Several of the
+  scratchpad measuring scripts (`bands.mjs`, `c6-hist.mjs`) read depth bands
+  at *pinned* image rows — a row number chosen when the script was written
+  because the horizon happened to sit there. Move a camera and the pin cuts a
+  different strip of world, so the instrument reports a change the render
+  never made. Wave 9 moved `resting.side` and `WIDEN_RISE_SHARE`, and against
+  the pins the tablet frame looks like it collapsed from 2.79 to 2.02 stops;
+  with the horizon *detected* it went 2.44 to 2.27 with every band brighter.
+  Before believing any band comparison that spans a camera change, re-run with
+  horizon detection (copy the shot to a filename the PINNED table does not
+  list). This is the "suspect the check first" rule again, in the one form
+  that survives a passing self-check: the instrument is correct, and pointed
+  at the wrong pixels.
 - **Verify behaviour, not just green tests.** `tools/autoplay.mjs` plays
   the game and checks every pitch it hears; `tools/learning-check.mjs`
   plays *well and then badly* to prove the letter-fading model both fades

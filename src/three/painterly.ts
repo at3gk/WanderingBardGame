@@ -112,7 +112,7 @@ export interface PainterlyOptions {
    * Strength of the ground's own colour drift, 0 disables it.
    *
    * Only the terrain sets this. It turns on a pair of extra vertex
-   * attributes, `aToneLo` and `aToneHi`, which give this fragment the dark
+   * attributes, aToneLo and aToneHi, which give this fragment the dark
    * and pale ends of the ground palette it is standing on; the shader then
    * drifts between them with world-space noise. See the note by the drift
    * itself for why this cannot live in vertex colour.
@@ -417,6 +417,86 @@ const FRAGMENT = /* glsl */ `
  * the shade side roughly where it was.
  */
 #define SKY_SCATTER 0.09
+/*
+ * How hard the near-ground mark rides the scattered-skylight term above.
+ *
+ * A relative swing on SKY_SCATTER, not an amplitude in its own right — see
+ * the long note at the point of use for why the mark needs a second carrier
+ * at a low sun and why this is the term it borrows rather than a new one.
+ *
+ * Shot at 0.85 and at 1.50 on the two frames the mark was missing, and the
+ * larger one is better on every reading of both:
+ *
+ *   06-dusk-encounter  largest connected flat region 19.8 → 14.6 → 10.6 per
+ *                      cent of frame, and its top edge moves down 129 rows,
+ *                      so it is the plane breaking up rather than shrinking
+ *   05-golden-busk     near band modal share 47.7 → 43.7 → 41.3, sd 10.7 →
+ *                      10.9 → 11.1, every scale-resolved difference up
+ *
+ * Not higher than this. The clamp at the point of use starts to bind here:
+ * at 1.50 the damp end of the patchwork takes the scatter term to zero over
+ * the bottom sixth of the noise, and past that the extra amplitude is spent
+ * flattening those patches against each other instead of separating them.
+ * The measured cost is small and real — 06's land hue spread falls 0.103 to
+ * 0.091 — and the cool-pixel share, which is what item 9 is actually about,
+ * holds at 4.9 → 4.8 per cent.
+ */
+#define NEAR_SHADE_MARK 1.50
+/*
+ * --- the foreground tier -----------------------------------------------
+ *
+ * The one term that separates five metres from thirty-five, and it exists
+ * because NOTHING ELSE IN THIS SHADER DOES. The fog block at the bottom of
+ * this file claims to be "the only term in the frame that separates a
+ * hundred and sixty metres from twenty", and that claim is true and is also
+ * the whole problem: read it the other way round and the frame has no
+ * distance cue at all inside the fog's near edge.
+ *
+ * The arithmetic, done properly, because the numbers in this file's own
+ * defaults are not the numbers the game runs. "createPainterlyGlobals"
+ * initialises uFogNear/uFogFar to 40 and 260, and "RoadStage" overwrites both
+ * before the first frame with TERRAIN_REACH * 0.12 and * 1.47 — 19.8 m and
+ * 242.5 m. It is worse than the defaults suggest, not better, because
+ * "distanceFog" puts the smoothstep through a SECOND smoothstep:
+ *
+ *     depth     40 m    60 m    90 m   120 m   160 m
+ *     fogAmount 0.001   0.013   0.084   0.233   0.463
+ *
+ * So the veil is a tenth of one per cent at forty metres and a hundredth at
+ * sixty. On a walking frame the near and mid thirds of the picture are both
+ * inside sixty metres — measured with a depth pass rather than a horizon row,
+ * the phone-portrait frame reads 25 per cent of its pixels at 0-8 m, 19 per
+ * cent at 8-20 m and 7 per cent at 20-40 m — and every one of those pixels is
+ * lit and hazed identically. That is why the land reads as one grey tier: not
+ * because it has no shape, but because two thirds of it is at one value.
+ *
+ * What this term is: a short-range darkening of the direct light, full at the
+ * camera's feet and gone by forty-five metres, which hands the near ground a
+ * value of its own to be read against the middle distance. It is the
+ * reverse-facing half of aerial perspective — haze lightens the far, a
+ * foreground shadow darkens the near — and it is the device a painter uses
+ * when the near ground has nothing standing in it to cast one.
+ *
+ * Why it is scaled by sunHeight, which is the part worth keeping if anything
+ * here is ever retuned. The two frames in this game's own sheet that already
+ * have a genuine two-tier field are golden hour and dusk, and both get it from
+ * long low-sun cast shadows lying across the foreground. Those frames need
+ * nothing from this term and must not be paid for by it; the high-sun frames,
+ * whose shadows are directly under the things casting them, are exactly the
+ * ones that come back flat. Riding sunHeight puts the term where the shadows
+ * are not, and takes it to zero at night, where the near ground is the
+ * campfire's business and the hearth term owns it.
+ *
+ * Applied to "albedo * lighting" only — before the scattered skylight, the
+ * rim, the hearth and the black floor. That ordering is deliberate three
+ * times over: shade that is already dark barely moves (its light is mostly
+ * scatter, which is not scaled), a near silhouette keeps its rim so the tier
+ * cannot swallow an edge, and the anti-soot floor still fires underneath, so
+ * this can darken the foreground without ever crushing it to black.
+ */
+#define FG_TIER_DEPTH 0.30
+#define FG_TIER_NEAR_M 4.0
+#define FG_TIER_FAR_M 45.0
 #include <packing>
 #include <lights_pars_begin>
 #include <shadowmap_pars_fragment>
@@ -524,7 +604,13 @@ void main() {
     vec3 N = normalize(vWorldNormal);
   #endif
 
-  vec3 V = normalize(cameraPosition - vWorldPosition);
+  // The distance to the camera is wanted twice — once by the ground's fine
+  // drift below and once by the fog at the end — so the vector is kept and
+  // the view direction falls out of it. This is one square root fewer per
+  // fragment than computing V and the fog depth separately.
+  vec3 toCamera = cameraPosition - vWorldPosition;
+  float viewDepth = length(toCamera);
+  vec3 V = toCamera / max(viewDepth, 0.0001);
   vec3 L = normalize(uSunDirection);
 
   /*
@@ -544,6 +630,13 @@ void main() {
   float grainA = noise31f(vWorldPosition * uGrainScale);
   float grainB = noise31f(vWorldPosition * uGrainScale * 2.7 + 11.3);
   float grain = grainA * 0.68 + grainB * 0.32;
+
+  // The near-ground mottle, carried out of the albedo block so the shade
+  // side can use it too. Zero on every surface that is not near ground, and
+  // on every material without PAINTERLY_GROUND_TONES, which is what keeps
+  // the term below inert everywhere except the strip it is for.
+  float nearWeight = 0.0;
+  float nearMark = 0.0;
 
   vec3 albedo = uColor;
   #ifdef PAINTERLY_VERTEX_COLORS
@@ -592,9 +685,119 @@ void main() {
      * Asymmetric: the pale tone comes in over a narrower range than the dark
      * one, so bleached ground reads as patches and damp ground reads as most
      * of the field.
+     *
+     * --- and the pale half did neither of those things ---------------------
+     *
+     * The paragraph above describes what these two lines are meant to do; the
+     * numbers used to say something else, and nobody had put them next to the
+     * noise field's own deviation.
+     *
+     *   dark ramp  0.50 -> 0.27   full at 1.84 sd below the mean, span 0.23
+     *   pale ramp  0.56 -> 0.82   full at 2.56 sd ABOVE it,       span 0.26
+     *
+     * So the pale ramp was the WIDER of the two where the comment claims it is
+     * the narrower, and it topped out two and a half deviations up, which on a
+     * field of this size is a patch every few hundred metres. Between that and
+     * a reach of 0.62, the pale tone in palette.ts was a colour the ground
+     * could not actually arrive at: measured with a land-masked histogram, the
+     * only pixels in a daylight frame above L170 were fog.
+     *
+     * THE FINDING STANDS; THE FIX WAS REVERTED, AND BOTH ARE RECORDED BECAUSE
+     * THE NEXT ATTEMPT SHOULD START FROM HERE. 0.55 -> 0.73 with a reach of
+     * 0.85 was built and shipped briefly: mirrored to the same 1.84 deviations
+     * as the dark ramp, span 0.18, genuinely narrower, with a patch reaching
+     * most of the way to the tone rather than two thirds.
+     *
+     * It was backed out when ROADMAP task 121 landed on main independently and
+     * raised grass, grassVariant, grassDry, road and roadShoulder 35 per cent
+     * across all three biomes. This ramp had been tuned against a much smaller
+     * lift (only each biome's *Dry tone, by about a sixth), and the two
+     * compound: a wider, further-reaching ramp toward an already much paler
+     * tone lifts the darks instead of adding patches. Measured on the merge,
+     * with the widened ramp against without it, everything else identical:
+     *
+     *   phone-portrait  2.57 -> 2.78 stops     noon  2.64 -> 2.73
+     *   morning, golden, night, landscape unchanged
+     *
+     * — that is, the narrow-and-far ramp was costing 0.21 stops on the tightest
+     * pose, which sits nearest the gate floor. So the constants below are the
+     * pre-existing ones, and they are still wrong in the way described above.
+     * Redoing this properly means re-deriving the span and the reach against
+     * the NEW albedos rather than reinstating these numbers.
      */
     albedo = mix(albedo, vToneLo, smoothstep(0.50, 0.27, drift) * uGroundTones * 0.72);
     albedo = mix(albedo, vToneHi, smoothstep(0.56, 0.82, drift) * uGroundTones * 0.62);
+
+    /*
+     * --- and then the same thing again at a metre, for the near ground ----
+     *
+     * Everything above is calibrated for ground seen at fifty metres, and
+     * the bottom of the frame is not that. It is worth being exact about the
+     * scales, because the obvious repair is an order of magnitude too timid.
+     * The bottom fifth of a 1600-pixel frame shows ground from about two
+     * metres out to about six, which is under two metres of world across the
+     * whole width of the bottom row: driftA's 69 m contributes a constant
+     * across it, driftB's 21 m under a tenth of a cycle, and the paper grain
+     * at 9 m not much more. That is the whole reason the near ground reads as
+     * a flat fill with grass standing on it rather than as ground.
+     *
+     * A fourth octave at 4.5 m was tried first, which is what the arithmetic
+     * gives if the near ground is taken to be ten metres deep — and then at
+     * 0.95 m, added into the drift sum at a weight that leaves the field's overall
+     * deviation and its dark and pale area fractions where they were. Both
+     * were shot and measured and both are gone. The near band's modal
+     * ten-level share moved from 32.0 to 28.2 per cent on the morning frame
+     * and the wrong way, 46.9 to 50.1, on noon; the band's own standard
+     * deviation fell slightly in all four frames. The reason is structural
+     * rather than a matter of tuning: vToneLo and vToneHi on the
+     * carriageway are deliberately pulled close to the road's own colour so
+     * that a track stays a track, so the whole distance from one end of the
+     * ramps to the other is about thirty levels of albedo there, and two
+     * standard deviations of a fourth octave is a small fraction of thirty.
+     *
+     * So this is multiplicative instead, and it is not spending the ramps'
+     * budget. A wet hollow in a cart track is darker and cooler than the
+     * earth around it and a baked crust is lighter and warmer, in whatever
+     * biome, so the two ends can be factors rather than tones — which makes
+     * the amplitude a fraction of the surface's own albedo and takes it out
+     * of the ramps' calibration entirely. One noise call, the same one the
+     * failed version paid for.
+     *
+     * The distance fade is not a performance dodge, it is what makes a
+     * feature this small safe at all. There are no mipmaps on a noise
+     * function; a metre of ground at a hundred and fifty metres is two
+     * pixels, and a pattern sampled at two pixels a cycle is not texture, it
+     * is a hash. Gone by forty-five metres, a metre is still fourteen pixels
+     * across, which is a brush mark. Beyond the fade the ground is
+     * bit-identical to what it was, which is wanted: the mid and far bands of
+     * these frames measure well and had nothing to gain here.
+     *
+     * Steepened into patches rather than left as the raw noise, and that is
+     * the difference between a term that measures and a term that is
+     * visible. The smooth version shipped for one round: it moved the near
+     * band's modal ten-level share from 32.0 to 30.1 per cent on morning and
+     * 52.7 to 42.3 on portrait, and in the zoomed frame the near ground was
+     * indistinguishable from before. A gradient of fifteen levels spread
+     * across four hundred pixels is not a mark. The same fifteen levels
+     * either side of an edge a few tens of pixels wide is, which is the
+     * argument this file's header already makes about the light bands: a
+     * gradient reads as untextured 3D and an edge broken up by noise reads
+     * as a brush.
+     */
+    float nearness = 1.0 - smoothstep(10.0, 45.0, viewDepth);
+    float mottle = noise21f(vWorldPosition.xz * 1.05 + 31.7);
+    // Four fifths of the way to a two-tone patchwork. Not all the way: at
+    // full steepening the near ground reads as two colours of paint and the
+    // last fifth of raw noise is what keeps a patch's interior from being
+    // dead flat.
+    mottle = mix(mottle, smoothstep(0.38, 0.62, mottle), 0.8);
+    vec3 damp = vec3(0.78, 0.83, 0.93);
+    vec3 baked = vec3(1.23, 1.18, 1.05);
+    albedo *= mix(vec3(1.0), mix(damp, baked, mottle), nearness);
+    nearWeight = nearness;
+    // Signed, so the two ends of the patchwork pull opposite ways about the
+    // field's own value rather than only lifting it.
+    nearMark = mottle * 2.0 - 1.0;
   #endif
 
   albedo = mix(albedo, albedo * uColorVariant, smoothstep(0.35, 0.75, grain) * uGrain);
@@ -670,12 +873,55 @@ void main() {
 
   vec3 lighting = ambient + uSunColor * sunAmount * SUN_STRENGTH;
 
-  vec3 color = albedo * lighting;
+  // See FG_TIER_DEPTH: the near ground's own value, and the only thing in
+  // this shader that tells five metres from thirty-five.
+  float foreground = 1.0 - smoothstep(FG_TIER_NEAR_M, FG_TIER_FAR_M, viewDepth);
+  float foregroundTier = 1.0 - FG_TIER_DEPTH * foreground * sunHeight;
+
+  vec3 color = albedo * lighting * foregroundTier;
 
   // The one light term that does not pass through the albedo. See
   // SKY_SCATTER: a warm albedo cannot be multiplied into a cool shadow, so
   // the shade side is given its colour additively instead.
-  color += ambient * SKY_SCATTER * (1.0 - sunAmount) * mix(0.25, 1.0, skyFacing);
+  float scatter = SKY_SCATTER * (1.0 - sunAmount) * mix(0.25, 1.0, skyFacing);
+  /*
+   * --- the near-ground mark's second carrier -----------------------------
+   *
+   * Not a new light term. The mark above is a factor on albedo, and a factor
+   * on albedo is a fixed RELATIVE change in linear light — which the sRGB
+   * encode turns into a level difference very nearly proportional to the
+   * level itself. Measured through the real encode with the shipped damp and
+   * baked constants, the same shader term is worth 12.8 sRGB levels at the
+   * morning frame's near-band mean of L74 and 5.7 at the dusk frame's L25.
+   * Against a ten-level bucket that is the difference between a band spread
+   * over three buckets and a band sitting in one, and it is exactly the shape
+   * of the failure: the mottle measures well on the six high-sun frames and
+   * misses 05-golden-busk and 06-dusk-encounter, the two where the near
+   * ground is LARGEST.
+   *
+   * The multiply cannot be turned up to fix it. Its amplitude is a fraction
+   * of the surface's own albedo by construction — that is the whole reason it
+   * is multiplicative rather than a fourth octave in the drift, and the note
+   * above records what happened when the drift's own budget was spent
+   * instead. At a low sun the surface simply has little light to take a
+   * fraction of.
+   *
+   * So the mark rides the one term that is BIGGEST where the multiply is
+   * weakest. SKY_SCATTER is scaled by 1 - sunAmount, so it is near nothing at
+   * noon (flat ground there takes sunAmount ~0.81) and near everything at
+   * dusk (the sun is below the horizon by 06's hour, so ~0.85 of it survives)
+   * — the two frames that needed this are the two that get it, and the six
+   * that already measure well are barely touched. It is the same patchwork
+   * with the same edges, reinforcing the multiply rather than fighting it.
+   *
+   * The amplitude is a relative swing on a small term, not a term of its own,
+   * so it cannot introduce light where the sky is dark: the ambient collapses
+   * with the sky at night exactly as SKY_SCATTER's own note describes, and
+   * the clamp keeps the damp end from ever subtracting more scatter than
+   * there is.
+   */
+  scatter *= clamp(1.0 + nearMark * NEAR_SHADE_MARK * nearWeight, 0.0, 2.0);
+  color += ambient * scatter * foregroundTier;
 
   // --- rim ---------------------------------------------------------------
   float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), uRimPower);
@@ -748,15 +994,51 @@ void main() {
    */
   vec3 hue = albedo / max(max(albedo.r, max(albedo.g, albedo.b)), 0.001);
   vec3 floorLight = ambient * mix(vec3(1.0), hue, 0.5) * 0.28;
-  color += floorLight * exp(-dot(color, vec3(0.30, 0.59, 0.11)) * 22.0);
+  color += floorLight * foregroundTier * exp(-dot(color, vec3(0.30, 0.59, 0.11)) * 22.0);
 
-  color += uEmissive * uEmissiveStrength;
+  /*
+   * The emissive floor rides the surface's own painted field.
+   *
+   * It used to be added flat — one constant, the same on every fragment of
+   * the material, laid on top of the albedo. A constant added to two values
+   * compresses the ratio between them, and that is not a small effect here
+   * because this term is at its largest exactly when the light is at its
+   * smallest: the songboard's floor is sized as LIGHT_FLOOR minus the world's
+   * own luminance, so at dusk it is most of what the plank is made of. The
+   * plank carries its weathering and its printed rules as VERTEX COLOUR, a
+   * 22 per cent value swing between fresh and worn timber and a factor of
+   * eleven between paper and ink (BOARD_INK is 0.09 of the paper) — and a
+   * flat addition arrives on all of them equally, so the worn end and the
+   * fresh end converge and, worse, the rules fill in toward the paper at the
+   * hour a player most needs to read a pitch off them.
+   *
+   * Multiplying by the painted field fixes both without touching the floor's
+   * size: a fragment that is nine per cent of the paper's albedo receives
+   * nine per cent of the lift, so every ratio the artist painted survives the
+   * floor intact and the plank as a whole is lifted by the same amount it was.
+   *
+   * Deliberately vVertexColor * vInstanceColor and NOT the full albedo. The
+   * distinction is what makes this safe: the field is the part of the albedo
+   * somebody painted per vertex or per instance, while the rest of the albedo
+   * (uColor, the grain's colour variant, the ground drift) is the material's
+   * own base tone, and dividing a light term by that would tint every emitter
+   * with the square of its own colour. Of the eight emissive surfaces in the
+   * game, seven are the campfire's — flames, coals, lantern glass — and every
+   * one of them is a plain mesh with neither vertex nor instance colour, so
+   * this leaves the fire arithmetically identical. The songboard's timber is
+   * the only material in the world with both, which is the one this is for.
+   */
+  vec3 emissiveField = vInstanceColor;
+  #ifdef PAINTERLY_VERTEX_COLORS
+    emissiveField *= vVertexColor;
+  #endif
+  color += uEmissive * uEmissiveStrength * emissiveField;
   color *= uExposure;
 
   // --- fog ---------------------------------------------------------------
   // Distance fog, thinned with altitude so hilltops stay legible while the
   // valley floor dissolves. Tinted toward the horizon low down.
-  float depth = length(cameraPosition - vWorldPosition);
+  float depth = viewDepth;
   // A steeper near ramp, then a long tail.
   //
   // One smoothstep across the whole range spreads the veil so evenly that
@@ -810,7 +1092,7 @@ void main() {
  * Create a painterly material bound to a scene's shared globals.
  *
  * The returned material shares the global uniform *objects*, so a single
- * write to `globals.uSunDirection.value` moves the sun for the whole world.
+ * write to globals.uSunDirection.value moves the sun for the whole world.
  * Per-material uniforms (colour, rim, sway) are private to each instance.
  */
 export function createPainterlyMaterial(
@@ -907,7 +1189,7 @@ export function bindGlobals(material: ShaderMaterial, globals: PainterlyGlobals)
 
 /**
  * A double-sided cutout variant for billboarded foliage. Split out because
- * getting `side` and `alphaTest` wrong on grass is the single most common
+ * getting side and alphaTest wrong on grass is the single most common
  * way stylised foliage ends up looking like cardboard.
  */
 export function createFoliageMaterial(

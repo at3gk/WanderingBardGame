@@ -161,7 +161,9 @@ const HILL_DIAGONAL_M = 5;
 const HILL_DIAGONAL_WAVELENGTH_M = 165;
 
 // Surface texture, deliberately an order of magnitude smaller than the
-// landform. This is the part the road corridor erases.
+// landform. This is the part the road corridor erases — over a 23 m strip
+// since 2026-07-30, and over a 45 m one before that, which is the whole
+// story of why the near ground read as a plate. See CORRIDOR_FALLOFF_M.
 // Raised with the landform above, and for the same reason. Taller ridges
 // with the same fine detail on them read as smooth modelled shapes rather
 // than as ground; the hummocks are what a hillside is actually made of at
@@ -176,8 +178,60 @@ const BUMP_B_WAVELENGTH_M = 31;
 
 /** Half-width of the flat carriageway plus its verges. */
 export const CORRIDOR_HALF_WIDTH_M = 4.5;
-/** How far beyond the verge the ground takes to become natural again. */
-export const CORRIDOR_FALLOFF_M = 18;
+/**
+ * How far beyond the verge the ground takes to become natural again.
+ *
+ * Cut from 18 m to 7 m on 2026-07-30, and it is the largest single change to
+ * what a walking frame looks like that this file has made. At 18 m the
+ * corridor owned a 45 m strip centred on the lane — the entire near and
+ * middle third of every frame — and inside it the landform was graded flat
+ * by construction. Two independent visual critiques called the result "a
+ * flat green plane meeting a flat sky" and nine rounds of shader, palette
+ * and lighting work failed to move it, because the fault was never light:
+ * there was no shape there to light.
+ *
+ * Measured over 24 seeds at 37 m stations as the peak-to-trough of the
+ * ground across the strip the camera actually fills (medians):
+ *
+ *     falloff     |d| <= 10 m    |d| <= 15 m
+ *      18 m         0.29 m         0.93 m
+ *       9 m         0.86 m         1.52 m
+ *       7 m         1.14 m         1.53 m
+ *       0 m         1.35 m         1.60 m   (the ceiling — no corridor at all)
+ *
+ * So 7 m recovers 84% of the relief the landform has to give within ten
+ * metres of the road, against 21% before. The last row is worth reading
+ * too: even with the corridor deleted the ground within ten metres of the
+ * lane holds only 1.35 m of shape, because `HILL_ACROSS_M` is 15 m over a
+ * 205 m wavelength and that is a median cross gradient near 0.13. The
+ * corridor is why the near ground was *flat*. It is not why it is gentle —
+ * that one is the landform's own wavelength, and a separate decision.
+ *
+ * Why not less. The bank's steepest cross grade, measured the same way, is
+ * 0.36 at an 18 m falloff, 0.52 at 9 m, 0.64 at 7 m and 0.74 at 6 m. Soil
+ * stands at an angle of repose around 30-35 degrees — 0.58 to 0.70 — and
+ * slumps past it, so 6 m asks a grass bank to hold a face it could not
+ * hold. `road.test.ts` gates the grade at 0.70, the top of that range,
+ * rather than at whatever the shipped value happens to measure.
+ *
+ * What it costs the walk: nothing, and that is not a rounding claim.
+ * `laneHeight` never consults the corridor — the lane is `hills` evaluated
+ * at the centreline — so the gradient the player actually walks is
+ * unchanged to the digit: mean 0.029, p95 0.071, worst 0.119 at either
+ * falloff. What does steepen is a line held at a *fixed* lateral offset
+ * while the centreline drifts under it, which is what a tree or a fence
+ * post sees. Redoing the landform note's arithmetic for that case: the
+ * centreline moves up to 0.19 m of X per metre of Z, the smoothstep gives
+ * up at most 1.5/falloff of its weight per metre of lateral distance, and
+ * the lane-to-natural difference at mid-bank is about 2 m typically and 5 m
+ * at worst, so the extra along-road gradient is bounded by
+ * 0.19 * 2 * 1.5/7 = 0.08 typically and 0.19 * 5 * 1.5/7 = 0.20 at worst.
+ * That bound is loose, because the drift averages 0.085 rather than 0.19:
+ * measured 9 m off the centreline the gradient is 0.035 mean and 0.161
+ * worst, against 0.029 and 0.118 at an 18 m falloff. Inside the bound, and
+ * on ground nobody walks.
+ */
+export const CORRIDOR_FALLOFF_M = 7;
 
 /** No two stops are ever closer than this. */
 export const MIN_STOP_SPACING_M = 60;
@@ -301,7 +355,10 @@ function naturalHeight(field: RoadField, x: number, z: number): number {
  * Smoothstep rather than a linear ramp because the derivative has to be
  * continuous at *both* ends: a linear blend leaves a crease along the edge of
  * the verge and another where the falloff ends, and low-poly flat shading
- * shows creases far more clearly than a smooth mesh does.
+ * shows creases far more clearly than a smooth mesh does. `road.test.ts`
+ * proves that property by how the ground's second difference *scales* with
+ * the step rather than by how large it is, which is the one form of the test
+ * that a change to the landform's amplitude cannot quietly invalidate.
  */
 function corridorWeight(d: number): number {
   if (d <= CORRIDOR_HALF_WIDTH_M) return 1;
@@ -343,7 +400,7 @@ export function terrainHeight(road: DailyRoad, x: number, z: number): number {
   // per vertex.
   const w = corridorWeight(Math.abs(x - cx));
   // The two early-outs come before the work they would make redundant, and
-  // the far one comes first: the corridor is 69 m wide against a terrain mesh
+  // the far one comes first: the corridor is 23 m wide against a terrain mesh
   // hundreds of metres across, so the overwhelming majority of vertices are
   // natural ground and would otherwise pay for a `hills` call at the lane that
   // is then multiplied by a weight of zero. Six wasted noise evaluations per

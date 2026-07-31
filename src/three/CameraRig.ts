@@ -192,7 +192,43 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
     height: 1.6,
     lookHeight: 0.85,
     lead: 1.4,
-    side: 2.1,
+    // 2.6. This has been 2.1 and it has been 3.3, and this is the first time
+    // it has been swept through a lens that was holding still — see `reset`,
+    // which had to be fixed before any of these numbers meant anything.
+    //
+    // What the previous pass measured is real and it reproduces: the thigh's
+    // *horizontal* extent — the part that says "this limb goes forward"
+    // rather than "this is another shin" — grows monotonically with `side`,
+    // 0.36 of its true length at 1.6, 0.46 at 2.1, 0.54 at 2.6, 0.63 at 3.3,
+    // 0.69 at 3.9 (mean of the two thighs, seated pose settled). Against
+    // that, it quoted a seat log foreshortening from 195 px to 137. Both
+    // curves are confirmed here at 252 -> 160 px.
+    //
+    // What it did not measure is the price, and the price is in this file's
+    // own header: the true camera-to-subject range is
+    // `sqrt(distance² + side² + (height - 0.7)²)`, so `side` is a distance
+    // like any other and **raising it shrinks the subject**. From 2.1 to 3.3
+    // that is sqrt(15.25 + 4.41) = 4.43 m to sqrt(15.25 + 10.89) = 5.11 m,
+    // 15 per cent further away; measured, the seated figure went from 0.339
+    // of frame height to 0.298, a 12 per cent loss, and the instrument in his
+    // lap went from 2201 visible pixels to 1536, a 30 per cent loss. The
+    // complaint the swing was meant to answer was that the subject of the
+    // best-lit frame in the game is illegible. Twelve per cent of his height
+    // and a third of his instrument is a steep way to pay for thigh angle.
+    //
+    // Nor can it be paid back by closing the distance: holding the range at
+    // 4.43 m with `side` at 3.3 needs `distance` = sqrt(19.66 - 10.89) =
+    // 2.96 m, and 3 m behind a seated figure is where the fire leaves the
+    // frame, which is the constraint that set this framing in the first
+    // place.
+    //
+    // So 2.6 takes 47 per cent of the thigh's available gain for 40 per cent
+    // of the size loss, and keeps the seat log 206 px across — the log being,
+    // per the last two waves of notes, the thing that actually reads as
+    // "seated" here. Distance, height and fov stay as they are; the fire's
+    // screen position moves by under thirty pixels across the whole sweep,
+    // so it is not the binding constraint anywhere in this range.
+    side: 2.6,
     fov: 43,
     positionSmoothing: 1.1,
     targetSmoothing: 1.3,
@@ -258,8 +294,11 @@ const FRAMINGS: Record<CameraMood, MoodFraming> = {
 /**
  * How much of the narrow-screen widening is handed back to the sky rather
  * than to the ground. See `widenRise`, which is where the number is argued.
+ *
+ * Negative, which is not a typo. It used to be +0.25 — a quarter of the added
+ * angle given to the sky — and going the other way is the change.
  */
-const WIDEN_RISE_SHARE = 0.25;
+const WIDEN_RISE_SHARE = -0.35;
 
 /**
  * Ceiling on the narrow-screen FOV widening, in tangent space.
@@ -338,6 +377,8 @@ export class CameraRig {
   private moodBlendRate = 1;
   private elapsed = 0;
   private initialised = false;
+  /** Posed for a screenshot: snapped to the goal and not drifting. */
+  private posed = false;
 
   /**
    * Extra height added when the ground under the camera would otherwise
@@ -372,6 +413,8 @@ export class CameraRig {
    */
   setMood(mood: CameraMood, seconds = 1.4): void {
     if (mood === this.mood) return;
+    // A real framing change means the game is being played, not posed.
+    this.posed = false;
     // Blend from wherever the current blend has actually got to.
     this.fromFraming = this.blendedFraming();
     this.mood = mood;
@@ -438,10 +481,11 @@ export class CameraRig {
 
     // Idle drift. Two incommensurable frequencies so it never visibly
     // repeats; scaled by the framing so the close shots breathe more.
+    const drift = this.posed ? 0 : framing.drift;
     const driftX = Math.sin(this.elapsed * 0.23) * Math.cos(this.elapsed * 0.11);
     const driftY = Math.sin(this.elapsed * 0.31 + 1.7);
-    this.scratchGoal.x += driftX * framing.drift;
-    this.scratchGoal.y += driftY * framing.drift * 0.6;
+    this.scratchGoal.x += driftX * drift;
+    this.scratchGoal.y += driftY * drift * 0.6;
 
     if (!this.initialised) {
       // First frame: snap. Damping in from wherever a default-constructed
@@ -508,14 +552,58 @@ export class CameraRig {
    * phone — the framing most players see first — was very nearly half empty
    * sky with everything of interest squeezed into a band at the skyline.
    *
-   * A quarter share, with the widening itself pulled back to 1.14, lands the
+   * A quarter share, with the widening itself pulled back to 1.14, landed the
    * horizon at 0.35 on both phone portrait and tablet: still a little more
    * sky than the desktop framing, which is right for a tall frame, and
-   * nowhere near half of it. The bottom edge picks up about two degrees more
-   * road, which is a price worth paying and much the smaller of the two.
+   * nowhere near half of it. The bottom edge picked up about two degrees more
+   * road, which read as a price worth paying and much the smaller of the two.
+   *
+   * **That last judgement was wrong, and the share is now negative.** The
+   * reason is a measurement the argument above never made: how big the largest
+   * *connected* patch of one value in the frame is. On the tall aspects it was
+   * the sky, and the sky is not a price worth paying, because a flat sky is
+   * flat everywhere while a flat road has grass, ruts, stones and a shadow
+   * across it and therefore breaks into small patches at the same bucket
+   * share. Measured on 08-phone-portrait, largest flat region as a share of
+   * frame: 12.1 per cent at +0.25, 10.6 per cent at -0.35, against 8 to 13.5
+   * per cent on the desktop frames — so a tall frame stops being the outlier.
+   * The treeline band, which is the one carrying the midground, went from 61
+   * per cent of its pixels in a single ten-level bucket to 49; the near road
+   * gave up 25 to 30 the other way, which is the trade being made on purpose.
+   *
+   * A note on what this fixes and what it does not. The critique that prompted
+   * it asked for the skyline to sit *nearer 0.45* of frame height rather than
+   * 0.37 — that is, for more sky, not less — while also naming the flat sky as
+   * a quarter of the frame and the answer as "not more scatter". Those two
+   * cannot both be had, and the arithmetic above says which one to keep. The
+   * bottom third of a portrait frame is still one brown plane; that is the
+   * ground's own business and not something a camera can fix.
+   *
+   * **And a third option that has been asked for twice does not exist.** The
+   * standing note on this constant is to stop spending the widening on road
+   * and sky and "bias it toward the mid band" instead. It cannot be done from
+   * here, and the reason is geometry rather than tuning: the widening adds
+   * angle at the top and bottom EDGES of the frustum, and the mid band is by
+   * definition the part that is at neither edge. Whatever this constant is
+   * set to, every degree the widening adds arrives as more sky, more road, or
+   * some split of the two — the middle of the picture cannot receive any of
+   * it. The two extremes have both now been shot (+0.25 gave it all to the
+   * sky, -0.35 all to the road) and there is no third setting hiding between
+   * them.
+   *
+   * What *would* grow the mid band is a narrower FOV, which magnifies
+   * everything and is the opposite of what a phone needs, or a higher camera,
+   * which spreads the same slab of world over more angle. Measured on the
+   * frames as they stand: the horizon sits at 0.316 of frame height on the
+   * 1600x900 walking shot and 0.382 on phone portrait, so the tall frame is
+   * already giving only six and a half points more of its height to sky than
+   * the desktop composition it is derived from. The portrait frame's real
+   * problem is what is IN its bottom half, not how much of it there is.
    *
    * It is done by moving the *look target*, not by adding a pitch offset, so
-   * it damps with everything else and cannot fight the target smoothing.
+   * it damps with everything else and cannot fight the target smoothing. That
+   * is also why a negative value is safe: it is a look target a little below
+   * the one the desktop framing uses, not a rotation bolted on afterwards.
    */
   private widenRise(framing: MoodFraming): number {
     if (this.fovWiden <= 1) return 0;
@@ -574,9 +662,51 @@ export class CameraRig {
   }
 
   /** Drop the smoothing state, e.g. when teleporting to a new scene. */
+  /**
+   * Put the rig into a *posed* state: snapped to its goal, and held there.
+   *
+   * The only caller is `RoadStage.pose`, which is how the screenshot harness
+   * asks the game to hold still. That makes this the right place to solve a
+   * problem the harness had no way to solve for itself.
+   *
+   * Measured before this: three shoots of one unchanged build, all posed
+   * `07-night-campfire`, put the camera at x = -13.29, -14.15 and -14.11, a
+   * spread of 0.86 m. The whole difference between the two candidate values
+   * of `resting.side` that this project has argued about for two waves is
+   * 1.2 m. The thigh's projected horizontal extent came back 0.735, 0.551
+   * and 0.571 of its length off those same three shoots — a spread three
+   * times the size of the effect the last wave swept for and reasoned from.
+   *
+   * Two causes, both fixed here rather than worked around:
+   *
+   * - **The rig is damped on `frameDt`, not on the fixed step.** That is
+   *   correct for play — the camera should move in wall-clock time — but
+   *   under SwiftShader a frame is anywhere between 0.3 and 5 seconds, so
+   *   how far the damping has converged when the shutter opens is luck.
+   *   Probed directly, a shot frame sat 0.27 m short of its own goal.
+   *   `initialised = false` makes the next update snap exactly onto it.
+   * - **The idle drift keeps running.** It is 0.14 m of lateral sway at
+   *   this framing and its phase at the shutter is set by how long the page
+   *   took to boot. `posed` holds it at zero, and `elapsed` goes back to
+   *   zero with it.
+   *
+   * `posed` clears itself on the next real mood change (`setMood` with a
+   * duration), so a game that somehow reached this path would get its drift
+   * back the next time the camera changed framing rather than losing it for
+   * the session.
+   */
   reset(): void {
     this.initialised = false;
     this.groundLift = 0;
     this.moodBlend = 1;
+    this.elapsed = 0;
+    this.posed = true;
+    // The FOV damps like everything else and is the one channel `initialised`
+    // never snapped, so a posed 'resting' frame was shot through a lens
+    // somewhere between walking's 42 and resting's 43 depending on frame
+    // timing. Small, but it scales every pixel measurement taken off the
+    // frame, including the thigh extents above.
+    this.camera.fov = this.goalFov(this.blendedFraming().fov);
+    this.camera.updateProjectionMatrix();
   }
 }

@@ -37,7 +37,7 @@ import { Group, Scene, Vector3 } from 'three';
 import type { App, Stage } from './App';
 import { CameraRig, type CameraMood } from './CameraRig';
 import { Sky, applyTimeOfDay, skyStateAt } from './sky';
-import { TERRAIN_REACH, WorldStreamer } from './world/WorldStreamer';
+import { roadSurfaceHeight, TERRAIN_REACH, WorldStreamer } from './world/WorldStreamer';
 import { Bard } from './actors/Bard';
 import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
 import { Campfire } from './scenes/Campfire';
@@ -737,7 +737,9 @@ export class RoadStage implements Stage {
     const angle = this.subject.heading + bearing;
     const x = this.subject.position.x + Math.sin(angle) * radius;
     const z = this.subject.position.z + Math.cos(angle) * radius;
-    person.group.position.set(x, terrainHeight(this.road, x, z), z);
+    // The drawn surface, not the landform: a listener who stops in a wheel
+    // rut stands in it rather than on the flat road that used to be there.
+    person.group.position.set(x, roadSurfaceHeight(this.road, x, z), z);
     // Facing back down their own bearing, which is the bard.
     person.setHeading(angle + Math.PI);
     person.setAttention(attention);
@@ -1277,6 +1279,29 @@ export class RoadStage implements Stage {
       if (this.ctx) this.buskAnchorSec = this.ctx.currentTime - this.buskSimMs / 1000;
       this.notes.update(this.buskNowMs());
     }
+    // Land the pose and the framing, rather than starting them easing.
+    //
+    // Everything above sets a *transition* going: `setPhase` blends the
+    // bard's pose over 0.6 s and the rig's mood over 1.6 s. A player never
+    // notices, because a player's browser runs sixty of those steps a
+    // second. The screenshot harness does not: `App` caps a frame's
+    // simulation at `MAX_CATCHUP_MS` (250 ms) and SwiftShader takes roughly
+    // 600 ms to draw one of these frames, so the whole 1800 ms the tool
+    // waits buys about three sim steps — 0.75 s. Measured on the campfire
+    // shot, the bard's pose blend came back 0.417 on one run and 1.0 on the
+    // next, off the same build. Every postcard of the seated bard has been
+    // a coin toss between the pose and a crouch half-way out of a walk, and
+    // that is what four rounds of critique described as a hunched red mass
+    // with a lute floating off his shoulder. See `Bard.settlePose`.
+    //
+    // Note the `reset` moved down here from the `s` branch, where it ran
+    // *before* `setPhase` started the mood transition and so was undone by
+    // it. That is why a posed 'resting' frame was shot from a camera still
+    // most of the way back at the walking framing, and it means any earlier
+    // sweep of a `resting` framing constant was measured through the wrong
+    // lens as well as at the wrong pose.
+    this.bard.settlePose();
+    this.rig.reset();
   }
 
   /** What the world looks like here, for the debug overlay. */
