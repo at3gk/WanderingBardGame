@@ -1689,6 +1689,35 @@ scene — build once).
     clobbered by pagehide's persist — seed via init script before the
     app boots. **Remaining on 160: the heads-to-ghosts level (by-heart
     proper) and its diary-facts song state.**
+    **Second slice done (2026-08-01, overnight session) — TASK 160
+    COMPLETE: heads fade to ghosts, then a clean staff.**
+    `core/mastery.ts` (pure, 7 tests): `headsLevel` gates on BOTH the
+    diary fact (`songWalks` — passes walked with the song pinned; a
+    wander-rotation tune was never "carried") and the model (every
+    position at band 0 — heads fading before letters would be a cliff,
+    not one-level-up). Thresholds GHOST_WALKS 6 / CLEAN_WALKS 14; with
+    SESSION_GAIN_CAP this means by-heart takes several real days plus
+    real carrying — festival pacing by arithmetic. `shownLevel` pins
+    the stumble demotion. scaffoldStorage gained `w` (same single
+    anonymous key; absent reads as never-carried — errs toward help).
+    SongNotes: `setHeadsAlpha` with asymmetric settle (help returns in
+    ~0.3s, ink withdraws over ~2s — "quick to help, slow to withdraw"
+    written as two rates); travelling heads take the fade, judged
+    notes never do. RoadStage: earned level per pinned walking song,
+    stumbles return ink instantly — BOTH tap-judged misses AND lapsed
+    untapped notes (found in verification: at a clean staff the real
+    stumble is silence, and lapses go through tickPerformance's sweep,
+    not playNote; lapses are display help only, never fed to the
+    scaffold); pass boundaries withdraw the help, and only passes with
+    at least one hit count as carrying (idling is not carrying). Busks
+    always perform from the full page. Verified live: earned 2 →
+    target 0 → settled 0.04 while played; silence → 10 lapse-stumbles
+    → ink fully back; the clean-staff frame read by eye (five empty
+    rules riding the road — the design image exactly). 1066 tests
+    green (+7), build 834.31 kB. The by-heart *song state* for
+    162/163: a song is by-heart when `headsLevel(...) === 2` — the
+    rehearsal and the festival book read the same function the staff
+    does, so the state can never disagree with the ink.
 161. **Pitch recall in practice.** Practice mode's unguided tier: no pip,
     find the melody's positions yourself; wrong note sounds and costs
     nothing; the kind fallback restores guidance. The only surface that
