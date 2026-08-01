@@ -38,6 +38,20 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — TASK 163
+  COMPLETE: THE FESTIVAL ARC SHIPS.** FestivalGrounds scene (lantern
+  strings, stalls, stage, warm pool — built against wave-5's night
+  fault, placed via campfireLayout so it cannot collide with the camp),
+  festival-eve only, control night verified empty, frame read by eye.
+  With 158/159(3 of 4)/160/162/163/164 landed, the v1.0 arc stands
+  minus: 161 (blocked on input-model design), 165 (Book Two content),
+  159's moonlit walk-on wiring. Per the human's queue rules the v1.3
+  family-songbook queue is now UNLOCKED. Critique due (3 visual tasks
+  since wave 5's panel: rehearsal frame, title card, grounds).
+  1087 tests green, build 853.12 kB. Ops: the service worker caches
+  index.html on preview servers — unregister between rebuilds when
+  verifying, or a stale bundle white-screens.
+
 - **HANDOFF, 2026-08-01 (overnight loop session, continued) — 163's
   second piece: the post-festival choice.** Three doors after the
   closing line (Book Two's invitation with a sounded F→F♯ and honest

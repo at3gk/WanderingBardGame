@@ -45,6 +45,7 @@ import { roadSurfaceHeight, TERRAIN_REACH, WorldStreamer } from './world/WorldSt
 import { Bard } from './actors/Bard';
 import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
 import { Campfire } from './scenes/Campfire';
+import { FestivalGrounds } from './scenes/FestivalGrounds';
 import { ParticleField, fallingLeaves, fireflies, seedFluff, sunDust } from './fx/Particles';
 import { SongNotes } from './fx/SongNotes';
 import { BIOME_PALETTES, DEFAULT_PALETTE } from './world/palette';
@@ -394,6 +395,12 @@ export class RoadStage implements Stage {
 
   // --- the camp ----------------------------------------------------------
   private campfire: Campfire | null = null;
+  /**
+   * The festival's edge, on the thirteenth night only. Built beside the camp
+   * rather than inside it so an ordinary night pays nothing for it — see
+   * `FestivalGrounds`, which places itself beyond the camp's own extent.
+   */
+  private festivalGrounds: FestivalGrounds | null = null;
 
   // --- weather in a small way --------------------------------------------
   private readonly fields: Array<{ id: string; field: ParticleField; opacity: number }> = [];
@@ -670,6 +677,7 @@ export class RoadStage implements Stage {
 
     this.world.update(this.journey.s);
     this.campfire?.update(dt, this.app.globals.uTime.value);
+    this.festivalGrounds?.update(dt, this.app.globals.uTime.value);
     this.updateFields(dt);
     this.hud.update(dt);
 
@@ -1614,6 +1622,25 @@ export class RoadStage implements Stage {
     // and still landing between the resting camera and the flame.
     const { fire, extent } = this.campfire.layout;
     this.world.addClearing(anchor.x + fire.x, anchor.z + fire.z, extent + 1.2);
+
+    // The thirteenth night, and the camp is pitched at the festival's rim
+    // (task 163's last piece). The grounds place themselves beyond the camp's
+    // own extent on the far side from the road, so nothing here needs to know
+    // where they land — only that they need their own patch cleared of scrub,
+    // for the same reason the camp does: a shrub standing in a stall is worse
+    // than no stall. Radius is generous because the grounds are wide, and the
+    // whole lot is dropped again by `clearClearings` in `strikeCamp`.
+    if (isFestivalEve(this.journey)) {
+      this.festivalGrounds = new FestivalGrounds(this.app.globals, stop ? stop.seed : this.road.seed, {
+        heading: at.heading,
+        palette,
+        groundHeightAt: (x, z) => terrainHeight(this.road, anchor.x + x, anchor.z + z) - anchor.y,
+      });
+      this.festivalGrounds.group.position.add(anchor);
+      this.scene.add(this.festivalGrounds.group);
+      const centre = this.festivalGrounds.group.position;
+      this.world.addClearing(centre.x, centre.z, 11);
+    }
     this.syncSubject();
 
     // What the day turned up is named here, and only here.
@@ -1790,6 +1817,11 @@ export class RoadStage implements Stage {
       this.notes.setHeadsAlpha(1);
     }
     this.festivalQueue = null;
+    if (this.festivalGrounds) {
+      this.scene.remove(this.festivalGrounds.group);
+      this.festivalGrounds.dispose();
+      this.festivalGrounds = null;
+    }
     if (!this.campfire) return;
     this.scene.remove(this.campfire.group);
     this.campfire.dispose();
