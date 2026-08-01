@@ -2109,6 +2109,33 @@ full verdict map and the measure-first suspicion list):
     precedent in 144, and cannot regress 03/08/10 because it IS their
     mechanism. Measure with the partition harness, which must exclude
     cast-shadow pixels from the figure mask.
+    **IMPLEMENTED (2026-08-01), with two corrections to the above.**
+    (1) The "04 inversion" was ITSELF a measurement artifact — the
+    partition harness compares shadow pixels against DIFFERENT road
+    pixels; same-pixel ablation (clear castShadow, re-render) shows
+    shadows properly 4-6 L* darker everywhere. The unguarded
+    arithmetic was real though, so the guarantee shipped anyway:
+    SKY_SCATTER's shade lift now reads sunFacing (orientation) not
+    sunAmount (orientation×shadow), and residual cast-shadow gain is
+    capped at SHADOW_GAIN_CAP 0.55 of the luminance removed. (2) The
+    "22 points of headroom at 01" was arithmetically false: at dawn
+    the FIGURE is the darker body, so darkening ground moves figure
+    and surround TOGETHER — a contact mark cannot raise whole-figure
+    dL there. What shipped: `ContactShadow.ts` (a draped, blended,
+    edge-soft mark under the bard — three bugs en route: three.js's
+    MultiplyBlending silently not honoured on this material, backface
+    culling, and the fire-pool falloff shape being wrong for shadow),
+    landing every daylight frame's contact in the passing frames' own
+    8-15 dL-under-road band (01/04 previously had ZERO contact); no
+    noon fade because THIS WORLD'S NOON IS 21.8° — the ramp was inert
+    and was deleted. figground: 03 +2.1, 10/04 held, 01/02/08 small
+    moves either way per the arithmetic above. **RESIDUAL, re-queued
+    as the true remainder of 179: the dawn/low-sun figure-side value
+    (dynamic, day-aware — no static albedo works; measurement phase
+    proved the requirement inverts across the day).** ALSO FOUND:
+    frame-quality's noon gate ALREADY FAILS ON MAIN (1.91 stops vs
+    2.5 floor, pre-existing; this change nudges 1.91→1.93) — some
+    earlier merge regressed it unnoticed; investigate separately.
 180. **Close the frame: foreground occluders.** All ten postcards open
     on a clean ground plane; every ASH reference crops canopy, cliff or
     rock masses through its edges. Give the postcard framings (and the
