@@ -1627,6 +1627,71 @@ scene — build once).
     glyphs; songbook needs volume structure. Arc. (notation, songs,
     engraving in SongNotes.)
 
+## The v1.1 queue: "the crafted frame" (human-set, 2026-08-01)
+
+From docs/research/art-quality.md (primary-sourced: adamgryu's own posts,
+Campo Santo's sky/color-script writing, Sable and Monument Valley
+interviews) — read it before taking any task; its not-recommended list
+(outline pass, bloom chains, shipped image LUTs) binds.
+
+166. **Write the color script.** Authored per-hour/per-biome palette
+    keyframes with INTENDED value structure, Firewatch-style — design
+    noon on purpose instead of letting the palette imply it. Fixes the
+    "anchorless noon" gap at the authorship level; zero runtime cost.
+    (sky.ts keyframes + palette.ts, documented as a script.)
+167. **No framing without an anchor.** A composition rule the rig
+    enforces: every camera mood guarantees a near-field anchor silhouette
+    (telegraph props, landmarks, canopy mass), Monument Valley's
+    screen-first lesson. Headlessly testable. (CameraRig + WorldStreamer
+    placement bias; merges with task 145.)
+168. **The finishing pass.** Render to target at ~0.8 scale + a
+    CODE-GENERATED 3D-LUT grade (Data3DTexture built at boot — no image
+    asset, no constraint exception). A Short Hike's unifier translated
+    to painterly: forgives close-range crudeness, can be net-cheaper on
+    phones (fewer shaded fragments). Measure fps both ways on the
+    quality tiers. (App.ts render path + painterly.)
+169. **Terrain as the hero surface.** Journey's lesson restated for this
+    game: broad PLANNED shadow masses (task 144's remake), winner-take-
+    all ground-material edges (adamgryu's splat trick — kills the soft
+    road edge, task 143), clustered ground-cover patches inheriting
+    ground colour with distance fade (task 149's fix, with LESS
+    overdraw). One coherent pass, three existing tasks folded in.
+170. **Bake vertex AO at generation time** on props and the bard — the
+    strongest "crafted" signal at close range; precomputed into vertex
+    colours, no UVs, feeds the existing lighting model. (geometry.ts
+    builders + actors.)
+
+## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
+
+From docs/research/mobile-friendly.md — read it first. The urgent fact:
+Safari's ITP deletes ALL script-writable storage (the child's whole
+journey) after 7 days without site interaction; home-screen-installed
+web apps are exempt (WebKit first-party). Install-to-home-screen IS the
+save system's protection on iPad. Store distribution (Play TWA $25,
+Apple $99/yr + Mac + review risk) is a SEPARATE human-gated track — the
+iPad household needs none of it; logged under Blocked on human.
+
+171. **PWA save-protection bundle (urgent).** Web manifest + generated
+    PNG icons + standalone display + `viewport-fit=cover` and safe-area
+    CSS + `navigator.storage.persist()` + a diegetic save keepsake
+    (export/import the journey as a small file/code — the journal page
+    as a token). This is data-loss protection, not polish.
+172. **Precache service worker.** Offline-capable shell (the bundle is
+    one JS file + HTML); cold-load speed on flaky school wifi.
+173. **Audio that survives the pocket.** iOS audio-session behaviour:
+    silent-switch handling (WebKit bug 237322), interruption/resume on
+    calls and backgrounding, Low Power Mode's 30fps rAF (WebKit 168837)
+    — the beat clock must stay honest at 30fps.
+174. **Quality tiers that actually detect.** detectQuality() reads
+    Chromium-only deviceMemory, so every iPad lands 'medium'; the 'low'
+    tier still enables shadow maps. Detect by GPU/UA signals available
+    on WebKit; make 'low' genuinely low (no shadow map); re-measure the
+    730k-triangle scene against mobile budgets.
+175. **Touch-target and orientation audit.** WCAG 2.2 24px minimum /
+    Apple 44pt on every HUD control at phone sizes; verify the landscape
+    recommendation for the road; palm-rejection kindness already exists
+    (stray taps are free) — pin it with a test.
+
 ## The v0.9 queue: "the road home" (human-set, 2026-07-31)
 
 Retention as design work, grounded in docs/research/retention-design.md

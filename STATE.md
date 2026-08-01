@@ -4,6 +4,15 @@ Run counter: 50
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
+Three primary-sourced notes live in `docs/research/` and bind the queues
+built from them: `retention-design.md` (→ v0.9 queue), `art-quality.md`
+(→ v1.1 queue; its not-recommended list binds), and `mobile-friendly.md`
+(→ v1.2 queue; its URGENT fact: Safari ITP deletes the child's whole
+localStorage save after 7 days of absence — home-screen install is the
+first-party-documented exemption, so ROADMAP task 171 is data-loss
+protection, not polish. Store distribution is human-gated: logged under
+Blocked on human).
+
 `docs/research/retention-design.md` (2026-07-31, primary-sourced) is the
 living note on why players return to cozy games and what this game may
 and may not do about it. Its seven ranked recommendations became ROADMAP's
