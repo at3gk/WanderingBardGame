@@ -1722,6 +1722,16 @@ scene — build once).
     find the melody's positions yourself; wrong note sounds and costs
     nothing; the kind fallback restores guidance. The only surface that
     exercises true pitch recall. (core/freePlay.ts, practice UI.)
+    **PREMISE GAP found 2026-08-01 (same class as 160's): practice mode
+    does not exist in the live game.** `core/freePlay.ts` has zero
+    consumers in src/three — the practice UI died with the 2D build in
+    Run 44 and was never rebuilt. So this task is really "build the
+    practice surface into the Three game, with the unguided tier",
+    which needs a position-CHOOSING input model the tap-anywhere game
+    deliberately lacks (tap-on-staff-line regions? — an input-design
+    question a 5-9-year-old's fingers should settle, not a scheduled
+    run). Arc-sized and design-sensitive; split before attempting, and
+    consider asking the human about the input model first.
 162. **Campfire rehearsal.** Each campfire offers one attempt at the
     carried song without notes — no-fail, notes return on a stumble, the
     journal writes it warmly either way. (Campfire/RoadStage + core.)
@@ -1884,6 +1894,20 @@ iPad household needs none of it; logged under Blocked on human.
     (+17 keepsake), build 817.70 kB.
 172. **Precache service worker.** Offline-capable shell (the bundle is
     one JS file + HTML); cold-load speed on flaky school wifi.
+    **Done (2026-08-01, overnight session).** No plugin dependency — a
+    workbox pipeline for one JS file is a lorry for a letter. A ~40-line
+    plugin in vite.config.ts lists what actually shipped (hashed bundle
+    + the task-171 shell) and emits `sw.js` with the list baked in;
+    the cache name carries an FNV hash of the list so identical builds
+    produce byte-identical workers and new deploys clean old caches on
+    activate. Cache-first for precached files, cached-shell fallback
+    for navigations, network for the rest. Registered in main.ts,
+    production-only (a worker caching the dev server would serve
+    yesterday's code forever), after `load`. Verified live: worker
+    active with 7 URLs cached, then `context.setOffline(true)` +
+    reload → the road boots ("11/1670 m · forest · first light").
+    Also new: `src/vite-env.d.ts` (the repo had never used
+    `import.meta.env` before). 1077 tests green, build 839.09 kB.
 173. **Audio that survives the pocket.** iOS audio-session behaviour:
     silent-switch handling (WebKit bug 237322), interruption/resume on
     calls and backgrounding, Low Power Mode's 30fps rAF (WebKit 168837)
