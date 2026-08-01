@@ -1585,6 +1585,48 @@ from the wave-2 blind re-critique and the human's stakes direction.
     coins+delight settled early; fumbled passes with a warm line and
     costs nothing. Not persisted — a reload lets the moment go quietly.
     +20 tests (performance 79, encounters 55).
+## The v0.9 queue: "the road home" (human-set, 2026-07-31)
+
+Retention as design work, grounded in docs/research/retention-design.md
+(read it first — its rejected-on-principle list binds every task here).
+DESIGN.md's "The road home" section is the contract. These interleave with
+the wave-5 visual queue below; a scheduled run may take whichever list's
+top task fits its energy.
+
+151. **Campfire bookend: today closed, tomorrow glimpsed.** At the fire
+    the journal writes today's page (where you walked, who you met, what
+    you carried); on the horizon, the silhouette of tomorrow's road —
+    genuinely renderable, the next UTC day's seed is knowable. Pure
+    anticipation, zero loss-framing. (Campfire.ts, journal, road.ts.)
+152. **Name the shared road.** Diegetic sharedness: each daily seed gets a
+    deterministic road name ("Larchwind Road"), on the signposts and in
+    traveller lines that speak as if everyone walks it today — because
+    everyone does. (road.ts name generator + world signage + encounter
+    lines.)
+153. **The campfire postcard.** Optional share: a small painted frame of
+    today's road with its name and the song carried. Shares presence,
+    never performance — no accuracy, no coins, nothing gradable (Wordle's
+    rule, and the research's leaderboard ban). Canvas-render + download;
+    no network. (Campfire/HUD.)
+154. **Songbook pages wear in.** First slice: a song's page shows its
+    walked-count as wear and marginalia (diary facts ONLY — never the
+    scaffold model; a page that got prettier as letters faded would be a
+    grade in costume). (songChoice/journey diary facts + Hud songbook.)
+155. **Mementos, not checklists.** Lovely encounter outcomes leave a
+    keepsake drawn on the journal page — no collection screen, no counts,
+    no empty slots; missed rarities recur on later roads (Sky's
+    returning-spirits stance; encounters already reseed daily). (
+    encounters.ts payouts + journal.)
+156. **Welcome-back, never weeds.** Returning after days away gets a small
+    campfire welcome beat — the case's idle takings, a journal line about
+    the roadside days. No counter of days kept or missed, ever. (idle.ts
+    describeIdleYield + campfire/journal.)
+157. **Two bookmarks on one bench.** Local family profiles: two
+    localStorage bookmarks, each with its own song pin and scaffold
+    state, each able to see the other's journal PAGES (never anything
+    gradable). Arc — scaffold-state separation needs care. (
+    scaffoldStorage/journey save + Hud.)
+
 The wave-5 queue, from the wave-4 panel (mean ~5.5; take these next):
 
 144. **Remake the terrain self-shadow as a presentation decision.** Three

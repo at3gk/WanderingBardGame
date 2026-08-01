@@ -2,6 +2,18 @@
 
 Run counter: 50
 
+## Direction research (standing — CLAUDE.md pillar 5)
+
+`docs/research/retention-design.md` (2026-07-31, primary-sourced) is the
+living note on why players return to cozy games and what this game may
+and may not do about it. Its seven ranked recommendations became ROADMAP's
+v0.9 queue (tasks 151-157); its rejected-on-principle list (no streaks,
+no login rewards, no FOMO content, no near-miss staging, no visible
+learning fractions, no accuracy sharing, no decay) BINDS all retention
+work. Consolidation runs: reread it, note here what the game now does
+about each top recommendation, extend it when a shipped feature teaches
+something it didn't predict.
+
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
