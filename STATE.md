@@ -14,6 +14,17 @@ work. Consolidation runs: reread it, note here what the game now does
 about each top recommendation, extend it when a shipped feature teaches
 something it didn't predict.
 
+## The true goal (standing pointer)
+
+DESIGN.md's "The true goal" section (2026-07-31, human-grilled to shared
+understanding) now defines the game's destination: household audience
+with the child as tie-break, the Festival of the Long Road at 12-15
+walked legs, the by-heart mastery ladder ending in playing without
+notes, Book Two (accidentals) as the post-festival choice, the
+first-campfire promise, and a one-tap title card. The v1.0 arc is
+ROADMAP tasks 158-165. Any run touching goals, pacing, menus, or
+mastery display must read that section first.
+
 ## Current status
 
 **At a glance** — read this, then only the sections you need.

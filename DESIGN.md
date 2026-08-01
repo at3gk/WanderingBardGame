@@ -202,6 +202,64 @@ Three more, set later the same day watching the build:
    road gives you) without reintroducing the anxiety the pedagogy section
    forbids: a child can lose a chance, never progress.
 
+## The true goal (v1.0 direction, human-set, 2026-07-31, grilled to shared understanding)
+
+Shaped in a one-question-at-a-time session with the human; each decision
+below was explicitly confirmed.
+
+**Who it is for.** The household — a parent who plays it like A Short
+Hike and a child (5-9) it gets handed to, on the same walk. When a
+feature helps the adult but confuses the child, **the child wins the
+tie-break**. The pedagogy is the defensible identity; the premium cozy
+craft is what makes the adult respect it enough to hand it over.
+
+**The destination.** The bard is walking to the **Festival of the Long
+Road** — 12-15 legs (campfires) away — where they perform the songs the
+player actually carried. The arc is measured in **walked days, not
+calendar days** (hybrid pacing): the first leg on any calendar day is
+the shared daily road everyone walks; walking on past the campfire opens
+a **moonlit road** (seeded day+leg, deterministic, just not communal).
+The campfire's craft makes stopping feel complete; nothing gates an
+eager Saturday.
+
+**The end goal is playing without the notes.** The mastery ladder —
+*learning it → know it → by heart* — runs on two surfaces: on the road,
+a well-known song's note heads fade to ghosts and then to a clean staff,
+kept alive from memory (rhythm recall), with a stumble gently bringing
+the notes back (quick to help, slow to withdraw, one level up); in
+practice, *by heart* means unguided pitch-finding — playing the melody
+by choosing positions yourself. At **each campfire the player may
+attempt the song they carried without the notes** — rehearsal for the
+festival, no-fail, journalled warmly. The festival is performed from the
+by-heart book. "By heart" is a *song's state, not a child's score*: the
+page's ink quietly stops being needed; no badge, no fraction, ever.
+
+**Musical accuracy is inviolable.** E sounds exactly like E; if the game
+ever writes C-sharp it sounds exactly C-sharp (equal temperament,
+verified to the cent by the harness); engraving is never wrong; register
+shifts are octave-only so the letter is always the pitch class heard.
+
+**After the festival, the choice** (autonomy is the design): an
+invitation to **Book Two** that *shows what it would teach* — real key
+signatures and accidentals, correctly engraved and exactly sounded — or
+freely revisiting any Book One song, choosing songs at will, or simply
+walking on. Book One stays naturals-only C-major; growth is a new
+volume, not a breaking change.
+
+**The first five minutes' promise, sequenced:** minute one is the tune
+working under your fingers (no front-loading, straight into the walk);
+the **first campfire** (~8-10 minutes in) is where the journal opens,
+the festival is named, tomorrow's road glows on the horizon, and
+rehearsal is introduced. Stated success metric: a new household reaches
+the first campfire in one sitting, sees the festival named, and wants
+tomorrow's road.
+
+**A small title card** (evolving pillar 1, not breaking it): returning
+players get one warm card — "Continue the journey" (default, one tap)
+and "The songbook" (pick a song to learn again). A brand-new player has
+nothing to choose and goes straight to the road; playable-in-5-seconds
+holds either way.
+
 ## The road home (v0.9 direction, human-set, 2026-07-31)
 
 The human asked for the game to become one "users want to come back to,"

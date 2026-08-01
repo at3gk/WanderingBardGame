@@ -1585,6 +1585,48 @@ from the wave-2 blind re-critique and the human's stakes direction.
     coins+delight settled early; fumbled passes with a warm line and
     costs nothing. Not persisted — a reload lets the moment go quietly.
     +20 tests (performance 79, encounters 55).
+## The v1.0 arc: "the Festival of the Long Road" (human-set, 2026-07-31)
+
+DESIGN.md's "The true goal" section is the contract — read it first. This
+arc gives the game its destination; the v0.9 retention queue and wave-5
+visual queue below interleave with it (151 and 159 are the same campfire
+scene — build once).
+
+158. **The journey ledger.** Journey state gains the pilgrimage: legs
+    walked (campfires) toward the festival at 12-15; hybrid pacing — the
+    calendar day's first leg is the shared daily road, further legs are
+    moonlit roads (seeded day+leg, deterministic). Pure core logic +
+    tests first. (core/journey.ts, core/road.ts.)
+159. **The first-campfire promise.** The journal opens, the festival is
+    named, tomorrow's road silhouette glows (merge with task 151),
+    rehearsal is introduced. The single most important scene in the game;
+    success metric in DESIGN. (Campfire.ts, journal, Hud.)
+160. **By-heart on the road.** A well-carried song's note heads fade to
+    ghosts then to a clean staff; a recall stumble gently returns them.
+    Extends the scaffold's fade machinery one level up (letters, then
+    heads); same safety rule — fade the prompt, never the answer, and
+    help returns instantly. "By heart" is a song state on diary facts.
+    (core/scaffold or a sibling, SongNotes.ts.)
+161. **Pitch recall in practice.** Practice mode's unguided tier: no pip,
+    find the melody's positions yourself; wrong note sounds and costs
+    nothing; the kind fallback restores guidance. The only surface that
+    exercises true pitch recall. (core/freePlay.ts, practice UI.)
+162. **Campfire rehearsal.** Each campfire offers one attempt at the
+    carried song without notes — no-fail, notes return on a stumble, the
+    journal writes it warmly either way. (Campfire/RoadStage + core.)
+163. **The festival.** Arrival scene at journey's end: the bard performs
+    the by-heart book to the festival crowd; warm payoff; then the
+    choice — Book Two's invitation (showing a real sharp sign and what
+    it would teach), free revisiting, or walking on. (New scene + core.)
+164. **The title card.** One warm card for returning players: "Continue
+    the journey" (default, one tap) / "The songbook". New players skip
+    straight to the road. Playable-in-5s holds. (main/App/Hud.)
+165. **Book Two: true keys.** The accidentals volume — real key
+    signatures, sharps/flats correctly engraved and exactly sounded.
+    Engine is chromatically exact already; notation needs accidental
+    glyphs; songbook needs volume structure. Arc. (notation, songs,
+    engraving in SongNotes.)
+
 ## The v0.9 queue: "the road home" (human-set, 2026-07-31)
 
 Retention as design work, grounded in docs/research/retention-design.md
