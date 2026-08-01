@@ -38,6 +38,25 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session) — task 179's
+  measurement phase: THREE PANEL PREMISES DISPROVED, one real defect
+  found.** New instrument (`tools/figground.mjs` + `tools/
+  figground-partition.mjs`): silhouette-diff plus albedo-flood
+  partition separates the bard's own pixels from his cast shadow.
+  Verdicts: passing frames' "figure separation" was shadow-vs-road
+  (0% bard pixels in the knees-down band of 03/04/10); dawn's fault
+  is an ABSENT contact shadow, not a swallowing band; the figure is
+  the best-lit object at low sun — darkness is albedo and the needed
+  correction inverts across the day, so no static albedo works (the
+  Bard.ts history's near-black-trousers failure, explained at last).
+  REAL DEFECT: 04-golden renders the bard's cast shadow LIGHTER than
+  its receiving road (31.3 on 28.7). Re-aimed lever in ROADMAP 179:
+  grounded low-sun contact shadow + fix the inversion; measured
+  sufficient, cannot regress the passers. Nothing implemented — the
+  disproof is the deliverable, per the task's own license. This is
+  the strongest instance yet of the standing law: panels see true
+  symptoms and misattribute causes.
+
 - **HANDOFF, 2026-08-01 (overnight loop session) — wave-6 blind panel:
   mean 5.33, up from wave 5's 4.42 UNDER THE SAME ANCHOR ("ships
   beside ASH without apology") — the first same-rubric gain on
