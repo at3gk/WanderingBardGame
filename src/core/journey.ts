@@ -113,6 +113,8 @@ export interface JourneyState {
   totalCoins: number;
   totalEncounters: number;
   campfires: number;
+  /** Festivals performed, lifetime. The first one is the v1.0 arc's summit. */
+  festivals: number;
 
   /** Today's moments, oldest first. Capped — see `MAX_JOURNAL_ENTRIES`. */
   journal: JournalEntry[];
@@ -269,6 +271,7 @@ export function createJourney(dayKey: string, roadLengthM: number): JourneyState
     totalCoins: 0,
     totalEncounters: 0,
     campfires: 0,
+    festivals: 0,
     journal: [],
   };
 }
@@ -369,6 +372,13 @@ export function noteRehearsal(state: object): JourneyState {
   return next;
 }
 
+/** The festival has heard the carried songs. Banked eagerly, like every lifetime figure. */
+export function noteFestival(state: object): JourneyState {
+  const next = normalize(state);
+  next.festivals += 1;
+  return next;
+}
+
 // ---------------------------------------------------------------------------
 // The pilgrimage
 // ---------------------------------------------------------------------------
@@ -427,6 +437,7 @@ export function startNextLeg(state: object): JourneyState {
     totalCoins: previous.totalCoins,
     totalEncounters: previous.totalEncounters,
     campfires: previous.campfires,
+    festivals: previous.festivals,
     journal: [],
   };
 }
@@ -585,6 +596,7 @@ export function startNewDay(state: object, dayKey: string): JourneyState {
     totalCoins: previous.totalCoins,
     totalEncounters: previous.totalEncounters,
     campfires: previous.campfires,
+    festivals: previous.festivals,
     journal: [],
   };
 }
@@ -611,6 +623,8 @@ interface Stored {
   leg?: number;
   /** 1 when this leg's rehearsal has been played. Absent reads as not yet — the fire asks. */
   rh?: 1;
+  /** Festivals performed, lifetime. Absent in pre-v1.0 saves, which reads as 0. */
+  fests?: number;
   visited: string[];
   metres: number;
   earned: number;
@@ -666,6 +680,7 @@ export function saveJourney(state: object, force = false, nowMs: number = Date.n
       earned: round(j.totalCoins, 2),
       encounters: Math.round(j.totalEncounters),
       campfires: Math.round(j.campfires),
+      fests: Math.round(j.festivals),
       journal: j.journal.map((e): StoredEntry => [round(e.s, 1), round(e.dayFraction, 4), e.kind, e.line]),
     };
     store.setItem(JOURNEY_STORAGE_KEY, JSON.stringify(record));
@@ -727,6 +742,7 @@ export function loadJourney(dayKey: string): JourneyState | null {
       totalCoins: parsed.earned,
       totalEncounters: parsed.encounters,
       campfires: parsed.campfires,
+      festivals: parsed.fests,
       journal: Array.isArray(parsed.journal)
         ? parsed.journal.map((e) =>
             Array.isArray(e) ? { s: e[0], dayFraction: e[1], kind: e[2], line: e[3] } : e
@@ -796,6 +812,7 @@ function normalize(input: unknown): JourneyState {
     totalCoins: Math.max(0, finiteOr(raw.totalCoins, 0)),
     totalEncounters: Math.max(0, Math.floor(finiteOr(raw.totalEncounters, 0))),
     campfires: Math.max(0, Math.floor(finiteOr(raw.campfires, 0))),
+    festivals: Math.max(0, Math.floor(finiteOr(raw.festivals, 0))),
     journal: journalList(raw.journal),
   };
 }

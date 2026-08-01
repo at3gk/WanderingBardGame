@@ -78,6 +78,7 @@ import {
   earn,
   enterPhase,
   loadJourney,
+  noteFestival,
   noteRehearsal,
   recordEntry,
   saveJourney,
@@ -124,7 +125,13 @@ import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
 import { campfirePage } from '../core/campfirePage';
 import { encounter } from '../core/scaffold';
-import { loadScaffold, recordSongWalk, saveScaffold, songWalksFor } from '../core/scaffoldStorage';
+import { allSongWalks, loadScaffold, recordSongWalk, saveScaffold, songWalksFor } from '../core/scaffoldStorage';
+import {
+  festivalArrival,
+  festivalClosingLine,
+  festivalSetList,
+  isFestivalEve,
+} from '../core/festival';
 import { revealLeads } from '../core/reveal';
 import { staffStepAt } from '../core/notation';
 import { HEADS_ALPHA, headsLevel, shownLevel, type HeadsLevel } from '../core/mastery';
@@ -290,6 +297,9 @@ export class RoadStage implements Stage {
   /** The song the fire is hearing, and when the attempt's schedule runs out. */
   private rehearsalSong: Song | null = null;
   private rehearsalEndMs = 0;
+  /** The festival's remaining set (task 163), when tonight is the festival eve. */
+  private festivalQueue: Song[] | null = null;
+  private festivalPlayed = 0;
   private beats: SongBeat[] = [];
   private tuneBpm = BASE_BPM;
   private tuneBeatsPerBar = 4;
@@ -819,11 +829,13 @@ export class RoadStage implements Stage {
       return;
     }
     // At the fire with the page open and an attempt still standing, the tap
-    // is the answer to the fire's asking — the rehearsal begins.
+    // is the answer to the fire's asking — the rehearsal begins. On the
+    // festival eve the asking stands whether or not a song is pinned:
+    // every arriving bard is met with something to play.
     if (
       this.journey.phase === 'resting' &&
       !this.performance &&
-      this.journey.songChoice &&
+      (this.journey.songChoice || isFestivalEve(this.journey)) &&
       !this.journey.rehearsed
     ) {
       this.startRehearsal();
@@ -844,7 +856,41 @@ export class RoadStage implements Stage {
    */
   private startRehearsal(): void {
     const biome = biomeAt(this.road, this.journey.s);
-    const song = songForPass(this.journey.songChoice, biome, 0);
+
+    // The festival eve turns the one attempt into the set: the carried
+    // songs in carried order, each performed AS IT STANDS — a by-heart
+    // song from the clean staff, a still-learning one with its ink. The
+    // ordinary rehearsal keeps forcing the clean staff, because attempting
+    // without the notes is what a rehearsal is.
+    let song: Song;
+    let earned: HeadsLevel;
+    if (isFestivalEve(this.journey)) {
+      if (!this.festivalQueue) {
+        const fallback = songForPass(this.journey.songChoice, biome, 0).id;
+        // Dedupe on the RESOLVED song: a carried id this build no longer
+        // knows (a newer build's song, a renamed one) falls back to the
+        // rotation's tune, and two unknowns must not make the festival
+        // hear the same fallback twice.
+        const resolved = new Map<string, Song>();
+        for (const id of festivalSetList(allSongWalks(), this.journey.songChoice, fallback)) {
+          const song = songForPass(id, biome, 0);
+          if (!resolved.has(song.id)) resolved.set(song.id, song);
+        }
+        this.festivalQueue = [...resolved.values()];
+        this.festivalPlayed = 0;
+      }
+      song = this.festivalQueue[0];
+      const steps = new Set<number>();
+      for (const note of song.notes) {
+        if (note.rest) continue;
+        const step = staffStepAt(note.semitone);
+        if (step !== null) steps.add(step);
+      }
+      earned = headsLevel(this.scaffold, [...steps], songWalksFor(song.id));
+    } else {
+      song = songForPass(this.journey.songChoice, biome, 0);
+      earned = 2;
+    }
     const instrument = this.instrument();
 
     this.tuneBpm = BASE_BPM * instrument.tempoFeel;
@@ -861,16 +907,18 @@ export class RoadStage implements Stage {
 
     this.tuneNotesPerPass = song.notes.length;
     this.refreshLeads();
-    // The attempt is played as if by heart: full fade, stumbles restore.
-    this.headsEarned = 2;
+    this.headsEarned = earned;
     this.passStumbles = 0;
-    this.notes.setHeadsAlpha(0);
+    this.notes.setHeadsAlpha(HEADS_ALPHA[shownLevel(this.headsEarned, 0)]);
     this.notes.setInstrument(instrument);
     this.notes.setBeats(this.beats, this.tuneLeads);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.setActive(true);
     this.hud.hidePage();
-    this.hud.say(`${song.title}, for the fire.`, 5);
+    this.hud.say(
+      this.festivalQueue ? `${song.title}, for the festival.` : `${song.title}, for the fire.`,
+      5,
+    );
   }
 
   private updateRehearsal(): void {
@@ -900,12 +948,35 @@ export class RoadStage implements Stage {
     if (!performance || !song) return;
 
     const line = rehearsalLine(song.title, performance.hits, song.notes.length);
-    this.journey = noteRehearsal(recordEntry(this.journey, { kind: 'rehearsal', line }));
-    saveJourney(this.journey, true);
-
     this.performance = null;
     this.tuneMode = null;
     this.rehearsalSong = null;
+
+    // The festival set: write each song's line, then either raise the next
+    // tune or close the evening. `noteFestival` is what retires the eve —
+    // ordinary fires resume tomorrow, and the post-festival choice (the
+    // arc's next piece) has a lifetime fact to hang from.
+    if (this.festivalQueue) {
+      this.journey = recordEntry(this.journey, { kind: 'festival', line });
+      this.festivalPlayed += 1;
+      this.festivalQueue.shift();
+      if (this.festivalQueue.length > 0) {
+        this.hud.say(line, 6);
+        this.startRehearsal();
+        return;
+      }
+      const closing = festivalClosingLine(this.festivalPlayed);
+      this.festivalQueue = null;
+      this.journey = noteFestival(noteRehearsal(recordEntry(this.journey, { kind: 'festival', line: closing })));
+      saveJourney(this.journey, true);
+      this.notes.setActive(false);
+      this.notes.setHeadsAlpha(1);
+      this.hud.say(closing, 16);
+      return;
+    }
+
+    this.journey = noteRehearsal(recordEntry(this.journey, { kind: 'rehearsal', line }));
+    saveJourney(this.journey, true);
     this.notes.setActive(false);
     this.notes.setHeadsAlpha(1);
     this.hud.say(line, 12);
@@ -1580,7 +1651,21 @@ export class RoadStage implements Stage {
     const carried = this.journey.songChoice
       ? songForPass(this.journey.songChoice, biomeAt(this.road, this.journey.s), 0).title
       : null;
-    this.hud.showPage(campfirePage(this.journey, carried));
+    const page = campfirePage(this.journey, carried);
+
+    // The night the long way ends, the page is the festival's (task 163,
+    // first piece): title, arrival, and an asking that stands for every
+    // arriving bard, pinned tune or not.
+    if (isFestivalEve(this.journey)) {
+      const biome = biomeAt(this.road, this.journey.s);
+      const fallback = songForPass(this.journey.songChoice, biome, 0).id;
+      const setSize = festivalSetList(allSongWalks(), this.journey.songChoice, fallback).length;
+      const arrival = festivalArrival(setSize);
+      page.title = arrival.title;
+      page.festival = arrival.festival;
+      if (!this.journey.rehearsed) page.invitation = arrival.invitation;
+    }
+    this.hud.showPage(page);
   }
 
   /**
@@ -1692,6 +1777,7 @@ export class RoadStage implements Stage {
     this.hud.hidePage();
     // A rehearsal cut short by the day turning over is simply not written:
     // the next fire asks again, which is the kind reading of a closed tab.
+    // An interrupted festival set is the same, whole: the eve returns.
     if (this.tuneMode === 'rehearsal') {
       this.performance = null;
       this.tuneMode = null;
@@ -1699,6 +1785,7 @@ export class RoadStage implements Stage {
       this.notes.setActive(false);
       this.notes.setHeadsAlpha(1);
     }
+    this.festivalQueue = null;
     if (!this.campfire) return;
     this.scene.remove(this.campfire.group);
     this.campfire.dispose();
