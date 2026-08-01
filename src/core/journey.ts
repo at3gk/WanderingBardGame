@@ -91,6 +91,15 @@ export interface JourneyState {
   /** Ids of road stops already played or resolved today, in the order they were reached. */
   visited: string[];
 
+  /**
+   * Which leg of this calendar day's walking this is. 0 is the shared daily
+   * road everyone walks; 1 and up are the moonlit roads an eager player
+   * opens by walking on from the campfire (`startNextLeg`), seeded by
+   * day+leg so they are deterministic without being communal. Reset to 0 by
+   * the day rollover: every new dawn starts on the shared road.
+   */
+  legIndex: number;
+
   totalMetres: number;
   totalCoins: number;
   totalEncounters: number;
@@ -112,6 +121,18 @@ export interface JourneyState {
  */
 export const DAWN_FRACTION = 0.22;
 export const DUSK_FRACTION = 0.9;
+
+/**
+ * How many legs (nights by the fire) the Festival of the Long Road sits
+ * from the first step. DESIGN.md's "The true goal" gives the band 12-15;
+ * thirteen is the choice within it — about two weeks of one-leg days, or
+ * meaningfully sooner for a household that walks moonlit roads, and it
+ * keeps the arc long enough that the by-heart ladder has real nights to
+ * climb. Counted against `campfires`, the lifetime nights figure: a night
+ * by the fire is a leg of the pilgrimage wherever it was slept, including
+ * every night walked before this constant existed.
+ */
+export const FESTIVAL_LEGS = 13;
 
 /** The instrument every bard starts with. Duplicated from `instruments.ts` rather than imported — see the file header. */
 export const DEFAULT_INSTRUMENT_ID = 'lute';
@@ -178,13 +199,28 @@ const SAVE_THROTTLE_MS = 4000;
  * what should make the day feel uneven, not a curve applied on top of it.
  *
  * A road of no length is a generator bug rather than a play state, so this
- * answers first light for it: it is the least misleading thing to say when
- * we cannot know how far along you are.
+ * answers the leg's own first light for it: it is the least misleading
+ * thing to say when we cannot know how far along you are.
+ *
+ * A moonlit leg (`legIndex` >= 1) walks the *other* arc of the same clock:
+ * dusk through midnight to the next dawn. The span wraps past 1.0, so the
+ * result is taken mod 1 — every consumer of `dayFraction` already treats
+ * the value as a position on a circular day (the sky's own keyframes cover
+ * the night), and dusk-to-dawn is exactly the stretch the daytime mapping
+ * never visits. Every moonlit leg walks the same night arc rather than
+ * pushing later into a second day: the fiction is "walking on into the
+ * night", however many times the player does it, not an accelerating
+ * calendar.
  */
-export function dayFractionAt(s: number, roadLengthM: number): number {
-  if (!Number.isFinite(roadLengthM) || roadLengthM <= 0) return DAWN_FRACTION;
+export function dayFractionAt(s: number, roadLengthM: number, legIndex = 0): number {
+  const moonlit = Math.max(0, Math.floor(finiteOr(legIndex, 0))) >= 1;
+  if (!Number.isFinite(roadLengthM) || roadLengthM <= 0) {
+    return moonlit ? DUSK_FRACTION : DAWN_FRACTION;
+  }
   const t = clamp01(finiteOr(s, 0) / roadLengthM);
-  return DAWN_FRACTION + (DUSK_FRACTION - DAWN_FRACTION) * t;
+  if (!moonlit) return DAWN_FRACTION + (DUSK_FRACTION - DAWN_FRACTION) * t;
+  const nightSpan = 1 - (DUSK_FRACTION - DAWN_FRACTION);
+  return (DUSK_FRACTION + nightSpan * t) % 1;
 }
 
 /**
@@ -218,6 +254,7 @@ export function createJourney(dayKey: string, roadLengthM: number): JourneyState
     unlockedInstruments: [DEFAULT_INSTRUMENT_ID],
     songChoice: null,
     visited: [],
+    legIndex: 0,
     totalMetres: 0,
     totalCoins: 0,
     totalEncounters: 0,
@@ -254,7 +291,7 @@ export function advance(state: object, deltaMetres: number, roadLengthM: number)
   // should cost the player nothing and should not hand them the catalogue
   // either. This mirrors `hasArrived`, which refuses to end the day on one.
   if (!Number.isFinite(roadLengthM) || roadLengthM <= 0) {
-    next.dayFraction = DAWN_FRACTION;
+    next.dayFraction = dayFractionAt(0, roadLengthM, next.legIndex);
     return next;
   }
 
@@ -276,7 +313,7 @@ export function advance(state: object, deltaMetres: number, roadLengthM: number)
     next.s = Math.min(next.s, roadLengthM);
   }
 
-  next.dayFraction = dayFractionAt(next.s, roadLengthM);
+  next.dayFraction = dayFractionAt(next.s, roadLengthM, next.legIndex);
   return next;
 }
 
@@ -313,6 +350,66 @@ export function enterPhase(state: object, phase: string): JourneyState {
 /** The day is over once the bard has stopped for the night. Arriving at the campfire is not enough; sitting down is. */
 export function isDayComplete(state: object): boolean {
   return normalize(state).phase === 'resting';
+}
+
+// ---------------------------------------------------------------------------
+// The pilgrimage
+// ---------------------------------------------------------------------------
+
+/**
+ * How many nights by the fire still stand between the bard and the
+ * Festival of the Long Road. Zero means the festival gate is in sight —
+ * whether the arrival scene exists yet is the render layer's business.
+ */
+export function legsToFestival(state: object): number {
+  return Math.max(0, FESTIVAL_LEGS - normalize(state).campfires);
+}
+
+/** Whether the pilgrimage has covered its distance. */
+export function festivalReached(state: object): boolean {
+  return legsToFestival(state) === 0;
+}
+
+/**
+ * Walk on from the campfire into the night — the moonlit road.
+ *
+ * Only a resting bard can do it (the campfire's craft is what makes
+ * stopping feel complete; walking on is a choice made *at* the fire, not a
+ * way to skip it), and it is deliberately not an `enterPhase` transition:
+ * a new leg is a new road, so it resets everything that describes *this
+ * road* — the walk, the itinerary, the journal page — exactly as the day
+ * rollover does, while keeping the whole day's purse, because it is still
+ * today. `legIndex` ticks up, which is what tells the road builder to lay
+ * a moonlit road (`legSeed`/`legRoadKey` in rng.ts) instead of the shared
+ * one, and the sky opens at dusk rather than dawn.
+ *
+ * Nothing gates it. An eager Saturday can walk as many legs as it likes;
+ * each one still ends at a campfire that counts. The kindness constraint
+ * lives in what is absent: no bonus for the extra legs beyond the walk
+ * itself, so there is nothing here to feel behind on.
+ */
+export function startNextLeg(state: object): JourneyState {
+  const previous = normalize(state);
+  if (previous.phase !== 'resting') return previous;
+  const legIndex = previous.legIndex + 1;
+  return {
+    dayKey: previous.dayKey,
+    phase: 'waking',
+    s: 0,
+    dayFraction: dayFractionAt(0, 1, legIndex),
+    coins: previous.coins,
+    delight: previous.delight,
+    instrumentId: previous.instrumentId,
+    unlockedInstruments: previous.unlockedInstruments.slice(),
+    songChoice: previous.songChoice,
+    visited: [],
+    legIndex,
+    totalMetres: previous.totalMetres,
+    totalCoins: previous.totalCoins,
+    totalEncounters: previous.totalEncounters,
+    campfires: previous.campfires,
+    journal: [],
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -461,6 +558,9 @@ export function startNewDay(state: object, dayKey: string): JourneyState {
     // across days is the whole mechanism, so a new dawn keeps the choice.
     songChoice: previous.songChoice,
     visited: [],
+    // Every dawn is the shared daily road, however far last night's moonlit
+    // walking went. The communal first leg is the appointment worth keeping.
+    legIndex: 0,
     totalMetres: previous.totalMetres,
     totalCoins: previous.totalCoins,
     totalEncounters: previous.totalEncounters,
@@ -487,6 +587,8 @@ interface Stored {
   unlocked: string[];
   /** Pinned song id, or null while wandering. Absent in pre-v0.8 saves, which reads as null. */
   song?: string | null;
+  /** Which leg of the day this walk is. Absent in pre-v1.0 saves, which reads as 0 — the shared road. */
+  leg?: number;
   visited: string[];
   metres: number;
   earned: number;
@@ -535,6 +637,7 @@ export function saveJourney(state: object, force = false, nowMs: number = Date.n
       instrument: j.instrumentId,
       unlocked: j.unlockedInstruments,
       song: j.songChoice,
+      leg: j.legIndex,
       visited: j.visited,
       metres: round(j.totalMetres, 1),
       earned: round(j.totalCoins, 2),
@@ -594,6 +697,7 @@ export function loadJourney(dayKey: string): JourneyState | null {
       instrumentId: parsed.instrument,
       unlockedInstruments: parsed.unlocked,
       songChoice: parsed.song,
+      legIndex: parsed.leg,
       visited: parsed.visited,
       totalMetres: parsed.metres,
       totalCoins: parsed.earned,
@@ -662,6 +766,7 @@ function normalize(input: unknown): JourneyState {
     songChoice:
       typeof raw.songChoice === 'string' && raw.songChoice !== '' ? raw.songChoice : null,
     visited: stringList(raw.visited, MAX_VISITED),
+    legIndex: Math.max(0, Math.floor(finiteOr(raw.legIndex, 0))),
     totalMetres: Math.max(0, finiteOr(raw.totalMetres, 0)),
     totalCoins: Math.max(0, finiteOr(raw.totalCoins, 0)),
     totalEncounters: Math.max(0, Math.floor(finiteOr(raw.totalEncounters, 0))),

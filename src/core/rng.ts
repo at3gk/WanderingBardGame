@@ -72,6 +72,35 @@ export function dailySeed(now: Date = new Date()): number {
   return hashString(`wandering-bard/${dayKey(now)}`);
 }
 
+/**
+ * The seed for one leg of a calendar day's walking (DESIGN.md, "The true
+ * goal": hybrid pacing). Leg 0 is the shared daily road — byte-identical to
+ * `dailySeed` for that day, which is what keeps the first walk of everyone's
+ * day communal. Legs past it are the moonlit roads an eager player opens by
+ * walking on from the campfire: still deterministic (the same day and leg
+ * always build the same road, so a save can resume one), just not the road
+ * anyone else is on. The identity with `dailySeed` at leg 0 is pinned by
+ * test — a drift there would quietly fork the shared road.
+ */
+export function legSeed(dayKey: string, leg: number): number {
+  const n = Math.max(0, Math.floor(Number.isFinite(leg) ? leg : 0));
+  if (n === 0) return hashString(`wandering-bard/${dayKey}`);
+  return hashString(`wandering-bard/${dayKey}/leg/${n}`);
+}
+
+/**
+ * The dayKey-shaped label a leg's road stamps into its stop ids. Stop ids
+ * are derived from the key `generateRoad` is given (`road.ts` documents why
+ * a caller that overrides the seed must override the key with it) — so a
+ * second leg on the same day must carry a distinct key, or its stops would
+ * collide with the morning's in the visited list. `~` rather than `/`
+ * because `/` is the id's own field separator.
+ */
+export function legRoadKey(dayKey: string, leg: number): string {
+  const n = Math.max(0, Math.floor(Number.isFinite(leg) ? leg : 0));
+  return n === 0 ? dayKey : `${dayKey}~${n}`;
+}
+
 /** Integer in [min, max] inclusive. */
 export function randInt(rand: Rand, min: number, max: number): number {
   return min + Math.floor(rand() * (max - min + 1));

@@ -38,6 +38,21 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 158
+  shipped after 171: the journey ledger, the v1.0 arc's foundation.**
+  Pure core only (no scene wiring — zero live-build behaviour change):
+  `FESTIVAL_LEGS = 13` counted against `campfires` (veterans'
+  already-slept nights count — kind, and one line to change if the
+  human wants a fresh start), `startNextLeg` (resting-only, resets the
+  road-shaped fields, keeps the day's purse, nothing gates or rewards
+  it), the moonlit night arc in `dayFractionAt` (dusk→midnight→dawn,
+  mod 1 — the sky's keyframes already cover it), and `legSeed`/
+  `legRoadKey` in rng.ts (leg 0 === dailySeed by identity, pinned;
+  `~N` road keys keep moonlit stop ids from colliding with the
+  morning's). 1033 tests green (+16), build 817.92 kB. The campfire
+  scene tasks (159/162) wire it: `generateRoad(legSeed(k,n),
+  legRoadKey(k,n))` and a "walk on" choice at the fire.
+
 - **HANDOFF, 2026-08-01 (overnight loop session) — ROADMAP task 171
   shipped: the PWA save-protection bundle, the v1.2 queue's urgent
   data-loss item.** 1017 tests green (+17), build 817.70 kB. The game

@@ -3,6 +3,7 @@ import {
   DAWN_FRACTION,
   DEFAULT_INSTRUMENT_ID,
   DUSK_FRACTION,
+  FESTIVAL_LEGS,
   JOURNEY_STORAGE_KEY,
   JourneyState,
   LEGAL_TRANSITIONS,
@@ -17,13 +18,16 @@ import {
   dayFractionAt,
   earn,
   enterPhase,
+  festivalReached,
   hasArrived,
   hasVisited,
   isDayComplete,
+  legsToFestival,
   loadJourney,
   recordEntry,
   saveJourney,
   startNewDay,
+  startNextLeg,
   unlockInstrument,
   visitStop,
 } from './journey';
@@ -877,5 +881,110 @@ describe('chooseSong', () => {
     delete raw.song;
     store.setItem(JOURNEY_STORAGE_KEY, JSON.stringify(raw));
     expect(loadJourney(DAY)?.songChoice).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The pilgrimage (v1.0)
+// ---------------------------------------------------------------------------
+
+describe('startNextLeg — the moonlit road', () => {
+  /** A bard at the fire at the end of the shared road, with a day lived in. */
+  const resting = () =>
+    enterPhase(walking({ s: LENGTH, coins: 12, delight: 3, totalMetres: 900 }), 'resting');
+
+  it('only a resting bard can walk on into the night', () => {
+    for (const phase of PHASES.filter((p) => p !== 'resting')) {
+      const refused = startNextLeg(inPhase(phase));
+      expect(refused.legIndex).toBe(0);
+      expect(refused.phase).toBe(phase);
+    }
+  });
+
+  it('opens a fresh road at dusk and keeps the whole day purse', () => {
+    const fire = resting();
+    const leg = startNextLeg(fire);
+    expect(leg.legIndex).toBe(1);
+    expect(leg.phase).toBe('waking');
+    expect(leg.s).toBe(0);
+    expect(leg.dayFraction).toBeCloseTo(DUSK_FRACTION, 10);
+    expect(leg.dayKey).toBe(DAY);
+    // Still today: the purse and the lifetime figures ride along...
+    expect(leg.coins).toBe(fire.coins);
+    expect(leg.delight).toBe(fire.delight);
+    expect(leg.totalMetres).toBe(fire.totalMetres);
+    expect(leg.campfires).toBe(fire.campfires);
+    // ...while everything describing the finished road is a blank page.
+    expect(leg.visited).toEqual([]);
+    expect(leg.journal).toEqual([]);
+  });
+
+  it('walks the night arc: dusk through midnight to the next dawn', () => {
+    expect(dayFractionAt(0, LENGTH, 1)).toBeCloseTo(DUSK_FRACTION, 10);
+    expect(dayFractionAt(LENGTH, LENGTH, 1)).toBeCloseTo(DAWN_FRACTION, 10);
+    // Midnight falls inside the leg, not at either end.
+    const nightSpan = 1 - (DUSK_FRACTION - DAWN_FRACTION);
+    const midnightS = ((1 - DUSK_FRACTION) / nightSpan) * LENGTH;
+    expect(dayFractionAt(midnightS, LENGTH, 1)).toBeCloseTo(0, 10);
+  });
+
+  it('every moonlit leg walks the same night, however many there are', () => {
+    expect(dayFractionAt(700, LENGTH, 4)).toBeCloseTo(dayFractionAt(700, LENGTH, 1), 10);
+  });
+
+  it('advance follows the night arc while a moonlit leg is walked', () => {
+    const leg = enterPhase(startNextLeg(resting()), 'walking');
+    const on = advance(leg, 300, LENGTH);
+    const nightSpan = 1 - (DUSK_FRACTION - DAWN_FRACTION);
+    expect(on.dayFraction).toBeCloseTo((DUSK_FRACTION + nightSpan * (300 / LENGTH)) % 1, 10);
+    expect(on.s).toBe(300);
+  });
+
+  it('a moonlit campfire still counts a night', () => {
+    const leg = enterPhase(startNextLeg(resting()), 'walking');
+    const secondFire = enterPhase(advance(leg, LENGTH, LENGTH), 'resting');
+    expect(secondFire.campfires).toBe(resting().campfires + 1);
+  });
+
+  it('does not mutate its argument', () => {
+    const before = deepFreeze(resting());
+    expect(() => startNextLeg(before)).not.toThrow();
+    expect(before.legIndex).toBe(0);
+  });
+
+  it('the day rollover always returns to the shared road', () => {
+    expect(startNewDay(startNextLeg(resting()), NEXT_DAY).legIndex).toBe(0);
+  });
+
+  it('round-trips the leg through the save, and reads a pre-v1.0 record as the shared road', () => {
+    installStorage(memoryStorage());
+    saveJourney(startNextLeg(resting()), true);
+    expect(loadJourney(DAY)?.legIndex).toBe(1);
+    const store = globalThis.localStorage;
+    const raw = JSON.parse(store.getItem(JOURNEY_STORAGE_KEY) ?? '{}') as Record<string, unknown>;
+    delete raw.leg;
+    store.setItem(JOURNEY_STORAGE_KEY, JSON.stringify(raw));
+    expect(loadJourney(DAY)?.legIndex).toBe(0);
+  });
+});
+
+describe('the festival ledger', () => {
+  it('sits inside the human-set band of 12 to 15 legs', () => {
+    expect(FESTIVAL_LEGS).toBeGreaterThanOrEqual(12);
+    expect(FESTIVAL_LEGS).toBeLessThanOrEqual(15);
+  });
+
+  it('counts nights by the fire down to the festival gate', () => {
+    const j = createJourney(DAY, LENGTH);
+    expect(legsToFestival(j)).toBe(FESTIVAL_LEGS);
+    expect(festivalReached(j)).toBe(false);
+    expect(legsToFestival({ ...j, campfires: FESTIVAL_LEGS - 1 })).toBe(1);
+    expect(legsToFestival({ ...j, campfires: FESTIVAL_LEGS })).toBe(0);
+    expect(festivalReached({ ...j, campfires: FESTIVAL_LEGS })).toBe(true);
+  });
+
+  it('never counts below zero, however long the road has already been', () => {
+    expect(legsToFestival({ campfires: FESTIVAL_LEGS + 40 })).toBe(0);
+    expect(festivalReached({ campfires: FESTIVAL_LEGS + 40 })).toBe(true);
   });
 });
