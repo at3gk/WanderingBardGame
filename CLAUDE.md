@@ -27,7 +27,8 @@ executes YOUR vision — write it like you mean it.
    even if ugly.
 5. A game people want to come back to — warmly, never compulsively
    (human-set, 2026-07-31). Retention work is design work here: keep
-   `docs/research/` current (retention-design.md is the founding note),
+   `docs/research/` current (retention-design.md, art-quality.md and
+   mobile-friendly.md are the founding notes),
    and check any feature that touches returning-player behaviour against
    its recommendations AND its rejected-on-principle list. Consolidation
    runs (every ~10th) refresh the research the same way they refresh the
