@@ -73,6 +73,25 @@ export function dailySeed(now: Date = new Date()): number {
 }
 
 /**
+ * The UTC day after `key`, in the same `YYYY-MM-DD` shape.
+ *
+ * The campfire shows tomorrow's road on the horizon (ROADMAP 151/159), and
+ * this is the arithmetic that makes the promise honest: tomorrow's key is
+ * knowable tonight, so tomorrow's seed is too, so the silhouette drawn at
+ * the fire is the road that will actually be walked. Date.UTC does the
+ * calendar work (month ends, leap days); a key that does not parse comes
+ * back unchanged rather than as `NaN-NaN-NaN`, which would quietly seed a
+ * road no calendar can ever reach.
+ */
+export function nextDayKey(key: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  if (!m) return key;
+  const next = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + 1));
+  if (Number.isNaN(next.getTime())) return key;
+  return dayKey(next);
+}
+
+/**
  * The seed for one leg of a calendar day's walking (DESIGN.md, "The true
  * goal": hybrid pacing). Leg 0 is the shared daily road — byte-identical to
  * `dailySeed` for that day, which is what keeps the first walk of everyone's

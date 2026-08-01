@@ -39,6 +39,22 @@ mastery display must read that section first.
 **At a glance** — read this, then only the sections you need.
 
 - **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 159's
+  second piece shipped: tomorrow's road glows on the horizon at the
+  fire.** `core/skyline.ts` derives tomorrow's real profile (nextDayKey
+  + leg-0 seed); sky.ts draws it as the farthest ridge band in a
+  down-road wedge with a warm first-light halo, all scaled by one
+  uniform (`uTomorrow`) that eases in only while resting. A/B ablation
+  on the campfire framing shows a clear, soft "light beyond the hills"
+  read; dawn walking frame byte-unchanged. GLSL note for future edits:
+  this material is GLSL ES 1.00 — uniform arrays cannot take computed
+  indices; the band samples its profile via a constant-bound loop.
+  1051 tests green (+8), build 828.23 kB. Blind critique now due (two
+  visual tasks since wave 4): references re-downloaded to scratchpad
+  (7 A Short Hike gameplay frames; Spiritfarer press pages are now
+  JS-rendered so only key art was reachable — panels should weight
+  ASH).
+
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 159's
   first piece shipped after 158: the journal opens at the fire and the
   festival is named.** The journal had been written all day and read
   nowhere since v0.6 — the whole recap was one coins line. Now
