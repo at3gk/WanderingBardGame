@@ -1665,6 +1665,30 @@ scene — build once).
     heads); same safety rule — fade the prompt, never the answer, and
     help returns instantly. "By heart" is a song state on diary facts.
     (core/scaffold or a sibling, SongNotes.ts.)
+    **First slice done (2026-08-01, overnight session): the LETTERS
+    level went live.** Discovery that reshaped the task: the scaffold
+    model (complete and tested since v0.4) had NO live callers — no
+    encounter() heard taps, no load/save ran, and every letter printed
+    at spawn; "one level up" would have built on an unwired first
+    floor. Now: `core/reveal.ts` (pure, 8 tests) bridges scaffold →
+    per-note reveal leads (first-in-pass keeps a band more help — the
+    teacher points at the note once per repeat; a FRESH scaffold
+    yields full-flight letters, so a new player's staff is
+    byte-identical to before — kindness by arithmetic, not special
+    case); SongNotes gained an `aLetter` instanced attribute gating
+    the atlas's green channel (letter hides inside an intact head,
+    fades in over 150ms at its reveal moment; struck/softened notes
+    always show the answer); RoadStage loads the scaffold, feeds every
+    judged tap (`meterAlive` read BEFORE applyJudgement so collapse is
+    judged on the tap's own meter), saves in persist(), and keeps the
+    leads array parallel to the walk's in-place-extended beats (a
+    fresh array each extension would strand the cursor). Verified
+    live: seeded-strong scaffold → far note letter 0, approaching note
+    mid-fade 0.246 (arithmetic exact), past-barline 1; fresh → all 1.
+    Test-rig trap documented: seeding localStorage then reloading gets
+    clobbered by pagehide's persist — seed via init script before the
+    app boots. **Remaining on 160: the heads-to-ghosts level (by-heart
+    proper) and its diary-facts song state.**
 161. **Pitch recall in practice.** Practice mode's unguided tier: no pip,
     find the melody's positions yourself; wrong note sounds and costs
     nothing; the kind fallback restores guidance. The only surface that

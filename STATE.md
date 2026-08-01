@@ -38,6 +38,28 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 160's
+  first slice shipped: the learning model is LIVE for the first time.**
+  The scaffold (built and tested since v0.4) had zero live callers —
+  the letter pedagogy was decorative and every letter printed at spawn.
+  Now `core/reveal.ts` bridges scaffold → per-note reveal leads,
+  SongNotes hides each letter inside an intact head until its lead
+  (150ms fade-in; struck/softened notes always answer), RoadStage
+  feeds judged taps and persists via scaffoldStorage. A fresh scaffold
+  reproduces the old always-labelled staff exactly — fading only
+  begins where strength is earned. Verified live with attribute reads
+  (far note letter 0 / approaching 0.246 mid-fade / past-barline 1
+  under a strong scaffold; all 1 fresh). Two traps for future runs:
+  (1) seeding localStorage in a test rig then reloading gets clobbered
+  by pagehide's persist — seed via addInitScript; (2) the walk tune
+  extends `beats` IN PLACE, so any parallel array must be extended in
+  place too or SongNotes' cursor reads a stale one. 1059 tests green
+  (+8), build 832.17 kB. Remaining on 160: heads-to-ghosts (by-heart
+  proper). Human playtest note: letter fading is now REAL for a
+  returning player with an earned scaffold — the family iPad will
+  show blank heads on well-known positions; that is the design
+  working, not a regression.
+
 - **HANDOFF, 2026-08-01 (overnight loop session) — wave-5 six-lens blind
   panel ran (fresh judges, fresh frames, HARSHER ANCHOR: "10 = ships
   beside A Short Hike without apology" — so the 4.42 mean is NOT

@@ -953,6 +953,13 @@ interface LiveNote {
   state: 'travelling' | 'struck' | 'softened';
   /** Busk-clock time the state was entered. */
   changedMs: number;
+  /**
+   * Flight milliseconds before the hit at which the letter becomes
+   * readable — the scaffold's dose for this note (core/reveal.ts). At or
+   * above the full flight time the letter is simply always present, which
+   * is both the new-player default and the pre-pedagogy behaviour.
+   */
+  revealLeadMs: number;
 }
 
 export interface SongNotesOptions {
@@ -974,6 +981,10 @@ export class SongNotes {
   private readonly aScale: InstancedBufferAttribute;
   private readonly aAlpha: InstancedBufferAttribute;
   private readonly aPale: InstancedBufferAttribute;
+  private readonly aLetter: InstancedBufferAttribute;
+
+  /** Per-beat letter reveal leads, parallel to `beats`. See `setBeats`. */
+  private revealLeads: readonly number[] | null = null;
 
   private readonly ribbon: Mesh;
   private readonly ribbonMaterial: ShaderMaterial;
@@ -1165,11 +1176,13 @@ export class SongNotes {
     this.aScale = instanced(MAX_GLYPHS, 1);
     this.aAlpha = instanced(MAX_GLYPHS, 1);
     this.aPale = instanced(MAX_GLYPHS, 1);
+    this.aLetter = instanced(MAX_GLYPHS, 1);
     this.glyphGeometry.setAttribute('aPos', this.aPos);
     this.glyphGeometry.setAttribute('aCell', this.aCell);
     this.glyphGeometry.setAttribute('aScale', this.aScale);
     this.glyphGeometry.setAttribute('aAlpha', this.aAlpha);
     this.glyphGeometry.setAttribute('aPale', this.aPale);
+    this.glyphGeometry.setAttribute('aLetter', this.aLetter);
     this.glyphGeometry.instanceCount = MAX_GLYPHS;
     this.glyphGeometry.boundingSphere = null;
 
@@ -1295,8 +1308,17 @@ export class SongNotes {
    * staff that changes shape while a child is reading it is worse than a
    * little spare paper.
    */
-  setBeats(beats: readonly SongBeat[]): void {
+  /**
+   * `revealLeads`, when given, is parallel to `beats`: how many flight
+   * milliseconds before its hit each note's letter becomes readable
+   * (core/reveal.ts computes it from the scaffold). Omitted, every letter
+   * is present for the whole flight — the pre-pedagogy behaviour, and the
+   * behaviour every note falls back to when struck or missed (the answer
+   * is never withheld; only the prompt fades).
+   */
+  setBeats(beats: readonly SongBeat[], revealLeads: readonly number[] | null = null): void {
     this.beats = beats;
+    this.revealLeads = revealLeads;
     this.cursor = 0;
     this.live.clear();
 
@@ -1884,7 +1906,12 @@ export class SongNotes {
       // Full means "wait", not "skip": advancing the cursor here would
       // silently drop a note the player is about to be asked to play.
       if (this.live.size >= MAX_GLYPHS) break;
-      if (beat.hitTimeMs + PAST_MS > nowMs) this.live.set(beat.index, makeLive(beat));
+      if (beat.hitTimeMs + PAST_MS > nowMs) {
+        this.live.set(
+          beat.index,
+          makeLive(beat, this.revealLeads?.[this.cursor] ?? TRAVEL_TIME_MS),
+        );
+      }
       this.cursor++;
     }
 
@@ -1903,6 +1930,7 @@ export class SongNotes {
     const scale = this.aScale.array as Float32Array;
     const alpha = this.aAlpha.array as Float32Array;
     const pale = this.aPale.array as Float32Array;
+    const letter = this.aLetter.array as Float32Array;
 
     let i = 0;
     for (const note of this.live.values()) {
@@ -1945,6 +1973,18 @@ export class SongNotes {
       const col = note.cell % ATLAS_COLS;
       const row = Math.floor(note.cell / ATLAS_COLS);
 
+      // The scaffold's dose. A travelling note keeps its letter hidden
+      // until its reveal moment, then fades it in over ~150ms so recall's
+      // answer arrives rather than pops. A full-flight lead is always-on
+      // (the new-player default), and any judged note — struck or softened
+      // — shows its letter unconditionally: fade the prompt, never the
+      // answer.
+      let letterA = 1;
+      if (note.state === 'travelling' && note.revealLeadMs < TRAVEL_TIME_MS) {
+        const remaining = note.hitTimeMs - nowMs;
+        letterA = clamp((note.revealLeadMs - remaining) / 150, 0, 1);
+      }
+
       pos[i * 3] = this.scratchB.x;
       pos[i * 3 + 1] = y;
       pos[i * 3 + 2] = this.scratchB.z;
@@ -1954,6 +1994,7 @@ export class SongNotes {
       scale[i] = scaleMul;
       alpha[i] = clamp(a, 0, 1);
       pale[i] = paleness;
+      letter[i] = letterA;
       i++;
     }
 
@@ -1969,6 +2010,7 @@ export class SongNotes {
     this.aScale.needsUpdate = true;
     this.aAlpha.needsUpdate = true;
     this.aPale.needsUpdate = true;
+    this.aLetter.needsUpdate = true;
   }
 
   /**
@@ -2620,7 +2662,7 @@ function cellFor(step: number): number {
   return letterIndex * 4 + (stemDown(step) ? 2 : 0) + (needsLedger(step) ? 1 : 0);
 }
 
-function makeLive(beat: SongBeat): LiveNote {
+function makeLive(beat: SongBeat, revealLeadMs: number): LiveNote {
   const step = beat.rest ? null : staffStepAt(beat.semitone);
   return {
     index: beat.index,
@@ -2632,6 +2674,7 @@ function makeLive(beat: SongBeat): LiveNote {
     cell: step === null ? REST_CELL : cellFor(step),
     state: 'travelling',
     changedMs: 0,
+    revealLeadMs,
   };
 }
 
@@ -2779,6 +2822,7 @@ attribute vec2 aCell;
 attribute float aScale;
 attribute float aAlpha;
 attribute float aPale;
+attribute float aLetter;
 
 uniform float uSize;
 uniform float uFront;
@@ -2790,12 +2834,14 @@ varying vec2 vCell;
 varying float vAlpha;
 varying float vPale;
 varying float vDepth;
+varying float vLetter;
 
 void main() {
   vQuad = position.xy;
   vCell = aCell;
   vAlpha = aAlpha;
   vPale = aPale;
+  vLetter = aLetter;
   vDepth = length(cameraPosition - aPos);
 
   // Billboarded in view space from the view matrix's own basis, the same way
@@ -2834,6 +2880,7 @@ varying vec2 vCell;
 varying float vAlpha;
 varying float vPale;
 varying float vDepth;
+varying float vLetter;
 
 ${LIGHT_CHUNK}
 
@@ -2852,7 +2899,11 @@ void main() {
   // always the far end of the head's own value rather than always the light
   // one. See PALE_INK for the measurement that forced this.
   vec3 letter = mix(uInk, uPaleInk, vPale);
-  vec3 color = mix(body, letter, clamp(t.g, 0.0, 1.0));
+  // vLetter is the scaffold's dose (core/scaffold.ts, via core/reveal.ts):
+  // 0 hides the letter inside an intact head while recall is being asked
+  // for, 1 is the letter as it always was. The head's coverage never
+  // changes — the prompt fades, never the answer.
+  vec3 color = mix(body, letter, clamp(t.g, 0.0, 1.0) * clamp(vLetter, 0.0, 1.0));
   // The note takes the light falling on the paper it is printed on — the
   // whole floor, not the paper's share of it, because the pitch letter is
   // what has to stay readable and the paper is what has to belong.
