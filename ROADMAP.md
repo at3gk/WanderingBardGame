@@ -1756,6 +1756,20 @@ scene — build once).
 164. **The title card.** One warm card for returning players: "Continue
     the journey" (default, one tap) / "The songbook". New players skip
     straight to the road. Playable-in-5s holds. (main/App/Hud.)
+    **Done (2026-08-01, overnight session).** `Hud.showTitleCard`: a
+    radial dark-plum veil with the dawn road glowing through (a
+    bookmark lifted, not a menu), title + "The road kept your place." +
+    two doors, staggered reveal. The WHOLE sheet is the default door —
+    one tap anywhere continues; "The songbook" stops propagation,
+    dismisses, and opens the book via the new public `Hud.openBook`.
+    Gated in RoadStage's constructor on `resumed.totalMetres > 0` (a
+    record with no walking behind it has nothing to continue — DESIGN's
+    "nothing to choose goes straight to the road"). The stage loads and
+    runs beneath the veil, so playable-in-5s holds; the card costs one
+    tap. Verified live: fresh profile → no card; returning → card,
+    tap-anywhere dismisses, songbook door opens the book; frame read
+    by eye. 1077 tests green (unchanged — DOM layer, no unit precedent),
+    build 838.95 kB.
 165. **Book Two: true keys.** The accidentals volume — real key
     signatures, sharps/flats correctly engraved and exactly sounded.
     Engine is chromatically exact already; notation needs accidental

@@ -427,7 +427,8 @@ export class RoadStage implements Stage {
     const seed = options.seedOverride ?? dailySeed();
     this.road = generateRoad(seed, key);
 
-    this.journey = loadJourney(key) ?? createJourney(key, this.road.lengthM);
+    const resumed = loadJourney(key);
+    this.journey = resumed ?? createJourney(key, this.road.lengthM);
     // `waking` is a state with one exit and nothing in it, and a walk
     // reloaded mid-busk should resume on the road rather than in the middle
     // of somebody else's tune — the stop has not been marked visited yet, so
@@ -543,6 +544,15 @@ export class RoadStage implements Stage {
     app.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('pagehide', this.onPageHide);
+
+    // The title card, for a bard with a road behind them (DESIGN.md's "A
+    // small title card"). Gated on lifetime metres rather than on the mere
+    // existence of a record: someone who opened the tab once and never
+    // walked has nothing to continue, and DESIGN's rule is that a player
+    // with nothing to choose goes straight to the road.
+    if (resumed && resumed.totalMetres > 0) {
+      this.hud.showTitleCard(() => this.hud.openBook());
+    }
   }
 
   get camera() {

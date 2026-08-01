@@ -38,6 +38,16 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 164
+  COMPLETE: the title card.** One warm sheet for returning players
+  (gated on lifetime metres > 0), the game live beneath it: tap
+  anywhere continues, "The songbook" opens the book (new public
+  Hud.openBook). Playable-in-5s holds — the card costs one tap and
+  never shows to a new player. Verified live both profiles + both
+  doors; frame read. v1.0 arc remaining: 161 (practice pitch recall),
+  163 (the festival scene), 165 (Book Two), 159's moonlit walk-on
+  wiring. 1077 tests green, build 838.95 kB.
+
 - **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 162
   COMPLETE: the campfire rehearsal.** The fire's asking rides tonight's
   page (159's "rehearsal introduced" beat, done by offering); one tap
