@@ -44,6 +44,11 @@ let songChoice: string | null = null;
 /** Held beside `songChoice` for the same module-scope reason it is. */
 let songWalks: Record<string, number> = {};
 
+/** Every carried song's walk count — the festival's set list is drawn from this. */
+export function allSongWalks(): Readonly<Record<string, number>> {
+  return { ...songWalks };
+}
+
 /** How many walking passes this song has been carried through, lifetime. */
 export function songWalksFor(songId: string): number {
   const n = songWalks[songId];

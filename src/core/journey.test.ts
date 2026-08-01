@@ -24,6 +24,7 @@ import {
   isDayComplete,
   legsToFestival,
   loadJourney,
+  noteFestival,
   noteRehearsal,
   recordEntry,
   saveJourney,
@@ -994,6 +995,29 @@ describe('noteRehearsal — one attempt per fire', () => {
     delete raw.rh;
     store.setItem(JOURNEY_STORAGE_KEY, JSON.stringify(raw));
     expect(loadJourney(DAY)?.rehearsed).toBe(false);
+  });
+});
+
+describe('noteFestival — the lifetime figure', () => {
+  it('banks eagerly and round-trips through the save', () => {
+    installStorage(memoryStorage());
+    const fire = enterPhase(walking({ s: LENGTH }), 'resting');
+    const played = noteFestival(fire);
+    expect(played.festivals).toBe(1);
+    saveJourney(played, true);
+    expect(loadJourney(DAY)?.festivals).toBe(1);
+  });
+
+  it('survives the day rollover and reads absent as zero', () => {
+    installStorage(memoryStorage());
+    const played = noteFestival(enterPhase(walking({ s: LENGTH }), 'resting'));
+    expect(startNewDay(played, NEXT_DAY).festivals).toBe(1);
+    saveJourney(played, true);
+    const store = globalThis.localStorage;
+    const raw = JSON.parse(store.getItem(JOURNEY_STORAGE_KEY) ?? '{}') as Record<string, unknown>;
+    delete raw.fests;
+    store.setItem(JOURNEY_STORAGE_KEY, JSON.stringify(raw));
+    expect(loadJourney(DAY)?.festivals).toBe(0);
   });
 });
 

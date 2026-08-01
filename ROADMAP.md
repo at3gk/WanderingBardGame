@@ -1763,6 +1763,29 @@ scene — build once).
     the by-heart book to the festival crowd; warm payoff; then the
     choice — Book Two's invitation (showing a real sharp sign and what
     it would teach), free revisiting, or walking on. (New scene + core.)
+    **First piece done (2026-08-01, overnight session): the festival
+    eve.** `core/festival.ts` (pure, 7 tests): `isFestivalEve`
+    (festivalReached && festivals === 0), `festivalSetList` (the songs
+    genuinely CARRIED — songWalks order, pinned tune opening, capped at
+    3, an all-wandering player met with the rotation's tune: nobody
+    walks thirteen campfires to be told their book is too thin — this
+    is the no-fail reading of "performed from the by-heart book"),
+    arrival copy and closing line (vocab-banned). The gate camp's page
+    becomes the festival's; one tap plays the set as a CHAINED
+    rehearsal, each song performed AS IT STANDS (by-heart from the
+    clean staff, still-learning with its ink — headsLevel per song,
+    unlike the ordinary rehearsal's forced clean staff); per-song
+    journal lines, then the closing line, `journey.festivals` banked
+    (persisted `fests`, +2 round-trip tests) and the next fire is
+    ordinary. Interrupted set = whole eve returns. Queue dedupes on
+    RESOLVED song id (an unknown carried id falls back to the rotation
+    — two unknowns must not play the same tune twice; found live).
+    Verification-harness lesson recorded: addInitScript re-seeds on
+    EVERY navigation — guard with a seed-once flag or reload checks
+    test the seed, not the game. **Remaining on 163: the post-festival
+    choice (Book Two invitation with a real engraved sharp, revisit,
+    walk on) and the festival grounds visuals (lanterns, stalls,
+    crowd, stage).** 1086 tests green (+9), build 841.46 kB.
 164. **The title card.** One warm card for returning players: "Continue
     the journey" (default, one tap) / "The songbook". New players skip
     straight to the road. Playable-in-5s holds. (main/App/Hud.)

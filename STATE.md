@@ -38,6 +38,22 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 163's
+  first piece: THE FESTIVAL EVE IS PLAYABLE.** At the gate camp
+  (campfires >= 13, no festival yet) the page becomes the festival's,
+  and one tap performs the carried songs as a chained rehearsal — each
+  song AS IT STANDS (headsLevel per song), per-song journal lines, a
+  closing line, `festivals` banked and persisted, ordinary fires after.
+  Set list is the kind reading of "the by-heart book": most-carried
+  first, pinned tune opening, a wandering player met with the
+  rotation's tune. Verified end-to-end live (two-song set, reload
+  persistence, next-fire-ordinary). Two harness lessons: addInitScript
+  re-seeds on EVERY navigation (seed-once flag, or reload checks test
+  the seed); and PowerShell Get/Set-Content round-trips mangle UTF-8
+  em-dashes in PS 5.1 — use the Edit tool for source files, always.
+  Remaining on 163: the post-festival choice + festival grounds
+  visuals. 1086 tests green (+9), build 841.46 kB.
+
 - **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 172
   COMPLETE (service worker; offline boot verified live), and task 161
   found to have a PREMISE GAP: practice mode has no live surface —
