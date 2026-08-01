@@ -24,6 +24,7 @@ import {
   isDayComplete,
   legsToFestival,
   loadJourney,
+  noteRehearsal,
   recordEntry,
   saveJourney,
   startNewDay,
@@ -965,6 +966,34 @@ describe('startNextLeg — the moonlit road', () => {
     delete raw.leg;
     store.setItem(JOURNEY_STORAGE_KEY, JSON.stringify(raw));
     expect(loadJourney(DAY)?.legIndex).toBe(0);
+  });
+});
+
+describe('noteRehearsal — one attempt per fire', () => {
+  const resting = () => enterPhase(walking({ s: LENGTH }), 'resting');
+
+  it('marks the leg rehearsed, immutably', () => {
+    const before = deepFreeze(resting());
+    expect(before.rehearsed).toBe(false);
+    expect(noteRehearsal(before).rehearsed).toBe(true);
+    expect(before.rehearsed).toBe(false);
+  });
+
+  it('a new fire asks again: both the moonlit leg and the new day reset it', () => {
+    const played = noteRehearsal(resting());
+    expect(startNextLeg(played).rehearsed).toBe(false);
+    expect(startNewDay(played, NEXT_DAY).rehearsed).toBe(false);
+  });
+
+  it('round-trips through the save, and a pre-v1.0 record reads as not yet played', () => {
+    installStorage(memoryStorage());
+    saveJourney(noteRehearsal(resting()), true);
+    expect(loadJourney(DAY)?.rehearsed).toBe(true);
+    const store = globalThis.localStorage;
+    const raw = JSON.parse(store.getItem(JOURNEY_STORAGE_KEY) ?? '{}') as Record<string, unknown>;
+    delete raw.rh;
+    store.setItem(JOURNEY_STORAGE_KEY, JSON.stringify(raw));
+    expect(loadJourney(DAY)?.rehearsed).toBe(false);
   });
 });
 

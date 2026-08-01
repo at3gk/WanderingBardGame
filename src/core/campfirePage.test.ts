@@ -85,6 +85,18 @@ describe('campfirePage', () => {
     expect(campfirePage(atFire(FESTIVAL_LEGS)).festival).toContain('festival');
   });
 
+  it('carries the fire’s asking while an attempt is open, and only then', () => {
+    const open = campfirePage(atFire(2), 'Twinkle Twinkle Little Star');
+    expect(open.invitation).toContain('Twinkle Twinkle Little Star');
+    expect(open.invitation).toContain('from memory');
+
+    const played = campfirePage({ ...atFire(2), rehearsed: true }, 'Twinkle Twinkle Little Star');
+    expect(played.invitation).toBeUndefined();
+
+    const wandering = campfirePage(atFire(2), null);
+    expect(wandering.invitation).toBeUndefined();
+  });
+
   it('never uses the vocabulary the journal bans — the page is journal, out loud', () => {
     // Same rule encounters.ts pins for its lines: nothing on this page may
     // read as a verdict. Checked across the whole pilgrimage span.

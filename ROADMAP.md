@@ -1725,6 +1725,30 @@ scene — build once).
 162. **Campfire rehearsal.** Each campfire offers one attempt at the
     carried song without notes — no-fail, notes return on a stumble, the
     journal writes it warmly either way. (Campfire/RoadStage + core.)
+    **Done (2026-08-01, overnight session).** The fire's asking rides
+    tonight's page as an `invitation` line (this is also 159's
+    "rehearsal is introduced" beat — introduced by being offered, in
+    the fire's own voice); a tap anywhere at the fire begins one pass
+    of the carried song from a clean staff (`headsEarned` set to 2 for
+    the attempt, so 160's whole stumble machinery — tap-misses AND
+    silent lapses — returns ink level by level); the walk's gentle
+    meter judges it; taps feed the scaffold as real evidence; the
+    journal writes one of three registers from `core/rehearsal.ts`
+    (vocab-banned by test, kindest at the bottom: "Tunes are learned
+    exactly this way"), and `journey.rehearsed` (persisted `rh`,
+    reset by every new leg and day) keeps it one attempt per fire so
+    the asking stays an occasion. A rehearsal cut short by a closed
+    tab is simply not written — the next fire asks again. Verified
+    live end-to-end: invitation on page → tap → mode 'rehearsal',
+    staff clean → silence returns ink (6 stumbles → full) → warm
+    journal line persisted → second tap inert. Bonus bug found by
+    reading the frame: a day RESUMED at the fire stood the bard in
+    the flames all night (constructor path never set the seated
+    pose; only live setPhase did) — fixed in makeCamp, idempotent.
+    1077 tests green (+11), build 837.32 kB. Note for the resting
+    camera: the ribbon lies over the road behind this framing —
+    fine while the staff is clean, worth a look when ink returns
+    (human playtest note in STATE).
 163. **The festival.** Arrival scene at journey's end: the bard performs
     the by-heart book to the festival crowd; warm payoff; then the
     choice — Book Two's invitation (showing a real sharp sign and what
