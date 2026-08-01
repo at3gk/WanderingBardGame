@@ -97,6 +97,15 @@ describe('campfirePage', () => {
     expect(wandering.invitation).toBeUndefined();
   });
 
+  it('heads the page with the road, when the road has been named', () => {
+    const named = campfirePage(atFire(2), null, 'Larchwind Road');
+    expect(named.title).toContain('Larchwind Road');
+    expect(named.title).toContain("tonight's page");
+
+    expect(campfirePage(atFire(2), null, null).title).toBe("Tonight's page");
+    expect(campfirePage(atFire(2)).title).toBe("Tonight's page");
+  });
+
   it('never uses the vocabulary the journal bans — the page is journal, out loud', () => {
     // Same rule encounters.ts pins for its lines: nothing on this page may
     // read as a verdict. Checked across the whole pilgrimage span.

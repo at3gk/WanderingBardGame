@@ -2000,6 +2000,16 @@ top task fits its energy.
     traveller lines that speak as if everyone walks it today — because
     everyone does. (road.ts name generator + world signage + encounter
     lines.)
+    **Core done (2026-08-01, overnight session).** `core/roadName.ts`
+    (pure, 5 tests): 28×8 curated names from
+    `mulberry32(subSeed(seed, 'road/name'))` — naming cannot shift any
+    other stream; moonlit legs name themselves (2026-08-01 is
+    Bramblegate Way; its first moonlit leg, Willowbend Way). Surfaced
+    at the trailhead ("Bramblegate Way, this morning." — construction
+    only, s < 50) and as tonight's page title ("BRAMBLEGATE WAY —
+    TONIGHT'S PAGE"; festival eve still wins its override). Verified
+    live at both points. 1093 tests green (+6), build 861.57 kB.
+    **Deferred: world signage + traveller lines that speak the name.**
 153. **The campfire postcard.** Optional share: a small painted frame of
     today's road with its name and the song carried. Shares presence,
     never performance — no accuracy, no coins, nothing gradable (Wordle's
