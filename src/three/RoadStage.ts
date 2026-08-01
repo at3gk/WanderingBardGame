@@ -119,6 +119,7 @@ import {
 import { resolveAsk, rollAsk, rollEncounter, type EncounterAsk } from '../core/encounters';
 import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
+import { campfirePage } from '../core/campfirePage';
 import { Ambience, dayShape } from '../audio/ambience';
 import {
   adaptiveDrive,
@@ -1282,6 +1283,12 @@ export class RoadStage implements Stage {
     const tail =
       found.length > 0 ? describeFound(found) : 'The road will still be there in the morning.';
     this.hud.say(`${camp} ${tail}`, 14);
+
+    // Tonight's page: the journal, read back at last (v1.0 task 159's first
+    // piece, folded together with v0.9 task 151's bookend). Composed after
+    // `noteUnlocks` above so an instrument found today is a moment on the
+    // page, not just a corner flash.
+    this.hud.showPage(campfirePage(this.journey));
   }
 
   /**
@@ -1390,6 +1397,7 @@ export class RoadStage implements Stage {
   }
 
   private strikeCamp(): void {
+    this.hud.hidePage();
     if (!this.campfire) return;
     this.scene.remove(this.campfire.group);
     this.campfire.dispose();

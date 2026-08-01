@@ -38,6 +38,21 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 159's
+  first piece shipped after 158: the journal opens at the fire and the
+  festival is named.** The journal had been written all day and read
+  nowhere since v0.6 — the whole recap was one coins line. Now
+  `core/campfirePage.ts` (pure, tested) composes tonight's page and
+  `Hud.showPage` sets it above the instrument corner, each moment inked
+  in the sky it happened under, staggered reveal, tap-to-fold. The
+  festival line has three registers (first-fire naming, distance count
+  in words, anticipatory at the gate) and its copy is test-bound to
+  distance-not-time and no-verdict vocabulary. Read the re-shot
+  07-night-campfire frame: page sits bottom-left, legible, clear of
+  the scene. Remaining on 159: tomorrow's silhouette, rehearsal intro
+  (after 162), moonlit walk-on wiring (mid-session road rebuild).
+  1043 tests green (+10), build 821.01 kB.
+
 - **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 158
   shipped after 171: the journey ledger, the v1.0 arc's foundation.**
   Pure core only (no scene wiring — zero live-build behaviour change):
