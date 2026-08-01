@@ -600,6 +600,102 @@ export class Hud {
   }
 
   /**
+   * A quiet sheet in the title card's family: a veil, a heading, optional
+   * body lines, and doors. Tap on the veil (outside any door) dismisses.
+   * Serves the post-festival choice and Book Two's invitation — the two
+   * moments the game asks a question instead of taking a tap.
+   */
+  showSheet(options: {
+    title: string;
+    glyph?: string;
+    lines?: readonly string[];
+    doors?: ReadonlyArray<{ label: string; onPick?: () => void }>;
+  }): void {
+    const veil = element('div', {
+      position: 'fixed',
+      inset: '0',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      background:
+        'radial-gradient(120% 90% at 50% 40%, rgba(26, 22, 33, 0.62) 0%, rgba(26, 22, 33, 0.88) 100%)',
+      pointerEvents: 'auto',
+      cursor: 'pointer',
+      opacity: '0',
+      transition: 'opacity 500ms ease',
+      zIndex: '4',
+      font: `400 17px/1.55 ${BOOK_FACE}`,
+      textAlign: 'center',
+      padding: '0 24px',
+    });
+    const shadow = '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 14px rgba(20, 14, 18, 0.7)';
+    const dismiss = () => {
+      veil.style.opacity = '0';
+      veil.style.pointerEvents = 'none';
+      window.setTimeout(() => veil.remove(), 600);
+    };
+    veil.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      dismiss();
+    });
+
+    const rows: HTMLElement[] = [];
+    const title = element('div', { fontSize: '24px', color: INK, textShadow: shadow });
+    title.textContent = options.title;
+    rows.push(title);
+    if (options.glyph) {
+      const glyph = element('div', { fontSize: '64px', color: INK, textShadow: shadow, margin: '6px 0' });
+      glyph.textContent = options.glyph;
+      rows.push(glyph);
+    }
+    for (const text of options.lines ?? []) {
+      const line = element('div', {
+        fontStyle: 'italic',
+        color: INK_SOFT,
+        textShadow: shadow,
+        maxWidth: '560px',
+      });
+      line.textContent = text;
+      rows.push(line);
+    }
+    for (const [i, door] of (options.doors ?? []).entries()) {
+      const row = element('div', {
+        fontStyle: 'italic',
+        fontSize: i === 0 ? '20px' : '16px',
+        color: i === 0 ? INK : INK_SOFT,
+        textShadow: shadow,
+        padding: '12px 26px',
+        cursor: 'pointer',
+        marginTop: i === 0 ? '18px' : '0',
+      });
+      row.textContent = door.label;
+      row.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        dismiss();
+        door.onPick?.();
+      });
+      rows.push(row);
+    }
+
+    for (const [i, row] of rows.entries()) {
+      row.style.opacity = '0';
+      row.style.transition = 'opacity 700ms ease';
+      row.style.transitionDelay = `${180 + i * 220}ms`;
+      veil.appendChild(row);
+    }
+    this.root.appendChild(veil);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        veil.style.opacity = '1';
+        for (const row of rows) row.style.opacity = '1';
+      }),
+    );
+  }
+
+  /**
    * The title card (DESIGN.md, "A small title card"): one warm sheet for a
    * returning player — continue with a tap anywhere, or step into the
    * songbook. A brand-new player never sees it, and the game is loading

@@ -74,3 +74,35 @@ export function festivalClosingLine(songsPlayed: number): string {
   const songs = count === 1 ? 'one song, carried the whole way' : `${count} songs, carried the whole way`;
   return `The Festival of the Long Road heard ${songs}. The lanterns burned late, and the road is yours now, in any direction.`;
 }
+
+/**
+ * The choice after the festival (DESIGN.md: autonomy is the design). Three
+ * doors, none marked correct: hear what Book Two would teach, wander the
+ * songbook at will, or simply walk on. Copy only — the doors' work belongs
+ * to the scene.
+ */
+export const FESTIVAL_CHOICE = {
+  title: 'The road, after the festival',
+  bookTwo: 'Hear what Book Two would teach',
+  songbook: 'Wander the songbook',
+  walkOn: 'Walk on',
+} as const;
+
+/**
+ * Book Two's invitation, honest about both halves: it SHOWS what it
+ * teaches (a real sharp, exactly sounded — the demonstration is the
+ * caller's, since sounding is the point), and it says plainly that the
+ * volume is still being written. Growth is a new book, not a pressure.
+ */
+export const BOOK_TWO_INVITATION = {
+  glyph: 'F♯',
+  lines: [
+    'The same letter, raised a half step — listen: F, then F♯.',
+    'Book Two teaches these: real key signatures, sharps and flats, engraved right and sounded exactly.',
+    'It is still being written. The road will carry it to you when it is ready.',
+  ],
+} as const;
+
+/** The journal's line for leaning toward Book Two. A leaning, never a lock. */
+export const BOOK_TWO_JOURNAL_LINE =
+  'At the festival’s edge, a page of Book Two: one raised note, heard once and kept.';

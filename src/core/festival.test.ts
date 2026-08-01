@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BOOK_TWO_INVITATION,
+  BOOK_TWO_JOURNAL_LINE,
+  FESTIVAL_CHOICE,
   FESTIVAL_SET_MAX,
   festivalArrival,
   festivalClosingLine,
@@ -56,8 +59,16 @@ describe('the festival’s words', () => {
       festivalArrival(3).invitation,
       festivalClosingLine(1),
       festivalClosingLine(3),
+      BOOK_TWO_JOURNAL_LINE,
+      ...BOOK_TWO_INVITATION.lines,
+      ...Object.values(FESTIVAL_CHOICE),
     ]) {
       expect(text).not.toMatch(BANNED);
     }
+  });
+
+  it('the invitation shows a real sharp and admits the book is unwritten', () => {
+    expect(BOOK_TWO_INVITATION.glyph).toContain('♯');
+    expect(BOOK_TWO_INVITATION.lines.join(' ')).toContain('still being written');
   });
 });
