@@ -2084,6 +2084,31 @@ full verdict map and the measure-first suspicion list):
     do NOT invent a rim light first. Keeps to honour: 08's inverted
     band order is load-bearing, and wave 11's diagnosis stands (value,
     not pose).
+    **MEASUREMENT PHASE DONE (2026-08-01) — three premises DISPROVED
+    with a flood-partition harness (now `tools/figground.mjs` +
+    `tools/figground-partition.mjs`: silhouette-diff the bard, then
+    flood his albedos white to partition figure pixels from his cast
+    shadow).** Findings: (1) in every PASSING frame the knees-down
+    "figure" is 0% bard — it is his cast shadow on a bright road; the
+    panels compared shadow-vs-road in passers with legs-vs-road in
+    failers. (2) At dawn there is NO shadow band swallowing the legs —
+    the fault is the ABSENCE of a contact shadow under the figure (low
+    sun casts it long, out of frame). (3) At low sun the figure is the
+    BEST-LIT thing in frame (1.9x the road, white-flood measured) —
+    the darkness is pure albedo, and the required correction INVERTS
+    across the day (dark-on-bright at noon, light-on-dark at dawn), so
+    no static albedo can serve both; the near-black-trousers attempt
+    in Bard.ts's history already failed this way. (4) REAL DEFECT: at
+    04-golden the bard's cast shadow renders LIGHTER than the road it
+    falls on (L*31.3 on 28.7) — an inversion no shadow may have.
+    **The re-aimed task (next run): guarantee a grounded contact
+    shadow under the bard at low sun, and fix the 04 inversion (a cast
+    shadow must never render lighter than its receiving surface).**
+    Arithmetically sufficient (04: shadow to ~15 on a 28.7 road → dL
+    ≈14; 01: ~22 points of headroom), ground-side (no halo terms),
+    precedent in 144, and cannot regress 03/08/10 because it IS their
+    mechanism. Measure with the partition harness, which must exclude
+    cast-shadow pixels from the figure mask.
 180. **Close the frame: foreground occluders.** All ten postcards open
     on a clean ground plane; every ASH reference crops canopy, cliff or
     rock masses through its edges. Give the postcard framings (and the
