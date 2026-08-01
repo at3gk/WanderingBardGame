@@ -594,6 +594,110 @@ export class Hud {
     );
   }
 
+  /** Open the songbook as if its corner had been tapped. For the title card's second door. */
+  openBook(): void {
+    this.setBookOpen(true);
+  }
+
+  /**
+   * The title card (DESIGN.md, "A small title card"): one warm sheet for a
+   * returning player — continue with a tap anywhere, or step into the
+   * songbook. A brand-new player never sees it, and the game is loading
+   * and live underneath it the whole time, so playable-in-five-seconds
+   * holds either way: the card costs exactly one tap.
+   */
+  showTitleCard(onSongbook: () => void): void {
+    const veil = element('div', {
+      position: 'fixed',
+      inset: '0',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '10px',
+      // The game's own dark plum, deep enough to read as a book cover but
+      // thin enough that the dawn road glows through — the card should
+      // feel like a bookmark lifted, not a menu.
+      background:
+        'radial-gradient(120% 90% at 50% 40%, rgba(26, 22, 33, 0.62) 0%, rgba(26, 22, 33, 0.88) 100%)',
+      pointerEvents: 'auto',
+      cursor: 'pointer',
+      opacity: '0',
+      transition: 'opacity 600ms ease',
+      zIndex: '4',
+      font: `400 17px/1.5 ${BOOK_FACE}`,
+      textAlign: 'center',
+    });
+
+    const shadow = '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 14px rgba(20, 14, 18, 0.7)';
+    const rows: HTMLElement[] = [];
+
+    const title = element('div', {
+      fontSize: '34px',
+      letterSpacing: '0.04em',
+      color: INK,
+      textShadow: shadow,
+    });
+    title.textContent = 'The Wandering Bard';
+    rows.push(title);
+
+    const sub = element('div', {
+      fontStyle: 'italic',
+      color: INK_SOFT,
+      textShadow: shadow,
+      marginBottom: '26px',
+    });
+    sub.textContent = 'The road kept your place.';
+    rows.push(sub);
+
+    const doorStyle = {
+      fontStyle: 'italic',
+      color: INK,
+      textShadow: shadow,
+      padding: '12px 26px',
+      cursor: 'pointer',
+    } as const;
+
+    const go = element('div', { ...doorStyle, fontSize: '21px' });
+    go.textContent = 'Continue the journey';
+    rows.push(go);
+
+    const book = element('div', { ...doorStyle, fontSize: '16px', color: INK_SOFT });
+    book.textContent = 'The songbook';
+    rows.push(book);
+
+    const dismiss = () => {
+      veil.style.opacity = '0';
+      veil.style.pointerEvents = 'none';
+      window.setTimeout(() => veil.remove(), 700);
+    };
+    // The whole sheet is the default door — one tap, anywhere.
+    veil.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      dismiss();
+    });
+    book.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      dismiss();
+      onSongbook();
+    });
+
+    for (const [i, row] of rows.entries()) {
+      row.style.opacity = '0';
+      row.style.transition = 'opacity 800ms ease';
+      row.style.transitionDelay = `${200 + i * 260}ms`;
+      veil.appendChild(row);
+    }
+    this.root.appendChild(veil);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        veil.style.opacity = '1';
+        for (const row of rows) row.style.opacity = '1';
+      }),
+    );
+  }
+
   /** Fold tonight's page away. */
   hidePage(): void {
     if (!this.pageShown) return;
