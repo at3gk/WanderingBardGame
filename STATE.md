@@ -38,6 +38,26 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session) — 179 implemented:
+  the bard is grounded.** ContactShadow.ts anchors every daylight
+  frame's figure with a contact mark in the passing frames' own 8-15
+  dL-under-road band (01/04 had ZERO contact before); the shadow
+  arithmetic gained its guarantee (sunFacing/sunAmount split +
+  SHADOW_GAIN_CAP 0.55). Two MORE measurement artifacts caught: the
+  "04 inversion" compared different pixels (same-pixel ablation shows
+  4-6 L* proper darkening), and "22 points of headroom at dawn" was
+  backwards — the figure is the DARKER body at dawn, so ground-side
+  work cannot raise whole-figure dL there. The residual (re-queued in
+  179): a dynamic day-aware figure-side value. Also: THIS WORLD'S
+  NOON IS 21.8° (shortest shadow 2.5× figure height — no steep-sun
+  hour exists), and three.js MultiplyBlending is silently not
+  honoured on the painterly-family material (renders as normal
+  blending — cost a debugging cycle; recorded in ContactShadow.ts).
+  **FLAG: frame-quality's noon gate FAILS ON PRISTINE MAIN (1.91
+  stops vs 2.5 floor) — an earlier merge regressed it unnoticed;
+  CI doesn't run this gate. Investigate as its own task.** 1087
+  green, build 860.88 kB, eye-read: soft grounded pooling, no halo.
+
 - **HANDOFF, 2026-08-01 (overnight loop session) — task 179's
   measurement phase: THREE PANEL PREMISES DISPROVED, one real defect
   found.** New instrument (`tools/figground.mjs` + `tools/

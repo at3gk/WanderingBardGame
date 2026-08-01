@@ -719,6 +719,67 @@ const FRAGMENT = /* glsl */ `
  */
 #define CAST_SHADOW_HUE 0.50
 /*
+ * The fraction of the light a cast shadow removed that the additive skylight
+ * terms are allowed to put back. Below 1.0 this is a PROOF, not a taste
+ * setting: a cast shadow can never render lighter than the same surface
+ * unshadowed.
+ *
+ * --- the defect this was aimed at does not exist -------------------------
+ *
+ * ROADMAP 179's measurement phase reported an inversion: at 04-golden the
+ * bard's cast shadow at L*31.3 lying on a road of L*28.7. Re-measured the
+ * only way that claim can be settled — same pixels, shadow ablated by
+ * clearing castShadow on the bard's meshes and re-rendering, so lit and
+ * shadowed values come from one surface at one distance under one fog — the
+ * shipped build read 24.2 shadowed against 28.6 unshadowed. The shadow was
+ * 4.4 points DARKER, not 2.6 lighter. The reported inversion was the
+ * partition harness comparing shadow pixels against DIFFERENT road pixels
+ * further from the camera; it is a cross-location artifact, not a shader
+ * fault. 01-dawn measures the same way: 34.7 shadowed against 41.0.
+ *
+ * --- why the guarantee is worth having anyway ---------------------------
+ *
+ * Because the arithmetic that would produce an inversion is genuinely there,
+ * and nothing was stopping it. The additive terms (SKY_SCATTER's shade lift,
+ * tripled at low sun by LOW_SUN_SCATTER, plus CAST_SHADOW_SKY) do NOT pass
+ * through the albedo — that is their whole point, a warm albedo cannot be
+ * multiplied into a cool shadow. The sunlight a shadow removes DOES pass
+ * through it. On a dark surface under a low sun the two are spent in
+ * different currencies: a road albedo near a quarter quarters the removal
+ * while the addition arrives at full strength and tripled. The margin at
+ * golden hour was 4.4 points, and a darker albedo or a lower sun eats it.
+ *
+ * Two changes carry the guarantee. First, SKY_SCATTER's shade term now reads
+ * sunFacing (orientation only) instead of sunAmount (orientation times
+ * shadow), so entering a shadow no longer raises the term that exists to
+ * colour shade sides — the shade side itself is untouched, only the cast
+ * shadow stops being paid twice. Second, whatever a cast shadow still gains
+ * (that term's residue, and CAST_SHADOW_SKY, which is a cast-shadow term by
+ * design and stays) is capped against the luminance the shadow actually
+ * removed, in final-picture units, albedo and aerial tint included.
+ *
+ * --- the number ----------------------------------------------------------
+ *
+ * 0.55. A shadow that keeps just over half of what it took reads as air in
+ * the shade, which is the look those terms were built for; the remaining 45%
+ * is the darkening. Measured same-surface, the pair deepens the low-sun cast
+ * shadows slightly and touches nothing else: 01-dawn 6.3 -> 6.5 points under
+ * its own lit value, 04-golden 4.4 -> 4.5, noon unchanged because a noon
+ * shadow removes several times what the terms add and the cap never binds.
+ * The change is small on purpose — the frames were not broken, they were
+ * unguarded.
+ *
+ * What this cannot do is MAKE a shadow: the cap is a ceiling, not a floor,
+ * and where no shadow is cast into frame there is nothing for it to bound.
+ * That is the contact shadow's job -- see actors/ContactShadow.ts.
+ *
+ * CAST_SHADOW_HUE above is untouched and must stay untouched: it is a
+ * luminance-preserving rotation applied after all of this, so it moves hue
+ * and provably not value, and it is the term the wave-4 measurement credits
+ * with the chroma gain in shadows.
+ */
+#define SHADOW_GAIN_CAP 0.55
+/*
  * How far the haze is pushed away from its own grey axis before it is mixed
  * into the picture — and the reason STATE.md item 10 survived the fix that
  * was supposed to close it.
@@ -1364,8 +1425,14 @@ void main() {
   // Cast shadows only bite into the *lit* bands: a face already turned away
   // from the sun does not get darker for also being in shadow, which is
   // physically wrong and visually much calmer.
-  float sunAmount = (band1 * 0.42 + band2 * 0.38 + band3 * 0.20);
-  sunAmount *= mix(uShadowDepth, 1.0, shadowMask);
+  // sunFacing is what the surface's ORIENTATION earns before the cast
+  // shadow bites; sunAmount is what survives it. The two are kept apart
+  // because the additive skylight terms below must be able to tell "this
+  // face is turned away from the sun" (a shade side, which they exist to
+  // colour) from "this face is behind something" (a cast shadow, which they
+  // must never brighten). See SHADOW_GAIN_CAP.
+  float sunFacing = (band1 * 0.42 + band2 * 0.38 + band3 * 0.20);
+  float sunAmount = sunFacing * mix(uShadowDepth, 1.0, shadowMask);
 
   /*
    * --- what is NOT here: a cloud shadow ---------------------------------
@@ -1489,14 +1556,27 @@ void main() {
 
   vec3 color = albedo * lighting * foregroundTier * airward;
 
+  // See SHADOW_GAIN_CAP. The luminance the cast shadow actually TOOK out of
+  // this fragment, in final-picture units: the sunlight it removed, through
+  // the albedo and the aerial tint, exactly as the line above spends it.
+  // foregroundTier is deliberately absent — it multiplies both sides of
+  // the comparison below and cancels.
+  float shadowRemoved = dot(albedo * uSunColor * airward, LUMA_W)
+    * (sunFacing - sunAmount) * SUN_STRENGTH;
+  // The most the additive terms may put back, expressed in the units the
+  // scatter terms are spent in (they are multiplied by skyLight).
+  float castGainCeiling = SHADOW_GAIN_CAP * shadowRemoved
+    / max(dot(skyLight, LUMA_W), 1e-4);
+
   // The one light term that does not pass through the albedo. See
   // SKY_SCATTER: a warm albedo cannot be multiplied into a cool shadow, so
   // the shade side is given its colour additively instead.
   // See LOW_SUN_SCATTER for why the strength depends on sun height: skylight
   // and sunlight do not fall off together, and this term was a seventieth of
   // the light at golden hour, which is why item 9 stayed open there.
-  float scatter = SKY_SCATTER * (1.0 + lowSun * (LOW_SUN_SCATTER - 1.0))
-    * (1.0 - sunAmount) * mix(0.25, 1.0, skyFacing);
+  float scatterKey = SKY_SCATTER * (1.0 + lowSun * (LOW_SUN_SCATTER - 1.0))
+    * mix(0.25, 1.0, skyFacing);
+  float scatter = scatterKey * (1.0 - sunFacing);
   /*
    * --- the near-ground mark's second carrier -----------------------------
    *
@@ -1533,13 +1613,20 @@ void main() {
    * the clamp keeps the damp end from ever subtracting more scatter than
    * there is.
    */
-  scatter *= clamp(1.0 + nearMark * NEAR_SHADE_MARK * nearWeight, 0.0, 2.0);
+  float nearShade = clamp(1.0 + nearMark * NEAR_SHADE_MARK * nearWeight, 0.0, 2.0);
+  scatter *= nearShade;
   // See CAST_SHADOW_SKY: the term above serves the SHADE side and, by its own
   // arithmetic, barely reaches a cast shadow under a high sun. A patch of
   // ground a tree is standing in front of at noon has the sky dome for its
   // only illuminant, so it is the one genuinely blue thing in the frame.
-  scatter += CAST_SHADOW_SKY * (1.0 - shadowMask) * sunHeight * mix(0.35, 1.0, skyFacing);
-  color += skyLight * scatter * foregroundTier;
+  // Everything a fragment gains FOR BEING IN A CAST SHADOW, gathered into
+  // one number so it can be capped. Two contributors: the skylight term
+  // above used to see 1 - sunAmount, so entering a shadow raised it (that
+  // is the first line below, preserved exactly, nearShade and all); and
+  // CAST_SHADOW_SKY, which is deliberately a cast-shadow-only term.
+  float castGain = scatterKey * (sunFacing - sunAmount) * nearShade
+    + CAST_SHADOW_SKY * (1.0 - shadowMask) * sunHeight * mix(0.35, 1.0, skyFacing);
+  color += skyLight * (scatter + min(castGain, castGainCeiling)) * foregroundTier;
 
   /*
    * --- the colour of being occluded -------------------------------------

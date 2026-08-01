@@ -43,6 +43,7 @@ import { CameraRig, type CameraMood } from './CameraRig';
 import { Sky, applyTimeOfDay, skyStateAt } from './sky';
 import { roadSurfaceHeight, TERRAIN_REACH, WorldStreamer } from './world/WorldStreamer';
 import { Bard } from './actors/Bard';
+import { ContactShadow } from './actors/ContactShadow';
 import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
 import { Campfire } from './scenes/Campfire';
 import { FestivalGrounds } from './scenes/FestivalGrounds';
@@ -239,6 +240,8 @@ export class RoadStage implements Stage {
   private readonly sky = new Sky();
   private readonly world: WorldStreamer;
   private readonly bard: Bard;
+  /** The bard's grounded contact mark. See ContactShadow. */
+  private readonly contact = new ContactShadow();
   /**
    * The people on the road. One of each silhouette, built once and moved
    * around, because a busk needs three or four of them for six seconds and
@@ -492,6 +495,10 @@ export class RoadStage implements Stage {
 
     this.bard = new Bard(app.globals);
     this.actors.add(this.bard.group);
+    // A sibling of the bard, not a child of him: it is a mark on the GROUND,
+    // it must not take his yaw, and hiding him for a measurement must leave
+    // it standing so the figure/ground harness counts it as surround.
+    this.actors.add(this.contact.mesh);
     this.scene.add(this.actors);
 
     this.bard.setInstrument(this.instrument());
@@ -613,6 +620,22 @@ export class RoadStage implements Stage {
     }
     this.bard.group.position.copy(this.subject.position);
     this.bard.setHeading(this.subject.heading + this.shownFacing);
+
+    // Not at the camp: there the fire is the light and its own pool is the
+    // mark on the ground (see Campfire). A sun-driven contact shadow under a
+    // seated bard would be a second, contradicting ground mark.
+    const atCamp = this.journey.phase === 'resting';
+    const sun = this.app.globals.uSunDirection.value;
+    this.contact.update(
+      this.subject.position.x,
+      this.subject.position.z,
+      sun.x,
+      sun.y,
+      sun.z,
+      this.subject.position.y,
+      (x, z) => terrainHeight(this.road, x, z),
+      !atCamp,
+    );
   }
 
   update(dt: number): void {
@@ -2390,6 +2413,7 @@ export class RoadStage implements Stage {
     void this.ctx?.close().catch(() => undefined);
     this.world.dispose();
     this.bard.dispose();
+    this.contact.dispose();
     for (const person of this.people) person.dispose();
     this.people.length = 0;
     this.shown.length = 0;
