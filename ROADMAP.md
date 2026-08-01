@@ -1627,6 +1627,36 @@ scene — build once).
     glyphs; songbook needs volume structure. Arc. (notation, songs,
     engraving in SongNotes.)
 
+## The v1.3 queue: "the family songbook" (human-set, 2026-08-01, post-festival)
+
+Book Three: the songs you bring. The human's idea, sized honestly: the
+pedagogy's own safety argument (fading is safe because the child already
+knows the tune) is BEST satisfied by a song the family chose themselves.
+All content stays local (localStorage; the CC0 rule governs what the game
+ships, not what a player brings). Sequenced after the v1.0 festival arc.
+
+176. **The song maker.** Practice mode already lets a child point at
+    staff positions and hear them; let them SAVE what they tap as a
+    named song and walk the road with it. Zero parsing, existing
+    surface, and composing is itself pedagogy. (freePlay + songChoice +
+    journey save.)
+177. **MIDI import.** Dependency-free parser (the format is simple);
+    melody extraction (single track direct, polyphonic via top-note
+    skyline); quantize to the songbook's note values; auto-transpose
+    into staff range; validate through the SAME engraving tests the
+    built-in songbook passes — an uploaded song that cannot be engraved
+    correctly is declined kindly, never mangled. Accidentals route into
+    the Book Two machinery. (New core/midi.ts + songs plumbing.)
+178. **MusicXML import.** Second format, richer (it is already
+    notation); reuses 177's validation path.
+
+Rejected on principle: **audio upload / transcription** (MP3, humming).
+Automatic transcription is wrong often enough that it would mis-teach —
+the exact failure that got the forest This Old Man rejected — and it
+breaks "the notation is never musically wrong" at the feature's core.
+Revisit only if browser-side transcription someday reaches
+engraving-test reliability.
+
 ## The v1.1 queue: "the crafted frame" (human-set, 2026-08-01)
 
 From docs/research/art-quality.md (primary-sourced: adamgryu's own posts,
