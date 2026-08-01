@@ -18,6 +18,7 @@
  */
 
 import { FESTIVAL_LEGS, legsToFestival, type JourneyState } from './journey';
+import { rehearsalInvitation } from './rehearsal';
 
 export interface CampfirePageLine {
   text: string;
@@ -32,6 +33,13 @@ export interface CampfirePage {
   moments: CampfirePageLine[];
   /** The festival, named. Always present — the destination is standing. */
   festival: string;
+  /**
+   * The fire's asking — the rehearsal invitation, when a song is carried
+   * and this leg's attempt has not been played. Absent otherwise. This is
+   * the "rehearsal is introduced" beat of the first-campfire promise: it
+   * is introduced by being offered, on the page, in the fire's own voice.
+   */
+  invitation?: string;
 }
 
 /**
@@ -103,8 +111,15 @@ export function festivalLine(state: JourneyState): string {
   return `The Festival of the Long Road: ${words(remaining)} campfires on.`;
 }
 
-/** Compose tonight's page from the journey as it sits at the fire. */
-export function campfirePage(state: JourneyState): CampfirePage {
+/**
+ * Compose tonight's page from the journey as it sits at the fire.
+ *
+ * `carriedTitle` is the pinned song's display title, resolved by the
+ * caller (this module stays loadable without the songbook, the same
+ * boundary journey.ts keeps): given while an attempt is still open, it
+ * becomes the fire's asking.
+ */
+export function campfirePage(state: JourneyState, carriedTitle: string | null = null): CampfirePage {
   const journal = Array.isArray(state.journal) ? state.journal : [];
   const kept = journal.slice(Math.max(0, journal.length - PAGE_MOMENTS_MAX));
   const moments: CampfirePageLine[] =
@@ -116,11 +131,15 @@ export function campfirePage(state: JourneyState): CampfirePage {
         }))
       : [{ text: QUIET_LINE, dayFraction: state.dayFraction, kind: 'note' }];
 
-  return {
+  const page: CampfirePage = {
     title: "Tonight's page",
     moments,
     festival: festivalLine(state),
   };
+  if (carriedTitle && !state.rehearsed) {
+    page.invitation = rehearsalInvitation(carriedTitle);
+  }
+  return page;
 }
 
 /**

@@ -100,6 +100,15 @@ export interface JourneyState {
    */
   legIndex: number;
 
+  /**
+   * Whether this leg's campfire rehearsal has been played (DESIGN.md: at
+   * each campfire the player may attempt the carried song without the
+   * notes — one attempt, so the fire's asking stays an occasion rather
+   * than a grind loop). Road-shaped state: a new leg or a new day brings a
+   * new fire, and the fire asks again.
+   */
+  rehearsed: boolean;
+
   totalMetres: number;
   totalCoins: number;
   totalEncounters: number;
@@ -255,6 +264,7 @@ export function createJourney(dayKey: string, roadLengthM: number): JourneyState
     songChoice: null,
     visited: [],
     legIndex: 0,
+    rehearsed: false,
     totalMetres: 0,
     totalCoins: 0,
     totalEncounters: 0,
@@ -352,6 +362,13 @@ export function isDayComplete(state: object): boolean {
   return normalize(state).phase === 'resting';
 }
 
+/** The fire has heard this leg's rehearsal. One attempt per campfire — see the field's note. */
+export function noteRehearsal(state: object): JourneyState {
+  const next = normalize(state);
+  next.rehearsed = true;
+  return next;
+}
+
 // ---------------------------------------------------------------------------
 // The pilgrimage
 // ---------------------------------------------------------------------------
@@ -404,6 +421,8 @@ export function startNextLeg(state: object): JourneyState {
     songChoice: previous.songChoice,
     visited: [],
     legIndex,
+    // A new fire, a new asking.
+    rehearsed: false,
     totalMetres: previous.totalMetres,
     totalCoins: previous.totalCoins,
     totalEncounters: previous.totalEncounters,
@@ -561,6 +580,7 @@ export function startNewDay(state: object, dayKey: string): JourneyState {
     // Every dawn is the shared daily road, however far last night's moonlit
     // walking went. The communal first leg is the appointment worth keeping.
     legIndex: 0,
+    rehearsed: false,
     totalMetres: previous.totalMetres,
     totalCoins: previous.totalCoins,
     totalEncounters: previous.totalEncounters,
@@ -589,6 +609,8 @@ interface Stored {
   song?: string | null;
   /** Which leg of the day this walk is. Absent in pre-v1.0 saves, which reads as 0 — the shared road. */
   leg?: number;
+  /** 1 when this leg's rehearsal has been played. Absent reads as not yet — the fire asks. */
+  rh?: 1;
   visited: string[];
   metres: number;
   earned: number;
@@ -638,6 +660,7 @@ export function saveJourney(state: object, force = false, nowMs: number = Date.n
       unlocked: j.unlockedInstruments,
       song: j.songChoice,
       leg: j.legIndex,
+      ...(j.rehearsed ? { rh: 1 as const } : {}),
       visited: j.visited,
       metres: round(j.totalMetres, 1),
       earned: round(j.totalCoins, 2),
@@ -698,6 +721,7 @@ export function loadJourney(dayKey: string): JourneyState | null {
       unlockedInstruments: parsed.unlocked,
       songChoice: parsed.song,
       legIndex: parsed.leg,
+      rehearsed: parsed.rh === 1,
       visited: parsed.visited,
       totalMetres: parsed.metres,
       totalCoins: parsed.earned,
@@ -767,6 +791,7 @@ function normalize(input: unknown): JourneyState {
       typeof raw.songChoice === 'string' && raw.songChoice !== '' ? raw.songChoice : null,
     visited: stringList(raw.visited, MAX_VISITED),
     legIndex: Math.max(0, Math.floor(finiteOr(raw.legIndex, 0))),
+    rehearsed: raw.rehearsed === true,
     totalMetres: Math.max(0, finiteOr(raw.totalMetres, 0)),
     totalCoins: Math.max(0, finiteOr(raw.totalCoins, 0)),
     totalEncounters: Math.max(0, Math.floor(finiteOr(raw.totalEncounters, 0))),

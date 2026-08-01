@@ -38,6 +38,24 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 162
+  COMPLETE: the campfire rehearsal.** The fire's asking rides tonight's
+  page (159's "rehearsal introduced" beat, done by offering); one tap
+  begins one pass of the carried song from a clean staff, judged by the
+  walk's gentle meter, stumbles returning ink via 160's machinery, the
+  journal writing one of three warm registers (core/rehearsal.ts,
+  vocab-banned). One attempt per fire (`journey.rehearsed`, reset per
+  leg/day); an interrupted attempt is not written — the next fire asks
+  again. Bonus fix found by READING the frame: a resumed-resting bard
+  stood in the flames (constructor never set the seated pose) — fixed
+  in makeCamp. Verified live end-to-end incl. persistence and the
+  second-tap guard. 1077 tests green (+11), build 837.32 kB.
+  **Needs human playtest:** the resting camera vs the ribbon when ink
+  returns mid-rehearsal (the paper lies over the road behind the
+  camp framing); and whether "tap anywhere" at the fire feels right
+  on a phone where a pocket tap could start the attempt (it is
+  no-fail and unwritten if interrupted, so the cost is one asking).
+
 - **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 160
   COMPLETE: heads fade to ghosts, then a clean staff, from memory.**
   `core/mastery.ts` gates the ladder on carrying (songWalks diary fact,

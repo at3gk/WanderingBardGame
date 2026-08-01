@@ -69,6 +69,8 @@ export interface PageContent {
   title: string;
   moments: PageMoment[];
   festival: string;
+  /** The fire's asking, when a rehearsal is on offer. */
+  invitation?: string;
 }
 
 /**
@@ -559,6 +561,19 @@ export class Hud {
     });
     festival.textContent = page.festival;
     rows.push(festival);
+
+    if (page.invitation) {
+      const invitation = element('div', {
+        marginTop: '12px',
+        fontStyle: 'italic',
+        fontSize: '0.9em',
+        lineHeight: '1.45',
+        color: INK_SOFT,
+        textShadow: shadow,
+      });
+      invitation.textContent = page.invitation;
+      rows.push(invitation);
+    }
 
     for (const [i, row] of rows.entries()) {
       row.style.opacity = '0';

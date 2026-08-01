@@ -78,6 +78,7 @@ import {
   earn,
   enterPhase,
   loadJourney,
+  noteRehearsal,
   recordEntry,
   saveJourney,
   unlockInstrument,
@@ -91,7 +92,8 @@ import {
   type Instrument,
 } from '../core/instruments';
 import { beatIntervalMs } from '../core/beats';
-import { expandSong, songDurationMs, type SongBeat } from '../core/song';
+import { expandSong, songDurationMs, type Song, type SongBeat } from '../core/song';
+import { rehearsalLine } from '../core/rehearsal';
 import { SONGS } from '../core/songs';
 import { songForPass } from '../core/songChoice';
 import {
@@ -284,7 +286,10 @@ export class RoadStage implements Stage {
   // walk moves the bard) and how the schedule ends (a busk ends, the walk's
   // is extended for ever).
   private performance: PerformanceState | null = null;
-  private tuneMode: 'busk' | 'walk' | null = null;
+  private tuneMode: 'busk' | 'walk' | 'rehearsal' | null = null;
+  /** The song the fire is hearing, and when the attempt's schedule runs out. */
+  private rehearsalSong: Song | null = null;
+  private rehearsalEndMs = 0;
   private beats: SongBeat[] = [];
   private tuneBpm = BASE_BPM;
   private tuneBeatsPerBar = 4;
@@ -625,6 +630,9 @@ export class RoadStage implements Stage {
       } else if (this.tuneMode === 'walk' && this.walking && this.journey.phase === 'walking') {
         this.tuneSimMs += dt * 1000;
         this.updateWalkTune();
+      } else if (this.tuneMode === 'rehearsal') {
+        this.tuneSimMs += dt * 1000;
+        this.updateRehearsal();
       }
     }
 
@@ -800,7 +808,97 @@ export class RoadStage implements Stage {
       this.resume();
       return;
     }
+    // At the fire with the page open and an attempt still standing, the tap
+    // is the answer to the fire's asking — the rehearsal begins.
+    if (
+      this.journey.phase === 'resting' &&
+      !this.performance &&
+      this.journey.songChoice &&
+      !this.journey.rehearsed
+    ) {
+      this.startRehearsal();
+      return;
+    }
     if (this.performance) this.playNote();
+  }
+
+  /**
+   * The campfire rehearsal (DESIGN.md's mastery ladder, made a nightly
+   * occasion): one pass of the carried song, seated at the fire, from a
+   * clean staff — whatever the song has earned on the road, the attempt
+   * begins without the notes, because attempting is the rehearsal. The
+   * stumble machinery from the walk does the catching: a mistimed tap or a
+   * lapsed note brings the ink back a level for the rest of the attempt,
+   * and the journal writes the night warmly whatever happened. One attempt
+   * per fire, so the asking stays an occasion.
+   */
+  private startRehearsal(): void {
+    const biome = biomeAt(this.road, this.journey.s);
+    const song = songForPass(this.journey.songChoice, biome, 0);
+    const instrument = this.instrument();
+
+    this.tuneBpm = BASE_BPM * instrument.tempoFeel;
+    this.tuneBeatsPerBar = song.beatsPerBar;
+    this.beats = expandSong(song, this.tuneBpm);
+    this.performance = createPerformance();
+    this.tuneMode = 'rehearsal';
+    this.rehearsalSong = song;
+    this.walkTune = null;
+    this.tuneSimMs = 0;
+    this.tuneAnchorSec = this.ctx ? this.ctx.currentTime + 0.2 : Number.NaN;
+    this.rehearsalEndMs =
+      this.beats[this.beats.length - 1].hitTimeMs + lateWindowMs() + BUSK_TAIL_MS;
+
+    this.tuneNotesPerPass = song.notes.length;
+    this.refreshLeads();
+    // The attempt is played as if by heart: full fade, stumbles restore.
+    this.headsEarned = 2;
+    this.passStumbles = 0;
+    this.notes.setHeadsAlpha(0);
+    this.notes.setInstrument(instrument);
+    this.notes.setBeats(this.beats, this.tuneLeads);
+    this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
+    this.notes.setActive(true);
+    this.hud.hidePage();
+    this.hud.say(`${song.title}, for the fire.`, 5);
+  }
+
+  private updateRehearsal(): void {
+    const performance = this.performance;
+    if (!performance) return;
+    const now = this.tuneNowMs();
+
+    const result = tickPerformance(performance, now, this.beats, this.judgingConfig());
+    for (const index of result.missed) this.notes.soften(index);
+    // The same catch as the walk: on a faded staff, a silent gone-by note
+    // is the stumble, and the ink answers it.
+    if (result.missed.length > 0 && this.headsEarned > 0) {
+      this.passStumbles += result.missed.length;
+      this.applyHeadsAlpha();
+    }
+
+    this.bard.setWarmth(performance.warmth);
+    this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
+    this.notes.update(now);
+
+    if (now > this.rehearsalEndMs) this.finishRehearsal();
+  }
+
+  private finishRehearsal(): void {
+    const performance = this.performance;
+    const song = this.rehearsalSong;
+    if (!performance || !song) return;
+
+    const line = rehearsalLine(song.title, performance.hits, song.notes.length);
+    this.journey = noteRehearsal(recordEntry(this.journey, { kind: 'rehearsal', line }));
+    saveJourney(this.journey, true);
+
+    this.performance = null;
+    this.tuneMode = null;
+    this.rehearsalSong = null;
+    this.notes.setActive(false);
+    this.notes.setHeadsAlpha(1);
+    this.hud.say(line, 12);
   }
 
   private playNote(): void {
@@ -834,8 +932,9 @@ export class RoadStage implements Stage {
     if (judgement === 'miss') {
       // A recall stumble returns one level of heads instantly, for the
       // rest of the pass — quick to help; the pass boundary is what
-      // withdraws it again (slow to withdraw).
-      if (this.tuneMode === 'walk' && this.headsEarned > 0) {
+      // withdraws it again (slow to withdraw). The rehearsal rides the
+      // same rule: its whole staff is a recall surface.
+      if ((this.tuneMode === 'walk' || this.tuneMode === 'rehearsal') && this.headsEarned > 0) {
         this.passStumbles += 1;
         this.applyHeadsAlpha();
       }
@@ -1040,7 +1139,9 @@ export class RoadStage implements Stage {
    * tap and a lapsed note can never be charged against different meters.
    */
   private judgingConfig(): PerformanceConfig {
-    return this.tuneMode === 'walk' ? WALK_PERFORMANCE_CONFIG : DEFAULT_PERFORMANCE_CONFIG;
+    // The busk keeps the original meter (a short social set, leaned into);
+    // the walk and the fire's rehearsal share the gentle one.
+    return this.tuneMode === 'busk' ? DEFAULT_PERFORMANCE_CONFIG : WALK_PERFORMANCE_CONFIG;
   }
 
   private tuneNowMs(): number {
@@ -1399,6 +1500,12 @@ export class RoadStage implements Stage {
 
   private makeCamp(): void {
     if (this.campfire) return;
+    // Sitting belongs to the camp, not to the transition: a day RESUMED at
+    // the fire comes through the constructor rather than `setPhase`, and
+    // until this line that bard stood in the flames all night. Found by
+    // reading a resumed-resting frame (2026-08-01); idempotent for the
+    // ordinary path, which set the pose a frame earlier.
+    this.bard.setPose('sitting');
     const stop = this.road.stops[this.road.stops.length - 1];
     const at = sampleRoad(this.road, stop ? stop.s : this.journey.s);
     const anchor = new Vector3(at.x, at.y, at.s);
@@ -1458,8 +1565,12 @@ export class RoadStage implements Stage {
     // Tonight's page: the journal, read back at last (v1.0 task 159's first
     // piece, folded together with v0.9 task 151's bookend). Composed after
     // `noteUnlocks` above so an instrument found today is a moment on the
-    // page, not just a corner flash.
-    this.hud.showPage(campfirePage(this.journey));
+    // page, not just a corner flash. The carried song's title rides along
+    // so the page can carry the fire's asking (task 162).
+    const carried = this.journey.songChoice
+      ? songForPass(this.journey.songChoice, biomeAt(this.road, this.journey.s), 0).title
+      : null;
+    this.hud.showPage(campfirePage(this.journey, carried));
   }
 
   /**
@@ -1569,6 +1680,15 @@ export class RoadStage implements Stage {
 
   private strikeCamp(): void {
     this.hud.hidePage();
+    // A rehearsal cut short by the day turning over is simply not written:
+    // the next fire asks again, which is the kind reading of a closed tab.
+    if (this.tuneMode === 'rehearsal') {
+      this.performance = null;
+      this.tuneMode = null;
+      this.rehearsalSong = null;
+      this.notes.setActive(false);
+      this.notes.setHeadsAlpha(1);
+    }
     if (!this.campfire) return;
     this.scene.remove(this.campfire.group);
     this.campfire.dispose();
