@@ -1622,6 +1622,26 @@ scene — build once).
     named, tomorrow's road silhouette glows (merge with task 151),
     rehearsal is introduced. The single most important scene in the game;
     success metric in DESIGN. (Campfire.ts, journal, Hud.)
+    **First piece done (2026-08-01, overnight session): the journal
+    opens and the festival is named.** Before this the journal was
+    written all day and read back nowhere — the fire said one coins
+    line and the day's story stayed in storage. Now `core/
+    campfirePage.ts` (pure, 10 tests) composes tonight's page — the
+    day's last `PAGE_MOMENTS_MAX` moments plus the festival line in
+    three registers (first-fire full naming / "N campfires on" in
+    storybook words / anticipatory at the gate, deliberately not
+    promising the 163 scene) — and the Hud sets it in type above the
+    instrument corner, each moment inked in the sky it happened under
+    (the `dayFraction` stamp journey.ts always carried for exactly
+    this), rows revealing one by one. Tap folds it away; strikeCamp
+    folds it too. Festival copy measured in distance only (test bans
+    calendar words) and the journal's no-verdict vocabulary (test bans
+    fail/lose/wrong/missed/streak/score). Verified in the re-shot
+    07-night-campfire postcard: page legible bottom-left, clear of
+    fire and bard. **Still open on 159: tomorrow's road silhouette on
+    the horizon (next piece), rehearsal introduction (waits for 162's
+    mechanic), and the moonlit walk-on choice (needs mid-session road
+    rebuild — its own task).**
 160. **By-heart on the road.** A well-carried song's note heads fade to
     ghosts then to a clean staff; a recall stumble gently returns them.
     Extends the scaffold's fade machinery one level up (letters, then

@@ -58,6 +58,49 @@ export interface SongEntry {
 /** The songbook's endpaper actions: press the journey into a keepsake file, or unfold one. */
 export type KeepsakeAction = 'save' | 'restore';
 
+/** One moment on tonight's page, with the sky it happened under. */
+export interface PageMoment {
+  text: string;
+  dayFraction: number;
+}
+
+/** Tonight's page, composed by `core/campfirePage.ts`. */
+export interface PageContent {
+  title: string;
+  moments: PageMoment[];
+  festival: string;
+}
+
+/**
+ * Ink for a moment, tinted by the sky it happened under: moonlight blue
+ * through dawn rose, day cream, golden amber, dusk, and back to moonlight.
+ * The page's one indulgence — a day read back in its own light — and cheap,
+ * because the journal already stamps every entry with its `dayFraction`
+ * precisely so a recap could do this (journey.ts said so before any recap
+ * existed).
+ */
+const PAGE_INK_STOPS: ReadonlyArray<readonly [number, readonly [number, number, number]]> = [
+  [0.0, [174, 184, 216]],
+  [0.22, [240, 203, 166]],
+  [0.5, [240, 226, 198]],
+  [0.82, [243, 198, 143]],
+  [0.95, [217, 163, 160]],
+  [1.0, [174, 184, 216]],
+];
+
+function pageInk(dayFraction: number): string {
+  const f = Number.isFinite(dayFraction) ? Math.min(1, Math.max(0, dayFraction)) : 0.5;
+  for (let i = 1; i < PAGE_INK_STOPS.length; i++) {
+    const [f1, c1] = PAGE_INK_STOPS[i];
+    if (f > f1) continue;
+    const [f0, c0] = PAGE_INK_STOPS[i - 1];
+    const t = f1 === f0 ? 0 : (f - f0) / (f1 - f0);
+    const ch = (k: 0 | 1 | 2) => Math.round(c0[k] + (c1[k] - c0[k]) * t);
+    return `rgb(${ch(0)}, ${ch(1)}, ${ch(2)})`;
+  }
+  return INK;
+}
+
 /** What the song corner says while no song is pinned. */
 const WANDERING_LABEL = 'Wandering';
 /** The row that hands the rotation back. */
@@ -128,6 +171,8 @@ export class Hud {
   private readonly bookBox: HTMLDivElement;
   private readonly journalBox: HTMLDivElement;
   private readonly journalLine: HTMLParagraphElement;
+  private readonly pageBox: HTMLDivElement;
+  private pageShown = false;
 
   private chrome: HudChrome;
   private coins = -1;
@@ -353,6 +398,33 @@ export class Hud {
     this.journalBox.appendChild(this.journalLine);
     this.root.appendChild(this.journalBox);
 
+    // --- tonight's page ---------------------------------------------------
+    //
+    // The campfire's read-back of the day (core/campfirePage.ts composes it;
+    // this only sets it in type). A column above the instrument corner: the
+    // fire and the seated bard hold the frame's centre and right, so the
+    // left margin is the page's to use, and growing from the corner keeps
+    // it in the same family as the case and the book — the HUD's one idiom,
+    // a corner opened. Tap to fold it away.
+    this.pageBox = element('div', {
+      position: 'absolute',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'flex-end',
+      boxSizing: 'border-box',
+      padding: '18px 22px',
+      background: JOURNAL_WASH,
+      opacity: '0',
+      transition: 'opacity 700ms ease',
+      pointerEvents: 'none',
+      cursor: 'pointer',
+    });
+    this.pageBox.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      this.hidePage();
+    });
+    this.root.appendChild(this.pageBox);
+
     host.appendChild(this.root);
 
     this.chrome = hudChrome({ width: 0, height: 0 });
@@ -441,6 +513,93 @@ export class Hud {
     this.keepsakeCb = handler;
     this.buildCase();
     this.applyPickable();
+  }
+
+  /**
+   * Open tonight's page — the campfire's read-back of the day. The rows
+   * reveal one by one, the way a page is read aloud, and each moment is
+   * inked in the light it happened under. A tap folds it away; `strikeCamp`
+   * folds it away too, so it cannot outlive the fire.
+   */
+  showPage(page: PageContent): void {
+    this.pageShown = true;
+    this.pageBox.replaceChildren();
+
+    const shadow = '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 12px rgba(20, 14, 18, 0.7)';
+    const rows: HTMLElement[] = [];
+
+    const title = element('div', {
+      color: INK_SOFT,
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase',
+      fontSize: '0.72em',
+      textShadow: shadow,
+    });
+    title.textContent = page.title;
+    rows.push(title);
+
+    for (const moment of page.moments) {
+      const row = element('div', {
+        marginTop: '8px',
+        fontStyle: 'italic',
+        lineHeight: '1.45',
+        color: pageInk(moment.dayFraction),
+        textShadow: shadow,
+      });
+      row.textContent = moment.text;
+      rows.push(row);
+    }
+
+    const festival = element('div', {
+      marginTop: '16px',
+      fontStyle: 'italic',
+      lineHeight: '1.45',
+      color: INK,
+      textShadow: shadow,
+    });
+    festival.textContent = page.festival;
+    rows.push(festival);
+
+    for (const [i, row] of rows.entries()) {
+      row.style.opacity = '0';
+      row.style.transition = 'opacity 900ms ease';
+      row.style.transitionDelay = `${400 + i * 420}ms`;
+      this.pageBox.appendChild(row);
+    }
+
+    this.layoutPage();
+    this.pageBox.style.opacity = '1';
+    this.pageBox.style.pointerEvents = 'auto';
+    // Two frames, so the rows' transitions start from their styled zero
+    // rather than being collapsed into the same style flush.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        for (const row of rows) row.style.opacity = '1';
+      }),
+    );
+  }
+
+  /** Fold tonight's page away. */
+  hidePage(): void {
+    if (!this.pageShown) return;
+    this.pageShown = false;
+    this.pageBox.style.opacity = '0';
+    this.pageBox.style.pointerEvents = 'none';
+  }
+
+  /**
+   * Above the instrument corner, flush with its left edge (minus the pad,
+   * so the type aligns with the corner's own), growing upward. The fire and
+   * the seated bard hold the middle and right of the resting frame; the
+   * left margin is the page's.
+   */
+  private layoutPage(): void {
+    const { instrument } = this.chrome;
+    const height = window.innerHeight || 0;
+    this.pageBox.style.left = `${Math.max(0, instrument.left - 22)}px`;
+    this.pageBox.style.bottom = `${height - instrument.top + 10}px`;
+    this.pageBox.style.width = 'min(430px, 52vw)';
+    this.pageBox.style.fontSize = `${Math.round(15 * (this.chrome.compact ? 0.88 : 1))}px`;
   }
 
   /**
@@ -555,6 +714,7 @@ export class Hud {
     this.journalLine.style.fontSize = `${Math.round(17 * scale)}px`;
     this.layoutCase();
     this.layoutBook();
+    this.layoutPage();
     this.applyOpacity();
   }
 
