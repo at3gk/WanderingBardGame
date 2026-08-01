@@ -1706,6 +1706,33 @@ iPad household needs none of it; logged under Blocked on human.
     CSS + `navigator.storage.persist()` + a diegetic save keepsake
     (export/import the journey as a small file/code — the journal page
     as a token). This is data-loss protection, not polish.
+    **Done (2026-08-01, overnight session).** All five pieces:
+    `public/manifest.webmanifest` (relative `start_url`/`scope`, so the
+    Pages base needs no hardcoding; `display: standalone`; `purpose:
+    "any maskable"`), `tools/make-icons.mjs` (pure-Node deterministic
+    PNG encoder — zlib + hand-rolled CRC32, 8×8 supersampled render of
+    the favicon mark at 512/192/180, full-bleed for iOS mask
+    compositing; committed under `public/icons/`), index.html metas
+    (`viewport-fit=cover` is what finally makes Hud.ts's existing
+    `env(safe-area-inset-*)` probe return non-zero on notched phones;
+    apple-touch-icon; theme-color), a one-shot
+    `navigator.storage.persist()` on first gesture (main.ts), and the
+    keepsake: `core/keepsake.ts` exports/imports the three storage keys
+    as a human-readable JSON file, deliberately NOT re-validating
+    record contents (every load path already normalizes on read — a
+    second validator would drift). UI: two dim "endpaper" rows in the
+    instrument CASE — first written into the songbook, where a
+    screenshot showed them permanently below `songBookBox`'s
+    whole-rows fold behind 11 songs; the case fits always, is the
+    bard's own luggage, and its corner is now pickable on a fresh
+    device (which is exactly the device that needs "Unfold a
+    keepsake"). RoadStage guards every save path behind a `restoring`
+    flag after import, because the pagehide save fired by the reload
+    would otherwise overwrite the just-restored records. Verified
+    live end-to-end in headless Chromium: export via the real row →
+    downloaded file → storage wiped → import via the real file chooser
+    → reload → journey metres restored byte-true. 1017 tests green
+    (+17 keepsake), build 817.70 kB.
 172. **Precache service worker.** Offline-capable shell (the bundle is
     one JS file + HTML); cold-load speed on flaky school wifi.
 173. **Audio that survives the pocket.** iOS audio-session behaviour:

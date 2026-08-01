@@ -118,6 +118,7 @@ import {
 } from '../core/performance';
 import { resolveAsk, rollAsk, rollEncounter, type EncounterAsk } from '../core/encounters';
 import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
+import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
 import { Ambience, dayShape } from '../audio/ambience';
 import {
   adaptiveDrive,
@@ -362,6 +363,15 @@ export class RoadStage implements Stage {
   };
   private readonly onPageHide = () => this.persist();
 
+  /**
+   * Set the moment a keepsake import succeeds. From then on the records in
+   * storage are truer than this stage's memory, and every write path is
+   * held off until the reload re-reads them — otherwise the pagehide save
+   * that fires *during* the reload would quietly overwrite the very save
+   * the player just restored, and the keepsake would appear to do nothing.
+   */
+  private restoring = false;
+
   constructor(app: App, options: RoadStageOptions = {}) {
     this.app = app;
 
@@ -449,6 +459,7 @@ export class RoadStage implements Stage {
     this.hud.setInstrument(this.instrument().name);
     this.hud.onInstrumentChosen((id) => this.takeOut(id));
     this.hud.onSongChosen((id) => this.pinSong(id));
+    this.hud.onKeepsake((action) => this.keepsake(action));
     this.hud.setMode(this.journey.phase === 'resting' ? 'resting' : 'walking');
     if (this.journey.phase === 'resting') this.makeCamp();
     this.collectIdle();
@@ -571,7 +582,7 @@ export class RoadStage implements Stage {
     this.saveTimer += dt;
     if (this.saveTimer > 5) {
       this.saveTimer = 0;
-      saveJourney(this.journey);
+      if (!this.restoring) saveJourney(this.journey);
     }
   }
 
@@ -1405,7 +1416,69 @@ export class RoadStage implements Stage {
     this.hud.say(line, 11);
   }
 
+  /**
+   * The songbook's endpapers: press the whole save into a small file the
+   * family keeps, or unfold one back in. This is the only backstop that
+   * survives Safari ITP's 7-day storage eviction, a cleared browser, or a
+   * new device — and it fits the no-accounts constraint because it is
+   * paper, not login. The file work lives here rather than in
+   * `core/keepsake.ts` so the core stays pure and testable; this method is
+   * DOM glue by design.
+   */
+  private keepsake(action: 'save' | 'restore'): void {
+    if (action === 'save') {
+      // Write the newest state out first, so the file holds this very
+      // moment rather than the last throttled save.
+      this.persist();
+      const text = exportKeepsake();
+      if (!text) {
+        this.hud.say('The road has nothing to press into a keepsake yet.', 8);
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = KEEPSAKE_FILENAME;
+      anchor.click();
+      // Revoke on a delay, not immediately: Safari resolves the download
+      // lazily, and a URL revoked in the same tick can hand it nothing.
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      this.hud.say('The journey is pressed into a keepsake. Keep it with the family things.', 9);
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.addEventListener('change', () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      file
+        .text()
+        .then((text) => {
+          const result = importKeepsake(text);
+          if (result === 'restored') {
+            // From here the records in storage are truer than this stage's
+            // memory. Hold every save until the reload re-reads them — see
+            // `restoring`'s comment for the overwrite this prevents.
+            this.restoring = true;
+            this.hud.say('The keepsake unfolds…', 6);
+            setTimeout(() => location.reload(), 1200);
+          } else if (result === 'nothing-inside') {
+            this.hud.say('This keepsake has nothing pressed inside it.', 8);
+          } else {
+            this.hud.say('This page does not read as a keepsake from this road.', 8);
+          }
+        })
+        .catch(() => {
+          this.hud.say('That file would not open here. The road walks on.', 8);
+        });
+    });
+    input.click();
+  }
+
   private persist(): void {
+    if (this.restoring) return;
     saveJourney(this.journey, true);
     saveIdle({
       since: Date.now(),

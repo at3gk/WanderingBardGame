@@ -55,6 +55,25 @@ try {
       stage.pose(options),
     describe: () => stage.describe(),
   };
+
+  // Ask the browser — once, after the first real gesture — to mark this
+  // origin's storage as persistent. Safari and Chrome decide silently from
+  // the user's interaction history (no prompt), it may be refused, and
+  // nothing reached in the research says it overrides Safari ITP's 7-day
+  // eviction for a non-installed tab — the manifest and the keepsake carry
+  // that weight. But it is three lines, it can only help, and a game whose
+  // whole save is localStorage should at least raise its hand.
+  window.addEventListener(
+    'pointerdown',
+    () => {
+      try {
+        void navigator.storage?.persist?.().catch(() => {});
+      } catch {
+        // Storage manager missing or gated (old WebKit, sandboxed frame).
+      }
+    },
+    { once: true },
+  );
 } catch (error) {
   fail(
     'The road will not open in this browser. It needs WebGL 2 — a different browser, or turning hardware acceleration back on, usually does it.',

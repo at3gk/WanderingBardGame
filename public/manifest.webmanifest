@@ -1,0 +1,24 @@
+{
+  "name": "Wandering Bard",
+  "short_name": "Wandering Bard",
+  "description": "A cozy walk with a tune under your fingers.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#1a1621",
+  "theme_color": "#1a1621",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
