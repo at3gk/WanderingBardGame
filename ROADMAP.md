@@ -1798,6 +1798,25 @@ scene — build once).
     (+1 test). Verified live: both sheets render, the door chain works,
     the journal line lands. **Remaining on 163: the festival grounds
     visuals only.** 1087 tests green, build 844.13 kB.
+    **Final piece done (2026-08-01) — TASK 163 COMPLETE; the v1.0
+    festival arc SHIPS and the v1.3 queue unlocks.** `FestivalGrounds`
+    (new scene class, Campfire idiom, ~2.5k tris, fully seeded): three
+    catenary lantern lines (~18 lamps, three alternating warm hues via
+    per-instance colour, gentle phase-offset sway), three closed
+    stalls, a knee-high plank stage with banner-prism poles, and a
+    warm ground pool sized deliberately against wave-5's night fault —
+    the lamps and pool give the night frame the mid-value ladder it
+    measured as missing. Placement derives from campfireLayout(seed)
+    so it cannot disagree with the built camp; outside the extent,
+    off the road, and off the bard's sightline column (the agent hit
+    and fixed the stick-through-hat fault the layout's checks exist
+    for). Festival eve only; ordinary-night control verified empty.
+    Frame read: lantern strings cross the mid-ground with visible sag
+    and hue variety, stalls/stage silhouette against the pool. 1087
+    tests green, build 853.12 kB. Ops note: the task-172 service
+    worker caches index.html on the preview server — unregister
+    between rebuilds in verification sessions or a stale bundle
+    white-screens.
 164. **The title card.** One warm card for returning players: "Continue
     the journey" (default, one tap) / "The songbook". New players skip
     straight to the road. Playable-in-5s holds. (main/App/Hud.)
