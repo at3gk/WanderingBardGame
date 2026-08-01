@@ -38,6 +38,21 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 160
+  COMPLETE: heads fade to ghosts, then a clean staff, from memory.**
+  `core/mastery.ts` gates the ladder on carrying (songWalks diary fact,
+  new `w` field in wb.learn.v1) AND full letter-earning (band 0
+  everywhere); SongNotes settles head alpha asymmetrically (help ~0.3s,
+  withdrawal ~2s); stumbles — tap-judged misses AND lapsed untapped
+  notes (the real stumble at a clean staff is silence; found in live
+  verification, and lapses are display-help only, never scaffold
+  evidence) — return ink for the rest of the pass. Only played passes
+  of the pinned song count as carrying. By-heart song state for
+  rehearsal (162) and the festival book (163): `headsLevel(...) === 2`
+  — same function the staff reads, so state and ink cannot disagree.
+  Verified live at all three tiers plus the stumble path; clean-staff
+  frame read by eye. 1066 tests green (+7), build 834.31 kB.
+
 - **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 160's
   first slice shipped: the learning model is LIVE for the first time.**
   The scaffold (built and tested since v0.4) had zero live callers —

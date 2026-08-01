@@ -986,6 +986,18 @@ export class SongNotes {
   /** Per-beat letter reveal leads, parallel to `beats`. See `setBeats`. */
   private revealLeads: readonly number[] | null = null;
 
+  /**
+   * The by-heart ladder's head fade (core/mastery.ts): the alpha the
+   * travelling heads are settling toward, and where the settle currently
+   * is. Only travelling notes take it — a struck bloom and a softened
+   * gone-by are answers, and answers never fade. The approach is
+   * asymmetric on purpose: help (more ink) arrives in a beat, the fade
+   * (less ink) withdraws over seconds — the maxim "quick to help, slow to
+   * withdraw", written as two rates.
+   */
+  private headTarget = 1;
+  private headFade = 1;
+
   private readonly ribbon: Mesh;
   private readonly ribbonMaterial: ShaderMaterial;
   private ribbonGeometry = new BufferGeometry();
@@ -1316,6 +1328,11 @@ export class SongNotes {
    * behaviour every note falls back to when struck or missed (the answer
    * is never withheld; only the prompt fades).
    */
+  /** Where the travelling heads should settle, 0..1. See `headTarget`. */
+  setHeadsAlpha(target: number): void {
+    this.headTarget = Math.min(1, Math.max(0, Number.isFinite(target) ? target : 1));
+  }
+
   setBeats(beats: readonly SongBeat[], revealLeads: readonly number[] | null = null): void {
     this.beats = beats;
     this.revealLeads = revealLeads;
@@ -1377,8 +1394,18 @@ export class SongNotes {
    * feel "off" without anyone being able to say why.
    */
   update(nowMs: number): void {
+    const dtMs = Math.min(100, Math.max(0, nowMs - this.nowMs));
     this.nowMs = nowMs;
     if (!this.group.visible) return;
+
+    // Settle the head fade toward its target: rising (help returning)
+    // covers the whole range in ~0.3s, falling (ink withdrawing) in ~2s.
+    const rate = this.headTarget > this.headFade ? 1 / 300 : 1 / 2000;
+    const move = dtMs * rate;
+    this.headFade =
+      this.headTarget > this.headFade
+        ? Math.min(this.headTarget, this.headFade + move)
+        : Math.max(this.headTarget, this.headFade - move);
 
     this.samplePath();
     this.writeRibbon();
@@ -1984,6 +2011,12 @@ export class SongNotes {
         const remaining = note.hitTimeMs - nowMs;
         letterA = clamp((note.revealLeadMs - remaining) / 150, 0, 1);
       }
+
+      // The by-heart fade: travelling heads thin toward the settled fade,
+      // ghosting or clearing a well-carried song's staff. Judged notes
+      // are exempt above by the same rule as the letters — the answer
+      // never fades.
+      if (note.state === 'travelling') a *= this.headFade;
 
       pos[i * 3] = this.scratchB.x;
       pos[i * 3 + 1] = y;

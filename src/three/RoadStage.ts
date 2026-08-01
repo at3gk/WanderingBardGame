@@ -122,9 +122,10 @@ import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
 import { campfirePage } from '../core/campfirePage';
 import { encounter } from '../core/scaffold';
-import { loadScaffold, saveScaffold } from '../core/scaffoldStorage';
+import { loadScaffold, recordSongWalk, saveScaffold, songWalksFor } from '../core/scaffoldStorage';
 import { revealLeads } from '../core/reveal';
 import { staffStepAt } from '../core/notation';
+import { HEADS_ALPHA, headsLevel, shownLevel, type HeadsLevel } from '../core/mastery';
 import { Ambience, dayShape } from '../audio/ambience';
 import {
   adaptiveDrive,
@@ -350,6 +351,17 @@ export class RoadStage implements Stage {
   private readonly tuneLeads: number[] = [];
   /** How many notes one pass of the scheduled song holds. */
   private tuneNotesPerPass = 0;
+
+  /**
+   * The by-heart ladder's walk-side state (core/mastery.ts): the level the
+   * pinned song has earned, the stumbles that are holding ink on the staff
+   * for the rest of this pass, and the bookkeeping that turns completed,
+   * actually-played passes into the diary fact the ladder reads.
+   */
+  private headsEarned: HeadsLevel = 0;
+  private passStumbles = 0;
+  private lastWalkPass = 0;
+  private hitsAtPassStart = 0;
   /** Rotation cursor for the wandering songbook, one step per walking stretch. */
   private walkPasses = 0;
   /**
@@ -820,6 +832,13 @@ export class RoadStage implements Stage {
     }
 
     if (judgement === 'miss') {
+      // A recall stumble returns one level of heads instantly, for the
+      // rest of the pass — quick to help; the pass boundary is what
+      // withdraws it again (slow to withdraw).
+      if (this.tuneMode === 'walk' && this.headsEarned > 0) {
+        this.passStumbles += 1;
+        this.applyHeadsAlpha();
+      }
       this.notes.soften(beat.index);
       return;
     }
@@ -827,6 +846,33 @@ export class RoadStage implements Stage {
     this.notes.strike(beat.index, judgement);
     this.bard.pluck(judgement === 'perfect' ? 1 : 0.75);
     this.sound(beat);
+  }
+
+  /**
+   * Re-derive the pinned song's earned heads level and hand the staff the
+   * alpha the current pass has a right to show. Only a *pinned* walking
+   * song can fade — carrying is the by-heart claim, and the wander
+   * rotation's tunes were never carried (core/mastery.ts's header).
+   */
+  private refreshHeads(song: { id: string; notes: readonly { semitone: number; rest?: true }[] }): void {
+    const pinned = this.journey.songChoice === song.id && this.tuneMode === 'walk';
+    if (!pinned) {
+      this.headsEarned = 0;
+      this.notes.setHeadsAlpha(1);
+      return;
+    }
+    const steps = new Set<number>();
+    for (const note of song.notes) {
+      if (note.rest) continue;
+      const step = staffStepAt(note.semitone);
+      if (step !== null) steps.add(step);
+    }
+    this.headsEarned = headsLevel(this.scaffold, [...steps], songWalksFor(song.id));
+    this.applyHeadsAlpha();
+  }
+
+  private applyHeadsAlpha(): void {
+    this.notes.setHeadsAlpha(HEADS_ALPHA[shownLevel(this.headsEarned, this.passStumbles)]);
   }
 
   /**
@@ -883,6 +929,10 @@ export class RoadStage implements Stage {
 
     this.tuneNotesPerPass = song.notes.length;
     this.refreshLeads();
+    // A busk performs to a crowd from the page, ink and all: the by-heart
+    // fade belongs to the walk (and, later, to the campfire rehearsal).
+    this.headsEarned = 0;
+    this.notes.setHeadsAlpha(1);
     this.notes.setInstrument(instrument);
     this.notes.setBeats(this.beats, this.tuneLeads);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
@@ -1037,6 +1087,10 @@ export class RoadStage implements Stage {
 
     this.tuneNotesPerPass = song.notes.length;
     this.refreshLeads();
+    this.passStumbles = 0;
+    this.lastWalkPass = 0;
+    this.hitsAtPassStart = 0;
+    this.refreshHeads(song);
     this.notes.setInstrument(instrument);
     this.notes.setBeats(this.beats, this.tuneLeads);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
@@ -1076,8 +1130,33 @@ export class RoadStage implements Stage {
     // notes track the scaffold as it learns tonight's playing.
     if (this.beats.length !== beatsBefore) this.refreshLeads();
 
+    // Pass boundary: the stumble help withdraws, and a pass that was
+    // actually played (at least one hit — an idle stretch is not
+    // carrying) writes the diary fact the by-heart ladder reads.
+    const pass = tune.passLengthMs > 0 ? Math.floor(now / tune.passLengthMs) : 0;
+    if (pass > this.lastWalkPass) {
+      this.lastWalkPass = pass;
+      this.passStumbles = 0;
+      const played = performance.hits > this.hitsAtPassStart;
+      this.hitsAtPassStart = performance.hits;
+      if (played && this.journey.songChoice === tune.song.id) {
+        recordSongWalk(tune.song.id, this.scaffold);
+      }
+      this.refreshHeads(tune.song);
+    }
+
     const result = tickPerformance(performance, now, this.beats, this.judgingConfig());
     for (const index of result.missed) this.notes.soften(index);
+    // On a ghosted or clean staff, a note lapsing untapped IS the recall
+    // stumble the design promises to answer — the child was keeping the
+    // rhythm from memory and the note went by silent, so the ink comes
+    // back a level for the rest of the pass. Deliberately NOT fed to the
+    // scaffold (an unplayed note is no evidence about reading, and its
+    // contract ignores them); this is display help, which is free.
+    if (result.missed.length > 0 && this.headsEarned > 0) {
+      this.passStumbles += result.missed.length;
+      this.applyHeadsAlpha();
+    }
 
     // A traveller's request rides the walk's first notes. It settles early
     // the moment enough have landed — a request granted should not wait for
