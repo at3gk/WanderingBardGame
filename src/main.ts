@@ -56,6 +56,22 @@ try {
     describe: () => stage.describe(),
   };
 
+  // The precache worker (task 172): the whole build is one JS file and a
+  // shell, and caching it is what makes the game load in the back of a car
+  // and cold-load fast on school wifi. Production only — a worker caching
+  // the dev server would serve yesterday's code forever — and registered
+  // after load so it never competes with the first paint.
+  if ('serviceWorker' in navigator && import.meta.env.PROD) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register(import.meta.env.BASE_URL + 'sw.js')
+        .catch(() => {
+          // An uninstallable worker costs nothing: the game simply stays
+          // online-only, which is where it started.
+        });
+    });
+  }
+
   // Ask the browser — once, after the first real gesture — to mark this
   // origin's storage as persistent. Safari and Chrome decide silently from
   // the user's interaction history (no prompt), it may be refused, and

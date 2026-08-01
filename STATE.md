@@ -38,6 +38,17 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 172
+  COMPLETE (service worker; offline boot verified live), and task 161
+  found to have a PREMISE GAP: practice mode has no live surface —
+  freePlay.ts lost its UI in Run 44's 2D deletion and was never
+  rebuilt. 161 needs a position-choosing input model (a design
+  question for the human, arguably) before its unguided tier means
+  anything. Logged in 161's ROADMAP entry; interleaved 172 instead.
+  The PWA story is now complete: installable (171), offline (172).
+  **Blocked on human** additions: the 161 input-model question; plus
+  the standing real-iPad playtest items.
+
 - **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 164
   COMPLETE: the title card.** One warm sheet for returning players
   (gated on lifetime metres > 0), the game live beneath it: tap
