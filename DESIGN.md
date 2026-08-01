@@ -239,6 +239,16 @@ ever writes C-sharp it sounds exactly C-sharp (equal temperament,
 verified to the cent by the harness); engraving is never wrong; register
 shifts are octave-only so the letter is always the pitch class heard.
 
+**Book Three: the songs you bring** (idea-stage, human-set 2026-08-01).
+After the festival, families will be able to add their own songs — made
+in practice mode (tap a tune onto the staff, name it, walk with it) or
+imported from MIDI/MusicXML, locally only, validated through the same
+engraving tests as the shipped songbook. The pedagogy's safety argument
+(fading is safe because the child already knows the tune) is best
+satisfied by a song the family chose. Audio transcription is rejected on
+principle: it mis-transcribes often enough to mis-teach, and the
+notation is never allowed to be wrong. ROADMAP v1.3 carries the tasks.
+
 **After the festival, the choice** (autonomy is the design): an
 invitation to **Book Two** that *shows what it would teach* — real key
 signatures and accidentals, correctly engraved and exactly sounded — or
