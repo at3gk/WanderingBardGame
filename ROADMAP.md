@@ -1786,6 +1786,18 @@ scene — build once).
     choice (Book Two invitation with a real engraved sharp, revisit,
     walk on) and the festival grounds visuals (lanterns, stalls,
     crowd, stage).** 1086 tests green (+9), build 841.46 kB.
+    **Second piece done (2026-08-01): the post-festival choice.** After
+    the closing line, a quiet sheet (`Hud.showSheet`, the title card's
+    family) offers three doors, none marked correct: "Hear what Book
+    Two would teach" (a second sheet with a large F♯, three honest
+    lines including "still being written", and F then F♯ SOUNDED
+    through the real instrument voice — `playPitch`, exactly tuned
+    because the engine already is; a journal line records the leaning),
+    "Wander the songbook" (opens the book), "Walk on" (dismisses).
+    Missing the sheet costs only the demonstration. Copy vocab-banned
+    (+1 test). Verified live: both sheets render, the door chain works,
+    the journal line lands. **Remaining on 163: the festival grounds
+    visuals only.** 1087 tests green, build 844.13 kB.
 164. **The title card.** One warm card for returning players: "Continue
     the journey" (default, one tap) / "The songbook". New players skip
     straight to the road. Playable-in-5s holds. (main/App/Hud.)

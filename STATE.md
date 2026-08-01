@@ -38,6 +38,14 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — 163's
+  second piece: the post-festival choice.** Three doors after the
+  closing line (Book Two's invitation with a sounded F→F♯ and honest
+  "still being written" copy; the songbook; walking on), via the new
+  generalized `Hud.showSheet`. Verified live. Remaining on 163: the
+  festival grounds VISUALS only — with those, the v1.0 festival arc
+  ships and v1.3 unlocks. 1087 tests green, build 844.13 kB.
+
 - **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 163's
   first piece: THE FESTIVAL EVE IS PLAYABLE.** At the gate camp
   (campfires >= 13, no festival yet) the page becomes the festival's,

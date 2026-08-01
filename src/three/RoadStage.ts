@@ -127,6 +127,9 @@ import { campfirePage } from '../core/campfirePage';
 import { encounter } from '../core/scaffold';
 import { allSongWalks, loadScaffold, recordSongWalk, saveScaffold, songWalksFor } from '../core/scaffoldStorage';
 import {
+  BOOK_TWO_INVITATION,
+  BOOK_TWO_JOURNAL_LINE,
+  FESTIVAL_CHOICE,
   festivalArrival,
   festivalClosingLine,
   festivalSetList,
@@ -972,6 +975,7 @@ export class RoadStage implements Stage {
       this.notes.setActive(false);
       this.notes.setHeadsAlpha(1);
       this.hud.say(closing, 16);
+      this.showFestivalChoice();
       return;
     }
 
@@ -1871,6 +1875,58 @@ export class RoadStage implements Stage {
         });
     });
     input.click();
+  }
+
+  /**
+   * The choice after the festival (DESIGN.md: autonomy is the design).
+   * Three doors, none marked correct. Book Two's door SOUNDS what the
+   * letter cannot say — F, then F♯, a real half step through the real
+   * instrument voice, exactly tuned because the engine already is — and
+   * admits in writing that the volume is still being written. Missing the
+   * sheet costs only the demonstration: the other two doors are the
+   * songbook corner and the road itself, which are always there.
+   */
+  private showFestivalChoice(): void {
+    this.hud.showSheet({
+      title: FESTIVAL_CHOICE.title,
+      doors: [
+        {
+          label: FESTIVAL_CHOICE.bookTwo,
+          onPick: () => {
+            this.hud.showSheet({
+              title: 'Book Two',
+              glyph: BOOK_TWO_INVITATION.glyph,
+              lines: BOOK_TWO_INVITATION.lines,
+            });
+            this.playPitch(5, 0);
+            this.playPitch(6, 0.9);
+            this.journey = recordEntry(this.journey, { kind: 'festival', line: BOOK_TWO_JOURNAL_LINE });
+            saveJourney(this.journey, true);
+          },
+        },
+        { label: FESTIVAL_CHOICE.songbook, onPick: () => this.hud.openBook() },
+        { label: FESTIVAL_CHOICE.walkOn },
+      ],
+    });
+  }
+
+  /** One exact pitch through the current instrument, `delaySec` from now. */
+  private playPitch(semitone: number, delaySec: number): void {
+    const ctx = this.ctx;
+    const destination = this.musicBus ?? this.master;
+    if (!ctx || !destination) return;
+    try {
+      playVoiceNote(
+        ctx,
+        destination,
+        this.instrument().voice,
+        semitoneToFrequency(AUDIO_MANIFEST.rootFrequencyHz, semitone),
+        ctx.currentTime + 0.005 + Math.max(0, delaySec),
+        { holdSec: 0.7, gain: 0.2 },
+      );
+    } catch {
+      // One silent note; the sheet still shows the sign.
+    }
   }
 
   private persist(): void {
