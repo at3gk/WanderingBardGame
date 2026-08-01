@@ -5,6 +5,8 @@ import {
   dayKey,
   fbm1D,
   hashString,
+  legRoadKey,
+  legSeed,
   mulberry32,
   pick,
   randInt,
@@ -14,6 +16,32 @@ import {
   valueNoise1D,
   weightedPick,
 } from './rng';
+
+describe('legSeed / legRoadKey — the moonlit roads', () => {
+  it('leg 0 IS the shared daily seed — communal by identity, not by luck', () => {
+    const d = new Date(Date.UTC(2026, 6, 28, 15, 30));
+    expect(legSeed(dayKey(d), 0)).toBe(dailySeed(d));
+  });
+
+  it('each leg of a day is its own deterministic road', () => {
+    expect(legSeed('2026-07-28', 1)).toBe(legSeed('2026-07-28', 1));
+    expect(legSeed('2026-07-28', 1)).not.toBe(legSeed('2026-07-28', 0));
+    expect(legSeed('2026-07-28', 1)).not.toBe(legSeed('2026-07-28', 2));
+    expect(legSeed('2026-07-28', 1)).not.toBe(legSeed('2026-07-29', 1));
+  });
+
+  it('reads a nonsense leg as the shared road', () => {
+    expect(legSeed('2026-07-28', Number.NaN)).toBe(legSeed('2026-07-28', 0));
+    expect(legSeed('2026-07-28', -3)).toBe(legSeed('2026-07-28', 0));
+    expect(legSeed('2026-07-28', 1.9)).toBe(legSeed('2026-07-28', 1));
+  });
+
+  it('stamps a moonlit road with a key of its own, so its stop ids cannot collide', () => {
+    expect(legRoadKey('2026-07-28', 0)).toBe('2026-07-28');
+    expect(legRoadKey('2026-07-28', 2)).toBe('2026-07-28~2');
+    expect(legRoadKey('2026-07-28', 2)).not.toBe(legRoadKey('2026-07-28', 1));
+  });
+});
 
 describe('mulberry32', () => {
   it('is deterministic for a seed', () => {

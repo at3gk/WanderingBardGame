@@ -1597,6 +1597,27 @@ scene — build once).
     calendar day's first leg is the shared daily road, further legs are
     moonlit roads (seeded day+leg, deterministic). Pure core logic +
     tests first. (core/journey.ts, core/road.ts.)
+    **Done (2026-08-01, overnight session). Core only, by design — no
+    scene wiring yet, so zero behaviour change in the live build.**
+    `FESTIVAL_LEGS = 13` (inside the human's 12-15 band; counted
+    against `campfires`, so every night already slept counts — a night
+    by the fire is a leg wherever it was slept). `legsToFestival` /
+    `festivalReached` helpers. `JourneyState.legIndex` (persisted as
+    optional `leg`, pre-v1.0 saves read as 0; day rollover always
+    resets to the shared road). `startNextLeg` — only from `resting`,
+    deliberately NOT an `enterPhase` transition: a new leg is a new
+    road, so it resets s/visited/journal like the rollover while
+    keeping the day's purse; nothing gates it and nothing rewards it
+    beyond the walk (the kindness constraint is what's absent).
+    `dayFractionAt` gained the night arc: moonlit legs walk dusk →
+    midnight → next dawn ((DUSK + 0.32·t) mod 1), every leg the same
+    night rather than an accelerating calendar. `rng.ts` gained
+    `legSeed` (leg 0 === `dailySeed` by identity, pinned by test —
+    communal first walk) and `legRoadKey` (`2026-08-01~2`-shaped, so a
+    moonlit road's stop ids cannot collide with the morning's — the
+    road.ts:76 trap). 1033 tests green (+16). Next up: the campfire
+    scene (159/162) is where `startNextLeg` and the moonlit road build
+    (`generateRoad(legSeed(k,n), legRoadKey(k,n))`) get wired.
 159. **The first-campfire promise.** The journal opens, the festival is
     named, tomorrow's road silhouette glows (merge with task 151),
     rehearsal is introduced. The single most important scene in the game;
