@@ -29,10 +29,16 @@ import {
   Mesh,
   ShaderMaterial,
   SphereGeometry,
+  Vector2,
   Vector3,
   type IUniform,
 } from 'three';
 import type { PainterlyGlobals } from './painterly';
+// The one number the shader and the profile generator must agree on. Imported
+// rather than written twice: a silent mismatch here would read as a skyline
+// that is *nearly* tomorrow's road, which is the worst possible failure for a
+// band whose entire justification is that it is honest.
+import { SKYLINE_SAMPLES } from '../core/skyline';
 
 /** One keyframe of the day. `t` is 0..1 across a full cycle from midnight. */
 export interface SkyKey {
@@ -579,6 +585,17 @@ uniform float uStarness;
 uniform float uCloudiness;
 uniform float uTime;
 
+/* Tomorrow's road on the skyline; see the block in main() and core/skyline.ts.
+ * The sample count is injected from SKYLINE_SAMPLES so the two cannot drift.
+ * The arc is a little over a third of a turn wide: narrow enough that a signed
+ * angle taken with atan() can never meet its own seam, wide enough that the
+ * whole of tomorrow's road fits in the direction the bard is facing. */
+#define TOMORROW_SAMPLES ${SKYLINE_SAMPLES}
+#define TOMORROW_ARC 0.6
+uniform float uTomorrow;
+uniform float uTomorrowHeights[TOMORROW_SAMPLES];
+uniform vec2 uTomorrowDir;
+
 varying vec3 vDirection;
 
 float hash21(vec2 p) {
@@ -868,6 +885,100 @@ void main() {
   // road runs uphill, which is most of them; much higher and they stop
   // being distance and become a wall around the meadow.
   vec2 ring = normalize(dir.xz + vec2(1e-5));
+
+  /*
+   * --- tomorrow's road ---------------------------------------------------
+   *
+   * The campfire bookend. At rest, the skyline down the road is the shape of
+   * the road that will actually be walked tomorrow: uTomorrowHeights is the
+   * centreline of tomorrow's real generated road, off tomorrow's real seed
+   * (core/skyline.ts), normalized to a profile. That derivation is the whole
+   * point. A hand-painted range would have been three lines shorter and would
+   * have been a lie, and the one thing this game is not allowed to sell the
+   * player at the end of a day is a promise it has not already kept.
+   *
+   * Drawn FIRST of the three bands so today's two ridges paint straight over
+   * it. It is the farthest thing on the dome — a day further off than the far
+   * ridge — and it has to lose to everything standing in front of it. Where
+   * it wins, it wins on its own height, which is why the amplitude below is
+   * set against the far ridge's arithmetic rather than by eye: base 0.048
+   * plus up to 0.055 against a far crest that averages 0.085, so the upper
+   * half of the profile clears the skyline and the lower half sinks into it.
+   *
+   * Everything here is multiplied by uTomorrow, and the whole block is
+   * skipped when it is zero: the effect ablates on one uniform, and the fade
+   * is phase-driven rather than clock-driven because it is the FIRE that
+   * makes the horizon worth looking at. On the road, the bard is walking
+   * today's road and tomorrow is none of their business.
+   */
+  if (uTomorrow > 0.001) {
+    vec2 tdir = normalize(uTomorrowDir + vec2(1e-5, 0.0));
+    float along = dot(ring, tdir);
+    float across = ring.x * tdir.y - ring.y * tdir.x;
+    float angle = atan(across, along);
+    float u = angle / TOMORROW_ARC;
+    if (abs(u) < 1.0) {
+      // The outer sixth of the wedge at each end takes the crest down to
+      // nothing — not the coverage, which would leave a see-through band of
+      // haze, but the height itself, so the range sinks under today's ridges
+      // and dissolves into the existing skyline instead of ending in a cliff.
+      float amt = uTomorrow * smoothstep(1.0, 0.85, abs(u));
+
+      // Position along the profile: west end of tomorrow's road first, the
+      // order core/skyline.ts hands them over in.
+      float fi = (u * 0.5 + 0.5) * float(TOMORROW_SAMPLES - 1);
+      // Read as a hat-weighted sum rather than by index pair. This material
+      // compiles as GLSL ES 1.00 — gl_FragColor and varying, not GLSL3 — and
+      // there a uniform array may only be indexed by a constant-index
+      // expression, which a constant-bound loop counter is and a computed
+      // index is not. Only the two neighbours of fi carry any weight, so
+      // the result is exactly the linear interpolation between them.
+      float profile = 0.0;
+      for (int i = 0; i < TOMORROW_SAMPLES; i++) {
+        profile += uTomorrowHeights[i] * max(0.0, 1.0 - abs(fi - float(i)));
+      }
+      // ridgeMask's third octave at the same relative weight (0.16 of the
+      // amplitude). Sixteen samples across seventy degrees is one summit every
+      // four and a half, and the straight line between two of them reads as a
+      // roof rather than as land; this is the smallest amount of noise that
+      // stops the silhouette being polygonal without editing its shape.
+      float crest = amt * (0.048 + profile * 0.055 + vnoise(ring * 13.0 + 71.0) * 0.0088);
+      float band = smoothstep(crest, crest - 0.004, height);
+
+      // Hazier and higher in value than the far ridge (0.32 / 0.79), because
+      // it is further away: land almost entirely dissolved in air. Through
+      // ridgeTint like the others, so it is built from the sky's own colour
+      // in its own direction and stays darker than the air it meets at every
+      // hour by construction, and so the one chroma correction below picks it
+      // up with the rest of the dome rather than treating it as a special case.
+      if (band > 0.001) {
+        color = mix(color, ridgeTint(skyBase, ring, 0.45, 0.86, 0.05), band);
+      }
+
+      /*
+       * The glow: first light behind a range the bard has not reached yet.
+       *
+       * Mixed toward the colour distance already tends toward, carried a
+       * little way to the hour's own warm end — never a picked cream and
+       * never white. A constant would be a UI chip pasted on a midnight sky;
+       * deriving it from uFogColor and uSunColor means it is dawn-coloured at
+       * dusk and moon-coloured at deep night, which is what a real light over
+       * a real horizon does, and it costs no uniform this file did not have.
+       *
+       * Value-modest on purpose: at 0.18 it is a lift of a few levels, well
+       * inside what the note above calls value-modest, and it must not push
+       * the sky off its place in the front-to-back order.
+       */
+      vec3 dawn = mix(uFogColor, mix(uHorizon, uSunColor, 0.60), 0.50);
+      float halo = smoothstep(crest + 0.045, crest, height) * (1.0 - band);
+      color = mix(color, dawn, halo * 0.18 * amt);
+      // A touch of the same light caught on the crest itself, so the range is
+      // lit from behind rather than being a silhouette with a lamp above it.
+      float rim = smoothstep(crest - 0.014, crest, height) * band;
+      color = mix(color, dawn, rim * 0.10 * amt);
+    }
+  }
+
   float farRidge = ridgeMask(ring, height, 0.026, 0.075, 11.0);
   float nearRidge = ridgeMask(ring, height, 0.004, 0.040, 47.0);
   if (farRidge > 0.001) {
@@ -945,6 +1056,9 @@ export class Sky {
     uStarness: IUniform<number>;
     uCloudiness: IUniform<number>;
     uTime: IUniform<number>;
+    uTomorrow: IUniform<number>;
+    uTomorrowHeights: IUniform<number[]>;
+    uTomorrowDir: IUniform<Vector2>;
   };
 
   constructor() {
@@ -958,6 +1072,12 @@ export class Sky {
       uStarness: { value: 0 },
       uCloudiness: { value: 0.4 },
       uTime: { value: 0 },
+      // Absent until a stage hands over a road and lights a fire. A flat 0.5
+      // profile is the same neutral `tomorrowSkyline` returns for a road with
+      // no relief, so a sky with no stage behind it is still well-formed.
+      uTomorrow: { value: 0 },
+      uTomorrowHeights: { value: new Array<number>(SKYLINE_SAMPLES).fill(0.5) },
+      uTomorrowDir: { value: new Vector2(0, 1) },
     };
 
     const material = new ShaderMaterial({
@@ -987,6 +1107,27 @@ export class Sky {
     this.uniforms.uStarness.value = state.starness;
     this.uniforms.uCloudiness.value = state.cloudiness;
     this.uniforms.uTime.value = timeSeconds;
+  }
+
+  /**
+   * Hand the dome tomorrow's road. Once per stage, not once per frame: the
+   * profile is a property of the day, and `core/skyline.ts` derives it from
+   * tomorrow's real seed, which is the whole reason the horizon is allowed to
+   * make a promise about it. `dirX`/`dirZ` are the unit ring direction of
+   * "down the road" — the band appears in a wedge around that and nowhere
+   * else, because that is the only direction tomorrow is actually in.
+   */
+  setTomorrowRoad(heights: readonly number[], dirX: number, dirZ: number): void {
+    const target = this.uniforms.uTomorrowHeights.value;
+    for (let i = 0; i < target.length; i++) {
+      target[i] = heights[Math.min(i, heights.length - 1)] ?? 0.5;
+    }
+    this.uniforms.uTomorrowDir.value.set(dirX, dirZ);
+  }
+
+  /** 0 = the horizon is today's. 1 = tomorrow's road is fully raised on it. */
+  setTomorrow(amount: number): void {
+    this.uniforms.uTomorrow.value = Math.min(1, Math.max(0, amount));
   }
 
   dispose(): void {

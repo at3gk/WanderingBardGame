@@ -1642,6 +1642,23 @@ scene — build once).
     the horizon (next piece), rehearsal introduction (waits for 162's
     mechanic), and the moonlit walk-on choice (needs mid-session road
     rebuild — its own task).**
+    **Second piece done (2026-08-01, overnight session): tomorrow's
+    road on the horizon.** `core/skyline.ts` (pure, tested) derives a
+    16-sample normalized profile from tomorrow's actual shared road
+    (`nextDayKey` + `legSeed(key, 0)` — honest anticipation, the same
+    skyline at every fire on the same day); sky.ts raises it as a
+    third, farthest ridge band in a ±0.6 rad wedge around the
+    down-road heading, crest from the profile (hat-weighted loop, not
+    computed indexing — this material is GLSL ES 1.00), tinted through
+    the existing `ridgeTint` at haze 0.45 / value 0.86, with a warm
+    first-light halo (peak 0.18) above the crest. Everything scales by
+    one uniform `uTomorrow`, eased 0.8/s toward 1 only while resting —
+    ablation is one dial, and walking frames are byte-untouched.
+    A/B-verified on the campfire framing (band on: lifted warm glow +
+    far ridge beyond the treeline; off: flat dark purple) and the dawn
+    walking postcard confirmed unchanged. Footprint measured 5.11% of
+    frame, confined to a 141-row horizon strip. 1051 tests green
+    (+8 skyline/nextDayKey), build 828.23 kB.
 160. **By-heart on the road.** A well-carried song's note heads fade to
     ghosts then to a clean staff; a recall stumble gently returns them.
     Extends the scaffold's fade machinery one level up (letters, then

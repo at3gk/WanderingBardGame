@@ -57,6 +57,7 @@ import {
   withinBand,
 } from './roadStaging';
 import { Hud } from '../ui/Hud';
+import { tomorrowSkyline } from '../core/skyline';
 import { dailySeed, dayKey, mulberry32, randRange, subSeed } from '../core/rng';
 import {
   biomeAt,
@@ -240,6 +241,13 @@ export class RoadStage implements Stage {
    */
   private shownDayFraction: number;
   private walking = false;
+  /**
+   * How far tomorrow's road has risen on the horizon, 0..1. Driven by the
+   * phase rather than by the clock: the far range is the campfire's own
+   * bookend, so it arrives when the fire is lit and leaves when the bard
+   * stands up, and it does neither as a cut.
+   */
+  private tomorrowShown = 0;
   private saveTimer = 0;
 
   /** The stop the bard is currently stood at, if any. */
@@ -393,6 +401,26 @@ export class RoadStage implements Stage {
     this.shownDayFraction = this.journey.dayFraction;
 
     this.scene.add(this.sky.mesh);
+
+    // Tomorrow's road, raised on the far skyline (ROADMAP 151 / 159).
+    //
+    // The day ends at a fire and the fire is meant to leave the player wanting
+    // the next one. This is the whole of that promise: the silhouette down the
+    // road is the shape of the road that will actually be walked tomorrow,
+    // read off tomorrow's real seed by `tomorrowSkyline` rather than painted.
+    // Anticipation the game can keep — nothing is being asked of the player,
+    // no timer is running, and the horizon says the same thing whether they
+    // come back tomorrow or in a fortnight.
+    //
+    // Set once, here, because the profile belongs to the day. The direction is
+    // the heading at the very end of today's road, because that is literally
+    // where they would keep walking if the day did not stop.
+    const roadEnd = sampleRoad(this.road, this.road.lengthM);
+    this.sky.setTomorrowRoad(
+      tomorrowSkyline(this.road.dayKey),
+      Math.sin(roadEnd.heading),
+      Math.cos(roadEnd.heading),
+    );
 
     this.world = new WorldStreamer(this.road, app.globals, {
       foliageDensity: app.quality.foliageDensity,
@@ -1762,6 +1790,20 @@ export class RoadStage implements Stage {
     const state = skyStateAt(this.shownDayFraction);
     applyTimeOfDay(this.app.globals, state, this.app.sun);
     this.sky.apply(state, this.app.globals.uTime.value);
+
+    // Raise or lower tomorrow's road with the phase. A linear ramp rather
+    // than an exponential ease: 0.8 per second means a frame posed at the
+    // fire is at full strength in a second and a quarter, inside the settle
+    // the screenshot tools already wait out, where an exponential of the same
+    // nominal rate would still be a third short of it. Slow enough that a
+    // player standing up from the fire sees the horizon let go rather than
+    // blink.
+    const wanted = this.journey.phase === 'resting' ? 1 : 0;
+    const step = frameDt * 0.8;
+    this.tomorrowShown += Math.max(-step, Math.min(step, wanted - this.tomorrowShown));
+    this.tomorrowShown = Math.max(0, Math.min(1, this.tomorrowShown));
+    this.sky.setTomorrow(this.tomorrowShown);
+
     // The journal card takes its wash from the sky it is floating in. It is
     // the only piece of DOM in the game that overlaps the world, and a fixed
     // neutral behind it was the one grey in a game that does not use grey.
