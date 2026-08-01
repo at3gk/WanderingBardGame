@@ -126,6 +126,7 @@ import { resolveAsk, rollAsk, rollEncounter, type EncounterAsk } from '../core/e
 import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
 import { campfirePage } from '../core/campfirePage';
+import { roadName } from '../core/roadName';
 import { encounter } from '../core/scaffold';
 import { allSongWalks, loadScaffold, recordSongWalk, saveScaffold, songWalksFor } from '../core/scaffoldStorage';
 import {
@@ -567,6 +568,19 @@ export class RoadStage implements Stage {
     // constructor never goes through `setPhase`, so the walk's tune has to
     // be raised here or the road is silent until the first stop.
     if (this.journey.phase === 'walking') this.startWalkingTune();
+
+    // The road introduces itself, once, at the trailhead. Everyone opening
+    // the tab today is standing on this same named road — which is the only
+    // sharedness this game wants: a place held in common, with nothing to
+    // compare and nobody to be behind. Said at the start of the walk rather
+    // than on a resume, because a name that arrives eight hundred metres in
+    // is an interruption, not a greeting.
+    if (
+      (this.journey.phase === 'waking' || this.journey.phase === 'walking') &&
+      this.journey.s < 50
+    ) {
+      this.hud.say(`${roadName(this.road.seed)}, this morning.`, 6);
+    }
 
     app.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
     window.addEventListener('keydown', this.onKeyDown);
@@ -1705,7 +1719,7 @@ export class RoadStage implements Stage {
     const carried = this.journey.songChoice
       ? songForPass(this.journey.songChoice, biomeAt(this.road, this.journey.s), 0).title
       : null;
-    const page = campfirePage(this.journey, carried);
+    const page = campfirePage(this.journey, carried, roadName(this.road.seed));
 
     // The night the long way ends, the page is the festival's (task 163,
     // first piece): title, arrival, and an asking that stands for every

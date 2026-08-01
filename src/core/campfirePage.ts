@@ -118,8 +118,18 @@ export function festivalLine(state: JourneyState): string {
  * caller (this module stays loadable without the songbook, the same
  * boundary journey.ts keeps): given while an attempt is still open, it
  * becomes the fire's asking.
+ *
+ * `roadNameText` is the day's road, named (`roadName.ts`), and when it is
+ * given the page is headed with it — the page a bard closes is the page of
+ * a *place*, and that place is the one everyone else walked today. Passed
+ * in rather than derived here for the same boundary reason: this module
+ * knows the journey, not which seed built it.
  */
-export function campfirePage(state: JourneyState, carriedTitle: string | null = null): CampfirePage {
+export function campfirePage(
+  state: JourneyState,
+  carriedTitle: string | null = null,
+  roadNameText: string | null = null,
+): CampfirePage {
   const journal = Array.isArray(state.journal) ? state.journal : [];
   const kept = journal.slice(Math.max(0, journal.length - PAGE_MOMENTS_MAX));
   const moments: CampfirePageLine[] =
@@ -132,7 +142,7 @@ export function campfirePage(state: JourneyState, carriedTitle: string | null = 
       : [{ text: QUIET_LINE, dayFraction: state.dayFraction, kind: 'note' }];
 
   const page: CampfirePage = {
-    title: "Tonight's page",
+    title: roadNameText ? `${roadNameText} — tonight's page` : "Tonight's page",
     moments,
     festival: festivalLine(state),
   };
