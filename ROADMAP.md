@@ -2143,6 +2143,23 @@ full verdict map and the measure-first suspicion list):
     frame — a canopy edge at top, a verge rock at a lower corner —
     per-framing, composed, not scattered. The composition lens's most
     repeated note and the cheapest depth the set can buy.
+182. **The noon gate is red on main — bisect it.** `frame-quality.mjs`
+    reports noon at 1.91-1.93 stops vs the 2.5 floor on pristine main;
+    CI never runs this gate, so some merge regressed it unnoticed.
+    Gauge facts already established (2026-08-01): stops =
+    log2(p90/p10) over linear Rec.709 luminance, every pose shot
+    through phase 'vista' (the vista framing is the whole gate's
+    lens), noon pose = s 620 / day 0.55 / 1600x900; the file's own
+    header ("every pose measures 3.3-6.8") is now stale — carry that
+    into whatever gets written. Protocol: confirm reproduction, bisect
+    main (build+measure per step), then judge honestly — real visual
+    regression (fix the change), accepted-cost compression like task
+    121's (adjust the noon floor with the full argument, per
+    phone-portrait's minStops precedent at lines 74-85), or gauge
+    artifact (fix the gauge). A failing check is a claim about the
+    check first. Needs a fresh session — the bisect is many
+    build+measure cycles.
+
 181. **Smoke as soft forms.** The campfire smoke still reads as a stack
     of hard-edged translucent polygons ("a hovering boulder", "a render
     bug" — wave 2 called it stacked glass octagons; three waves on it
