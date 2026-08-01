@@ -202,6 +202,40 @@ Three more, set later the same day watching the build:
    road gives you) without reintroducing the anxiety the pedagogy section
    forbids: a child can lose a chance, never progress.
 
+## The road home (v0.9 direction, human-set, 2026-07-31)
+
+The human asked for the game to become one "users want to come back to,"
+grounded in research rather than instinct, and for that research to stay a
+living part of the project (CLAUDE.md pillar 5). The founding note is
+`docs/research/retention-design.md` — primary-sourced (Wordle, Animal
+Crossing's real-time design, Sky's returning spirits, Duolingo's own
+streak research and its critics, self-determination theory, the Project
+Horseshoe coziness report) and ranked against this game's constraints.
+Read it before building anything that touches returning-player behaviour.
+
+The stance it supports: **the return must be a ritual the player is glad
+they kept, never a hook they resent.** Anticipation is the kind version of
+the appointment; absence becomes story, never debt. Concretely, the queued
+work (ROADMAP v0.9): the campfire closes today's page and shows
+tomorrow's road on the horizon (the seed is knowable — render the
+silhouette); the sharedness of the daily road becomes visible (roads get
+names; an optional campfire postcard shares presence, never performance —
+Wordle's exact rule); songbook pages wear in with care (keyed to diary
+facts only — the learning model stays invisible, a page that got prettier
+as letters faded would be a grade in costume); encounters leave mementos,
+not checklists (no counts, no empty slots, missed rarities recur — Sky's
+stance); returning gets a welcome-back beat while absence costs nothing;
+and one device can hold two bookmarks, because for an audience of
+five-to-nines the retention target is the household.
+
+**Rejected on principle** (binding, from the research's own list): streak
+counters of any kind including "kind" ones, daily login rewards and
+appointment decay, one-time-only content, near-miss staging on rares, any
+visible fraction or "mastered" state on learning content, accuracy
+comparison in sharing, re-engagement nags, and idle earnings that decay.
+These retain players in the literature; they are what "addicting" is NOT
+licensed to mean here.
+
 ## The one core mechanic
 
 **Single-lane rhythm tapping.** Beat markers scroll toward a hit line at a

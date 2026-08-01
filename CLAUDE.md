@@ -25,6 +25,18 @@ executes YOUR vision — write it like you mean it.
 3. Mobile-friendly: touch input, small bundle (<5 MB).
 4. Ship small and often; the game should be playable at the end of every week
    even if ugly.
+5. A game people want to come back to — warmly, never compulsively
+   (human-set, 2026-07-31). Retention work is design work here: keep
+   `docs/research/` current (retention-design.md is the founding note),
+   and check any feature that touches returning-player behaviour against
+   its recommendations AND its rejected-on-principle list. Consolidation
+   runs (every ~10th) refresh the research the same way they refresh the
+   docs: reread it, note in STATE.md what the game now does about each
+   top recommendation, and add findings when a shipped feature teaches
+   something the research didn't predict. "Addicting" is licensed only in
+   its kind form — a ritual players are glad they kept, never a hook they
+   resent. Dark patterns (loss-framed streaks, FOMO timers, guilt copy)
+   stay banned regardless of what any source reports works.
 
 ## Stack (fixed)
 
