@@ -121,6 +121,10 @@ import { resolveAsk, rollAsk, rollEncounter, type EncounterAsk } from '../core/e
 import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
 import { campfirePage } from '../core/campfirePage';
+import { encounter } from '../core/scaffold';
+import { loadScaffold, saveScaffold } from '../core/scaffoldStorage';
+import { revealLeads } from '../core/reveal';
+import { staffStepAt } from '../core/notation';
 import { Ambience, dayShape } from '../audio/ambience';
 import {
   adaptiveDrive,
@@ -328,6 +332,24 @@ export class RoadStage implements Stage {
 
   // --- the walk's own tune -----------------------------------------------
   private walkTune: WalkTune | null = null;
+
+  /**
+   * The learning model, live at last. Loaded once per stage (load applies
+   * time-away decay and opens the session's gain caps), fed by every
+   * judged tap, and saved with everything else in `persist`. The staff
+   * reads it only through `revealLeads` — see core/reveal.ts for why a
+   * fresh scaffold reproduces the old always-labelled staff exactly.
+   */
+  private readonly scaffold = loadScaffold();
+  /**
+   * Letter-reveal leads, parallel to `this.beats` BY REFERENCE: the walk
+   * tune extends its beats array in place, so the staff must see this
+   * array grow the same way — a fresh array each extension would strand
+   * the notes' cursor against a stale one.
+   */
+  private readonly tuneLeads: number[] = [];
+  /** How many notes one pass of the scheduled song holds. */
+  private tuneNotesPerPass = 0;
   /** Rotation cursor for the wandering songbook, one step per walking stretch. */
   private walkPasses = 0;
   /**
@@ -780,8 +802,23 @@ export class RoadStage implements Stage {
     // is not.
     if (!beat) return;
 
+    // The scaffold hears about the tap before the meter moves: its own
+    // contract ignores misses once the meter has collapsed (a child who
+    // has lost the beat misses everything), so the collapse test must read
+    // the meter as it stood when the tap was judged.
+    const meterAlive = performance.meter >= 0.3;
+
     const judgement = judge(beat, now);
     applyJudgement(performance, judgement, this.judgingConfig(), { beatIndex: beat.index });
+
+    if (!beat.rest) {
+      const step = staffStepAt(beat.semitone);
+      if (step !== null) {
+        encounter(this.scaffold, step, judgement === 'miss' ? 'miss' : 'hit', meterAlive);
+        saveScaffold(this.scaffold);
+      }
+    }
+
     if (judgement === 'miss') {
       this.notes.soften(beat.index);
       return;
@@ -790,6 +827,24 @@ export class RoadStage implements Stage {
     this.notes.strike(beat.index, judgement);
     this.bard.pluck(judgement === 'perfect' ? 1 : 0.75);
     this.sound(beat);
+  }
+
+  /**
+   * Recompute the letter-reveal leads for the whole scheduled tune, in
+   * place. Called when a tune is scheduled and whenever the walk extends
+   * its schedule — which is also what lets a strengthening (or wobbling)
+   * position change the dose of notes not yet spawned, while notes already
+   * in flight keep the lead they were born with.
+   */
+  private refreshLeads(): void {
+    const steps = this.beats.map((b) => (b.rest ? null : staffStepAt(b.semitone)));
+    const struggling = this.performance ? this.performance.meter < 0.5 : false;
+    const leads = revealLeads(this.scaffold, steps, this.tuneNotesPerPass, {
+      struggling,
+      lost: this.performance ? this.performance.meter < 0.15 : false,
+    });
+    this.tuneLeads.length = 0;
+    this.tuneLeads.push(...leads);
   }
 
   // --- busking -----------------------------------------------------------
@@ -826,8 +881,10 @@ export class RoadStage implements Stage {
     this.tuneAnchorSec = this.ctx ? this.ctx.currentTime + 0.2 : Number.NaN;
     this.buskEndMs = this.beats[this.beats.length - 1].hitTimeMs + lateWindowMs() + BUSK_TAIL_MS;
 
+    this.tuneNotesPerPass = song.notes.length;
+    this.refreshLeads();
     this.notes.setInstrument(instrument);
-    this.notes.setBeats(this.beats);
+    this.notes.setBeats(this.beats, this.tuneLeads);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.setActive(true);
     this.bard.setWarmth(0);
@@ -978,8 +1035,10 @@ export class RoadStage implements Stage {
     this.tuneSimMs = 0;
     this.tuneAnchorSec = this.ctx ? this.ctx.currentTime + 0.2 : Number.NaN;
 
+    this.tuneNotesPerPass = song.notes.length;
+    this.refreshLeads();
     this.notes.setInstrument(instrument);
-    this.notes.setBeats(this.beats);
+    this.notes.setBeats(this.beats, this.tuneLeads);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.setActive(true);
     this.bard.setWarmth(0);
@@ -1010,7 +1069,12 @@ export class RoadStage implements Stage {
 
     const now = this.tuneNowMs();
     // In place, so the judge and the staff keep reading the same array.
+    const beatsBefore = this.beats.length;
     extendWalkTune(tune, now);
+    // The leads array must grow with it — and refreshing the whole thing
+    // (cheap, a few hundred entries) is what lets the dose of unspawned
+    // notes track the scaffold as it learns tonight's playing.
+    if (this.beats.length !== beatsBefore) this.refreshLeads();
 
     const result = tickPerformance(performance, now, this.beats, this.judgingConfig());
     for (const index of result.missed) this.notes.soften(index);
@@ -1515,6 +1579,7 @@ export class RoadStage implements Stage {
 
   private persist(): void {
     if (this.restoring) return;
+    saveScaffold(this.scaffold, true);
     saveJourney(this.journey, true);
     saveIdle({
       since: Date.now(),
