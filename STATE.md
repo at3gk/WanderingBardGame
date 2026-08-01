@@ -38,6 +38,29 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session) — wave-6 blind panel:
+  mean 5.33, up from wave 5's 4.42 UNDER THE SAME ANCHOR ("ships
+  beside ASH without apology") — the first same-rubric gain on
+  record.** Lens means: emotion 5.91, colour 5.45, value 5.36,
+  composition 5.18, silhouette 5.09, mobile 4.95. 07-night-campfire
+  is now the set's best (6.25 mean; value 2.5→6.5 wave-over-wave;
+  emotion 7.5 — the page + fire pool + seated bard read as "the only
+  true coziness" become the strongest frame). Festival eve judged
+  ~5.5 on value: lanterns work but COMPETE with the fire (two light
+  notes, neither dominant), lower-left text quadrant fully crushed.
+  **Persisting faults, still mapping to the queued tasks:** figure/
+  ground lower-body merges (01/04/10 knees-down dissolve into shadow
+  bands — task 179's measurement should start there, not at whole-
+  figure dL); night treelines crush to one band (147's "structure not
+  direction", NOT yet addressed); smoke still "an ambiguous grey
+  wedge" (181); portrait mobile worst cell at 3.5 (146/175). **New
+  and specific:** 06's midground hedgerow is the darkest mass in its
+  frame — a background band OUTRANKING the protagonist and inverting
+  the ladder (roughly the 145 anchor-frames family); 05's bard head
+  sits dark-on-dark against the busk banner. Suspicion-list note:
+  wave 5's "dawn shadows grey" did NOT recur as a top fault this
+  wave; treat it as low-priority until measured.
+
 - **HANDOFF, 2026-08-01 (overnight loop session, continued) — TASK 163
   COMPLETE: THE FESTIVAL ARC SHIPS.** FestivalGrounds scene (lantern
   strings, stalls, stage, warm pool — built against wave-5's night
