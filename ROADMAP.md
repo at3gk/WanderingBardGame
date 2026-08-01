@@ -1806,6 +1806,12 @@ iPad household needs none of it; logged under Blocked on human.
     Apple 44pt on every HUD control at phone sizes; verify the landscape
     recommendation for the road; palm-rejection kindness already exists
     (stray taps are free) — pin it with a test.
+    Wave-5 adds two concrete finds for this audit: the corner labels in
+    the 03 postcard are sheared mid-glyph by the BOTTOM frame edge
+    (desktop viewports get no bottom inset at all — check hudChrome's
+    bottom margin, not just safe-area plumbing), and 08's two corner
+    labels sit inside the phone's home-indicator swipe band in
+    low-contrast grey-on-tan.
 
 ## The v0.9 queue: "the road home" (human-set, 2026-07-31)
 
@@ -1869,17 +1875,60 @@ The wave-5 queue, from the wave-4 panel (mean ~5.5; take these next):
     DISPUTED and must be measured first: "noteheads ride above the top
     line on lollipop stems" — anchors measured exact twice before; check
     the depth-makeup and the specific pose before re-fixing pitch.
+    Wave-5 adds a measurement: in 08 the staff ENTERS AT x=0 — the one
+    interactive surface is cropped by the left screen edge on the
+    device with the most spare vertical, and the two visible pills fuse
+    into one "DE" mass at x 140-290. The crop is a framing/fitShare
+    fact, checkable in hudLayout/SongNotes constants before any pitch
+    re-litigation.
 147. **Commit to night.** 07: ring stones stay daylight-grey inches from
     flame, nothing throws radiating shadows from the fire, off-fire land
     sits within a stop of the sky. Needs the palette-side night ambient
     drop (the campfire agent's recorded ceiling), fire-warmed ring
     stones, and possibly cheap radial blob shadows from fire-lit props.
+    Wave-5 RECONCILIATION — the panels collide here: wave 4 said
+    "commit to night" (darker, moodier); wave 5 measured 59.4% of 07's
+    pixels below L*10 (median L*6.4) against a reference night whose
+    p5 never drops under L*32, with near/far conifers merged into one
+    silhouette. The shared symptom is an UNDIFFERENTIATED dark. The
+    fix is structure, not direction: a moonlit ambient that grades the
+    treeline near/far, fire-warmed stones, radiating prop shadows —
+    while the fire pool itself and the sky-to-treeline boundary stay
+    untouched (every lens's keeps list).
 148. **The postcard must catch the verb.** 05's busker reads as standing
     idle (the strum exists — the postcard shutter catches the arm at
     rest; consider posing the strum mid-sweep for the busk framing) and
     06 reads as a walking shot mislabeled (the encounter framing needs
     its own identity: two figures, mutual facing, closer camera — the
     staging landed but the postcard pose may predate arrival).
+
+The wave-5 additions, from the wave-5 blind panel (2026-08-01; anchor
+"ships beside ASH without apology", mean 4.42 — see STATE.md for the
+full verdict map and the measure-first suspicion list):
+
+179. **Figure/ground value floor.** The panel's one measured-everywhere
+    fault: bard-vs-surround dL 0.7 (02), 2.0 (01), 2.4 (07), 4.0
+    (04/06) against the reference floor of 13.6-25.2 — the protagonist
+    vanishes in greyscale; the red cloak's hue does all the work. START
+    by measuring what 03 (dL 16.3) and 10 (12.1) already do right
+    (likely the lit road behind the figure) and extend that mechanism;
+    do NOT invent a rim light first. Keeps to honour: 08's inverted
+    band order is load-bearing, and wave 11's diagnosis stands (value,
+    not pose).
+180. **Close the frame: foreground occluders.** All ten postcards open
+    on a clean ground plane; every ASH reference crops canopy, cliff or
+    rock masses through its edges. Give the postcard framings (and the
+    live camera's near field) occluding foreground masses cut by the
+    frame — a canopy edge at top, a verge rock at a lower corner —
+    per-framing, composed, not scattered. The composition lens's most
+    repeated note and the cheapest depth the set can buy.
+181. **Smoke as soft forms.** The campfire smoke still reads as a stack
+    of hard-edged translucent polygons ("a hovering boulder", "a render
+    bug" — wave 2 called it stacked glass octagons; three waves on it
+    is unchanged). The vertical mass in that quadrant is compositionally
+    right (keeps list) — soften the FORMS: alpha-feathered edges,
+    fewer/larger overlapping shapes, or a shader dissolve toward the
+    top. Judge only by the re-shot 07.
 149. **Ground cover, round three: patches over specks.** The read is still
     "debris": individuated dark-stemmed spikes and litter-like pebble
     decals. References do broad tonal patches that disappear. Consider
@@ -1889,6 +1938,14 @@ The wave-5 queue, from the wave-4 panel (mean ~5.5; take these next):
     (face marks exist — check angles/culling), rear head reads as a void
     cube (hair mass value), hat crown-brim gap leaks background in 02,
     NPC limb joins still gap at close range.
+    Wave-5 extends: the travellers in 05 decompose entirely (hip gaps,
+    hairline tapering legs, and two unsupported boxes floating near the
+    banner pole — the last is likely a staging bug worth checking
+    independently), and the emotion lens's top finding across ALL ten
+    frames is that the bard has no readable facial feature at any
+    postcard distance — ASH's whole charm budget is one large white
+    eye on a small sprite. A face readable at distance is a character-
+    design decision, not a bug fix; try it behind a comparison shoot.
 
 143. **The road's soft edge.** Wave 3's ablation identified the road's
     soft-blended boundary against the grass as the biggest remaining

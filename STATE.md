@@ -38,6 +38,71 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-01 (overnight loop session) — wave-5 six-lens blind
+  panel ran (fresh judges, fresh frames, HARSHER ANCHOR: "10 = ships
+  beside A Short Hike without apology" — so the 4.42 mean is NOT
+  comparable to wave 4's ~5.5; read the fault structure, not the
+  number).** Lens means: value 3.75, composition 3.65, mobile 4.05,
+  silhouette 4.45, emotion 5.15, colour 5.50. Best frames 04 (5.25),
+  07 (5.00), 10 (4.83); worst 06/08 (4.00). References: 7 ASH gameplay
+  frames only (Spiritfarer press pages now JS-rendered; key art
+  weighted lightly). Full digest in the session scratchpad; the
+  durable findings and their dispositions:
+  1. **THE finding, measured across frames: figure/ground value
+     separation.** Bard-vs-surround dL 0.7 (02!), 2.0 (01), 2.4 (07),
+     4.0 (04, 06) against the reference floor of 13.6-25.2 — in
+     greyscale the protagonist vanishes; only the red cloak's hue holds
+     him. CRITICALLY, 03 (dL 16.3) and 10 (12.1) already CLEAR the
+     floor — measure what those two frames do differently (likely the
+     lit road behind the figure) before inventing a mechanism. Queued
+     as ROADMAP task 179. This is wave 11's "value problem, not a pose
+     problem" diagnosis, now with numbers on every frame.
+  2. **All ten frames lack foreground occluders** — ASH crops canopy/
+     rock masses through all four edges in every reference frame; our
+     postcards all open on a clean ground plane. Structural, new,
+     convincing. Queued as task 180 (composition lens's most repeated
+     note; also the cheapest route to depth the set has).
+  3. **Night (07) darkness is overextended**: 59.4% of pixels below
+     L*10, median L*6.4, vs the reference night's p5 of L*32. This
+     COLLIDES with queued task 147 ("commit to night") — reconciled in
+     147's text: the shared symptom is an undifferentiated dark; the
+     fix direction is STRUCTURE (moonlit ambient ladder, fire-warmed
+     stones, near/far treeline grading), neither "darker" nor
+     "brighter" wholesale. The fire pool itself is on every lens's
+     keeps list — do not touch it.
+  4. **Mobile bugs, concrete**: 08's staff is cropped by the left
+     screen edge (the one interactive surface, cut on the device with
+     the most spare vertical); corner labels in 03 are sheared
+     mid-glyph by the bottom frame edge (no bottom inset on desktop
+     viewports — folded into task 175's audit); 10's read-vs-act
+     corridor is ~400 px of empty road. 146 extended with the
+     portrait-crop measurement.
+  5. **Smoke still reads as a polygon stack** (wave-2 complaint,
+     still live; emotion lens calls it fiction-breaking) — queued as
+     task 181. The compositional intent (vertical mass in that
+     quadrant) is on the keeps list; it is the hard polygonal edges
+     that fail.
+  6. **NPCs decompose at postcard range** (05 worst: hip gaps,
+     hairline legs, floating boxes near the banner) and **the bard has
+     no readable face at any distance** (ASH's charm budget is one big
+     white eye) — both folded into task 150's text.
+  **Measure-first suspicion list (wave-4 pattern: panels see true
+  symptoms, misattribute causes):** (a) "dawn shadows drop chroma to
+  grey" (01/02/10) — wave 4's CAST_SHADOW_HUE was PROVEN chroma-gaining
+  at noon; dawn may genuinely differ (low-sun path) but measure the
+  actual shadow S values before touching the term; (b) "03's distance
+  is a grey fade" — sky.ts's ridgeTint was fixed and measured last
+  wave; the complaint may be the terrain-side painterly fog, not the
+  sky — ablate which layer owns the desaturation first; (c) note
+  "pills fuse into a blob" in 08/10 — same family as the twice-refuted
+  "noteheads ignore pitch"; verify against the governor's actual
+  spacing at those aspect ratios before re-fixing.
+  **Keeps (unanimous or near):** the sky gradients at every hour, the
+  fire pool, the red cloak accent, 10-tablet's four-step value ladder,
+  03/10's figure separation, 08's inverted band order (lit road
+  carrying the character — do NOT "correct" it), the serif typography
+  and journal-page treatment, tree silhouettes, 04's S-curve road.
+
 - **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 159's
   second piece shipped: tomorrow's road glows on the horizon at the
   fire.** `core/skyline.ts` derives tomorrow's real profile (nextDayKey
