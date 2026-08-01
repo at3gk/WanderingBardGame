@@ -55,6 +55,9 @@ export interface SongEntry {
   name: string;
 }
 
+/** The songbook's endpaper actions: press the journey into a keepsake file, or unfold one. */
+export type KeepsakeAction = 'save' | 'restore';
+
 /** What the song corner says while no song is pinned. */
 const WANDERING_LABEL = 'Wandering';
 /** The row that hands the rotation back. */
@@ -144,6 +147,7 @@ export class Hud {
   private bookOpen = false;
   private bookHold = 0;
   private songChosen: ((id: string | null) => void) | null = null;
+  private keepsakeCb: ((action: KeepsakeAction) => void) | null = null;
 
   /** Seconds of brightness left on each piece. */
   private coinsAttention = 0;
@@ -427,6 +431,19 @@ export class Hud {
   }
 
   /**
+   * Called when the player presses the journey into a keepsake file or
+   * unfolds one back into the game. Registering the handler is also what
+   * makes the endpaper rows appear at all — a book with nobody listening
+   * offers no keepsake, so tests and any host that never wires it see the
+   * songbook exactly as it always was.
+   */
+  onKeepsake(handler: (action: KeepsakeAction) => void): void {
+    this.keepsakeCb = handler;
+    this.buildCase();
+    this.applyPickable();
+  }
+
+  /**
    * Put a line in the journal.
    *
    * The line is written by whoever knows what happened —
@@ -583,6 +600,46 @@ export class Hud {
       });
       this.caseBox.appendChild(row);
     }
+
+    // The case's lining: two quiet rows for pressing the whole journey into
+    // a keepsake file and unfolding one back in. They live in the case, not
+    // the songbook, for a size reason that is also a story reason: the book
+    // holds enough songs that anything after them sits below the layout's
+    // whole-rows fold and is never seen, while the case holds a handful of
+    // instruments at most — and the case is the bard's own luggage, which is
+    // where a family keeps the things it cannot lose. Smaller, dimmer type
+    // so a player scanning for an instrument reads past them; full row
+    // height, because shrinking the *target* would trade the 44 pt touch
+    // floor for typography.
+    if (this.keepsakeCb) {
+      for (const [action, label] of [
+        ['save', 'Press a keepsake'],
+        ['restore', 'Unfold a keepsake'],
+      ] as const) {
+        const row = element('div', {
+          display: 'flex',
+          alignItems: 'center',
+          flex: '0 0 auto',
+          boxSizing: 'border-box',
+          padding: '0',
+          fontStyle: 'italic',
+          fontSize: '0.85em',
+          color: 'rgba(240, 226, 198, 0.55)',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          cursor: 'pointer',
+          textShadow: '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 12px rgba(20, 14, 18, 0.7)',
+        });
+        row.textContent = label;
+        row.addEventListener('pointerdown', (event) => {
+          event.preventDefault();
+          this.setCaseOpen(false);
+          this.keepsakeCb?.(action);
+        });
+        this.caseBox.appendChild(row);
+      }
+    }
     this.layoutCase();
   }
 
@@ -603,9 +660,14 @@ export class Hud {
     }
   }
 
-  /** Whether the corner is a handle at the moment, or only a readout. */
+  /**
+   * Whether the corner is a handle at the moment, or only a readout. The
+   * keepsake rows count toward openability: a brand-new device has one
+   * instrument and no case rows, and that is exactly the device that most
+   * needs "Unfold a keepsake" to be reachable.
+   */
   private pickable(): boolean {
-    if (this.caseRows().length === 0) return false;
+    if (this.caseRows().length === 0 && !this.keepsakeCb) return false;
     return this.mode === 'walking' || this.mode === 'resting';
   }
 

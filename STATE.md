@@ -38,8 +38,30 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
-- **HANDOFF, 2026-07-31 (second interactive session, continued) — v0.8
-  wave 4 landed: every disputed symptom traced to its real cause.** 1000
+- **HANDOFF, 2026-08-01 (overnight loop session) — ROADMAP task 171
+  shipped: the PWA save-protection bundle, the v1.2 queue's urgent
+  data-loss item.** 1017 tests green (+17), build 817.70 kB. The game
+  is now installable (manifest + deterministic procedural PNG icons via
+  `tools/make-icons.mjs`; installed home-screen apps are exempt from
+  Safari ITP's 7-day storage wipe — the whole point), asks for storage
+  persistence once on first gesture, and has the no-account backstop:
+  a "keepsake" file (all three `wb.*` keys as readable JSON,
+  `core/keepsake.ts`) exported/imported from two dim endpaper rows in
+  the instrument case. Three findings worth keeping: (1) the songbook
+  CANNOT host new rows — `songBookBox`'s whole-rows-fit rule puts
+  anything after 11 songs permanently below the fold (found by reading
+  the screenshot, not the code; the case never overflows); (2) the
+  case corner is now pickable on a fresh one-instrument device because
+  the restore path matters most there; (3) after a keepsake import,
+  RoadStage's `restoring` flag must gate every save — the reload's own
+  pagehide save would otherwise silently overwrite the restored
+  records with in-memory state, and the keepsake would "do nothing".
+  `viewport-fit=cover` was the only missing half of safe-area support
+  (Hud's `env()` probe existed, returning zeros). Remaining from the
+  research's ranked list: service worker (172), audio session (173),
+  quality tiers (174), touch audit (175). **Needs human playtest:**
+  A2HS on the family iPad — icon, standalone chrome, saves surviving
+  a week; and a real keepsake save/restore across two devices. 1000
   tests green (37 files), build 815.02 kB, all gates PASS, morning land
   p90 165. Five agents, five root causes that had each survived multiple
   critique rounds:
