@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 83 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 84 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop)
 
@@ -39,6 +39,22 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 84) — dawn-smear ablation: ALL THREE
+  shader levers measured and refuted; no code shipped.** The full
+  matrix and numbers live in ROADMAP task 144's new ablation entry.
+  Short form: 4096 shadow map moved nothing (the low-sun penumbra
+  is canopy-geometry ×8 projection, not texels), SHADOW_GAIN_CAP
+  0.40 moved nothing (dawn valueDrop stays 0.10), coarse fray 0.55
+  is leopard spots. The dawn bands are 94.3% tree-cast with casters
+  off-frame; edges are already ragged — the SCALE and interior film
+  are what read. The shader-knob family is EXHAUSTED after six
+  measured rounds; remaining 144 levers are presentation decisions
+  (sun-elevation floor vs accepting the hour — both argue with the
+  color script's "dawn is CARRYING"). NEXT, in wave-10 evidence
+  order: 166 noon accents (03 worst frame, licensed), staff
+  ghost-panel measurement, 149 scatter patches. Tests 1209, build
+  green, nothing changed in src.
 
 - **HANDOFF, 2026-08-05 (run 83) — WAVE-10 BLIND PANEL: mean 4.61
   vs wave 9's 5.02, but the rubric text was RECONSTRUCTED (the
