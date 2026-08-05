@@ -125,6 +125,7 @@ import {
   type PerformanceState,
 } from '../core/performance';
 import {
+  encounterLine,
   leavesMemento,
   MEMENTO_KIND,
   resolveAsk,
@@ -132,7 +133,7 @@ import {
   rollEncounter,
   type EncounterAsk,
 } from '../core/encounters';
-import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
+import { describeIdleYield, idleYield, IDLE_JOURNAL_KIND, loadIdle, saveIdle } from '../core/idle';
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
 import { campfirePage, type CampfirePage } from '../core/campfirePage';
 import { postcardLines, POSTCARD_FILENAME, type PostcardCard } from '../core/postcardCard';
@@ -1736,16 +1737,19 @@ export class RoadStage implements Stage {
       { exclude: this.metToday },
     );
     this.metToday.push(roll.def.id);
+    // Sometimes the traveller names the road — the day is shared and this is
+    // the one place anybody in it says so. See `encounterLine`.
+    const line = encounterLine(stop ? stop.seed : this.road.seed, roll, roadName(this.road.seed));
     this.journey = earn(this.journey, roll.coins, roll.delight);
     // A lovely meeting goes into the journal under its own kind, which is all
     // a memento is: the same line, marked, so tonight's page shows it pressed
     // flat like a flower. No second store, no tally — see `leavesMemento`.
     this.journey = recordEntry(this.journey, {
       kind: leavesMemento(roll) ? MEMENTO_KIND : 'encounter',
-      line: roll.def.line,
+      line,
     });
     this.hud.setCoins(this.journey.coins);
-    this.hud.say(roll.gift ? `${roll.def.line} ${roll.gift}` : roll.def.line, ENCOUNTER_HOLD_SEC + 2);
+    this.hud.say(roll.gift ? `${line} ${roll.gift}` : line, ENCOUNTER_HOLD_SEC + 2);
     this.holdSec = ENCOUNTER_HOLD_SEC;
     // Some travellers want something (v0.8 item 8). The request shows when
     // the walk resumes and its tune is in the air — see `startWalkingTune`
@@ -2033,7 +2037,9 @@ export class RoadStage implements Stage {
     if (yielded.coins <= 0 && yielded.delight <= 0) return;
     this.journey = earn(this.journey, yielded.coins, yielded.delight);
     const line = describeIdleYield(yielded);
-    this.journey = recordEntry(this.journey, { kind: 'idle', line });
+    // Tagged, not counted: tonight's page reads this kind back to open with
+    // a welcome (campfirePage's WELCOME_LINE), and the tag is all it reads.
+    this.journey = recordEntry(this.journey, { kind: IDLE_JOURNAL_KIND, line });
     this.hud.setCoins(this.journey.coins);
     this.hud.say(line, 11);
   }

@@ -2272,6 +2272,18 @@ top task fits its energy.
     TONIGHT'S PAGE"; festival eve still wins its override). Verified
     live at both points. 1093 tests green (+6), build 861.57 kB.
     **Deferred: world signage + traveller lines that speak the name.**
+    **Traveller lines done (2026-08-05, run 80; delegated to an opus
+    agent, verified in the main loop).** Encounter prose gained its
+    composer: `encounterLine(seed, roll, road)` draws from a NEW
+    subSeed stream ('encounter/road' — existing draw order untouched,
+    the sentinel precedent), and 22% of TRAVELLER meetings speak the
+    road's name communally ("Half the county seems to be on
+    Bramblegate Way today") — travellers only; a fox has no news.
+    The aside lands in the journal too, so tonight's page carries
+    the shared road. Anti-pressure regex bans obligation/comparison
+    and ALL digits (no counts of other walkers, ever); null-name
+    fallback byte-identical. 3D signage text remains deferred (no
+    fonts in world). 1200 tests (+7), build green.
 153. **The campfire postcard.** Optional share: a small painted frame of
     today's road with its name and the song carried. Shares presence,
     never performance — no accuracy, no coins, nothing gradable (Wordle's
@@ -2332,6 +2344,19 @@ top task fits its energy.
     campfire welcome beat — the case's idle takings, a journal line about
     the roadside days. No counter of days kept or missed, ever. (idle.ts
     describeIdleYield + campfire/journal.)
+    **Done (2026-08-05, run 79; delegated to an opus agent, verified
+    in the main loop).** The fire's half of the beat: tonight's page
+    opens with WELCOME_LINE ("The fire is glad of the company —
+    there was noodling at the roadside all the while, and the tunes
+    kept warm.") whenever the day's journal carries the idle-return
+    entry — found across the WHOLE journal, not the 6-moment window,
+    so a busy return day doesn't lose its welcome (regression-
+    tested). Composed from the entry's existence only; ban sweeps
+    cover digits, calendar words, and the debt register (no "you
+    were gone", no "finally"), proven against a fixture that puts
+    countable numbers right next to the fact. IDLE_JOURNAL_KIND
+    exported so writer and reader can't drift. 1193 tests (+7),
+    build green.
 157. **Two bookmarks on one bench.** Local family profiles: two
     localStorage bookmarks, each with its own song pin and scaffold
     state, each able to see the other's journal PAGES (never anything

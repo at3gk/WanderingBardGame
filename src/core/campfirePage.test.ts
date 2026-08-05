@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   FESTIVAL_LEGS,
   PAGE_MOMENTS_MAX,
+  WELCOME_KIND,
+  WELCOME_LINE,
   campfirePage,
   festivalLine,
 } from './campfirePage';
 import { MEMENTO_KIND } from './encounters';
+import { IDLE_JOURNAL_KIND } from './idle';
 import { createJourney, enterPhase, recordEntry, type JourneyState } from './journey';
 
 const DAY = '2026-07-28';
@@ -19,6 +22,29 @@ function atFire(campfires: number, entries: string[] = []): JourneyState {
     s: LENGTH,
     campfires: Math.max(0, campfires - 1),
   };
+  for (const line of entries) j = recordEntry(j, { kind: 'busk', line });
+  return enterPhase(j, 'resting');
+}
+
+/**
+ * The same bard, on a day that opened with the case standing open — the
+ * boot's own journal line, kind and all, exactly as `collectIdle` writes it.
+ * Its prose is deliberately the real thing, numbers included, so the tests
+ * below prove the welcome is composed from the *tag* and not from anything
+ * countable sitting next to it.
+ */
+function returnedToFire(campfires: number, entries: string[] = []): JourneyState {
+  let j: JourneyState = {
+    ...createJourney(DAY, LENGTH),
+    phase: 'walking',
+    s: LENGTH,
+    campfires: Math.max(0, campfires - 1),
+  };
+  j = recordEntry(j, {
+    kind: IDLE_JOURNAL_KIND,
+    dayFraction: 0.25,
+    line: 'You were away three days; the case has forty coins in it.',
+  });
   for (const line of entries) j = recordEntry(j, { kind: 'busk', line });
   return enterPhase(j, 'resting');
 }
@@ -150,5 +176,70 @@ describe('mementos on the page', () => {
 
   it('gives the quiet day no mark at all', () => {
     expect(campfirePage(atFire(2)).moments.map((m) => m.kind)).toEqual(['note']);
+  });
+});
+
+describe('campfirePage — the welcome back', () => {
+  it('opens the page with a welcome when the day began with a coming back', () => {
+    const page = campfirePage(returnedToFire(3, ['a fine tune by the bridge']));
+    expect(page.moments[0].kind).toBe(WELCOME_KIND);
+    expect(page.moments[0].text).toBe(WELCOME_LINE);
+  });
+
+  it('says nothing of the sort on an ordinary day', () => {
+    const page = campfirePage(atFire(3, ['a fine tune by the bridge']));
+    expect(page.moments.some((m) => m.kind === WELCOME_KIND)).toBe(false);
+    expect(page.moments.some((m) => m.text === WELCOME_LINE)).toBe(false);
+  });
+
+  it('still welcomes after a full day, when the dawn line has scrolled off the page', () => {
+    // The regression this guards: the coming-back is written at dawn, so a
+    // day with more moments than the page holds drops it from the window.
+    // The fact is looked for in the whole journal, or the welcome would
+    // only ever appear on days too quiet to have one.
+    const lines = Array.from({ length: PAGE_MOMENTS_MAX + 4 }, (_, i) => `moment ${i}`);
+    const page = campfirePage(returnedToFire(3, lines));
+    expect(page.moments[0].text).toBe(WELCOME_LINE);
+    expect(page.moments.some((m) => m.text.startsWith('You were away'))).toBe(false);
+  });
+
+  it('takes a moment’s room rather than making the page longer', () => {
+    const lines = Array.from({ length: PAGE_MOMENTS_MAX + 4 }, (_, i) => `moment ${i}`);
+    expect(campfirePage(returnedToFire(3, lines)).moments).toHaveLength(PAGE_MOMENTS_MAX);
+    expect(campfirePage(atFire(3, lines)).moments).toHaveLength(PAGE_MOMENTS_MAX);
+  });
+
+  it('carries the sky the return happened under', () => {
+    const moment = campfirePage(returnedToFire(3, ['a fine tune'])).moments[0];
+    expect(moment.dayFraction).toBeGreaterThanOrEqual(0);
+    expect(moment.dayFraction).toBeLessThanOrEqual(1);
+  });
+
+  it('keeps no count of days, kept or missed — not a digit, not a calendar word', () => {
+    // retention-design.md, recommendation 5 and its rejected-on-principle
+    // list: absence becomes story, never debt. The boot line may still say
+    // how long the case stood open (it is describing the case); the fire's
+    // hello may not, because a welcome that measures is a ledger.
+    for (const fires of [1, 3, FESTIVAL_LEGS]) {
+      const welcome = campfirePage(returnedToFire(fires, ['a fine tune'])).moments[0].text;
+      expect(welcome).not.toMatch(/\d/);
+      expect(welcome).not.toMatch(/\bday\b|\bdays\b|\bweek|\bmonth|since|\bago\b|streak/i);
+    }
+  });
+
+  it('never reads as debt, guilt, or a verdict', () => {
+    const banned =
+      /\bfail|\blose|\blost\b|\bwrong\b|\bmiss(ed|ing)?\b|streak|score|you were gone|finally|at last|owe|catch up|behind/i;
+    expect(WELCOME_LINE).not.toMatch(banned);
+    const page = campfirePage(returnedToFire(4, ['a fine tune']));
+    expect(page.title).not.toMatch(banned);
+    expect(page.festival).not.toMatch(banned);
+  });
+
+  it('is one line, and not the title card’s line said twice', () => {
+    expect(WELCOME_LINE.split('\n')).toHaveLength(1);
+    // Hud.ts's boot card already says this; the fire is a different voice
+    // hours later, so it may share the sentiment and none of the words.
+    expect(WELCOME_LINE).not.toContain('kept your place');
   });
 });
