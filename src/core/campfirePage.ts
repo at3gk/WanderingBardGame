@@ -40,6 +40,15 @@ export interface CampfirePage {
    * is introduced by being offered, on the page, in the fire's own voice.
    */
   invitation?: string;
+  /**
+   * The moonlit road's door (DESIGN.md, "The true goal": hybrid pacing) —
+   * walking on past the campfire opens another leg tonight. Always offered
+   * at an ordinary fire; the caller removes it on the festival eve, where
+   * the page's one asking is the performance. The wording carries the whole
+   * mechanic — more road tonight, under the moon — and nothing beyond the
+   * walk itself is promised, because nothing beyond the walk is given.
+   */
+  walkOn?: string;
 }
 
 /**
@@ -52,6 +61,15 @@ export const PAGE_MOMENTS_MAX = 6;
 
 /** The quiet-day line. A day with no moments still deserves a page. */
 const QUIET_LINE = 'A quiet road, walked the whole way.';
+
+/**
+ * The walk-on door's line. "Tap here" because the page's other rows fold it
+ * away when tapped — this is the one row that does something else, and a
+ * child should not have to discover that. "A little further" keeps the
+ * offer's size honest: another leg, not another day.
+ */
+export const WALK_ON_LINE =
+  'Or tap here to walk on — the road goes a little further beneath the moon.';
 
 /**
  * Small numbers in a storybook voice. Digits past the festival's own span,
@@ -145,6 +163,7 @@ export function campfirePage(
     title: roadNameText ? `${roadNameText} — tonight's page` : "Tonight's page",
     moments,
     festival: festivalLine(state),
+    walkOn: WALK_ON_LINE,
   };
   if (carriedTitle && !state.rehearsed) {
     page.invitation = rehearsalInvitation(carriedTitle);

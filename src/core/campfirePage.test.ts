@@ -106,6 +106,18 @@ describe('campfirePage', () => {
     expect(campfirePage(atFire(2)).title).toBe("Tonight's page");
   });
 
+  it('always offers the moonlit road — walking on is never gated', () => {
+    // DESIGN.md's hybrid pacing: nothing gates an eager Saturday. The door
+    // stands whether the rehearsal has been played, whatever leg it is,
+    // however far the pilgrimage has come. (The festival eve's page drops
+    // it, but that is the caller's edit — the composer always offers.)
+    expect(campfirePage(atFire(1)).walkOn).toContain('walk on');
+    expect(campfirePage({ ...atFire(2), rehearsed: true }).walkOn).toContain('walk on');
+    expect(campfirePage({ ...atFire(4), legIndex: 2 }).walkOn).toContain('moon');
+    // "Tap here", because every other row on the page folds it instead.
+    expect(campfirePage(atFire(3)).walkOn).toMatch(/tap here/i);
+  });
+
   it('never uses the vocabulary the journal bans — the page is journal, out loud', () => {
     // Same rule encounters.ts pins for its lines: nothing on this page may
     // read as a verdict. Checked across the whole pilgrimage span.
@@ -114,6 +126,9 @@ describe('campfirePage', () => {
       const page = campfirePage(atFire(fires, ['a fine tune by the bridge']));
       expect(page.title).not.toMatch(banned);
       expect(page.festival).not.toMatch(banned);
+      expect(page.walkOn).not.toMatch(banned);
+      // Distance, never deadline, on the door too: no calendar words, no urgency.
+      expect(page.walkOn).not.toMatch(/\bday\b|\bdays\b|week|left|remaining|hurry|behind|now or/i);
       for (const moment of page.moments) expect(moment.text).not.toMatch(banned);
     }
   });

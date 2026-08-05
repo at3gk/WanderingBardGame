@@ -71,6 +71,8 @@ export interface PageContent {
   festival: string;
   /** The fire's asking, when a rehearsal is on offer. */
   invitation?: string;
+  /** The moonlit road's door — its own tappable row, unlike every other line. */
+  walkOn?: string;
 }
 
 /**
@@ -195,6 +197,7 @@ export class Hud {
   private bookHold = 0;
   private songChosen: ((id: string | null) => void) | null = null;
   private keepsakeCb: ((action: KeepsakeAction) => void) | null = null;
+  private walkOnCb: (() => void) | null = null;
 
   /** Seconds of brightness left on each piece. */
   private coinsAttention = 0;
@@ -518,6 +521,21 @@ export class Hud {
   }
 
   /**
+   * Called when the player takes the page's walk-on door — the moonlit
+   * road. Same contract as `onKeepsake`: registering the handler is what
+   * makes the door render at all, so a host that never wires it (tests,
+   * the proof sheets) sees the page exactly as it always was.
+   */
+  onWalkOn(handler: () => void): void {
+    this.walkOnCb = handler;
+  }
+
+  /** Whether tonight's page is open. The stage re-opens it on a tap at the fire. */
+  get isPageOpen(): boolean {
+    return this.pageShown;
+  }
+
+  /**
    * Open tonight's page — the campfire's read-back of the day. The rows
    * reveal one by one, the way a page is read aloud, and each moment is
    * inked in the light it happened under. A tap folds it away; `strikeCamp`
@@ -573,6 +591,32 @@ export class Hud {
       });
       invitation.textContent = page.invitation;
       rows.push(invitation);
+    }
+
+    // The one row that is a door rather than a line: tapping it walks on
+    // instead of folding the page, so it stops the fold from hearing the
+    // tap. Vertical padding is the touch target (the text alone would be
+    // under WCAG's 24px); full ink rather than soft, because a door should
+    // read a shade firmer than the prose around it.
+    if (page.walkOn && this.walkOnCb) {
+      const door = element('div', {
+        marginTop: '10px',
+        padding: '12px 0 4px',
+        fontStyle: 'italic',
+        fontSize: '0.9em',
+        lineHeight: '1.45',
+        color: INK,
+        textShadow: shadow,
+        cursor: 'pointer',
+      });
+      door.textContent = page.walkOn;
+      door.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.hidePage();
+        this.walkOnCb?.();
+      });
+      rows.push(door);
     }
 
     for (const [i, row] of rows.entries()) {

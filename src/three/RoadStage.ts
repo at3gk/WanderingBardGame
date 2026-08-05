@@ -60,7 +60,7 @@ import {
 } from './roadStaging';
 import { Hud } from '../ui/Hud';
 import { tomorrowSkyline } from '../core/skyline';
-import { dailySeed, dayKey, mulberry32, randRange, subSeed } from '../core/rng';
+import { dayKey, legRoadKey, legSeed, mulberry32, randRange, subSeed } from '../core/rng';
 import {
   biomeAt,
   generateRoad,
@@ -84,6 +84,7 @@ import {
   noteRehearsal,
   recordEntry,
   saveJourney,
+  startNextLeg,
   unlockInstrument,
   type JourneyState,
   type Phase,
@@ -125,7 +126,7 @@ import {
 import { resolveAsk, rollAsk, rollEncounter, type EncounterAsk } from '../core/encounters';
 import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
-import { campfirePage } from '../core/campfirePage';
+import { campfirePage, type CampfirePage } from '../core/campfirePage';
 import { roadName } from '../core/roadName';
 import { encounter } from '../core/scaffold';
 import { allSongWalks, loadScaffold, recordSongWalk, saveScaffold, songWalksFor } from '../core/scaffoldStorage';
@@ -234,12 +235,13 @@ export interface RoadStageOptions {
 
 export class RoadStage implements Stage {
   readonly scene = new Scene();
-  readonly road: DailyRoad;
+  /** The road being walked. Replaced in place by `walkOn` — a new leg is a new road. */
+  road: DailyRoad;
 
   private readonly app: App;
   private readonly rig: CameraRig;
   private readonly sky = new Sky();
-  private readonly world: WorldStreamer;
+  private world: WorldStreamer;
   private readonly bard: Bard;
   /** The bard's grounded contact mark. See ContactShadow. */
   private readonly contact = new ContactShadow();
@@ -448,10 +450,15 @@ export class RoadStage implements Stage {
     this.app = app;
 
     const key = options.dayKeyOverride ?? dayKey();
-    const seed = options.seedOverride ?? dailySeed();
-    this.road = generateRoad(seed, key);
-
     const resumed = loadJourney(key);
+    // The road is the *leg's* road: a tab closed on a moonlit leg reopens on
+    // that same moonlit road, not on the morning's shared one. Leg 0 keeps
+    // the old identity exactly — `legSeed(key, 0)` is `dailySeed` and
+    // `legRoadKey(key, 0)` is the key, both pinned by test in rng.test.ts.
+    const leg = resumed?.legIndex ?? 0;
+    const seed = options.seedOverride ?? legSeed(key, leg);
+    this.road = generateRoad(seed, legRoadKey(key, leg));
+
     this.journey = resumed ?? createJourney(key, this.road.lengthM);
     // `waking` is a state with one exit and nothing in it, and a walk
     // reloaded mid-busk should resume on the road rather than in the middle
@@ -479,20 +486,18 @@ export class RoadStage implements Stage {
     // Set once, here, because the profile belongs to the day. The direction is
     // the heading at the very end of today's road, because that is literally
     // where they would keep walking if the day did not stop.
+    // `key`, not `this.road.dayKey`: a moonlit leg's road key ('2026-08-04~1')
+    // is not a calendar day, and `nextDayKey` would hand it back unchanged —
+    // seeding a horizon no morning will ever walk. Tomorrow's promise is
+    // always the next *day's* shared road, whichever leg tonight is.
     const roadEnd = sampleRoad(this.road, this.road.lengthM);
     this.sky.setTomorrowRoad(
-      tomorrowSkyline(this.road.dayKey),
+      tomorrowSkyline(key),
       Math.sin(roadEnd.heading),
       Math.cos(roadEnd.heading),
     );
 
-    this.world = new WorldStreamer(this.road, app.globals, {
-      foliageDensity: app.quality.foliageDensity,
-      castShadows: app.quality.shadows,
-      ahead: app.quality.tier === 'low' ? 5 : 7,
-      behind: app.quality.tier === 'low' ? 2 : 3,
-    });
-    this.scene.add(this.world.group);
+    this.world = this.buildWorld();
 
     this.bard = new Bard(app.globals);
     this.actors.add(this.bard.group);
@@ -505,12 +510,7 @@ export class RoadStage implements Stage {
     this.bard.setInstrument(this.instrument());
     this.bard.setPose('walking', 0);
 
-    for (let i = 0; i < TRAVELLER_KINDS.length; i++) {
-      const person = new Traveller(app.globals, TRAVELLER_KINDS[i], this.road.seed + i * 17);
-      person.group.visible = false;
-      this.people.push(person);
-      this.actors.add(person.group);
-    }
+    this.buildPeople();
 
     this.notes = new SongNotes({ particleDensity: app.quality.particleDensity });
     this.scene.add(this.notes.group);
@@ -557,6 +557,7 @@ export class RoadStage implements Stage {
     this.hud.onInstrumentChosen((id) => this.takeOut(id));
     this.hud.onSongChosen((id) => this.pinSong(id));
     this.hud.onKeepsake((action) => this.keepsake(action));
+    this.hud.onWalkOn(() => this.walkOn());
     this.hud.setMode(this.journey.phase === 'resting' ? 'resting' : 'walking');
     if (this.journey.phase === 'resting') this.makeCamp();
     this.collectIdle();
@@ -579,7 +580,10 @@ export class RoadStage implements Stage {
       (this.journey.phase === 'waking' || this.journey.phase === 'walking') &&
       this.journey.s < 50
     ) {
-      this.hud.say(`${roadName(this.road.seed)}, this morning.`, 6);
+      this.hud.say(
+        `${roadName(this.road.seed)}, ${this.journey.legIndex >= 1 ? 'by moonlight' : 'this morning'}.`,
+        6,
+      );
     }
 
     app.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
@@ -859,6 +863,88 @@ export class RoadStage implements Stage {
     this.setPhase('walking');
   }
 
+  /**
+   * Walk on from the fire into the night — the moonlit road (DESIGN.md,
+   * "The true goal": hybrid pacing). `startNextLeg` owns the journey side
+   * (resting-only, resets the road-shaped fields, keeps the day's purse);
+   * this owns the scene's half: strike the camp, lay the new road, and set
+   * out at dusk. The sky needs no seam — a leg's first light *is* dusk
+   * (`dayFractionAt`'s night arc), which is exactly where the evening
+   * already stood, so the shown fraction carries straight on.
+   *
+   * Nothing gates it and nothing here rewards it beyond the walk itself;
+   * the kindness constraint lives in what is absent (see startNextLeg).
+   */
+  walkOn(): void {
+    // Mid-rehearsal the fire is listening; the door is not offered then
+    // (the page is folded), but a stale callback must still refuse.
+    if (this.journey.phase !== 'resting' || this.performance) return;
+    const next = startNextLeg(this.journey);
+    if (next.legIndex === this.journey.legIndex) return;
+    this.journey = next;
+
+    this.strikeCamp();
+    this.currentStop = null;
+    this.disperse();
+
+    // A new leg is a new road, and a new road is a new world: the streamer
+    // and the travellers are both built around one road's seed, so both are
+    // rebuilt — the same construction a resumed moonlit leg gets, which is
+    // what keeps walking on and reloading indistinguishable.
+    const key = this.journey.dayKey;
+    this.road = generateRoad(
+      legSeed(key, this.journey.legIndex),
+      legRoadKey(key, this.journey.legIndex),
+    );
+    this.scene.remove(this.world.group);
+    this.world.dispose();
+    this.world = this.buildWorld();
+    for (const person of this.people) {
+      this.actors.remove(person.group);
+      person.dispose();
+    }
+    this.people.length = 0;
+    this.buildPeople();
+
+    // Tomorrow's promise keeps from the new road's end — same profile (the
+    // next day is the same day), new heading to hang it on.
+    const roadEnd = sampleRoad(this.road, this.road.lengthM);
+    this.sky.setTomorrowRoad(
+      tomorrowSkyline(key),
+      Math.sin(roadEnd.heading),
+      Math.cos(roadEnd.heading),
+    );
+
+    this.world.update(this.journey.s);
+    this.syncSubject();
+    this.setPhase('walking');
+    // The moonlit road introduces itself the way the morning's did.
+    this.hud.say(`${roadName(this.road.seed)}, by moonlight.`, 6);
+    if (!this.restoring) saveJourney(this.journey, true);
+  }
+
+  /** The streamed world for the current road, added to the scene. */
+  private buildWorld(): WorldStreamer {
+    const world = new WorldStreamer(this.road, this.app.globals, {
+      foliageDensity: this.app.quality.foliageDensity,
+      castShadows: this.app.quality.shadows,
+      ahead: this.app.quality.tier === 'low' ? 5 : 7,
+      behind: this.app.quality.tier === 'low' ? 2 : 3,
+    });
+    this.scene.add(world.group);
+    return world;
+  }
+
+  /** One traveller of each silhouette, seeded by the current road. See `people`. */
+  private buildPeople(): void {
+    for (let i = 0; i < TRAVELLER_KINDS.length; i++) {
+      const person = new Traveller(this.app.globals, TRAVELLER_KINDS[i], this.road.seed + i * 17);
+      person.group.visible = false;
+      this.people.push(person);
+      this.actors.add(person.group);
+    }
+  }
+
   // --- input -------------------------------------------------------------
 
   /**
@@ -887,6 +973,14 @@ export class RoadStage implements Stage {
       !this.journey.rehearsed
     ) {
       this.startRehearsal();
+      return;
+    }
+    // At the fire with nothing left to ask, a tap re-opens tonight's page —
+    // the fire's one surface, and the walk-on door with it. Without this, a
+    // page folded away (or a rehearsal finished, which folds it) would put
+    // the moonlit road out of reach until a reload relit the fire.
+    if (this.journey.phase === 'resting' && !this.performance && !this.hud.isPageOpen) {
+      this.hud.showPage(this.composeTonightsPage());
       return;
     }
     if (this.performance) this.playNote();
@@ -1714,8 +1808,18 @@ export class RoadStage implements Stage {
     // Tonight's page: the journal, read back at last (v1.0 task 159's first
     // piece, folded together with v0.9 task 151's bookend). Composed after
     // `noteUnlocks` above so an instrument found today is a moment on the
-    // page, not just a corner flash. The carried song's title rides along
-    // so the page can carry the fire's asking (task 162).
+    // page, not just a corner flash.
+    this.hud.showPage(this.composeTonightsPage());
+  }
+
+  /**
+   * Tonight's page, as it stands right now. Its own method rather than a
+   * one-shot inside `makeCamp` because the page can be re-opened by a tap
+   * at the fire, and a re-opened page must be current — the rehearsal's
+   * journal line on it, the spent invitation off it. The carried song's
+   * title rides along so the page can carry the fire's asking (task 162).
+   */
+  private composeTonightsPage(): CampfirePage {
     const carried = this.journey.songChoice
       ? songForPass(this.journey.songChoice, biomeAt(this.road, this.journey.s), 0).title
       : null;
@@ -1723,7 +1827,9 @@ export class RoadStage implements Stage {
 
     // The night the long way ends, the page is the festival's (task 163,
     // first piece): title, arrival, and an asking that stands for every
-    // arriving bard, pinned tune or not.
+    // arriving bard, pinned tune or not. The walk-on door comes off it —
+    // the eve's one asking is the set, and the road on is still there at
+    // every fire after.
     if (isFestivalEve(this.journey)) {
       const biome = biomeAt(this.road, this.journey.s);
       const fallback = songForPass(this.journey.songChoice, biome, 0).id;
@@ -1732,8 +1838,9 @@ export class RoadStage implements Stage {
       page.title = arrival.title;
       page.festival = arrival.festival;
       if (!this.journey.rehearsed) page.invitation = arrival.invitation;
+      delete page.walkOn;
     }
-    this.hud.showPage(page);
+    return page;
   }
 
   /**
