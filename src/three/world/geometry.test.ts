@@ -26,8 +26,14 @@
  * stays free and only a reversal trips them.
  */
 import { describe, expect, it } from 'vitest';
-import type { BufferAttribute, BufferGeometry } from 'three';
+// A value import, not a type import: the AO tests below build their own
+// geometries rather than measuring the builders', because the shapes that
+// pin a bake's behaviour (a bare quad, an inside corner) are ones no builder
+// has any reason to make.
+import { BufferAttribute, BufferGeometry } from 'three';
 import {
+  AO_FLOOR,
+  AO_VERTEX_BUDGET,
   BUSK_LANTERN_R,
   BUSK_LANTERN_X,
   BUSK_LANTERN_Y,
@@ -35,6 +41,7 @@ import {
   CAIRN_MARKER_HEIGHT_M,
   SMOKE_HEIGHT_M,
   SMOKE_PUFFS,
+  bakeVertexAO,
   buskPitchGeometry,
   fallenLogGeometry,
   fernGeometry,
@@ -588,5 +595,189 @@ describe('stop dressing', () => {
     }
     expect(atLowest).toBeLessThan(0.05);
     expect(atHighest).toBeGreaterThan(0.8);
+  });
+});
+
+/**
+ * Baked vertex occlusion (ROADMAP 170).
+ *
+ * The bake is the first thing in this file whose output nobody can read off a
+ * screenshot: it is a few per cent of albedo, in creases, under a cel ramp
+ * that is already stepping the value. A regression in it would not look like
+ * a bug — it would look like the art being slightly flatter than last week,
+ * which is precisely the class of failure the notes at the top of this file
+ * were written about.
+ *
+ * So four properties are pinned, and they are properties rather than numbers:
+ * it is deterministic, it only ever darkens and never past its floor, a
+ * surface with nothing to hide behind comes back untouched, and an inside
+ * corner comes back darker than the open floor beside it. Tuning `strength`
+ * or `samples` leaves all four true; getting the ray maths, the hemisphere or
+ * the multiply wrong breaks at least one.
+ */
+describe('baked vertex occlusion', () => {
+  /** Two triangles from four corners, wound so the normal comes out +Y-ish. */
+  function quad(corners: number[][]): number[] {
+    const [a, b, c, d] = corners;
+    return [...a, ...b, ...c, ...a, ...c, ...d];
+  }
+
+  function geometryFrom(verts: number[]): BufferGeometry {
+    const geometry = new BufferGeometry();
+    geometry.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+    geometry.computeVertexNormals();
+    return geometry;
+  }
+
+  /** A flat square metre of floor, facing up. Nothing can occlude anything. */
+  function flatQuad(): BufferGeometry {
+    return geometryFrom(
+      quad([
+        [0, 0, 0],
+        [0, 0, 1],
+        [1, 0, 1],
+        [1, 0, 0],
+      ]),
+    );
+  }
+
+  /**
+   * An inside corner: a floor with a wall standing across the near end of it.
+   *
+   * The wall passes *through* the floor's plane rather than meeting its edge,
+   * and the floor starts a few centimetres clear of the wall rather than at
+   * it. Both are deliberate, and they are how real geometry in this project
+   * is built — a cairn's stones interpenetrate, a tree's lobes overlap. Two
+   * quads meeting at an exact knife edge is the one arrangement a bake cannot
+   * read, because the shared vertices lie *in* the occluder's plane, where
+   * every ray either misses it or hits it at t = 0; a corner built that way
+   * would come back unshaded and the test would be pinning an artifact.
+   *
+   * The wall is wider than the floor in x so the corner's shading does not
+   * fall off at the ends, which would blur the comparison this makes.
+   */
+  function insideCorner(): BufferGeometry {
+    const floor = quad([
+      [0, 0, 0.05],
+      [0, 0, 1.5],
+      [1, 0, 1.5],
+      [1, 0, 0.05],
+    ]);
+    const wall = quad([
+      [-0.5, -0.2, 0],
+      [1.5, -0.2, 0],
+      [1.5, 1, 0],
+      [-0.5, 1, 0],
+    ]);
+    return geometryFrom([...floor, ...wall]);
+  }
+
+  function colorsOf(geometry: BufferGeometry): Float32Array {
+    const color = geometry.attributes.color as BufferAttribute;
+    return color.array as Float32Array;
+  }
+
+  /** Mean AO of the floor vertices within `span` of the wall at z = 0. */
+  function meanNear(geometry: BufferGeometry, from: number, to: number): number {
+    const position = geometry.attributes.position as BufferAttribute;
+    const colors = colorsOf(geometry);
+    let sum = 0;
+    let n = 0;
+    for (let i = 0; i < position.count; i++) {
+      // Floor only: the wall's own vertices are a different surface.
+      if (Math.abs(position.getY(i)) > 1e-6) continue;
+      const z = position.getZ(i);
+      if (z < from || z > to) continue;
+      sum += colors[i * 3];
+      n++;
+    }
+    expect(n).toBeGreaterThan(0);
+    return sum / n;
+  }
+
+  it('bakes the same colours every time, from the same seed', () => {
+    // The world is a pure function of the day's seed. A bake that wandered
+    // between runs would give two players on the same road different trees,
+    // and would change them under one player on a reload — a shimmer nobody
+    // could ever attribute once they noticed it.
+    const first = colorsOf(bakeVertexAO(insideCorner(), { seed: 4242 }));
+    const second = colorsOf(bakeVertexAO(insideCorner(), { seed: 4242 }));
+    expect(Array.from(second)).toEqual(Array.from(first));
+
+    // And a *different* seed still has to be a valid bake, not a different
+    // shape: same geometry, so the same creases, within the noise of sixteen
+    // rays.
+    const other = colorsOf(bakeVertexAO(insideCorner(), { seed: 9 }));
+    for (let i = 0; i < first.length; i++) {
+      expect(Math.abs(other[i] - first[i])).toBeLessThan(0.12);
+    }
+  });
+
+  it('only ever darkens, and never past the floor', () => {
+    const geometry = insideCorner();
+    // A painted geometry, so the test proves the bake *multiplies* into
+    // whatever colour a builder has already laid down rather than replacing
+    // it — which is the whole contract with `paint` and `paintGradient`.
+    const painted = new Float32Array(geometry.attributes.position.count * 3);
+    for (let i = 0; i < painted.length; i += 3) {
+      painted[i] = 0.8;
+      painted[i + 1] = 0.6;
+      painted[i + 2] = 0.4;
+    }
+    geometry.setAttribute('color', new BufferAttribute(painted.slice(), 3));
+
+    bakeVertexAO(geometry, { seed: 31 });
+    const colors = colorsOf(geometry);
+    for (let i = 0; i < colors.length; i++) {
+      expect(colors[i]).toBeLessThanOrEqual(painted[i] + 1e-6);
+      // Cosy games do not use black, and a crevice is not allowed to be the
+      // darkest thing in the frame.
+      expect(colors[i]).toBeGreaterThanOrEqual(painted[i] * AO_FLOOR - 1e-6);
+    }
+    // ...and something actually moved, or the two bounds above are vacuous.
+    let darkened = 0;
+    for (let i = 0; i < colors.length; i++) if (colors[i] < painted[i] - 1e-4) darkened++;
+    expect(darkened).toBeGreaterThan(0);
+  });
+
+  it('leaves a surface with nothing to hide behind alone', () => {
+    const colors = colorsOf(bakeVertexAO(flatQuad(), { seed: 77 }));
+    for (let i = 0; i < colors.length; i++) expect(colors[i]).toBeCloseTo(1, 6);
+  });
+
+  it('darkens an inside corner and not the open floor beside it', () => {
+    const geometry = bakeVertexAO(insideCorner(), { seed: 101 });
+    const corner = meanNear(geometry, 0, 0.5);
+    const open = meanNear(geometry, 1.4, 2);
+    // The open floor is a metre and a half from the only other surface in
+    // the scene, which is past the default reach: it should be untouched.
+    expect(open).toBeGreaterThan(0.97);
+    // And the corner should be visibly, but only visibly, darker. A tenth of
+    // the albedo is about what a crease is worth at this scale; if this ever
+    // reads as half, the strength dial has run away.
+    expect(corner).toBeLessThan(open - 0.06);
+    expect(corner).toBeGreaterThan(AO_FLOOR);
+  });
+
+  it('leaves a geometry over the vertex budget untouched', () => {
+    // The guard is what keeps a future heavy shape from turning a chunk
+    // stream into a dropped frame on a phone. It has to be a silent pass, not
+    // a partial bake.
+    const verts: number[] = [];
+    const strips = Math.ceil(AO_VERTEX_BUDGET / 6) + 1;
+    for (let i = 0; i < strips; i++) {
+      verts.push(
+        ...quad([
+          [0, 0, i * 0.01],
+          [0, 0, i * 0.01 + 0.01],
+          [1, 0, i * 0.01 + 0.01],
+          [1, 0, i * 0.01],
+        ]),
+      );
+    }
+    const geometry = geometryFrom(verts);
+    expect(geometry.attributes.position.count).toBeGreaterThan(AO_VERTEX_BUDGET);
+    bakeVertexAO(geometry, { seed: 5 });
+    expect(geometry.attributes.color).toBeUndefined();
   });
 });

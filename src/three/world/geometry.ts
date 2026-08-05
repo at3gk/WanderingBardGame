@@ -213,6 +213,326 @@ function paintGradient(
   return geometry;
 }
 
+// --- baked occlusion ---------------------------------------------------
+
+/**
+ * Options for `bakeVertexAO`. Every one of them is a *look* dial rather than
+ * a quality dial — see the notes on the function itself.
+ */
+export interface VertexAOOptions {
+  /** Hemisphere rays per vertex. 16 is the point of diminishing returns. */
+  samples?: number;
+  /** How far a surface has to be before it stops shading this vertex, metres. */
+  maxDist?: number;
+  /** How much of the albedo a fully-occluded vertex may lose. */
+  strength?: number;
+  /** Seeds the ray directions. Give each builder its own. */
+  seed?: number;
+}
+
+/**
+ * The most a baked crevice is allowed to take off a vertex's albedo.
+ *
+ * 0.55 of the albedo survives at the very darkest, which is far short of
+ * what a physically-plausible bake would do to an inside corner. That is the
+ * whole point: the lighting model in `painterly.ts` is a three-band cel ramp
+ * over a shadow floor that never reaches black, on the stated grounds that
+ * cosy games do not use black — and an AO term that undercuts that floor
+ * would put the deepest thing in the frame in the crease of a shrub rather
+ * than under the trees, which is the tonal inversion that makes stylised art
+ * read as "3D render with dirt on it".
+ *
+ * So this is a *drawn* occlusion: enough to tell the eye that two forms meet
+ * here, not enough to model the light that does not reach.
+ */
+export const AO_FLOOR = 0.55;
+
+/**
+ * Above this many vertices a geometry is left unbaked, silently.
+ *
+ * The bake is O(vertices x samples x nearby-triangles) and it runs on the
+ * main thread inside a builder, which means it runs during the frame that
+ * streams a chunk in — on a phone. Every shape this file makes is comfortably
+ * under the budget (the heaviest is a broadleaf at about 700 vertices), so the
+ * guard never fires today; it exists so that a future shape that *is* heavy
+ * degrades by losing a subtle darkening rather than by dropping a frame, and
+ * so nobody has to remember to think about it. Silent rather than warning
+ * because there is no console anyone reads on the platform that would care.
+ */
+export const AO_VERTEX_BUDGET = 6000;
+
+/** Ignore hits closer than this: they are the vertex's own neighbourhood. */
+const AO_RAY_EPSILON = 1e-4;
+
+/**
+ * Bake ambient occlusion into a geometry's vertex colours.
+ *
+ * ROADMAP 170's argument for this being the strongest available "crafted"
+ * signal at close range: everything in this world is untextured flat-shaded
+ * facets, so the only thing that can say *this object has depth* at two
+ * metres is how the light falls into the places where two of its forms meet.
+ * A shadow map cannot do it — the creases are centimetres across and the map
+ * covers hundreds of metres — and a screen-space pass costs a full-frame
+ * buffer on hardware that does not have one to spare. Baking it into the
+ * vertex colours costs three floats a vertex that most of these geometries
+ * are already carrying, needs no UVs, no textures and no shader change, and
+ * feeds straight into the multiply `painterly.ts` already does with
+ * `PAINTERLY_VERTEX_COLORS`.
+ *
+ * **Determinism is not negotiable here.** The whole world is a pure function
+ * of a day's seed (see `core/rng.ts`), and a bake that drew its ray
+ * directions from `Math.random` would give two players on the same road
+ * subtly different rocks — and would give the same player different rocks on
+ * a reload, which is the kind of shimmer that is impossible to attribute once
+ * noticed. So the directions come from `mulberry32`, seeded once per bake,
+ * and are drawn in a fixed order: same geometry in, byte-identical colours
+ * out, on every machine, forever.
+ *
+ * The rays are cast against the geometry's *own* triangles with a hand-rolled
+ * Möller-Trumbore rather than three's `Raycaster`, which allocates a `Ray`,
+ * a `Matrix4` and an intersection record per test and would turn a few
+ * hundred thousand ray-triangle tests into a few hundred thousand objects.
+ * Occluders are pre-filtered per vertex by bounding sphere against `maxDist`,
+ * which is what keeps a willow's 48-strip curtain affordable: a frond only
+ * ever tests the handful of strips actually beside it.
+ *
+ * Two consequences of the geometry style are worth stating so they do not
+ * read as bugs. These meshes are non-indexed with a duplicated vertex per
+ * face, so AO is per *face corner* and steps between facets rather than
+ * blending across them — which is exactly the faceted look everything else
+ * here is built for. And a closed convex hull occludes nothing at all, so a
+ * boulder comes out unchanged; the darkening only appears where forms
+ * genuinely meet, which is the honest answer.
+ */
+export function bakeVertexAO(
+  geometry: BufferGeometry,
+  options: VertexAOOptions = {},
+): BufferGeometry {
+  const position = geometry.attributes.position as BufferAttribute | undefined;
+  if (!position) return geometry;
+  const count = position.count;
+  if (count === 0 || count > AO_VERTEX_BUDGET) return geometry;
+
+  const samples = Math.max(1, Math.floor(options.samples ?? 16));
+  const maxDist = Math.max(1e-4, options.maxDist ?? 1.6);
+  const strength = Math.min(1, Math.max(0, options.strength ?? 0.45));
+  const floor = Math.max(AO_FLOOR, 1 - strength);
+
+  // Normals decide the hemisphere, so a geometry that has not computed them
+  // yet would scatter its rays around a zero vector and come back unshaded.
+  if (!geometry.attributes.normal) geometry.computeVertexNormals();
+  const normal = geometry.attributes.normal as BufferAttribute;
+
+  // Triangles, flattened. Indexed geometries are rare in this file but the
+  // bard's parts are built by hand elsewhere, so read through the index when
+  // one is present rather than quietly baking the wrong triangles.
+  const index = geometry.index;
+  const triCount = index ? Math.floor(index.count / 3) : Math.floor(count / 3);
+  if (triCount === 0) return geometry;
+
+  const ia = new Int32Array(triCount * 3);
+  for (let t = 0; t < triCount; t++) {
+    if (index) {
+      ia[t * 3] = index.getX(t * 3);
+      ia[t * 3 + 1] = index.getX(t * 3 + 1);
+      ia[t * 3 + 2] = index.getX(t * 3 + 2);
+    } else {
+      ia[t * 3] = t * 3;
+      ia[t * 3 + 1] = t * 3 + 1;
+      ia[t * 3 + 2] = t * 3 + 2;
+    }
+  }
+
+  // Per triangle: corner A, the two edge vectors Möller-Trumbore wants, and a
+  // bounding sphere for the distance pre-filter.
+  const ax = new Float32Array(triCount);
+  const ay = new Float32Array(triCount);
+  const az = new Float32Array(triCount);
+  const e1x = new Float32Array(triCount);
+  const e1y = new Float32Array(triCount);
+  const e1z = new Float32Array(triCount);
+  const e2x = new Float32Array(triCount);
+  const e2y = new Float32Array(triCount);
+  const e2z = new Float32Array(triCount);
+  const lox = new Float32Array(triCount);
+  const loy = new Float32Array(triCount);
+  const loz = new Float32Array(triCount);
+  const hix = new Float32Array(triCount);
+  const hiy = new Float32Array(triCount);
+  const hiz = new Float32Array(triCount);
+
+  for (let t = 0; t < triCount; t++) {
+    const i0 = ia[t * 3];
+    const i1 = ia[t * 3 + 1];
+    const i2 = ia[t * 3 + 2];
+    const p0x = position.getX(i0);
+    const p0y = position.getY(i0);
+    const p0z = position.getZ(i0);
+    const p1x = position.getX(i1);
+    const p1y = position.getY(i1);
+    const p1z = position.getZ(i1);
+    const p2x = position.getX(i2);
+    const p2y = position.getY(i2);
+    const p2z = position.getZ(i2);
+    ax[t] = p0x;
+    ay[t] = p0y;
+    az[t] = p0z;
+    e1x[t] = p1x - p0x;
+    e1y[t] = p1y - p0y;
+    e1z[t] = p1z - p0z;
+    e2x[t] = p2x - p0x;
+    e2y[t] = p2y - p0y;
+    e2z[t] = p2z - p0z;
+    lox[t] = Math.min(p0x, p1x, p2x);
+    loy[t] = Math.min(p0y, p1y, p2y);
+    loz[t] = Math.min(p0z, p1z, p2z);
+    hix[t] = Math.max(p0x, p1x, p2x);
+    hiy[t] = Math.max(p0y, p1y, p2y);
+    hiz[t] = Math.max(p0z, p1z, p2z);
+  }
+
+  const rand = mulberry32((options.seed ?? 1) >>> 0);
+  const candidates = new Int32Array(triCount);
+
+  const existing = geometry.attributes.color as BufferAttribute | undefined;
+  const colors = new Float32Array(count * 3);
+  if (existing) {
+    for (let i = 0; i < count; i++) {
+      colors[i * 3] = existing.getX(i);
+      colors[i * 3 + 1] = existing.getY(i);
+      colors[i * 3 + 2] = existing.getZ(i);
+    }
+  } else {
+    colors.fill(1);
+  }
+
+  for (let i = 0; i < count; i++) {
+    const nx = normal.getX(i);
+    const ny = normal.getY(i);
+    const nz = normal.getZ(i);
+    const nLen = Math.hypot(nx, ny, nz);
+    // Draw the sample directions regardless, so the PRNG advances by the same
+    // amount per vertex whether or not this one is shadeable. A stream whose
+    // position depends on the geometry's content is a determinism trap the
+    // first time somebody adds an early return above it.
+    const skip = nLen < 1e-6;
+    const unx = skip ? 0 : nx / nLen;
+    const uny = skip ? 1 : ny / nLen;
+    const unz = skip ? 0 : nz / nLen;
+
+    // Origin lifted off the surface, so the vertex's own faces (and the
+    // coplanar half of a split quad) sit at or behind t = 0.
+    const ox = position.getX(i) + unx * 1e-3;
+    const oy = position.getY(i) + uny * 1e-3;
+    const oz = position.getZ(i) + unz * 1e-3;
+
+    /*
+     * Pre-filter once per vertex, not once per ray. The two tests below are
+     * the whole reason this is affordable: without them a broadleaf's 660
+     * vertices would each run 16 rays against all 220 triangles, and the
+     * intersection maths is fifty times the cost of a rejection.
+     *
+     * The first is distance to the triangle's AABB, which is the exact
+     * question `maxDist` asks. (A bounding sphere was tried and is
+     * meaningfully worse here: a canopy facet is a wide flat triangle, so its
+     * circumradius inflates its reach by half a metre for nothing.)
+     *
+     * The second is a tangent-plane reject — a triangle entirely at or below
+     * the plane the hemisphere sits on cannot be hit by any ray in that
+     * hemisphere. On a rounded form this throws away the whole far side of
+     * the shape, which is most of it, and it is exact rather than
+     * conservative, so nothing that could have occluded is lost.
+     */
+    let nCandidates = 0;
+    if (!skip) {
+      const maxSq = maxDist * maxDist;
+      for (let t = 0; t < triCount; t++) {
+        if (ia[t * 3] === i || ia[t * 3 + 1] === i || ia[t * 3 + 2] === i) continue;
+        const dx = Math.max(lox[t] - ox, 0, ox - hix[t]);
+        const dy = Math.max(loy[t] - oy, 0, oy - hiy[t]);
+        const dz = Math.max(loz[t] - oz, 0, oz - hiz[t]);
+        if (dx * dx + dy * dy + dz * dz > maxSq) continue;
+        const d0 = (ax[t] - ox) * unx + (ay[t] - oy) * uny + (az[t] - oz) * unz;
+        const d1 = d0 + e1x[t] * unx + e1y[t] * uny + e1z[t] * unz;
+        const d2 = d0 + e2x[t] * unx + e2y[t] * uny + e2z[t] * unz;
+        if (d0 <= 0 && d1 <= 0 && d2 <= 0) continue;
+        candidates[nCandidates++] = t;
+      }
+    }
+
+    // An orthonormal frame around the normal. The helper axis is chosen away
+    // from the normal so the cross product never degenerates.
+    const hx = Math.abs(unx) < 0.9 ? 1 : 0;
+    const hy = Math.abs(unx) < 0.9 ? 0 : 1;
+    let tx = hy * unz - 0 * uny;
+    let ty = 0 * unx - hx * unz;
+    let tz = hx * uny - hy * unx;
+    const tLen = Math.hypot(tx, ty, tz) || 1;
+    tx /= tLen;
+    ty /= tLen;
+    tz /= tLen;
+    const bx = uny * tz - unz * ty;
+    const by = unz * tx - unx * tz;
+    const bz = unx * ty - uny * tx;
+
+    let occluded = 0;
+    for (let s = 0; s < samples; s++) {
+      // Cosine-weighted: concentrating the rays around the normal is what
+      // makes 16 of them enough, because that is also where the incoming
+      // light this is approximating is weighted.
+      const u = rand();
+      const v = rand();
+      const r = Math.sqrt(u);
+      const phi = v * Math.PI * 2;
+      const lx = r * Math.cos(phi);
+      const ly = r * Math.sin(phi);
+      const lz = Math.sqrt(Math.max(0, 1 - u));
+      const dx = tx * lx + bx * ly + unx * lz;
+      const dy = ty * lx + by * ly + uny * lz;
+      const dz = tz * lx + bz * ly + unz * lz;
+
+      let nearest = maxDist;
+      for (let c = 0; c < nCandidates; c++) {
+        const t = candidates[c];
+        // Möller-Trumbore, two-sided. Backface culling would be wrong here:
+        // an inside corner is often approached from behind the occluder's
+        // winding, and a one-sided test would leave exactly the creases this
+        // exists for unshaded.
+        const px = dy * e2z[t] - dz * e2y[t];
+        const py = dz * e2x[t] - dx * e2z[t];
+        const pz = dx * e2y[t] - dy * e2x[t];
+        const det = e1x[t] * px + e1y[t] * py + e1z[t] * pz;
+        if (det > -1e-12 && det < 1e-12) continue;
+        const inv = 1 / det;
+        const sx = ox - ax[t];
+        const sy = oy - ay[t];
+        const sz = oz - az[t];
+        const bu = (sx * px + sy * py + sz * pz) * inv;
+        if (bu < 0 || bu > 1) continue;
+        const qx = sy * e1z[t] - sz * e1y[t];
+        const qy = sz * e1x[t] - sx * e1z[t];
+        const qz = sx * e1y[t] - sy * e1x[t];
+        const bv = (dx * qx + dy * qy + dz * qz) * inv;
+        if (bv < 0 || bu + bv > 1) continue;
+        const hit = (e2x[t] * qx + e2y[t] * qy + e2z[t] * qz) * inv;
+        if (hit > AO_RAY_EPSILON && hit < nearest) nearest = hit;
+      }
+      // Attenuated by distance: a surface at arm's length is ambient
+      // occlusion, a surface touching this one is contact shadow, and only
+      // the second should be visible as a line.
+      if (nearest < maxDist) occluded += 1 - nearest / maxDist;
+    }
+
+    const ao = Math.max(floor, 1 - strength * (occluded / samples));
+    colors[i * 3] *= ao;
+    colors[i * 3 + 1] *= ao;
+    colors[i * 3 + 2] *= ao;
+  }
+
+  geometry.setAttribute('color', new BufferAttribute(colors, 3));
+  return geometry;
+}
+
 // --- blades and fronds -------------------------------------------------
 
 /**
@@ -821,6 +1141,10 @@ export function rockGeometry(seed = 17): BufferGeometry {
   const geometry = fromPositions(verts);
   geometry.computeVertexNormals();
   paintGradient(geometry, 0x8b877d, 0xffffff, -0.3, 0.5);
+  // A single closed hull occludes nothing, so this is very nearly a no-op
+  // today — kept anyway so that the day the boulder grows a second lobe or a
+  // split, the crease is already lit for it.
+  bakeVertexAO(geometry, { maxDist: 0.6, seed: 1017 });
   // Rocks do not sway. The attribute still has to exist so this geometry can
   // share a material with things that do.
   addSway(geometry, 0, 1, 0);
@@ -861,6 +1185,10 @@ export function shrubGeometry(seed = 23): BufferGeometry {
   }
   const merged = mergeGeometries(parts);
   merged.computeVertexNormals();
+  // Three lobes seated into each other, which is exactly the case baked AO is
+  // for: the valleys between them are the only thing saying this is a mass of
+  // foliage rather than one smooth blob.
+  bakeVertexAO(merged, { maxDist: 0.5, seed: 1023 });
   addSway(merged, 0, 1.1, 0.32);
   return merged;
 }
@@ -945,6 +1273,10 @@ export function fallenLogGeometry(seed = 29): BufferGeometry {
   paint(ends, 0xcbb289, 0.08, rand);
 
   const merged = mergeGeometries([sides, ends]);
+  // Baked after the merge, not per part: the darkening worth having here is
+  // in the armpit where a snapped limb leaves the trunk, and neither half of
+  // that crease can see the other until the two buffers are one.
+  bakeVertexAO(merged, { maxDist: 0.5, seed: 1029 });
   addSway(merged, 0, 1, 0);
   return merged;
 }
@@ -989,6 +1321,10 @@ export function coniferGeometry(options: TreeOptions): BufferGeometry {
 
   const merged = mergeGeometries(parts);
   merged.computeVertexNormals();
+  // The tiers overlap, so each skirt sits in the shade of the one above it.
+  // That stack of soft dark rings is what stops four cones reading as one
+  // smooth triangle when the tree is close enough to see the tiers at all.
+  bakeVertexAO(merged, { maxDist: 1.0, seed: 1011 });
   addSway(merged, trunkH * 0.5, height, 0.45);
   return merged;
 }
@@ -1031,6 +1367,13 @@ export function broadleafGeometry(options: TreeOptions): BufferGeometry {
 
   const merged = mergeGeometries(parts);
   merged.computeVertexNormals();
+  // The heaviest bake in the file — 660 vertices against 220 triangles — and
+  // the one that pays best: four lobes and a crown all overlapping means the
+  // canopy's *underside* comes back a good deal darker than its top, which is
+  // the single cue that turns a cluster of domes into a tree with mass under
+  // it. Measured at about 7 ms once per (biome, variant) and cached from then
+  // on, which is the trade this budget was set to allow.
+  bakeVertexAO(merged, { maxDist: 0.9, seed: 1012 });
   addSway(merged, trunkH * 0.4, height + 1, 0.6);
   return merged;
 }
@@ -1145,6 +1488,14 @@ export function willowGeometry(options: TreeOptions): BufferGeometry {
 
   const merged = mergeGeometries(parts);
   merged.computeVertexNormals();
+  // Baked before the sway work below, because the sway pass rewrites `aSway`
+  // in place and never touches `color` — the two are independent and the
+  // order only matters for the reader.
+  //
+  // The curtain is where this lands: forty-eight strips overlapping their
+  // neighbours by a quarter, so every strip is partly behind another one and
+  // the skirt gains the depth it has been faking with a flat colour.
+  bakeVertexAO(merged, { maxDist: 0.8, seed: 1013 });
   // Create the attribute before overriding it. mergeGeometries only keeps
   // attributes that *every* part carries, and none of the willow's parts
   // carry aSway — so reaching straight for `merged.attributes.aSway` found
@@ -1215,6 +1566,10 @@ export function pebbleGeometry(seed = 41): BufferGeometry {
   // Painted over a taller span the whole pebble came out at the dark end and
   // a gravelled verge read as a scatter of holes.
   paintGradient(merged, 0x968f84, 0xffffff, -0.01, 0.07);
+  // Centimetres, not metres: the stones in a scatter are a hand's width
+  // apart, and at the file's default reach every stone would shade every
+  // other one and the whole patch would come back uniformly grey.
+  bakeVertexAO(merged, { maxDist: 0.14, seed: 1041 });
   addSway(merged, 0, 1, 0);
   return merged;
 }
@@ -1346,6 +1701,10 @@ export function standingStoneGeometry(options: LandmarkOptions): BufferGeometry 
 
   const merged = mergeGeometries(parts);
   merged.computeVertexNormals();
+  // Reaches further than the shrub's because the shapes are metres apart
+  // rather than centimetres: a companion standing close to the great stone
+  // should pick up a little of its shade at the base and nothing higher.
+  bakeVertexAO(merged, { maxDist: 1.4, seed: 1101 });
   addSway(merged, 0, 1, 0);
   return merged;
 }
@@ -1392,6 +1751,10 @@ export function trilithonGeometry(options: LandmarkOptions): BufferGeometry {
 
   const merged = mergeGeometries(parts);
   merged.computeVertexNormals();
+  // The seat of the lintel on each pier is the one joint on this shape, and
+  // it is the joint that says the thing was *built*. A shadow line under the
+  // lintel is worth more here than anywhere else in the file.
+  bakeVertexAO(merged, { maxDist: 1.4, seed: 1103 });
   addSway(merged, 0, 1, 0);
   return merged;
 }
@@ -1437,6 +1800,11 @@ export function chapelGeometry(options: LandmarkOptions): BufferGeometry {
 
   const merged = mergeGeometries(parts);
   merged.computeVertexNormals();
+  // The eaves overhang exists to put a line of shadow under the roof (see the
+  // note where it is built) and until now that line only appeared when the
+  // sun happened to be in the right quarter. Baked, it is always there — and
+  // so is the crease where the tower meets the nave.
+  bakeVertexAO(merged, { maxDist: 1.6, seed: 1107 });
   addSway(merged, 0, 1, 0);
   return merged;
 }
@@ -1711,6 +2079,10 @@ export function waysideCairnGeometry(options: LandmarkOptions): BufferGeometry {
 
   const merged = mergeGeometries(parts);
   merged.computeVertexNormals();
+  // A cairn *is* a pile of contact shadows — five slabs stacked with their
+  // edges a few centimetres apart. Half a metre of reach keeps each stone
+  // shading only the one it sits on rather than the whole heap.
+  bakeVertexAO(merged, { maxDist: 0.5, seed: 1223 });
   addSway(merged, 0, 1, 0);
   return merged;
 }
