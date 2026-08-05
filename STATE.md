@@ -38,6 +38,24 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-05 (overnight loop session) — TASK 182 RESOLVED:
+  the noon gate was never red; the gauge was rolling dice.** One
+  build, twelve pinned dates: noon spans 1.81-3.44 stops purely by
+  which biome the DAILY road lays at s 620 (forest 2.7-3.4, village
+  1.8-2.2, riverside between; p90 constant — the variance is entirely
+  the dark anchor). The 08-01 "red on pristine main" was a village
+  noon. frame-quality.mjs now pins its road (GAUGE_DAY 2026-07-30,
+  init-script Date redirect, performance.now untouched) and gains a
+  `noon-village` pose (own floor 1.6) keeping the TRUE finding: a
+  village noon is the flattest family the game draws — an art
+  observation for the 145/179 value-ladder work, now gated against
+  worsening. All poses PASS, byte-stable re-runs. **Standing caveat
+  for critique waves: postcard.mjs and land-histogram.mjs still shoot
+  TODAY'S road — wave-over-wave deltas ride the same dice. Note the
+  dayKey on every wave, or pin it before comparing.** No merge was
+  guilty; the strongest instance yet of "a failing check is a claim
+  about the check first." Tools-only; 1094 tests + build green.
+
 - **HANDOFF, 2026-08-04 (overnight loop session) — TASK 159 COMPLETE:
   the moonlit walk-on ships, and with it the whole first-campfire
   promise.** Tonight's page gained its one door row ("Or tap here to

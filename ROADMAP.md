@@ -2199,6 +2199,34 @@ full verdict map and the measure-first suspicion list):
     artifact (fix the gauge). A failing check is a claim about the
     check first. Needs a fresh session — the bisect is many
     build+measure cycles.
+    **Done (2026-08-05, overnight session) — gauge artifact; no merge
+    ever regressed noon, and no commit bisect was needed.** The
+    disproof: one build, twelve dates (Date pinned via init script),
+    noon ranging 1.81-3.44 stops in perfect correlation with the
+    biome the DAILY road lays at s 620 — forest days 2.7-3.4 (the
+    treeline is the frame's dark anchor; p10 ~0.06-0.10), village
+    days 1.8-2.2 (bright walls over bright ground; p10 ~0.17),
+    riverside between, p90 essentially constant throughout. The
+    2026-08-01 "red on pristine main" was a village noon; the header's
+    "3.3-6.8" was written on a forest-flavoured day. The gate was
+    rolling dice on the road of the day. Fix, per this task's own
+    third disposition: the gauge now walks a PINNED road —
+    `GAUGE_DAY = 2026-07-30` (forest at the noon s, mid-band of the
+    forest dates swept), argless `new Date()`/`Date.now()` redirected
+    per page, `performance.now` untouched so the loop runs normally.
+    Measured on the pins: morning 2.89, noon 3.44, golden 3.94, night
+    6.05, phone-landscape 3.94 — floors unchanged and honest again,
+    morning now the pose nearest its floor. Byte-stable across
+    re-runs. The true finding underneath the false alarm is KEPT as a
+    new `noon-village` pose (gaugeDay 2026-08-01, minStops 1.6, the
+    phone-portrait precedent): a village noon genuinely is the
+    flattest family the game draws — that is an art observation for
+    the value-ladder queue (145/179 family), and the pose exists so
+    the flattest family getting flatter is caught. Tools-only change;
+    1094 tests and build untouched-green. Standing lesson extended:
+    postcard.mjs and land-histogram.mjs still shoot TODAY'S road, so
+    wave-over-wave critique deltas ride the same dice — pin or note
+    the dayKey when comparing waves (logged in STATE).
 
 181. **Smoke as soft forms.** The campfire smoke still reads as a stack
     of hard-edged translucent polygons ("a hovering boulder", "a render
