@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BOTTOM_KINDNESS,
   COMPACT_EDGE,
   HUD_TOUCH_TARGET,
   JOURNAL_MAX_WIDTH,
@@ -168,10 +169,29 @@ describe('hudChrome', () => {
     const notched = hudChrome({ width: 390, height: 844, insets: { top: 47, bottom: 34 } });
     expect(notched.coins.top - plain.coins.top).toBeCloseTo(47, 6);
     expect(notched.journal.top - plain.journal.top).toBeCloseTo(47, 6);
-    expect(plain.instrument.top - notched.instrument.top).toBeCloseTo(34, 6);
+    // The bottom row moves by the inset LESS the gesture-strip kindness the
+    // zero-inset phone was already given — a real inset replaces the
+    // kindness, it does not stack on it.
+    expect(plain.instrument.top - notched.instrument.top).toBeCloseTo(34 - BOTTOM_KINDNESS, 6);
     // A top-only inset must not move the bottom row, and vice versa.
     const topOnly = hudChrome({ width: 390, height: 844, insets: { top: 47 } });
     expect(topOnly.instrument.top).toBeCloseTo(plain.instrument.top, 6);
+  });
+
+  it('keeps the bottom corners clear of the phone gesture strip even with no inset', () => {
+    // A browser tab reports zero bottom inset, but the thumb and the system
+    // edge-swipe are there anyway — wave 8's mobile lens found the bottom
+    // labels "pinned into the bottom-edge thumb strip" on every phone frame.
+    for (const [width, height] of [[390, 844], [844, 390], [360, 900]] as const) {
+      const chrome = hudChrome({ width, height });
+      const instrumentFoot = chrome.instrument.top + chrome.instrument.height;
+      const songFoot = chrome.song.top + chrome.song.height;
+      expect(height - instrumentFoot, `${width}x${height}`).toBeGreaterThanOrEqual(BOTTOM_KINDNESS);
+      expect(height - songFoot, `${width}x${height}`).toBeGreaterThanOrEqual(BOTTOM_KINDNESS);
+    }
+    // A desktop is not a phone: no kindness, the gutter is the clearance.
+    const desktop = hudChrome({ width: 1600, height: 900 });
+    expect(desktop.safe.height).toBe(900);
   });
 
   it('survives a viewport that makes no sense', () => {
