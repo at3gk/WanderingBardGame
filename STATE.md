@@ -39,6 +39,48 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-05 (run 63) — WAVE-7 BLIND PANEL: mean 5.56, up
+  from wave 6's 5.33 UNDER THE SAME ANCHOR ("ships beside ASH
+  without apology") — the second consecutive same-rubric gain.**
+  Shot on the 2026-08-05 road (village-noon family, like wave 6's —
+  note the dayKey caveat when comparing). Lens means: colour 6.05,
+  value 5.95, composition 5.60, silhouette 5.30, emotion 5.25,
+  mobile 5.20. Frames: 07 campfire best again (6.75, up from 6.25),
+  04 vista 6.42; 03 noon-forest worst (4.58 — the 182/166 village-
+  noon family, "milky monochrome", exactly what the colour script
+  exists to fix). **RETIRED: the smoke.** No lens named it — the
+  three-wave "stacked glass plates" fault is gone (181 confirmed
+  blind). **THE new dominant fault family, named independently by
+  three lenses: PHANTOM SHADOWS** — long dark streaks crossing road
+  and grass "with no visible caster", read as render banding, cutting
+  the bard's own silhouette (01/03/09). Suspicion-list discipline:
+  these are almost certainly REAL shadow-map casts from offscreen
+  trees — the symptom is true, the "banding" attribution is not;
+  measure which casters own them and whether softness/value (not
+  existence) is the lever before touching anything. **Second family,
+  now FIVE frames and worth finally measuring: note-head overlap**
+  ("fused brown blobs" 01/02/03/08/10) — this is the twice-refuted
+  "noteheads ignore pitch" suspicion, but the mobile lens adds that
+  05/09 with real spacing are excellent, making it a collision claim
+  about close MUSICAL spacing at certain aspects; measure the
+  governor's actual worst-pair gap per viewport before re-fixing.
+  Also recurring: corner HUD labels thin/plateless/in thumb zones
+  (task 175's audit, now with four frames of evidence); staff ribbon
+  "terminates mid-air" (composition — consider an anchor at the far
+  end); golden-hour maroon value-merge of cast+props (05/06 — the
+  145/179 family, unchanged); bard's black-box head at close range
+  (150). One design tension for the HUMAN: the walk-on door on 07
+  reads "styled identically to non-interactive prose" — the panel
+  wants a clearer affordance; the no-menus idiom resists; child-wins
+  says a door should look tappable. **Keeps (new/confirmed):** 07's
+  whole ladder ("reference-grade"), every hour's sky ("would not
+  embarrass itself beside ASH"), the hero silhouette at all
+  distances, 04's tent-through-corner and 07's pine-through-edge
+  (the two frames that crop through edges score highest — task 180's
+  thesis confirmed from the other direction), depth layering, the
+  temperature story per hour. Full per-frame verdicts in the wave-7
+  task output (six judges, 470k tokens, all StructuredOutput).
+
 - **HANDOFF, 2026-08-05 (run 62) — task 181 done: the smoke is
   finally smoke.** painterly gained its one per-vertex-alpha door
   (opt-in fadeAttribute, squared in the fragment); puff planes became
