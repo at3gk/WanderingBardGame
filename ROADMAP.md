@@ -2077,6 +2077,31 @@ interviews) — read it before taking any task; its not-recommended list
     (telegraph props, landmarks, canopy mass), Monument Valley's
     screen-first lesson. Headlessly testable. (CameraRig + WorldStreamer
     placement bias; merges with task 145.)
+    **First piece done (2026-08-05, run 82): the wayside cadence is now
+    a rule.** Task 180's sentinel system leaked three ways — 15% of
+    chunks rolled no sentinel, an exclusion collision (river, landmark,
+    stop dressing) silently deleted the tree, and a uniform draw let
+    gaps cluster — which is wave 9's "four unused edges on 8 frames"
+    stated as arithmetic. Placement now lives in the pure exported
+    `waysideSentinelSites` (the `stopDressingSites` pattern): every
+    chunk holds at least one sentinel in its central band, so two
+    consecutive sentinels are never more than 96 m apart on any road
+    (pinned by test across 24 seeds); static exclusions REDRAW the site
+    (12 bounded tries, the late tries alternating verges so a river
+    owning one side cannot starve the slot) instead of deleting it;
+    each slot draws from its own subseeded stream so a crowded slot
+    cannot reshuffle its neighbour, and no other chunk's trees can
+    move. The camp clearing is the one dynamic exclusion and still
+    drops the tree at build time — a dusk rebuild must never move one.
+    Deliberately NOT guaranteed: an anchor in frame at every instant
+    (that is an avenue, and the sides alternate precisely so the road
+    is not a hedge); the dial, if wave 10 still reads empty edges, is
+    SENTINEL_BAND, not more trees. Frames read: 10-tablet (the one
+    anchorless frame left) gains a corner-cropped canopy and a near
+    broadleaf; 08-phone a top-edge-cropped sentinel; busk/campfire
+    scenes untouched, road clear. frame-quality all poses PASS (noon
+    3.86 stops). 1209 tests (+9). Remaining 167: a projection-level
+    per-mood anchor audit only if wave 10 asks for it.
 168. **The finishing pass.** Render to target at ~0.8 scale + a
     CODE-GENERATED 3D-LUT grade (Data3DTexture built at boot — no image
     asset, no constraint exception). A Short Hike's unifier translated

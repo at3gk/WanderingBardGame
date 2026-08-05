@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 81 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 82 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,28 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 82) — 167 first piece: no framing
+  without an anchor.** The wayside-sentinel cadence (task 180) is
+  now a RULE, not a probability: pure exported
+  `waysideSentinelSites` guarantees ≥1 sentinel per 60 m chunk in
+  its central band (no two consecutive further than 96 m apart on
+  any road — pinned across 24 seeds), static exclusions redraw the
+  site instead of silently deleting it (12 tries, late tries
+  alternate verges), each slot on its own subseeded stream; the
+  dynamic camp clearing still drops at build so a dusk rebuild
+  never moves a tree. This answers wave 9 item 3 ("sentinels
+  under-hit, cadence or pose luck") the world-honest way rather
+  than pinning trees to postcard s-positions. Frames: 10-tablet
+  (the last anchorless frame) gains a corner-cropped canopy + near
+  broadleaf, 08-phone a top-edge-cropped sentinel; busk untouched,
+  road clear; frame-quality ALL POSES PASS (noon 3.86). 1209 tests
+  (+9), build green. Sentinel postcard-cadence LEAVES the visual
+  menu. TWO visual tasks since wave 9 (run 75 shadow form, this) —
+  WAVE 10 IS DUE after at most one more visual task. If wave 10
+  still reads empty edges the dial is SENTINEL_BAND, not more
+  trees; if it still reads dawn smear the lever is fray amplitude
+  or shadow-map resolution, NOT riser narrowing (run 75's note).
 
 - **HANDOFF, 2026-08-05 (run 81) — 151 closed as absorbed by 159
   (audit, no code).** Both halves (tonight's page; tomorrow's
