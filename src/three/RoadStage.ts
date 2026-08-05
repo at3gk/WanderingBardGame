@@ -132,7 +132,11 @@ import {
   rollEncounter,
   type EncounterAsk,
 } from '../core/encounters';
+<<<<<<< HEAD
 import { describeIdleYield, idleYield, IDLE_JOURNAL_KIND, loadIdle, saveIdle } from '../core/idle';
+=======
+import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
+>>>>>>> origin/main
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
 import { campfirePage, type CampfirePage } from '../core/campfirePage';
 import { postcardLines, POSTCARD_FILENAME, type PostcardCard } from '../core/postcardCard';
