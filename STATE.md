@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 69 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 70 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,45 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 70) — WAVE-8 BLIND PANEL: mean 5.10,
+  with a hard caveat — NOT same-rubric comparable to wave 7's 5.56.**
+  This wave used a fresh opus judge cohort and a rewritten prompt
+  (previous waves' exact rubric text wasn't preserved), so the mean
+  moved for reasons that include the instrument; treat the FAULT
+  FAMILIES as the signal, not the delta. Same 2026-08-05 road as
+  wave 7; Spiritfarer gameplay frames unreachable this session (only
+  key art — logged; ASH remains the anchor). Lens means: colour 5.63
+  (top), value 5.36, emotion 5.03, silhouette 5.00, composition
+  4.98, mobile 4.61. Frames: 07 campfire best again (6.37), 03
+  noon-forest worst again (4.23), 08/10 next-worst (4.52/4.30).
+  **Registered:** the 166 shadow-colour work shows as a colour KEEP
+  ("violet-blue cast shadow bands — genuinely hued"); the 184
+  envelope watch item resolved (no lens read the far lane as empty;
+  remaining note complaints are the known in-runway pairs).
+  **New dominant cross-lens family — SHADOW FORM:** "full-frame
+  smeared shadow bands" (emotion, 9 frames), "blurred diagonal wash"
+  (composition), "cast-shadow bands sever the legs" (silhouette),
+  "blurred and only one step dark" (value). Depth agrees with 183's
+  measurement (ASH V-drop 0.31 vs ours 0.09-0.12) — the next shadow
+  lever is DEPTH (and possibly less fray), not colour, and 183's
+  "softness is not the fault" claim should be re-measured against
+  what these judges saw before believing either. **Second family,
+  now six lenses loud: HUD/notation chrome** — "unbacked text
+  floating on world geometry" (all 10), "staff reads as unstyled
+  debug overlay", thumb-strip HUD, orphan coin numeral — task 175's
+  audit with overwhelming evidence; next actionable task.
+  **Persisting:** noon khaki drain + neutral-grey distance
+  (02/03/08/10 — 166's remaining ambient/accent levers + 144/169
+  tone field); NPC/bard warm-hue collision at golden (05/06/09);
+  ground-scatter confetti (149). **Set-level artifacts, not game
+  faults:** "one camera ten times" and "identical back-turned pose"
+  describe the postcard harness's uniform framing — consider pose/
+  framing variety in postcard.mjs before wave 9, or keep and note.
+  **Keeps:** 07's whole architecture, 04's silhouette masses and
+  edge-breaking tent, golden violet shadows, the hat-brim silhouette,
+  sky gradients every hour, caption prose voice. Full verdicts in
+  the wave-8 task output (six opus judges, 498k tokens).
 
 - **HANDOFF, 2026-08-05 (run 69) — 166 piece 2: shadows carry their
   colour now.** The CAST_SHADOW_HUE rotation's "chroma all the way
