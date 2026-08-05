@@ -595,7 +595,19 @@ const FRAGMENT = /* glsl */ `
  * so it moves the boundary in and out in equal measure and the long-shadow
  * ladder at dawn and dusk keeps its reach.
  */
-#define SHADOW_EDGE 0.13
+/*
+ * 0.13 → 0.08 (2026-08-05, the wave-9 form run). Waves 8 and 9 both put the
+ * cast shadows' FORM at the top of the fault list under four lenses —
+ * "smeared", "blurred soft wedge", "giant unattributed soft-edged masses" —
+ * AFTER the colour (CAST_SHADOW_HUE chroma restore) and depth (terrain
+ * shadowDepth 0.14) runs had landed. 183's earlier "softness is not the
+ * fault" claim was measured against penumbra share alone; with the other two
+ * variables fixed, two independent panels read softness as the remaining
+ * fault, which is the licence this narrowing was waiting for. The ratio
+ * argument above strengthens rather than weakens: 0.08 riser against 0.30
+ * fray is nearly four lobes per ramp, further from "merely soft again".
+ */
+#define SHADOW_EDGE 0.08
 #define SHADOW_FRAY 0.30
 /*
  * The size of the lobes the shadow edge breaks into, as a world-space
