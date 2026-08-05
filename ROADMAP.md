@@ -2411,6 +2411,31 @@ The wave-5 queue, from the wave-4 panel (mean ~5.5; take these next):
     as deliberate cloud-shadow shapes. ALSO REAL: the bard and props cast
     NO shadow ("the world casts, the bard doesn't") — give figures cast
     shadows; a shadowless hero reads as pasted.
+    **Ablation run (2026-08-05, run 84 — no code shipped; all three
+    licensed shader levers measured and REFUTED).** Run 75's handoff
+    licensed "fray amplitude or shadow-map resolution" for the dawn
+    smear wave 10 re-confirmed; both were measured this run, plus a
+    third: (1) shadowMapSize 2048 → 4096 on the high tier moved NO
+    number (penumbraShare 0.77/0.26/0.83 identical to baseline) — the
+    low-sun penumbra is GEOMETRIC (a 3-6 m canopy's silhouette
+    projected ×8 at 7° sun), not texel-bound; (2) SHADOW_GAIN_CAP
+    0.55 → 0.40 moved dawn valueDrop not at all (0.10) — the cap's
+    residue is too small to deepen the band; (3) SHADOW_FRAY_COARSE
+    0.34 → 0.55 turned the foreground mottle into the leopard spots
+    run 72 warned about while the main band stayed a film. WHAT THE
+    MEASUREMENTS SAY INSTEAD: shadowcast attribution shows the dawn
+    "casterless bands" are 94.3% TREE shadows (63 casters, 36% of
+    the frame in shadow) whose casters stand off-frame — the smear
+    is the ×8 projection scale itself, and its edges are ALREADY
+    ragged in-frame (run 75 landed; the interior film and the scale
+    are what read). Remaining levers are PRESENTATION decisions,
+    not shader knobs: raise the dawn/dusk sun-elevation floor (fights
+    the load-bearing long-shadow ladder and the color script's
+    "dawn is CARRYING — spend no runs there"), or accept the hour.
+    The shader-knob family (edge/fray/depth/chroma/resolution/cap)
+    is EXHAUSTED — six measured rounds; do not reopen without new
+    evidence. The figure-shadow half of this task (bard casts
+    nothing) remains real and untouched.
 145. **Anchor the anchorless frames.** 03/08/10 are one chalky plane: no
     dark mass, no authored landmark inside the first third. Noon and the
     phone framings need a composed anchor (landmark placement bias near
