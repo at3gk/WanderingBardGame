@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 68 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 69 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,21 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 69) — 166 piece 2: shadows carry their
+  colour now.** The CAST_SHADOW_HUE rotation's "chroma all the way
+  along" claim measured false (equal-luminance mixes toward a near-
+  complement cross grey — the drain 183 quantified). The rotation now
+  chroma-restores (cap 2.2, luminance re-normalised — value gate
+  intact by construction). S-kept: dawn 50%, noon 66% (script target
+  MET), golden 40%. Frames: dawn stripes plum/deep-green, noon bard-
+  shadow saturated blue, golden grass teal kept; golden's road
+  stripes now warm violet — WATCH for wave 8 (with run 66's other
+  watch item: does the dimmer far lane read calm or empty?).
+  frame-quality all PASS (noon 3.45, noon-village 1.93). NEXT: wave-8
+  six-lens blind panel (two visual changes landed since wave 7: 184
+  envelope + this), then 180 occluders or 153-157 retention. 161
+  still awaits the human; 184 problem (2) still deliberately open.
 
 - **HANDOFF, 2026-08-05 (run 68) — 166 piece 1: the colour script is
   written (`docs/color-script.md`).** Eight hours with intended mood,
