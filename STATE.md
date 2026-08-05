@@ -38,6 +38,21 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-05 (overnight loop session) — task 170 done:
+  baked vertex AO (v1.1 queue opens).** bakeVertexAO in geometry.ts
+  (seeded hemisphere rays, own-triangle Möller-Trumbore, AO_FLOOR
+  0.55, 6k-vertex budget, deterministic by construction) wired into
+  all 11 prop builders behind cachedGeometry (~15 ms once) + the
+  bard's hat/cloak/instrument-body only (his other parts are convex
+  hulls — AO 1.0 by construction). Canopy undersides now ~13-15%
+  darker on average — the one thing to eyeball in future critiques;
+  the dial is broadleaf/willow maxDist. Knife-edge crevices bake to
+  zero by geometry (t=0 plane fact, recorded in the test). Frames
+  read: soft mass, not dirt. 1149 green (+5), build 873 kB.
+  Delegated to an opus agent, verified in-loop. Visual tasks since
+  wave 6: signature engraving + AO — a critique wave is due after
+  one more visual task.
+
 - **HANDOFF, 2026-08-05 (overnight loop session) — TASK 165 COMPLETE
   IN FIVE PIECES; THE v1.0 ARC IS DONE except 161 (blocked on
   human).** Book Two exists end-to-end: notation core (keys ±4,

@@ -53,6 +53,7 @@ import {
   type ShaderMaterial,
 } from 'three';
 import { createFoliageMaterial, createPainterlyMaterial, type PainterlyGlobals } from '../painterly';
+import { bakeVertexAO } from '../world/geometry';
 import type { Instrument } from '../../core/instruments';
 
 /** How the bard is currently behaving. Drives which pose blend is active. */
@@ -610,6 +611,45 @@ function armGeometry(): BufferGeometry {
  */
 const CLOAK_TOP = 0.46;
 
+/**
+ * Bake contact shading into one of the figure's parts (ROADMAP 170).
+ *
+ * Three of them get it — the hat, the cloak and the instrument's body — and
+ * the reason it is three and not thirty is worth stating, because "the bard
+ * has baked AO now" would otherwise be read as more than it is.
+ *
+ * **A bake only sees the geometry it is given, and this figure is thirty
+ * separate meshes.** So the darkening a viewer would most expect — the brim's
+ * shade on the forehead, the arm's on the ribs — is not something a
+ * per-geometry bake can produce at all; those are cross-mesh, and the brim
+ * already casts a real shadow map onto the head anyway (see the `underBrim`
+ * material, which exists because that shadow was landing too hard). What is
+ * left for a bake is *within-part* creases, and only three parts on the
+ * figure have any: the seam where the hat's crown rises out of its brim, the
+ * fold where the cloak's collar turns over the shoulders, and the joint where
+ * the lute's neck leaves its bowl. Every other part — every limb, the torso,
+ * the boots, the head — is a single closed convex hull, which occludes
+ * nothing by construction. Baking them would cost time and return 1.0.
+ *
+ * **And a part may only be baked if its own material declares
+ * `vertexColors`.** The define makes the shader multiply albedo by the
+ * attribute, so a material with it on and a geometry without the attribute
+ * renders black. These three parts each own a private material — `hatMaterial`,
+ * `cloakMaterial`, `bodyMaterial` — which is what makes the pairing safe to
+ * state locally. The shared `solid()` helper is deliberately left alone: it
+ * builds the material for a dozen meshes whose geometries have no colour
+ * attribute, and turning the flag on there would be a figure-wide change made
+ * for a benefit of zero.
+ *
+ * Reach is a third of a metre because the figure is 1.8 m and its features
+ * are centimetres; at the world builders' default of 1.6 m a hat would shade
+ * itself from one brim edge to the other and come back uniformly grey, which
+ * is a tint, not a crease.
+ */
+function bakeFigureAO(geometry: BufferGeometry, seed: number, maxDist = 0.35): BufferGeometry {
+  return bakeVertexAO(geometry, { maxDist, strength: 0.4, seed });
+}
+
 function cloakGeometry(): BufferGeometry {
   const panels = 11;
   const topRadius = 0.155;
@@ -724,7 +764,11 @@ function cloakGeometry(): BufferGeometry {
     sway[i] = Math.pow(Math.min(1, Math.max(0, (top - y) / (top - bottom))), 1.6);
   }
   geometry.setAttribute('aSway', new BufferAttribute(sway, 1));
-  return geometry;
+  // The collar is a second sheet standing off the top of the first, so the
+  // band of cloth immediately under it is the one genuine crease on the
+  // garment — and it is directly beneath the figure's face, where the
+  // walking and busking cameras are already looking.
+  return bakeFigureAO(geometry, 5001, 0.45);
 }
 
 /**
@@ -800,7 +844,10 @@ function hatGeometry(): BufferGeometry {
     sway[i] = above * Math.min(1, Math.max(0, (r - crownRadius) / (brim - crownRadius)));
   }
   geometry.setAttribute('aSway', new BufferAttribute(sway, 1));
-  return geometry;
+  // Darkens the ring where the crown rises out of the brim, which is the one
+  // place this shape has two surfaces meeting at an angle. It is also where
+  // the hat band sits, so the band gains an edge without needing one drawn.
+  return bakeFigureAO(geometry, 5003, 0.3);
 }
 
 /** The band around the base of the crown. Breaks up the hat's one big mass. */
@@ -1125,8 +1172,12 @@ function instrumentGeometry(kind: string): InstrumentParts {
     return merged;
   };
 
+  // Only the timber is baked. `dark` (soundhole, bridge) and `bright`
+  // (strings, nut) are thin plates laid *on* the soundboard and drawn with
+  // their own materials, neither of which declares `vertexColors` — and a
+  // string a third of a pixel wide has no crease to find anyway.
   return {
-    body: finish(parts) as BufferGeometry,
+    body: bakeFigureAO(finish(parts) as BufferGeometry, 5007, 0.3),
     dark: finish(dark),
     bright: finish(bright),
   };
@@ -1492,6 +1543,11 @@ export class Bard {
         sway: 0.12,
         swaySpeed: 1.35,
         swayAttribute: true,
+        // Carries `cloakGeometry`'s baked collar crease and nothing else —
+        // the attribute is white everywhere the bake found no occluder, so
+        // this multiply is the identity over most of the garment. See
+        // `bakeFigureAO` for why only three materials on the figure get this.
+        vertexColors: true,
         bandSoftness: 0.11,
         baseShade: 0.22,
         baseShadeHeight: 0.9,
@@ -1710,6 +1766,8 @@ export class Bard {
         rimPower: 2.1,
         bandSoftness: 0.09,
         flatShading: true,
+        // Carries `hatGeometry`'s baked crown seam. See `bakeFigureAO`.
+        vertexColors: true,
         // The brim carries a real sway weight, so it lifts on the same gusts
         // that move the grass. Small: a hat that flapped would pull the eye.
         swayAttribute: true,
@@ -1791,6 +1849,9 @@ export class Bard {
         rim: 0.9,
         rimPower: 1.7,
         flatShading: true,
+        // Carries `instrumentGeometry`'s baked neck-to-bowl joint. Only
+        // `parts.body` is baked; see `bakeFigureAO`.
+        vertexColors: true,
         swayAttribute: false,
         sway: 0,
         shadowDepth: 0.6,

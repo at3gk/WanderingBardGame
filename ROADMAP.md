@@ -2053,6 +2053,32 @@ interviews) — read it before taking any task; its not-recommended list
     strongest "crafted" signal at close range; precomputed into vertex
     colours, no UVs, feeds the existing lighting model. (geometry.ts
     builders + actors.)
+    **Done (2026-08-05, overnight session; implemented by a delegated
+    agent, verified in the main loop).** `bakeVertexAO` in geometry.ts:
+    cosine-weighted hemisphere rays (16/vertex) against the mesh's OWN
+    triangles via hand-rolled Möller-Trumbore (two-sided — backface
+    culling would miss exactly the inside corners this exists for),
+    distance-attenuated, multiplied into the existing `color`
+    attribute with a hard floor (`AO_FLOOR` 0.55 — a painterly hint,
+    never a render), deterministic by construction (one mulberry32
+    stream, drawn unconditionally so stream position cannot depend on
+    geometry content), with a 6000-vertex budget guard and two
+    per-vertex prefilters (AABB distance + tangent-plane reject,
+    3-5× faster). Wired into all 11 prop builders behind
+    `cachedGeometry` (whole set ≈15 ms once; broadleaf worst at
+    ~7 ms); the bard gets a figure bake on exactly hat/cloak/
+    instrument-body (his other parts are closed convex hulls — AO 1.0
+    by construction, so their shared material was left alone).
+    Measured means: canopy undersides 0.85-0.94, cairn/shrub crevices
+    floor ~0.56, bard hat min 0.70. Five property tests (determinism,
+    only-darkens-to-floor, flat = unshaded, inside corner darker,
+    budget guard) — plus a recorded engraving fact: an EXACT knife-
+    edge crevice bakes to zero occlusion (rays hit at t=0 in the
+    occluder's plane); real interpenetrating geometry is unaffected.
+    Frames read: shrub masses and lute body gain soft crevice
+    gradation, nothing reads as dirt. 1149 tests green (+5), build
+    873.34 kB. The dial if a critique ever calls canopies dirty:
+    broadleaf/willow maxDist.
 
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 
