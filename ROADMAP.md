@@ -2509,6 +2509,21 @@ full verdict map and the measure-first suspicion list):
     CAST_SHADOW_HUE saturation pass; judge on re-shot 01/09 (casts)
     separately from 03 (bands — different system). Measurement-only
     run; no game code touched.
+    **Depth run done (2026-08-05, run 72).** With the colour fix
+    (166 piece 2) landed first, the depth lever: terrain shadowDepth
+    0.42 → 0.14. Shadow value bite 18-29% of lit → 30-33%
+    (reference 40%; the remainder is the ambient floor, correct to
+    keep — a shadow with no skylight is night, not shade).
+    Saturation retention in shadow now 72-82%: the deepening arrives
+    as colour because the two runs landed in that order.
+    frame-quality IMPROVED on the pinned road (golden 3.94 → 4.18,
+    landscape → 4.39, all PASS) — deep coloured shadows are value
+    structure, the "companion darks" wave 8's value lens measured as
+    missing. Frames: dawn's raking ladder has real depth; 04's
+    ground breaks into separately-valued patches. One variable;
+    fray/edge untouched — if wave 9 still reads smear, softness is
+    its own run. WATCH: dappled shrub-shadow density at golden hour
+    (could read as leopard spots to a fresh panel).
 184. **Note-head overlap — measure the governor at last (wave 7).**
     Five frames name "fused brown blobs" where notes are close in
     musical time (01/02/03/08 portrait/10 tablet), while 05/09 with

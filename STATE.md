@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 71 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 72 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,19 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 72) — 183 depth run: shadows bite like
+  the reference's.** Terrain shadowDepth 0.42 → 0.14; shadow value
+  bite 18-29% → 30-33% of lit (ASH 40%; remainder is the ambient
+  floor, correct to keep). Saturation retention in shadow 72-82% —
+  the colour fix landing first is why depth arrives as colour.
+  frame-quality IMPROVED (golden 4.18, landscape 4.39, all PASS) —
+  deep coloured shadows ARE the "companion darks" wave 8's value
+  lens measured missing. Fray/edge untouched (one variable); if
+  wave 9 still reads smear, softness is its own run. WATCH: dappled
+  shrub-shadow density at golden hour. Visual changes since wave 8:
+  175 chrome + this — one more visual task, then wave 9. Next menu:
+  180 occluders, 153-157 retention, 149 scatter, 184 problem (2).
 
 - **HANDOFF, 2026-08-05 (run 71) — 175 chrome piece: the corner
   labels stand on washes now.** Wave 8's loudest family (six lenses)
