@@ -545,3 +545,39 @@ describe('the light floor is paid in the units it is quoted in', () => {
     expect(Number.isFinite(black.r + black.g + black.b)).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Book Two: the signature on the paper (task 165)
+// ---------------------------------------------------------------------------
+
+import { signatureGlyphs } from './SongNotes';
+import { majorKey } from '../../core/notation';
+
+describe('the key signature is engraved, not improvised', () => {
+  it('draws nothing for Book One — null or C major', () => {
+    expect(signatureGlyphs(null)).toEqual([]);
+    expect(signatureGlyphs({ fifths: 0 })).toEqual([]);
+  });
+
+  it('engraves G major as one sharp on the F5 line', () => {
+    expect(signatureGlyphs(majorKey('G'))).toEqual([{ cell: 29, step: 10 }]);
+  });
+
+  it('engraves the sharps in entry order at the standard treble steps', () => {
+    const steps = signatureGlyphs(majorKey('E')).map((m) => m.step);
+    expect(steps).toEqual([10, 7, 11, 8]); // F5 C5 G5 D5
+    expect(new Set(signatureGlyphs(majorKey('E')).map((m) => m.cell))).toEqual(new Set([29]));
+  });
+
+  it('engraves the flats in entry order, all with the flat mark', () => {
+    const marks = signatureGlyphs(majorKey('Ab'));
+    expect(marks.map((m) => m.step)).toEqual([6, 9, 5, 8]); // B4 E5 A4 D5
+    expect(new Set(marks.map((m) => m.cell))).toEqual(new Set([30]));
+  });
+
+  it('never carries more marks than the paper reserves instances for', () => {
+    for (const name of ['C', 'G', 'D', 'A', 'E', 'F', 'Bb', 'Eb', 'Ab']) {
+      expect(signatureGlyphs(majorKey(name)).length).toBeLessThanOrEqual(4);
+    }
+  });
+});

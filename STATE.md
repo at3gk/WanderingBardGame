@@ -54,10 +54,21 @@ mastery display must read that section first.
   engraving rules bind now on fixtures (keyedSongFaults in
   songs.test.ts: diatonic-only, round-trip exact, drawable staff),
   and a test pins that no shipped song carries a key until the
-  volume structure exists. 1111 green (+5). Next 165 pieces:
-  signature + accidental glyphs in SongNotes' engraving, songbook
-  volume structure, first Book Two song. v1.0 arc otherwise: 161
-  still blocked on human.
+  volume structure exists. 1111 green (+5). **Third piece same
+  night: the signature on the paper.** Atlas spare cells 29-31 are
+  now the ♯/♭/♮ marks; SongNotes.setKey raises the signature on an
+  extended paper tail past the barline (the eye's end of this
+  ribbon), staggered at the standard treble steps (signatureGlyphs,
+  test-pinned); with a key set every head's step is spelt through
+  spellInKey — a G-major F♯ sits on F4's space with its plain F
+  letter, the signature carrying the alteration (single-letter heads
+  stay phone-legible; **needs human playtest**: does a child connect
+  the signature to the F?). Book One byte-identical (no key = the
+  old refusal path; all RoadStage tune sites pass songKey = C).
+  Verified live incl. teardown, zero console errors. 1116 green
+  (+5). Remaining on 165: volume structure, then the first Book Two
+  song (public-domain transcription needed — task 60's sourcing
+  bar). v1.0 arc otherwise: 161 still blocked on human.
 
 - **HANDOFF, 2026-08-05 (overnight loop session) — TASK 182 RESOLVED:
   the noon gate was never red; the gauge was rolling dice.** One
