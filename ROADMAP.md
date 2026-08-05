@@ -2415,6 +2415,21 @@ full verdict map and the measure-first suspicion list):
     frame — a canopy edge at top, a verge rock at a lower corner —
     per-framing, composed, not scattered. The composition lens's most
     repeated note and the cheapest depth the set can buy.
+    **Done (2026-08-05, run 73): the wayside sentinels.** One large
+    tree per ~60 m chunk (85% chance, sometimes two), stood INSIDE
+    the ordinary tree verge (lateral ROAD_HALF_WIDTH + 2.8-4.2 m),
+    sides alternating by chunk parity with a seeded flip, scale
+    1.35-1.7 — a WORLD object, not a camera wing, because the walk
+    is live and a mass that moves with the camera is a sticker on
+    the lens. Own seeded stream (`sentinel:${index}`) so the
+    existing tree placement is byte-stable; same exclusions as every
+    tree (river/clearing/landmark/dressing). Frames: 02 gains a
+    broadleaf crossing its left edge plus near canopy masses; 08
+    gets the canopy-edge-at-top the task named, whose cast shadow is
+    the dark anchor behind the noon-portrait gauge jumping 1.99 →
+    3.16 stops. frame-quality all PASS. The road ahead stays clear
+    (the VERGE fern lesson honoured). 1161 tests green, build green.
+    Watch for wave 9: sentinel hit-rate on the busk/vista framings.
 182. **The noon gate is red on main — bisect it.** `frame-quality.mjs`
     reports noon at 1.91-1.93 stops vs the 2.5 floor on pristine main;
     CI never runs this gate, so some merge regressed it unnoticed.

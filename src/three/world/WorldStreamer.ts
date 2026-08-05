@@ -3255,6 +3255,77 @@ export class WorldStreamer {
       else buckets.set(key, [{ matrix, color }]);
     }
 
+    /*
+     * The wayside sentinels (task 180): one large tree per stretch stood
+     * INSIDE the ordinary tree verge, close enough to the road that walking
+     * past it puts a trunk or a canopy mass across the frame's edge.
+     *
+     * Every A Short Hike reference frame crops canopy, cliff or rock through
+     * its edges; every one of this game's postcards opened on a clean ground
+     * plane, and two critique waves running named it — "frame edges left
+     * untouched" (wave 8, seven frames), with 04's tent the sole exception
+     * and explicitly kept. A composed near mass is the cheapest depth the
+     * frame can buy, and it has to be a WORLD object, not a camera-attached
+     * wing: the walk is live, and a mass that moves with the camera is a
+     * sticker on the lens.
+     *
+     * Placement rules, and why each: a SEPARATE seeded stream, because the
+     * main tree stream's draw order is load-bearing (this file's standing
+     * rule: stream position must not depend on geometry content — a new
+     * unconditional draw at the top would reshuffle every tree in the
+     * world). Sides alternate by chunk parity with a seeded flip, so the
+     * road reads as passing between trees rather than along a hedge. The
+     * lateral band sits between the shrub verge and the ordinary tree
+     * verge: near enough to cross an edge at walk-by, far enough that the
+     * road ahead — the game's whole subject — stays clear (the VERGE
+     * comment's fern lesson). Scale runs above the ordinary spread's top:
+     * a sentinel is composition, and a small one is just a misplaced tree.
+     * Same exclusions as every tree (river, clearings, landmarks, stop
+     * dressings) — a sentinel that stood in the busk's sightline would buy
+     * an edge and cost the scene.
+     */
+    const sentinelRand = mulberry32(subSeed(this.road.seed, `sentinel:${index}`));
+    const sentinelCount = sentinelRand() < 0.85 ? (sentinelRand() < 0.3 ? 2 : 1) : 0;
+    for (let i = 0; i < sentinelCount; i++) {
+      const s = s0 + sentinelRand() * CHUNK_LENGTH;
+      const parity = (index + i) % 2 === 0 ? 1 : -1;
+      const side = sentinelRand() < 0.25 ? -parity : parity;
+      const u = side * (ROAD_HALF_WIDTH + 2.8 + sentinelRand() * 1.4);
+      const sample = sampleRoad(this.road, s);
+      const nx = Math.cos(sample.heading);
+      const nz = -Math.sin(sample.heading);
+      const x = sample.x + nx * u;
+      const z = roadZ(sample) + nz * u;
+      const river = this.riverAt(s);
+      const riverD = Math.abs(u - river.u);
+      const y = riverShape(river, riverD, terrainHeight(this.road, x, z));
+      const drowned = river.strength > 0 && riverD < river.reach && y < river.surfaceY + 0.4;
+
+      const kind = weightedPick(sentinelRand, palette.trees, (entry) => entry.weight).kind;
+      const variant = Math.floor(sentinelRand() * TREE_VARIANTS);
+      const key = `${kind}:${variant}`;
+
+      this.scratchPos.set(x, y - 0.15, z);
+      this.scratchQuat.setFromAxisAngle(this.upAxis, sentinelRand() * Math.PI * 2);
+      const scale = randRange(sentinelRand, 1.35, 1.7);
+      this.scratchScale.set(scale, scale * randRange(sentinelRand, 1.0, 1.3), scale);
+      const matrix = new Matrix4().compose(this.scratchPos, this.scratchQuat, this.scratchScale);
+
+      const shade =
+        kind === 'conifer'
+          ? sentinelRand() * 0.4
+          : kind === 'willow'
+            ? 0.35 + sentinelRand() * 0.5
+            : 0.3 + sentinelRand() * 0.7;
+      const color = mixColor(canopyTint, 0xffffff, shade);
+      if (drowned || this.inClearing(x, z) || insideLandmark(landmarks, x, z) || this.insideDressing(x, z)) {
+        continue;
+      }
+      const list = buckets.get(key);
+      if (list) list.push({ matrix, color });
+      else buckets.set(key, [{ matrix, color }]);
+    }
+
     const meshes: InstancedMesh[] = [];
     for (const [key, list] of buckets) {
       const [kind, variantText] = key.split(':');

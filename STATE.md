@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 72 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 73 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,16 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 73) — 180 done: the wayside sentinels
+  close the frame.** One large verge tree per ~60 m chunk on its own
+  seeded stream (existing placement byte-stable), inside the ordinary
+  tree verge, alternating sides — frames now crop canopy through
+  their edges the way every reference does. Noon-portrait gauge
+  jumped 1.99 → 3.16 stops (the sentinel's shadow is the pose's dark
+  anchor); all poses PASS. Road ahead stays clear. THREE visual tasks
+  since wave 8 (175 chrome, 183 depth, this) — WAVE 9 IS DUE next
+  iteration. 1161 tests, build green.
 
 - **HANDOFF, 2026-08-05 (run 72) — 183 depth run: shadows bite like
   the reference's.** Terrain shadowDepth 0.42 → 0.14; shadow value
