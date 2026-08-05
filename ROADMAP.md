@@ -637,6 +637,20 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     are blocked, but the snippets carry titles, keys and public-domain
     provenance — never note sequences. Don't spend another run on that
     route; it needs a real page fetch or a human-supplied transcription.
+    **Done (2026-08-05, overnight session, from a machine WITH network)
+    — the wait was worth it and the premise held exactly.** Wikipedia's
+    article carries an engraved LilyPond score (G major, 6/8);
+    transposed up a fourth to C it lands naturals-only on degrees
+    1/2/3/5/6/7 at G4–G5, the forest register — precisely what this
+    entry predicted in July. Independently corroborated by a
+    Kodály-curriculum source (musicyoucanread.com: 6/8, form ABAC,
+    tone set so-la-ti-do-re-mi-so — the exact set the transcription
+    uses with do = C5), and it is the tune as universally sung. The
+    songbook's first 6/8 song (three quarter-beats to the bar, the
+    lilt in quarter+eighth pairs); forest now rotates four songs like
+    the other biomes; every engraving/region/coverage test accepted
+    it unchanged. Live-verified pinned and walking, zero console
+    errors. 1144 tests green (+11), build green.
 61. ~~**Stop the audio drifting away from the staff.**~~ Done: `AudioEngine`
     anchored the audio clock to the visual one once at `start()` and
     scheduled every later pass against that anchor, letting the difference

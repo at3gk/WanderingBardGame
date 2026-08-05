@@ -56,8 +56,12 @@ mastery display must read that section first.
   console errors. 1133 tests green, build 869 kB. **Needs human
   playtest:** the single-letter F head under a G-major signature
   (does a child connect them?), and "turn the page ⤵" wording with
-  a pre-reader. Next: v1.3 (176-178) is open; 161 awaits the human;
-  task 60 (Mulberry Bush) is unblocked by network.
+  a pre-reader. Next: v1.3 (176-178) is open; 161 awaits the human.
+  **Task 60 also DONE this session** (blocked since v0.4): Mulberry
+  Bush transcribed from Wikipedia's engraved score + Kodály-source
+  corroboration (6/8, ABAC, so-la-ti-do-re-mi-so — the entry's July
+  prediction held exactly); forest rotates four songs now; first
+  6/8 tune in the book. 1144 green (+11).
 
 - **HANDOFF, 2026-08-05 (overnight loop session) — task 165 first
   piece: Book Two's notation core.** notation.ts gains the key layer

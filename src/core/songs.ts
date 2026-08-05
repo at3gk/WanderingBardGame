@@ -248,13 +248,48 @@ export const ITSY_BITSY_SPIDER: Song = {
 };
 
 /**
+ * Here We Go Round the Mulberry Bush — traditional English singing game
+ * (recorded by Halliwell, 1849; melody shared with Nuts in May), the
+ * fourth forest song task 60 waited on. Transcribed 2026-08-05 from the
+ * Wikipedia article's engraved score (G major, 6/8) transposed up a
+ * fourth to C — which lands it naturals-only on degrees 1/2/3/5/6/7
+ * exactly as task 60's entry predicted, sitting G4–G5, the forest
+ * register. Independently corroborated by a Kodály-curriculum source
+ * (musicyoucanread.com): 6/8, form ABAC, tone set so-la-ti-do-re-mi-so —
+ * the very set this transcription uses with do = C5. The songbook's
+ * first 6/8 tune: three quarter-beats to the bar, the lilt carried by
+ * quarter+eighth pairs.
+ */
+export const MULBERRY_BUSH: Song = {
+  id: 'mulberry',
+  title: 'Here We Go Round the Mulberry Bush',
+  beatsPerBar: 3,
+  notes: [
+    // Here we go round the mul-b'ry bush,
+    { semitone: 12, beats: 0.5 }, { semitone: 12, beats: 0.5 }, { semitone: 12, beats: 0.5 },
+    { semitone: 12, beats: 1 }, { semitone: 16, beats: 0.5 },
+    { semitone: 19, beats: 1 }, { semitone: 16, beats: 0.5 }, { semitone: 12, beats: 1 }, { semitone: 12, beats: 0.5 },
+    // the mul-b'ry bush, the mul-b'ry bush.
+    { semitone: 14, beats: 1 }, { semitone: 14, beats: 0.5 }, { semitone: 14, beats: 1 }, { semitone: 12, beats: 0.5 },
+    { semitone: 11, beats: 1 }, { semitone: 9, beats: 0.5 }, { semitone: 7, beats: 1.5 },
+    // Here we go round the mul-b'ry bush
+    { semitone: 12, beats: 0.5 }, { semitone: 12, beats: 0.5 }, { semitone: 12, beats: 0.5 },
+    { semitone: 12, beats: 1 }, { semitone: 16, beats: 0.5 },
+    { semitone: 19, beats: 1 }, { semitone: 16, beats: 0.5 }, { semitone: 12, beats: 1 }, { semitone: 12, beats: 0.5 },
+    // so ear-ly in the mor-ning.
+    { semitone: 14, beats: 1 }, { semitone: 14, beats: 0.5 }, { semitone: 7, beats: 1 }, { semitone: 7, beats: 0.5 },
+    { semitone: 12, beats: 1.5 }, { semitone: 12, beats: 1.5 },
+  ],
+};
+
+/**
  * Each biome's set, played in rotation so a long walk isn't one tune on
  * repeat. Every song in a set lives in the same region of the staff, so the
  * curriculum (low → middle → upper) survives the variety.
  */
 export const SONGS_BY_BIOME: Record<string, Song[]> = {
   village: [MARY_HAD_A_LITTLE_LAMB, HOT_CROSS_BUNS, ROW_YOUR_BOAT, THIS_OLD_MAN],
-  forest: [TWINKLE_TWINKLE, LONDON_BRIDGE, ARE_YOU_SLEEPING],
+  forest: [TWINKLE_TWINKLE, LONDON_BRIDGE, ARE_YOU_SLEEPING, MULBERRY_BUSH],
   riverside: [ODE_TO_JOY, JINGLE_BELLS, OLD_MACDONALD, ITSY_BITSY_SPIDER],
 };
 
