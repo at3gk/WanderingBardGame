@@ -101,3 +101,123 @@ describe('reading the staff the other way round', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Book Two: true keys (task 165, first piece)
+// ---------------------------------------------------------------------------
+
+import {
+  FLAT_ORDER,
+  FLAT_SIGNATURE_STEPS,
+  SHARP_ORDER,
+  SHARP_SIGNATURE_STEPS,
+  alteredLetters,
+  majorKey,
+  semitoneOfSpelling,
+  spellInKey,
+} from './notation';
+
+const KEY_NAMES = ['C', 'G', 'D', 'A', 'E', 'F', 'Bb', 'Eb', 'Ab'];
+
+describe('majorKey', () => {
+  it('knows the teaching span, four sharps to four flats', () => {
+    expect(majorKey('C')).toEqual({ fifths: 0 });
+    expect(majorKey('G')).toEqual({ fifths: 1 });
+    expect(majorKey('E')).toEqual({ fifths: 4 });
+    expect(majorKey('F')).toEqual({ fifths: -1 });
+    expect(majorKey('Ab')).toEqual({ fifths: -4 });
+  });
+
+  it('answers null for a key outside the span instead of guessing', () => {
+    expect(majorKey('F#')).toBeNull();
+    expect(majorKey('Db')).toBeNull();
+    expect(majorKey('c')).toBeNull();
+    expect(majorKey('')).toBeNull();
+  });
+});
+
+describe('alteredLetters', () => {
+  it('slices the standard orders', () => {
+    expect(alteredLetters({ fifths: 0 })).toEqual([]);
+    expect(alteredLetters({ fifths: 2 })).toEqual(['F', 'C']);
+    expect(alteredLetters({ fifths: -3 })).toEqual(['B', 'E', 'A']);
+  });
+
+  it('sharp and flat orders mirror each other', () => {
+    expect([...FLAT_ORDER].reverse()).toEqual([...SHARP_ORDER]);
+    expect(SHARP_SIGNATURE_STEPS).toHaveLength(4);
+    expect(FLAT_SIGNATURE_STEPS).toHaveLength(4);
+  });
+});
+
+describe('spellInKey', () => {
+  it('spells the sharp key diatonics through the signature, shown nothing', () => {
+    // F# in G major: carries the sharp, shows nothing — the signature says it.
+    const fis = spellInKey(6, majorKey('G')!);
+    expect(fis).toMatchObject({ letter: 'F', accidental: 'sharp', shown: null, step: 3 });
+    // C# and F# in D major.
+    expect(spellInKey(1, majorKey('D')!)).toMatchObject({ letter: 'C', accidental: 'sharp', shown: null, step: 0 });
+    // G# in E major.
+    expect(spellInKey(8, majorKey('E')!)).toMatchObject({ letter: 'G', accidental: 'sharp', shown: null });
+  });
+
+  it('spells the flat key diatonics through the signature', () => {
+    // Bb in F major.
+    expect(spellInKey(10, majorKey('F')!)).toMatchObject({ letter: 'B', accidental: 'flat', shown: null, step: 6 });
+    // Ab and Db in Ab major.
+    expect(spellInKey(8, majorKey('Ab')!)).toMatchObject({ letter: 'A', accidental: 'flat', shown: null });
+    expect(spellInKey(1, majorKey('Ab')!)).toMatchObject({ letter: 'D', accidental: 'flat', shown: null });
+  });
+
+  it('shows the natural sign exactly where the signature is being cancelled', () => {
+    // F natural in G major: the lesson a key signature teaches.
+    expect(spellInKey(5, majorKey('G')!)).toMatchObject({ letter: 'F', accidental: 'natural', shown: 'natural' });
+    // B natural in F major.
+    expect(spellInKey(11, majorKey('F')!)).toMatchObject({ letter: 'B', accidental: 'natural', shown: 'natural' });
+    // F natural in C major shows nothing — nothing to cancel.
+    expect(spellInKey(5, majorKey('C')!)).toMatchObject({ letter: 'F', accidental: null, shown: null });
+  });
+
+  it('shows chromatic notes in the key’s own direction', () => {
+    // C# in C major: sharp side.
+    expect(spellInKey(1, majorKey('C')!)).toMatchObject({ letter: 'C', accidental: 'sharp', shown: 'sharp' });
+    // Gb in Ab major: flat side, and not in the signature, so shown.
+    expect(spellInKey(6, majorKey('Ab')!)).toMatchObject({ letter: 'G', accidental: 'flat', shown: 'flat' });
+  });
+
+  it('never spells B#, E#, Cb or Fb, and never a double accidental', () => {
+    for (const name of KEY_NAMES) {
+      const key = majorKey(name)!;
+      for (let s = -24; s <= 24; s++) {
+        const spelt = spellInKey(s, key);
+        if (spelt.accidental === 'sharp') expect(['B', 'E']).not.toContain(spelt.letter);
+        if (spelt.accidental === 'flat') expect(['C', 'F']).not.toContain(spelt.letter);
+      }
+    }
+  });
+
+  it('round-trips: every spelling sounds back as the pitch it was spelt from', () => {
+    // Musical accuracy is inviolable (DESIGN.md): the letter+accidental the
+    // child reads must be exactly the pitch the engine plays, in every key,
+    // across four octaves.
+    for (const name of KEY_NAMES) {
+      const key = majorKey(name)!;
+      for (let s = -24; s <= 24; s++) {
+        const spelt = spellInKey(s, key);
+        expect(semitoneOfSpelling(spelt.step, spelt.accidental)).toBe(s);
+      }
+    }
+  });
+
+  it('keeps octaves honest at the boundaries', () => {
+    // F#3 sits on F3’s step, one octave below F#4.
+    expect(spellInKey(-6, majorKey('G')!).step).toBe(-4);
+    expect(spellInKey(6, majorKey('G')!).step).toBe(3);
+    expect(spellInKey(18, majorKey('G')!).step).toBe(10);
+  });
+
+  it('leaves Book One untouched: the naturals-only functions still refuse accidentals', () => {
+    expect(noteNameAt(6)).toBeNull();
+    expect(staffStepAt(6)).toBeNull();
+  });
+});
