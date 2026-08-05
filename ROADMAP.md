@@ -2430,6 +2430,29 @@ full verdict map and the measure-first suspicion list):
     thumb/gesture zones; and 07's walk-on door reads as prose — an
     affordance question for the human (child-wins says a door should
     look tappable; the no-menus idiom resists).
+    **Measurement done (2026-08-05) — THE PANEL WAS RIGHT ON THE
+    THIRD LOOK; the twice-refuted symptom is real, and the CLAIM was
+    what was wrong.** New instrument `tools/headgap.mjs`: at six
+    sampled moments per viewport it projects every lit glyph (alpha
+    > 0.25) through the live camera, using the same aPos/aScale
+    buffers the GPU draws, and measures neighbouring centre gaps
+    against summed projected head radii. Verdict: OVERLAP ON EVERY
+    VIEWPORT — worst pairs at ratio 0.56 (desktop), 0.23 (phone
+    portrait: heads 77% fused), 0.57 (landscape), 0.58 (tablet),
+    where ratio < 1 is geometric overlap of lit heads. The laneSpan
+    test's "tightest pair stays apart" claim pins NOMINAL arc
+    spacing; the eye sees PROJECTED spacing, and the lane's
+    perspective compresses gaps faster than the spawn-scale envelope
+    shrinks heads — the claim measured the wrong space, which is why
+    it survived two refutations while the symptom kept returning.
+    **Re-aimed lever (next visual run, frame-judged):** make the far
+    half of the lane honest in projection — candidates: steepen the
+    envelope's far-scale, lengthen far spacing (arc easing), or lift
+    far-note alpha floor so overlapped pairs are never both lit;
+    tune against headgap ratios (target: no lit pair under ~0.9 on
+    any postcard viewport) AND the frames, since a too-aggressive
+    fix empties the runway the wave-2 urgency work built. The
+    175-fold items above stand unchanged.
 
 181. **Smoke as soft forms.** The campfire smoke still reads as a stack
     of hard-edged translucent polygons ("a hovering boulder", "a render
