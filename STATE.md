@@ -1,7 +1,7 @@
 # STATE
 
-Run counter: 66 (the 2026-08-05 overnight loop session was runs ~51-65;
-run 61 was the consolidation pass; run 66 opens the next overnight loop)
+Run counter: 67 (the 2026-08-05 overnight loop session was runs ~51-65;
+run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -38,6 +38,27 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 67) — 183 measured: the "phantom
+  shadows" are TWO different systems, and each side vindicates a
+  different judge.** New instrument `tools/shadowcast.mjs` (frozen-
+  frame ablation: sun shadows off, then each caster family silenced,
+  pixel diffs). Dawn 01: real casts, 96.5% offscreen trees, 31.8% of
+  the frame. Golden busk 09: trees 34% + the encounter's travellers
+  49%. Noon 03: only 2% of the frame is cast — the big diagonal
+  bands are NOT shadows; they persist with the shadow map off and
+  don't move when the sun rotates 90°. They are the terrain's baked
+  tone field (meadowAt landform shade + aTone noise drift) — the
+  panel's "render banding" read was RIGHT at noon; that half belongs
+  to the 144/166 value-ladder family. Colour claim confirmed with
+  numbers: our shadows flip hue family (H 39°→222°) keeping 34-43%
+  saturation (grey-blue drain); ASH's shadowed ground goes same-
+  family deeper green (H 44°→75°) keeping 63% at V drop 0.31 —
+  DARKER than ours but hue-carrying. Softness is NOT the fault
+  (our penumbra 0.73-0.8 is reference-soft). Next lever when a fix
+  run picks this up: saturated same-family-cooler shadow colour
+  (skylight/CAST_SHADOW_HUE pass), judged on 01/09 separately from
+  03. Measurement-only; no game code touched.
 
 - **HANDOFF, 2026-08-05 (run 66) — 184 problem (1) fixed: the
   envelope grows for the whole flight.** The deepened diagnosis's
