@@ -39,6 +39,16 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-05 (run 62) — task 181 done: the smoke is
+  finally smoke.** painterly gained its one per-vertex-alpha door
+  (opt-in fadeAttribute, squared in the fragment); puff planes became
+  centre-fans (fade 1 centre, 0 rims); opacity 0.36 → 0.52 to keep
+  the 400 m telegraph. The three-wave "stacked glass plates" read is
+  gone in the re-shot 07 — soft warm haze, vertical mass intact.
+  Check at next wave: telegraph legibility at range. **CRITIQUE WAVE
+  NOW DUE: three visual tasks since wave 6 (signature engraving,
+  vertex AO, soft smoke).** 1157 green, build green.
+
 - **HANDOFF, 2026-08-05 (run 61) — CONSOLIDATION PASS.** Drift check
   clean across the session's six tasks: the walk-on is a road choice,
   Book Two is pedagogy presentation, the rest is data/rendering/perf —
