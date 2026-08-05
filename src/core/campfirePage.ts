@@ -17,6 +17,7 @@
  * month comes back the same number of campfires from the gate.
  */
 
+import { IDLE_JOURNAL_KIND } from './idle';
 import { FESTIVAL_LEGS, legsToFestival, type JourneyState } from './journey';
 import { rehearsalInvitation } from './rehearsal';
 
@@ -61,6 +62,30 @@ export const PAGE_MOMENTS_MAX = 6;
 
 /** The quiet-day line. A day with no moments still deserves a page. */
 const QUIET_LINE = 'A quiet road, walked the whole way.';
+
+/**
+ * The welcome — tonight's page opening on a day that began with a coming
+ * back (retention-design.md, recommendation 5: absence becomes story, not
+ * debt).
+ *
+ * The title card already says "The road kept your place." at boot; this is
+ * its campfire sibling, said hours later by the fire rather than the road,
+ * so it deliberately shares none of that sentence's words. What it says is
+ * that the playing carried on without anybody watching and that the company
+ * is welcome — which is true, and is the entire emotional content the
+ * feature is allowed to have.
+ *
+ * What it must never do is measure. There is no number here and no input
+ * that could become one: the composer knows only *that* the day held a
+ * coming-back, never how long the away was. No "you were gone", no
+ * "finally", no counting of days kept or missed — the absence cost nothing,
+ * so the line owes nothing back.
+ */
+export const WELCOME_LINE =
+  'The fire is glad of the company — there was noodling at the roadside all the while, and the tunes kept warm.';
+
+/** The mark a welcome moment carries, so a caller can tell it from a lived one. */
+export const WELCOME_KIND = 'welcome';
 
 /**
  * The walk-on door's line. "Tap here" because the page's other rows fold it
@@ -149,8 +174,19 @@ export function campfirePage(
   roadNameText: string | null = null,
 ): CampfirePage {
   const journal = Array.isArray(state.journal) ? state.journal : [];
-  const kept = journal.slice(Math.max(0, journal.length - PAGE_MOMENTS_MAX));
-  const moments: CampfirePageLine[] =
+
+  // Searched across the whole journal rather than the page window: the
+  // coming-back is written at dawn, and a day with any life in it will have
+  // pushed that line off the end long before the fire. Only its existence
+  // is read — the entry's own numbers are never consulted, which is what
+  // makes it impossible for a day count to leak into the welcome.
+  const returned = journal.find((entry) => entry && entry.kind === IDLE_JOURNAL_KIND);
+
+  // The welcome takes a moment's room rather than adding one, so the page
+  // stays the handful of lines a child gets read at a real fire.
+  const room = returned ? PAGE_MOMENTS_MAX - 1 : PAGE_MOMENTS_MAX;
+  const kept = journal.slice(Math.max(0, journal.length - room));
+  const lived: CampfirePageLine[] =
     kept.length > 0
       ? kept.map((entry) => ({
           text: entry.line,
@@ -158,6 +194,12 @@ export function campfirePage(
           kind: entry.kind,
         }))
       : [{ text: QUIET_LINE, dayFraction: state.dayFraction, kind: 'note' }];
+
+  // Under the sky the return happened under, which is the dawn one — the
+  // fire says hello about the morning, then reads the day it opened.
+  const moments: CampfirePageLine[] = returned
+    ? [{ text: WELCOME_LINE, dayFraction: returned.dayFraction, kind: WELCOME_KIND }, ...lived]
+    : lived;
 
   const page: CampfirePage = {
     title: roadNameText ? `${roadNameText} — tonight's page` : "Tonight's page",

@@ -132,7 +132,7 @@ import {
   rollEncounter,
   type EncounterAsk,
 } from '../core/encounters';
-import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
+import { describeIdleYield, idleYield, IDLE_JOURNAL_KIND, loadIdle, saveIdle } from '../core/idle';
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
 import { campfirePage, type CampfirePage } from '../core/campfirePage';
 import { postcardLines, POSTCARD_FILENAME, type PostcardCard } from '../core/postcardCard';
@@ -2033,7 +2033,9 @@ export class RoadStage implements Stage {
     if (yielded.coins <= 0 && yielded.delight <= 0) return;
     this.journey = earn(this.journey, yielded.coins, yielded.delight);
     const line = describeIdleYield(yielded);
-    this.journey = recordEntry(this.journey, { kind: 'idle', line });
+    // Tagged, not counted: tonight's page reads this kind back to open with
+    // a welcome (campfirePage's WELCOME_LINE), and the tag is all it reads.
+    this.journey = recordEntry(this.journey, { kind: IDLE_JOURNAL_KIND, line });
     this.hud.setCoins(this.journey.coins);
     this.hud.say(line, 11);
   }

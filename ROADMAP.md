@@ -2332,6 +2332,19 @@ top task fits its energy.
     campfire welcome beat — the case's idle takings, a journal line about
     the roadside days. No counter of days kept or missed, ever. (idle.ts
     describeIdleYield + campfire/journal.)
+    **Done (2026-08-05, run 79; delegated to an opus agent, verified
+    in the main loop).** The fire's half of the beat: tonight's page
+    opens with WELCOME_LINE ("The fire is glad of the company —
+    there was noodling at the roadside all the while, and the tunes
+    kept warm.") whenever the day's journal carries the idle-return
+    entry — found across the WHOLE journal, not the 6-moment window,
+    so a busy return day doesn't lose its welcome (regression-
+    tested). Composed from the entry's existence only; ban sweeps
+    cover digits, calendar words, and the debt register (no "you
+    were gone", no "finally"), proven against a fixture that puts
+    countable numbers right next to the fact. IDLE_JOURNAL_KIND
+    exported so writer and reader can't drift. 1193 tests (+7),
+    build green.
 157. **Two bookmarks on one bench.** Local family profiles: two
     localStorage bookmarks, each with its own song pin and scaffold
     state, each able to see the other's journal PAGES (never anything

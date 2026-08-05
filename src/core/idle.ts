@@ -108,6 +108,17 @@ export const DEFAULT_IDLE_OPTIONS: Required<IdleOptions> = Object.freeze({
 export const IDLE_STORAGE_KEY = 'wb.idle.v1';
 
 /**
+ * The journal kind stamped on the line `describeIdleYield` writes.
+ *
+ * Shared because it is the game's only honest record that a session began
+ * with a *coming back* rather than a straight continuation, and tonight's
+ * page reads it to decide whether the fire says hello. A matched tag, never
+ * a measurement: the presence of the entry is the whole fact, and nothing
+ * downstream is allowed to ask it how long the absence was.
+ */
+export const IDLE_JOURNAL_KIND = 'idle';
+
+/**
  * Yield for an absence. Deterministic: same state and same clock, same
  * result, on every device — with the one caveat that `Math.exp` is only
  * specified to be *approximately* correct, so two engines could in principle

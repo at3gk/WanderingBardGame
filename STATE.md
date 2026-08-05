@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 78 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 79 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,13 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 79) — 156 done: the fire welcomes the
+  return.** Tonight's page opens with the welcome line when the day
+  carries the idle-return entry (whole-journal search; existence
+  only — day-count and debt-register bans swept against adversarial
+  fixtures). 1193 tests (+7). Retention remaining: 151 pieces, 152
+  signage, 157 (arc — needs care). Visual menu unchanged.
 
 - **HANDOFF, 2026-08-05 (run 78) — 155 first slice: mementos press
   into the page.** leavesMemento(roll) = gift OR rare/wondrous (the
