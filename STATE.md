@@ -1,7 +1,7 @@
 # STATE
 
-Run counter: 61 (the 2026-08-05 overnight loop session was runs ~51-61;
-run 61 was the consolidation pass)
+Run counter: 66 (the 2026-08-05 overnight loop session was runs ~51-65;
+run 61 was the consolidation pass; run 66 opens the next overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -38,6 +38,24 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 66) — 184 problem (1) fixed: the
+  envelope grows for the whole flight.** The deepened diagnosis's
+  first half is shipped: `glyphEnvelope` no longer saturates scale at
+  a sixth of the flight — scale climbs continuously (0.5 → full at
+  0.95 of flight), ink arrives over the first 0.35 and cruises at
+  0.55, urgency ramp untouched so the barline note stays boldest.
+  The old test pin ("full nominal presence for the last 1500 ms")
+  was re-derived into eye-tiers — it was a nominal-space blanket,
+  the same wrong-space failure as the laneSpan claim it fell with.
+  Headgap: mid-lane fusion GONE on all four viewports (worst
+  mid-lane pair now 0.88; was 0.34-0.79); every remaining sub-0.9
+  pair is the IN-RUNWAY eighth pair — problem (2), the per-viewport
+  design decision, still deliberately open. Frames 01/03 show clean
+  depth-ordering; 08/10's near-barline pair still touches as
+  expected. 1160 tests (+3), build green. Watch item for the next
+  critique wave: does the dimmer far lane read as "calm" or as
+  "empty"? (The far third now carries ink under 0.45.)
 
 - **HANDOFF, 2026-08-05 (run 65, session close) — 184's fix
   deliberately NOT attempted; diagnosis deepened instead.** The

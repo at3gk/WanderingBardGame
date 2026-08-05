@@ -405,19 +405,30 @@ describe('the ribbon prints exactly five staff lines', () => {
 
 /**
  * The approach envelope: the note at the barline is the boldest thing on the
- * ribbon, and every note is readable for the whole of its final approach.
+ * ribbon, and a note is readable for the whole of its final approach.
  *
  * The wave-2 critique found the inverse shipped — the note to tap NOW was
  * the least legible mark on the lane, half-dissolved at the hit moment,
  * while mid-flight notes rode at full strength — and separately that a note
  * fading in at full size next to its same-pitch predecessor read as a ghost
  * duplicate. These pin the envelope that answers both.
+ *
+ * The old blanket pin here — full nominal presence (alpha 0.7, scale 0.95)
+ * for the entire last 1500 ms — was re-derived by task 184's headgap
+ * measurement: it held the envelope saturated through the lane's
+ * perspective-compressed far stretch, where a nominal 0.95 projects too
+ * small to read anyway, and full-size fully-lit heads there measured as
+ * geometrically fused pairs on every viewport. Nominal-space blanket
+ * claims measure the wrong space (the same failure the laneSpan spacing
+ * claim died of). The contract is now tiered the way the eye actually
+ * meets an approaching note: legible-and-climbing at 1000 ms out, plainly
+ * readable at 600 ms, near-full through the scaffold's 350 ms answer
+ * window (`SUPPORT_LEAD_MS`'s floor — the reveal must land on a strong
+ * head). Each tier stated against TRAVEL_TIME_MS so a re-timed flight
+ * moves the pins with it.
  */
 describe('the imminent note is the most legible thing on the ribbon', () => {
-  // The runway contract, in the critique's own terms: readable for at least
-  // 1.5 s of approach. Stated against TRAVEL_TIME_MS so a re-timed flight
-  // moves the pin with it.
-  const runwayStart = 1 - 1500 / TRAVEL_TIME_MS;
+  const atLeadMs = (ms: number) => 1 - ms / TRAVEL_TIME_MS;
 
   it('arrives at full ink and its largest size exactly at the barline', () => {
     const atBar = glyphEnvelope(1);
@@ -427,12 +438,35 @@ describe('the imminent note is the most legible thing on the ribbon', () => {
     expect(atBar.scale).toBeGreaterThan(cruise.scale);
   });
 
-  it('is readable for the whole runway', () => {
-    for (let p = runwayStart; p <= 1.0001; p += 0.01) {
+  it('is legible and climbing from 1000 ms out', () => {
+    for (let p = atLeadMs(1000); p <= 1.0001; p += 0.01) {
+      const env = glyphEnvelope(p);
+      expect(env.alpha).toBeGreaterThanOrEqual(0.55);
+      expect(env.scale).toBeGreaterThanOrEqual(0.7);
+    }
+  });
+
+  it('is plainly readable from 600 ms out', () => {
+    for (let p = atLeadMs(600); p <= 1.0001; p += 0.01) {
       const env = glyphEnvelope(p);
       expect(env.alpha).toBeGreaterThanOrEqual(0.7);
+      expect(env.scale).toBeGreaterThanOrEqual(0.85);
+    }
+  });
+
+  it('is at near-full presence through the scaffold answer window', () => {
+    for (let p = atLeadMs(350); p <= 1.0001; p += 0.01) {
+      const env = glyphEnvelope(p);
+      expect(env.alpha).toBeGreaterThanOrEqual(0.85);
       expect(env.scale).toBeGreaterThanOrEqual(0.95);
     }
+  });
+
+  it('never carries a full-size head through the far half, where projection compresses', () => {
+    // The task-184 lever: nominal growth must still be under way while the
+    // projection is compressing, or full-size heads fuse in the far lane.
+    expect(glyphEnvelope(0.5).scale).toBeLessThanOrEqual(0.8);
+    expect(glyphEnvelope(0.25).alpha).toBeLessThanOrEqual(0.45);
   });
 
   it('only ever grows on the way in — urgency runs the same direction as time', () => {
