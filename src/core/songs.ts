@@ -260,6 +260,83 @@ export const SONGS_BY_BIOME: Record<string, Song[]> = {
 
 export const SONGS: Song[] = Object.values(SONGS_BY_BIOME).flat();
 
+// ---------------------------------------------------------------------------
+// Book Two: true keys (task 165)
+// ---------------------------------------------------------------------------
+
+/**
+ * My Bonnie Lies Over the Ocean — traditional Scottish (published 1881,
+ * melody older; unambiguously public domain), the accidentals volume's
+ * opening tune: a waltz in G whose F♯ is the leading tone a child already
+ * sings without knowing its name ("to ME", "bring BACK").
+ *
+ * Transcribed 2026-08-05 from two independent settings on thesession.org
+ * (tune 6023: a G-major setting and a D-major setting), which agree
+ * note-for-note once transposed; cross-checked against the tune as sung.
+ * Two normalizations, both honest to this engine where duration is
+ * arrival spacing, not sustain:
+ * - the source's cross-barline ties (the held "o-cean", "me") become
+ *   note + written rest — one tap, then the breath the singer holds
+ *   through, engraved as the rests task 50 already teaches;
+ * - the closing G is short by the one-beat pickup, so the loop's seam
+ *   completes the final bar with the next verse's "My" — see
+ *   `Song.pickupBeats`.
+ */
+export const MY_BONNIE: Song = {
+  id: 'my-bonnie',
+  title: 'My Bonnie Lies Over the Ocean',
+  beatsPerBar: 3,
+  pickupBeats: 1,
+  key: 'G',
+  notes: [
+    // My
+    { semitone: 2, beats: 1 },
+    // Bon-nie lies | o-ver the | o---cean
+    { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 7, beats: 1 },
+    { semitone: 9, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 4, beats: 1 },
+    { semitone: 2, beats: 1 }, { semitone: -1, beats: 2 },
+    { rest: true, semitone: 0, beats: 2 }, { semitone: 2, beats: 1 },
+    // Bon-nie lies | o-ver the | sea
+    { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 7, beats: 1 },
+    { semitone: 7, beats: 1 }, { semitone: 6, beats: 1 }, { semitone: 7, beats: 1 },
+    { semitone: 9, beats: 3 },
+    { rest: true, semitone: 0, beats: 2 }, { semitone: 2, beats: 1 },
+    // Bon-nie lies | o-ver the | o---cean
+    { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 7, beats: 1 },
+    { semitone: 9, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 4, beats: 1 },
+    { semitone: 2, beats: 1 }, { semitone: -1, beats: 2 },
+    { rest: true, semitone: 0, beats: 2 }, { semitone: 2, beats: 1 },
+    // bring back my | Bon-nie to | me
+    { semitone: 4, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 7, beats: 1 },
+    { semitone: 6, beats: 1 }, { semitone: 4, beats: 1 }, { semitone: 6, beats: 1 },
+    { semitone: 7, beats: 3 },
+    { rest: true, semitone: 0, beats: 3 },
+    // Bring | back, | bring | back,
+    { semitone: 2, beats: 3 }, { semitone: 7, beats: 3 },
+    { semitone: 4, beats: 3 }, { semitone: 9, beats: 2 }, { semitone: 7, beats: 1 },
+    // bring back my Bon-nie to | me, to | me
+    { semitone: 6, beats: 1 }, { semitone: 6, beats: 1 }, { semitone: 6, beats: 1 },
+    { semitone: 6, beats: 1 }, { semitone: 4, beats: 1 }, { semitone: 6, beats: 1 },
+    { semitone: 7, beats: 2 }, { semitone: 9, beats: 1 },
+    { semitone: 11, beats: 3 },
+    // Bring | back, | bring | back,
+    { semitone: 2, beats: 3 }, { semitone: 7, beats: 3 },
+    { semitone: 4, beats: 3 }, { semitone: 9, beats: 2 }, { semitone: 7, beats: 1 },
+    // bring back my Bon-nie to | me
+    { semitone: 6, beats: 1 }, { semitone: 6, beats: 1 }, { semitone: 6, beats: 1 },
+    { semitone: 6, beats: 1 }, { semitone: 4, beats: 1 }, { semitone: 6, beats: 1 },
+    { semitone: 7, beats: 2 },
+  ],
+};
+
+/**
+ * The accidentals volume. Its own list, not a biome set: Book Two is a
+ * choice made after the festival, not scenery met on the road — the
+ * volume-structure piece wires where these become reachable. Every song
+ * here carries a key and is held to the keyed engraving rules.
+ */
+export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE];
+
 /**
  * The song a biome plays on its `pass`-th time through, cycling. Falls back
  * to the village set for an unknown biome id.

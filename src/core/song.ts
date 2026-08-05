@@ -34,6 +34,17 @@ export interface Song {
   beatsPerBar: number;
   notes: SongNote[];
   /**
+   * Anacrusis: how many beats of pickup open the song before its first
+   * full bar (the "My BON-nie" upbeat). An engraving fact only — like
+   * `beatsPerBar` it never changes how the timeline expands, because this
+   * engine's durations are arrival spacing either way. The bar-integrity
+   * tests offset their grid by it, and a looping song's final bar is
+   * short by exactly this much, so the seam completes the bar: the tune
+   * hands its own upbeat back. Absent means none, which is every Book
+   * One song.
+   */
+  pickupBeats?: number;
+  /**
    * Major key the song is written in, by name ('G', 'F', 'Bb', …) —
    * resolved through notation.ts's `majorKey`. Absent means C major:
    * Book One's whole world, where every pitch is a natural and no

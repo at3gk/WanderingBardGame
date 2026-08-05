@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { noteNameAt, staffStepAt } from './notation';
 import { songLengthBeats } from './song';
-import { SONGS, SONGS_BY_BIOME, songForBiome } from './songs';
+import { BOOK_TWO_SONGS, SONGS, SONGS_BY_BIOME, songForBiome } from './songs';
 
 /**
  * These are engraving checks, not style checks. Kids read this screen, so a
@@ -13,11 +13,17 @@ import { SONGS, SONGS_BY_BIOME, songForBiome } from './songs';
 // Quarter, half, whole, eighth, dotted quarter, dotted half.
 const LEGAL_DURATIONS = [0.5, 1, 1.5, 2, 3, 4];
 
-describe.each(SONGS)('song: $title', (song) => {
-  it('uses only natural notes — every note has a one-letter name', () => {
+describe.each([...SONGS, ...BOOK_TWO_SONGS])('song: $title', (song) => {
+  it('spells cleanly: naturals-only in Book One, diatonic to the key in Book Two', () => {
+    const key = song.key === undefined ? null : majorKey(song.key);
     for (const note of song.notes) {
       if (note.rest) continue;
-      expect(noteNameAt(note.semitone), `semitone ${note.semitone}`).not.toBeNull();
+      if (key === null) {
+        expect(noteNameAt(note.semitone), `semitone ${note.semitone}`).not.toBeNull();
+      } else {
+        // The signature does all the work — no shown accidental, ever.
+        expect(spellInKey(note.semitone, key).shown, `semitone ${note.semitone}`).toBeNull();
+      }
     }
   });
 
@@ -32,19 +38,24 @@ describe.each(SONGS)('song: $title', (song) => {
   });
 
   it('never runs a note over a bar line (it would need a tie)', () => {
-    let cursor = 0;
+    // The bar grid starts a pickup early (anacrusis — see Song.pickupBeats):
+    // an upbeat note lives in its own partial bar before beat zero. Every
+    // Book One song has no pickup, so this is the old arithmetic for them.
+    let cursor = -(song.pickupBeats ?? 0);
     for (const note of song.notes) {
-      const startBar = Math.floor(cursor / song.beatsPerBar);
-      const endBar = Math.floor((cursor + note.beats - 1e-9) / song.beatsPerBar);
+      // `+ 0` folds Math.floor's -0 into 0 — toBe is Object.is, which tells them apart.
+      const startBar = Math.floor(cursor / song.beatsPerBar) + 0;
+      const endBar = Math.floor((cursor + note.beats - 1e-9) / song.beatsPerBar) + 0;
       expect(endBar, `note at beat ${cursor} spans bars`).toBe(startBar);
       cursor += note.beats;
     }
   });
 
   it('stays in a range the staff can draw legibly', () => {
+    const key = song.key === undefined ? null : majorKey(song.key);
     for (const note of song.notes) {
       if (note.rest) continue;
-      const step = staffStepAt(note.semitone)!;
+      const step = key === null ? staffStepAt(note.semitone)! : spellInKey(note.semitone, key).step;
       // One ledger below middle C through one ledger above the staff.
       expect(step, `semitone ${note.semitone}`).toBeGreaterThanOrEqual(-2);
       expect(step, `semitone ${note.semitone}`).toBeLessThanOrEqual(12);
@@ -139,7 +150,7 @@ describe('the songbook', () => {
 // drawable staff.
 // ---------------------------------------------------------------------------
 
-import { semitoneOfSpelling, spellInKey } from './notation';
+import { majorKey, semitoneOfSpelling, spellInKey } from './notation';
 import { songKey, type Song } from './song';
 
 /** The Book Two engraving rules, as one callable check. */
@@ -197,12 +208,31 @@ describe('Book Two keys', () => {
     expect(keyedSongFaults(low).some((f) => f.includes('off the drawable staff'))).toBe(true);
   });
 
-  it('holds every shipped keyed song to the rules (none ship yet — Book One is keyless on purpose)', () => {
+  it('keeps Book One keyless and holds every Book Two song to the keyed rules', () => {
     for (const song of SONGS) {
-      expect(song.key, `${song.title} carries a key before the volume structure exists`).toBeUndefined();
+      expect(song.key, `${song.title} carries a key inside Book One`).toBeUndefined();
     }
-    for (const song of SONGS.filter((s) => s.key !== undefined)) {
+    for (const song of BOOK_TWO_SONGS) {
+      expect(song.key, `${song.title} is in Book Two without a key`).toBeDefined();
       expect(keyedSongFaults(song)).toEqual([]);
     }
+  });
+
+  it('keeps a pickup smaller than the bar, and the loop seam bar-true', () => {
+    for (const song of [...SONGS, ...BOOK_TWO_SONGS]) {
+      const pickup = song.pickupBeats ?? 0;
+      expect(pickup).toBeGreaterThanOrEqual(0);
+      expect(pickup).toBeLessThan(song.beatsPerBar);
+    }
+    // My Bonnie's closing bar is short by exactly its pickup, so a looping
+    // pass hands the upbeat back — total length stays whole-bar divisible.
+    const bonnie = BOOK_TWO_SONGS.find((s) => s.id === 'my-bonnie')!;
+    expect(bonnie.pickupBeats).toBe(1);
+    expect(bonnie.notes.reduce((t, n) => t + n.beats, 0) % bonnie.beatsPerBar).toBe(0);
+  });
+
+  it('uses the leading tone — Book Two’s first lesson is a real F sharp', () => {
+    const bonnie = BOOK_TWO_SONGS.find((s) => s.id === 'my-bonnie')!;
+    expect(bonnie.notes.some((n) => !n.rest && ((n.semitone % 12) + 12) % 12 === 6)).toBe(true);
   });
 });

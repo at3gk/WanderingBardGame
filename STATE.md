@@ -66,9 +66,19 @@ mastery display must read that section first.
   the signature to the F?). Book One byte-identical (no key = the
   old refusal path; all RoadStage tune sites pass songKey = C).
   Verified live incl. teardown, zero console errors. 1116 green
-  (+5). Remaining on 165: volume structure, then the first Book Two
-  song (public-domain transcription needed — task 60's sourcing
-  bar). v1.0 arc otherwise: 161 still blocked on human.
+  (+5). **Fourth piece same night: the first Book Two song.** My
+  Bonnie Lies Over the Ocean, in G with its leading-tone F♯ —
+  task 60's sourcing bar met at last (this machine HAS network):
+  two independent thesession.org settings agree note-for-note.
+  Ties → note+rest (duration is arrival spacing); pickup → new
+  `Song.pickupBeats` anacrusis support (bar grid offsets; beware
+  Math.floor(-0) vs toBe(0)). In BOOK_TWO_SONGS, not yet reachable;
+  engraving suite runs over both books. 1125 green (+9). Remaining
+  on 165: the volume structure (Book Two shelf in the songbook,
+  unlocked by festivals >= 1) — then TASK 165 AND THE v1.0 ARC are
+  done bar 161 (blocked on human). NOTE for that piece: network
+  also unblocks task 60 (Mulberry Bush, forest set) — same session
+  kind of work if a run wants it.
 
 - **HANDOFF, 2026-08-05 (overnight loop session) — TASK 182 RESOLVED:
   the noon gate was never red; the gauge was rolling dice.** One
