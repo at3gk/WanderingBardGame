@@ -2539,6 +2539,17 @@ full verdict map and the measure-first suspicion list):
     fray/edge untouched — if wave 9 still reads smear, softness is
     its own run. WATCH: dappled shrub-shadow density at golden hour
     (could read as leopard spots to a fresh panel).
+    **Form run done (2026-08-05, run 75): SHADOW_EDGE 0.13 → 0.08.**
+    Waves 8 AND 9 put shadow FORM top of the fault list under four
+    lenses after colour and depth had landed — two independent panels
+    flipping 183's "softness is not the fault" is the licence the
+    narrowing waited for. Riser-to-fray ratio moves to ~4 lobes per
+    ramp. Measured: noon penumbra share 0.50 → 0.13 (deep 0.8 —
+    hard-edged noon shadows); dawn/golden stay soft (the ×8 low-sun
+    projection stretch dominates — if wave 10 still reads smear
+    THERE, the lever is the fray amplitude or the map resolution,
+    not this riser). Frames: dawn's stripes carry ragged brush-lobed
+    edges. All gauges PASS, 1161 tests green.
 184. **Note-head overlap — measure the governor at last (wave 7).**
     Five frames name "fused brown blobs" where notes are close in
     musical time (01/02/03/08 portrait/10 tablet), while 05/09 with

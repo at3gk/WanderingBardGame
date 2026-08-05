@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 74 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 75 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,17 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 75) — shadow FORM run: SHADOW_EDGE
+  0.13 → 0.08.** Two same-rubric panels licensed it. Noon penumbra
+  share 0.50 → 0.13 (hard-edged); dawn/golden remain soft — the
+  low-sun ×8 projection stretch dominates there, so if wave 10 still
+  reads smear at dawn the lever is fray amplitude or shadow-map
+  resolution, NOT further riser narrowing. Frames: dawn stripes now
+  ragged brush lobes. All gauges PASS, 1161 tests. Next menu:
+  153-157 retention (change of muscle after five visual runs), 149
+  scatter patches, sentinel postcard-cadence, HUD idle-opacity
+  decision (wave 9 item 2), 184 problem (2).
 
 - **HANDOFF, 2026-08-05 (run 74) — WAVE-9 BLIND PANEL: mean 5.02,
   FLAT against wave 8's 5.10 — same rubric, same judge model, honest
