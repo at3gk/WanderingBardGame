@@ -1904,6 +1904,30 @@ scene — build once).
     structure exists. 1111 tests green (+5), build green. Next: the
     engraving (signature + accidental glyphs in SongNotes), then the
     volume structure, then the first Book Two song.
+    **Third piece done (2026-08-05): the signature on the paper.** The
+    glyph atlas's three spare cells become the sharp/flat/natural
+    marks (body channel only — an accidental carries no letter);
+    `SongNotes.setKey` raises a key's signature as fixed instances on
+    the paper's tail, PAST the barline on the player's side — the
+    written line's left edge is at this ribbon's vanishing distance,
+    and the near end is where the eye lives — with the tail extended
+    (TAIL_M 0.46 → 1.14) so the marks stand on paper, staggered in
+    entry order at the standard treble steps (pure `signatureGlyphs`,
+    pinned by test: G = one sharp on F5's line). With a key set,
+    every head's step is SPELT through it (`stepOf` → spellInKey):
+    a G-major F♯ sits on F4's space showing its plain F letter — the
+    signature carries the alteration, which is the notation being
+    taught (single-letter heads stay legible at phone size; flagged
+    for human playtest). Book One's path is byte-identical: no key →
+    staffStepAt's refusal, and all three RoadStage tune sites now
+    pass `songKey(song)`, which is C for every shipped song.
+    Verified live: baseline ribbon unchanged; setKey(G) raises the ♯
+    on the extended tail; a fixture F♯4 renders mid-flight at step 3
+    (screenshot read); setKey(null) takes it all down; zero console
+    errors. 1116 tests green (+5), build green. Remaining on 165:
+    the songbook volume structure, then the first Book Two song
+    (needs a verified public-domain transcription — same sourcing
+    bar task 60 set).
 
 ## The v1.3 queue: "the family songbook" (human-set, 2026-08-01, post-festival)
 

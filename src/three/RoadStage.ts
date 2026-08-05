@@ -96,7 +96,7 @@ import {
   type Instrument,
 } from '../core/instruments';
 import { beatIntervalMs } from '../core/beats';
-import { expandSong, songDurationMs, type Song, type SongBeat } from '../core/song';
+import { expandSong, songDurationMs, songKey, type Song, type SongBeat } from '../core/song';
 import { rehearsalLine } from '../core/rehearsal';
 import { SONGS } from '../core/songs';
 import { songForPass } from '../core/songChoice';
@@ -1053,6 +1053,10 @@ export class RoadStage implements Stage {
     this.passStumbles = 0;
     this.notes.setHeadsAlpha(HEADS_ALPHA[shownLevel(this.headsEarned, 0)]);
     this.notes.setInstrument(instrument);
+    // The song's key rides with its beats (task 165): a Book Two song's
+    // paper carries its signature and spells its steps; every Book One
+    // song resolves to C and takes the signature down.
+    this.notes.setKey(songKey(song));
     this.notes.setBeats(this.beats, this.tuneLeads);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.setActive(true);
@@ -1257,6 +1261,10 @@ export class RoadStage implements Stage {
     this.headsEarned = 0;
     this.notes.setHeadsAlpha(1);
     this.notes.setInstrument(instrument);
+    // The song's key rides with its beats (task 165): a Book Two song's
+    // paper carries its signature and spells its steps; every Book One
+    // song resolves to C and takes the signature down.
+    this.notes.setKey(songKey(song));
     this.notes.setBeats(this.beats, this.tuneLeads);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.setActive(true);
@@ -1417,6 +1425,10 @@ export class RoadStage implements Stage {
     this.hitsAtPassStart = 0;
     this.refreshHeads(song);
     this.notes.setInstrument(instrument);
+    // The song's key rides with its beats (task 165): a Book Two song's
+    // paper carries its signature and spells its steps; every Book One
+    // song resolves to C and takes the signature down.
+    this.notes.setKey(songKey(song));
     this.notes.setBeats(this.beats, this.tuneLeads);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.setActive(true);

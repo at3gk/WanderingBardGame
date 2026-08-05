@@ -166,7 +166,17 @@ import {
 } from 'three';
 import { TRAVEL_TIME_MS } from '../../core/beats';
 import type { Instrument } from '../../core/instruments';
-import { letterForStep, needsLedger, staffStepAt, stemDown } from '../../core/notation';
+import {
+  FLAT_SIGNATURE_STEPS,
+  SHARP_SIGNATURE_STEPS,
+  alteredLetters,
+  letterForStep,
+  needsLedger,
+  spellInKey,
+  staffStepAt,
+  stemDown,
+  type KeySignature,
+} from '../../core/notation';
 import type { Judgement } from '../../core/performance';
 import type { SongBeat } from '../../core/song';
 import {
@@ -544,6 +554,45 @@ const ARRIVAL_SWELL = 1.14;
 
 /** Instances reserved for glyphs. A bar of eighths at this travel time needs ten. */
 const MAX_GLYPHS = 28;
+
+// --- Book Two: the key signature on the paper (task 165) -------------------
+//
+// A keyed song's staff carries its signature the way a printed line does:
+// the accidentals at their fixed staff positions, horizontally staggered in
+// the order they enter the key. On this ribbon the signature sits PAST the
+// barline, on the player's side — past where a gone-by note comes to rest
+// (PAST_DRIFT_M + a head's half-width reaches ~0.40 m) — because that end of
+// the paper is where the eye lives, and the far end, where a written line's
+// signature would be, is at the ribbon's vanishing distance. The paper's
+// tail extends to carry it (SIGNATURE_TAIL_M replaces TAIL_M while a key is
+// set), so the signature stands on paper, not on air.
+
+/** The most accidentals a supported signature carries (±4 — see notation.ts). */
+const SIGNATURE_MAX = 4;
+const TOTAL_GLYPHS = MAX_GLYPHS + SIGNATURE_MAX;
+/** Atlas cells 29-31: the three accidental marks, body channel only. */
+const SHARP_CELL = 29;
+const FLAT_CELL = 30;
+const NATURAL_CELL = 31;
+/** Arc of the signature's first mark, metres past the barline (negative = player side). */
+const SIGNATURE_ARC_M = -0.66;
+/** Horizontal stagger between the signature's marks, in metres of arc. */
+const SIGNATURE_STAGGER_M = 0.11;
+/** Paper tail while a signature is on the page. */
+const SIGNATURE_TAIL_M = 1.14;
+const SIGNATURE_SCALE = 0.72;
+
+/**
+ * The signature's marks for a key: which atlas cell, at which staff step, in
+ * entry order. Pure, so the test can pin the engraving (G major = one sharp
+ * on F5's line; flats descend from B4). Null or C answers none.
+ */
+export function signatureGlyphs(key: KeySignature | null): Array<{ cell: number; step: number }> {
+  if (!key || !Number.isFinite(key.fifths) || key.fifths === 0) return [];
+  const steps = key.fifths > 0 ? SHARP_SIGNATURE_STEPS : FLAT_SIGNATURE_STEPS;
+  const cell = key.fifths > 0 ? SHARP_CELL : FLAT_CELL;
+  return alteredLetters(key).map((_, i) => ({ cell, step: steps[i] }));
+}
 
 /**
  * Cream. Reserved for notation everywhere in this game, and used here for
@@ -987,6 +1036,14 @@ export class SongNotes {
   private revealLeads: readonly number[] | null = null;
 
   /**
+   * Book Two: the key whose signature the paper carries (task 165). Null is
+   * Book One — no signature, and an accidental pitch is refused into a rest
+   * exactly as before. Set, every head's step is spelt through the key.
+   */
+  private key: KeySignature | null = null;
+  private signature: Array<{ cell: number; step: number }> = [];
+
+  /**
    * The by-heart ladder's head fade (core/mastery.ts): the alpha the
    * travelling heads are settling toward, and where the settle currently
    * is. Only travelling notes take it — a struck bloom and a softened
@@ -1183,19 +1240,19 @@ export class SongNotes {
     // --- the glyphs -----------------------------------------------------
     this.glyphGeometry = new InstancedBufferGeometry();
     this.glyphGeometry.setAttribute('position', quadPositions());
-    this.aPos = instanced(MAX_GLYPHS, 3);
-    this.aCell = instanced(MAX_GLYPHS, 2);
-    this.aScale = instanced(MAX_GLYPHS, 1);
-    this.aAlpha = instanced(MAX_GLYPHS, 1);
-    this.aPale = instanced(MAX_GLYPHS, 1);
-    this.aLetter = instanced(MAX_GLYPHS, 1);
+    this.aPos = instanced(TOTAL_GLYPHS, 3);
+    this.aCell = instanced(TOTAL_GLYPHS, 2);
+    this.aScale = instanced(TOTAL_GLYPHS, 1);
+    this.aAlpha = instanced(TOTAL_GLYPHS, 1);
+    this.aPale = instanced(TOTAL_GLYPHS, 1);
+    this.aLetter = instanced(TOTAL_GLYPHS, 1);
     this.glyphGeometry.setAttribute('aPos', this.aPos);
     this.glyphGeometry.setAttribute('aCell', this.aCell);
     this.glyphGeometry.setAttribute('aScale', this.aScale);
     this.glyphGeometry.setAttribute('aAlpha', this.aAlpha);
     this.glyphGeometry.setAttribute('aPale', this.aPale);
     this.glyphGeometry.setAttribute('aLetter', this.aLetter);
-    this.glyphGeometry.instanceCount = MAX_GLYPHS;
+    this.glyphGeometry.instanceCount = TOTAL_GLYPHS;
     this.glyphGeometry.boundingSphere = null;
 
     this.glyphMaterial = new ShaderMaterial({
@@ -1333,6 +1390,33 @@ export class SongNotes {
     this.headTarget = Math.min(1, Math.max(0, Number.isFinite(target) ? target : 1));
   }
 
+  /**
+   * The key whose signature the paper carries (task 165). Call before
+   * `setBeats` for a keyed song; null (or C) takes the signature down and
+   * restores Book One's contract whole. The paper's tail is rebuilt when
+   * the signature's presence changes, because the signature stands on an
+   * extended tail — see SIGNATURE_TAIL_M.
+   */
+  setKey(key: KeySignature | null): void {
+    const fifths = key && Number.isFinite(key.fifths) ? Math.trunc(key.fifths) : 0;
+    const next = fifths === 0 ? null : { fifths };
+    const changed = (this.key?.fifths ?? 0) !== fifths;
+    this.key = next;
+    this.signature = signatureGlyphs(next);
+    if (changed) this.buildRibbon();
+  }
+
+  /**
+   * A beat's staff step: spelt through the key when one is set (total — a
+   * keyed song's F♯ has a real step), Book One's naturals-only refusal
+   * otherwise. Null means "draw a rest", exactly as before.
+   */
+  private stepOf(beat: SongBeat): number | null {
+    if (beat.rest) return null;
+    if (this.key) return spellInKey(beat.semitone, this.key).step;
+    return staffStepAt(beat.semitone);
+  }
+
   setBeats(beats: readonly SongBeat[], revealLeads: readonly number[] | null = null): void {
     this.beats = beats;
     this.revealLeads = revealLeads;
@@ -1342,8 +1426,7 @@ export class SongNotes {
     let lowest = Infinity;
     let highest = -Infinity;
     for (const beat of beats) {
-      if (beat.rest) continue;
-      const step = staffStepAt(beat.semitone);
+      const step = this.stepOf(beat);
       if (step === null) continue;
       lowest = Math.min(lowest, step);
       highest = Math.max(highest, step);
@@ -1785,7 +1868,12 @@ export class SongNotes {
     // the printed extent and the arc — `ribbonLayout`, which the test walks
     // to assert the staff draws exactly five rules. This method only turns
     // that layout into buffers.
-    const layout = ribbonLayout(this.printedLow, this.printedHigh, this.laneArcM);
+    const layout = ribbonLayout(
+      this.printedLow,
+      this.printedHigh,
+      this.laneArcM,
+      this.signature.length > 0 ? SIGNATURE_TAIL_M : TAIL_M,
+    );
     this.rows = layout.rows;
     this.cols = layout.cols;
 
@@ -1936,7 +2024,7 @@ export class SongNotes {
       if (beat.hitTimeMs + PAST_MS > nowMs) {
         this.live.set(
           beat.index,
-          makeLive(beat, this.revealLeads?.[this.cursor] ?? TRAVEL_TIME_MS),
+          makeLive(beat, this.revealLeads?.[this.cursor] ?? TRAVEL_TIME_MS, this.stepOf(beat)),
         );
       }
       this.cursor++;
@@ -1960,8 +2048,25 @@ export class SongNotes {
     const letter = this.aLetter.array as Float32Array;
 
     let i = 0;
+    // The signature first, so a crowded bar can never drop it: it is the
+    // one mark on the paper that is true for every note at once. Fixed on
+    // the paper's tail, staggered in entry order like a printed signature.
+    for (const [order, mark] of this.signature.entries()) {
+      this.pointOnLane(SIGNATURE_ARC_M - order * SIGNATURE_STAGGER_M, this.scratchB);
+      pos[i * 3] = this.scratchB.x;
+      pos[i * 3 + 1] = this.middleY + (mark.step - MIDDLE_STEP) * STEP_M * this.notationScale;
+      pos[i * 3 + 2] = this.scratchB.z;
+      cell[i * 2] = (mark.cell % ATLAS_COLS) / ATLAS_COLS;
+      cell[i * 2 + 1] = 1 - (Math.floor(mark.cell / ATLAS_COLS) + 1) / ATLAS_ROWS;
+      scale[i] = SIGNATURE_SCALE;
+      alpha[i] = 0.92;
+      pale[i] = 0;
+      letter[i] = 0;
+      i++;
+    }
+
     for (const note of this.live.values()) {
-      if (i >= MAX_GLYPHS) break;
+      if (i >= TOTAL_GLYPHS) break;
 
       const progress = 1 - (note.hitTimeMs - nowMs) / TRAVEL_TIME_MS;
       const step = note.step ?? MIDDLE_STEP;
@@ -2033,7 +2138,7 @@ export class SongNotes {
 
     // Everything past the live notes is collapsed rather than left holding
     // last frame's values, which would leave a glyph frozen on the staff.
-    for (; i < MAX_GLYPHS; i++) {
+    for (; i < TOTAL_GLYPHS; i++) {
       alpha[i] = 0;
       scale[i] = 0;
     }
@@ -2299,6 +2404,9 @@ export function ribbonLayout(
   printedLow: number,
   printedHigh: number,
   laneArcM: number,
+  // The paper's tail past the barline. TAIL_M ordinarily; a keyed song's
+  // paper extends to carry its signature (SIGNATURE_TAIL_M) — task 165.
+  tailM: number = TAIL_M,
 ): RibbonLayout {
   const inkHalf = LINE_HALF_STEPS;
   const soft = INK_SOFT_STEPS;
@@ -2333,7 +2441,7 @@ export function ribbonLayout(
   // --- columns, in metres of arc from the barline ---
   const barHalf = BAR_HALF_STEPS * STEP_M;
   const softM = soft * STEP_M;
-  const colSet = new Set<number>([-TAIL_M, -barHalf - softM, -barHalf, barHalf, barHalf + softM]);
+  const colSet = new Set<number>([-tailM, -barHalf - softM, -barHalf, barHalf, barHalf + softM]);
   // The rest of the run, biased toward the near end: that is where the
   // curvature is, where the paper is at full strength, and where a player
   // is reading. The far stretch is nearly straight and nearly gone.
@@ -2344,8 +2452,8 @@ export function ribbonLayout(
     colSet.add(start + (laneArcM - start) * (0.35 * t + 0.65 * t * t));
   }
   // A couple more through the tail, for the near dissolve.
-  colSet.add(-TAIL_M * 0.62);
-  colSet.add(-TAIL_M * 0.3);
+  colSet.add(-tailM * 0.62);
+  colSet.add(-tailM * 0.3);
   const cols = [...colSet].sort((a, b) => a - b);
 
   // Slack on the band tests, because the rows and columns are *placed* at
@@ -2364,7 +2472,7 @@ export function ribbonLayout(
   };
   /** How present the paper is at an arc distance from the barline. */
   const fadeU = (arc: number): number => {
-    const near = smoothstep(-TAIL_M, -TAIL_M * (1 - NEAR_FADE_SHARE), arc);
+    const near = smoothstep(-tailM, -tailM * (1 - NEAR_FADE_SHARE), arc);
     const far = 1 - smoothstep(laneArcM * FAR_FADE_START, laneArcM, arc);
     return near * far;
   };
@@ -2618,6 +2726,22 @@ function buildGlyphAtlas(): CanvasTexture {
     ctx.restore();
   }
 
+  // The three accidental marks (task 165) in the atlas's three spare cells.
+  // Body channel only — an accidental carries no letter.
+  const accidentals: Array<[number, 'sharp' | 'flat' | 'natural']> = [
+    [SHARP_CELL, 'sharp'],
+    [FLAT_CELL, 'flat'],
+    [NATURAL_CELL, 'natural'],
+  ];
+  for (const [cell, kind] of accidentals) {
+    const col = cell % ATLAS_COLS;
+    const row = Math.floor(cell / ATLAS_COLS);
+    ctx.save();
+    ctx.translate(col * ATLAS_CELL_PX + ATLAS_CELL_PX / 2, row * ATLAS_CELL_PX + ATLAS_CELL_PX / 2);
+    drawAccidental(ctx, kind);
+    ctx.restore();
+  }
+
   const texture = new CanvasTexture(canvas);
   // Linear without mipmaps: the glyphs are drawn at a wide range of sizes
   // and a mip chain built from a sparse atlas bleeds neighbouring cells into
@@ -2689,21 +2813,71 @@ function drawRest(ctx: CanvasRenderingContext2D): void {
   ctx.fillRect(-22, -5, 44, 10);
 }
 
+/**
+ * An accidental mark, drawn bold. These are read at signature size — about
+ * three-quarters of a head — so every stroke is heavier than engraved print
+ * would have it, the same legibility trade `drawRest` documents.
+ */
+function drawAccidental(ctx: CanvasRenderingContext2D, kind: 'sharp' | 'flat' | 'natural'): void {
+  ctx.fillStyle = 'rgb(255,0,0)';
+  if (kind === 'sharp') {
+    // Two uprights, two slanted cross-strokes.
+    ctx.fillRect(-13, -34, 7, 68);
+    ctx.fillRect(6, -34, 7, 68);
+    ctx.save();
+    ctx.rotate(-0.16);
+    ctx.fillRect(-26, -17, 52, 9);
+    ctx.fillRect(-26, 8, 52, 9);
+    ctx.restore();
+    return;
+  }
+  if (kind === 'flat') {
+    // A tall stem with a bowl on its lower right.
+    ctx.fillRect(-14, -40, 7, 74);
+    ctx.beginPath();
+    ctx.moveTo(-7, 2);
+    ctx.bezierCurveTo(14, -8, 22, 10, -7, 30);
+    ctx.bezierCurveTo(2, 16, 2, 8, -7, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(1, 14, 11, 13, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgb(0,0,0)';
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.ellipse(2, 15, 5, 6, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    return;
+  }
+  // Natural: two offset uprights joined by two horizontals.
+  ctx.fillRect(-11, -34, 6.5, 52);
+  ctx.fillRect(4.5, -18, 6.5, 52);
+  ctx.save();
+  ctx.rotate(-0.12);
+  ctx.fillRect(-13, -12, 26, 8.5);
+  ctx.fillRect(-13, 8, 26, 8.5);
+  ctx.restore();
+}
+
 /** Which atlas cell a written note wants. The only place this arithmetic lives. */
 function cellFor(step: number): number {
   const letterIndex = ((step % 7) + 7) % 7;
   return letterIndex * 4 + (stemDown(step) ? 2 : 0) + (needsLedger(step) ? 1 : 0);
 }
 
-function makeLive(beat: SongBeat, revealLeadMs: number): LiveNote {
-  const step = beat.rest ? null : staffStepAt(beat.semitone);
+function makeLive(beat: SongBeat, revealLeadMs: number, step: number | null): LiveNote {
+  // The step arrives spelt (SongNotes.stepOf): through the key for a Book
+  // Two song, naturals-only for Book One — where an accidental still answers
+  // null, and guessing a spelling for one would be worse than drawing a
+  // rest. The head shows the step's LETTER either way; a keyed song's
+  // alteration is carried by the signature, which is the notation being
+  // taught.
   return {
     index: beat.index,
     hitTimeMs: beat.hitTimeMs,
     step,
-    // An accidental cannot reach here — the songbook is naturals-only and
-    // its test says so — but `staffStepAt` is allowed to answer null and
-    // guessing a spelling for one would be worse than drawing a rest.
     cell: step === null ? REST_CELL : cellFor(step),
     state: 'travelling',
     changedMs: 0,
