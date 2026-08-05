@@ -727,6 +727,32 @@ const FRAGMENT = /* glsl */ `
  * sky's chroma, so a shadow lands somewhere between its own hue and a blue,
  * with chroma all the way along, instead of passing through grey to get there.
  *
+ * --- and THAT paragraph was measured too, and its chroma claim is wrong ---
+ *
+ * (Task 183/166, tools/shadowcast.mjs, final frames on the live build.)
+ * A linear mix between two colours of equal luminance keeps chroma only when
+ * the endpoints are neighbours on the wheel. A warm ground hue and this blue
+ * sky are near-complements, so the halfway points of the mix pass close to
+ * the grey axis — exactly the trap CAST_SHADOW_SKY's note works out for
+ * addition, one operation later. Measured on the shipped frames: shadowed
+ * land kept 34-43% of its lit saturation and its mean hue landed at
+ * H 185-222° — a weakly saturated blue-grey, which a blind panel read as
+ * "long dark streaks... render banding". The reference (A Short Hike,
+ * rect-measured) keeps 63% and rotates +31°, staying in the surface's own
+ * family: DARKER than ours, and more saturated.
+ *
+ * So the rotation now restores the chroma the mix loses: after mixing the
+ * luminance-normalised hue toward the sky's, the result's deviation from
+ * neutral is expanded back toward the fragment's own chroma magnitude,
+ * capped at CAST_SHADOW_CHROMA_CAP so a hue that opposes the sky (the warm
+ * road) cannot be blown into a garish blue — an opposed hue crosses near
+ * grey, the expansion hits the cap, and the shadow stays a quiet slate
+ * instead of either extreme. A neighbouring hue (the greens, most of the
+ * world) loses little in the mix and is restored fully: green shadow stays
+ * a deep saturated blue-green, the colour-script noon target. Luminance is
+ * re-normalised after the expansion, so the value gate holds exactly as
+ * before.
+ *
  * Ridden by sunHeight, which weights it exactly where the evidence asks. The
  * frames a blind panel read as grey bands are dawn, morning, noon and the
  * portrait — sunHeight 0.59, 1, 1, 1. The one frame whose shadows the same
@@ -736,6 +762,7 @@ const FRAGMENT = /* glsl */ `
  * so the frame that is already right is the one this changes least.
  */
 #define CAST_SHADOW_HUE 0.50
+#define CAST_SHADOW_CHROMA_CAP 2.2
 /*
  * The fraction of the light a cast shadow removed that the additive skylight
  * terms are allowed to put back. Below 1.0 this is a PROOF, not a taste
@@ -1667,7 +1694,19 @@ void main() {
   float castShade = (1.0 - shadowMask) * sunHeight;
   float castLum = dot(color, LUMA_W);
   vec3 skyHue = uSkyColor / max(dot(uSkyColor, LUMA_W), 1e-4);
-  color = mix(color, castLum * skyHue, CAST_SHADOW_HUE * castShade);
+  // The rotation, then the chroma restore CAST_SHADOW_HUE's note argues for:
+  // the mix's halfway points pass near grey when the surface opposes the sky,
+  // so the shifted hue's deviation from neutral is expanded back toward the
+  // fragment's own chroma magnitude (capped), and luminance re-normalised so
+  // the equal-luminance guarantee survives the expansion untouched.
+  vec3 fragHue = color / max(castLum, 1e-4);
+  vec3 shifted = mix(fragHue, skyHue, CAST_SHADOW_HUE * castShade);
+  float ownChroma = length(fragHue - vec3(1.0));
+  float gotChroma = length(shifted - vec3(1.0));
+  shifted = vec3(1.0)
+    + (shifted - vec3(1.0)) * clamp(ownChroma / max(gotChroma, 1e-4), 1.0, CAST_SHADOW_CHROMA_CAP);
+  shifted /= max(dot(shifted, LUMA_W), 1e-4);
+  color = castLum * shifted;
 
   // --- rim ---------------------------------------------------------------
   float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), uRimPower);

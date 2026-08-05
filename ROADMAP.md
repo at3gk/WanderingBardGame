@@ -2050,11 +2050,28 @@ interviews) — read it before taking any task; its not-recommended list
     section names village-noon's special case (no treeline anchor —
     colour must come from accents and coloured shade). No runtime
     values changed in this piece.
-    **Piece 2 (queued next): enact noon.** Levers in cheapness
-    order: skylight ambient saturation at high sun, CAST_SHADOW_HUE
-    chroma, the bounce key. Tune against shadowcast S-kept/hue-rot
-    on the noon poses AND the frames (re-shot 03/08/10 +
-    noon-village); the baked tone-field diagonals stay 144/169's.
+    **Piece 2 done (2026-08-05, run 69): the cast-shadow rotation now
+    restores its chroma.** One variable, per the house law: the
+    CAST_SHADOW_HUE rotation's own claim ("chroma all the way along")
+    was measured false — an equal-luminance mix toward a near-
+    complement crosses grey, which is why shadowed land kept 34-49%
+    of its saturation and read as the panel's banding. The rotation
+    now expands the mixed hue's deviation from neutral back toward
+    the fragment's own chroma magnitude, capped
+    (CAST_SHADOW_CHROMA_CAP 2.2) so an opposed hue (warm road) stays
+    quiet slate instead of garish blue, and luminance is
+    re-normalised so the value gate holds exactly. Measured:
+    S-kept dawn 43→50%, noon 49→66% (script target ≥50% MET),
+    golden 34→40% (least-weighted hour by design). Frames: dawn's
+    stripes carry plum/deep-green instead of grey-mauve; noon's bard
+    shadow is a clean saturated blue; golden's grass shadows keep
+    their teal (the panel's protected read) while its road stripes
+    now carry warm violet — bolder, flagged for wave 8 to judge.
+    frame-quality all poses PASS on the pinned road (noon 3.45,
+    noon-village 1.93, hue spreads healthy). 1160 tests green,
+    build green. Remaining 166 work if wave 8 asks: the skylight
+    ambient saturation lever and per-biome noon accents were NOT
+    touched this piece.
 167. **No framing without an anchor.** A composition rule the rig
     enforces: every camera mood guarantees a near-field anchor silhouette
     (telegraph props, landmarks, canopy mass), Monument Valley's
