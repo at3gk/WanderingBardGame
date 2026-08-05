@@ -55,7 +55,30 @@
 // does it: `dayFraction` is derived from `s` and is recomputed whenever the
 // bard advances, so a posed time of day only survives if the walk is stopped
 // first. See the long note in shader-check.mjs.
+//
+// ## The gauge walks a pinned road (task 182)
+//
+// The game builds a different road every UTC day, and a pose at a fixed `s`
+// therefore lands in a different *biome* depending on the calendar. Measured
+// on one build across twelve dates, the noon pose ranged 1.81-3.44 stops —
+// forest days 2.7-3.4 (a dark treeline hands the frame its low p10), village
+// days 1.8-2.2 (bright walls and open ground raise the dark floor), with p90
+// essentially constant. The "noon gate red on pristine main" alarm of
+// 2026-08-01 was a village noon, not a regression: the gate was rolling dice
+// on the road of the day. So every pose here is measured on a *pinned* date's
+// road (argless `new Date()` and `Date.now()` are redirected in an init
+// script; `performance.now` is untouched, so the game loop runs normally),
+// which is what makes a floor a claim about the build rather than about the
+// weather. The pin is per-pose so a pose can choose the biome that makes it
+// an honest test — see `noon-village`.
 import { BASE_URL, launch } from './browser.mjs';
+
+/**
+ * The default measurement day. 2026-07-30's road puts forest at the noon
+ * pose's `s` (the biome whose treeline gives daylight frames their value
+ * anchor), and its numbers sit mid-band among the forest dates swept.
+ */
+const GAUGE_DAY = '2026-07-30';
 
 const only = process.argv[2] ?? null;
 
@@ -83,9 +106,29 @@ const only = process.argv[2] ?? null;
 // narrows *this pose's* own range even as the postcards read as a better,
 // not flatter, frame. See the long note in world/palette.ts before touching
 // either number again.
+// `gaugeDay` overrides GAUGE_DAY for one pose. Only noon-village carries
+// one: it exists precisely to measure the OTHER road family.
 const POSES = [
   { name: 'morning', s: 265, day: 0.42, viewport: [1600, 900], minHue: 0.1 },
   { name: 'noon', s: 620, day: 0.55, viewport: [1600, 900], minHue: 0.15 },
+  // The true finding under task 182's false alarm: a village noon really is
+  // the flattest frame family the game draws — bright walls over bright
+  // ground with no dark anchor in frame (p10 ~0.17 linear where forest sits
+  // at ~0.06). That is an art observation, not a build regression, so the
+  // pose gets its own floor under what village noons measure (1.8-2.2 on
+  // the dates swept) rather than failing the forest floor forever. If this
+  // number climbs, a palette change gave the village its anchor; if it
+  // falls under the floor, the flattest family got flatter — which is the
+  // regression this gate exists to catch.
+  {
+    name: 'noon-village',
+    s: 620,
+    day: 0.55,
+    viewport: [1600, 900],
+    minHue: 0.15,
+    minStops: 1.6,
+    gaugeDay: '2026-08-01',
+  },
   { name: 'golden', s: 900, day: 0.8, viewport: [1600, 900] },
   { name: 'night', s: 1400, day: 0.95, viewport: [1600, 900] },
   { name: 'phone-portrait', s: 420, day: 0.5, viewport: [390, 844], minHue: 0.1, minStops: 1.6 },
@@ -100,9 +143,13 @@ const POSES = [
  * deliberately when a round genuinely improves a frame and you want to keep
  * the gain.
  */
-// Every pose currently measures between 3.3 and 6.8 stops, so 2.5 is a real
-// regression gate with room to spare rather than a number art tuning will
-// trip over. phone-portrait is the one exception — see its `minStops` above.
+// On the pinned roads (task 182) the full-floor poses measure 2.9-6.1
+// stops (morning 2.89, noon 3.44, golden 3.94, night 6.05, phone-landscape
+// 3.94), so 2.5 is a real regression gate rather than a number art tuning
+// will trip over — morning is the pose nearest its floor. phone-portrait and noon-village are the
+// two exceptions — see their `minStops` above. (This file once said "every
+// pose measures 3.3-6.8"; that was written on a forest-flavoured day before
+// the gauge pinned its road, and was never true of village noons.)
 const FLOORS = {
   valueStops: 2.5,
 };
@@ -206,6 +253,24 @@ for (const pose of POSES) {
     viewport: { width: pose.viewport[0], height: pose.viewport[1] },
   });
   page.on('pageerror', (e) => problems.push(`${pose.name}: pageerror: ${e.message}`));
+  // Pin the road (see the header): argless `new Date()` and `Date.now()`
+  // resolve to the gauge day, so `dayKey()`/`dailySeed()` build the same
+  // road every run. Explicit Date constructions and performance.now are
+  // untouched — the game loop runs normally.
+  const fixedMs = Date.parse(`${pose.gaugeDay ?? GAUGE_DAY}T12:00:00Z`);
+  await page.addInitScript((ms) => {
+    const Real = Date;
+    // eslint-disable-next-line no-global-assign
+    Date = class extends Real {
+      constructor(...args) {
+        if (args.length === 0) super(ms);
+        else super(...args);
+      }
+      static now() {
+        return ms;
+      }
+    };
+  }, fixedMs);
   await page.goto(BASE_URL, { waitUntil: 'load' });
   await page.waitForTimeout(2500);
 
