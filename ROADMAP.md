@@ -2147,6 +2147,30 @@ iPad household needs none of it; logged under Blocked on human.
     tier still enables shadow maps. Detect by GPU/UA signals available
     on WebKit; make 'low' genuinely low (no shadow map); re-measure the
     730k-triangle scene against mobile budgets.
+    **Done (2026-08-05, overnight session), with the prescribed fix
+    partly REFUTED by the code's own record:** "detect by GPU
+    signals" is what the old comment already ruled out — the GPU
+    string is privacy-gated and reads "Apple GPU" on every iOS
+    device. The honest WebKit signals are the ones Apple ties to
+    hardware anyway: the OS major in the UA (an iPad stuck below
+    iOS 15 is old hardware, because updates stop with the silicon),
+    Safari's Version/N for the iPadOS-13+ devices that masquerade as
+    Macs (maxTouchPoints > 1 is the tell), and WebGPU's presence.
+    `tierFor(probe)` is now a pure exported decision over a
+    `CapabilityProbe` bag — one unit test per device family (old
+    iPad → low, incl. the masquerading-as-Mac case caught by Safari
+    version; modern iPhone/iPad → medium; real Mac never demoted via
+    the Apple-touch path; Chromium heuristics preserved word for
+    word, including the pre-existing quirk that engines without
+    deviceMemory read as 4 → medium). 'low' is genuinely low now:
+    shadows false, shadowMapSize 0 — the one renderer-wide cost the
+    old low tier still paid — and the bard keeps his grounding
+    because 179's contact shadow is a textured disc, not a shadow
+    map. Modern WebGPU iPads deliberately stay 'medium' until the
+    scene is measured on real hardware (the task's re-measure half —
+    headless desktop GL says nothing; standing real-iPad playtest
+    item in STATE). Boot-smoked live (high/shadowed on this desktop,
+    zero errors). 1156 tests green (+7), build green.
 175. **Touch-target and orientation audit.** WCAG 2.2 24px minimum /
     Apple 44pt on every HUD control at phone sizes; verify the landscape
     recommendation for the road; palm-rejection kindness already exists
