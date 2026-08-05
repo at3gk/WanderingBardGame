@@ -38,6 +38,27 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-05 (overnight loop session) — TASK 165 COMPLETE
+  IN FIVE PIECES; THE v1.0 ARC IS DONE except 161 (blocked on
+  human).** Book Two exists end-to-end: notation core (keys ±4,
+  spellInKey, carried-vs-shown accidentals), song data model
+  (Song.key + pickupBeats anacrusis), the signature engraved on the
+  paper's extended tail with spelt head steps, My Bonnie Lies Over
+  the Ocean (two-source-verified transcription), and the songbook's
+  Book Two shelf unlocked at festivals >= 1. The shelf work fixed a
+  pre-existing fold fault: the book silently cut rows past what fit
+  (everything past FOUR on 844x390) — it now PAGES (pure bookPage/
+  bookCapacity, "turn the page ⤵" row), so the whole book is
+  reachable on every viewport. Wandering never deals a keyed song;
+  a pinned Book Two song walks a wandering road (no home biome).
+  Verified live: post-festival save → shelf → pin → the ♯ on the
+  paper with B3's ledger in flight; phone book pages through; zero
+  console errors. 1133 tests green, build 869 kB. **Needs human
+  playtest:** the single-letter F head under a G-major signature
+  (does a child connect them?), and "turn the page ⤵" wording with
+  a pre-reader. Next: v1.3 (176-178) is open; 161 awaits the human;
+  task 60 (Mulberry Bush) is unblocked by network.
+
 - **HANDOFF, 2026-08-05 (overnight loop session) — task 165 first
   piece: Book Two's notation core.** notation.ts gains the key layer
   (majors, ±4 accidentals; minors deferred with the songs that need

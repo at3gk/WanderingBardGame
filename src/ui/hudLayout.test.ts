@@ -270,3 +270,48 @@ describe('hudChrome', () => {
     expect(chrome.coins.height).toBeLessThanOrEqual(HUD_TOUCH_TARGET);
   });
 });
+
+// ---------------------------------------------------------------------------
+// The paged songbook (task 165)
+// ---------------------------------------------------------------------------
+
+import { bookCapacity, bookPage } from './hudLayout';
+
+describe('bookPage', () => {
+  const rows = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+
+  it('is one whole page when everything fits — no turn row', () => {
+    expect(bookPage(rows, 7, 0)).toEqual({ shown: rows, pages: 1 });
+    expect(bookPage(rows, 20, 3)).toEqual({ shown: rows, pages: 1 });
+  });
+
+  it('reserves the last slot for the turn row when it must page', () => {
+    const { shown, pages } = bookPage(rows, 4, 0);
+    expect(shown).toEqual(['a', 'b', 'c']);
+    expect(pages).toBe(3);
+  });
+
+  it('wraps the page index, so turning past the end returns to the start', () => {
+    expect(bookPage(rows, 4, 1).shown).toEqual(['d', 'e', 'f']);
+    expect(bookPage(rows, 4, 2).shown).toEqual(['g']);
+    expect(bookPage(rows, 4, 3).shown).toEqual(['a', 'b', 'c']);
+  });
+
+  it('shows every row across a full cycle of pages, even at capacity one', () => {
+    for (const cap of [1, 2, 3, 4, 5, 6]) {
+      const seen: string[] = [];
+      const pages = bookPage(rows, cap, 0).pages;
+      for (let p = 0; p < pages; p++) seen.push(...bookPage(rows, cap, p).shown);
+      expect(seen).toEqual(rows);
+    }
+  });
+
+  it('agrees with songBookBox about capacity on the smallest landscape phone', () => {
+    const chrome = hudChrome({ width: 844, height: 390 });
+    const cap = bookCapacity(chrome);
+    expect(cap).toBeGreaterThanOrEqual(2);
+    // The box sized for a full page never exceeds the room the capacity claims.
+    const page = bookPage(Array.from({ length: 14 }, (_, i) => i), cap, 0);
+    expect(page.shown.length + 1).toBeLessThanOrEqual(cap);
+  });
+});

@@ -58,7 +58,7 @@ import {
   MEETING_RADIUS,
   withinBand,
 } from './roadStaging';
-import { Hud } from '../ui/Hud';
+import { Hud, type SongEntry } from '../ui/Hud';
 import { tomorrowSkyline } from '../core/skyline';
 import { dayKey, legRoadKey, legSeed, mulberry32, randRange, subSeed } from '../core/rng';
 import {
@@ -98,7 +98,7 @@ import {
 import { beatIntervalMs } from '../core/beats';
 import { expandSong, songDurationMs, songKey, type Song, type SongBeat } from '../core/song';
 import { rehearsalLine } from '../core/rehearsal';
-import { SONGS } from '../core/songs';
+import { BOOK_TWO_SONGS, SONGS } from '../core/songs';
 import { songForPass } from '../core/songChoice';
 import {
   extendWalkTune,
@@ -1117,6 +1117,8 @@ export class RoadStage implements Stage {
       saveJourney(this.journey, true);
       this.notes.setActive(false);
       this.notes.setHeadsAlpha(1);
+      // The night the festival is performed, Book Two takes its shelf.
+      this.refreshSongbook();
       this.hud.say(closing, 16);
       this.showFestivalChoice();
       return;
@@ -1954,10 +1956,16 @@ export class RoadStage implements Stage {
 
   /** Hand the HUD the songbook and which tune is pinned. */
   private refreshSongbook(): void {
-    this.hud.setSongbook(
-      SONGS.map((song) => ({ id: song.id, name: song.title })),
-      this.journey.songChoice,
-    );
+    const entries: SongEntry[] = SONGS.map((song) => ({ id: song.id, name: song.title }));
+    // Book Two stands on its own shelf once the festival has heard the
+    // by-heart book (task 165; DESIGN's post-festival choice). Growth is a
+    // new volume, never a change to Book One — and a household that has
+    // not reached the festival sees the book exactly as it always was.
+    if (this.journey.festivals >= 1) {
+      entries.push({ id: '', name: 'Book Two — true keys', heading: true });
+      for (const song of BOOK_TWO_SONGS) entries.push({ id: song.id, name: song.title });
+    }
+    this.hud.setSongbook(entries, this.journey.songChoice);
   }
 
   private strikeCamp(): void {

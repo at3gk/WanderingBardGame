@@ -1,5 +1,5 @@
 import { Song } from './song';
-import { SONGS, SONGS_BY_BIOME, songForBiome } from './songs';
+import { BOOK_TWO_SONGS, SONGS, SONGS_BY_BIOME, songForBiome } from './songs';
 
 /**
  * Choosing one song to learn, instead of letting the songbook rotate.
@@ -16,7 +16,10 @@ export type SongChoice = string | null;
 /** The chosen song, or the rotation's pick when wandering. Falls back to rotation for an unknown id. */
 export function songForPass(choice: SongChoice, biomeId: string, pass: number): Song {
   if (choice) {
-    const chosen = SONGS.find((s) => s.id === choice);
+    // Both books resolve: a pinned Book Two song is the walk's tune like any
+    // other (task 165). The rotation itself stays Book One — the road's own
+    // scenery-matched curriculum; Book Two is only ever chosen.
+    const chosen = SONGS.find((s) => s.id === choice) ?? BOOK_TWO_SONGS.find((s) => s.id === choice);
     if (chosen) return chosen;
   }
   return songForBiome(biomeId, pass);
