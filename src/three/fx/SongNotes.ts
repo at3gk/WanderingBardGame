@@ -527,29 +527,56 @@ const STRIKE_MS = 420;
  * flight. See `glyphEnvelope`, which is the only consumer, and the test that
  * pins its shape.
  *
- * `RUNWAY_MS` is the readability contract: a note is at full readable
- * presence for at least its last 1500 ms, which is the number the portrait
- * phone critique demanded ("readable for ~1.5 s of approach"). Everything
- * before that is birth: the note fades and scales in quickly at the far end,
- * so a newcomer is a small dim thing clearly *behind* its neighbour rather
- * than a translucent full-size twin floating beside it — which is exactly
- * how the wave-2 landscape frame manufactured a ghost duplicate out of two
- * consecutive same-pitch notes. On a lane that recedes upward, depth reads
- * as height, so depth has to be disambiguated the honest way: the nearer of
- * two equal marks is bigger and bolder, always.
+ * This is the third shape of this envelope, and the second was rewritten on
+ * a measurement rather than a taste (task 184, `tools/headgap.mjs`). The
+ * second shape saturated scale to full at a sixth of the flight and rode a
+ * 0.74 cruise ink from there — "full readable presence for the last 1500 ms",
+ * the portrait critique's demand, taken literally in NOMINAL units. But the
+ * eye reads PROJECTED units, and the lane's perspective compresses the far
+ * arc to a fraction of its nominal spacing: full-size, fully-lit heads
+ * carried through that compression measured as geometrically overlapping
+ * pairs on every viewport (worst ratio 0.34 of the separation two heads
+ * need), which five wave-7 frames called "fused brown blobs". The old
+ * promise was never delivered anyway — a nominal 0.95 scale at the far end
+ * projects far too small to read a letter in — so the ink it spent there
+ * bought nothing but fusion. Same lesson as the laneSpan claim it fell with:
+ * measure the space the eye is in.
  *
- * The urgency ramp is the other half of the same rule: from 55 to 95 per
- * cent of the flight the ink climbs from its cruise value to full and the
- * glyph swells a seventh, so the note at the barline is unmistakably the
- * highest-contrast, largest mark on the ribbon at the moment it asks to be
- * tapped.
+ * The honest shape: **a note grows for its whole approach.** Scale climbs
+ * continuously from `SPAWN_SCALE` to full across the flight
+ * (`SCALE_GROWTH_END`), so nominal growth runs *with* projection growth
+ * instead of finishing before projection has started magnifying — the far
+ * lane carries small heads through the compressed stretch, and a head is
+ * full-size only where projection can show it. Ink arrives over
+ * `INK_BORN_SHARE` of the flight and cruises at `CRUISE_INK`, low enough
+ * that two notes a close musical interval apart sit on visibly different
+ * rungs of the ink ramp — the nearer of two equal marks is bigger and
+ * bolder, always, which is also what keeps a newcomer from ghosting its
+ * same-pitch neighbour (the wave-2 duplicate).
+ *
+ * What is deliberately kept from the second shape: the urgency ramp. From
+ * `URGENCY_START` to `URGENCY_END` of the flight the ink climbs to full and
+ * the glyph swells a seventh past its grown size, so the note at the barline
+ * is unmistakably the highest-contrast, largest mark on the ribbon at the
+ * moment it asks to be tapped — urgency runs the same direction as time, and
+ * the wave-2 inversion (imminent note dissolving while mid-flight notes ride
+ * at full strength) stays answered: mid-flight notes now ride *lower* than
+ * before, never higher.
+ *
+ * The readability contract this leaves, tiered the way the eye meets it: at
+ * 1000 ms out a note is legible and climbing (ink past half, scale past 0.7
+ * nominal — which projection is by then magnifying); at 600 ms out it is
+ * plainly readable (ink past 0.7, scale past 0.85); through the
+ * scaffold's answer window (the 350 ms letter reveal, `core/beats.ts`) it
+ * is at near-full presence. The test pins those tiers instead of the old
+ * nominal-space blanket.
  */
-const RUNWAY_MS = 1500;
-const SPAWN_SHARE = 1 - RUNWAY_MS / TRAVEL_TIME_MS;
-const URGENCY_START = 0.55;
+const INK_BORN_SHARE = 0.35;
+const SCALE_GROWTH_END = 0.95;
+const URGENCY_START = 0.45;
 const URGENCY_END = 0.95;
-const CRUISE_INK = 0.74;
-const SPAWN_SCALE = 0.6;
+const CRUISE_INK = 0.55;
+const SPAWN_SCALE = 0.5;
 const ARRIVAL_SWELL = 1.14;
 
 /** Instances reserved for glyphs. A bar of eighths at this travel time needs ten. */
@@ -2521,32 +2548,34 @@ export function paperBottomClearanceM(lowestStep: number, notationScale = 1): nu
  * A travelling note's ink and size over its flight, `progress` running 0 at
  * spawn to 1 at the barline (and past it, where the envelope holds).
  *
- * Three pieces, each answering a named failure from the wave-2 critique:
+ * Three pieces — see the block over the constants for the full argument and
+ * the task-184 measurement that reshaped it:
  *
- * - **Birth** (`SPAWN_SHARE`): alpha and scale climb from nothing/small over
- *   the first sixth of the flight, so a note entering the lane is a small
- *   dim thing behind its neighbour — not a translucent full-size twin, which
- *   is what a landscape frame read as a ghost duplicate of a repeated pitch.
- * - **Cruise** (`CRUISE_INK`): mid-flight notes ride below full ink, so the
- *   eye is not asked to weight the far end of the lane equally with the
- *   barline. They are readable — the runway contract starts here — just not
- *   the boldest thing in view.
+ * - **Ink birth** (`INK_BORN_SHARE`, `CRUISE_INK`): alpha climbs from
+ *   nothing over the first third of the flight and cruises low, so two
+ *   notes a close musical interval apart sit on visibly different rungs of
+ *   the ramp — depth-ordered, not fused — and a newcomer cannot ghost its
+ *   same-pitch neighbour.
+ * - **Growth** (`SPAWN_SCALE..SCALE_GROWTH_END`): scale climbs continuously
+ *   across the whole flight, running with projection instead of finishing
+ *   before it, so the compressed far lane carries small heads.
  * - **Urgency** (`URGENCY_START..END`, `ARRIVAL_SWELL`): ink climbs to full
  *   and the glyph swells a seventh over the last stretch, so the note AT the
  *   barline is unmistakably the most legible mark on the ribbon. The
  *   shipped inverse — imminent note dissolving, mid-flight notes at full
  *   strength — is the one reading a rhythm game cannot afford.
  *
- * Pure and exported so the test can pin the contract: full presence for the
- * whole runway, boldest exactly at the barline, monotone on the way in.
+ * Pure and exported so the test can pin the contract: readable through the
+ * final approach, boldest exactly at the barline, monotone on the way in.
  */
 export function glyphEnvelope(progress: number): { alpha: number; scale: number } {
   const p = Math.min(progress, 1);
-  const born = smoothstep(0, SPAWN_SHARE, p);
+  const born = smoothstep(0, INK_BORN_SHARE, p);
+  const grown = smoothstep(0, SCALE_GROWTH_END, p);
   const urgency = smoothstep(URGENCY_START, URGENCY_END, p);
   return {
     alpha: born * (CRUISE_INK + (1 - CRUISE_INK) * urgency),
-    scale: (SPAWN_SCALE + (1 - SPAWN_SCALE) * born) * (1 + (ARRIVAL_SWELL - 1) * urgency),
+    scale: (SPAWN_SCALE + (1 - SPAWN_SCALE) * grown) * (1 + (ARRIVAL_SWELL - 1) * urgency),
   };
 }
 

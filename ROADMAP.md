@@ -2471,6 +2471,36 @@ full verdict map and the measure-first suspicion list):
     a design decision needing fresh-session frame iteration, not an
     end-of-queue tweak. Left deliberately unfixed rather than
     half-fixed.
+    **Problem (1) FIXED (2026-08-05, run 66): the envelope grows for
+    the whole flight now.** The old envelope saturated scale at a
+    sixth of the flight and rode 0.74 cruise ink — full-size,
+    fully-lit heads through the whole compressed far lane. The pinned
+    test was part of the fault: "full nominal presence (alpha 0.7,
+    scale 0.95) for the entire last 1500 ms" is a NOMINAL-space
+    blanket, and nominal 0.95 at the far end projects too small to
+    read anyway — the ink bought nothing but fusion. Same death as
+    the laneSpan claim: measured the wrong space. New shape
+    (`glyphEnvelope`): scale climbs continuously SPAWN_SCALE 0.5 →
+    full across the flight (SCALE_GROWTH_END 0.95), so nominal growth
+    runs WITH projection growth; ink arrives over INK_BORN_SHARE 0.35
+    and cruises at 0.55, so a close pair sits on visibly different
+    rungs of the ramp (depth-ordered, not fused); the urgency ramp
+    (0.45→0.95, swell 1.14) is untouched — the barline note is still
+    unmistakably boldest, wave-2's inversion stays answered. The test
+    pin was re-derived into eye-tiers: legible-and-climbing at
+    1000 ms out (alpha ≥ 0.55, scale ≥ 0.7), plainly readable at
+    600 ms (0.7/0.85), near-full through the scaffold's 350 ms answer
+    window (0.85/0.95), plus a ceiling pin that the far half may
+    never carry a full-size head. Headgap before → after (same day's
+    road): desktop 0.79 → 1.2-1.7 mid-lane, landscape 0.53 → 0.68+,
+    tablet 0.48 → 0.9+, portrait mid-lane 0.34 → 0.88. Every
+    remaining sub-0.9 pair is the IN-RUNWAY eighth pair (summed radii
+    50-60 px — two full-size heads near the barline): that is problem
+    (2), still open, still the per-viewport design decision above.
+    Frames read: depth-ordering visible on 01/03 (small dim D behind
+    mid E behind bold near E), runway not emptied, imminent note
+    still boldest; 08/10's in-runway pair still touches, as expected.
+    1160 tests green (+3), build green.
 
 181. **Smoke as soft forms.** The campfire smoke still reads as a stack
     of hard-edged translucent polygons ("a hovering boulder", "a render
