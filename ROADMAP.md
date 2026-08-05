@@ -2257,6 +2257,18 @@ top task fits its energy.
     you carried); on the horizon, the silhouette of tomorrow's road —
     genuinely renderable, the next UTC day's seed is knowable. Pure
     anticipation, zero loss-framing. (Campfire.ts, journal, road.ts.)
+    **Closed as absorbed (2026-08-05, run 81 — audit, no new code).**
+    Both halves shipped inside task 159: tonight's page (159 first
+    piece — campfirePage composes the day's moments, the Hud sets
+    them in type, each inked in the sky it happened under) and
+    tomorrow's road on the horizon (159 second piece — core/skyline
+    derives the profile from tomorrow's real seed; the sky raises it
+    only while resting). 159's own done-entries named the merge both
+    times; this entry closes the loop so the retention queue reads
+    honestly. With it, v0.9 stands: 151 ✓ (via 159), 152 ✓ (name +
+    traveller lines; 3D signage text deferred), 153 ✓, 154 first
+    slice ✓, 155 first slice ✓, 156 ✓ — leaving only 157 (two
+    bookmarks, arc-sized, scaffold-separation care) open.
 152. **Name the shared road.** Diegetic sharedness: each daily seed gets a
     deterministic road name ("Larchwind Road"), on the signposts and in
     traveller lines that speak as if everyone walks it today — because

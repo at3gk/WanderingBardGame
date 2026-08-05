@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 80 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 81 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,17 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 81) — 151 closed as absorbed by 159
+  (audit, no code).** Both halves (tonight's page; tomorrow's
+  skyline) shipped in 159's first two pieces, which each named the
+  merge. THE v0.9 RETENTION QUEUE NOW STANDS COMPLETE except 157
+  (two bookmarks — arc-sized, scaffold-separation care; wants a
+  fresh session, arguably with the human's view on profile UX).
+  Remaining menus: visual (sentinel postcard-cadence, HUD
+  idle-opacity decision, 149 scatter patches, 184 problem 2, dawn
+  smear via fray/map-res), v1.3 (176-178, open since the festival
+  shipped), 161 (blocked on human). Tests 1200, build green.
 
 - **HANDOFF, 2026-08-05 (run 80) — 152 traveller lines: the road is
   spoken.** 22% of traveller meetings speak today's road name
