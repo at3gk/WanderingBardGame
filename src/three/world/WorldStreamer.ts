@@ -86,8 +86,8 @@ function roadZ(sample: RoadSample): number {
   return sample.s;
 }
 
-/** Metres of road per chunk. */
-const CHUNK_LENGTH = 60;
+/** Metres of road per chunk. Exported for the wayside-sentinel cadence test. */
+export const CHUNK_LENGTH = 60;
 /**
  * Half-width of the terrain ribbon, metres — and, since the ribbon is the
  * furthest built thing in the world, how far the ground reaches before the
@@ -1324,6 +1324,132 @@ function insideLandmark(landmarks: Landmark[], x: number, z: number): boolean {
     if (dx * dx + dz * dz < landmark.radius * landmark.radius) return true;
   }
   return false;
+}
+
+/* ======================================================================
+ * Wayside sentinels as a guarantee (task 167, hardening task 180's system).
+ *
+ * Task 180 put one large verge tree per chunk on its own seeded stream so
+ * frames crop canopy through their edges the way every reference does. The
+ * wave-9 panel still found "four unused edges" on eight of ten frames, and
+ * the cause is arithmetic, not taste: 15% of chunks rolled no sentinel at
+ * all, an exclusion collision (river, landmark, stop dressing) silently
+ * deleted the tree rather than moving it, and a uniform draw across the
+ * chunk lets gaps cluster. Three independent leaks in what was meant to be
+ * a cadence.
+ *
+ * So the placement is now a *rule* rather than a probability — "no framing
+ * without an anchor" — and it lives in a pure exported function for the
+ * same reason `stopDressingSites` does: nothing fails loudly when a
+ * placement system leaks, so the guarantee has to be pinned headlessly.
+ *
+ * The guarantee: every chunk holds at least one sentinel, placed in the
+ * chunk's central band, so two consecutive sentinels are never more than
+ * ~96 m apart on any road. Exclusions no longer delete it — the site is
+ * redrawn (bounded tries) until it stands clear. Each slot draws from its
+ * own subseeded stream, so a landmark that crowds out slot 0's first
+ * candidate cannot reshuffle slot 1, and neither slot can shift any other
+ * chunk's trees.
+ *
+ * What is deliberately NOT guaranteed: an anchor in the frame at every
+ * instant. That would need a tree every ~45 m on the camera's side, which
+ * is an avenue — and the sides alternate by parity precisely so the road
+ * reads as passing between trees rather than along a hedge. One per chunk
+ * bounds the gap; if wave 10 still reads empty edges, the dial is
+ * SENTINEL_BAND (narrower band, tighter cadence), not more trees.
+ * ====================================================================== */
+
+/**
+ * Where in its chunk the guaranteed sentinel may stand, as fractions of
+ * CHUNK_LENGTH. The band is what turns "one per chunk" into a cadence: a
+ * uniform draw allows 12 m and 108 m gaps in equal measure; this bounds the
+ * worst pair at (1 - 0.2 + 0.8) x 60 = 96 m.
+ */
+const SENTINEL_BAND: [number, number] = [0.2, 0.8];
+/**
+ * Redraws allowed against the static exclusions before a slot gives up.
+ * Twelve, because the guarantee has to survive a *structured* exclusion,
+ * not a speck: half a band excluded (a landmark clearing) leaves 1/4096;
+ * six tries left 1/64, which the cadence test promptly hit on a fixed
+ * seed. The last half of the attempts alternate sides deterministically,
+ * so a river drowning one whole verge still finds the opposite one. The
+ * cap only exists so a chunk with both verges excluded gives up honestly.
+ */
+const SENTINEL_TRIES = 12;
+/** Chance of a second sentinel, roaming the whole chunk. Task 180's number. */
+const SENTINEL_SECOND_CHANCE = 0.3;
+/** Chance a slot stands opposite its parity side. Task 180's number. */
+const SENTINEL_FLIP_CHANCE = 0.25;
+/** Lateral band, metres off the centreline. Task 180's: between the shrub
+ * verge and the ordinary tree verge — near enough to cross a frame edge at
+ * walk-by, far enough that the road ahead stays clear. */
+const SENTINEL_OFFSET_MIN_M = ROAD_HALF_WIDTH + 2.8;
+const SENTINEL_OFFSET_SPREAD_M = 1.4;
+
+/** One wayside sentinel, resolved to a place on the road. */
+export interface WaysideSentinelSite {
+  /** Metres along the road. */
+  s: number;
+  /** Signed lateral offset from the centreline, metres. */
+  u: number;
+  x: number;
+  z: number;
+  /** Seed for the tree's own appearance draws (species, scale, shade). */
+  seed: number;
+}
+
+/**
+ * The sentinels for one chunk.
+ *
+ * `excluded` is the *static* world only — river water, landmark clearings,
+ * stop dressings, everything knowable from the seed — so the returned sites
+ * are a property of the day. The camp clearing is dynamic (it appears at
+ * dusk and rebuilds the chunk) and is deliberately not consulted here: a
+ * sentinel that *moved* on that rebuild would be a tree jumping the road,
+ * so the caller drops it at build time instead, the way every tree yields.
+ */
+export function waysideSentinelSites(
+  road: DailyRoad,
+  index: number,
+  excluded: (s: number, u: number, x: number, z: number) => boolean,
+): WaysideSentinelSite[] {
+  const s0 = index * CHUNK_LENGTH;
+  const baseRand = mulberry32(subSeed(road.seed, `sentinel:${index}`));
+  const slots = baseRand() < SENTINEL_SECOND_CHANCE ? 2 : 1;
+  const sites: WaysideSentinelSite[] = [];
+  for (let i = 0; i < slots; i++) {
+    const rand = mulberry32(subSeed(road.seed, `sentinel:${index}:${i}`));
+    const parity = (index + i) % 2 === 0 ? 1 : -1;
+    // Slot 0 is the guarantee and stays in the band; the second is texture
+    // and may roam the whole chunk.
+    const [lo, hi] = i === 0 ? SENTINEL_BAND : [0, 1];
+    for (let attempt = 0; attempt < SENTINEL_TRIES; attempt++) {
+      const s = s0 + (lo + (hi - lo) * rand()) * CHUNK_LENGTH;
+      // Early attempts keep the seeded flip (variety); late ones alternate
+      // sides outright, so an exclusion that owns one whole verge cannot
+      // starve the slot. The flip draw happens either way — see the file's
+      // standing rule: stream position must not depend on content.
+      const flip = rand() < SENTINEL_FLIP_CHANCE;
+      const side =
+        attempt < SENTINEL_TRIES / 2
+          ? flip
+            ? -parity
+            : parity
+          : attempt % 2 === 0
+            ? parity
+            : -parity;
+      const u = side * (SENTINEL_OFFSET_MIN_M + rand() * SENTINEL_OFFSET_SPREAD_M);
+      const sample = sampleRoad(road, s);
+      const nx = Math.cos(sample.heading);
+      const nz = -Math.sin(sample.heading);
+      const x = sample.x + nx * u;
+      const z = roadZ(sample) + nz * u;
+      if (excluded(s, u, x, z)) continue;
+      sites.push({ s, u, x, z, seed: subSeed(road.seed, `sentinel-look:${index}:${i}`) });
+      break;
+    }
+  }
+  return sites;
 }
 
 /* ======================================================================
@@ -3256,9 +3382,10 @@ export class WorldStreamer {
     }
 
     /*
-     * The wayside sentinels (task 180): one large tree per stretch stood
-     * INSIDE the ordinary tree verge, close enough to the road that walking
-     * past it puts a trunk or a canopy mass across the frame's edge.
+     * The wayside sentinels (task 180, guaranteed by task 167): one large
+     * tree per stretch stood INSIDE the ordinary tree verge, close enough to
+     * the road that walking past it puts a trunk or a canopy mass across the
+     * frame's edge.
      *
      * Every A Short Hike reference frame crops canopy, cliff or rock through
      * its edges; every one of this game's postcards opened on a clean ground
@@ -3269,58 +3396,44 @@ export class WorldStreamer {
      * wing: the walk is live, and a mass that moves with the camera is a
      * sticker on the lens.
      *
-     * Placement rules, and why each: a SEPARATE seeded stream, because the
-     * main tree stream's draw order is load-bearing (this file's standing
-     * rule: stream position must not depend on geometry content — a new
-     * unconditional draw at the top would reshuffle every tree in the
-     * world). Sides alternate by chunk parity with a seeded flip, so the
-     * road reads as passing between trees rather than along a hedge. The
-     * lateral band sits between the shrub verge and the ordinary tree
-     * verge: near enough to cross an edge at walk-by, far enough that the
-     * road ahead — the game's whole subject — stays clear (the VERGE
-     * comment's fern lesson). Scale runs above the ordinary spread's top:
-     * a sentinel is composition, and a small one is just a misplaced tree.
-     * Same exclusions as every tree (river, clearings, landmarks, stop
-     * dressings) — a sentinel that stood in the busk's sightline would buy
-     * an edge and cost the scene.
+     * Placement lives in `waysideSentinelSites` — pure, exported, and pinned
+     * by its own tests, because the wave-9 panel showed this system leaking
+     * silently. Scale runs above the ordinary spread's top: a sentinel is
+     * composition, and a small one is just a misplaced tree. The static
+     * exclusions (river, landmarks, stop dressings) redraw the site rather
+     * than deleting it; the camp clearing is dynamic and is the one check
+     * that still simply drops the tree, so a dusk rebuild never moves one.
      */
-    const sentinelRand = mulberry32(subSeed(this.road.seed, `sentinel:${index}`));
-    const sentinelCount = sentinelRand() < 0.85 ? (sentinelRand() < 0.3 ? 2 : 1) : 0;
-    for (let i = 0; i < sentinelCount; i++) {
-      const s = s0 + sentinelRand() * CHUNK_LENGTH;
-      const parity = (index + i) % 2 === 0 ? 1 : -1;
-      const side = sentinelRand() < 0.25 ? -parity : parity;
-      const u = side * (ROAD_HALF_WIDTH + 2.8 + sentinelRand() * 1.4);
-      const sample = sampleRoad(this.road, s);
-      const nx = Math.cos(sample.heading);
-      const nz = -Math.sin(sample.heading);
-      const x = sample.x + nx * u;
-      const z = roadZ(sample) + nz * u;
+    const sentinelSites = waysideSentinelSites(this.road, index, (s, u, x, z) => {
       const river = this.riverAt(s);
       const riverD = Math.abs(u - river.u);
       const y = riverShape(river, riverD, terrainHeight(this.road, x, z));
       const drowned = river.strength > 0 && riverD < river.reach && y < river.surfaceY + 0.4;
-
-      const kind = weightedPick(sentinelRand, palette.trees, (entry) => entry.weight).kind;
-      const variant = Math.floor(sentinelRand() * TREE_VARIANTS);
+      return drowned || insideLandmark(landmarks, x, z) || this.insideDressing(x, z);
+    });
+    for (const site of sentinelSites) {
+      if (this.inClearing(site.x, site.z)) continue;
+      const look = mulberry32(site.seed);
+      const kind = weightedPick(look, palette.trees, (entry) => entry.weight).kind;
+      const variant = Math.floor(look() * TREE_VARIANTS);
       const key = `${kind}:${variant}`;
 
-      this.scratchPos.set(x, y - 0.15, z);
-      this.scratchQuat.setFromAxisAngle(this.upAxis, sentinelRand() * Math.PI * 2);
-      const scale = randRange(sentinelRand, 1.35, 1.7);
-      this.scratchScale.set(scale, scale * randRange(sentinelRand, 1.0, 1.3), scale);
+      const river = this.riverAt(site.s);
+      const riverD = Math.abs(site.u - river.u);
+      const y = riverShape(river, riverD, terrainHeight(this.road, site.x, site.z));
+      this.scratchPos.set(site.x, y - 0.15, site.z);
+      this.scratchQuat.setFromAxisAngle(this.upAxis, look() * Math.PI * 2);
+      const scale = randRange(look, 1.35, 1.7);
+      this.scratchScale.set(scale, scale * randRange(look, 1.0, 1.3), scale);
       const matrix = new Matrix4().compose(this.scratchPos, this.scratchQuat, this.scratchScale);
 
       const shade =
         kind === 'conifer'
-          ? sentinelRand() * 0.4
+          ? look() * 0.4
           : kind === 'willow'
-            ? 0.35 + sentinelRand() * 0.5
-            : 0.3 + sentinelRand() * 0.7;
+            ? 0.35 + look() * 0.5
+            : 0.3 + look() * 0.7;
       const color = mixColor(canopyTint, 0xffffff, shade);
-      if (drowned || this.inClearing(x, z) || insideLandmark(landmarks, x, z) || this.insideDressing(x, z)) {
-        continue;
-      }
       const list = buckets.get(key);
       if (list) list.push({ matrix, color });
       else buckets.set(key, [{ matrix, color }]);
