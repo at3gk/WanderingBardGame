@@ -2032,6 +2032,29 @@ interviews) — read it before taking any task; its not-recommended list
     noon on purpose instead of letting the palette imply it. Fixes the
     "anchorless noon" gap at the authorship level; zero runtime cost.
     (sky.ts keyframes + palette.ts, documented as a script.)
+    **Piece 1 done (2026-08-05, run 68): the script is written —
+    `docs/color-script.md`.** Eight hours, each with intended mood,
+    what carries the frame (the structural claim: low sun = value
+    carries, high sun = COLOUR must carry), the value structure
+    (darkest dark / lightest light / eye's first stop), measured
+    state, and owed work. Enforcement wired to the existing gauges
+    (frame-quality pinned-road floors, shadowcast photometrics,
+    land-histogram, postcards). Night/golden/dawn marked CARRYING —
+    spend no runs there. Noon is THE designed hour, with measurable
+    targets for the enacting run: shadowed land keeps ≥ 50% of lit
+    saturation (ASH reference: 63%) rotating ≤ ~60° cool of the lit
+    hue (ASH: +31°), instead of today's 180° flip to blue-grey at
+    ~35% (183's numbers). Named non-levers: lightening shadows
+    (reference shadows are DARKER than ours), lowering the noon sun
+    (measured worse twice), full-frame passes (banned). Biome
+    section names village-noon's special case (no treeline anchor —
+    colour must come from accents and coloured shade). No runtime
+    values changed in this piece.
+    **Piece 2 (queued next): enact noon.** Levers in cheapness
+    order: skylight ambient saturation at high sun, CAST_SHADOW_HUE
+    chroma, the bounce key. Tune against shadowcast S-kept/hue-rot
+    on the noon poses AND the frames (re-shot 03/08/10 +
+    noon-village); the baked tone-field diagonals stay 144/169's.
 167. **No framing without an anchor.** A composition rule the rig
     enforces: every camera mood guarantees a near-field anchor silhouette
     (telegraph props, landmarks, canopy mass), Monument Valley's
