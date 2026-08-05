@@ -39,6 +39,24 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-05 (run 65, session close) — 184's fix
+  deliberately NOT attempted; diagnosis deepened instead.** The
+  overlap is two problems in one symptom: pre-runway envelope
+  saturation (fixable inside the pinned contracts — curve levers
+  named in ROADMAP 184) and IN-RUNWAY portrait overlap where head
+  size is pinned by letter legibility and lane length by the
+  viewport — eighth-pairs are nominally narrower than two heads
+  there, which no envelope can fix. That second half is a design
+  decision (per-viewport levers, each trading against a standing
+  contract) for a fresh session with frame-iteration energy. Session
+  totals (runs 51-65): tasks 159/165/60/170/174/181/182 done + 184's
+  measurement, consolidation run 61, wave-7 panel (5.33 → 5.56
+  same-anchor, smoke retired), fifteen PRs #175-#189, tests
+  1017 → 1157. Next session's menu: 184 fix (start from the
+  deepened diagnosis), 183 shadow measurement, 166 colour script
+  (noon is wave-7's worst frame), 180 occluders (thesis confirmed by
+  the panel), 153-157 retention, v1.3; 161 still awaits the human.
+
 - **HANDOFF, 2026-08-05 (run 64) — task 184 measurement: THE PANEL
   WAS RIGHT ON THE THIRD LOOK.** New instrument tools/headgap.mjs
   (projects the live glyph buffers through the live camera; lit
