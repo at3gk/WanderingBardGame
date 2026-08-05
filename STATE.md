@@ -39,6 +39,22 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-05 (run 64) — task 184 measurement: THE PANEL
+  WAS RIGHT ON THE THIRD LOOK.** New instrument tools/headgap.mjs
+  (projects the live glyph buffers through the live camera; lit
+  pairs only). Note heads OVERLAP on every viewport — worst 0.23 on
+  phone portrait (77% fused), 0.56 desktop. The twice-refuted
+  "noteheads" symptom was real all along: the laneSpan test pins
+  NOMINAL arc spacing while the eye sees PROJECTED spacing, and
+  perspective compresses the lane faster than the spawn envelope
+  shrinks heads — the refutations were measuring the wrong space.
+  A caution for the standing law: "panels misattribute causes" cuts
+  both ways — twice-refuted symptoms deserve a NEW instrument, not
+  a third application of the old one. Fix re-aimed in ROADMAP 184
+  (far-lane projection honesty; tune against headgap ratio >= ~0.9
+  on all postcard viewports AND the frames). Measurement-only run;
+  no game code touched; 1157 green.
+
 - **HANDOFF, 2026-08-05 (run 63) — WAVE-7 BLIND PANEL: mean 5.56, up
   from wave 6's 5.33 UNDER THE SAME ANCHOR ("ships beside ASH
   without apology") — the second consecutive same-rubric gain.**
