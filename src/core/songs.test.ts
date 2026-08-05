@@ -126,3 +126,83 @@ describe('the songbook', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Book Two keys (task 165): the rules a keyed song is held to.
+//
+// No shipped song carries a key yet — the volume-structure piece decides
+// where Book Two songs live. These rules bind now, on fixtures, so the
+// first real keyed song inherits a working validator instead of writing
+// one: notes must be diatonic to the key (the signature does ALL the work
+// — a shown accidental is a later, deliberate step), every spelling must
+// round-trip to the exact pitch, and the spelt steps must stay on the
+// drawable staff.
+// ---------------------------------------------------------------------------
+
+import { semitoneOfSpelling, spellInKey } from './notation';
+import { songKey, type Song } from './song';
+
+/** The Book Two engraving rules, as one callable check. */
+function keyedSongFaults(song: Song): string[] {
+  const faults: string[] = [];
+  const key = songKey(song);
+  if (!key) return [`unknown key '${song.key}'`];
+  for (const note of song.notes) {
+    if (note.rest) continue;
+    const spelt = spellInKey(note.semitone, key);
+    if (spelt.shown !== null) {
+      faults.push(`semitone ${note.semitone} is not diatonic in '${song.key ?? 'C'}' (shows ${spelt.shown})`);
+    }
+    if (semitoneOfSpelling(spelt.step, spelt.accidental) !== note.semitone) {
+      faults.push(`semitone ${note.semitone} does not round-trip`);
+    }
+    if (spelt.step < -2 || spelt.step > 12) {
+      faults.push(`semitone ${note.semitone} spells off the drawable staff (step ${spelt.step})`);
+    }
+  }
+  return faults;
+}
+
+describe('Book Two keys', () => {
+  const inG: Song = {
+    id: 'fixture-g',
+    title: 'Fixture in G',
+    beatsPerBar: 4,
+    key: 'G',
+    // G4 A4 B4 F#4 | G4 D5 B4 G4 — diatonic in G, F# through the signature.
+    notes: [7, 9, 11, 6, 7, 14, 11, 7].map((semitone) => ({ semitone, beats: 1 })),
+  };
+
+  it('resolves keys: absent is C major, unknown is a caught bug', () => {
+    expect(songKey({ ...inG, key: undefined })).toEqual({ fifths: 0 });
+    expect(songKey(inG)).toEqual({ fifths: 1 });
+    expect(songKey({ ...inG, key: 'H' })).toBeNull();
+    expect(keyedSongFaults({ ...inG, key: 'H' })).toEqual(["unknown key 'H'"]);
+  });
+
+  it('accepts a diatonic keyed song whole', () => {
+    expect(keyedSongFaults(inG)).toEqual([]);
+  });
+
+  it('rejects a chromatic note — the signature must do all the work', () => {
+    const chromatic = { ...inG, notes: [...inG.notes, { semitone: 8, beats: 1 }] };
+    expect(keyedSongFaults(chromatic).some((f) => f.includes('not diatonic'))).toBe(true);
+    // And F natural in G would need its cancelling sign — equally not yet allowed.
+    const cancelled = { ...inG, notes: [...inG.notes, { semitone: 5, beats: 1 }] };
+    expect(keyedSongFaults(cancelled).some((f) => f.includes('not diatonic'))).toBe(true);
+  });
+
+  it('rejects a spelt note off the drawable staff', () => {
+    const low = { ...inG, notes: [{ semitone: -10, beats: 1 }] };
+    expect(keyedSongFaults(low).some((f) => f.includes('off the drawable staff'))).toBe(true);
+  });
+
+  it('holds every shipped keyed song to the rules (none ship yet — Book One is keyless on purpose)', () => {
+    for (const song of SONGS) {
+      expect(song.key, `${song.title} carries a key before the volume structure exists`).toBeUndefined();
+    }
+    for (const song of SONGS.filter((s) => s.key !== undefined)) {
+      expect(keyedSongFaults(song)).toEqual([]);
+    }
+  });
+});

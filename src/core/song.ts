@@ -1,4 +1,5 @@
 import { Beat, beatIntervalMs } from './beats';
+import { majorKey, type KeySignature } from './notation';
 
 /**
  * Written melodies (ROADMAP task 45; DESIGN.md Pedagogy). v0.2 taught note
@@ -32,6 +33,27 @@ export interface Song {
   title: string;
   beatsPerBar: number;
   notes: SongNote[];
+  /**
+   * Major key the song is written in, by name ('G', 'F', 'Bb', …) —
+   * resolved through notation.ts's `majorKey`. Absent means C major:
+   * Book One's whole world, where every pitch is a natural and no
+   * signature is drawn. Only Book Two songs carry one (task 165), and a
+   * keyed song's notes are semitone-exact like everyone else's — the
+   * spelling (letter, signature, shown accidental) derives from the key
+   * at engraving time via `spellInKey`, so the page and the ear cannot
+   * disagree.
+   */
+  key?: string;
+}
+
+/**
+ * The song's key signature. An absent key reads as C major rather than
+ * null, because keyless is Book One's contract, not an error; an unknown
+ * key *name* answers null rather than guessing — a shipped song with an
+ * unresolvable key is a bug the engraving tests exist to catch.
+ */
+export function songKey(song: Song): KeySignature | null {
+  return song.key === undefined ? { fifths: 0 } : majorKey(song.key);
 }
 
 /** A song note placed on the timeline — a `Beat` that knows what it is. */
