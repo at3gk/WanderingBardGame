@@ -1659,6 +1659,36 @@ scene — build once).
     walking postcard confirmed unchanged. Footprint measured 5.11% of
     frame, confined to a 141-row horizon strip. 1051 tests green
     (+8 skyline/nextDayKey), build 828.23 kB.
+    **Final piece done (2026-08-04) — TASK 159 COMPLETE: the moonlit
+    walk-on.** Tonight's page now carries a fourth kind of row — a
+    *door*: "Or tap here to walk on — the road goes a little further
+    beneath the moon" (composed in campfirePage with the other copy,
+    vocab-bound by the same tests; "tap here" because every other row
+    folds the page). Taking it runs the game's first mid-session road
+    rebuild: `startNextLeg` (task 158's core, live at last) resets the
+    journey's road-shaped fields, then RoadStage strikes the camp and
+    lays `generateRoad(legSeed(key, n), legRoadKey(key, n))` — new
+    WorldStreamer, new travellers (seeded by the new road, so walking
+    on and reloading are indistinguishable), tomorrow's skyline rehung
+    on the new road's end heading, and the sky needs no seam because a
+    leg's first light IS dusk, exactly where the evening already stood.
+    The moonlit road introduces itself "by moonlight" as the morning's
+    did. Three adjacent faults fixed while wiring: a resumed moonlit
+    leg used to rebuild the *shared* road (constructor now seeds by
+    `legIndex`); `tomorrowSkyline(road.dayKey)` would mis-seed on a
+    `~N` road key (now always the plain day key); and a folded page
+    put the door out of reach — a tap at the fire with nothing left to
+    ask now re-opens tonight's page, recomposed current. The door is
+    withheld on the festival eve only (the eve's one asking is the
+    set; ordinary fires resume after) — composer always offers,
+    RoadStage's eve override removes it, both under test. Verified
+    live end-to-end (13 assertions): door → leg 1 at the trailhead at
+    dusk on the `~1` road → the leg's own fire offers again → fold/
+    re-open → leg 2 → reload resumes the SAME moonlit road, zero
+    console errors; 07-night-campfire re-shot and read (door legible,
+    clear of fire and bard). Harness lesson: Playwright's isVisible
+    counts an opacity-0 fade-out as visible — assert computed opacity.
+    1094 tests green (+7), build 863.74 kB.
 160. **By-heart on the road.** A well-carried song's note heads fade to
     ghosts then to a clean staff; a recall stumble gently returns them.
     Extends the scaffold's fade machinery one level up (letters, then

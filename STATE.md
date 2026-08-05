@@ -38,6 +38,29 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-04 (overnight loop session) — TASK 159 COMPLETE:
+  the moonlit walk-on ships, and with it the whole first-campfire
+  promise.** Tonight's page gained its one door row ("Or tap here to
+  walk on — the road goes a little further beneath the moon"; composed
+  in campfirePage, vocab-bound, withheld on the festival eve where the
+  set is the one asking). Taking it is the game's first mid-session
+  road rebuild: startNextLeg + new road from legSeed/legRoadKey, new
+  WorldStreamer + travellers, skyline rehung — and no sky seam, since
+  a leg opens at dusk where the evening already stood. Fixed while
+  wiring: resumed moonlit legs rebuilt the SHARED road (constructor
+  now seeds by legIndex); tomorrowSkyline(road.dayKey) mis-seeds on
+  `~N` keys (use the plain day key); a folded page stranded the door
+  (a tap at the fire now re-opens tonight's page, recomposed). v1.0
+  arc now stands minus 161 (blocked on human input-model) and 165
+  (Book Two, arc-sized). Verified live end-to-end (13 assertions incl.
+  reload-resume of the same moonlit road); 07 postcard re-shot and
+  read. Harness lesson: Playwright isVisible counts opacity-0 as
+  visible — assert computed opacity on faded HUD surfaces. 1094 tests
+  green (+7), build 863.74 kB.
+  **Needs human playtest:** whether a child finds the door (it is the
+  page's last row, full ink); whether "a little further" reads honestly
+  on a phone where the next fire is ~10 minutes on.
+
 - **HANDOFF, 2026-08-01 (overnight loop session) — 179 implemented:
   the bard is grounded.** ContactShadow.ts anchors every daylight
   frame's figure with a contact mark in the passing frames' own 8-15
