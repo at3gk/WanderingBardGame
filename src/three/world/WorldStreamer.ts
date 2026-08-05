@@ -1702,7 +1702,21 @@ export class WorldStreamer {
        * the bands — so the long raking dawn shadows still land.
        */
       bandSoftness: 0.45,
-      shadowDepth: 0.42,
+      /*
+       * Down from 0.42 (task 183's depth lever, wave 8's value lens
+       * concurring from the other direction). Measured on final frames
+       * (tools/shadowcast.mjs): a cast shadow on this ground dropped the
+       * surface 0.08-0.12 in V against a lit value of 0.31-0.6 — 18-29% of
+       * lit — while the reference's shadowed ground drops 0.31 against 0.77,
+       * a 40% bite. "Blurred and only one step dark... they read as smudges
+       * of dirt rather than as shapes with a caster" is four lenses saying
+       * that same ratio in words. The colour side was fixed first
+       * (CAST_SHADOW_HUE's chroma restore), so what deepens here deepens as
+       * COLOUR, not as grey — the order of those two changes matters.
+       * Depth only, one variable: the fray/edge work is untouched, and if
+       * the next wave still reads smear, softness is its own run.
+       */
+      shadowDepth: 0.14,
     });
 
     // Vertex colours are on for the scatter materials too, and they are not
