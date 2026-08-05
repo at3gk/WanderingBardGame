@@ -59,7 +59,7 @@ import {
   MEETING_RADIUS,
   withinBand,
 } from './roadStaging';
-import { Hud, type SongEntry } from '../ui/Hud';
+import { BOOK_FACE, Hud, type SongEntry } from '../ui/Hud';
 import { tomorrowSkyline } from '../core/skyline';
 import { dayKey, legRoadKey, legSeed, mulberry32, randRange, subSeed } from '../core/rng';
 import {
@@ -128,6 +128,7 @@ import { resolveAsk, rollAsk, rollEncounter, type EncounterAsk } from '../core/e
 import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
 import { campfirePage, type CampfirePage } from '../core/campfirePage';
+import { postcardLines, POSTCARD_FILENAME, type PostcardCard } from '../core/postcardCard';
 import { roadName } from '../core/roadName';
 import { encounter } from '../core/scaffold';
 import { allSongWalks, loadScaffold, recordSongWalk, saveScaffold, songWalksFor } from '../core/scaffoldStorage';
@@ -559,6 +560,7 @@ export class RoadStage implements Stage {
     this.hud.onSongChosen((id) => this.pinSong(id));
     this.hud.onKeepsake((action) => this.keepsake(action));
     this.hud.onWalkOn(() => this.walkOn());
+    this.hud.onPostcard(() => this.pressPostcard());
     this.hud.setMode(this.journey.phase === 'resting' ? 'resting' : 'walking');
     if (this.journey.phase === 'resting') this.makeCamp();
     this.collectIdle();
@@ -2072,6 +2074,129 @@ export class RoadStage implements Stage {
         });
     });
     input.click();
+  }
+
+  /**
+   * Press tonight's road into a postcard: the frame as it stands, in a
+   * painted border, with the road's name and the tune that was carried.
+   *
+   * Nothing leaves the device. There is no upload, no share endpoint and no
+   * link — the card is a PNG in the downloads folder, and what happens to it
+   * afterwards is the player's business and nobody's metric. That is also
+   * why the card can say nothing gradable (`core/postcardCard.ts` carries
+   * the whole argument, and a test enforces it): the one artefact this game
+   * hands to somebody who is not playing it must show presence, never
+   * performance.
+   *
+   * The capture is the delicate part. The renderer runs with
+   * `preserveDrawingBuffer: false`, so by the time any handler reads the
+   * canvas the buffer has already been presented and cleared — drawing the
+   * WebGL canvas into a 2D context here would copy black and press a
+   * postcard of nothing. `tools/postcard.mjs` learned this the hard way and
+   * the fix is the same one: render explicitly, then `readPixels` in the
+   * same task, before the browser gets a turn. The rows come back bottom-up
+   * from GL, so they are flipped on the way into the image.
+   */
+  private pressPostcard(): void {
+    const renderer = this.app.renderer;
+    const gl = renderer.getContext();
+    const w = gl.drawingBufferWidth;
+    const h = gl.drawingBufferHeight;
+    if (!w || !h) {
+      this.hud.say('The light is not right for a postcard just now.', 7);
+      return;
+    }
+
+    renderer.render(this.scene, this.camera);
+    const pixels = new Uint8Array(w * h * 4);
+    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+    const frame = document.createElement('canvas');
+    frame.width = w;
+    frame.height = h;
+    const frameCtx = frame.getContext('2d');
+    if (!frameCtx) return;
+    const image = frameCtx.createImageData(w, h);
+    const stride = w * 4;
+    for (let y = 0; y < h; y++) {
+      const from = (h - 1 - y) * stride;
+      image.data.set(pixels.subarray(from, from + stride), y * stride);
+    }
+    frameCtx.putImageData(image, 0, 0);
+
+    const carried = this.journey.songChoice
+      ? songForPass(this.journey.songChoice, biomeAt(this.road, this.journey.s), 0).title
+      : null;
+    const card = postcardLines(roadName(this.road.seed), carried, this.journey.campfires);
+    this.paintPostcard(frame, card);
+  }
+
+  /**
+   * The card itself: the picture matted on parchment, the road's name under
+   * it, the two lines under that.
+   *
+   * Everything is sized off the captured frame's width so the card comes out
+   * the same postcard on a phone as on a desktop — a fixed 24px title would
+   * be a caption on one and a headline on the other. The mat is a hairline
+   * of the dark warm ink the HUD uses for its washes, which is the only
+   * thing keeping a dusk frame from bleeding into the cream.
+   */
+  private paintPostcard(frame: HTMLCanvasElement, card: PostcardCard): void {
+    const w = frame.width;
+    const margin = Math.round(w * 0.06);
+    const mat = Math.max(1, Math.round(w * 0.006));
+    const titleSize = Math.max(16, Math.round(w * 0.042));
+    const bodySize = Math.max(12, Math.round(w * 0.027));
+    const gap = Math.round(bodySize * 1.7);
+
+    const cardW = w + margin * 2;
+    const textTop = margin + frame.height + Math.round(margin * 0.9);
+    const cardH = textTop + titleSize + Math.round(gap * 0.6) + gap * card.lines.length + margin;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = cardW;
+    canvas.height = cardH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const parchment = ctx.createLinearGradient(0, 0, 0, cardH);
+    parchment.addColorStop(0, '#f2e6cd');
+    parchment.addColorStop(1, '#e3d0ab');
+    ctx.fillStyle = parchment;
+    ctx.fillRect(0, 0, cardW, cardH);
+
+    ctx.fillStyle = '#2a1e20';
+    ctx.fillRect(margin - mat, margin - mat, w + mat * 2, frame.height + mat * 2);
+    ctx.drawImage(frame, margin, margin);
+
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#3b2a20';
+    ctx.font = `italic ${titleSize}px ${BOOK_FACE}`;
+    ctx.fillText(card.title, margin, textTop + titleSize);
+
+    ctx.fillStyle = '#5a4433';
+    ctx.font = `italic ${bodySize}px ${BOOK_FACE}`;
+    let y = textTop + titleSize + Math.round(gap * 0.6);
+    for (const line of card.lines) {
+      y += gap;
+      ctx.fillText(line, margin, y);
+    }
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        this.hud.say('The postcard would not take the ink. The road walks on.', 7);
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = POSTCARD_FILENAME;
+      anchor.click();
+      // Same delay as the keepsake's: Safari resolves a download lazily and
+      // a URL revoked in the same tick can hand it nothing.
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      this.hud.say('The postcard is pressed. Keep it, or send it to somebody.', 8);
+    }, 'image/png');
   }
 
   /**

@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 75 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 76 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,16 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 76) — 153 done: the campfire postcard.**
+  Delegated to an opus agent, verified live: tonight's page offers
+  "press a postcard of today's road", which captures the live frame
+  (explicit render + readPixels), mats it in parchment with the road's
+  name and presence-only prose (vocab-banned by test — Wordle's rule),
+  and downloads a PNG. No network, no deps. The pressed postcard was
+  read by eye: lovely. Needs human playtest: long road names on
+  phones. 1172 tests (+11). Retention queue now: 154-157; visual
+  menu: sentinel cadence, HUD idle-opacity decision, 149, 184(2).
 
 - **HANDOFF, 2026-08-05 (run 75) — shadow FORM run: SHADOW_EDGE
   0.13 → 0.08.** Two same-rubric panels licensed it. Noon penumbra

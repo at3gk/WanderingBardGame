@@ -2277,6 +2277,22 @@ top task fits its energy.
     never performance — no accuracy, no coins, nothing gradable (Wordle's
     rule, and the research's leaderboard ban). Canvas-render + download;
     no network. (Campfire/HUD.)
+    **Done (2026-08-05, run 76; delegated to an opus agent, verified
+    live in the main loop).** `core/postcardCard.ts` (pure, 11
+    tests): road name as title, the song carried or a wandering
+    line, campfires in storybook words — never a digit, and a
+    test-enforced vocabulary ban (accuracy/coins/score/streak/fail/
+    missed/best/record/%) across all outputs. Tonight's page gains a
+    row ("Or press a postcard of today's road, to keep or to send."
+    — registered-handler contract like walkOn; pressing does NOT
+    fold the page, a souvenir shouldn't end the evening).
+    RoadStage.pressPostcard: explicit render + gl.readPixels (the
+    preserveDrawingBuffer trap), rows flipped, parchment card with
+    6% border and the HUD's own serif, canvas.toBlob download — no
+    network, no dependency. Verified live end-to-end: row present at
+    the fire, download saved, PNG read by eye (orientation correct,
+    title and lines set well). Needs human playtest: long road
+    names on a phone postcard. 1172 tests (+11), build green.
 154. **Songbook pages wear in.** First slice: a song's page shows its
     walked-count as wear and marginalia (diary facts ONLY — never the
     scaffold model; a page that got prettier as letters faded would be a

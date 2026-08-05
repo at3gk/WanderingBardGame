@@ -113,13 +113,23 @@ const WANDERING_LABEL = 'Wandering';
 const WANDER_ROW_LABEL = 'Wander the songbook';
 
 /**
+ * The page's second door: press today's road into a small painted card.
+ * "To keep or to send" is the whole offer — a postcard is for a shelf as
+ * often as for anyone else, and naming both keeps the row from reading as
+ * a nudge to share. Worded here rather than arriving in `PageContent`
+ * because the row exists only when a host wired a handler, which is a fact
+ * about this HUD's wiring and not about the day the page describes.
+ */
+const POSTCARD_ROW_LABEL = "Or press a postcard of today's road, to keep or to send.";
+
+/**
  * The face stack.
  *
  * Local families only, in the order a device is likeliest to have something
  * good: a book serif if there is one, then the platform serif, then whatever
  * `serif` resolves to. No webfont is fetched — see the file header.
  */
-const BOOK_FACE =
+export const BOOK_FACE =
   "'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif";
 
 /** Ink. Cream, the game's notation colour, at two strengths. */
@@ -222,6 +232,7 @@ export class Hud {
   private songChosen: ((id: string | null) => void) | null = null;
   private keepsakeCb: ((action: KeepsakeAction) => void) | null = null;
   private walkOnCb: (() => void) | null = null;
+  private postcardCb: (() => void) | null = null;
 
   /** Seconds of brightness left on each piece. */
   private coinsAttention = 0;
@@ -557,6 +568,15 @@ export class Hud {
     this.walkOnCb = handler;
   }
 
+  /**
+   * Called when the player presses tonight's road into a postcard. Same
+   * contract again: no handler, no row. The postcard is a file operation
+   * and belongs to whoever owns the canvas, so the HUD only ever offers it.
+   */
+  onPostcard(handler: () => void): void {
+    this.postcardCb = handler;
+  }
+
   /** Whether tonight's page is open. The stage re-opens it on a tap at the fire. */
   get isPageOpen(): boolean {
     return this.pageShown;
@@ -644,6 +664,31 @@ export class Hud {
         this.walkOnCb?.();
       });
       rows.push(door);
+    }
+
+    // The other door, and the only one that leaves the page standing: a
+    // postcard is a souvenir of the evening, not a way out of it, and
+    // folding the page to press one would read as though the offer had
+    // ended the night. Soft ink rather than full — it sits a shade quieter
+    // than the road on, because it is optional in a way the road is not.
+    if (this.postcardCb) {
+      const press = element('div', {
+        marginTop: '4px',
+        padding: '12px 0 4px',
+        fontStyle: 'italic',
+        fontSize: '0.9em',
+        lineHeight: '1.45',
+        color: INK_SOFT,
+        textShadow: shadow,
+        cursor: 'pointer',
+      });
+      press.textContent = POSTCARD_ROW_LABEL;
+      press.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.postcardCb?.();
+      });
+      rows.push(press);
     }
 
     for (const [i, row] of rows.entries()) {
