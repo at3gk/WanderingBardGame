@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 73 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 74 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,32 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 74) — WAVE-9 BLIND PANEL: mean 5.02,
+  FLAT against wave 8's 5.10 — same rubric, same judge model, honest
+  comparison at last, and the three fixes did not move the mean.**
+  Lens means: colour 5.53, value 5.41 (up), emotion 5.27, silhouette
+  4.88, composition 4.84, mobile 4.20 (down). Frames: 07 best 6.18,
+  04 up to 5.93, 03 worst again 4.12. THE READ: (1) SHADOW FORM is
+  now the binding constraint — "phantom dark bands" (emotion, 9
+  frames), "smeared shadow" (composition, 7), "giant unattributed
+  soft-edged masses" (silhouette), "soft blurred dark wedge" (value).
+  With colour (run 69) and depth (run 72) fixed, the evidence FLIPS
+  183's "softness is not the fault" — narrowing the penumbra
+  (SHADOW_EDGE/FRAY family, painterly.ts's own measured history) is
+  now the licensed lever. (2) The 175 corner washes DID NOT REGISTER
+  (mobile lens still says "no backing plate", 5 frames): the HUD
+  idles at 36% opacity in every postcard — either the wash must
+  survive idle, or the postcard should catch the attention state;
+  decide which is honest before re-touching. (3) Sentinels
+  under-hit: "four unused edges" still on 8 frames — cadence or
+  postcard-pose luck; consider one guaranteed sentinel within ±20 m
+  of each postcard s (it is world-honest — the road just has trees).
+  (4) Stable families: notation slab/collisions (184 problem 2 +
+  the ribbon's paper), NPC brown boxes (figure craft), milky
+  distance (colour-script piece for the fog hues), one-camera-ten-
+  frames (postcard harness). Full verdicts in the wave-9 task
+  output (six opus judges, 479k tokens).
 
 - **HANDOFF, 2026-08-05 (run 73) — 180 done: the wayside sentinels
   close the frame.** One large verge tree per ~60 m chunk on its own
