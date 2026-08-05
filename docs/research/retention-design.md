@@ -253,6 +253,26 @@ ritual*. Players return because return is cheap, warm, and familiar — the
 game is a place, and you visit places you feel safe in. Retention harm
 comes precisely from the mechanics this game already bans.
 
+### Findings from shipping (added as features teach — CLAUDE.md pillar 5)
+
+- **2026-08-05, the moonlit walk-on (ROADMAP 159).** The research frames
+  the daily road as the appointment made kind; what it did not name is
+  the *eager day* — the Saturday a household wants more than one leg.
+  Every conventional answer to "more" is an appointment mechanic in
+  disguise (energy, bonus multipliers, streak credit). The shipped
+  answer that fits the contract: **more is the same walk again, under a
+  different sky** — a deterministic, non-communal leg that nothing
+  gates, nothing rewards beyond the walk, and that every dawn quietly
+  resets away. Retention shape without a single retention mechanic; the
+  kindness lives in what is absent.
+- **2026-08-05, the paged songbook (ROADMAP 165's shelf work).**
+  Reachability is retention-adjacent: the fold had silently cut the far
+  end of the songbook on small screens for weeks — a song a child
+  cannot reach is a page that can never wear in (recommendation 3's
+  whole surface). Any future collection surface should carry a
+  reachability test at the smallest viewport, not just a fits-on-
+  desktop check.
+
 ## Recommendations, ranked by fit
 
 Existing systems referenced: daily road / campfire / journal / songbook /
