@@ -2398,6 +2398,39 @@ full verdict map and the measure-first suspicion list):
     wave-over-wave critique deltas ride the same dice — pin or note
     the dayKey when comparing waves (logged in STATE).
 
+183. **Phantom shadows — measure who casts them (wave 7).** Three
+    lenses independently named long dark streaks crossing road and
+    grass "with no visible caster", reading as render banding and
+    cutting the bard's silhouette (01/03/09). Suspicion-list
+    discipline applies: they are almost certainly REAL shadow-map
+    casts from offscreen trees — the symptom is true, the "banding"
+    attribution is not. Instrument first: identify the casters per
+    postcard framing, measure the shadow's value/softness against the
+    references' (ASH shadows are softer and hue-carrying), and only
+    then choose the lever (shadow radius? sun-shadow value floor?
+    caster culling near framings? — NOT existence; grounded shadows
+    are the 179 family's win). The colour lens adds the fix that
+    "moves every frame at once": shadows should carry hue, cooler and
+    still saturated, not grey — measure current cast-shadow S values
+    before believing that too (wave 4 proved CAST_SHADOW_HUE
+    chroma-gaining at noon once already).
+184. **Note-head overlap — measure the governor at last (wave 7).**
+    Five frames name "fused brown blobs" where notes are close in
+    musical time (01/02/03/08 portrait/10 tablet), while 05/09 with
+    real spacing are excellent. This is the twice-refuted "noteheads
+    ignore pitch" symptom, now with a sharper claim: a COLLISION at
+    close musical spacing on certain aspects. Measure
+    songNotes' worst-pair gap per viewport across the songbook
+    (the laneSpan test claims eighths stay apart — re-derive that
+    claim on the postcard aspect ratios with the CURRENT governor,
+    including 6/8 Mulberry's quarter+eighth pairs), then fix the
+    governor or the claim, whichever is wrong. Also from wave 7's
+    mobile lens, fold into task 175: corner HUD labels are thin
+    italic, plateless, low-contrast in four lightings, and sit in
+    thumb/gesture zones; and 07's walk-on door reads as prose — an
+    affordance question for the human (child-wins says a door should
+    look tappable; the no-menus idiom resists).
+
 181. **Smoke as soft forms.** The campfire smoke still reads as a stack
     of hard-edged translucent polygons ("a hovering boulder", "a render
     bug" — wave 2 called it stacked glass octagons; three waves on it
