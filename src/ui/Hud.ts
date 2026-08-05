@@ -55,6 +55,11 @@ export interface SongEntry {
   name: string;
   /** A shelf label between volumes (task 165), not a song: never tappable. */
   heading?: true;
+  /**
+   * How thumbed this page looks, from `core/pageWear.ts` — walks only, never
+   * the scaffold. Absent reads as untouched.
+   */
+  wear?: 0 | 1 | 2 | 3;
 }
 
 /** The songbook's endpaper actions: press the journey into a keepsake file, or unfold one. */
@@ -1198,8 +1203,8 @@ export class Hud {
   }
 
   /** What the open book would list: wander (when pinned), then every other song. */
-  private bookRows(): Array<{ id: string | null; name: string; heading?: true }> {
-    const rows: Array<{ id: string | null; name: string; heading?: true }> = [];
+  private bookRows(): Array<{ id: string | null; name: string; heading?: true; wear?: 0 | 1 | 2 | 3 }> {
+    const rows: Array<{ id: string | null; name: string; heading?: true; wear?: 0 | 1 | 2 | 3 }> = [];
     if (this.pinnedSongId !== null) rows.push({ id: null, name: WANDER_ROW_LABEL });
     for (const entry of this.songEntries) {
       if (entry.heading) rows.push(entry);
@@ -1247,8 +1252,34 @@ export class Hud {
         this.bookBox.appendChild(row);
         continue;
       }
-      const row = makeRow();
-      row.textContent = entry.name;
+      // A page wears where it has been carried (task 154). Quiet on purpose:
+      // warmer ink, then a scribe's mark in the margin. No count, no badge,
+      // no tooltip — a reader who never notices has lost nothing, and one
+      // who does has only been told "this one has been on the road".
+      const wear = entry.wear ?? 0;
+      const row = makeRow(
+        wear >= 1
+          ? {
+              color: 'rgba(240, 226, 198, 0.92)',
+              textShadow: `${shadow}, 0 0 7px rgba(240, 203, 166, 0.22)`,
+              ...(wear >= 3 ? { letterSpacing: '0.01em' } : {}),
+            }
+          : {},
+      );
+      if (wear >= 2) {
+        const mark = element('span', {
+          color: INK_SOFT,
+          marginRight: '0.4em',
+          flex: '0 0 auto',
+        });
+        mark.textContent = wear >= 3 ? '❧' : '·';
+        row.appendChild(mark);
+        const title = element('span', { overflow: 'hidden', textOverflow: 'ellipsis' });
+        title.textContent = entry.name;
+        row.appendChild(title);
+      } else {
+        row.textContent = entry.name;
+      }
       row.addEventListener('pointerdown', (event) => {
         event.preventDefault();
         this.setBookOpen(false);

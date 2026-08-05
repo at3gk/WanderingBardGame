@@ -2297,6 +2297,17 @@ top task fits its energy.
     walked-count as wear and marginalia (diary facts ONLY — never the
     scaffold model; a page that got prettier as letters faded would be a
     grade in costume). (songChoice/journey diary facts + Hud songbook.)
+    **First slice done (2026-08-05, run 77; delegated to an opus
+    agent, verified in the main loop).** `core/pageWear.ts`:
+    wearTier(walks) 0/1/2/3 at 1/6/14 walks — thresholds IMPORTED
+    from mastery.ts so the page and the staff age on one clock, but
+    reading WALKS ONLY (the diary fact; the header cites the
+    grade-in-costume rule). Songbook rows wear quietly by tier: ink
+    warms (1+), a middot marginalia (2+), the fleuron ❧ with a
+    breath of letterspacing (3) — no numbers, no badges, no
+    tooltips; both volumes wear (a carried Book Two page is exactly
+    as thumbed). Needs human playtest: tier 1 is deliberately
+    near-invisible on a dim phone. 1178 tests (+6), build green.
 155. **Mementos, not checklists.** Lovely encounter outcomes leave a
     keepsake drawn on the journal page — no collection screen, no counts,
     no empty slots; missed rarities recur on later roads (Sky's

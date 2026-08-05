@@ -131,6 +131,7 @@ import { campfirePage, type CampfirePage } from '../core/campfirePage';
 import { postcardLines, POSTCARD_FILENAME, type PostcardCard } from '../core/postcardCard';
 import { roadName } from '../core/roadName';
 import { encounter } from '../core/scaffold';
+import { wearTier } from '../core/pageWear';
 import { allSongWalks, loadScaffold, recordSongWalk, saveScaffold, songWalksFor } from '../core/scaffoldStorage';
 import {
   BOOK_TWO_INVITATION,
@@ -1959,14 +1960,23 @@ export class RoadStage implements Stage {
 
   /** Hand the HUD the songbook and which tune is pinned. */
   private refreshSongbook(): void {
-    const entries: SongEntry[] = SONGS.map((song) => ({ id: song.id, name: song.title }));
+    // The same per-song walk record the festival's set list is drawn from —
+    // a diary fact, so a page may wear without the book ever grading it.
+    const walks = allSongWalks();
+    const entries: SongEntry[] = SONGS.map((song) => ({
+      id: song.id,
+      name: song.title,
+      wear: wearTier(walks[song.id] ?? 0),
+    }));
     // Book Two stands on its own shelf once the festival has heard the
     // by-heart book (task 165; DESIGN's post-festival choice). Growth is a
     // new volume, never a change to Book One — and a household that has
     // not reached the festival sees the book exactly as it always was.
     if (this.journey.festivals >= 1) {
       entries.push({ id: '', name: 'Book Two — true keys', heading: true });
-      for (const song of BOOK_TWO_SONGS) entries.push({ id: song.id, name: song.title });
+      for (const song of BOOK_TWO_SONGS) {
+        entries.push({ id: song.id, name: song.title, wear: wearTier(walks[song.id] ?? 0) });
+      }
     }
     this.hud.setSongbook(entries, this.journey.songChoice);
   }
