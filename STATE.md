@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 76 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 77 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,14 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 77) — 154 first slice: songbook pages
+  wear in.** wearTier(walks) at 1/6/14 (thresholds imported from
+  mastery.ts — one aging clock), diary facts only. Rows warm their
+  ink, then a middot, then the fleuron ❧ — no numbers, badges, or
+  tooltips, both volumes. Needs human playtest: tier 1 near-invisible
+  on dim phones (deliberate quiet). 1178 tests (+6). Retention queue
+  remaining: 151 (bookend pieces), 152's deferred signage, 155-157.
 
 - **HANDOFF, 2026-08-05 (run 76) — 153 done: the campfire postcard.**
   Delegated to an opus agent, verified live: tonight's page offers
