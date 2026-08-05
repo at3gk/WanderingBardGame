@@ -83,3 +83,24 @@ describe('picker layout', () => {
     expect(songGridLayout(COUNT, 1400, 600).cellW).toBeLessThanOrEqual(260);
   });
 });
+
+describe('Book Two resolution (task 165)', () => {
+  it('resolves a pinned Book Two song like any other', () => {
+    const bonnie = BOOK_TWO_SONGS[0];
+    expect(songForPass(bonnie.id, 'village', 0).id).toBe(bonnie.id);
+  });
+
+  it('keeps the rotation itself Book One — wandering never deals a keyed song', () => {
+    for (const biome of ['village', 'forest', 'riverside']) {
+      for (let pass = 0; pass < 8; pass++) {
+        expect(songForPass(null, biome, pass).key).toBeUndefined();
+      }
+    }
+  });
+
+  it('gives a Book Two song no home biome — the road keeps wandering', () => {
+    expect(homeBiomeOf(BOOK_TWO_SONGS[0].id)).toBeNull();
+  });
+});
+
+import { BOOK_TWO_SONGS } from './songs';

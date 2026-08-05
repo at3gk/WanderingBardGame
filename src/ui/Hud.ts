@@ -23,7 +23,7 @@
  */
 
 import type { HudBox, HudChrome, SafeAreaInsets } from './hudLayout';
-import { hudChrome, instrumentCaseBox, songBookBox } from './hudLayout';
+import { bookCapacity, bookPage, hudChrome, instrumentCaseBox, songBookBox } from './hudLayout';
 
 /** Where the chrome rests when nothing has happened for a while. */
 const IDLE_OPACITY = 0.36;
@@ -53,6 +53,8 @@ export interface CaseEntry {
 export interface SongEntry {
   id: string;
   name: string;
+  /** A shelf label between volumes (task 165), not a song: never tappable. */
+  heading?: true;
 }
 
 /** The songbook's endpaper actions: press the journey into a keepsake file, or unfold one. */
@@ -195,6 +197,8 @@ export class Hud {
   private pinnedSongId: string | null = null;
   private bookOpen = false;
   private bookHold = 0;
+  /** Which page of the book is open, when it does not all fit. See `bookPage`. */
+  private bookPageIndex = 0;
   private songChosen: ((id: string | null) => void) | null = null;
   private keepsakeCb: ((action: KeepsakeAction) => void) | null = null;
   private walkOnCb: (() => void) | null = null;
@@ -1120,19 +1124,26 @@ export class Hud {
   }
 
   /** What the open book would list: wander (when pinned), then every other song. */
-  private bookRows(): Array<{ id: string | null; name: string }> {
-    const rows: Array<{ id: string | null; name: string }> = [];
+  private bookRows(): Array<{ id: string | null; name: string; heading?: true }> {
+    const rows: Array<{ id: string | null; name: string; heading?: true }> = [];
     if (this.pinnedSongId !== null) rows.push({ id: null, name: WANDER_ROW_LABEL });
     for (const entry of this.songEntries) {
-      if (entry.id !== this.pinnedSongId) rows.push(entry);
+      if (entry.heading) rows.push(entry);
+      else if (entry.id !== this.pinnedSongId) rows.push(entry);
     }
     return rows;
   }
 
   private buildBook(): void {
     this.bookBox.replaceChildren();
-    for (const entry of this.bookRows()) {
-      const row = element('div', {
+    // Page the book to the chrome's capacity (task 165): the fold used to
+    // silently cut every row past what fit — everything past four on a
+    // short landscape phone — and Book Two only made an existing fault
+    // longer. Now the last slot turns the page instead.
+    const { shown, pages } = bookPage(this.bookRows(), bookCapacity(this.chrome), this.bookPageIndex);
+    const shadow = '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 12px rgba(20, 14, 18, 0.7)';
+    const makeRow = (style: Record<string, string> = {}) =>
+      element('div', {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'flex-end',
@@ -1145,8 +1156,24 @@ export class Hud {
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         cursor: 'pointer',
-        textShadow: '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 12px rgba(20, 14, 18, 0.7)',
+        textShadow: shadow,
+        ...style,
       });
+    for (const entry of shown) {
+      if (entry.heading) {
+        // A shelf label, set like the page titles: small caps, no hand.
+        const row = makeRow({
+          fontStyle: 'normal',
+          fontSize: '0.72em',
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+          cursor: 'default',
+        });
+        row.textContent = entry.name;
+        this.bookBox.appendChild(row);
+        continue;
+      }
+      const row = makeRow();
       row.textContent = entry.name;
       row.addEventListener('pointerdown', (event) => {
         event.preventDefault();
@@ -1154,6 +1181,18 @@ export class Hud {
         this.songChosen?.(entry.id);
       });
       this.bookBox.appendChild(row);
+    }
+    if (pages > 1) {
+      const turn = makeRow({ color: INK });
+      turn.textContent = 'turn the page ⤵';
+      turn.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.bookPageIndex += 1;
+        this.bookHold = CASE_HOLD_SEC;
+        this.buildBook();
+      });
+      this.bookBox.appendChild(turn);
     }
     this.layoutBook();
   }
@@ -1181,6 +1220,11 @@ export class Hud {
     const next = open && this.bookPickable();
     if (next === this.bookOpen) return;
     if (next) this.setCaseOpen(false);
+    // Opened afresh, the book opens at its first page.
+    if (next && this.bookPageIndex !== 0) {
+      this.bookPageIndex = 0;
+      this.buildBook();
+    }
     this.bookOpen = next;
     this.bookHold = next ? CASE_HOLD_SEC : 0;
     this.bookBox.style.opacity = next ? '1' : '0';

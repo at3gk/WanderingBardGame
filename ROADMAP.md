@@ -1953,6 +1953,28 @@ scene — build once).
     165: the volume structure — the songbook UI's Book Two shelf,
     unlocked by `festivals >= 1`, which makes this song reachable
     and completes the task.
+    **Final piece done (2026-08-05) — TASK 165 COMPLETE; the v1.0
+    arc stands finished except 161 (blocked on human).** The
+    songbook grew a shelf: `refreshSongbook` appends a small-caps
+    "Book Two — true keys" heading and the BOOK_TWO_SONGS beneath it
+    once `festivals >= 1` (refreshed the moment the festival's
+    closing line lands, so the shelf appears that same night); a
+    pre-festival household sees the book exactly as it always was.
+    `songForPass` resolves both books for a PINNED song while the
+    rotation stays Book One (wandering never deals a keyed song —
+    pinned by test), and a Book Two song has no home biome: the road
+    keeps wandering. Sizing the shelf exposed a PRE-EXISTING fault
+    and fixed it: `songBookBox`'s fold silently cut every row past
+    what fit — on a 844x390 landscape phone that was everything past
+    FOUR, so the far end of Book One was already unreachable exactly
+    where screens are smallest. The book now PAGES: pure `bookPage`/
+    `bookCapacity` in hudLayout (tested incl. the full-cycle-shows-
+    every-row sweep), the last slot becoming a "turn the page ⤵" row
+    when needed, page reset on reopen. Verified live end-to-end:
+    post-festival save → shelf + My Bonnie in the book → pinned →
+    the walk plays it with the ♯ on the paper and B3 wearing its
+    ledger (frame read); 844x390 book pages through to Book Two;
+    zero console errors. 1133 tests green (+8), build green.
 
 ## The v1.3 queue: "the family songbook" (human-set, 2026-08-01, post-festival)
 

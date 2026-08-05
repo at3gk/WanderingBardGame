@@ -317,6 +317,40 @@ export function songBookBox(chrome: HudChrome, count: number): HudBox {
   };
 }
 
+/**
+ * How many whole rows the open songbook can show on this chrome. The same
+ * arithmetic `songBookBox` sizes with, exported so the book can page: the
+ * fold used to silently cut every row past this count — on a 844x390
+ * landscape phone that was everything past FOUR — which made the far end
+ * of the songbook unreachable exactly where screens are smallest.
+ */
+export function bookCapacity(chrome: HudChrome): number {
+  const { song, safe, gutter, journal } = chrome;
+  const ceiling = Math.max(safe.top + gutter, journal.top + journal.height + gutter);
+  const room = Math.max(0, song.top - ceiling);
+  return song.height > 0 ? Math.floor(room / song.height) : 0;
+}
+
+/**
+ * Which of the book's rows this page shows. When everything fits, one page
+ * and no turn row; otherwise the last visible slot is reserved for the
+ * "turn the page" row, and `page` wraps, so tapping it cycles through the
+ * whole book on any screen. Pure, so the smallest landscape phone is a
+ * unit test rather than a surprise.
+ */
+export function bookPage<T>(
+  rows: readonly T[],
+  capacity: number,
+  page: number,
+): { shown: T[]; pages: number } {
+  const cap = Math.max(1, Math.floor(Number.isFinite(capacity) ? capacity : 1));
+  if (rows.length <= cap) return { shown: rows.slice(), pages: 1 };
+  const size = Math.max(1, cap - 1);
+  const pages = Math.ceil(rows.length / size);
+  const p = ((Math.trunc(page) % pages) + pages) % pages;
+  return { shown: rows.slice(p * size, p * size + size), pages };
+}
+
 /** Whether a box could be tapped fairly by a thumb. */
 export function isTouchable(box: HudBox): boolean {
   return box.width >= HUD_TOUCH_TARGET && box.height >= HUD_TOUCH_TARGET;
