@@ -1889,6 +1889,21 @@ scene — build once).
     tests green (+12), build green. Next pieces: accidental glyph
     engraving in SongNotes; songbook volume structure; the first
     Book Two song.
+    **Second piece done (2026-08-05): the song data model.** `Song`
+    gains optional `key` (a name, resolved via `majorKey`; absent IS
+    C major — keyless is Book One's contract, not an error) and
+    `songKey()`. Deliberately nothing per-note: pitches stay
+    semitone-exact and the spelling derives from the key at engraving
+    time, so the page and the ear cannot drift. The Book Two
+    engraving rules bind NOW, on fixtures, in songs.test.ts
+    (`keyedSongFaults`): notes must be diatonic to the key — the
+    signature does ALL the work; a shown accidental is a later,
+    deliberate step — every spelling must round-trip to the exact
+    pitch, spelt steps must stay on the drawable staff, and a test
+    pins that no shipped song carries a key until the volume
+    structure exists. 1111 tests green (+5), build green. Next: the
+    engraving (signature + accidental glyphs in SongNotes), then the
+    volume structure, then the first Book Two song.
 
 ## The v1.3 queue: "the family songbook" (human-set, 2026-08-01, post-festival)
 
