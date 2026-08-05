@@ -1869,6 +1869,26 @@ scene — build once).
     Engine is chromatically exact already; notation needs accidental
     glyphs; songbook needs volume structure. Arc. (notation, songs,
     engraving in SongNotes.)
+    **First piece done (2026-08-05, overnight session): the notation
+    core.** `core/notation.ts` gains the key layer, majors only, four
+    sharps to four flats (the method-book span; minors wait for the
+    songs that need their raised-seventh rule): `majorKey` (unknown
+    names answer null, Book One's own stance), `alteredLetters` /
+    SHARP_ORDER / FLAT_ORDER, standard treble signature glyph steps,
+    and `spellInKey` — total over every pitch and key, separating
+    what a note *carries* (F♯ in G carries the sharp) from what the
+    engraver *shows* (nothing — the signature says it; F natural
+    shows the cancelling sign, which is the lesson a signature
+    teaches). Spelling policy pinned by test: chromatic notes spell
+    in the key's own direction, always one letter away, so B♯/E♯/
+    C♭/F♭ and double accidentals can never appear. The inviolable
+    round-trip is swept: every spelling in every key across four
+    octaves sounds back as the semitone it was spelt from
+    (`semitoneOfSpelling`), and Book One's naturals-only functions
+    are pinned untouched. Pure core, zero live-build change. 1106
+    tests green (+12), build green. Next pieces: accidental glyph
+    engraving in SongNotes; songbook volume structure; the first
+    Book Two song.
 
 ## The v1.3 queue: "the family songbook" (human-set, 2026-08-01, post-festival)
 

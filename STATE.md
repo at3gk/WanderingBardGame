@@ -38,6 +38,20 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-05 (overnight loop session) — task 165 first
+  piece: Book Two's notation core.** notation.ts gains the key layer
+  (majors, ±4 accidentals; minors deferred with the songs that need
+  the raised seventh): majorKey / alteredLetters / signature glyph
+  steps / spellInKey, which separates carried vs SHOWN accidentals —
+  the signature says F♯, the note shows nothing; F natural shows the
+  cancelling sign. Policy pinned by test: chromatics spell in the
+  key's direction one letter away (B♯/E♯/C♭/F♭ impossible), and the
+  inviolable round-trip is swept every-key × four octaves. Book One's
+  naturals-only functions pinned untouched; zero live-build change.
+  1106 tests green (+12). Next 165 pieces: accidental glyphs in
+  SongNotes' engraving, songbook volume structure, first Book Two
+  song. v1.0 arc otherwise: 161 still blocked on human.
+
 - **HANDOFF, 2026-08-05 (overnight loop session) — TASK 182 RESOLVED:
   the noon gate was never red; the gauge was rolling dice.** One
   build, twelve pinned dates: noon spans 1.81-3.44 stops purely by
