@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 70 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 71 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,23 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 71) — 175 chrome piece: the corner
+  labels stand on washes now.** Wave 8's loudest family (six lenses)
+  answered inside the no-panels idiom: corner labels get the
+  journal's tone-following radial wash biased toward their content,
+  INK_SOFT 0.72 → 0.84 with the two-layer shadow, and hudLayout's new
+  BOTTOM_KINDNESS 12 keeps compact-screen corners clear of the
+  gesture strip when no real inset exists (real insets replace the
+  kindness, never stack — pinned). Frames read: 08's corners clear
+  and legible; desktop washes read as quiet pools. 1161 tests (+1),
+  build green. Remaining on 175: walk-on door affordance (human
+  question), orientation audit. NOTE: a prolonged permission-
+  classifier outage stalled this run mid-task (~an hour of retries;
+  read-only work continued); nothing was lost. Next menu: shadow
+  DEPTH fix run (183's lever, wave-8 value lens agrees: "one step
+  dark"), 180 occluders ("frame edges left untouched", 7 frames),
+  153-157 retention, 149 scatter confetti.
 
 - **HANDOFF, 2026-08-05 (run 70) — WAVE-8 BLIND PANEL: mean 5.10,
   with a hard caveat — NOT same-rubric comparable to wave 7's 5.56.**

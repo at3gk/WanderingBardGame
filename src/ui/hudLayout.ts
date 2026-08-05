@@ -125,10 +125,24 @@ const INSTRUMENT_WIDTH_TIGHT = 164;
 const SONG_WIDTH_ROOMY = 220;
 const SONG_WIDTH_TIGHT = 168;
 
+/**
+ * The gesture-strip kindness: on a phone-sized screen that reports NO bottom
+ * safe-area inset, the bottom corners still get this much clearance.
+ *
+ * A browser tab and an uninstalled web app both report zero — the inset only
+ * turns real once the game is installed to the home screen — but the thumb
+ * and the system's edge-swipe are there either way, and wave 8's mobile lens
+ * found the bottom labels "pinned into the bottom-edge thumb strip" on every
+ * phone frame. Where a genuine inset arrives it wins (it is larger).
+ */
+export const BOTTOM_KINDNESS = 12;
+
 export function hudChrome(viewport: HudViewport): HudChrome {
   const width = size(viewport?.width);
   const height = size(viewport?.height);
   const insets = resolveInsets(viewport?.insets, width, height);
+  const compact = Math.min(width, height) < COMPACT_EDGE;
+  if (compact) insets.bottom = Math.min(Math.max(insets.bottom, BOTTOM_KINDNESS), height);
 
   const safe: HudBox = {
     left: insets.left,
@@ -136,8 +150,6 @@ export function hudChrome(viewport: HudViewport): HudChrome {
     width: Math.max(0, width - insets.left - insets.right),
     height: Math.max(0, height - insets.top - insets.bottom),
   };
-
-  const compact = Math.min(width, height) < COMPACT_EDGE;
   // The gutter is clamped to the safe rectangle so that a viewport smaller
   // than two gutters degrades into overlapping boxes rather than into boxes
   // with negative width, which is the difference between chrome that looks

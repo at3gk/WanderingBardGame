@@ -124,7 +124,11 @@ const BOOK_FACE =
 
 /** Ink. Cream, the game's notation colour, at two strengths. */
 const INK = '#f0e2c6';
-const INK_SOFT = 'rgba(240, 226, 198, 0.72)';
+// 0.72 for two waves of critique; both read the corner labels as
+// low-contrast against bright ground. The wash behind them arrived in the
+// same pass as this lift, so the softness the alpha was buying (labels that
+// defer to the world) now comes from the wash's quiet instead.
+const INK_SOFT = 'rgba(240, 226, 198, 0.84)';
 
 /**
  * What sits behind a journal line.
@@ -150,15 +154,31 @@ const INK_SOFT = 'rgba(240, 226, 198, 0.72)';
  * two-layer text shadow underneath doing more of the contrast work. The card
  * should read as the sky going quiet behind the words, not as a panel.
  */
-function journalWash(r: number, g: number, b: number): string {
+function journalWash(r: number, g: number, b: number, atX = 50): string {
   const stop = (alpha: number) => `rgba(${r}, ${g}, ${b}, ${alpha})`;
   return (
-    `radial-gradient(49% 50% at 50% 50%, ${stop(0.34)} 0%, ${stop(0.2)} 46%, ${stop(0)} 100%)`
+    `radial-gradient(49% 50% at ${atX}% 50%, ${stop(0.34)} 0%, ${stop(0.2)} 46%, ${stop(0)} 100%)`
   );
 }
 
 /** Before the sky has said anything: a warm dusk, not a grey. */
 const JOURNAL_WASH = journalWash(34, 22, 24);
+
+/**
+ * The corner labels get the same wash, and the reason is two critique waves
+ * saying the same sentence: "thin italic, plateless, low-contrast, floating
+ * directly on world geometry" (wave 7, then all six wave-8 lenses). The
+ * design idiom resists a panel — the journal's own header explains why a
+ * rounded rectangle died — so the corners get what the card got: the sky
+ * going quiet behind the words. The ellipse is biased toward the corner's
+ * own content (the purse justifies right, the instrument left), because a
+ * wash centred in the box would peak beside the words it exists to back.
+ */
+const CORNER_WASH_LEADING = journalWash(34, 22, 24, 32);
+const CORNER_WASH_TRAILING = journalWash(34, 22, 24, 68);
+
+/** The corners' text shadow: the journal's two-layer, not the old single. */
+const CORNER_SHADOW = '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 12px rgba(20, 14, 18, 0.7)';
 
 export type HudMode = 'walking' | 'busking' | 'encounter' | 'resting';
 
@@ -254,7 +274,8 @@ export class Hud {
       justifyContent: 'flex-end',
       gap: '7px',
       transition: 'opacity 900ms ease',
-      textShadow: '0 1px 3px rgba(20, 14, 18, 0.75)',
+      textShadow: CORNER_SHADOW,
+      background: CORNER_WASH_TRAILING,
     });
     this.coinsBox.appendChild(coinMark());
     this.coinsValue = element('span', { letterSpacing: '0.02em' });
@@ -310,7 +331,8 @@ export class Hud {
       alignItems: 'center',
       gap: '8px',
       transition: 'opacity 900ms ease',
-      textShadow: '0 1px 3px rgba(20, 14, 18, 0.75)',
+      textShadow: CORNER_SHADOW,
+      background: CORNER_WASH_LEADING,
     });
     this.instrumentName = element('span', {
       fontStyle: 'italic',
@@ -360,7 +382,8 @@ export class Hud {
       justifyContent: 'flex-end',
       gap: '8px',
       transition: 'opacity 900ms ease',
-      textShadow: '0 1px 3px rgba(20, 14, 18, 0.75)',
+      textShadow: CORNER_SHADOW,
+      background: CORNER_WASH_TRAILING,
     });
     this.songName = element('span', {
       fontStyle: 'italic',
@@ -903,6 +926,12 @@ export class Hud {
     this.journalBox.style.background = wash;
     this.caseBox.style.background = wash;
     this.bookBox.style.background = wash;
+    // The corner washes follow the same sky, biased toward their content.
+    this.instrumentBox.style.background =
+      journalWash(quantise(r) + 8, quantise(g) + 6, quantise(b) + 8, 32);
+    const trailing = journalWash(quantise(r) + 8, quantise(g) + 6, quantise(b) + 8, 68);
+    this.coinsBox.style.background = trailing;
+    this.songBox.style.background = trailing;
   }
 
   /** Take the card down early, when the moment it described has passed. */

@@ -2221,6 +2221,28 @@ iPad household needs none of it; logged under Blocked on human.
     bottom margin, not just safe-area plumbing), and 08's two corner
     labels sit inside the phone's home-indicator swipe band in
     low-contrast grey-on-tan.
+    **Chrome piece done (2026-08-05, run 71), aimed by wave 8's
+    loudest family (six lenses: "unbacked text floating on world
+    geometry", thumb-strip corners, orphan coin numeral).** Three
+    changes inside the no-panels idiom: (1) the corner labels get the
+    journal's own tone-following radial wash (biased toward each
+    corner's content — a wash centred in the box would peak beside
+    the words), so text stands on the sky going quiet rather than on
+    raw world pixels; (2) INK_SOFT 0.72 → 0.84 and the corners take
+    the journal's two-layer text shadow — the softness the alpha was
+    buying now comes from the wash's quiet; (3) hudLayout gains
+    BOTTOM_KINDNESS 12: a compact screen reporting no bottom inset
+    still clears the gesture strip (a real inset replaces the
+    kindness, never stacks — pinned by test; the moves-by-exactly-
+    the-inset claim was re-derived accordingly). Touch targets were
+    already 44px by construction (isTouchable pins them); layout
+    unchanged otherwise. Frames read: 08's corners sit clear of the
+    bottom edge with visibly stronger ink; 06/desktop washes read as
+    quiet pools, not plates. 1161 tests (+1), build green. Remaining
+    on 175: the walk-on door affordance (07 — an input-design
+    question flagged for the human: child-wins says a door should
+    look tappable, the no-menus idiom resists), and the orientation
+    recommendation audit.
 
 ## The v0.9 queue: "the road home" (human-set, 2026-07-31)
 
