@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 77 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 78 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,14 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 78) — 155 first slice: mementos press
+  into the page.** leavesMemento(roll) = gift OR rare/wondrous (the
+  module's own vocabulary); such meetings journal as kind 'memento'
+  and tonight's page leads them with a quiet ✽. Share ~11%, pinned
+  in (0.02,0.3). Ask-resolution deliberately unmarked (performance-
+  reward smell). 1185 tests (+7). Retention remaining: 151 pieces,
+  152 signage, 156, 157.
 
 - **HANDOFF, 2026-08-05 (run 77) — 154 first slice: songbook pages
   wear in.** wearTier(walks) at 1/6/14 (thresholds imported from

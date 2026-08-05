@@ -5,6 +5,7 @@ import {
   campfirePage,
   festivalLine,
 } from './campfirePage';
+import { MEMENTO_KIND } from './encounters';
 import { createJourney, enterPhase, recordEntry, type JourneyState } from './journey';
 
 const DAY = '2026-07-28';
@@ -131,5 +132,23 @@ describe('campfirePage', () => {
       expect(page.walkOn).not.toMatch(/\bday\b|\bdays\b|week|left|remaining|hurry|behind|now or/i);
       for (const moment of page.moments) expect(moment.text).not.toMatch(banned);
     }
+  });
+});
+
+describe('mementos on the page', () => {
+  it('carries a lovely meeting through under its own kind, and marks nothing else', () => {
+    // The page does not decide what was lovely — the encounter did, hours
+    // ago, when it was written down (`leavesMemento`). All this pins is that
+    // the word survives the trip to the fire, since the mark is drawn from
+    // it and a dropped `kind` would fail silently as a page with no flowers.
+    let j = atFire(3);
+    j = recordEntry(j, { kind: 'busk', line: 'a square, and a hat that filled' });
+    j = recordEntry(j, { kind: MEMENTO_KIND, line: 'nine hares sat in a circle' });
+    const kinds = campfirePage(j).moments.map((m) => m.kind);
+    expect(kinds).toEqual(['busk', MEMENTO_KIND]);
+  });
+
+  it('gives the quiet day no mark at all', () => {
+    expect(campfirePage(atFire(2)).moments.map((m) => m.kind)).toEqual(['note']);
   });
 });

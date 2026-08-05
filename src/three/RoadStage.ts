@@ -124,7 +124,14 @@ import {
   tickPerformance,
   type PerformanceState,
 } from '../core/performance';
-import { resolveAsk, rollAsk, rollEncounter, type EncounterAsk } from '../core/encounters';
+import {
+  leavesMemento,
+  MEMENTO_KIND,
+  resolveAsk,
+  rollAsk,
+  rollEncounter,
+  type EncounterAsk,
+} from '../core/encounters';
 import { describeIdleYield, idleYield, loadIdle, saveIdle } from '../core/idle';
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
 import { campfirePage, type CampfirePage } from '../core/campfirePage';
@@ -1730,7 +1737,13 @@ export class RoadStage implements Stage {
     );
     this.metToday.push(roll.def.id);
     this.journey = earn(this.journey, roll.coins, roll.delight);
-    this.journey = recordEntry(this.journey, { kind: 'encounter', line: roll.def.line });
+    // A lovely meeting goes into the journal under its own kind, which is all
+    // a memento is: the same line, marked, so tonight's page shows it pressed
+    // flat like a flower. No second store, no tally — see `leavesMemento`.
+    this.journey = recordEntry(this.journey, {
+      kind: leavesMemento(roll) ? MEMENTO_KIND : 'encounter',
+      line: roll.def.line,
+    });
     this.hud.setCoins(this.journey.coins);
     this.hud.say(roll.gift ? `${roll.def.line} ${roll.gift}` : roll.def.line, ENCOUNTER_HOLD_SEC + 2);
     this.holdSec = ENCOUNTER_HOLD_SEC;

@@ -630,6 +630,37 @@ export function rollEncounter(
   return { def, coins, delight, gift, variant };
 }
 
+/**
+ * The journal `kind` a lovely encounter is written under, so the campfire
+ * page can press a mark beside it. Exported because two files have to agree
+ * on the word and neither should own it alone.
+ */
+export const MEMENTO_KIND = 'memento';
+
+/**
+ * Whether this meeting is worth pressing into the page like a flower.
+ *
+ * Two things qualify, and they are both the module's own existing notions of
+ * lovely rather than a new tier invented for the mark:
+ *
+ * - The top two rarities. `PAYOUTS` already says what those are for — a rare
+ *   is "usually good, sometimes absurd" and a wondrous "never disappoints" —
+ *   and the realised share of the table (see `RARITY_WEIGHT`) keeps them
+ *   scarce enough that a mark stays a surprise.
+ * - Anything that left a gift, at any rarity. `GIFTS` are already called
+ *   keepsakes in this file, and `GIFT_CHANCE` is deliberately steep so that a
+ *   gift "read as the encounter's own decision". A common that hands you a
+ *   feather has made exactly the decision this mark records; refusing it on
+ *   tier would be reading the table over the encounter's own head.
+ *
+ * What it is emphatically not: a count, a set, or a thing with slots. Nothing
+ * anywhere totals these, and a mark missed today is only a road not walked —
+ * the table reseeds daily, so every lovely thing comes round again.
+ */
+export function leavesMemento(roll: EncounterRoll): boolean {
+  return roll.gift !== null || roll.def.rarity === 'rare' || roll.def.rarity === 'wondrous';
+}
+
 // ---------------------------------------------------------------------------
 // Asks (v0.8 item 8 — stakes, not failure)
 // ---------------------------------------------------------------------------
