@@ -2453,6 +2453,24 @@ full verdict map and the measure-first suspicion list):
     any postcard viewport) AND the frames, since a too-aggressive
     fix empties the runway the wave-2 urgency work built. The
     175-fold items above stand unchanged.
+    **Diagnosis deepened (2026-08-05, before attempting the fix —
+    read this first):** the overlaps are TWO problems wearing one
+    symptom. (1) Pre-runway (small radii, mid-lane): the envelope
+    saturates scale to full at runwayStart (~57% of flight), so the
+    far half carries full-size heads into compressed projection —
+    an envelope-curve fix (slower scale growth, lower cruise ink)
+    is available and stays inside every pinned contract. (2) INSIDE
+    the runway on phone portrait (the measured 0.23 pair has ~30 px
+    radii — that is NEAR the barline): head size there is pinned by
+    the letter-legibility floor (the pedagogy) while lane length is
+    pinned by the viewport, so an eighth-pair's nominal spacing is
+    simply narrower than two heads. No envelope can fix (2); the
+    honest levers are per-viewport (longer portrait lane? staggered
+    pitch offsets making overlap read as a chord? eighth-pair
+    special-casing?), and each trades against a standing contract —
+    a design decision needing fresh-session frame iteration, not an
+    end-of-queue tweak. Left deliberately unfixed rather than
+    half-fixed.
 
 181. **Smoke as soft forms.** The campfire smoke still reads as a stack
     of hard-edged translucent polygons ("a hovering boulder", "a render
