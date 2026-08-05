@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 67 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 68 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,20 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 68) — 166 piece 1: the colour script is
+  written (`docs/color-script.md`).** Eight hours with intended mood,
+  value structure, measured state and owed work; the structural
+  claim: low sun = value carries the frame, high sun = COLOUR must
+  carry it. Night/golden/dawn are CARRYING hours — no runs to be
+  spent there. Noon is the designed hour with measurable targets for
+  the enacting run (166 piece 2, queued): shadowed land keeps ≥ 50%
+  of lit saturation rotating ≤ ~60° cool of lit hue (ASH reference
+  63% / +31°; ours today ~35% / 180° flip — 183's numbers). Village
+  noon's case is named: no treeline anchor, colour must come from
+  accents and coloured shade. Non-levers recorded: lightening
+  shadows, lowering the noon sun, full-frame passes. No runtime
+  change in this piece; gauges unchanged and green.
 
 - **HANDOFF, 2026-08-05 (run 67) — 183 measured: the "phantom
   shadows" are TWO different systems, and each side vindicates a
