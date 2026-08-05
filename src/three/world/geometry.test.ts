@@ -52,6 +52,7 @@ import {
   rockGeometry,
   shrubGeometry,
   smokeColumnGeometry,
+  SMOKE_PUFF_SIDES,
   waysideCairnGeometry,
 } from './geometry';
 
@@ -506,9 +507,10 @@ describe('stop dressing', () => {
   it('swells the smoke plume, then lets it give out, and breaks it up as it climbs', () => {
     const geometry = smokeColumnGeometry({ base: 0xf0e8dc, tip: 0xe4e8ec, seed: 233 });
     const position = geometry.attributes.position as BufferAttribute;
-    // Two crossed heptagons per puff, each face doubled and reversed: five
-    // triangles a fan, ten a plane, twenty a puff.
-    const perPuff = 60;
+    // Two crossed heptagons per puff, each a fan around a CENTRE vertex
+    // (task 181's soft edge needs a fade-1 centre), each face doubled and
+    // reversed: seven triangles a fan, fourteen a plane, twenty-eight a puff.
+    const perPuff = SMOKE_PUFF_SIDES * 3 * 2 * 2;
     expect(position.count).toBe(SMOKE_PUFFS * perPuff);
 
     const anchors: number[] = [];
@@ -532,10 +534,9 @@ describe('stop dressing', () => {
     for (let p = 1; p < SMOKE_PUFFS; p++) {
       expect(anchors[p]).toBeGreaterThan(anchors[p - 1]);
     }
-    // The gaps open out. This is the only fade the plume has: the shader
-    // carries one opacity for the whole material and no per-vertex alpha, so
-    // a column that stayed evenly stacked would end in a hard flat edge
-    // eleven metres up and read as a grey monument. Measured over thirds
+    // The gaps open out. The per-vertex fade softens each puff's EDGE, but
+    // the opening spacing is still what dissolves the COLUMN — an evenly
+    // stacked soft column would read as a glowing pillar. Measured over thirds
     // rather than pair by pair, because the per-puff jitter moves an
     // individual anchor further than one step of the profile does.
     const third = Math.floor(SMOKE_PUFFS / 3);
@@ -555,6 +556,29 @@ describe('stop dressing', () => {
     expect(Math.max(...widths)).toBeLessThan(2.8);
 
     expect(bounds(geometry).maxY).toBeGreaterThan(SMOKE_HEIGHT_M * 0.9);
+  });
+
+  it('fades every puff from a solid centre to a dissolved rim', () => {
+    // The soft-edge half of task 181: each fan triangle is centre-rim-rim,
+    // fade 1-0-0, so the interpolator retires the knife-edge silhouette
+    // that three critique waves read as stacked glass plates.
+    const geometry = smokeColumnGeometry({ base: 0xf0e8dc, tip: 0xe4e8ec, seed: 233 });
+    const fade = geometry.attributes.aFade as BufferAttribute;
+    const position = geometry.attributes.position as BufferAttribute;
+    expect(fade).toBeDefined();
+    expect(fade.count).toBe(position.count);
+    let centres = 0;
+    for (let i = 0; i < fade.count; i++) {
+      const f = fade.getX(i);
+      expect(f === 0 || f === 1).toBe(true);
+      if (i % 3 === 0) {
+        expect(f).toBe(1);
+        centres++;
+      } else {
+        expect(f).toBe(0);
+      }
+    }
+    expect(centres).toBe(position.count / 3);
   });
 
   it('draws the smoke well below the value it is handed', () => {

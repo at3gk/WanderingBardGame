@@ -104,6 +104,17 @@ export interface PainterlyOptions {
   swaySpeed?: number;
   /** Read a per-vertex `aSway` attribute instead of deriving from height. */
   swayAttribute?: boolean;
+  /**
+   * Read a per-vertex `aFade` attribute and multiply it into the fragment's
+   * alpha (task 181). The one per-vertex-alpha door in this material, added
+   * for the campfire smoke: a flat translucent polygon has a knife-edge
+   * silhouette at any opacity, and three critique waves called the plume a
+   * stack of glass plates. With a fade of 1 at a puff's centre falling to 0
+   * at its rim, the interpolator turns each facet into a soft blob and the
+   * overlaps blend instead of banding. Squared in the fragment so density
+   * biases toward centres — a linear ramp still reads a rim.
+   */
+  fadeAttribute?: boolean;
   /** Derive sway weight from local Y over this height when no attribute. */
   swayHeight?: number;
   /** Use per-vertex colours. */
@@ -195,6 +206,10 @@ uniform vec3 uWindDirection;
 #ifdef USE_SWAY_ATTRIBUTE
   attribute float aSway;
 #endif
+#ifdef USE_FADE_ATTRIBUTE
+  attribute float aFade;
+  varying float vFade;
+#endif
 #ifdef PAINTERLY_VERTEX_COLORS
   attribute vec3 color;
   varying vec3 vVertexColor;
@@ -260,6 +275,9 @@ void main() {
     float swayWeight = aSway;
   #else
     float swayWeight = uSwayHeight > 0.0 ? clamp(position.y / uSwayHeight, 0.0, 1.0) : 0.0;
+  #endif
+  #ifdef USE_FADE_ATTRIBUTE
+    vFade = aFade;
   #endif
 
   // The instance matrix has to be applied before the world position is
@@ -1103,6 +1121,9 @@ varying vec3 vWorldPosition;
 varying vec3 vWorldNormal;
 varying float vLocalHeight;
 varying vec3 vInstanceColor;
+#ifdef USE_FADE_ATTRIBUTE
+  varying float vFade;
+#endif
 #ifdef PAINTERLY_VERTEX_COLORS
   varying vec3 vVertexColor;
 #endif
@@ -1867,7 +1888,11 @@ void main() {
   vec3 airChroma = (fogTint - airLuma) * FOG_CHROMA;
   color = max(vec3(0.0), hazedLuma + mix(hazed - hazedLuma, airChroma, hazeDepth * FOG_HUE_LEAD));
 
-  gl_FragColor = vec4(color, uOpacity);
+  float painterlyAlpha = uOpacity;
+  #ifdef USE_FADE_ATTRIBUTE
+    painterlyAlpha *= vFade * vFade;
+  #endif
+  gl_FragColor = vec4(color, painterlyAlpha);
 
   #ifdef PAINTERLY_ALPHATEST
     if (gl_FragColor.a < PAINTERLY_ALPHATEST) discard;
@@ -1901,6 +1926,7 @@ export function createPainterlyMaterial(
     sway = 0,
     swaySpeed = 1.1,
     swayAttribute = false,
+    fadeAttribute = false,
     swayHeight = 1,
     vertexColors = false,
     groundTones = 0,
@@ -1920,6 +1946,7 @@ export function createPainterlyMaterial(
   if (vertexColors) defines.PAINTERLY_VERTEX_COLORS = '';
   if (groundTones > 0) defines.PAINTERLY_GROUND_TONES = '';
   if (swayAttribute) defines.USE_SWAY_ATTRIBUTE = '';
+  if (fadeAttribute) defines.USE_FADE_ATTRIBUTE = '';
   if (flatShading) defines.PAINTERLY_FLAT_SHADING = '';
   if (alphaTest > 0) defines.PAINTERLY_ALPHATEST = alphaTest.toFixed(4);
 

@@ -2405,6 +2405,25 @@ full verdict map and the measure-first suspicion list):
     right (keeps list) — soften the FORMS: alpha-feathered edges,
     fewer/larger overlapping shapes, or a shader dissolve toward the
     top. Judge only by the re-shot 07.
+    **Done (2026-08-05, overnight session): alpha-feathered edges, the
+    first option, and it sufficed alone (one variable changed, per the
+    house law).** The blocker was recorded in the geometry's own
+    comment — "the painterly shader carries one opacity for a whole
+    material and no per-vertex alpha" — so painterly gained its one
+    per-vertex-alpha door: an opt-in `fadeAttribute` (define + `aFade`
+    varying, SQUARED in the fragment so density biases toward puff
+    centres; a linear ramp still reads a rim). Each puff plane became
+    a fan around a centre vertex (fade 1) with rim corners at 0 — two
+    extra triangles a plane buys the whole soft edge. Opacity 0.36 →
+    0.52 because the squared falloff halves average coverage and the
+    400 m telegraph must survive. The geometric climb-dissolve stays
+    and still earns its keep (an evenly stacked soft column would be a
+    glowing pillar). Judged by the re-shot 07 against this morning's:
+    the stacked plates are simply gone — a soft warm haze at the fire
+    dissolving into faint smudges up the frame, vertical mass intact.
+    NOT yet verified: telegraph legibility at 400 m with the new
+    falloff — eyeball a distant-camp frame in the next critique wave.
+    1157 tests green, build green.
 149. **Ground cover, round three: patches over specks.** The read is still
     "debris": individuated dark-stemmed spikes and litter-like pebble
     decals. References do broad tonal patches that disappear. Consider

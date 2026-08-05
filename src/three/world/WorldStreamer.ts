@@ -1944,6 +1944,9 @@ export class WorldStreamer {
       rim: 0,
       vertexColors: true,
       swayAttribute: true,
+      // Soft puff edges (task 181): per-vertex fade, 1 at each puff's
+      // centre to 0 at its rim. See fadeAttribute in painterly.ts.
+      fadeAttribute: true,
       sway: 0.85,
       swaySpeed: 0.32,
       shadowDepth: 0.88,
@@ -1951,7 +1954,11 @@ export class WorldStreamer {
       transparent: true,
       fogScale: 0.7,
     });
-    this.smokeMaterial.uniforms.uOpacity.value = 0.36;
+    // Up from 0.36 with the fade: a squared centre-to-rim falloff halves a
+    // puff's average coverage, and 0.36 of that made the 400 m telegraph
+    // too faint to read. 0.52 keeps the plume's centre density where the
+    // old flat plates sat while the rims now dissolve.
+    this.smokeMaterial.uniforms.uOpacity.value = 0.52;
     this.smokeMaterial.depthWrite = false;
 
     /*

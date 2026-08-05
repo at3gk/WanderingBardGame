@@ -2127,7 +2127,7 @@ export const SMOKE_PUFFS = 14;
  * edges, so the two crossed planes of a puff cannot line up with each other
  * and the puff above cannot line up with the puff below.
  */
-const SMOKE_PUFF_SIDES = 7;
+export const SMOKE_PUFF_SIDES = 7;
 
 /**
  * How much of the caller's colour actually reaches the plume.
@@ -2159,10 +2159,11 @@ const SMOKE_VALUE = 0.38;
  *
  * **The plume breaks up as it climbs.** The puffs grow *and* their spacing
  * grows, so the bottom of the column is a rope and the top is separated blobs
- * with sky between them. That is the only fade available: the painterly
- * shader carries one opacity for a whole material and no per-vertex alpha, so
- * a continuous tapering ribbon would end in a hard flat edge eleven metres up.
- * Dissolving it *geometrically* costs a few triangles and needs no shader.
+ * with sky between them. This predates the per-vertex fade below and still
+ * earns its keep with it: the fade softens each puff's edge, the opening
+ * spacing is what dissolves the COLUMN, and either alone reads wrong (a
+ * soft-edged even stack is a glowing pillar; hard-edged separated blobs are
+ * the stacked plates three critique waves named).
  *
  * **It swells and then gives out.** The width used to climb monotonically to
  * its widest at the very top, which draws a wedge — the exact silhouette of a
@@ -2194,6 +2195,7 @@ export function smokeColumnGeometry(options: SmokeColumnOptions): BufferGeometry
   const lz = Math.sin(lean);
 
   const verts: number[] = [];
+  const fades: number[] = [];
   const baseY = 0.85;
   for (let i = 0; i < SMOKE_PUFFS; i++) {
     const t = i / (SMOKE_PUFFS - 1);
@@ -2218,11 +2220,16 @@ export function smokeColumnGeometry(options: SmokeColumnOptions): BufferGeometry
     // stacked-plates failure again, smaller.
     const jitter: number[] = [];
     for (let k = 0; k < SMOKE_PUFF_SIDES; k++) jitter.push(0.68 + rand() * 0.62);
-    puffPlane(verts, cx, y, cz, halfW, halfH * squash, spin, jitter, false);
-    puffPlane(verts, cx, y, cz, halfW, halfH * squash, spin, jitter, true);
+    puffPlane(verts, fades, cx, y, cz, halfW, halfH * squash, spin, jitter, false);
+    puffPlane(verts, fades, cx, y, cz, halfW, halfH * squash, spin, jitter, true);
   }
 
   const geometry = fromPositions(verts);
+  // The soft-edge half of task 181: 1 at each puff's centre, 0 at its rim,
+  // squared in the painterly fragment (see `fadeAttribute`). This is what
+  // finally retires the stacked-glass-plates read three critique waves
+  // named — the geometry's silhouette stops existing as an alpha edge.
+  geometry.setAttribute('aFade', new BufferAttribute(new Float32Array(fades), 1));
   paintGradient(
     geometry,
     scaleHex(options.base, SMOKE_VALUE),
@@ -2245,9 +2252,17 @@ function scaleHex(hex: number, scale: number): number {
   return (r << 16) | (g << 8) | b;
 }
 
-/** One puff face and its mirror, in the XY or the ZY plane. */
+/**
+ * One puff face and its mirror, in the XY or the ZY plane.
+ *
+ * A fan around a centre vertex rather than a fan off a rim vertex (which is
+ * what this was): the centre carries fade 1 and every rim corner fade 0, so
+ * the interpolator draws each facet as a gradient from body to nothing.
+ * Costs two extra triangles a plane and buys the whole soft edge.
+ */
 function puffPlane(
   out: number[],
+  fades: number[],
   cx: number,
   cy: number,
   cz: number,
@@ -2258,6 +2273,7 @@ function puffPlane(
   acrossZ: boolean,
 ): void {
   const n = SMOKE_PUFF_SIDES;
+  const centre = [cx, cy, cz];
   const pts: number[][] = [];
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 + spin;
@@ -2265,9 +2281,11 @@ function puffPlane(
     const py = Math.sin(a) * halfH * jitter[i];
     pts.push(acrossZ ? [cx, cy + py, cz + px] : [cx + px, cy + py, cz]);
   }
-  for (let i = 1; i < n - 1; i++) {
-    out.push(...pts[0], ...pts[i], ...pts[i + 1]);
-    out.push(...pts[0], ...pts[i + 1], ...pts[i]);
+  for (let i = 0; i < n; i++) {
+    const next = pts[(i + 1) % n];
+    out.push(...centre, ...pts[i], ...next);
+    out.push(...centre, ...next, ...pts[i]);
+    fades.push(1, 0, 0, 1, 0, 0);
   }
 }
 
