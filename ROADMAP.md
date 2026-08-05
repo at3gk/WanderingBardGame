@@ -2313,6 +2313,21 @@ top task fits its energy.
     no empty slots; missed rarities recur on later roads (Sky's
     returning-spirits stance; encounters already reseed daily). (
     encounters.ts payouts + journal.)
+    **First slice done (2026-08-05, run 78; delegated to an opus
+    agent, verified in the main loop).** "Lovely" was already in the
+    module's own vocabulary — nothing invented: any roll that leaves
+    a GIFT (encounters.ts literally calls them keepsakes; they were
+    shown once in the HUD and evaporated) plus the rare/wondrous
+    tiers. `leavesMemento(roll)` exported; such meetings journal as
+    kind 'memento' (same prose), and tonight's page presses a small
+    upright ✽ into the line's own ink before the text. Measured
+    share ~11% of encounters, pinned inside (0.02, 0.3) so a table
+    retune can't make the mark wallpaper. No counts, no collection
+    surface, no empty slots; missed rarities recur by construction.
+    The resolved-ask entry deliberately NOT marked (a fulfilled ask
+    marked too would read as reward for performance — flagged for a
+    later slice if wanted). Needs human playtest: the ✽ on a real
+    fire page. 1185 tests (+7), build green.
 156. **Welcome-back, never weeds.** Returning after days away gets a small
     campfire welcome beat — the case's idle takings, a journal line about
     the roadside days. No counter of days kept or missed, ever. (idle.ts

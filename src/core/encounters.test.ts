@@ -15,8 +15,10 @@ import {
   RARITY_WEIGHT,
   Rarity,
   RollOptions,
+  MEMENTO_KIND,
   VARIANT_COUNT,
   candidatesFor,
+  leavesMemento,
   matchesBiome,
   matchesWindow,
   resolveAsk,
@@ -715,5 +717,50 @@ describe("a traveller's ask (stakes, not failure)", () => {
       rollAsk(seed, before.def);
       expect(rollEncounter(seed, 'village', 0.5)).toEqual(before);
     }
+  });
+});
+
+describe('mementos', () => {
+  it('writes lovely meetings under their own journal kind', () => {
+    // Two files agree on this word; a rename that touched only one would
+    // silently stop the page marking anything, with no test to notice.
+    expect(MEMENTO_KIND).toBe('memento');
+  });
+
+  it('presses one for the top two rarities, whatever they left behind', () => {
+    const rolls = rollMany(600);
+    const top = rolls.filter((r) => r.def.rarity === 'rare' || r.def.rarity === 'wondrous');
+    expect(top.length).toBeGreaterThan(0);
+    for (const roll of top) expect(leavesMemento(roll)).toBe(true);
+  });
+
+  it('presses one for a gift at any rarity, because the gift is the keepsake', () => {
+    const rolls = rollMany(600);
+    const gifted = rolls.filter(
+      (r) => r.gift !== null && (r.def.rarity === 'common' || r.def.rarity === 'uncommon'),
+    );
+    // The branch has to be reachable, or this rule is decoration.
+    expect(gifted.length).toBeGreaterThan(0);
+    for (const roll of gifted) expect(leavesMemento(roll)).toBe(true);
+  });
+
+  it('leaves an ordinary meeting unmarked', () => {
+    const rolls = rollMany(600);
+    const ordinary = rolls.filter(
+      (r) => r.gift === null && (r.def.rarity === 'common' || r.def.rarity === 'uncommon'),
+    );
+    expect(ordinary.length).toBeGreaterThan(0);
+    for (const roll of ordinary) expect(leavesMemento(roll)).toBe(false);
+  });
+
+  it('keeps the mark scarce enough to stay a surprise', () => {
+    // Not a target the game shows anyone — a page holds six moments, and a
+    // mark on most of them is wallpaper rather than a kept flower. If a
+    // table edit or a GIFT_CHANCE retune pushes this share up, that should
+    // be an intentional edit here rather than a drift nobody saw.
+    const rolls = rollMany(1200);
+    const marked = rolls.filter(leavesMemento).length / rolls.length;
+    expect(marked).toBeGreaterThan(0.02);
+    expect(marked).toBeLessThan(0.3);
   });
 });

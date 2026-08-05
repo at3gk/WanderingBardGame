@@ -22,8 +22,16 @@
  * Nothing in this file computes a coordinate.
  */
 
+import { MEMENTO_KIND } from '../core/encounters';
 import type { HudBox, HudChrome, SafeAreaInsets } from './hudLayout';
 import { bookCapacity, bookPage, hudChrome, instrumentCaseBox, songBookBox } from './hudLayout';
+
+/**
+ * The keepsake mark. A six-petalled thing at text size — a pressed flower,
+ * not an icon and not a badge, because the moment it looks like a badge the
+ * page has started keeping score. It leads the line and says only "this one".
+ */
+const MEMENTO_MARK = '✽';
 
 /** Where the chrome rests when nothing has happened for a while. */
 const IDLE_OPACITY = 0.36;
@@ -69,6 +77,12 @@ export type KeepsakeAction = 'save' | 'restore';
 export interface PageMoment {
   text: string;
   dayFraction: number;
+  /**
+   * The journal kind the moment was written under. Optional because most
+   * rows do not care and a host composing a page by hand should not have to
+   * name one; only `MEMENTO_KIND` changes how a row is set.
+   */
+  kind?: string;
 }
 
 /** Tonight's page, composed by `core/campfirePage.ts`. */
@@ -618,7 +632,21 @@ export class Hud {
         color: pageInk(moment.dayFraction),
         textShadow: shadow,
       });
-      row.textContent = moment.text;
+      // A memento is the same row with a small thing pressed at its edge —
+      // the page's own ink, a shade faded, the way a kept flower is. It says
+      // nothing about how many there are because there is nothing to count:
+      // no slot it fills, no set it belongs to, no page it is missing from.
+      if (moment.kind === MEMENTO_KIND) {
+        const mark = element('span', {
+          marginRight: '0.5em',
+          fontStyle: 'normal',
+          fontSize: '0.85em',
+          opacity: '0.85',
+        });
+        mark.textContent = MEMENTO_MARK;
+        row.appendChild(mark);
+      }
+      row.appendChild(document.createTextNode(moment.text));
       rows.push(row);
     }
 
