@@ -1,6 +1,7 @@
 # STATE
 
-Run counter: 50
+Run counter: 61 (the 2026-08-05 overnight loop session was runs ~51-61;
+run 61 was the consolidation pass)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -37,6 +38,27 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 61) — CONSOLIDATION PASS.** Drift check
+  clean across the session's six tasks: the walk-on is a road choice,
+  Book Two is pedagogy presentation, the rest is data/rendering/perf —
+  all on the one tap mechanic; zero new runtime dependencies all
+  night; bundle 873 kB of 5 MB. One rough edge found and fixed
+  (RoadStage's "one verb" header claimed two tap meanings; the fire's
+  page-reopen made it three). **Retention research recap (pillar 5,
+  what the game NOW does per ranked recommendation):** 1 campfire
+  bookend — DONE WHOLE (159: page, skyline, festival named, rehearsal
+  offered, walk-on door); 2 shared road — half done (152 road names;
+  153 postcard still queued); 3 songbook wear-in — queued (154; NOTE
+  for its run: it now rides a PAGED book with volumes); 4 mementos —
+  queued (155); 5 welcome-back — half exists (idle yield line +
+  journal entry at boot; the celebratory fire beat of 156 still
+  queued); 6 two bookmarks — queued arc (157); 7 instruments —
+  standing design, no new task. New research finding recorded in
+  retention-design.md: the moonlit walk-on is the eager-day outlet
+  with zero appointment mechanics — "more" as the same walk under a
+  different sky. Session totals: 159/165/60/170/174/182 done, ten
+  PRs, tests 1017 → 1156.
 
 - **HANDOFF, 2026-08-05 (overnight loop session) — task 174 done:
   quality tiers that actually detect.** tierFor(probe) is a pure

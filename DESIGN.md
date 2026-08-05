@@ -553,6 +553,34 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
 
 ## Changelog
 
+- 2026-08-05 (overnight loop session, runs ~51-61) — **the v1.0 arc
+  closes and Book Two opens.** Six tasks across ten PRs: the moonlit
+  walk-on (159 complete — tonight's page gained its one door row and
+  the game's first mid-session road rebuild; a leg opens at dusk where
+  the evening stood, so the sky needs no seam); task 182 resolved as a
+  gauge artifact (the "red noon gate" was the daily road rolling dice —
+  frame-quality now measures a pinned road, and the true finding, that
+  village noons are the flattest family the game draws, became a gated
+  noon-village pose); task 165 complete in five pieces (key-signature
+  notation core with carried-vs-shown accidentals, Song.key +
+  pickupBeats anacrusis, the signature engraved on the paper's
+  extended tail with spelt head steps, My Bonnie Lies Over the Ocean
+  from a two-source verified transcription, and the songbook's Book
+  Two shelf unlocked at festivals >= 1 — which also fixed the
+  pre-existing fold fault by making the book PAGE, so every song is
+  reachable on every viewport for the first time); task 60 unblocked
+  after a month (Mulberry Bush, the fourth forest song, the book's
+  first 6/8 tune — the July entry's prediction held exactly); task 170
+  (deterministic baked vertex AO on props and the bard's hat/cloak/
+  lute); task 174 (quality tiers that detect on WebKit via OS-major/
+  masquerade signals; 'low' finally means no shadow map). Drift check
+  clean: every addition is a readout, a pedagogy surface, or rendering
+  on the one tap mechanic; no new runtime dependencies; bundle 873 kB
+  of the 5 MB budget. Standing law reinforced twice more: a failing
+  check is a claim about the check first (182), and a task's
+  prescribed fix can be refuted by the code's own record (174's "GPU
+  signals"). NOTHING CUT.
+
 - 2026-07-31 (second interactive session, wave 2) — **v0.8 items 6-8 set
   and largely built.** The human, watching the live build: notes should
   come at you from the front and be hit at the bard (built — the songboard

@@ -19,11 +19,12 @@
  * ## The one verb
  *
  * Tap, or press anything. That is the entire input surface, and it means
- * different things in only two places: while a tune is running — walking or
- * busking — it plays the note that has reached the barline, and while the
- * road is holding on something — a vista, somebody met at a crossroads — it
- * means "walk on". Nothing else in the game is clickable, so nothing has to
- * be found.
+ * different things in only three places: while a tune is running — walking,
+ * busking, or a fireside rehearsal — it plays the note that has reached the
+ * barline; while the road is holding on something — a vista, somebody met
+ * at a crossroads — it means "walk on"; and at the fire with nothing left
+ * to ask, it re-opens tonight's page. Nothing else in the game is
+ * clickable except what is on that page, so nothing has to be found.
  *
  * ## Two clocks
  *
