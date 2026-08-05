@@ -68,29 +68,99 @@ const FIXED_STEP_MS = 1000 / 60;
  */
 const MAX_CATCHUP_MS = 250;
 
-export function detectQuality(): QualitySettings {
-  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-  const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4;
-  const memory = (navigator as unknown as { deviceMemory?: number })?.deviceMemory ?? 4;
-  const coarse =
-    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-      ? window.matchMedia('(pointer: coarse)').matches
-      : false;
+/**
+ * Everything the tier decision reads, gathered in one bag so the decision
+ * itself can be a pure function with a test for every device family
+ * (task 174). The real values come from `readProbe`; tests hand in
+ * fixtures.
+ */
+export interface CapabilityProbe {
+  dpr: number;
+  cores: number;
+  /** navigator.deviceMemory — Chromium-only; WebKit never reports it. */
+  memory: number | null;
+  coarse: boolean;
+  userAgent: string;
+  /** iPadOS 13+ masquerades as a Mac; touch points are how it shows. */
+  maxTouchPoints: number;
+  /** `'gpu' in navigator` — Safari 17+/recent hardware when true on WebKit. */
+  hasWebGPU: boolean;
+}
 
-  // A coarse pointer with few cores is a phone; treat it conservatively.
-  // Nothing here reads the GPU string — WEBGL_debug_renderer_info is
-  // increasingly privacy-gated and returns "Apple GPU" for every iOS
-  // device anyway, which tells us nothing useful.
-  let tier: QualityTier = 'high';
-  if (coarse && (cores <= 4 || memory <= 3)) tier = 'low';
-  else if (coarse || cores <= 4 || memory <= 4) tier = 'medium';
+function readProbe(): CapabilityProbe {
+  const nav = typeof navigator !== 'undefined' ? navigator : null;
+  return {
+    dpr: typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
+    cores: nav?.hardwareConcurrency || 4,
+    memory: (nav as unknown as { deviceMemory?: number })?.deviceMemory ?? null,
+    coarse:
+      typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(pointer: coarse)').matches
+        : false,
+    userAgent: nav?.userAgent ?? '',
+    maxTouchPoints: nav?.maxTouchPoints ?? 0,
+    hasWebGPU: !!nav && 'gpu' in nav,
+  };
+}
+
+/**
+ * Which tier a device gets (task 174). The old rule read
+ * `deviceMemory ?? 4` — but deviceMemory is Chromium-only, so every
+ * Apple device fell through the default and every iPad landed 'medium',
+ * old and new alike, with the 'low' tier effectively unreachable on the
+ * family this game is built for.
+ *
+ * What WebKit actually offers, and what it refuses: the GPU string is
+ * privacy-gated and reads "Apple GPU" on every iOS device (the reason
+ * nothing here reads it — the task's own suggested fix, refuted by the
+ * code it would replace); deviceMemory never exists. The honest signals
+ * are the ones Apple ties to hardware anyway: the *OS major version* in
+ * the UA (an iPad stuck on iOS 12 is an old iPad, because Apple stops
+ * updating old hardware) and *WebGPU's presence* (Safari 17+, which only
+ * runs on hardware comfortably able to draw this game). An iPadOS 13+
+ * device reports a Macintosh UA — `maxTouchPoints > 1` is the tell.
+ */
+export function tierFor(probe: CapabilityProbe): QualityTier {
+  const appleTouch =
+    /iPad|iPhone|iPod/.test(probe.userAgent) ||
+    (/Macintosh/.test(probe.userAgent) && probe.maxTouchPoints > 1);
+
+  if (appleTouch) {
+    // "OS 12_5" in iPhone/iPad UAs; "Version/17.4" when masquerading.
+    const os = /OS (\d+)_/.exec(probe.userAgent);
+    const safari = /Version\/(\d+)/.exec(probe.userAgent);
+    const major = os ? Number(os[1]) : safari ? Number(safari[1]) : null;
+    if (major !== null && major < 15) return 'low';
+    // Every other Apple touch device — including WebGPU-era iPads that
+    // could plausibly take 'high' — stays 'medium' until the scene is
+    // measured on real hardware (the task's re-measure half, which a
+    // desktop's headless GL cannot answer; flagged in STATE).
+    return 'medium';
+  }
+
+  // Chromium and friends: the original heuristics, with the honest
+  // fallback — an ABSENT deviceMemory on a non-Apple engine reads as 4,
+  // exactly as before.
+  const memory = probe.memory ?? 4;
+  if (probe.coarse && (probe.cores <= 4 || memory <= 3)) return 'low';
+  if (probe.coarse || probe.cores <= 4 || memory <= 4) return 'medium';
+  return 'high';
+}
+
+export function detectQuality(probe: CapabilityProbe = readProbe()): QualitySettings {
+  const dpr = probe.dpr;
+  const tier = tierFor(probe);
 
   const byTier: Record<QualityTier, QualitySettings> = {
     low: {
       tier: 'low',
       pixelRatio: Math.min(dpr, 1.5),
-      shadows: true,
-      shadowMapSize: 1024,
+      // Genuinely low (task 174): no shadow map at all. The sun's shadow
+      // pass was the one renderer-wide cost the old 'low' tier still
+      // paid, and the bard keeps his grounding without it — the contact
+      // shadow (task 179) is a textured disc, not a shadow map.
+      shadows: false,
+      shadowMapSize: 0,
       foliageDensity: 0.45,
       particleDensity: 0.5,
       viewDistance: 180,

@@ -38,6 +38,18 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-05 (overnight loop session) — task 174 done:
+  quality tiers that actually detect.** tierFor(probe) is a pure
+  tested decision now; WebKit detection via UA OS major (old iPad →
+  low, incl. iPadOS-as-Mac caught by Version/N + maxTouchPoints),
+  Chromium heuristics preserved exactly. 'low' is genuinely low:
+  NO shadow map (contact shadow still grounds the bard — it is a
+  disc, not a map). The task's "detect by GPU signals" was refuted
+  by the code's own record (Apple GPU string is uniform). WebGPU
+  iPads stay 'medium' pending the real-device re-measure (standing
+  iPad playtest item). 1156 green (+7). Run counter: this session
+  is runs ~51-60; a consolidation run is due soon.
+
 - **HANDOFF, 2026-08-05 (overnight loop session) — task 170 done:
   baked vertex AO (v1.1 queue opens).** bakeVertexAO in geometry.ts
   (seeded hemisphere rays, own-triangle Möller-Trumbore, AO_FLOOR
