@@ -1,7 +1,8 @@
 # STATE
 
-Run counter: 82 (the 2026-08-05 overnight loop session was runs ~51-65;
-run 61 was the consolidation pass; runs 66+ are the second overnight loop)
+Run counter: 83 (the 2026-08-05 overnight loop session was runs ~51-65;
+run 61 was the consolidation pass; runs 66+ are the second overnight loop;
+runs 82+ are the third overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -38,6 +39,48 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 83) — WAVE-10 BLIND PANEL: mean 4.61
+  vs wave 9's 5.02, but the rubric text was RECONSTRUCTED (the
+  original wording is lost with the old session), and this wave's
+  told judges "do not grade on a curve" — treat the cross-wave mean
+  as weak evidence and the within-wave structure as the signal.**
+  Lens means: colour 5.20, value 4.70, composition 4.58, emotion
+  4.51, silhouette 4.46, mobile 4.21. Frame ranking STABLE: 07 best
+  5.77, 04 next 5.60, 03 worst again 3.53. Six opus judges, 574k
+  tokens, refs re-downloaded (7 ASH + 5 curated SF). THE READS:
+  (1) LOW-SUN SMEAR CONFIRMED SURVIVING run 75's SHADOW_EDGE fix —
+  silhouette's top fault is still "enormous soft-edged diagonal
+  bands attributable to nothing" in 01/06/09 (noon 03's shadow now
+  reads hard). Run 75's own prediction holds: the licensed lever is
+  FRAY AMPLITUDE or SHADOW-MAP RESOLUTION, not riser narrowing.
+  (2) NEW cross-lens family: the staff ribbon's soft white backing
+  wash reads as a "ghost haze panel / translucent slab with no
+  drawn edge" (silhouette, composition, mobile — 01/02/10). It is
+  the notation-slab family (184-2/146) grown louder; any fix must
+  be measured against note legibility, which is what the wash buys.
+  (3) NOON is still the worst frame and the colour judge's words
+  are 166's remaining piece verbatim ("brightness raised, tint
+  removed"; khaki road one unmodulated hue) — the skylight
+  saturation lever and per-biome noon accents were deliberately
+  left for "if a wave asks"; wave 10 asks. (4) Sentinel guarantee
+  REGISTERED (04 praised for canopy repoussoir + tent anchor;
+  10/08 carry cropped canopy) but composition still calls the
+  BOTTOM third dead in 6 frames — references crop treetops through
+  the bottom edge, which our flat-ahead camera cannot do; that is
+  a different (bigger) lever than more verge trees. (5) Emotion's
+  three faults are one design read: back-view protagonist,
+  prop-less procedural verges, one-road postcard monotony (partly
+  the harness's one-camera artifact, noted since wave 9). (6)
+  Mobile repeats wave 9 unresolved: staff crops at x=0 in 08 with
+  D/E discs colliding (146's measurement stands), text floats
+  plateless (the 175 washes idle at 36% opacity in postcards —
+  the honest-decision item is still open), 07's "tap here" door
+  affordance still flagged for human. Verdicts JSON in the run-83
+  workflow output; full evidence text there. NEXT VISUAL MENU, in
+  evidence order: dawn-smear (fray/map-res ablation), 166 noon
+  accents, staff ghost-panel measurement, 149 scatter patches
+  ("confetti shards" named again by silhouette).
 
 - **HANDOFF, 2026-08-05 (run 82) — 167 first piece: no framing
   without an anchor.** The wayside-sentinel cadence (task 180) is
