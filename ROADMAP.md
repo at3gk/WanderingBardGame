@@ -2414,6 +2414,39 @@ full verdict map and the measure-first suspicion list):
     still saturated, not grey — measure current cast-shadow S values
     before believing that too (wave 4 proved CAST_SHADOW_HUE
     chroma-gaining at noon once already).
+    **Measured (2026-08-05, run 67) — the family SPLITS IN TWO, and
+    each side vindicates a different judge.** New instrument
+    `tools/shadowcast.mjs`: freezes the frame (app.stop), re-renders
+    with the sun's shadows off and with each caster family silenced
+    in turn, and diffs pixels — ownership by measurement, not theory.
+    (1) DAWN 01: 31.8% of the frame is cast shadow, 96.5% tree-owned
+    — the raking streaks are real offscreen-tree casts, as the
+    suspicion list said. GOLDEN BUSK 09: 8.3% in shadow — trees 34%,
+    the encounter's travellers 49% (pedlar+elder). (2) NOON 03: only
+    2% of the frame is cast shadow (two-thirds of it the bard's own)
+    — the huge diagonal bands crossing road and grass are NOT
+    shadow-map casts. Confirmed by ablation: they persist with the
+    shadow map off AND stay put when the sun (light + shader L both)
+    is rotated 90°, while the bard's true shadow swings. They are the
+    terrain's own BAKED tone field — `meadowAt`'s landform shade term
+    (ground below lane height pulls 0.5 toward grassShade) plus the
+    aToneLo/aToneHi world-noise drift — i.e. at noon the panel's
+    "render banding" attribution was RIGHT, third case this session
+    of a twice-refuted panel read proving partially true. That half
+    belongs to the 144/166 value-ladder family, not to shadows.
+    (3) THE COLOUR CLAIM CONFIRMED WITH NUMBERS: our cast shadows
+    flip hue family (lit H≈39° warm → shadow H≈222° blue) and keep
+    only 34-43% of their saturation (S 0.46→0.20 dawn, 0.47→0.16
+    golden) — grey-blue drain. A Short Hike's shadow-side ground
+    (screen1, measured rects): H44→H75 (same family, deeper green),
+    S 0.73→0.46 (63% kept), V 0.77→0.46. So ASH shadows are DARKER
+    than ours (V drop 0.31 vs our 0.09-0.12) but hue-carrying —
+    the lever is saturated same-family-cooler shadow colour, NOT
+    lighter shadows and NOT softness: our penumbra share is already
+    0.73-0.8, reference-soft. Fix task queued as the skylight/
+    CAST_SHADOW_HUE saturation pass; judge on re-shot 01/09 (casts)
+    separately from 03 (bands — different system). Measurement-only
+    run; no game code touched.
 184. **Note-head overlap — measure the governor at last (wave 7).**
     Five frames name "fused brown blobs" where notes are close in
     musical time (01/02/03/08 portrait/10 tablet), while 05/09 with
