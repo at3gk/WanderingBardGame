@@ -1928,6 +1928,31 @@ scene — build once).
     the songbook volume structure, then the first Book Two song
     (needs a verified public-domain transcription — same sourcing
     bar task 60 set).
+    **Fourth piece done (2026-08-05): the first Book Two song.** *My
+    Bonnie Lies Over the Ocean* (traditional Scottish, published
+    1881 — unambiguously public domain), a waltz in G whose F♯ is
+    the leading tone a child already sings without knowing its name.
+    Task 60's sourcing bar finally met — this machine has network:
+    transcribed from TWO independent settings on thesession.org
+    (tune 6023, one in G and one in D), which agree note-for-note
+    once transposed, cross-checked against the tune as sung. Two
+    engine-honest normalizations, documented in songs.ts: the
+    source's cross-barline ties become note + written rest (duration
+    here is arrival spacing, not sustain — one tap and the breath
+    the singer holds), and the closing G is short by the one-beat
+    pickup so a looping pass hands its own upbeat back. That pickup
+    needed the data model's last piece: `Song.pickupBeats`
+    (anacrusis — engraving fact only, expansion untouched), with the
+    bar-integrity test offsetting its grid (and a -0/Object.is trap
+    found on the way: Math.floor(-0) fails toBe(0)). Lives in
+    `BOOK_TWO_SONGS`, its own list — Book Two is a post-festival
+    choice, not road scenery — NOT yet reachable in game; the whole
+    per-song engraving suite now runs over both books (keyless =
+    naturals-only; keyed = diatonic, spelt-range, no shown
+    accidental). 1125 tests green (+9), build green. Remaining on
+    165: the volume structure — the songbook UI's Book Two shelf,
+    unlocked by `festivals >= 1`, which makes this song reachable
+    and completes the task.
 
 ## The v1.3 queue: "the family songbook" (human-set, 2026-08-01, post-festival)
 
