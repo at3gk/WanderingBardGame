@@ -17,7 +17,9 @@ import {
   RollOptions,
   MEMENTO_KIND,
   VARIANT_COUNT,
+  ROAD_ASIDE_CHANCE,
   candidatesFor,
+  encounterLine,
   leavesMemento,
   matchesBiome,
   matchesWindow,
@@ -762,5 +764,85 @@ describe('mementos', () => {
     const marked = rolls.filter(leavesMemento).length / rolls.length;
     expect(marked).toBeGreaterThan(0.02);
     expect(marked).toBeLessThan(0.3);
+  });
+});
+
+describe('the road, spoken', () => {
+  const NAME = 'Bramblegate Way';
+  /** Rolls that can carry an aside at all: travellers, the one kind with news. */
+  const travellers = rollMany(1200).filter((r) => r.def.kind === 'traveller');
+
+  const named = (i: number, roll: EncounterRoll, name: string | null = NAME) =>
+    encounterLine(i, roll, name);
+
+  it('names the road for a minority of meetings, and never for most', () => {
+    const rolls = rollMany(1200);
+    const spoken = rolls.filter((r, i) => named(i, r).includes(NAME));
+    // A share of the *whole* day's meetings: travellers are only part of the
+    // table, and only some of those speak. Wide band on purpose — the point
+    // is that the road is mentioned sometimes and is quiet most of the time.
+    const share = spoken.length / rolls.length;
+    expect(share).toBeGreaterThan(0.02);
+    expect(share).toBeLessThan(0.25);
+  });
+
+  it('is a seeded minority among travellers, near ROAD_ASIDE_CHANCE', () => {
+    const spoken = travellers.filter((r, i) => named(i, r).includes(NAME)).length;
+    const share = spoken / travellers.length;
+    expect(travellers.length).toBeGreaterThan(200);
+    expect(share).toBeGreaterThan(ROAD_ASIDE_CHANCE - 0.1);
+    expect(share).toBeLessThan(ROAD_ASIDE_CHANCE + 0.1);
+  });
+
+  it('keeps the same seed saying the same thing', () => {
+    for (let i = 0; i < 60; i++) {
+      const roll = rollEncounter(i, BIOME_IDS[i % BIOME_IDS.length], 0.5);
+      expect(encounterLine(i, roll, NAME)).toBe(encounterLine(i, roll, NAME));
+    }
+  });
+
+  it('gives back the nameless line byte for byte when there is no road name', () => {
+    const rolls = rollMany(600);
+    rolls.forEach((roll, i) => {
+      expect(named(i, roll, null)).toBe(roll.def.line);
+      expect(named(i, roll, '')).toBe(roll.def.line);
+      expect(named(i, roll, '   ')).toBe(roll.def.line);
+    });
+  });
+
+  it('leaves the encounter its own opening words, always', () => {
+    const rolls = rollMany(600);
+    rolls.forEach((roll, i) => {
+      expect(named(i, roll).startsWith(roll.def.line)).toBe(true);
+    });
+  });
+
+  it('does not let a fox or a rain shower carry the news', () => {
+    const others = rollMany(900).filter((r) => r.def.kind !== 'traveller');
+    expect(others.length).toBeGreaterThan(100);
+    others.forEach((roll, i) => expect(encounterLine(i, roll, NAME)).toBe(roll.def.line));
+  });
+
+  it('speaks the road the way the journal speaks', () => {
+    // The journal's bans, plus the two this line could invent on its own:
+    // an obligation ("you should") and a comparison ("everyone else already").
+    const banned = /\bfail|\blose|\blost\b|\bwrong\b|\bmiss(ed)?\b|streak|score|!/i;
+    const pressure = /\bshould\b|\bmust\b|\bahead of\b|\bbehind\b|\belse already\b|\bonly you\b|\d/i;
+
+    const lines = new Set<string>();
+    const rolls = rollMany(2000);
+    rolls.forEach((roll, i) => {
+      const line = named(i, roll);
+      if (line !== roll.def.line) lines.add(line.slice(roll.def.line.length).trim());
+    });
+    // Every aside in the pool gets swept, not just the ones a short run drew.
+    expect(lines.size).toBeGreaterThanOrEqual(5);
+
+    for (const aside of lines) {
+      expect(aside).not.toMatch(banned);
+      expect(aside).not.toMatch(pressure);
+      expect(aside).toContain(NAME);
+      expect(aside.length).toBeLessThan(120);
+    }
   });
 });

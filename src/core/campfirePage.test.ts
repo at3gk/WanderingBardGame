@@ -8,10 +8,7 @@ import {
   festivalLine,
 } from './campfirePage';
 import { MEMENTO_KIND } from './encounters';
-<<<<<<< HEAD
 import { IDLE_JOURNAL_KIND } from './idle';
-=======
->>>>>>> origin/main
 import { createJourney, enterPhase, recordEntry, type JourneyState } from './journey';
 
 const DAY = '2026-07-28';
@@ -181,7 +178,6 @@ describe('mementos on the page', () => {
     expect(campfirePage(atFire(2)).moments.map((m) => m.kind)).toEqual(['note']);
   });
 });
-<<<<<<< HEAD
 
 describe('campfirePage — the welcome back', () => {
   it('opens the page with a welcome when the day began with a coming back', () => {
@@ -247,5 +243,3 @@ describe('campfirePage — the welcome back', () => {
     expect(WELCOME_LINE).not.toContain('kept your place');
   });
 });
-=======
->>>>>>> origin/main

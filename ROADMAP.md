@@ -2272,6 +2272,18 @@ top task fits its energy.
     TONIGHT'S PAGE"; festival eve still wins its override). Verified
     live at both points. 1093 tests green (+6), build 861.57 kB.
     **Deferred: world signage + traveller lines that speak the name.**
+    **Traveller lines done (2026-08-05, run 80; delegated to an opus
+    agent, verified in the main loop).** Encounter prose gained its
+    composer: `encounterLine(seed, roll, road)` draws from a NEW
+    subSeed stream ('encounter/road' — existing draw order untouched,
+    the sentinel precedent), and 22% of TRAVELLER meetings speak the
+    road's name communally ("Half the county seems to be on
+    Bramblegate Way today") — travellers only; a fox has no news.
+    The aside lands in the journal too, so tonight's page carries
+    the shared road. Anti-pressure regex bans obligation/comparison
+    and ALL digits (no counts of other walkers, ever); null-name
+    fallback byte-identical. 3D signage text remains deferred (no
+    fonts in world). 1200 tests (+7), build green.
 153. **The campfire postcard.** Optional share: a small painted frame of
     today's road with its name and the song carried. Shares presence,
     never performance — no accuracy, no coins, nothing gradable (Wordle's

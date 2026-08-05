@@ -662,6 +662,66 @@ export function leavesMemento(roll: EncounterRoll): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// The road, spoken (ROADMAP 152)
+// ---------------------------------------------------------------------------
+//
+// Everyone walking today walks the same road — same seed, same name (see
+// `roadName.ts`) — and the world has been quietly certain of that without
+// anybody in it ever saying so. These asides let a traveller say it: other
+// people are out on this road today, warmly, in passing.
+//
+// Three rules, and they are the whole design:
+//
+// - A minority. `ROAD_ASIDE_CHANCE` is deliberately about one meeting in
+//   five, because a road that announces itself at every meeting stops being
+//   a place and starts being a banner.
+// - Travellers only. "They say everyone is out on Bramblegate Way" needs a
+//   speaker; a fox has no news and a rain shower cannot gossip. Same reason
+//   `rollAsk` refuses the other two kinds.
+// - Presence, never comparison. No count of who else walked it, nothing
+//   anyone else has already done, nothing to be behind on — the same rule
+//   `roadName.ts` opens with.
+//
+// On its own sub-stream (`encounter/road`) for the reason spelled out under
+// Asks: `rollEncounter`'s draw order is pinned by tests, and taking one more
+// number from it would have reshuffled every meeting in the game.
+
+/** How often a traveller mentions the road by name. A minority on purpose. */
+export const ROAD_ASIDE_CHANCE = 0.22;
+
+/**
+ * The asides. `{road}` is the day's name. Written to the encounter table's
+ * rules — no exclamation marks, no adjective doing a noun's work — and to
+ * the journal's: nothing here is an instruction, a comparison, or a count.
+ * Time-neutral, because a meeting can land at any hour of the walk.
+ */
+const ROAD_ASIDES: readonly string[] = [
+  'Half the county is out on {road} today, they say.',
+  'Everyone seems to be walking {road} today, and they seem glad of it.',
+  'They came the other way down {road}, and pass on that it is a good day for it.',
+  'There are others on {road} today, they mention, each at their own pace.',
+  'They have been hearing music up and down {road} all day.',
+];
+
+/**
+ * The line a meeting shows: the encounter's own writing, and sometimes the
+ * road named aloud after it.
+ *
+ * `road` null, empty, or whitespace gives back `roll.def.line` untouched and
+ * unwrapped — a caller that has no name for the road (or is a test pinning
+ * the old prose) sees exactly what it saw before this function existed.
+ */
+export function encounterLine(seed: number, roll: EncounterRoll, road: string | null): string {
+  if (roll.def.kind !== 'traveller') return roll.def.line;
+  const name = road === null ? '' : road.trim();
+  if (name === '') return roll.def.line;
+
+  const rand = mulberry32(subSeed(seed, 'encounter/road'));
+  if (!chance(rand, ROAD_ASIDE_CHANCE)) return roll.def.line;
+  return `${roll.def.line} ${pick(rand, ROAD_ASIDES).replace('{road}', name)}`;
+}
+
+// ---------------------------------------------------------------------------
 // Asks (v0.8 item 8 — stakes, not failure)
 // ---------------------------------------------------------------------------
 //

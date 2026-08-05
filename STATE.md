@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 79 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 80 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -38,6 +38,17 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-05 (run 80) — 152 traveller lines: the road is
+  spoken.** 22% of traveller meetings speak today's road name
+  communally, on a new subSeed stream (draw order untouched); the
+  aside reaches the journal and tonight's page. Anti-pressure +
+  all-digits ban swept. ALSO: run 79's merge left conflict markers
+  in RoadStage.ts/campfirePage.test.ts (the reconcile script only
+  processed STATE/ROADMAP) — caught and repaired this run; future
+  reconciles must sweep ALL conflicted files. 1200 tests (+7).
+  Retention remaining: 151 pieces, 157 (arc). 3D signage still
+  deferred.
 
 - **HANDOFF, 2026-08-05 (run 79) — 156 done: the fire welcomes the
   return.** Tonight's page opens with the welcome line when the day
