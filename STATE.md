@@ -40,6 +40,26 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 95) — 168 DONE: the finishing pass ships
+  whole.** The wave-12 recommendation taken: scene renders into a
+  half-float target at 0.8 scale, composited through a code-generated
+  33³ LUT (gentle S-curve + vibrance + cool-shadow/warm-highlight
+  split-tone; knobs in finishingGrade.ts, all test-pinned). The
+  structural fact the whole design hangs on: three applies NO tone
+  mapping / sRGB to render-target renders, so the composite owns
+  ACES + encode + LUT, and transparency now blends in LINEAR light —
+  watch item for wave 13: every tuned alpha (paper veil, smoke,
+  washes) shifted subtly; the frames read fine (veil NOT re-brightened,
+  campfire pool richer, noon finally has colour conviction) but the
+  panel judges, not me. frame-quality ALL PASS with margin (noon 3.73).
+  fps measured on real GPU: free at DPR 1, net-POSITIVE at DPR 2 —
+  the task's "can be net-cheaper on phones" holds on desktop numbers;
+  phone tiers ride item 127. HARNESS LESSON in ROADMAP 168: never
+  trust SwiftShader RT-vs-canvas timings (gl.finish() sync artifact,
+  measured to 3.5 s/frame truth via readPixels). Visual count since
+  wave 12: ONE (this). Next per the wave-12 arc: 150 faces, then
+  wave 13 after one more visual task. Human-gated items unchanged.
+
 - **HANDOFF, 2026-08-06 (run 94) — the postcard sheet grows three
   poses (harness-only; no game code).** Three waves called the
   sheet "one camera repeated as if it were ten compositions" —

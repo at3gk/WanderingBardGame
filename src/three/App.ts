@@ -25,6 +25,7 @@ import {
   WebGLRenderer,
 } from 'three';
 import { createPainterlyGlobals, type PainterlyGlobals } from './painterly';
+import { FinishingPass } from './finishing';
 
 /** Anything the app can run. Stages own their own content and disposal. */
 export interface Stage {
@@ -197,6 +198,8 @@ export class App {
    * shadow-map cost and an instant tell that the lighting is fake.
    */
   readonly sun: DirectionalLight;
+  /** Task 168: every frame leaves through this — see finishing.ts. */
+  readonly finishing: FinishingPass;
 
   private stage: Stage | null = null;
   private readonly clock = new Clock();
@@ -239,6 +242,11 @@ export class App {
     this.renderer.setClearColor(new Color(0x9fc6e8), 1);
 
     host.appendChild(this.renderer.domElement);
+
+    // The canvas's own MSAA cannot reach an offscreen target, so the
+    // finishing pass carries its own samples — matching the `antialias`
+    // decision above: none on 'low', where it was already off.
+    this.finishing = new FinishingPass(this.renderer, quality.tier === 'low' ? 0 : 4);
 
     this.globals = createPainterlyGlobals();
 
@@ -329,7 +337,17 @@ export class App {
 
     this.globals.uTime.value = this.elapsedMs / 1000;
     stage.render?.(this.accumulatorMs / FIXED_STEP_MS, frameDt);
-    this.renderer.render(stage.scene, stage.camera);
+    this.renderFrame(stage.scene, stage.camera);
+  }
+
+  /**
+   * Draw one frame through the full pipeline. Anything that renders
+   * explicitly and then reads the canvas back (the pressed postcard) must
+   * come through here, or it captures the ungraded scene — a postcard that
+   * doesn't match the screen it was pressed from.
+   */
+  renderFrame(scene: Scene, camera: PerspectiveCamera): void {
+    this.finishing.render(this.renderer, scene, camera);
   }
 
   resize(): void {
@@ -350,6 +368,7 @@ export class App {
     // shoots at ratio 2, was quietly cropping every frame it took. A whole
     // round of art critique was made against quarter-frames as a result.
     this.renderer.setSize(width, height);
+    this.finishing.setSize(width, height, this.renderer.getPixelRatio());
     const stage = this.stage;
     if (stage) {
       stage.camera.aspect = width / Math.max(1, height);
@@ -374,6 +393,7 @@ export class App {
     window.removeEventListener('orientationchange', this.onResize);
     document.removeEventListener('visibilitychange', this.onVisibility);
     this.stage?.dispose?.();
+    this.finishing.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }

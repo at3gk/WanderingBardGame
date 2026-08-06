@@ -2149,6 +2149,36 @@ interviews) — read it before taking any task; its not-recommended list
     to painterly: forgives close-range crudeness, can be net-cheaper on
     phones (fewer shaded fragments). Measure fps both ways on the
     quality tiers. (App.ts render path + painterly.)
+    **Done (2026-08-06, run 95).** `finishing.ts` (FinishingPass) +
+    `finishingGrade.ts` (the pure grade + LUT builder, delegated to an
+    agent, 12 tests). The pipeline fact that shaped it: three r180
+    applies NO tone mapping and NO sRGB encode when rendering into a
+    render target (WebGLPrograms gates both on `currentRenderTarget ===
+    null`), so the offscreen target must be HALF FLOAT (linear light
+    overshoots 1.0; bytes would clip every highlight) and the composite
+    owns the whole display transform — ACES + sRGB via three's own
+    chunks, then the LUT in display space, where LUTs belong. Scene
+    renders at 0.8 scale (samples 4, matching the old canvas MSAA; 0 on
+    'low'), composited by one fullscreen triangle; devices without
+    renderable half float fall back to the exact pre-168 path. The
+    grade: gentle per-channel S-curve (CONTRAST 0.14), vibrance
+    protecting saturated colours (0.18), split-tone cool shadows / warm
+    highlights (SPLIT 0.035, zeroed at the endpoints so black stays
+    black). KNOWING CONSEQUENCE: transparency now blends in linear
+    light (tone mapping moved after blending) — the references' own
+    compositing; frames read: noon road ochre and shadow blues gain
+    conviction, dawn clouds warm, campfire pool richer, paper veil NOT
+    re-brightened. frame-quality ALL POSES PASS (noon 3.73 stops, up).
+    Pressed postcard routes through App.renderFrame so the capture
+    matches the screen. MEASURED both ways: real-GPU desktop 100.1 vs
+    100.4 fps at DPR 1 (free), 100.3 vs 98.5 at DPR 2 (the 0.64×
+    fragment saving already pays for the composite); phone-tier numbers
+    remain the standing real-hardware item (127). HARNESS LESSON:
+    SwiftShader "timings" of this pass were pure sync artifacts —
+    gl.finish() does not serialize the remote GL command stream, and
+    forcing completion via readPixels showed the direct path costing
+    3.5 s/frame, so no SwiftShader ratio of RT-vs-canvas cost is ever
+    actionable. 1221 tests (+12), build green.
 169. **Terrain as the hero surface.** Journey's lesson restated for this
     game: broad PLANNED shadow masses (task 144's remake), winner-take-
     all ground-material edges (adamgryu's splat trick — kills the soft
