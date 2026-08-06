@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 88 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 89 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop)
 
@@ -39,6 +39,26 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-06 (run 89) — ghost band round 2: the paper
+  honours its own header at last.** PAPER_ALPHA 0.62 → 0.50 (the
+  file's founding language was "a veil at forty per cent"; the
+  near lane subtends half a frame BY CONSTRUCTION — it is the
+  reading surface — so what extent cannot give, opacity must).
+  Geometry, margins, fades, ink alphas all untouched; the
+  sixth-line counterfeit pin gets safer as the paper's gradient
+  shallows. Frames: 02/08 read as world-through-gauze with rules
+  and discs fully legible. Gates PASS, 1209 tests. Visual count
+  since wave 11: ONE. Menu next: 149 scatter patches (wave 11
+  named the grass card chevrons again), 166 noon accents proper,
+  the harness pose-variety question (one-camera artifact), 150
+  faces (emotion's structural ask). NOTE: near-tail/margin trims
+  were CONSIDERED and rejected — TAIL_M 0.46 is pitch-pinned
+  (gone-by notes must rest on paper) and the fade margins are the
+  sixth-line settlement; the alpha lever is the only free one and
+  it is now at its design floor. If wave 12 still reads a band,
+  the remaining ideas are structural (hour-lit paper tint, or
+  attention-state opacity), each needing its own frame iteration.
 
 - **HANDOFF, 2026-08-06 (run 88) — WAVE-11 BLIND PANEL: mean 4.73,
   UP from wave 10's 4.61 with the SAME rubric text — the first
