@@ -41,6 +41,18 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 110) — 185 piece 6: the road stops
+  being a colour hole.** The three biome road albedos chroma-scaled
+  1.35 about exact luma (hexes in ROADMAP 185) per wave 15's
+  both-samples family and ASH's stated policy (the path is the
+  warmest object in frame). Value breaks untouched by construction;
+  run 87's drift rides on top. 02's road reads as warm sienna, the
+  warmest large shape; morning hueSpread up; ALL POSES PASS.
+  Visual count since wave 15: ONE. Next: the tuft-hour follow
+  (wave 15's other family), or the emotion queue. GitHub outage
+  6+ hours — PR #228 carries runs 104-110; land and reconcile
+  first thing once runners recover. 1235 tests, build green.
+
 - **HANDOFF, 2026-08-06 (run 109) — WAVE-15 BLIND PANEL: mean 4.40,
   the three-wave same-rubric block reads 4.38 / 4.33 / 4.40 — flat,
   WITH a new instrument-calibration fact: an accidental full re-run

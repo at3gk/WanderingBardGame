@@ -2885,6 +2885,19 @@ full verdict map and the measure-first suspicion list):
     the lerp-to-sky hueless distance (fog hue authorship), the cloud
     medium mismatch on 10, the unhued white building, noon-village
     accents. 1229 tests (+8), build green.
+    **Piece 6 (2026-08-06, run 110): the road stops being a colour
+    hole.** Wave 15's new family, identical in both panel samples
+    ("the lowest-chroma region in the image while taking the most
+    area", six daylight frames) with the reference policy stated:
+    ASH makes the path a saturated ochre, THE WARMEST OBJECT IN
+    FRAME. The three biome road albedos chroma-scaled 1.35 about
+    their exact lumas (village 0xb19065 → 0xbb8f55 S 0.43 → 0.55;
+    forest 0x8f785d → 0x967752 S 0.35 → 0.45; riverside 0x9b8870 →
+    0xa18767 S 0.28 → 0.36) — the value break each entry's comment
+    defends is untouched by construction, and run 87's drift still
+    rides on top. 02's road reads as warm sienna earth, the warmest
+    large shape in frame; morning hueSpread 0.419 → 0.447; ALL
+    POSES PASS. 1235 tests, build green.
     **Piece 5 (2026-08-06, run 108): the deep water follows the
     hour.** The "escape hatch" family's biggest member (waves 13/14:
     "rogue cyan/teal water and marsh materials that belong to no

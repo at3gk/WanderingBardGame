@@ -257,7 +257,15 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     // value break against every ground tone in its own biome, in both
     // directions: a road lighter than the field reads as a river of milk and
     // one the same value as the field is not a road at all.
-    road: 0xb19065,
+    //
+    // Chroma-scaled 1.35 about its exact luma (wave 15, both panel
+    // samples: "the road is a colour hole occupying the largest shape in
+    // frame" across six daylight frames, with the reference policy
+    // stated — A Short Hike makes the path a saturated ochre, the
+    // warmest object in frame, so the largest shape is the loudest
+    // colour decision). 0xb19065 → 0xbb8f55, S 0.43 → 0.55; the value
+    // break the paragraph above defends is untouched by construction.
+    road: 0xbb8f55,
     roadShoulder: 0xa39b6c,
     /*
      * A cool slate, where this was a warm grey-tan (0xbcb39d).
@@ -343,7 +351,9 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     grassVariant: 0x82a55c,
     grassShade: 0x162720,
     grassDry: 0xa9ad65,
-    road: 0x8f785d,
+    // Chroma 1.35 about luma with the village's (wave 15's road-colour-
+    // hole family): 0x8f785d → 0x967752, S 0.35 → 0.45.
+    road: 0x967752,
     roadShoulder: 0x6c7f50,
     rock: 0x8b9490,
     trunk: 0x655344,
@@ -398,7 +408,9 @@ export const BIOME_PALETTES: Record<string, BiomePalette> = {
     grassDry: 0xd8ddb5,
     // Same problem as village, milder: 0xa89a80 against a `grassDry` of
     // 0xccd2ac was not enough of a break to survive fog at thirty metres.
-    road: 0x9b8870,
+    // Chroma 1.35 about luma with the village's (wave 15's road-colour-
+    // hole family): 0x9b8870 → 0xa18767, S 0.28 → 0.36.
+    road: 0xa18767,
     roadShoulder: 0x84957b,
     rock: 0xa2a8ae,
     trunk: 0x746459,
