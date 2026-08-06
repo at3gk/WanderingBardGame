@@ -68,3 +68,47 @@ export function landKeyAmount(sunHeight: number): number {
   );
   return LAND_KEY_MAX * t * t * (3 - 2 * t);
 }
+
+/**
+ * The night mode (wave 14's seven-frame family: "the sky is graded, the
+ * ground is not" — a chlorophyll-green field under a violet night sky).
+ *
+ * The arithmetic that makes night different: `albedo * lighting` can only
+ * COOL a green with a pale moon, never pull it into the night's family —
+ * references grade sky-to-soil (ASH's snow shot is periwinkle from top to
+ * bottom with the path as the one warm through-line). So at night the key
+ * points at the night sky's own zenith chroma, and it gains BREADTH: the
+ * daylight cone (weight = max(cos, 0)) deliberately ignores chroma
+ * orthogonal to the key, and "green under violet" is exactly the
+ * orthogonal case. Breadth adds `breadth * (1 - |cos|)` — full capture at
+ * 90°, still nothing at 180° — so the one thing night must never touch,
+ * the fire's warmth (and the bard's), sits in the anti-family and stays.
+ */
+export const NIGHT_KEY_MAX = 0.38;
+export const NIGHT_KEY_BREADTH = 0.65;
+/** Below this sun height the night key is fully in. */
+export const NIGHT_KEY_FULL = -0.06;
+/** Above this it is fully out; dawn/golden stay untouched between ramps. */
+export const NIGHT_KEY_OUT = 0.1;
+
+export interface HourKeyMode {
+  /** Pull strength for the shader. */
+  amount: number;
+  /** Orthogonal-capture weight; 0 restores the pure daylight cone. */
+  breadth: number;
+  /** Where the key colour comes from: the biome's grass, or the sky. */
+  source: 'biome' | 'sky';
+}
+
+/** The whole schedule: night sky-key below the horizon, biome key at high sun. */
+export function hourKeyMode(sunHeight: number): HourKeyMode {
+  if (sunHeight < NIGHT_KEY_OUT) {
+    const t = Math.min(
+      1,
+      Math.max(0, (NIGHT_KEY_OUT - sunHeight) / (NIGHT_KEY_OUT - NIGHT_KEY_FULL)),
+    );
+    const eased = t * t * (3 - 2 * t);
+    return { amount: NIGHT_KEY_MAX * eased, breadth: NIGHT_KEY_BREADTH, source: 'sky' };
+  }
+  return { amount: landKeyAmount(sunHeight), breadth: 0, source: 'biome' };
+}

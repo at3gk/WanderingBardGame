@@ -40,6 +40,17 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 102) — 185 piece 3: the ground takes
+  the night.** Wave 14's seven-frame family answered at its clearest
+  site: hourKeyMode (landKey.ts) points the key at the night sky's
+  own zenith with breadth 0.65 (captures the orthogonal green-under-
+  violet case; the fire's warmth is anti-family and provably
+  untouched), amount 0.38 fading out before dawn. 07's field beyond
+  the firelight reads violet-dark; night gauge 6.45 stops, all PASS.
+  Golden-hour version + the 12/13 midground seam + escape hatches
+  remain in ROADMAP 185. Visual count since wave 14: ONE. 1234
+  tests (+5), build green.
+
 - **HANDOFF, 2026-08-06 (run 101) — WAVE-14 BLIND PANEL: mean 4.33,
   FLAT against wave 13's 4.38 UNDER THE SAME RUBRIC TEXT (the first
   same-rubric pair since wave 12; same 13 frames, same day's road

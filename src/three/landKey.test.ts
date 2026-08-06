@@ -4,6 +4,9 @@ import {
   LAND_KEY_MAX,
   LAND_KEY_RISE_END,
   LAND_KEY_RISE_START,
+  NIGHT_KEY_BREADTH,
+  NIGHT_KEY_MAX,
+  hourKeyMode,
   landKeyAmount,
 } from './landKey';
 
@@ -53,6 +56,47 @@ describe('landKeyAmount', () => {
     // Past ~0.5 the attraction stops binding a family and starts erasing
     // it — the within-family variety is the noon design's whole point.
     expect(LAND_KEY_MAX).toBeLessThanOrEqual(0.5);
+  });
+});
+
+describe('hourKeyMode', () => {
+  it('is the night sky key, full breadth, when the sun is well down', () => {
+    const mode = hourKeyMode(-0.5);
+    expect(mode.source).toBe('sky');
+    expect(mode.amount).toBe(NIGHT_KEY_MAX);
+    expect(mode.breadth).toBe(NIGHT_KEY_BREADTH);
+  });
+
+  it('fades the night key out before dawn owns the frame', () => {
+    // Dawn's sun height is 0.16 — past NIGHT_KEY_OUT, so dawn (a carrying
+    // hour) gets zero from both modes.
+    const dawn = hourKeyMode(0.16);
+    expect(dawn.amount).toBe(0);
+    expect(dawn.breadth).toBe(0);
+    expect(dawn.source).toBe('biome');
+  });
+
+  it('hands over to the daylight biome key at high sun', () => {
+    const noon = hourKeyMode(0.64);
+    expect(noon.source).toBe('biome');
+    expect(noon.amount).toBe(LAND_KEY_MAX);
+    expect(noon.breadth).toBe(0);
+  });
+
+  it('night amount never exceeds its max and never goes negative', () => {
+    for (let y = -1; y <= 1; y += 0.02) {
+      const mode = hourKeyMode(y);
+      expect(mode.amount).toBeGreaterThanOrEqual(0);
+      expect(mode.amount).toBeLessThanOrEqual(Math.max(NIGHT_KEY_MAX, LAND_KEY_MAX));
+    }
+  });
+
+  it('breadth stays under the anti-family guard', () => {
+    // At breadth 1 a hue at 180° from the key would take
+    // breadth * (1 - |cos|) = 0 — safe by construction — but hues at 135°
+    // start moving perceptibly. 0.65 keeps the warm anti-family (fire,
+    // bard) under ~7% pull at NIGHT_KEY_MAX; a breadth near 1 would not.
+    expect(NIGHT_KEY_BREADTH).toBeLessThan(0.8);
   });
 });
 

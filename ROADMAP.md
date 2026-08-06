@@ -2885,6 +2885,26 @@ full verdict map and the measure-first suspicion list):
     the lerp-to-sky hueless distance (fog hue authorship), the cloud
     medium mismatch on 10, the unhued white building, noon-village
     accents. 1229 tests (+8), build green.
+    **Piece 3 (2026-08-06, run 102): the ground takes the night.**
+    Wave 14's dominant family ("the sky is graded, the ground is not"
+    — a chlorophyll-green field under a violet night sky in 07)
+    measured to its arithmetic: `albedo * lighting` can only COOL a
+    green with a pale moon (0x8f9ed6), never pull it into the night
+    family — references grade sky-to-soil. The land key gains an HOUR
+    MODE (hourKeyMode in landKey.ts): at night the key colour is the
+    night sky's own zenith and the attraction gains BREADTH 0.65 —
+    weight = max(cos,0) + breadth·(1−|cos|) — capturing the orthogonal
+    case (green under violet) at full strength while the anti-family
+    (the fire's warmth, the bard's red) stays at zero BY CONSTRUCTION;
+    amount 0.38 fading out entirely before dawn's sun height, so the
+    carrying hours between night and high day still see nothing.
+    Frames: 07's field beyond the firelight reads violet-dark instead
+    of chlorophyll; the fire pool untouched. Night gauge 6.42 → 6.45
+    stops, hueSpread 0.164 → 0.201, ALL POSES PASS. Remaining family
+    pieces: the golden-hour version (bushes staying forest green in
+    the amber wash — needs the same mode with a warm key and its own
+    care not to fight the sun's real tint), 12/13's gold-to-slate
+    midground seam, the escape hatches. 1234 tests (+5), build green.
     **Piece 2 (2026-08-06, run 99): the air gets its colour back.**
     The "hueless cutout distance" half of the family, fixed with the
     lever sky.ts's own fog comments already licensed twice: the three
