@@ -981,11 +981,27 @@ void main() {
 
   float farRidge = ridgeMask(ring, height, 0.026, 0.075, 11.0);
   float nearRidge = ridgeMask(ring, height, 0.004, 0.040, 47.0);
+  /*
+   * Ridge values 0.79/0.64 → 0.62/0.48 (task 166 noon piece, run 85).
+   * Three panel waves running read the day frames' distance as "bleached
+   * to sky value so the horizon dissolves", and the run-85 ablations
+   * pinned the fault HERE and nowhere else: tree-haze fogScale 0.85
+   * moved the far band 0.3 luminance levels, the day fog keys' value
+   * −5% moved it 1, and this pair moved the painted range 6 per step of
+   * ~0.09 — the milky band IS the dome's own ranges, not the fogged
+   * world. The horizon and fog keys stay untouched (darkening those
+   * darkens the whole distance — measured, see the morning key). The
+   * bands stay lighter than any real geometry in front of them and
+   * darker than the air above by construction (value multiplies the
+   * sky's own base), so the file's band-order argument survives; what
+   * changes is that the range now holds a legible value step against
+   * the wash instead of dissolving into it.
+   */
   if (farRidge > 0.001) {
-    color = mix(color, ridgeTint(skyBase, ring, 0.32, 0.79, 0.10), farRidge);
+    color = mix(color, ridgeTint(skyBase, ring, 0.32, 0.62, 0.10), farRidge);
   }
   if (nearRidge > 0.001) {
-    color = mix(color, ridgeTint(skyBase, ring, 0.36, 0.64, 0.20), nearRidge);
+    color = mix(color, ridgeTint(skyBase, ring, 0.36, 0.48, 0.20), nearRidge);
   }
   float ridge = max(farRidge, nearRidge);
 

@@ -2072,6 +2072,28 @@ interviews) — read it before taking any task; its not-recommended list
     build green. Remaining 166 work if wave 8 asks: the skylight
     ambient saturation lever and per-biome noon accents were NOT
     touched this piece.
+    **Piece 3 done (2026-08-05, run 85): the horizon stops
+    dissolving.** Three waves running (8, 9, 10) read the day
+    frames' distance as milky — wave 10's value lens: "distant
+    terrain bleached to sky value so the horizon dissolves".
+    Ablated in order before touching anything: tree-material
+    fogScale 0.85 moved the measured far band 0.3 luminance levels
+    (the band is not tree pixels), the noon/afternoon fog keys'
+    value −5% moved it 1 (not fogged geometry either) — the milky
+    band is the SKY DOME'S OWN painted ranges. The enacting change
+    is dome-local: ridgeTint values 0.79/0.64 → 0.62/0.48, which
+    moved the painted range 12.5 levels below its old value on the
+    same-day frame while the sky above it stayed put. The horizon
+    and fog keys are untouched (their do-not-darken history holds);
+    the band-order argument survives by construction (the ridge is
+    still the sky's own base × value, darker than air, lighter than
+    real geometry). Frames read: 10-tablet's horizon is land meeting
+    air; dawn's ridges stay gentle behind the mist. frame-quality
+    ALL POSES PASS. NOTE for comparability: the UTC day rolled
+    mid-run, so measurements were re-baselined on the new road —
+    postcard A/B pairs must always be same-day. Remaining 166:
+    per-biome noon accents + skylight ambient saturation (the
+    "unmodulated khaki road" halves of wave 10's noon verdict).
 167. **No framing without an anchor.** A composition rule the rig
     enforces: every camera mood guarantees a near-field anchor silhouette
     (telegraph props, landmarks, canopy mass), Monument Valley's
