@@ -41,6 +41,18 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 107) — shadowcast partition: the dusk
+  shadows are INNOCENT; the grey band is lit ground crushed by the
+  display transform.** Numbers in ROADMAP 185: shadows 17.6% of the
+  12 frame, 61.7% trees, and MORE saturated than the lit ground
+  (0.36 vs 0.31, blue 220°) — the cast-shadow colour system works
+  at dusk. The S 0.13 band is lit dark albedo at V 0.21 where ACES
+  + the finishing S-curve crush chroma; the fix is a VALUE floor
+  for the dusk midground (144/169 design territory), not hue work
+  — three refuted levers plus this partition jointly prove it.
+  Family parked with complete data. GitHub outage ~3h; PR #228
+  carries runs 104-107 when runners recover.
+
 - **HANDOFF, 2026-08-06 (run 106) — the seam's scatter lever
   refuted twice; family re-attributed to the baked tone field.**
   Widened lowSun fade: byte-identical. Enriched dusk fog ×1.8:

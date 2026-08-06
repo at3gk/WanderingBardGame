@@ -2930,6 +2930,21 @@ full verdict map and the measure-first suspicion list):
     is the stopping rule; the next attempt on this family should
     START with shadowcast.mjs on the 12 pose to partition
     band-ownership before touching anything.
+    **Shadowcast partition run (run 107) — the shadows are innocent
+    and the family is now fully attributed.** At the 12-dusk pose:
+    cast shadows cover 17.6% of frame (61.7% trees, 12.3% the bard),
+    and their photometrics are HEALTHY — vShadow 0.19 vs vLit 0.24,
+    sShadow 0.36 vs sLit 0.31 (MORE saturated than lit), hue 220°
+    blue vs 129° green lit: the dusk cast shadows carry hue exactly
+    as the colour script demands. The grey S 0.13 band rows are
+    therefore LIT ground: dark albedo at V ~0.21, where ACES (and
+    the finishing S-curve's quarter-tone dip) crush chroma toward
+    the display floor. The family's true owners: the baked terrain
+    tone field's dusk values + the display transform at low V — a
+    value/exposure design decision for the 144/169 pass (raise the
+    dusk midground's VALUE floor so its chroma survives the
+    transform; hue work alone cannot reach it, as three refuted
+    levers and this partition now jointly prove).
     The family's second site (wave 14: "noon-green bushes under a
     saffron dawn sky" in 01; "bushes stay forest green inside a fully
     golden wash" in 05/12): hourKeyMode gains a LOW-SUN band —
