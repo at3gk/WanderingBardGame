@@ -276,6 +276,7 @@ export class RoadStage implements Stage {
    * postcard tool, or an idle catch-up) does not strobe the sky.
    */
   private shownDayFraction: number;
+  private saidTrailheadAside = false;
   private walking = false;
   /**
    * How far tomorrow's road has risen on the horizon, 0..1. Driven by the
@@ -593,10 +594,7 @@ export class RoadStage implements Stage {
       (this.journey.phase === 'waking' || this.journey.phase === 'walking') &&
       this.journey.s < 50
     ) {
-      this.hud.say(
-        `${roadName(this.road.seed)}, ${this.journey.legIndex >= 1 ? 'by moonlight' : 'this morning'}.`,
-        6,
-      );
+      this.sayRoadAside();
     }
 
     app.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
@@ -2553,6 +2551,26 @@ export class RoadStage implements Stage {
     this.adaptive = initialAdaptiveState(now);
   }
 
+  /**
+   * The road's greeting, with the hour word following the SHOWN sky.
+   * Run 94 caught the aside saying "this morning" over a dusk frame:
+   * a resumed save (or a posed screenshot) opens at the hour it left,
+   * and a greeting that contradicts the sky it hangs in breaks the one
+   * moment the road speaks for itself.
+   */
+  private sayRoadAside(): void {
+    this.saidTrailheadAside = true;
+    const hourWord =
+      this.journey.legIndex >= 1
+        ? 'by moonlight'
+        : this.shownDayFraction < 0.5
+          ? 'this morning'
+          : this.shownDayFraction < 0.85
+            ? 'this afternoon'
+            : 'this evening';
+    this.hud.say(`${roadName(this.road.seed)}, ${hourWord}.`, 6);
+  }
+
   // --- frame -------------------------------------------------------------
 
   render(_alpha: number, frameDt: number): void {
@@ -2625,6 +2643,10 @@ export class RoadStage implements Stage {
     if (options.dayFraction !== undefined) {
       this.journey = { ...this.journey, dayFraction: options.dayFraction };
       this.shownDayFraction = options.dayFraction;
+      // The trailhead aside may still be on screen inside its hold; its
+      // hour word must follow the clock this pose just set (run 94 caught
+      // "this morning" over a dusk frame).
+      if (this.saidTrailheadAside) this.sayRoadAside();
     }
     // 'vista' is a camera framing, not a journey phase — a vista is a place
     // you walk past and look at, not a state the game enters. Accepting it

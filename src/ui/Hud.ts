@@ -185,8 +185,13 @@ const INK_SOFT = 'rgba(240, 226, 198, 0.84)';
  */
 function journalWash(r: number, g: number, b: number, atX = 50): string {
   const stop = (alpha: number) => `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  // Peak 0.44: down from the original 0.55 (a panel), up from the 0.34
+  // retreat — four waves running read the card as "unbacked hairline
+  // italic that fails the moment the sky is light", judged on phones in
+  // a bright room, which is exactly the case the shadow alone cannot
+  // carry. Still radial, still sky-toned, still nothing to clip.
   return (
-    `radial-gradient(49% 50% at ${atX}% 50%, ${stop(0.34)} 0%, ${stop(0.2)} 46%, ${stop(0)} 100%)`
+    `radial-gradient(49% 50% at ${atX}% 50%, ${stop(0.44)} 0%, ${stop(0.26)} 46%, ${stop(0)} 100%)`
   );
 }
 
@@ -451,6 +456,10 @@ export class Hud {
       margin: '0',
       padding: '0 24px',
       fontStyle: 'italic',
+      // 500, not the face's default 400: the mobile lens's exact word was
+      // "hairline". A book serif's italic at 400 thins to threads at
+      // phone sizes; one weight step keeps the voice and holds the stroke.
+      fontWeight: '500',
       lineHeight: '1.5',
       textAlign: 'center',
       // Two shadows: a tight one for edge contrast and a wide soft one that
@@ -1081,7 +1090,9 @@ export class Hud {
     this.caseBox.style.fontSize = `${Math.round(15 * scale)}px`;
     this.songBox.style.fontSize = `${Math.round(15 * scale)}px`;
     this.bookBox.style.fontSize = `${Math.round(15 * scale)}px`;
-    this.journalLine.style.fontSize = `${Math.round(17 * scale)}px`;
+    // The caption shrinks less than the chrome: corners can afford 0.88,
+    // but the one line of prose the game speaks is read at arm's length.
+    this.journalLine.style.fontSize = `${Math.round(17 * (this.chrome.compact ? 0.94 : 1))}px`;
     this.layoutCase();
     this.layoutBook();
     this.layoutPage();
