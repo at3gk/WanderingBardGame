@@ -69,6 +69,7 @@ export interface PainterlyGlobals {
    */
   uLandKeyColor: IUniform<Color>;
   uLandKeyAmount: IUniform<number>;
+  uLandKeyBreadth: IUniform<number>;
   /**
    * The hearth: one warm point source, shared by every painterly surface.
    *
@@ -195,6 +196,7 @@ export function createPainterlyGlobals(): PainterlyGlobals {
     uExposure: { value: 1 },
     uLandKeyColor: { value: new Color(0x568752) },
     uLandKeyAmount: { value: 0 },
+    uLandKeyBreadth: { value: 0 },
     uHearthPosition: { value: new Vector3(0, 0, 0) },
     uHearthColor: { value: new Color(0xff9a4e) },
     uHearthStrength: { value: 0 },
@@ -1145,6 +1147,7 @@ uniform vec3 uSunDirection;
 uniform vec3 uSunColor;
 uniform vec3 uLandKeyColor;
 uniform float uLandKeyAmount;
+uniform float uLandKeyBreadth;
 uniform vec3 uSkyColor;
 uniform vec3 uHorizonColor;
 uniform vec3 uGroundBounce;
@@ -1477,7 +1480,12 @@ void main() {
     vec3 keyChroma = uLandKeyColor - dot(uLandKeyColor, LUMA_W);
     vec3 keyDir = keyChroma / max(length(keyChroma), 1e-4);
     float sim = dot(albChroma, keyDir) / max(albMag, 1e-4);
-    float pull = uLandKeyAmount * max(sim, 0.0);
+    // Breadth (landKey.ts, night mode): the daylight cone ignores chroma
+    // orthogonal to the key, which at night is exactly the offending case
+    // (green field, violet sky). breadth * (1 - |sim|) captures 90-degree
+    // hues fully and still leaves the anti-family — the fire's warmth —
+    // at zero by construction.
+    float pull = uLandKeyAmount * (max(sim, 0.0) + uLandKeyBreadth * (1.0 - abs(sim)));
     albedo = max(vec3(0.0), albLuma + mix(albChroma, keyDir * albMag, pull));
   }
 
