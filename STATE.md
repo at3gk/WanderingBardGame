@@ -40,6 +40,37 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 101) — WAVE-14 BLIND PANEL: mean 4.33,
+  FLAT against wave 13's 4.38 UNDER THE SAME RUBRIC TEXT (the first
+  same-rubric pair since wave 12; same 13 frames, same day's road
+  family).** Lens means (w13): colour 5.09 (5.22), value 4.80
+  (5.10), mobile 4.35 (4.19, up), composition 4.51 (4.07, up),
+  silhouette 3.73 (4.02), emotion 3.52 (3.67). Frames: 07 best 5.48,
+  04 5.00, 12 4.93; worst 09 3.68, 03 3.73, 08 3.85. REGISTERED:
+  the land key moved its target (03 colour 3.4 → 4.8, "closest
+  daytime frame to a real complementary pair"); mobile and
+  composition rose (caption backing + the arc). OVERSHOT AND
+  CORRECTED SAME RUN: the ×1.6 fog step — colour lens: "receding
+  trees MORE chromatic than the near greens; aerial perspective
+  reads as a fog bug" — walked back to ×1.3 (S ~0.34; hexes in
+  sky.ts, gauges PASS). THE DOMINANT FAMILY SHARPENED: "two colour
+  systems per frame — the sky is graded, the ground is not" (7
+  frames: night field still chlorophyll green under a violet sky,
+  golden bushes stay forest green inside the amber wash, 12/13's
+  gold-to-slate hard band at the midground seam). This is run 93's
+  hour-relighting family stated at its root: the GROUND must take
+  the hour's light — the ambient/skylight tint on land at
+  night/golden/dusk is too weak against albedo. That is the arc's
+  big remaining piece (multi-run; painterly's ambient terms), ahead
+  of "escape hatches" (assets missing the grade: 04's teal tile,
+  05/12's unwashed bushes). Emotion (3.52, worst) repeats
+  nobody-lives-here + mannequins; silhouette's drop names the same
+  soft-mass families. The plateau reading after three waves
+  (4.65/4.38/4.33): single-knob pieces register locally but the
+  mean is carried by the STRUCTURAL families — ground-takes-the-
+  light, figures, world-dressing, camera. Full verdicts in the
+  run-101 workflow output (six opus judges, 617k tokens).
+
 - **HANDOFF, 2026-08-06 (run 100) — 175 caption piece: the prose
   stands on its wash, and the greeting follows the sky.** Wave 13's
   nine-frame "unbacked hairline italic" answered inside the idiom:
