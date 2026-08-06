@@ -851,6 +851,18 @@ const GRASS_SEEDS = [7, 11, 19, 23];
 const FERN_SEEDS = [9, 13, 29, 37];
 const PEBBLE_SEEDS = [41, 53, 67];
 const PUDDLE_SEEDS = [71, 79, 83];
+/*
+ * Shrubs and rocks get silhouettes of their own (task 149, run 91). Grass
+ * and ferns have had four variants each since the meadow work, but the two
+ * LARGE scatter masses — the ones a frame's mid-band is actually built
+ * from — were single seeds stamped hundreds of times, and wave 11 read it
+ * plainly: "the same low ovoid bush lump at varying scale... visibly the
+ * identical polyhedron duplicated". Density, albedo and scale ranges are
+ * untouched (the shrub's dark mass is load-bearing for the noon gate);
+ * only the SHAPE now varies.
+ */
+const SHRUB_SEEDS = [23, 31, 43, 59];
+const ROCK_SEEDS = [17, 47, 61];
 
 const SCATTER_KINDS: ScatterKind[] = [
   /**
@@ -902,7 +914,12 @@ const SCATTER_KINDS: ScatterKind[] = [
     key: 'roadstone',
     geometry: (v) => cachedGeometry(`pebble:${v}`, () => pebbleGeometry(PEBBLE_SEEDS[v])),
     variants: 3,
-    perSquareMetre: 0.5,
+    // 0.5 → 0.34 (task 149, run 91): four waves running have read the
+    // road's stone scatter as "litter-like pebble decals". A third fewer
+    // keeps the travelled-texture read (the ruts and the along-road tone
+    // drift carry the structure now) and stops the near frame's largest
+    // surface being speckled with marks.
+    perSquareMetre: 0.34,
     densityKey: 'road',
     zones: [[FOOTFALL_HALF, RUT_CENTRE - RUT_HALF], STONE_BAND],
     clearance: FOOTFALL_HALF,
@@ -1146,7 +1163,8 @@ const SCATTER_KINDS: ScatterKind[] = [
   },
   {
     key: 'shrub',
-    geometry: () => cachedGeometry('shrub', () => shrubGeometry(23)),
+    geometry: (v) => cachedGeometry(`shrub:${v}`, () => shrubGeometry(SHRUB_SEEDS[v])),
+    variants: 4,
     perSquareMetre: 0.024,
     densityKey: 'shrub',
     spread: 46,
@@ -1197,7 +1215,8 @@ const SCATTER_KINDS: ScatterKind[] = [
   },
   {
     key: 'rock',
-    geometry: () => cachedGeometry('rock', () => rockGeometry(17)),
+    geometry: (v) => cachedGeometry(`rock:${v}`, () => rockGeometry(ROCK_SEEDS[v])),
+    variants: 3,
     perSquareMetre: 0.009,
     densityKey: 'rock',
     spread: 70,
