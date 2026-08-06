@@ -41,6 +41,34 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 109) — WAVE-15 BLIND PANEL: mean 4.40,
+  the three-wave same-rubric block reads 4.38 / 4.33 / 4.40 — flat,
+  WITH a new instrument-calibration fact: an accidental full re-run
+  of the same wave (a workflow resume that missed cache) moved lens
+  means ±0.3-0.6 on identical frames and rubric (silhouette 4.38 vs
+  3.79, emotion 4.23 vs 3.95), so WAVE DELTAS UNDER ~0.3 ARE JUDGE
+  NOISE — treat only larger moves and repeated fault families as
+  signal.** Both samples agree on the structure: 12 top (5.12/5.23
+  — the new pose is now the set's best), 07 5.10/5.28, 04 strong;
+  03 worst (3.4-3.5), 02/08 low; emotion/silhouette/composition all
+  ROSE vs wave 14 in at least one sample (the night/low-sun/water
+  pieces registered — 09 3.68 → 4.2-4.4, 13 4.43 → 4.5-4.8). THE
+  TWO DOMINANT FAULTS, IDENTICAL IN BOTH SAMPLES: (1) "terrain
+  green refuses the hour" (7 frames) — the grass TUFTS specifically
+  stay yellow-olive inside committed washes (olive is only
+  half-captured by the warm key's cone; the family's remaining
+  member after the hour-key arc); (2) NEW and sharply actionable:
+  "the road is a colour hole occupying the largest shape in frame"
+  (6 daylight frames) with the reference policy stated — ASH makes
+  the path a saturated ochre-orange, THE WARMEST OBJECT IN FRAME,
+  so the largest shape is the loudest colour decision; ours is the
+  lowest-chroma region in every daylight frame. That is the next
+  licensed lever (roadSurface/meadowAt chroma policy, building on
+  run 87's drift machinery). Also repeated: accents don't survive
+  analogous fields (bard's red on golden), NPC chroma identity,
+  07's fire pool edge. Full verdicts in the run-109 workflow
+  outputs (two six-judge samples, ~1.1M tokens).
+
 - **HANDOFF, 2026-08-06 (run 108) — 185 piece 5: the deep water
   follows the hour.** paintWater's deep end now leans 30% into the
   hour's horizon (the shallow end always did — same argument, "water
