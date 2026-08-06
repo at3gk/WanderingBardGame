@@ -40,6 +40,21 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 98) — 185 piece 1: the daylight land
+  key.** Wave 13's five-frame "engine default daylight" family
+  answered at its root: a chroma-plane attraction in painterly binds
+  near-family albedos toward the biome's grass-family key, scheduled
+  by sun height (zero at the carrying hours — golden/night gauges
+  byte-identical; full 0.35 at noon). Dissenters (terracotta, the
+  bard's red, flowers, fire) untouched by construction — the
+  attraction only pulls chroma within 90° of the key. Frames: 03/10's
+  green ladder binds into one family, teal water comes into family;
+  all gauges PASS (noon hueSpread 0.317 → 0.271 — bound, not
+  collapsed). Remaining arc pieces queued in ROADMAP 185: fog hue
+  authorship (lerp-to-sky distance), 10's cloud medium mismatch,
+  the white building, noon-village accents. Visual count since wave
+  13: ONE. 1229 tests (+8), build green.
+
 - **HANDOFF, 2026-08-06 (run 97) — WAVE-13 BLIND PANEL: mean 4.38
   over 13 frames, with TWO instrument caveats that make the cross-
   wave mean weak evidence: the rubric text was RECONSTRUCTED again

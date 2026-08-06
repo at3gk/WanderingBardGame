@@ -2838,6 +2838,36 @@ full verdict map and the measure-first suspicion list):
     still boldest; 08/10's in-runway pair still touches, as expected.
     1160 tests green (+3), build green.
 
+185. **The daylight land key (wave-13 arc, piece 1).** Wave 13's
+    strongest cross-lens agreement: colour and value independently
+    named the SAME five daylight frames (02/03/08/10/11) "engine
+    defaults" — "the greens are an unbound ladder at equal
+    saturation", "nothing dominates and nothing accents" — while the
+    sunset hours are authored. The sunset frames get their unity free
+    from a low warm sun tinting every surface; a high near-white sun
+    shows every albedo raw. The colour script's noon section licenses
+    the fix and its hour verdicts bind it (dawn/golden/dusk/night are
+    CARRYING — untouchable).
+    **Done (2026-08-06, run 98).** `landKey.ts` (pure: per-biome key
+    colours = the palettes' own grass hexes; `landKeyAmount(sunHeight)`
+    zero through dawn/golden, full 0.35 at the noon sun, 8 tests) +
+    a chroma-plane ATTRACTION in the painterly fragment: albedos whose
+    chroma points within 90° of the biome key rotate part-way toward
+    it, luma preserved exactly, magnitude up to the chord; chroma
+    pointing away — terracotta road, the bard's red, flowers,
+    firelight — is untouched BY CONSTRUCTION, the palette's
+    one-family-one-dissenter rule enforced by the hour. sky.ts sets
+    the amount from sun height (the hour's half); RoadStage sets the
+    key colour from the bard's biome (the place's half). Frames: 03's
+    meadow reads as one warm family, 10-tablet's Kelly-green blast is
+    bound, the rogue teal water comes into family; golden/night
+    gauges byte-identical (p10/p90 unchanged — the carrying hours
+    never see it). All poses PASS (noon hueSpread 0.317 → 0.271,
+    above floor: bound, not collapsed). REMAINING PIECES of the arc:
+    the lerp-to-sky hueless distance (fog hue authorship), the cloud
+    medium mismatch on 10, the unhued white building, noon-village
+    accents. 1229 tests (+8), build green.
+
 181. **Smoke as soft forms.** The campfire smoke still reads as a stack
     of hard-edged translucent polygons ("a hovering boulder", "a render
     bug" — wave 2 called it stacked glass octagons; three waves on it
