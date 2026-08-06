@@ -272,6 +272,21 @@ comes precisely from the mechanics this game already bans.
   whole surface). Any future collection surface should carry a
   reachability test at the smallest viewport, not just a fits-on-
   desktop check.
+- **2026-08-06, the v0.9 queue as shipped (runs 76-81; recorded at the
+  run-90 consolidation).** The kind-ritual stance survived contact with
+  implementation only because every promise was turned into a
+  test-enforced vocabulary ban swept against adversarial fixtures: the
+  welcome line is composed from an entry's *existence* (day-counts and
+  debt-register phrasings banned by test), the postcard's prose is
+  presence-only (accuracy vocabulary banned by test — Wordle's rule as
+  a regression suite), traveller road-lines carry an anti-pressure ban.
+  The research names the principles; what shipping taught is that the
+  principles hold under iteration ONLY as tests — a later run tuning
+  copy would otherwise reintroduce a streak in adjective form. Second
+  finding: the campfire postcard (rec 2's optional piece) turned out to
+  double as the project's own art instrument — the frame a player would
+  share is the frame the critique waves judge, so share-surface quality
+  and press-frame quality are one budget, not two.
 
 ## Recommendations, ranked by fit
 
