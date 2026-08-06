@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 92 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 93 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass)
 
@@ -39,6 +39,32 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-06 (run 93) — WAVE-12 BLIND PANEL: 4.65,
+  FLAT vs wave 11's 4.73 (waves 10-12: 4.61/4.73/4.65 — a plateau
+  at ~4.66; the quick-knob frontier is EXHAUSTED).** Lens means
+  (w11): colour 5.10 (5.23), value 4.82 (5.07), emotion 4.76
+  (4.74), silhouette 4.31 (4.54), composition 4.88 (4.81), mobile
+  4.04 (3.99). Frames stable: 07/04/06 top, 03 worst 3.77. WHAT
+  CLOSED: the clone-stamp fault is GONE from the lists (variants
+  worked); the ghost band shrank to a side mention. WHAT THE
+  PLATEAU IS MADE OF — every remaining family needs a BIG pass, a
+  decision, or the harness: (1) "light lives only in the sky; the
+  ground never changes hue with the hour" + "vegetation crushes to
+  hueless black at warm hours" — the hour-relighting of the LAND,
+  i.e. the colour script's enacting work at last (166/168 family,
+  multi-run); (2) low-sun shadow bands STILL top of silhouette —
+  run 84 closed the shader knobs; the presentation decision (sun
+  floor vs acceptance) now blocks this family; (3) one-shape
+  vocabulary (shrub≈rock≈boulder convex lumps — geometry
+  vocabulary, 169); (4) NPC mannequins (150); (5) one-camera +
+  unattended ground plane (rig/harness); (6) mobile chrome
+  (staff anchoring, text plates, tap affordance — HUMAN-flagged
+  design decisions, three waves running). RECOMMENDATION for the
+  next runs: stop knob-hunting; take 168 (finishing pass: 0.8
+  render scale + code-generated 3D-LUT — the references' unifier,
+  touches families 1 and 4 at once) as the next arc, then 150.
+  Full verdicts in the run-93 workflow output.
 
 - **HANDOFF, 2026-08-06 (run 92) — 149 second piece: the
   cross-blade kills the chevron.** The wedge fan was the cause
