@@ -1,8 +1,8 @@
 # STATE
 
-Run counter: 89 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 90 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
-runs 82+ are the third overnight loop)
+runs 82+ are the third overnight loop; run 90 was the consolidation pass)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -39,6 +39,29 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-06 (run 90) — CONSOLIDATION (drift control,
+  ~10th run; last was 61).** DESIGN.md reread against the code:
+  the core mechanic (tap the travelling staff, no-fail, notation
+  never wrong) is what ships; no drift found; changelog honest.
+  PILLAR-5 RESEARCH REFRESH — what the game now does about each
+  ranked recommendation: (1) campfire bookend SHIPPED via 159
+  (tonight's page + tomorrow's skyline); (2) shared road SHIPPED
+  (152 name + traveller lines, 153 postcard); (3) songbook wear-in
+  first slice SHIPPED (154, diary facts only); (4) mementos first
+  slice SHIPPED (155, ✽ lines, no counts); (5) welcome-back
+  SHIPPED (156, existence-only, bans swept); (6) family bench OPEN
+  (157 — the one remaining, arc-sized, wants human profile-UX
+  view); (7) instruments-as-finite-arc standing. New finding
+  appended to the research: the kind-ritual principles held under
+  iteration ONLY as test-enforced vocabulary bans, and the
+  postcard doubles as the project's art instrument (share quality
+  = press quality, one budget). Repo sweep: no conflict markers,
+  ROADMAP done-entries current, tests 1209 green, build green.
+  The visual trajectory is finally up (wave 11 4.73); the queue
+  ahead: 149 scatter, 166 noon accents, 150 faces, 157 (human),
+  the mobile-chrome decisions (human), 168/169 (the two big v1.1
+  passes), v1.3 (176-178).
 
 - **HANDOFF, 2026-08-06 (run 89) — ghost band round 2: the paper
   honours its own header at last.** PAPER_ALPHA 0.62 → 0.50 (the
