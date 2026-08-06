@@ -2910,6 +2910,26 @@ full verdict map and the measure-first suspicion list):
     exact row sample (target: the y 800-1000 band keeps S ≥ ~0.25 in
     the violet family) and judged on re-shot 12/13; NOT more key
     amount, NOT albedo work, NOT the value cliff (structure).
+    **THE SCATTER LEVER REFUTED SAME RUN (run 106), twice more, and
+    the family re-attributed.** Widening lowSun's below-horizon fade
+    (-0.22,0 → -0.30,-0.06; dusk moves from 30-55% to near-full
+    scatter): the band byte-identical. Enriching the dusk fog's
+    chroma ×1.8 luma-pinned (0x8a7c96 → 0x9178a7, the daylight-fog
+    move): byte-identical again. Both REVERTED — nothing unverified
+    ships. The row pattern is the tell the first reading missed: the
+    grey rows ALTERNATE with warm-lit rows (y900 S0.32 warm, y950
+    S0.06), so the "slate band" is the raking band STRIPES — and at
+    dusk sunHeight = max(0, -0.14) = 0 gates every cast-shadow
+    colour term (castShade, CAST_SHADOW_SKY) to zero by
+    construction, while the stripes themselves are most plausibly
+    the terrain's BAKED tone field, the same family the run-67
+    shadowcast ablation exposed at noon ("the big diagonals are NOT
+    shadows"). This is the 144/169 value-ladder family wearing dusk
+    light, and its lever is a presentation decision (the tone
+    field's dusk chroma), not a lighting knob. Three refuted levers
+    is the stopping rule; the next attempt on this family should
+    START with shadowcast.mjs on the 12 pose to partition
+    band-ownership before touching anything.
     The family's second site (wave 14: "noon-green bushes under a
     saffron dawn sky" in 01; "bushes stay forest green inside a fully
     golden wash" in 05/12): hourKeyMode gains a LOW-SUN band —

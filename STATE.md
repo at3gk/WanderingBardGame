@@ -41,6 +41,20 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 106) — the seam's scatter lever
+  refuted twice; family re-attributed to the baked tone field.**
+  Widened lowSun fade: byte-identical. Enriched dusk fog ×1.8:
+  byte-identical. Both reverted. The tell: the grey rows ALTERNATE
+  with warm rows — the "slate band" is the raking stripes, and at
+  dusk sunHeight=0 gates every cast-shadow colour term off by
+  construction; the stripes are most plausibly the BAKED terrain
+  tone field (run-67's noon finding, now at dusk) — the 144/169
+  family, a presentation decision, not a lighting knob. Full
+  refutation ledger in ROADMAP 185. Next attempt: START with
+  shadowcast.mjs on the 12 pose. No code shipped (measurement +
+  reverts). GitHub outage ongoing; PR #228 carries runs 104-106's
+  docs when it lands.
+
 - **HANDOFF, 2026-08-06 (run 105) — the 12/13 seam measured; the
   night key is structurally innocent; the lever is scatter.** Row
   sample across the seam (numbers in ROADMAP 185): a legitimate
