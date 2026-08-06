@@ -40,6 +40,19 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 99) — 185 piece 2: the air gets its
+  colour back.** The three daylight fog colours chroma-scaled 1.6
+  about their exact lumas (S ~0.27 → ~0.40 each; hexes and the
+  arithmetic in ROADMAP 185) — the same value-pinned hue lever
+  sky.ts's fog comments record using twice before, taken one step
+  further because wave 13 still read "hueless cutouts". 10-tablet's
+  distance now reads as blue woods; 11 carries hue under morning
+  fog; golden/night byte-identical. All gauges PASS, 1229 tests.
+  Visual count since wave 13: TWO (98 land key, 99 this) — wave 14
+  due after at most one more visual task. Remaining 185 pieces:
+  10's cloud medium mismatch, the white building, noon-village
+  accents.
+
 - **HANDOFF, 2026-08-06 (run 98) — 185 piece 1: the daylight land
   key.** Wave 13's five-frame "engine default daylight" family
   answered at its root: a chroma-plane attraction in painterly binds

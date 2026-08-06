@@ -2867,6 +2867,20 @@ full verdict map and the measure-first suspicion list):
     the lerp-to-sky hueless distance (fog hue authorship), the cloud
     medium mismatch on 10, the unhued white building, noon-village
     accents. 1229 tests (+8), build green.
+    **Piece 2 (2026-08-06, run 99): the air gets its colour back.**
+    The "hueless cutout distance" half of the family, fixed with the
+    lever sky.ts's own fog comments already licensed twice: the three
+    daylight fog colours chroma-scaled 1.6 about their EXACT lumas
+    (morning 0xa4c3e3 → 0x94c6f9 S0.278 → 0.406; noon 0xa9c8e8 →
+    0x99cbfe S0.272 → 0.398; afternoon 0xd2c299 → 0xdbc280 S0.271 →
+    0.415) — value untouched for the third time, because every value
+    argument in those comments (distance sits below the sky, above
+    the treeline) still binds. ASH's distance is a SATURATED blue;
+    ours was half-way. Frames: 10-tablet's far treeline reads as
+    blue woods instead of grey-lavender cutouts; 11's distance
+    carries hue under the morning fog; carrying hours untouched
+    (golden/night gauges byte-identical again). All poses PASS.
+    1229 tests, build green.
 
 181. **Smoke as soft forms.** The campfire smoke still reads as a stack
     of hard-edged translucent polygons ("a hovering boulder", "a render

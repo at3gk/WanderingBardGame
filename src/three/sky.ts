@@ -248,8 +248,16 @@ export const SKY_KEYS: SkyKey[] = [
      * are the three that have to carry aerial perspective; a grey haze
      * subtracts saturation from the distance instead of replacing it with
      * the colour of air.
+     *
+     * Second step along the same lever (wave 13, task 185): the panel still
+     * read the daylight distance as "hueless cutouts, a straight lerp to
+     * sky" — the first rotation was real but half-sized against reference
+     * air (ASH's distance is a saturated blue). Chroma scaled 1.6 about the
+     * SAME luma: 0xa4c3e3 → 0x94c6f9, L190.8 → 191.1, S0.278 → 0.406.
+     * Value untouched for the third time, for the same reason as the first
+     * two.
      */
-    fog: 0xa4c3e3,
+    fog: 0x94c6f9,
     /*
      * Down from 0.62 rad and round from 0.6, and this is the change that
      * gives the morning frame a landscape instead of a lawn.
@@ -366,7 +374,9 @@ export const SKY_KEYS: SkyKey[] = [
     // the palest sky to lose it against. Then rotated, L195.6 to L195.7 and
     // S0.107 to S0.272 — the flattest hue in the file, on the frame with the
     // longest sightlines and so the most aerial perspective to carry.
-    fog: 0xa9c8e8,
+    // Second step with morning's (wave 13): 0xa9c8e8 → 0x99cbfe, luma
+    // pinned, S0.272 → 0.398.
+    fog: 0x99cbfe,
     /*
      * Sixty degrees was the worst case of the problem described under
      * morning: at that height a flat field and a hillside differ by almost
@@ -422,7 +432,9 @@ export const SKY_KEYS: SkyKey[] = [
     // was as neutral as noon's while sitting under a warm horizon, so the
     // haze was pulling the distance toward grey and the horizon toward cream
     // at the same time, which is two atmospheres.
-    fog: 0xd2c299,
+    // Second step with morning's (wave 13), mirrored warm: 0xd2c299 →
+    // 0xdbc280, luma pinned, S0.271 → 0.415.
+    fog: 0xdbc280,
     // Same correction, mirrored: the afternoon sun has crossed over, so it
     // goes further round rather than back. Tried at 0.27 and put back; see
     // the note under morning.
