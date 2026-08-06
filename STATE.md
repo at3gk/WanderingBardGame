@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 90 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 91 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass)
 
@@ -39,6 +39,20 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-06 (run 91) — 149 first piece: clones break,
+  litter thins.** Shrubs 1 → 4 silhouette seeds, rocks 1 → 3
+  (density/albedo/scale untouched — the shrub dark mass is noon-
+  gate load-bearing; all poses PASS), roadstone 0.5 → 0.34/m².
+  Frames: 10-tablet's shrub field finally varies; the near road
+  is texture, not speckle. 1209 tests. Remaining 149: grass-card
+  edge-on chevrons (geometry run — blades crossing at the root),
+  07 night spikes. Visual count since wave 11: THREE (89 paper,
+  91 this, plus 90 was consolidation) — wave 12 due after the
+  next visual task or two. Big rocks left on the art queue: 150
+  faces (emotion's structural ask), 168 finishing pass, 169
+  terrain hero pass; human-gated: 157, 161, mobile chrome
+  decisions, 127 real-hardware tiers.
 
 - **HANDOFF, 2026-08-06 (run 90) — CONSOLIDATION (drift control,
   ~10th run; last was 61).** DESIGN.md reread against the code:

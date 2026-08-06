@@ -2839,6 +2839,19 @@ full verdict map and the measure-first suspicion list):
     decals. References do broad tonal patches that disappear. Consider
     fewer, larger, softer tufts; merge pebble scatter into ground-tone
     variation; break 04's visible clone repetition.
+    **First piece done (2026-08-06, run 91): the clones break and the
+    litter thins.** Wave 11 named it exactly — "the same low ovoid
+    bush lump... visibly the identical polyhedron duplicated": grass
+    and ferns have had four silhouettes each since the meadow work,
+    but the two LARGE masses were single seeds. Shrubs now draw from
+    four seeds, rocks from three (density, albedo, scale untouched —
+    the shrub's dark mass is noon-gate load-bearing and did not move:
+    all poses PASS). Roadstone density 0.5 → 0.34/m², a third fewer
+    "litter-like pebble decals" now that the ruts and the along-road
+    tone drift carry the road's structure. 1209 tests. Remaining 149:
+    the grass-card edge-on chevron read (a geometry question — blades
+    crossing at the root — sized for its own run) and 07's black
+    night spikes (value at night, possibly the same fix).
 150. **Close-range character pass.** Near-frontal face is eyeless in 06
     (face marks exist — check angles/culling), rear head reads as a void
     cube (hair mass value), hat crown-brim gap leaks background in 02,
