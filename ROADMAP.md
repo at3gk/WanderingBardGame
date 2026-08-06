@@ -2885,7 +2885,31 @@ full verdict map and the measure-first suspicion list):
     the lerp-to-sky hueless distance (fog hue authorship), the cloud
     medium mismatch on 10, the unhued white building, noon-village
     accents. 1229 tests (+8), build green.
-    **Piece 4 (2026-08-06, run 103): the low warm sun gets its lean.**
+    **Seam measurement (2026-08-06, run 105 — measurement only, the
+    next run's brief).** The 12/13 gold-to-slate midground seam
+    sampled row-by-row (x 400-1400 of 3200, y 600-1100): it is TWO
+    stacked cliffs. (1) A value cliff at y~620-650 (V 0.80 → 0.38) —
+    the backlit-glow-to-unlit-land boundary, legitimate dusk
+    structure. (2) The real fault, a CHROMA cliff at y~780-800:
+    warm-dark S 0.35 → S 0.13 near-grey — the "cold slate" is not
+    cold, it is chroma-DEAD. Re-measured after the run-102/103 hour
+    key shipped: byte-identical, and the reason is structural — the
+    dusk ground albedo is warm-OLIVE, which is anti-family to the
+    violet night key, and the anti-family exemption that protects
+    the fire protects it too. The attraction cannot fix this family.
+    The actual mechanism is the complementary-multiplication drain
+    the codebase already names (FOG_HUE_LEAD's comment: "a
+    low-saturation cool mixed into a saturated warm lands on grey"):
+    warm-olive albedo × violet dusk ambient = grey. The codebase's
+    own answer to exactly this class is the ADDITIVE sky-scatter
+    term (SKY_SCATTER: "a warm albedo cannot be multiplied into a
+    cool shadow, so the shade side is given its colour additively")
+    — and LOW_SUN_SCATTER's note records it starving at low sun
+    once before. THE NEXT RUN'S LEVER: the scatter strength at and
+    below the horizon (dusk sun height ≈ −0.14), tuned against this
+    exact row sample (target: the y 800-1000 band keeps S ≥ ~0.25 in
+    the violet family) and judged on re-shot 12/13; NOT more key
+    amount, NOT albedo work, NOT the value cliff (structure).
     The family's second site (wave 14: "noon-green bushes under a
     saffron dawn sky" in 01; "bushes stay forest green inside a fully
     golden wash" in 05/12): hourKeyMode gains a LOW-SUN band —

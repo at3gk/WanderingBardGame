@@ -41,6 +41,23 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 105) — the 12/13 seam measured; the
+  night key is structurally innocent; the lever is scatter.** Row
+  sample across the seam (numbers in ROADMAP 185): a legitimate
+  value cliff (backlight boundary) plus the REAL fault, a chroma
+  cliff to S 0.13 near-grey at y~800. Re-measured after the hour
+  key shipped: byte-identical — the dusk ground albedo is warm-
+  olive, ANTI-FAMILY to the violet key, protected by the same
+  construction that protects the fire. The mechanism is the
+  recorded complementary-multiplication drain; the codebase's own
+  answer is the additive SKY_SCATTER term, starved at/below the
+  horizon. Next run: scatter strength at dusk, tuned against the
+  row sample (y 800-1000 keeps S ≥ ~0.25, violet family), judged
+  on 12/13. NOTE: a GitHub Actions MAJOR OUTAGE stalled PRs this
+  run — #228 (consolidation) is armed for automerge and will land
+  when runners recover; this entry ships with it. No game code
+  changed this run (measurement only).
+
 - **HANDOFF, 2026-08-06 (run 104) — CONSOLIDATION (drift control,
   ~10th run; last was 90, this one ran overdue at 14).** DESIGN.md
   reread against runs 91-103: every shipped change is rendering
