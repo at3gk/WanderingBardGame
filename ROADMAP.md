@@ -2094,6 +2094,25 @@ interviews) — read it before taking any task; its not-recommended list
     postcard A/B pairs must always be same-day. Remaining 166:
     per-biome noon accents + skylight ambient saturation (the
     "unmodulated khaki road" halves of wave 10's noon verdict).
+    **Piece 4 done (2026-08-06, run 87): the road changes colour
+    along its length.** Wave 10's loudest colour fault by area —
+    "the largest area of every frame is one unmodulated hue", the
+    khaki road at 50-60% of the day frames — against the reference's
+    dirt path running "rust into ochre into sienna within one
+    stretch". The road's base was a single flat `palette.road`
+    swatch from first metre to last while the meadow has carried a
+    ~170 m drift since the tone-field work. Same mechanism, road's
+    turn: two slow sines of s (~200 m and ~80 m, several mesh rows
+    per cycle so interpolation cannot kink; two independent
+    zero-corner drifts per meadowAt's crease lesson) drift the
+    track's base between the palette's own silt (`bank`, rust end,
+    ×0.30) and sun-baked pale (`grassDry`, ×0.20 — held short so
+    the road never meets the meadow at equal value). Shoulder
+    inherits through trackAt; ruts/crown unchanged on top. Frames:
+    03 and 08's roads read as travelled earth in stretches. All
+    gauges PASS (noon 3.81, village 2.76), 1209 tests. Remaining
+    166: per-biome noon accents proper (flowers/terracotta/water at
+    full voice) + skylight ambient saturation.
 167. **No framing without an anchor.** A composition rule the rig
     enforces: every camera mood guarantees a near-field anchor silhouette
     (telegraph props, landmarks, canopy mass), Monument Valley's

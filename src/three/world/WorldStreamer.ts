@@ -2616,6 +2616,31 @@ export class WorldStreamer {
       const roadColor = mixColor(palette.road, blendPalette.road, bandBlend);
       const shoulderColor = mixColor(palette.roadShoulder, blendPalette.roadShoulder, bandBlend);
       const bankColor = mixColor(palette.bank, blendPalette.bank, bandBlend);
+      /*
+       * The travelled earth changes colour along its length (task 166's
+       * noon piece, run 87). The meadow has carried a ~170 m tonal drift
+       * since the tone-field work, but the road — half the picture in
+       * every walking frame — was one flat swatch of `palette.road` from
+       * first metre to last, which is wave 10's loudest colour fault:
+       * "the largest area of every frame is one unmodulated hue". The
+       * reference's dirt path runs rust into ochre into sienna within a
+       * single stretch. Same mechanism as `meadowAt`'s broad term: slow
+       * sines of s (~200 m and ~80 m — both several mesh rows per cycle,
+       * so linear interpolation between rows cannot kink), drifting the
+       * track's base between the palette's own silt (`bank`, the warm
+       * rust end) and its sun-baked pale end (`grassDry`, held at the
+       * same short reach the lo/hi note below keeps, so the road never
+       * meets the meadow at equal value and stops reading as a road).
+       * Two independent zero-corner drifts rather than one branched one —
+       * the crease lesson in `meadowAt`'s own comment.
+       */
+      const warmDrift = 0.5 + 0.5 * Math.sin(s * 0.031 + 1.3);
+      const paleDrift = 0.5 + 0.5 * Math.sin(s * 0.077 + 4.2);
+      const roadBase = mixColor(
+        mixColor(roadColor, bankColor, warmDrift * 0.3),
+        dryColor,
+        paleDrift * 0.2,
+      );
       const laneY = sample.y;
 
       const river = this.riverAt(s);
@@ -2692,7 +2717,7 @@ export class WorldStreamer {
         // The packed earth's own base, before the road's structure is drawn
         // on it. Split out so the shoulder has something to blend toward.
         const trackAt = (): number => {
-          let track = roadColor;
+          let track = roadBase;
           // Two wheel ruts, darker and slightly sunken-looking. The road
           // reads as travelled rather than paved because of these, and
           // there is now a vertex sitting exactly on each one.

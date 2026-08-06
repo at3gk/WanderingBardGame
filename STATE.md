@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 86 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 87 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop)
 
@@ -39,6 +39,24 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-06 (run 87) — 166 piece 4: the road changes
+  colour along its length.** The khaki-road fault (wave 10's
+  biggest-area colour verdict) fixed with meadowAt's own mechanism
+  applied to the track: two slow sines of s drift the road base
+  between palette silt (rust) and sun-baked pale, shoulder
+  inherits, ruts on top, value break against the meadow held.
+  Frames: 03/08 roads read as travelled earth in stretches. All
+  gauges PASS, 1209 tests. THREE VISUAL TASKS SINCE WAVE 10 (85
+  ridge bands, 86 staff paper, 87 this) — WAVE 11 IS DUE NEXT
+  ITERATION: re-download refs, same six lenses, same blind
+  protocol; compare against wave 10's structure (mean 4.61, 07
+  best 5.77, 03 worst 3.53; the three shipped fixes answer its
+  ghost-panel family, dissolved-horizon read, and unmodulated-road
+  fault — judge whether the families actually close). After the
+  panel: 166 noon accents proper, 184 problem 2 (design decision,
+  arguably human), 149 scatter patches. 161 and 127 remain human-
+  blocked; 157 remains arc-sized.
 
 - **HANDOFF, 2026-08-06 (run 86) — the staff ghost-panel was the
   paper's own opacity, and it is fixed.** Wave 10's new cross-lens
