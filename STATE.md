@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 85 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 86 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop)
 
@@ -39,6 +39,24 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-06 (run 86) — the staff ghost-panel was the
+  paper's own opacity, and it is fixed.** Wave 10's new cross-lens
+  family ("broad translucent white-grey slab behind the staff, no
+  edge, no caster" — silhouette/composition/mobile) measured to a
+  one-line cause: SongNotes' PAPER_ALPHA was 0.78 and its comment
+  claimed the INVERSE ("how much of the world reads through") — the
+  'veil' was three-quarters opaque, two staff-heights tall with its
+  designed margins, and the doc lie is why the fault survived three
+  waves. PAPER_ALPHA 0.78 → 0.62; INK_ALPHA, rule ink, note heads,
+  and every fade geometry untouched — the surfaces a child reads
+  did not move, pinned by the existing songNotes tests (1209 green).
+  Frames read: 01-dawn's slab is now breath-on-glass; 08-phone and
+  05-busk rules/discs fully legible; the veil finally is what its
+  design always claimed. Visual-task count since wave 10: TWO (85
+  ridge bands, 86 this) — WAVE 11 after one more visual task. Next
+  menu, evidence order: 166 noon accents (khaki road), 184's
+  re-aimed envelope lever (headgap), 149 scatter patches.
 
 - **HANDOFF, 2026-08-06 (run 85) — 166 piece 3: the horizon stops
   dissolving.** The three-wave "milky distance" family was ablated
