@@ -769,8 +769,18 @@ const PAPER = 0xdcdcd6;
  * while the world genuinely reads through it. The rules, barline and note
  * heads keep their own near-opaque ink — legibility of the things a child
  * reads is not spent here.
+ *
+ * 0.62 → 0.50 (run 89). Wave 11, same rubric: the band came back fainter
+ * but still top of the silhouette faults ("a broad milky translucent band
+ * top-to-bottom", six frames) — the near stretch of the lane subtends
+ * half a frame by construction, because it is the reading surface, so
+ * what extent cannot give, opacity must. Half is this file's own header
+ * language ("a veil at forty per cent") finally honoured within rounding;
+ * the geometry, margins, fades and every ink alpha stay untouched, and
+ * the sixth-line counterfeit pin only gets safer as the paper's own
+ * gradient shallows with its alpha.
  */
-const PAPER_ALPHA = 0.62;
+const PAPER_ALPHA = 0.5;
 const INK_ALPHA = 0.9;
 
 /**
