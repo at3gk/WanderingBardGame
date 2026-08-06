@@ -346,15 +346,34 @@ export class Traveller {
       // keeps the top of the silhouette in cloth and lets the face be the one
       // small light note it should be.
       const head = add(boxPart(0.185, 0.19, 0.18, 0.86), crown, 0, 0.67, 0.01);
-      const face = add(boxPart(0.1, 0.09, 0.05, 0.95), skin, 0, 0.73, 0.085);
+      /**
+       * The face is the elder's ONE light note, and it was not reading.
+       *
+       * Her palette notes record two rejected lightenings (shawl, hood) —
+       * both turned a dark seated figure into the brightest object on her
+       * side of the frame. The design that survived is "a dark mass with
+       * one small light note at the top", and measured against the golden
+       * busk that note did not exist: the face patch sat nearly flush with
+       * the hood (front at z 0.110 on eyes at 0.114), a tenth of the head's
+       * area, in the hood's own shade, on the shared skin material — at
+       * postcard distance she was the panel's "rock with a hood on" while
+       * the standing kinds read as people. So the patch is a fifth larger,
+       * stands a centimetre prouder of the hood so the low sun can find its
+       * edge, and takes its own material with the rim and floor pushed one
+       * step past the shared skin's — the same argument that material's
+       * comment already makes, applied to the one face that sits inside a
+       * hood. The hood, shawl and every palette value are untouched.
+       */
+      const faceSkin = solid(palette.skin, 0.85, 0.8);
+      const face = add(boxPart(0.12, 0.1, 0.06, 0.95), faceSkin, 0, 0.725, 0.092);
       // The same rounded eye the standing kinds get, and set further proud:
       // at z 0.106 on a face whose front is at 0.110 these stood two
       // millimetres out, which under the brim's shade is not enough relief to
       // catch an edge. See `faceMarkGeometry`.
       const eyes = [-1, 1].map((side) =>
-        add(faceMarkGeometry(0.028, 0.019, 0.014), gaze, side * 0.024, 0.786, 0.114),
+        add(faceMarkGeometry(0.028, 0.019, 0.014), gaze, side * 0.024, 0.786, 0.127),
       );
-      const mouth = add(faceMarkGeometry(0.032, 0.011, 0.012), gaze, 0, 0.751, 0.113);
+      const mouth = add(faceMarkGeometry(0.032, 0.011, 0.012), gaze, 0, 0.751, 0.126);
       this.headPivot.add(head, face, mouth, ...eyes);
       // The staff. Everything else about this figure is horizontal — a low
       // wide triangle is the whole idea — and a shape made only of horizontals
