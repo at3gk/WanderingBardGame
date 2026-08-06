@@ -753,8 +753,24 @@ const INK_SOFT_STEPS = 0.05;
  */
 const PAPER = 0xdcdcd6;
 
-/** How much of the world reads through the paper, and through the ink. */
-const PAPER_ALPHA = 0.78;
+/**
+ * Opacity of the paper and of the ink (these are plain alphas — the shader
+ * writes `vec4(color, vAlpha)` — and the old comment here claimed the
+ * inverse, which is how the next paragraph's fault survived three waves).
+ *
+ * Paper 0.78 → 0.62 (run 86). At 0.78 the "veil" was three-quarters opaque:
+ * a grey-white surface, two staff-heights tall with its designed margins,
+ * standing over a dark dawn road — and wave 10 read it under three lenses
+ * as "a broad translucent white-grey slab with no edge, no caster... a
+ * shader artifact, not a shape" (01/02/10). The slab is the paper's own
+ * saliency, not its geometry: the extent is the margin system doing its
+ * anti-signage job, so the honest knob is opacity. 0.62 keeps the veil's
+ * surface-not-cable purpose (the rules still visibly ride ON something)
+ * while the world genuinely reads through it. The rules, barline and note
+ * heads keep their own near-opaque ink — legibility of the things a child
+ * reads is not spent here.
+ */
+const PAPER_ALPHA = 0.62;
 const INK_ALPHA = 0.9;
 
 /**
