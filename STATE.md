@@ -40,6 +40,17 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 103) — 185 piece 4: the low warm sun
+  gets its lean.** hourKeyMode's third band: horizon-keyed, amount
+  0.22, breadth 0.5, sun heights 0.08-0.30 (dawn + golden in,
+  morning out, zero before the daylight rise). 05's bushes lean
+  olive-warm into the wash; cast-shadow coolness untouched (albedo-
+  side attraction). All gauges PASS. The hour-key system now covers
+  night/low-sun/high-sun with per-mode tests. Visual count since
+  wave 14: TWO (102 night, 103 this) — wave 15 after at most one
+  more visual task. Remaining 185: 12/13 midground seam, escape
+  hatches, noon-village accents. 1235 tests (+1), build green.
+
 - **HANDOFF, 2026-08-06 (run 102) — 185 piece 3: the ground takes
   the night.** Wave 14's seven-frame family answered at its clearest
   site: hourKeyMode (landKey.ts) points the key at the night sky's

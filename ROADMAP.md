@@ -2885,6 +2885,23 @@ full verdict map and the measure-first suspicion list):
     the lerp-to-sky hueless distance (fog hue authorship), the cloud
     medium mismatch on 10, the unhued white building, noon-village
     accents. 1229 tests (+8), build green.
+    **Piece 4 (2026-08-06, run 103): the low warm sun gets its lean.**
+    The family's second site (wave 14: "noon-green bushes under a
+    saffron dawn sky" in 01; "bushes stay forest green inside a fully
+    golden wash" in 05/12): hourKeyMode gains a LOW-SUN band —
+    key = the HORIZON's own warm colour, amount 0.22 (the gentlest of
+    the three modes; these hours carry themselves), breadth 0.5,
+    active for sun heights 0.08-0.30 (dawn ~0.16 and golden ~0.12
+    inside, morning out), fading to zero before the daylight biome
+    rise begins — no hour pulled two ways. Cast-shadow coolness
+    untouched by construction (the attraction is albedo-side; the
+    complement rule lives in lighting). Frames: 05's midground
+    bushes lean olive-warm into the wash; 01's greens calm. Golden
+    gauge 4.30 stops (was 4.32), hueSpread up a step, ALL PASS.
+    Remaining: 12/13's gold-to-slate midground seam (a different
+    fault — the seam is the fog/terrain band boundary, not albedo),
+    escape hatches, noon-village accents. 1235 tests (+1), build
+    green.
     **Piece 3 (2026-08-06, run 102): the ground takes the night.**
     Wave 14's dominant family ("the sky is graded, the ground is not"
     — a chlorophyll-green field under a violet night sky in 07)
