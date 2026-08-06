@@ -2885,6 +2885,20 @@ full verdict map and the measure-first suspicion list):
     the lerp-to-sky hueless distance (fog hue authorship), the cloud
     medium mismatch on 10, the unhued white building, noon-village
     accents. 1229 tests (+8), build green.
+    **Piece 5 (2026-08-06, run 108): the deep water follows the
+    hour.** The "escape hatch" family's biggest member (waves 13/14:
+    "rogue cyan/teal water and marsh materials that belong to no
+    frame's palette", 01/04/09/11): paintWater's SHALLOW end has
+    always been the horizon (the puddle entry's own argument — water
+    shows you the sky) but the deep end mixed toward palette
+    waterDeep at a FIXED hue, so a deep cell at golden hour stayed
+    teal inside a fully amber frame. Deep water is the same sky
+    attenuated by depth: the deep colour now leans 30% into the
+    hour's horizon before the mix runs — a near no-op at noon, a
+    warm lean at golden. 04's marsh pools read as cool notes inside
+    the wash instead of foreign tiles; the biome's waterDeep still
+    names the water's identity. All gauges PASS. 1235 tests, build
+    green.
     **Seam measurement (2026-08-06, run 105 — measurement only, the
     next run's brief).** The 12/13 gold-to-slate midground seam
     sampled row-by-row (x 400-1400 of 3200, y 600-1100): it is TWO

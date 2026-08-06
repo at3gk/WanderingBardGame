@@ -41,6 +41,16 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 108) — 185 piece 5: the deep water
+  follows the hour.** paintWater's deep end now leans 30% into the
+  hour's horizon (the shallow end always did — same argument, "water
+  shows you the sky", extended to depth). 04's rogue teal tiles read
+  as cool notes inside the amber wash. Gauges PASS, 1235 tests.
+  Visual count since wave 14: THREE (102 night, 103 low-sun, 108
+  this; 105-107 were measurement) — WAVE 15 DUE NEXT ITERATION,
+  pending the GitHub outage clearing so the backlog (PR #228,
+  runs 104-108) can land first.
+
 - **HANDOFF, 2026-08-06 (run 107) — shadowcast partition: the dusk
   shadows are INNOCENT; the grey band is lit ground crushed by the
   display transform.** Numbers in ROADMAP 185: shadows 17.6% of the

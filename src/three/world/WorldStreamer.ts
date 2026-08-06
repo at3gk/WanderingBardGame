@@ -1729,6 +1729,7 @@ export class WorldStreamer {
   private readonly scratchQuat = new Quaternion();
   private readonly scratchScale = new Vector3();
   private readonly scratchColor = new Color();
+  private readonly scratchDeep = new Color();
   private readonly upAxis = new Vector3(0, 1, 0);
   private readonly scratchNormal = new Vector3();
   private readonly scratchTilt = new Quaternion();
@@ -2451,6 +2452,22 @@ export class WorldStreamer {
   private paintWater(field: WaterField): void {
     const horizon = this.globals.uHorizonColor.value;
     const floor = luminanceOf(field.floorFrom) * field.floorScale;
+    /*
+     * The deep end follows the hour too. The shallow end has always been
+     * the horizon (the whole argument in the puddle's kind entry: water
+     * shows you the sky), but `toward` was the palette's waterDeep at a
+     * FIXED hue — and two blind waves named the result: "rogue cyan/teal
+     * water and marsh materials that belong to no frame's palette"
+     * (01/04/09/11), a teal tile sitting untouched inside a fully golden
+     * frame. Deep water is not a different substance from shallow water;
+     * it is the same sky attenuated by depth. So the deep colour leans
+     * 30% into the hour's horizon before the mix runs: at noon that is a
+     * near no-op (the horizon is already the pale blue the teal lives
+     * with), at golden it warms the deep end into the wash the way every
+     * real pond does at sunset. The palette's waterDeep keeps naming the
+     * biome's water identity; the hour just gets a vote it never had.
+     */
+    const deep = this.scratchDeep.copy(field.toward).lerp(horizon, 0.3);
 
     /*
      * The floor is one scale for the whole field, taken from its mean mix,
@@ -2468,7 +2485,7 @@ export class WorldStreamer {
     let meanMix = 0;
     for (let i = 0; i < field.mix.length; i++) meanMix += field.mix[i];
     meanMix /= Math.max(1, field.mix.length);
-    const reference = this.scratchColor.copy(horizon).lerp(field.toward, meanMix);
+    const reference = this.scratchColor.copy(horizon).lerp(deep, meanMix);
     const referenceLum = luminanceOf(reference);
     const lift = referenceLum < floor ? floor / Math.max(referenceLum, 0.0001) : 1;
 
@@ -2478,7 +2495,7 @@ export class WorldStreamer {
       : (field.mesh.geometry.attributes.color as BufferAttribute);
 
     for (let i = 0; i < field.mix.length; i++) {
-      const water = this.scratchColor.copy(horizon).lerp(field.toward, field.mix[i]);
+      const water = this.scratchColor.copy(horizon).lerp(deep, field.mix[i]);
       water.multiplyScalar(lift);
       water.r = Math.min(1, water.r);
       water.g = Math.min(1, water.g);
