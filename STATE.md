@@ -40,6 +40,22 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 96) — 150 audited and its live piece
+  fixed: the elder gets her light note.** The task's list was mostly
+  stale (bard face test-pinned long since; 06 frontal face reads; 02
+  "crown-brim gap" is the brim's own lit top face; 05 floating boxes
+  don't reproduce) — full audit in ROADMAP 150. The live symptom:
+  the elder read as a rock at every range because her design's "one
+  small light note at the top" didn't exist — face patch flush with
+  the hood, in its shade, shared material. Now a fifth larger, 1 cm
+  prouder, own lifted material; palettes untouched (her file's two
+  lamp rejections respected). Same-frame A/B also cleared the new
+  finishing grade of blame (pass-off crop equally dark). Re-shot
+  05/06: face note reads at postcard distance, no lamp. What 150
+  still owes if a wave asks: pose variety (stiffness), not anatomy.
+  Visual count since wave 12: TWO (95 finishing, 96 this) — WAVE 13
+  DUE after at most one more visual task. 1221 tests, build green.
+
 - **HANDOFF, 2026-08-06 (run 95) — 168 DONE: the finishing pass ships
   whole.** The wave-12 recommendation taken: scene renders into a
   half-float target at 0.8 scale, composited through a code-generated

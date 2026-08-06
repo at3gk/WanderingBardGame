@@ -2907,6 +2907,29 @@ full verdict map and the measure-first suspicion list):
     postcard distance — ASH's whole charm budget is one large white
     eye on a small sprite. A face readable at distance is a character-
     design decision, not a bug fix; try it behind a comparison shoot.
+    **Audit + second piece (2026-08-06, run 96).** The list re-measured
+    against the current build, because most of it predates the face
+    work that shipped inside Bard.ts/Traveller.ts iterations: the bard
+    HAS a test-pinned face (eyes/nose/mouth, clearance-pinned after the
+    buried-eyes fault); 06's near-frontal traveller face READS (eyes,
+    nose, brim — read off the shot frame); 02's "crown-brim gap" is the
+    brim's own lit top face seen from behind — correct hat anatomy, a
+    stale wave-5 read, no leak reproduced; the 05 floating boxes do not
+    reproduce (the cart's load sits on the tray). WHAT WAS STILL TRUE:
+    the elder read as "a rock with a hood on" at every range — her file
+    twice rejected lightening (lamp effect both times), and the design
+    that survived ("dark mass, one small light note at the top") had no
+    light note: the face patch sat flush with the hood, in its shade,
+    on the shared skin material. Fix inside her own design: patch a
+    fifth larger, a centimetre prouder so low sun finds its edge, own
+    material one step past shared skin (rim 0.85, floor 0.8); eyes and
+    mouth ride out with it. A/B same-frame crops + re-shot 05/06: the
+    light note exists at postcard distance, no lamp effect, palettes
+    untouched. ALSO measured en route: the finishing grade is NOT what
+    darkens her (pass-off crop identical) — her read is palette + hood
+    shade + backlit staging. Remaining 150, honestly: the mannequin
+    family is now stiffness/pose-variety, not anatomy — an idle-pose
+    piece if a wave asks again. 1221 tests, build green.
 
 143. **The road's soft edge.** Wave 3's ablation identified the road's
     soft-blended boundary against the grass as the biggest remaining
