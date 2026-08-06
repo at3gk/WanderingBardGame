@@ -2136,7 +2136,7 @@ export class RoadStage implements Stage {
       return;
     }
 
-    renderer.render(this.scene, this.camera);
+    this.app.renderFrame(this.scene, this.camera);
     const pixels = new Uint8Array(w * h * 4);
     gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
