@@ -6,6 +6,7 @@ import {
   LAND_KEY_RISE_START,
   NIGHT_KEY_BREADTH,
   NIGHT_KEY_MAX,
+  LOW_SUN_KEY_MAX,
   hourKeyMode,
   landKeyAmount,
 } from './landKey';
@@ -67,13 +68,25 @@ describe('hourKeyMode', () => {
     expect(mode.breadth).toBe(NIGHT_KEY_BREADTH);
   });
 
-  it('fades the night key out before dawn owns the frame', () => {
-    // Dawn's sun height is 0.16 — past NIGHT_KEY_OUT, so dawn (a carrying
-    // hour) gets zero from both modes.
-    const dawn = hourKeyMode(0.16);
-    expect(dawn.amount).toBe(0);
-    expect(dawn.breadth).toBe(0);
-    expect(dawn.source).toBe('biome');
+  it('gives dawn and golden the horizon key, gently', () => {
+    // Dawn's sun height is ~0.16, golden's ~0.12 — both inside the
+    // low-sun warm band (wave 14 named green-refusing-the-wash at both).
+    for (const y of [0.16, 0.12]) {
+      const mode = hourKeyMode(y);
+      expect(mode.source).toBe('horizon');
+      expect(mode.amount).toBeGreaterThan(0);
+      expect(mode.amount).toBeLessThanOrEqual(LOW_SUN_KEY_MAX);
+    }
+    // And the low-sun pull is the gentlest of the three modes — these
+    // hours carry themselves; the key only leans the greens.
+    expect(LOW_SUN_KEY_MAX).toBeLessThan(LAND_KEY_MAX);
+    expect(LOW_SUN_KEY_MAX).toBeLessThan(NIGHT_KEY_MAX);
+  });
+
+  it('is fully out of the warm band before the daylight rise begins', () => {
+    const handover = hourKeyMode(0.3);
+    expect(handover.source).toBe('biome');
+    expect(handover.amount).toBe(0);
   });
 
   it('hands over to the daylight biome key at high sun', () => {

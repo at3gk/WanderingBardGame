@@ -577,6 +577,7 @@ export function applyTimeOfDay(
   globals.uLandKeyAmount.value = keyMode.amount;
   globals.uLandKeyBreadth.value = keyMode.breadth;
   if (keyMode.source === 'sky') globals.uLandKeyColor.value.copy(state.zenith);
+  else if (keyMode.source === 'horizon') globals.uLandKeyColor.value.copy(state.horizon);
 
   if (sunLight) {
     sunLight.color.copy(state.sun);

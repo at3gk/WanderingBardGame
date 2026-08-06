@@ -88,27 +88,63 @@ export const NIGHT_KEY_MAX = 0.38;
 export const NIGHT_KEY_BREADTH = 0.65;
 /** Below this sun height the night key is fully in. */
 export const NIGHT_KEY_FULL = -0.06;
-/** Above this it is fully out; dawn/golden stay untouched between ramps. */
-export const NIGHT_KEY_OUT = 0.1;
+/** Above this it is fully out, handing over to the low-sun warm band. */
+export const NIGHT_KEY_OUT = 0.08;
+
+/**
+ * The low warm sun (wave 14, second site of the same family): "bright
+ * noon-green bushes and rocks under a saffron dawn sky" (01), "bushes
+ * stay forest green inside a fully golden wash" (05/12). The key is the
+ * HORIZON's own warm colour — the wash the panel says the greens refuse —
+ * and the pull is the gentlest of the three modes: these hours already
+ * carry themselves (the colour script's verdict stands for value); this
+ * only asks the albedo greens to lean toward the light everything else
+ * already obeys. The reference for what it should look like is 04's own
+ * praised foliage — "warm near-black silhouettes", aubergine — not
+ * saturated mid-green. Cast-shadow coolness is untouched by construction:
+ * the attraction acts on ALBEDO, and the complement rule lives in the
+ * lighting terms.
+ */
+export const LOW_SUN_KEY_MAX = 0.22;
+export const LOW_SUN_KEY_BREADTH = 0.5;
+/** The band: dawn (y≈0.16) and golden (y≈0.12) inside, morning out. */
+export const LOW_SUN_IN_START = 0.08;
+export const LOW_SUN_IN_FULL = 0.13;
+export const LOW_SUN_OUT_START = 0.24;
+export const LOW_SUN_OUT_END = 0.3;
 
 export interface HourKeyMode {
   /** Pull strength for the shader. */
   amount: number;
   /** Orthogonal-capture weight; 0 restores the pure daylight cone. */
   breadth: number;
-  /** Where the key colour comes from: the biome's grass, or the sky. */
-  source: 'biome' | 'sky';
+  /** Where the key colour comes from: biome grass, night sky, or horizon. */
+  source: 'biome' | 'sky' | 'horizon';
 }
 
-/** The whole schedule: night sky-key below the horizon, biome key at high sun. */
+function smooth01(t: number): number {
+  const x = Math.min(1, Math.max(0, t));
+  return x * x * (3 - 2 * x);
+}
+
+/**
+ * The whole schedule: night sky-key below the horizon, horizon-key at low
+ * warm sun, biome key at high sun, with each mode fading to zero before
+ * the next begins — no hour is ever pulled two ways at once.
+ */
 export function hourKeyMode(sunHeight: number): HourKeyMode {
   if (sunHeight < NIGHT_KEY_OUT) {
-    const t = Math.min(
-      1,
-      Math.max(0, (NIGHT_KEY_OUT - sunHeight) / (NIGHT_KEY_OUT - NIGHT_KEY_FULL)),
-    );
-    const eased = t * t * (3 - 2 * t);
-    return { amount: NIGHT_KEY_MAX * eased, breadth: NIGHT_KEY_BREADTH, source: 'sky' };
+    const t = smooth01((NIGHT_KEY_OUT - sunHeight) / (NIGHT_KEY_OUT - NIGHT_KEY_FULL));
+    return { amount: NIGHT_KEY_MAX * t, breadth: NIGHT_KEY_BREADTH, source: 'sky' };
+  }
+  if (sunHeight < LOW_SUN_OUT_END) {
+    const rise = smooth01((sunHeight - LOW_SUN_IN_START) / (LOW_SUN_IN_FULL - LOW_SUN_IN_START));
+    const fall = 1 - smooth01((sunHeight - LOW_SUN_OUT_START) / (LOW_SUN_OUT_END - LOW_SUN_OUT_START));
+    return {
+      amount: LOW_SUN_KEY_MAX * Math.min(rise, fall),
+      breadth: LOW_SUN_KEY_BREADTH,
+      source: 'horizon',
+    };
   }
   return { amount: landKeyAmount(sunHeight), breadth: 0, source: 'biome' };
 }
