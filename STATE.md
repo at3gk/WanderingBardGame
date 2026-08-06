@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 84 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 85 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop)
 
@@ -39,6 +39,22 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-06 (run 85) — 166 piece 3: the horizon stops
+  dissolving.** The three-wave "milky distance" family was ablated
+  to its true owner: not tree haze (fogScale 0.85 → 0.3 levels),
+  not the fog keys (−5% value → 1 level), but the SKY DOME's own
+  painted ridge bands. ridgeTint values 0.79/0.64 → 0.62/0.48 put
+  the painted range 12.5 levels under the air on the same-day
+  frame; horizon/fog keys untouched, band order by construction,
+  all gauges PASS, 1209 tests. 10-tablet's horizon now reads land-
+  meets-air; dawn stays gentle. HARNESS LESSON: the UTC day rolled
+  mid-run and silently changed the road under the postcards —
+  A/B measurement pairs must be SAME-DAY; re-baseline after any
+  midnight-UTC crossing. Remaining 166: noon accents + skylight
+  saturation (the khaki-road half of wave 10's noon verdict).
+  THREE visual tasks since wave 10 will be reached after two more —
+  the running count is one (this run; run 84 shipped no pixels).
 
 - **HANDOFF, 2026-08-05 (run 84) — dawn-smear ablation: ALL THREE
   shader levers measured and refuted; no code shipped.** The full
