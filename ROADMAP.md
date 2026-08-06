@@ -2852,6 +2852,19 @@ full verdict map and the measure-first suspicion list):
     the grass-card edge-on chevron read (a geometry question — blades
     crossing at the root — sized for its own run) and 07's black
     night spikes (value at night, possibly the same fix).
+    **Second piece done (2026-08-06, run 92): the cross-blade.** The
+    wedge fan (which fixed the asterisk read) was the chevron's
+    cause: all five blades inside one ~70° wedge means an instance
+    rotation that turns the wedge edge-on turns the whole tuft into
+    five floating lines. The LAST blade now stands across the
+    prevailing direction — every camera bearing sees at least one
+    blade's face, the other four keep the clump's lean, same blade
+    count and stream order (zero triangle cost). The wedge test was
+    re-derived, not weakened: the first four blades still pin < 2.6
+    rad, and the whole tuft pins < 3.0 (a rosette's back-to-back
+    blades would exceed it). Frames: 03's foreground tufts read as
+    grounded clumps. All gauges PASS, 1209 tests. Remaining 149:
+    07's night spikes only (value-at-night question).
 150. **Close-range character pass.** Near-frontal face is eyeless in 06
     (face marks exist — check angles/culling), rear head reads as a void
     cube (hair mass value), hat crown-brim gap leaks background in 02,

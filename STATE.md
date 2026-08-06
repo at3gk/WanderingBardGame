@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 91 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 92 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass)
 
@@ -39,6 +39,18 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-06 (run 92) — 149 second piece: the
+  cross-blade kills the chevron.** The wedge fan was the cause
+  (all five blades one heading family → whole tuft goes edge-on
+  together); the last blade now stands across the prevailing
+  direction, so every bearing sees a face. Same count, same stream
+  order, zero cost; the wedge test re-derived (4 blades < 2.6 rad,
+  whole tuft < 3.0 — a rosette still fails it). Gauges PASS, 1209
+  tests. 149 remaining: 07 night spikes only. Visual count since
+  wave 11: FOUR (89 paper, 91 scatter, 92 this) — WAVE 12 IS DUE
+  NEXT ITERATION. After it: 166 noon accents, 150 faces, 168/169
+  big passes; human-gated items unchanged.
 
 - **HANDOFF, 2026-08-06 (run 91) — 149 first piece: clones break,
   litter thins.** Shrubs 1 → 4 silhouette seeds, rocks 1 → 3

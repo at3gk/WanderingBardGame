@@ -158,15 +158,22 @@ describe('grassTuftGeometry', () => {
     }
   });
 
-  it('fans the blades into a wedge, not a full rosette', () => {
+  it('fans a wedge plus one cross-blade, never a full rosette', () => {
     for (const seed of SEEDS) {
-      const spread = headingSpread(bladeHeadings(grassTuftGeometry(seed)));
-      // A tuft with a prevailing lean keeps its blades inside a wedge. Five
-      // blades spread evenly around the whole circle — the old behaviour —
-      // put two of them back to back and spread close to pi. The shipped
-      // fan is ~1.0-1.5 rad of wedge, widened by per-blade jitter and by the
-      // sideways curl at the tip; 2.6 is that total with room to tune inside.
-      expect(spread).toBeLessThan(2.6);
+      const headings = bladeHeadings(grassTuftGeometry(seed));
+      // Task 149's cross-blade: the LAST blade stands across the prevailing
+      // direction so no camera bearing sees the whole tuft edge-on (the
+      // "detached chevron" four panel waves named). The first four keep the
+      // wedge and its claim: a clump that leans somewhere.
+      const wedgeOnly = headingSpread(headings.slice(0, headings.length - 1));
+      expect(wedgeOnly).toBeLessThan(2.6);
+      // The whole tuft, cross-blade included, still spans well under a
+      // rosette: the cross sits ~pi/2 off the wedge's centre, so the total
+      // stays inside a half-turn plus jitter. Back-to-back blades — the
+      // asterisk failure this family of tests exists for — would spread
+      // close to pi and past this line.
+      const all = headingSpread(headings);
+      expect(all).toBeLessThan(3.0);
     }
   });
 

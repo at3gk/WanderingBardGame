@@ -723,7 +723,23 @@ export function grassTuftGeometry(seed = 7): BufferGeometry {
   for (let b = 0; b < bladeCount; b++) {
     // -0.5 .. +0.5 across the fan, so the wedge is centred on `prevailing`.
     const spread = b / (bladeCount - 1) - 0.5;
-    const angle = prevailing + spread * wedge + (rand() - 0.5) * 0.36;
+    /*
+     * The last blade stands ACROSS the prevailing direction (task 149,
+     * run 92). The wedge fixed the asterisk read but created the fault
+     * four panel waves called "a single bent card... a detached chevron
+     * hanging in space": with every blade inside one ~70° wedge, an
+     * instance rotation that turns the wedge edge-on to the camera turns
+     * the WHOLE tuft edge-on — five cards seen as five lines, and the
+     * arch apex of the nearest one floating as a chevron. One blade at
+     * ninety degrees guarantees a facing surface from every bearing
+     * without reopening the rosette: four blades still agree about the
+     * weather, and the fifth is the stray every real clump has. Same
+     * blade count, same draws, same stream order.
+     */
+    const angle =
+      b === bladeCount - 1
+        ? prevailing + Math.PI / 2 + (rand() - 0.5) * 0.36
+        : prevailing + spread * wedge + (rand() - 0.5) * 0.36;
     // Ankle-to-shin on a 1.8 m bard: 0.17–0.28 m here, and 0.14–0.37 m once
     // the instance scale has had its way. Earlier passes at 0.36 m put the
     // tips at the bard's knee and the meadow read as an uncut hayfield.
