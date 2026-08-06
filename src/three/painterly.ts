@@ -62,6 +62,14 @@ export interface PainterlyGlobals {
   uWindDirection: IUniform<Vector3>;
   uExposure: IUniform<number>;
   /**
+   * The land key (landKey.ts): the biome's green-family chroma the
+   * daylight hours bind near-family albedos toward, and how hard. Amount
+   * is zero outside high sun by that module's schedule, so the carrying
+   * hours never see it.
+   */
+  uLandKeyColor: IUniform<Color>;
+  uLandKeyAmount: IUniform<number>;
+  /**
    * The hearth: one warm point source, shared by every painterly surface.
    *
    * There is exactly one because the whole art direction rests on there
@@ -185,6 +193,8 @@ export function createPainterlyGlobals(): PainterlyGlobals {
     uWindStrength: { value: 1 },
     uWindDirection: { value: new Vector3(1, 0, 0.35).normalize() },
     uExposure: { value: 1 },
+    uLandKeyColor: { value: new Color(0x568752) },
+    uLandKeyAmount: { value: 0 },
     uHearthPosition: { value: new Vector3(0, 0, 0) },
     uHearthColor: { value: new Color(0xff9a4e) },
     uHearthStrength: { value: 0 },
@@ -1133,6 +1143,8 @@ uniform vec3 uEmissive;
 uniform float uEmissiveStrength;
 uniform vec3 uSunDirection;
 uniform vec3 uSunColor;
+uniform vec3 uLandKeyColor;
+uniform float uLandKeyAmount;
 uniform vec3 uSkyColor;
 uniform vec3 uHorizonColor;
 uniform vec3 uGroundBounce;
@@ -1447,6 +1459,27 @@ void main() {
   #endif
 
   albedo = mix(albedo, albedo * uColorVariant, smoothstep(0.35, 0.75, grain) * uGrain);
+
+  // --- the land key ------------------------------------------------------
+  // The hour relights the land (landKey.ts carries the argument). An
+  // attraction in the chroma plane, not a tint: albedos whose chroma
+  // points within 90 degrees of the biome key's rotate part-way toward
+  // it; everything pointing away — the terracotta road, the bard's red,
+  // flowers, firelight — is untouched by construction, which is the
+  // palette's one-family-one-dissenter rule enforced by the hour. Luma
+  // is preserved exactly; chroma magnitude is preserved up to the chord
+  // of the rotation, so the pull can only bind hues, never brighten or
+  // saturate them.
+  if (uLandKeyAmount > 0.0) {
+    float albLuma = dot(albedo, LUMA_W);
+    vec3 albChroma = albedo - albLuma;
+    float albMag = length(albChroma);
+    vec3 keyChroma = uLandKeyColor - dot(uLandKeyColor, LUMA_W);
+    vec3 keyDir = keyChroma / max(length(keyChroma), 1e-4);
+    float sim = dot(albChroma, keyDir) / max(albMag, 1e-4);
+    float pull = uLandKeyAmount * max(sim, 0.0);
+    albedo = max(vec3(0.0), albLuma + mix(albChroma, keyDir * albMag, pull));
+  }
 
   // --- banded diffuse ----------------------------------------------------
   float ndl = dot(N, L);

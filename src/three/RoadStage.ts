@@ -42,6 +42,7 @@ import { Group, Scene, Vector3 } from 'three';
 import type { App, Stage } from './App';
 import { CameraRig, type CameraMood } from './CameraRig';
 import { Sky, applyTimeOfDay, skyStateAt } from './sky';
+import { LAND_KEYS } from './landKey';
 import { roadSurfaceHeight, TERRAIN_REACH, WorldStreamer } from './world/WorldStreamer';
 import { Bard } from './actors/Bard';
 import { ContactShadow } from './actors/ContactShadow';
@@ -2557,6 +2558,13 @@ export class RoadStage implements Stage {
   render(_alpha: number, frameDt: number): void {
     const state = skyStateAt(this.shownDayFraction);
     applyTimeOfDay(this.app.globals, state, this.app.sun);
+    // The land key's colour is the biome's; its strength is the hour's
+    // (set inside applyTimeOfDay). Together: daylight binds the green
+    // ladder toward the family of wherever the bard stands.
+    this.app.globals.uLandKeyColor.value.setHex(
+      LAND_KEYS[biomeAt(this.road, this.journey.s) as keyof typeof LAND_KEYS] ??
+        LAND_KEYS.forest,
+    );
     this.sky.apply(state, this.app.globals.uTime.value);
 
     // Raise or lower tomorrow's road with the phase. A linear ramp rather

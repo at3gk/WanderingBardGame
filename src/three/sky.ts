@@ -34,6 +34,7 @@ import {
   type IUniform,
 } from 'three';
 import type { PainterlyGlobals } from './painterly';
+import { landKeyAmount } from './landKey';
 // The one number the shader and the profile generator must agree on. Imported
 // rather than written twice: a silent mismatch here would read as a skyline
 // that is *nearly* tomorrow's road, which is the worst possible failure for a
@@ -550,6 +551,10 @@ export function applyTimeOfDay(
   globals.uFogColor.value.copy(state.fog);
   globals.uSunDirection.value.copy(state.sunDirection);
   globals.uExposure.value = state.exposure;
+  // The daylight land key rides the sun's height (landKey.ts): zero at
+  // the carrying hours, full at high sun. The key COLOUR is the stage's
+  // to set — it knows the biome; this function only knows the hour.
+  globals.uLandKeyAmount.value = landKeyAmount(state.sunDirection.y);
 
   if (sunLight) {
     sunLight.color.copy(state.sun);
