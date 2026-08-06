@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 87 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 88 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop)
 
@@ -39,6 +39,36 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-06 (run 88) — WAVE-11 BLIND PANEL: mean 4.73,
+  UP from wave 10's 4.61 with the SAME rubric text — the first
+  upward move in four waves, and it rose exactly where runs 85-87
+  aimed.** Lens means (w10 in parens): colour 5.23 (5.20), value
+  5.07 (4.70, +0.37 — the ridge + road work), composition 4.81
+  (4.58), emotion 4.74 (4.51), silhouette 4.54 (4.46), mobile 3.99
+  (4.21, DOWN). Frames: 07 best 5.48, 04 5.33, 06 5.12 (+0.37);
+  03 still worst but 4.05 (+0.52 — its road drift was explicitly
+  read as "the one colour idea"). FAMILY LEDGER: (1) ghost band
+  NOT closed — silhouette still names "a broad milky translucent
+  band top-to-bottom" in 01/02/03/08; fainter but the EXTENT (full
+  frame height at near distance) is the remaining offender — next
+  lever is the paper's near-tail reach/margins, not more alpha
+  alone. (2) Dissolved horizon REDUCED (value +0.37) but 10's far
+  trees still read near sky value — remaining piece is the fogged
+  GEOMETRY band between real trees and dome ridges. (3) Khaki road
+  PARTIALLY answered (03 colour 3.5→4.6, drift registered; noon
+  amplitude could rise). (4) Mobile's drop is the SAME three
+  wave-10 families sharpened (staff crops/collisions = 146/184-2;
+  unplated labels = 175's undecided idle-opacity item; 07's "tap
+  here" affordance — HUMAN-flagged), not new damage from the paper
+  change: judges fault crops and affordances, never rule
+  readability. (5) Emotion's asks are structural: faceless figures
+  (150), empty-world props, one-road postcard monotony (partly the
+  HARNESS's one-camera artifact — consider varying postcard poses
+  before spending art runs on it), and "note discs read as debug
+  gizmos, unshaded and unintegrated with the 3D lighting" — a
+  concrete art note for the notation family. Full verdicts in the
+  run-88 workflow output (six opus judges, 574k tokens).
 
 - **HANDOFF, 2026-08-06 (run 87) — 166 piece 4: the road changes
   colour along its length.** The khaki-road fault (wave 10's
