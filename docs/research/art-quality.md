@@ -350,6 +350,27 @@ texture maps (the generated-LUT route makes the exception unnecessary);
 and chasing Sky-style character tech (proprietary-engine territory;
 the panels are not asking for fur).
 
+## Findings from shipped work (appended by consolidation runs)
+
+- 2026-08-06 (runs 95-103, the finishing pass + hour-key arc): three
+  facts the note didn't predict. (1) A render-target pipeline moves
+  ALPHA BLENDING into linear light (three applies no tone mapping to
+  RT renders, so the display transform lands after compositing) —
+  every hand-tuned alpha in the game shifts the day a post pipeline
+  ships. The paper veil survived; the check belongs in any future
+  post-work's verification list. (2) The generated-LUT grade this
+  note recommended registered with blind judges on its first wave
+  (colour became the top lens; "hued darks" praised) — but a LUT
+  alone cannot fix "the sky is graded, the ground is not": the
+  hour-relighting the panels actually wanted needed an albedo-side
+  hue attraction with an hour schedule (landKey.ts), which is
+  authorship the grade cannot express. (3) Aerial-perspective chroma
+  has a ceiling the reference numbers didn't state: the distance must
+  never out-saturate the foreground it sits behind — a fog step that
+  measured reference-plausible in isolation (S 0.40) was read blind
+  as "a fog bug" because the FOREGROUND at that hour sat lower.
+  Relative, not absolute, saturation is the constraint.
+
 ## Source access notes
 
 Reached directly (fetched): adamgryu's effects thread (ThreadReader)

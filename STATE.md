@@ -1,8 +1,9 @@
 # STATE
 
-Run counter: 94 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 104 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
-runs 82+ are the third overnight loop; run 90 was the consolidation pass)
+runs 82+ are the third overnight loop; run 90 was the consolidation pass;
+runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -39,6 +40,29 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-06 (run 104) — CONSOLIDATION (drift control,
+  ~10th run; last was 90, this one ran overdue at 14).** DESIGN.md
+  reread against runs 91-103: every shipped change is rendering
+  (finishing pass, hour-key system, fog), harness (postcard poses),
+  character craft (elder), or HUD chrome (captions) — presentation
+  and readouts of the one tap mechanic; zero new runtime deps;
+  bundle 890 kB of 5 MB; no conflict markers; no drift found.
+  ROUGH EDGE FIXED: the critique rubric has been lost and
+  reconstructed TWICE (waves 10, 13) because it lived only in
+  session workflow scripts — it is now `docs/critique-rubric.md`
+  (exact lens texts, judge prompt, protocol, and a same-rubric score
+  ledger; waves 13/14 ran on it verbatim, future waves copy from
+  there). PILLAR-5 REFRESH: no returning-player surface changed
+  since run 90's full recommendation-by-recommendation refresh
+  except the road greeting's hour word (run 100 — kind, honest
+  wording; no banned pattern involved); 157 remains the one open
+  ranked recommendation (human-gated). THREE FINDINGS appended to
+  docs/research/art-quality.md: post-pipelines move alpha blending
+  into linear light (check every tuned alpha); a LUT cannot express
+  hour-relighting (the attraction was needed); aerial-perspective
+  chroma is bounded by the FOREGROUND's, not by reference absolutes.
+  Tests 1235 green, build green.
 
 - **HANDOFF, 2026-08-06 (run 103) — 185 piece 4: the low warm sun
   gets its lean.** hourKeyMode's third band: horizon-keyed, amount
