@@ -2339,6 +2339,24 @@ iPad household needs none of it; logged under Blocked on human.
     question flagged for the human: child-wins says a door should
     look tappable, the no-menus idiom resists), and the orientation
     recommendation audit.
+    **Caption piece (2026-08-06, run 100), aimed by wave 13's mobile
+    lens ("every caption is unbacked hairline italic — it fails the
+    moment the background is light or busy", nine frames).** Three
+    steps inside the idiom plus one diegetic fix: (1) the journal
+    wash's peak alpha 0.34 → 0.44 — down from the original 0.55 that
+    read as a panel, up from the retreat that four waves have called
+    invisible; still radial, still sky-toned; (2) the caption takes
+    font-weight 500 (the lens's exact word was "hairline" — a book
+    serif's italic at 400 thins to threads at phone size); (3) the
+    caption's compact shrink eased 0.88 → 0.94 (corners can afford
+    0.88; the one line of prose is read at arm's length). (4) The
+    road greeting's hour word now follows the SHOWN sky — run 94's
+    find ("this morning" over a dusk frame): composed in a new
+    sayRoadAside() from shownDayFraction, and pose() recomposes it
+    when it moves the clock, so a resumed evening save (and every
+    posed frame) greets honestly. Frames read: 08's caption stands
+    on a quiet pool against bright sky; 12 reads "this evening" over
+    dusk. 1229 tests, build green.
 
 ## The v0.9 queue: "the road home" (human-set, 2026-07-31)
 

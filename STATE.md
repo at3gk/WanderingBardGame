@@ -40,6 +40,19 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 100) — 175 caption piece: the prose
+  stands on its wash, and the greeting follows the sky.** Wave 13's
+  nine-frame "unbacked hairline italic" answered inside the idiom:
+  wash peak 0.34 → 0.44 (between the original panel-feeling 0.55
+  and the invisible retreat), caption weight 500, compact shrink
+  0.88 → 0.94. Plus run 94's diegetic find fixed: the road greeting
+  derives its hour word from shownDayFraction (sayRoadAside), and
+  pose() recomposes it — 12-dusk now reads "this evening". HUD-only
+  + one RoadStage method; walk-on door affordance and orientation
+  audit remain the human-flagged rest of 175. Visual count since
+  wave 13: THREE (98 land key, 99 fog, 100 this) — WAVE 14 DUE NEXT
+  ITERATION. 1229 tests, build green.
+
 - **HANDOFF, 2026-08-06 (run 99) — 185 piece 2: the air gets its
   colour back.** The three daylight fog colours chroma-scaled 1.6
   about their exact lumas (S ~0.27 → ~0.40 each; hexes and the
