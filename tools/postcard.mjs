@@ -39,6 +39,28 @@ const SHOTS = [
   { name: '08-phone-portrait', s: 420, day: 0.5, phase: 'walking', viewport: [390, 844] },
   { name: '09-phone-landscape', s: 900, day: 0.82, phase: 'busking', viewport: [844, 390] },
   { name: '10-tablet', s: 700, day: 0.7, phase: 'walking', viewport: [1024, 768] },
+  /*
+   * 11-13 (run 94): three poses the critique never saw. Three panel waves
+   * running called the sheet "one camera repeated as if it were ten
+   * compositions" — which was partly the HARNESS's own fault: eight of ten
+   * shots were the walking follow-cam on the same three daylight hours.
+   * These add what the game actually has and the sheet never showed: a
+   * second landscape composition in the morning, and the walk under a dusk
+   * sky on both desktop and phone (no walking shot existed past day 0.7).
+   *
+   * A walking pose's `day` must AGREE with its `s`: the journey model
+   * derives the hour from distance walked, so a posed mismatch is walked
+   * back within the settle (measured — a night pose at s 300 shot as
+   * morning). That also means the moonlit walk-on leg cannot be posed by
+   * this tool at all (it is a separate leg state, not an hour); if it is
+   * ever to face a judge it needs its own pose plumbing first.
+   *
+   * 01-10 are PINNED for cross-wave frame comparability: never renumber,
+   * retime, or reframe them; add, don't touch.
+   */
+  { name: '11-morning-vista', s: 500, day: 0.35, phase: 'vista', viewport: [1600, 900] },
+  { name: '12-dusk-walk', s: 1300, day: 0.92, phase: 'walking', viewport: [1600, 900] },
+  { name: '13-dusk-walk-phone', s: 1250, day: 0.91, phase: 'walking', viewport: [390, 844] },
 ];
 
 /**

@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 93 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 94 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass)
 
@@ -39,6 +39,22 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-06 (run 94) — the postcard sheet grows three
+  poses (harness-only; no game code).** Three waves called the
+  sheet "one camera repeated as if it were ten compositions" —
+  partly the harness's own artifact. Added 11-morning-vista (a
+  second landscape hour), 12-dusk-walk and 13-dusk-walk-phone (the
+  walk past day 0.7, never before judged — fireflies, raked dusk
+  light). 01-10 PINNED untouched for cross-wave comparability.
+  TWO FINDS while doing it: (1) a walking pose's day is DERIVED
+  from s by the journey model — a mismatched pose is walked back
+  during settle (measured: night at s300 shot as morning); the
+  moonlit leg cannot be posed at all without new plumbing —
+  recorded in postcard.mjs. (2) the road-name aside says "this
+  morning" whatever the hour (12-dusk shows it at dusk) — small
+  diegetic wording bug for a future retention-queue touch-up.
+  Wave 13 judges 13 frames; per-frame history holds for 01-10.
 
 - **HANDOFF, 2026-08-06 (run 93) — WAVE-12 BLIND PANEL: 4.65,
   FLAT vs wave 11's 4.73 (waves 10-12: 4.61/4.73/4.65 — a plateau
