@@ -40,6 +40,44 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-06 (run 97) — WAVE-13 BLIND PANEL: mean 4.38
+  over 13 frames, with TWO instrument caveats that make the cross-
+  wave mean weak evidence: the rubric text was RECONSTRUCTED again
+  (the wave 10-12 text lived in the old session's workflow output),
+  and this is the first wave judging the run-94 sheet (13 frames vs
+  wave 12's 10 — the new 12-dusk-walk debuted SECOND-BEST at 5.10).**
+  Lens means: colour 5.22, value 5.10, mobile 4.19, composition 4.07,
+  silhouette 4.02, emotion 3.67. Frames: 07 best 5.28, 12 next 5.10,
+  04 5.02; worst 08 3.73, 03 3.88, 02 4.00 (the stable ranking
+  holds). WHAT THE FINISHING PASS BOUGHT (run 95, judged blind for
+  the first time): colour is now the TOP lens; "hued darks —
+  aubergine and plum-brown rather than black", "blue-violet shadow
+  ribbons — a genuine complementary temperature story", dawn/golden
+  sky ladders "reference-grade"; and the three-wave GHOST-BAND family
+  is ABSENT — no lens names the milky slab (linear blending did not
+  re-brighten the paper; watch item closed). THE STRUCTURE NOW:
+  (1) STRONGEST cross-lens agreement on record — colour and value
+  independently name the SAME FIVE frames (02/03/08/10/11, exactly
+  the daylight hours) as "engine defaults": no dominant hue field,
+  mid-key compression, lerp-to-sky aerial perspective, rogue teal
+  water. The sunset frames are authored; daylight is not. This is
+  run 93's family (1) — the hour-relighting of the LAND — confirmed
+  with a frame list; NEXT ARC. (2) Emotion worst lens: "nobody lives
+  here" (no evidence of other lives in the world), NPC mannequins
+  (05/06/09 — the run-96 elder note is sub-pixel at postcard range),
+  the caption prose "carries emotion the image refuses to supply".
+  (3) Composition: one-camera-thirteen-times (harness artifact,
+  standing), no foreground plane, dead corners. (4) Mobile: unbacked
+  hairline captions, tap-affordance chrome (HUMAN-flagged, four
+  waves), D/E glyph blob at phone size. (5) Silhouette: bard's
+  unarticulated box stack, rock≈bush one outline (169), conifer
+  picket fence. KEEPS: campfire staging + prose voice, hat-brim
+  signature at every size, 03's S-bend road, caption slot
+  consistency. Full verdicts in the run-97 workflow output (six opus
+  judges, 617k tokens; refs re-downloaded — 7 ASH + 5 SF STEAM
+  GAMEPLAY frames, first wave with real SF gameplay since wave 7).
+  dayKey 2026-08-06 (same day as wave 12's road).
+
 - **HANDOFF, 2026-08-06 (run 96) — 150 audited and its live piece
   fixed: the elder gets her light note.** The task's list was mostly
   stale (bard face test-pinned long since; 06 frontal face reads; 02
