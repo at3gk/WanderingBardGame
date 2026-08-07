@@ -2329,7 +2329,27 @@ iPad household needs none of it; logged under Blocked on human.
     headless desktop GL says nothing; standing real-iPad playtest
     item in STATE). Boot-smoked live (high/shadowed on this desktop,
     zero errors). 1156 tests green (+7), build green.
-175. **Touch-target and orientation audit.** WCAG 2.2 24px minimum /
+175. **Touch-target and orientation audit.**
+    **Corner-presence piece (2026-08-07, run 117), aimed by wave 16's
+    mobile lens.** Two of its five families answered inside the
+    no-panel idiom: (1) "the coin counter is thin cream with no
+    weight, haloed by a grey artifact" — the artifact IS run 100's
+    trailing wash, an ellipse spanning a purse box sized for the
+    longest readout while the content right-justifies into a corner
+    of it; the purse now gets its own tighter wash (radiusX 34 at
+    78%, hugging the mark + digits) and fontWeight 600, so the
+    backing reads as the sky going quiet behind the numbers rather
+    than "a stray unlit quad" (04/09/12's smudge). (2) The corner
+    labels take fontWeight 500 with the caption (run 100's own move,
+    never extended to the corners it was derived from — "hairline"
+    was the lens's word both times). Frame read: 08's counter and
+    both corner labels hold their stroke on a bright sky; the purse
+    smudge is gone. NOT taken from the same list, with reasons in
+    STATE: the "sub-threshold counter" arithmetic (the judge scales
+    desktop shots to phone width — the phone frames render it at
+    17-18 CSS px), and the chevron tap-affordance question (needs
+    its own design pass, not a weight knob). 1239 tests, build
+    green. WCAG 2.2 24px minimum /
     Apple 44pt on every HUD control at phone sizes; verify the landscape
     recommendation for the road; palm-rejection kindness already exists
     (stray taps are free) — pin it with a test.

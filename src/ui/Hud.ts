@@ -183,15 +183,18 @@ const INK_SOFT = 'rgba(240, 226, 198, 0.84)';
  * two-layer text shadow underneath doing more of the contrast work. The card
  * should read as the sky going quiet behind the words, not as a panel.
  */
-function journalWash(r: number, g: number, b: number, atX = 50): string {
+function journalWash(r: number, g: number, b: number, atX = 50, radiusX = 49): string {
   const stop = (alpha: number) => `rgba(${r}, ${g}, ${b}, ${alpha})`;
   // Peak 0.44: down from the original 0.55 (a panel), up from the 0.34
   // retreat — four waves running read the card as "unbacked hairline
   // italic that fails the moment the sky is light", judged on phones in
   // a bright room, which is exactly the case the shadow alone cannot
   // carry. Still radial, still sky-toned, still nothing to clip.
+  // radiusX exists for the purse (wave 16): an ellipse spanning a box much
+  // wider than its right-justified content reads as "a stray unlit quad"
+  // floating beside the words — the backing must hug the thing it backs.
   return (
-    `radial-gradient(49% 50% at ${atX}% 50%, ${stop(0.44)} 0%, ${stop(0.26)} 46%, ${stop(0)} 100%)`
+    `radial-gradient(${radiusX}% 50% at ${atX}% 50%, ${stop(0.44)} 0%, ${stop(0.26)} 46%, ${stop(0)} 100%)`
   );
 }
 
@@ -210,6 +213,13 @@ const JOURNAL_WASH = journalWash(34, 22, 24);
  */
 const CORNER_WASH_LEADING = journalWash(34, 22, 24, 32);
 const CORNER_WASH_TRAILING = journalWash(34, 22, 24, 68);
+// The purse's own wash: the coin mark + digits sit right-justified in a
+// box sized for the longest possible readout, so the general trailing
+// ellipse peaked in empty space — wave 16's mobile lens read it as "a
+// soft grey elliptical smudge... a stray unlit quad" in three frames.
+// Tighter and pushed to the content's end, it reads as the sky going
+// quiet behind the numbers, which was always the design.
+const CORNER_WASH_PURSE = journalWash(34, 22, 24, 78, 34);
 
 /** The corners' text shadow: the journal's two-layer, not the old single. */
 const CORNER_SHADOW = '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 12px rgba(20, 14, 18, 0.7)';
@@ -310,7 +320,11 @@ export class Hud {
       gap: '7px',
       transition: 'opacity 900ms ease',
       textShadow: CORNER_SHADOW,
-      background: CORNER_WASH_TRAILING,
+      background: CORNER_WASH_PURSE,
+      // Weight, not size: wave 16 called the counter "thin cream with no
+      // weight" — the one persistent stat should hold its line without
+      // growing into a badge.
+      fontWeight: '600',
     });
     this.coinsBox.appendChild(coinMark());
     this.coinsValue = element('span', { letterSpacing: '0.02em' });
@@ -371,6 +385,9 @@ export class Hud {
     });
     this.instrumentName = element('span', {
       fontStyle: 'italic',
+      // 500 like the caption (run 100's move): a book serif's italic at 400
+      // thins to threads at phone size — the lens's word was "hairline".
+      fontWeight: '500',
       color: INK_SOFT,
       whiteSpace: 'nowrap',
       overflow: 'hidden',
@@ -422,6 +439,8 @@ export class Hud {
     });
     this.songName = element('span', {
       fontStyle: 'italic',
+      // 500 with the caption and the instrument corner — see instrumentName.
+      fontWeight: '500',
       color: INK_SOFT,
       whiteSpace: 'nowrap',
       overflow: 'hidden',

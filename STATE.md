@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 116 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 117 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass;
@@ -41,6 +41,22 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 117) — 175 corner presence: the purse
+  wash hugs its numbers, the corners hold their stroke.** Wave 16's
+  mobile-lens "grey elliptical smudge" identified as run 100's own
+  trailing wash spanning a box its content right-justifies inside;
+  the purse now has a tight wash (radiusX 34 at 78%) + weight 600,
+  and the corner labels take the caption's weight 500. Two judge
+  claims deliberately NOT obeyed, logged in ROADMAP 175: the
+  "sub-threshold counter" arithmetic double-shrinks (desktop shots
+  judged at phone width — the real phone frames render 17-18 CSS
+  px), and chevron affordances need a design pass, not a knob.
+  1239 tests, build green. Visual count since wave 16: THREE (114
+  trough, 116 value floor, 117 this; 115 was measurement) — **WAVE
+  17 IS DUE NEXT ITERATION**, judging: the value floor on 05/09/12/
+  13 (does "midtones scooped"/"navy voids" move?), the trough on
+  01/02, and the corner chrome on 04/08/09.
 
 - **HANDOFF, 2026-08-07 (run 116) — the low-sun value floor ships;
   the 144/169 crush family finally has its lever in the build.**
