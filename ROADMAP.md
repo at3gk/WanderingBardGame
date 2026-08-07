@@ -2530,6 +2530,32 @@ top task fits its energy.
     state, each able to see the other's journal PAGES (never anything
     gradable). Arc — scaffold-state separation needs care. (
     scaffoldStorage/journey save + Hud.)
+    **Piece 1 done (2026-08-07, run 121): the storage layer, with a
+    zero-migration design.** `core/profiles.ts` (pure, 6 tests):
+    BOOKMARK 0 IS THE LEGACY KEYS, byte for byte — `bookmarkKey()`
+    passes `wb.journey.v1`/`wb.learn.v1`/`wb.idle.v1` through
+    unchanged for the first bookmark and suffixes `.b1` only for the
+    second, so an existing family's save is never migrated, moved, or
+    rewritten; a stale service-worker build interoperates; the
+    task-171 keepsake keeps meaning what it meant (its export reads
+    the ACTIVE bookmark's records but writes base names, so a
+    keepsake stays bookmark-agnostic). The active pointer
+    (`wb.bookmark.v1`) is REMOVED rather than written when 0 is
+    chosen — absent IS bookmark 0, so pre-bookmark builds can never
+    disagree about whose save the legacy keys hold. All nine storage
+    call sites (journey/scaffold/idle/keepsake) route through
+    bookmarkKey at ACCESS time. THE SWITCH CONTRACT, found by
+    probing before writing the UI: a pointer moved under a LIVE
+    session makes that session's unload save land in the NEW
+    bookmark's keys — the design's one data-loss shape. The UI piece
+    must switch the way the keepsake import restores (force-save,
+    guard the save paths, move the pointer, reload) — contract
+    recorded in profiles.ts. Verified live across three sessions:
+    bookmark 0 walks to 121 m → bookmark 1 boots FRESH at 4 m →
+    bookmark 0 resumes at 125 m; keys cleanly separated. NOT yet
+    reachable by players (no UI). Remaining 157: the bookmark door
+    (title-card family, the guarded switch), then the shared journal
+    pages. 1246 tests (+6), build green.
 
 The wave-5 queue, from the wave-4 panel (mean ~5.5; take these next):
 

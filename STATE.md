@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 120 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 121 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -59,6 +59,20 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 121) — 157 piece 1: the bookmark
+  storage layer, zero-migration.** Bookmark 0 IS the legacy keys
+  (passthrough by construction — nothing to migrate, stale builds
+  interop, keepsakes stay bookmark-agnostic); bookmark 1 suffixes
+  `.b1`; the pointer is removed, not written, for 0. Nine call sites
+  routed. THE SWITCH CONTRACT (probed before the UI exists): a
+  pointer moved under a live session lands that session's unload
+  save in the NEW bookmark — piece 2's UI must force-save, guard
+  saves (keepsake's restoring-flag pattern), move the pointer, then
+  reload. Verified live across three sessions: 121 m → fresh 4 m →
+  resume 125 m, keys separated. Not yet player-reachable. 1246
+  tests (+6). Next: 157 piece 2 (the bookmark door) or 186 piece 2
+  (more creatures).
 
 - **HANDOFF, 2026-08-07 (run 120) — CONSOLIDATION (drift control,
   every ~10th run; last was 104).** Drift check over runs 105-119:

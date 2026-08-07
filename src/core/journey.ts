@@ -48,6 +48,8 @@
  * happened"; compare the fields they care about.
  */
 
+import { bookmarkKey } from './profiles';
+
 export type Phase = 'waking' | 'walking' | 'busking' | 'encounter' | 'resting';
 
 export interface JournalEntry {
@@ -683,7 +685,7 @@ export function saveJourney(state: object, force = false, nowMs: number = Date.n
       fests: Math.round(j.festivals),
       journal: j.journal.map((e): StoredEntry => [round(e.s, 1), round(e.dayFraction, 4), e.kind, e.line]),
     };
-    store.setItem(JOURNEY_STORAGE_KEY, JSON.stringify(record));
+    store.setItem(bookmarkKey(JOURNEY_STORAGE_KEY), JSON.stringify(record));
   } catch {
     // Quota, private browsing, partitioned storage. The walk continues; the
     // player simply resumes at dawn next time, which is the honest failure.
@@ -715,7 +717,7 @@ export function loadJourney(dayKey: string): JourneyState | null {
   if (!store) return null;
 
   try {
-    const raw = store.getItem(JOURNEY_STORAGE_KEY);
+    const raw = store.getItem(bookmarkKey(JOURNEY_STORAGE_KEY));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<Stored> | null;
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
