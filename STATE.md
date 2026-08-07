@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 121 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 122 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -59,6 +59,17 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 122) — 157 piece 2: the bookmark door.**
+  The title card's third, quietest door switches bookmarks by piece
+  1's exact contract (persist → restoring guard → pointer → reload);
+  the card also shows on a fresh bookmark when the other one holds a
+  journey (its only way back), greeting honestly ("A fresh page on
+  the same bench"). Verified with real taps: walked → fresh 4 m →
+  resumed 154 m, save intact. The family feature is now LIVE — a
+  parent and child genuinely share the bench. Remaining 157: piece 3,
+  the shared journal pages. 1246 tests, build green. Next: 157 piece
+  3, 186 creatures piece 2, or the wave-17 design asks.
 
 - **HANDOFF, 2026-08-07 (run 121) — 157 piece 1: the bookmark
   storage layer, zero-migration.** Bookmark 0 IS the legacy keys
