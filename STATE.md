@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 113 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 114 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass;
@@ -41,6 +41,20 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 114) — 185 piece 8: first light reaches
+  the ground.** Wave 16's licensed lever enacted: NIGHT_KEY_OUT
+  0.08 → 0.0 and LOW_SUN_IN 0.08-0.13 → 0.0-0.06, so pose 01's sun
+  (0.060, run-111's probe) gets the horizon key at full strength
+  instead of a fading violet at ~0.02. 01 re-shot: 39% of pixels
+  move +5.9° warm, the meadow takes the salmon wash; 06-dusk
+  byte-identical (handover continuity by construction); ALL GAUGES
+  PASS unchanged; 1236 tests. Visual count since wave 16: ONE.
+  Next candidates: the emotion queue's 150 family (faceless
+  protagonist / navy NPC voids at focal point — emotion is the
+  BOTTOM-TWO lens two waves running with silhouette), mobile's
+  unbacked-HUD-text (175 family), or 166's skylight ambient
+  saturation. 12/13 dusk stays parked (144/169).
 
 - **HANDOFF, 2026-08-07 (run 113) — WAVE-16 BLIND PANEL: mean 4.45,
   the same-rubric block reads 4.38 / 4.33 / 4.40 / 4.45 — still flat

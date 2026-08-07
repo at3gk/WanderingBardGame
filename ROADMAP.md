@@ -2907,6 +2907,24 @@ full verdict map and the measure-first suspicion list):
     the lerp-to-sky hueless distance (fog hue authorship), the cloud
     medium mismatch on 10, the unhued white building, noon-village
     accents. 1229 tests (+8), build green.
+    **Piece 8 (2026-08-07, run 114): first light reaches the ground —
+    the handover trough closes.** Wave 16's dominant colour fault
+    ("the hour lives in the sky and never reaches the ground",
+    01/02/12/13) cross-checked against run 111's probe: pose 01's sun
+    height is 0.060, which sat BETWEEN night's fade-out (ending 0.08)
+    and the warm band's rise (starting 0.08) — a violet key at amount
+    ~0.02 under a salmon sky. The schedule reshaped: NIGHT_KEY_OUT
+    0.08 → 0.0 (night ends AT the horizon — once the sun is up, the
+    ground keys to the horizon's wash, which is what a sunrise is)
+    and LOW_SUN_IN 0.08-0.13 → 0.0-0.06 (full by first light).
+    Continuity by construction: both modes exactly zero at 0.0.
+    Measured: 01 re-shot moves 39% of pixels +5.9° warm — the meadow
+    leans sage-rose inside the salmon wash instead of "midday
+    olive-green no dawn light has touched"; 06-dusk (sun below
+    horizon) BYTE-IDENTICAL; all gauges PASS unchanged. 12/13's dusk
+    side of the same wave-16 family stays parked with 144/169 (the
+    value-floor attribution runs 105-107 proved). 1236 tests (+1),
+    build green. Judge on re-shot 01/02 at wave 17.
     **Piece 7 (2026-08-07, run 111): the pull stops draining what it
     binds, and the committed hours get their grip.** Wave 15's other
     family ("terrain green refuses the hour", 7 frames, identical in

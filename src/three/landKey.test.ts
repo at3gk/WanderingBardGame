@@ -91,6 +91,20 @@ describe('hourKeyMode', () => {
     expect(LOW_SUN_KEY_MAX).toBeLessThanOrEqual(0.5);
   });
 
+  it('covers first light — the trough wave 16 named is closed', () => {
+    // The 01-dawn postcard's sun height, measured by run 111's probe.
+    // Under the old schedule this sat between night's fade-out (0.08)
+    // and the warm band's rise (0.08-0.13) and got a violet key at
+    // amount ~0.02 — "a midday olive-green that no dawn light has
+    // touched". Once the sun is up, the ground keys to the horizon.
+    const firstLight = hourKeyMode(0.06);
+    expect(firstLight.source).toBe('horizon');
+    expect(firstLight.amount).toBe(LOW_SUN_KEY_MAX);
+    // Continuity at the handover: both modes are zero exactly at 0.
+    expect(hourKeyMode(0).amount).toBe(0);
+    expect(hourKeyMode(-1e-9).amount).toBeLessThan(0.01);
+  });
+
   it('is fully out of the warm band before the daylight rise begins', () => {
     const handover = hourKeyMode(0.3);
     expect(handover.source).toBe('biome');

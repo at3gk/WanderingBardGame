@@ -88,8 +88,20 @@ export const NIGHT_KEY_MAX = 0.38;
 export const NIGHT_KEY_BREADTH = 0.65;
 /** Below this sun height the night key is fully in. */
 export const NIGHT_KEY_FULL = -0.06;
-/** Above this it is fully out, handing over to the low-sun warm band. */
-export const NIGHT_KEY_OUT = 0.08;
+/**
+ * Above this it is fully out, handing over to the low-sun warm band.
+ *
+ * 0.0, down from 0.08 (wave 16). The old handover left a TROUGH: a sun
+ * at height 0.06 — which is exactly where the 01-dawn postcard sits,
+ * measured by run 111's probe — got a fading NIGHT key (violet, amount
+ * ~0.02) while the horizon band it visibly stands under got nothing.
+ * Wave 16's dominant colour fault named the result across four waves of
+ * phrasing: "the hour lives in the sky and never reaches the ground —
+ * a midday olive-green that no dawn light has touched" (01). Night mode
+ * now ends AT the horizon: once the sun is up, the ground's key is the
+ * horizon's own wash, which is what a sunrise is.
+ */
+export const NIGHT_KEY_OUT = 0.0;
 
 /**
  * The low warm sun (wave 14, second site of the same family): "bright
@@ -117,9 +129,16 @@ export const NIGHT_KEY_OUT = 0.08;
  */
 export const LOW_SUN_KEY_MAX = 0.45;
 export const LOW_SUN_KEY_BREADTH = 0.5;
-/** The band: dawn (y≈0.16) and golden (y≈0.12) inside, morning out. */
-export const LOW_SUN_IN_START = 0.08;
-export const LOW_SUN_IN_FULL = 0.13;
+/**
+ * The band: first light (y≈0.06), dawn (y≈0.16) and golden (y≈0.12)
+ * inside, morning out. The rise now starts AT the horizon and is full
+ * by 0.06 (wave 16's trough fix — see NIGHT_KEY_OUT): the 01-dawn
+ * pose's sun sits at 0.060, and it was getting a key amount of ~0.02.
+ * Continuity at the handover is by construction: both modes are exactly
+ * zero at sun height 0.0.
+ */
+export const LOW_SUN_IN_START = 0.0;
+export const LOW_SUN_IN_FULL = 0.06;
 export const LOW_SUN_OUT_START = 0.24;
 export const LOW_SUN_OUT_END = 0.3;
 
