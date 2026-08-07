@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 111 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 113 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass;
@@ -41,6 +41,42 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 113) — WAVE-16 BLIND PANEL: mean 4.45,
+  the same-rubric block reads 4.38 / 4.33 / 4.40 / 4.45 — still flat
+  at the noise floor (±0.3 binds), but the LENS STRUCTURE moved:
+  COLOUR IS NOW THE TOP LENS (5.46, from bottom-two territory in
+  waves 13-14) and the run 110-112 fixes registered BY NAME — the
+  road called "the one element correctly at its hour" (01), "rust
+  road threading between them" (04, scored 7), the flower drifts
+  "the only warm accent below the horizon" (12), golden 04/05 at 7
+  with the sky ramp "reference-grade" (05).** Lens means: colour
+  5.46, value 4.92, composition 4.65, emotion 3.92, mobile 4.15,
+  silhouette 3.58. Top frames 08 (5.25), 04 (5.00), 07 (4.92);
+  worst 02 (3.67), 09 (3.83), 03/10 (4.08). THE DOMINANT COLOUR
+  FAULT NARROWED to exactly the hours the key schedule leaves
+  uncovered — "the hour lives in the sky and never reaches the
+  ground" (01/02/12/13): run-111's own probe already measured pose
+  01 at sunHeight 0.060, INSIDE the night→low-sun handover trough
+  (amount ≈ 0.02 — the low-sun band starts at 0.08), and 12/13 are
+  night-mode where warm-olive is anti-family (the parked 144/169
+  value family, runs 105-107). CONCRETE NEXT LEVER, licensed by
+  this wave + run-111's arithmetic: reshape the handover so dawn's
+  actual sun height gets the horizon key (extend LOW_SUN_IN below
+  0.08 / overlap the fade), judged on re-shot 01/02. OTHER LENS
+  FAMILIES (symptoms credible, causes suspect — ablate first):
+  emotion's top fault "the protagonist has no face and never turns
+  around" + 05/09 NPCs "unlit navy voids at the focal point" (150
+  family, NPC chroma identity repeat); silhouette's "broadleaf
+  trees silhouette as boulders / lump-on-a-stick"; mobile's
+  "zero-chrome text: unbacked cream HUD on arbitrary sky" (175
+  family); value's "bimodal frame, midtones scooped out" (the
+  144/169 dusk-midground value floor, third independent
+  confirmation); composition's "corridor lock — one camera, one
+  eye path" (rig family). Full verdicts:
+  scratchpad wave16-verdicts.json (session-local), 6 opus judges,
+  ~620k tokens, dayKey 2026-08-07. Rubric ledger updated (waves
+  15/16 rows added).
 
 - **HANDOFF, 2026-08-07 (run 112) — 166 noon-accent piece: the
   flowers become drifts.** The village-noon accent gap enacted as one
