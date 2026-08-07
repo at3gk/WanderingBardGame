@@ -256,6 +256,17 @@ export class Traveller {
   private readonly headPivot = new Group();
   private readonly materials: ShaderMaterial[] = [];
 
+  /**
+   * Where the constructor left the body's forward tilt and the head's height,
+   * so run 132's listening posture can be added *on top of* a kind's built-in
+   * pose rather than overwriting it. Only the elder has a non-zero lean (she
+   * is built hunched at 0.12), and only the standing kinds have a headPivot
+   * lifted off the floor — the elder's head parts carry their own absolute
+   * heights, so her pivot sits at zero and a bob still works from there.
+   */
+  private baseLeanX = 0;
+  private baseHeadY = 0;
+
   /** Phase offset so a row of listeners does not breathe in unison. */
   private readonly phase: number;
   private elapsed = 0;
@@ -727,6 +738,8 @@ export class Traveller {
     }
 
     this.group.add(this.body);
+    this.baseLeanX = this.body.rotation.x;
+    this.baseHeadY = this.headPivot.position.y;
   }
 
   /** Face a heading, in the same convention the road uses. */
@@ -745,12 +758,47 @@ export class Traveller {
    * Deliberately tiny. Everything here is under two centimetres or two
    * degrees; the point is only that the figure is not a prop, and anything
    * larger starts competing with the bard for the eye.
+   *
+   * That budget is for somebody merely standing about, and it stays. The
+   * terms multiplied by `attention` are exempt, and run 132 is where the
+   * exemption was cashed in.
+   *
+   * The finding it answers was measured twice: during a busk the listeners
+   * ARE placed facing the bard at `setAttention(1)`, and two blind panels
+   * still read the crowd as "mannequins, none turned toward the bard".
+   * Facing does not render on a box figure. Front and back share a
+   * silhouette, the face marks are sub-pixel at five to eight metres, and
+   * the attention head-tilt was 3.4 degrees — a number no frame can carry.
+   * The only lever that survives at that size is *posture*: what the outline
+   * is doing, and how it moves. So the attention-gated terms below are sized
+   * to read as a shape, not as a detail.
    */
   update(dt: number): void {
     this.elapsed += dt;
     const t = this.elapsed + this.phase;
     const breathe = Math.sin(t * 1.1);
     this.body.position.y = breathe * 0.008;
+    /**
+     * Leaning into the performance — the whole body, not the head.
+     *
+     * Six hundredths of a radian is three and a half degrees of forward tilt,
+     * which on a figure a metre and a half tall moves the top of the hat
+     * about nine centimetres: an outline change, visible before any part of
+     * the figure is resolved, and the one posture cue that survives the
+     * front/back ambiguity because a lean has a direction the silhouette can
+     * show. The elder is already built hunched at 0.12 and this adds to it
+     * rather than replacing it.
+     *
+     * The pivot needed checking and it is safe: `this.body`'s origin is at
+     * the feet — the legs are `boxPart`s added at y 0 growing up, and the
+     * elder's stone likewise — so this rotation tips the figure about the
+     * ground plane rather than sinking it. What it does cost is the rear
+     * bottom corner of each foot: at half a leg-depth (0.058) behind the
+     * pivot, a 0.06 rotation drops it 3.4 mm below zero. That is a third of
+     * the breath's own travel and well under a pixel at any distance these
+     * are seen from, so no pivot compensation is bought for it.
+     */
+    this.body.rotation.x = this.baseLeanX + this.attention * 0.06;
     // Weight shifts between the feet on a much slower cycle than the breath,
     // so the two never line up into a single bounce.
     //
@@ -762,14 +810,48 @@ export class Traveller {
     // read — it needs to be *off vertical*, and four degrees is enough for
     // that while staying under the two-degree-per-figure budget the rest of
     // this idle keeps for anyone merely standing about.
+    //
+    // Raised from 0.038 to 0.055 in run 132 — three degrees of extra roll,
+    // and only for a listener. The standing-about term beside it (0.035) is
+    // untouched, which is the point: the two now differ by enough that a
+    // listening figure and a loitering one are telling apart by their motion
+    // alone, which is the only channel left once the panels established that
+    // facing itself does not render at this size.
     this.body.rotation.z =
-      Math.sin(t * 0.37) * 0.035 + Math.sin(t * 0.93 + this.phase) * 0.038 * this.attention;
+      Math.sin(t * 0.37) * 0.035 + Math.sin(t * 0.93 + this.phase) * 0.055 * this.attention;
     this.headPivot.rotation.y = Math.sin(t * 0.29 + 1.3) * 0.14 * (1 - this.attention * 0.7);
+    /**
+     * A head bob, one centimetre, and it exists because the arms cannot move.
+     *
+     * The gesture that would say "listening" loudest is the arms, and they
+     * are solved statically in the constructor by `aimLimb` against fixed
+     * props — there is no rig to animate and building one for six seconds of
+     * screen time is the wrong trade. A vertical head bob is the cheapest
+     * honest substitute: it breaks the head away from the shoulder line, so
+     * the top of the silhouette moves independently of the body under it,
+     * which is the one thing a stack of boxes never does.
+     *
+     * Deliberately off the breath. The breath runs at 1.1 and lifts the whole
+     * body; this runs at 0.61 with its own phase offset, so the head and the
+     * chest are never at the top of their travel together — in step they
+     * would just have made the breath bigger.
+     */
+    this.headPivot.position.y =
+      this.baseHeadY + Math.sin(t * 0.61 + 2.1) * 0.010 * this.attention;
     // A nod, on a slower cycle than the rock so the two do not lock into one
     // bob. Nothing here is on the beat: the music is the bard's, and a crowd
     // nodding in time with it would read as choreography.
+    //
+    // The first term is the head-UP tilt of a person attending to something,
+    // and run 132 took it from 0.06 to 0.22 — 3.4 degrees to 12.6. The old
+    // value was chosen against the standing-about budget it does not belong
+    // to, and 3.4 degrees on a head 20 cm tall moves its top face by a single
+    // centimetre: measurably present, visually absent, which is exactly what
+    // two blind panels reported. At 12.6 the chin clears the brim's shade and
+    // the head reads as *lifted*, which is a posture rather than a detail.
+    // The two additive sway terms are unchanged.
     this.headPivot.rotation.x =
-      -this.attention * 0.06 +
+      -this.attention * 0.22 +
       Math.sin(t * 0.83) * 0.012 +
       Math.sin(t * 1.37 + this.phase * 0.6) * 0.05 * this.attention;
   }
