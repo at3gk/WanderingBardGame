@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 123 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 124 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -59,6 +59,17 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 124) — 186 piece 2: the fox and the
+  cat.** SmallCreatures.ts (seated fox with brush + pretending
+  head-turn; loaf cat whose tail is the whole performance); the
+  deer's staging generalized to a creatures Map + CREATURE_FIGURES
+  routing table (test extended); per-animal distances. Verified
+  staged live. Remaining 186: escort-dog (walk-along behaviour, own
+  piece), birds. 1249 tests, build green. Visual count since wave
+  17: THREE-ish (119 deer, 124 this; plus the 116/117 already
+  judged) — wave 18 is reasonable next, or the silhouette/scrim/
+  dark-accent design asks.
 
 - **HANDOFF, 2026-08-07 (run 123) — 157 COMPLETE; the v0.9 retention
   queue (151-157) CLOSES.** The shared pages shipped: peekJournal
