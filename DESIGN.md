@@ -553,6 +553,23 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
 
 ## Changelog
 
+- 2026-08-07 (runs 105-120, consolidated at 120) — **the hour reaches
+  the ground, and the picture starts agreeing with the prose.** The
+  colour arc that wave 13 licensed ran to its honest end: the land key
+  became a true chroma rotation (it was measurably desaturating what it
+  bound), the committed hours got real grip, the dawn handover trough
+  closed, the road and the flowers took their hours, and the low-sun
+  value floor finally enacted what three independent measurements
+  (dusk-stripe partition, a blind panel's "midtones scooped", the NPC
+  "navy voids" refutation) had converged on. Five same-rubric panels
+  (13-17) read flat at 4.3-4.45 overall — but the engine lenses now sit
+  at 5+ and the deficit moved to design: characters, silhouette
+  vocabulary, HUD scrim. The first design answer shipped the same day:
+  the deer (task 186) — encounters now stage what their captions
+  describe, and stand NOTHING rather than a wrong understudy. Drift
+  check clean: every run was a readout of the one mechanic, no new
+  systems, bundle 905 KB of 5 MB. Nothing cut.
+
 - 2026-08-05 (overnight loop session, runs ~51-61) — **the v1.0 arc
   closes and Book Two opens.** Six tasks across ten PRs: the moonlit
   walk-on (159 complete — tonight's page gained its one door row and

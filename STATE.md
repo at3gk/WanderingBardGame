@@ -1,9 +1,9 @@
 # STATE
 
-Run counter: 119 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 120 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
-runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass;
+runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
 runs 111+ are the 2026-08-07 overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -27,6 +27,24 @@ work. Consolidation runs: reread it, note here what the game now does
 about each top recommendation, extend it when a shipped feature teaches
 something it didn't predict.
 
+**Run-120 refresh (2026-08-07), against the seven ranked
+recommendations:** 1 (campfire bookend) SHIPPED — tonight's page +
+tomorrow's skyline (151/159). 2 (shared road felt) SHIPPED — road
+names + hour-honest greeting (152) and the campfire postcard (153).
+3 (pages wear in) SHIPPED first slice (154), keyed to diary facts
+only, as the ethics rule demands. 4 (mementos) SHIPPED (155) — pressed
+into the page, no counts. 5 (welcome-back, never weeds) SHIPPED (156)
+— the fire greets the idle return, no day counter anywhere. 6 (family
+on one bench) OPEN — task 157, the queue's one remaining arc. 7
+(instruments finite/distinct) standing design, no new task. The
+rejected-on-principle list was re-checked against runs 105-119:
+nothing shipped touches streaks, loss-framing, FOMO, near-miss
+staging, learning fractions, accuracy sharing, or decay. One shipped
+lesson worth adding to the note eventually: the deer staging (186)
+suggests recommendation 4's mementos gain more from being SEEN at the
+encounter than from the journal line alone — the picture agreeing
+with the prose is itself a return-warmth feature.
+
 ## The true goal (standing pointer)
 
 DESIGN.md's "The true goal" section (2026-07-31, human-grilled to shared
@@ -41,6 +59,26 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 120) — CONSOLIDATION (drift control,
+  every ~10th run; last was 104).** Drift check over runs 105-119:
+  CLEAN — every run was measurement (105-107, 115), presentation on
+  the one mechanic's readouts (108, 110-112, 114, 116-117, 119), or
+  a panel (109, 113, 118); no new systems, no new runtime
+  dependencies (the deer is three + painterly), bundle 905 KB of the
+  5 MB budget. The retention research reread per pillar 5 —
+  recommendations 1-5 SHIPPED, 6 (family bookmarks, task 157) is the
+  v0.9 queue's one remaining arc, 7 standing; rejected-on-principle
+  list re-checked clean; refresh note added to the Direction research
+  section above. STATE trimmed: handoffs 95-112 compressed to a run
+  index (ROADMAP carries the full accounts), 3897 → ~3600 lines.
+  DESIGN.md changelog gains the runs 105-120 entry (the hour-key/
+  value-floor arc, the panels, the deer). Session state: five-wave
+  panel block flat at 4.3-4.45 with engine lenses at 5+ and
+  design-level lenses (emotion/silhouette/mobile) the deficit — the
+  next arcs are characters (186 creatures, 150 pose variety),
+  silhouette vocabulary, the scrim decision, daylight dark accents,
+  and task 157. Docs-only run; 1240 tests and build untouched-green.
 
 - **HANDOFF, 2026-08-07 (run 119) — 186 piece 1: the deer is real,
   and the staging follows the writing.** Wave 17's sharpest emotion
@@ -191,325 +229,21 @@ mastery display must read that section first.
   ~620k tokens, dayKey 2026-08-07. Rubric ledger updated (waves
   15/16 rows added).
 
-- **HANDOFF, 2026-08-07 (run 112) — 166 noon-accent piece: the
-  flowers become drifts.** The village-noon accent gap enacted as one
-  lever, twice calibrated and shot both times: flower clump 3 → 7
-  over 0.8 m (patches over specks, the grass entry's own argument),
-  then density 0.07 → 0.12/m² — through the village's 2.4× multiplier
-  the meadow now carries coherent terracotta/periwinkle drifts at the
-  flattest hour. Instrument finding: frame-quality's hueSpread CANNOT
-  SEE this lever (flat at 2.63/0.401 through both moves — flowers are
-  too few pixels for a percentile spread); gauges gate regressions,
-  the panel judges the win. All poses PASS, 1235 tests. PR #229
-  landed and reconciled before this run. Visual count since wave 15:
-  THREE (110 road, 111 hour-key, 112 this) — **WAVE 16 IS DUE NEXT
-  ITERATION** (six-lens blind panel, re-downloaded references, same
-  rubric; judge-noise floor ±0.3 from run 109 binds). Wave 16 should
-  specifically judge: re-shot 01/04/05 (hour-key grip), noon-village/
-  02/08 (flower drifts), and the road family (piece 6). Remaining
-  166: skylight ambient saturation. Night-side olive stays parked
-  (144/169).
+- **Runs 95-112 (2026-08-06/07), compressed by the run-120 consolidation
+  — full accounts live in the ROADMAP done-entries named here.** 95:
+  finishing pass ships (168 DONE). 96: 150 audited, elder's light note.
+  97: WAVE 13 (4.38, rubric committed to docs/critique-rubric.md). 98:
+  daylight land key (185 p1). 99: fog chroma (185 p2). 100: caption
+  backing (175). 101: WAVE 14 (4.33). 102: night ground key (185 p3).
+  103: low-sun warm band (185 p4). 104: CONSOLIDATION (rubric
+  preserved). 105-107: the 12/13 dusk seam measured, scatter levers
+  refuted twice, shadowcast partition — the grey band is LIT ground
+  crushed at V~0.2, the 144/169 attribution that run 116 finally
+  enacted. 108: deep water follows the hour (185 p5). 109: WAVE 15
+  (4.40; judge-noise floor ±0.3 established). 110: road chroma (185
+  p6). 111: hour-key true rotation + low-sun grip 0.45 (185 p7). 112:
+  flower drifts (166 p5; hueSpread gauge blind to the lever).
 
-- **HANDOFF, 2026-08-07 (run 111) — 185 piece 7: the pull stops
-  draining what it binds; the committed hours get their grip.** Wave
-  15's tuft family measured before touching: the cone story was
-  half-right (olive at sim ≈ 0 → half capture; anti-family at night →
-  zero), but the binding constraint was (1) the attraction LERP losing
-  up to a fifth of chroma near 90° — now a true magnitude-preserving
-  rotation (noon re-shot: 16% of pixels, dS +0.011; night +0.036) —
-  and (2) LOW_SUN_KEY_MAX 0.22 being sub-perceptual (breadth ablation
-  moved <0.5% of pixels), now 0.45 with the "gentlest mode" test
-  re-derived, not weakened. Golden lit grass leans into the amber,
-  shadows stay cool, ALL GAUGES PASS, 1235 tests. PR #228 landed
-  before this run; branch reconciled. Visual count since wave 15:
-  TWO (110 road, 111 this) — wave 16 after roughly one more visual
-  task. Next: the emotion queue, an art task (166-170), or wave 16.
-  Night-side olive exemption stays parked with the 144/169 value
-  family (runs 105-107's partition binds).
-
-- **HANDOFF, 2026-08-06 (run 110) — 185 piece 6: the road stops
-  being a colour hole.** The three biome road albedos chroma-scaled
-  1.35 about exact luma (hexes in ROADMAP 185) per wave 15's
-  both-samples family and ASH's stated policy (the path is the
-  warmest object in frame). Value breaks untouched by construction;
-  run 87's drift rides on top. 02's road reads as warm sienna, the
-  warmest large shape; morning hueSpread up; ALL POSES PASS.
-  Visual count since wave 15: ONE. Next: the tuft-hour follow
-  (wave 15's other family), or the emotion queue. GitHub outage
-  6+ hours — PR #228 carries runs 104-110; land and reconcile
-  first thing once runners recover. 1235 tests, build green.
-
-- **HANDOFF, 2026-08-06 (run 109) — WAVE-15 BLIND PANEL: mean 4.40,
-  the three-wave same-rubric block reads 4.38 / 4.33 / 4.40 — flat,
-  WITH a new instrument-calibration fact: an accidental full re-run
-  of the same wave (a workflow resume that missed cache) moved lens
-  means ±0.3-0.6 on identical frames and rubric (silhouette 4.38 vs
-  3.79, emotion 4.23 vs 3.95), so WAVE DELTAS UNDER ~0.3 ARE JUDGE
-  NOISE — treat only larger moves and repeated fault families as
-  signal.** Both samples agree on the structure: 12 top (5.12/5.23
-  — the new pose is now the set's best), 07 5.10/5.28, 04 strong;
-  03 worst (3.4-3.5), 02/08 low; emotion/silhouette/composition all
-  ROSE vs wave 14 in at least one sample (the night/low-sun/water
-  pieces registered — 09 3.68 → 4.2-4.4, 13 4.43 → 4.5-4.8). THE
-  TWO DOMINANT FAULTS, IDENTICAL IN BOTH SAMPLES: (1) "terrain
-  green refuses the hour" (7 frames) — the grass TUFTS specifically
-  stay yellow-olive inside committed washes (olive is only
-  half-captured by the warm key's cone; the family's remaining
-  member after the hour-key arc); (2) NEW and sharply actionable:
-  "the road is a colour hole occupying the largest shape in frame"
-  (6 daylight frames) with the reference policy stated — ASH makes
-  the path a saturated ochre-orange, THE WARMEST OBJECT IN FRAME,
-  so the largest shape is the loudest colour decision; ours is the
-  lowest-chroma region in every daylight frame. That is the next
-  licensed lever (roadSurface/meadowAt chroma policy, building on
-  run 87's drift machinery). Also repeated: accents don't survive
-  analogous fields (bard's red on golden), NPC chroma identity,
-  07's fire pool edge. Full verdicts in the run-109 workflow
-  outputs (two six-judge samples, ~1.1M tokens).
-
-- **HANDOFF, 2026-08-06 (run 108) — 185 piece 5: the deep water
-  follows the hour.** paintWater's deep end now leans 30% into the
-  hour's horizon (the shallow end always did — same argument, "water
-  shows you the sky", extended to depth). 04's rogue teal tiles read
-  as cool notes inside the amber wash. Gauges PASS, 1235 tests.
-  Visual count since wave 14: THREE (102 night, 103 low-sun, 108
-  this; 105-107 were measurement) — WAVE 15 DUE NEXT ITERATION,
-  pending the GitHub outage clearing so the backlog (PR #228,
-  runs 104-108) can land first.
-
-- **HANDOFF, 2026-08-06 (run 107) — shadowcast partition: the dusk
-  shadows are INNOCENT; the grey band is lit ground crushed by the
-  display transform.** Numbers in ROADMAP 185: shadows 17.6% of the
-  12 frame, 61.7% trees, and MORE saturated than the lit ground
-  (0.36 vs 0.31, blue 220°) — the cast-shadow colour system works
-  at dusk. The S 0.13 band is lit dark albedo at V 0.21 where ACES
-  + the finishing S-curve crush chroma; the fix is a VALUE floor
-  for the dusk midground (144/169 design territory), not hue work
-  — three refuted levers plus this partition jointly prove it.
-  Family parked with complete data. GitHub outage ~3h; PR #228
-  carries runs 104-107 when runners recover.
-
-- **HANDOFF, 2026-08-06 (run 106) — the seam's scatter lever
-  refuted twice; family re-attributed to the baked tone field.**
-  Widened lowSun fade: byte-identical. Enriched dusk fog ×1.8:
-  byte-identical. Both reverted. The tell: the grey rows ALTERNATE
-  with warm rows — the "slate band" is the raking stripes, and at
-  dusk sunHeight=0 gates every cast-shadow colour term off by
-  construction; the stripes are most plausibly the BAKED terrain
-  tone field (run-67's noon finding, now at dusk) — the 144/169
-  family, a presentation decision, not a lighting knob. Full
-  refutation ledger in ROADMAP 185. Next attempt: START with
-  shadowcast.mjs on the 12 pose. No code shipped (measurement +
-  reverts). GitHub outage ongoing; PR #228 carries runs 104-106's
-  docs when it lands.
-
-- **HANDOFF, 2026-08-06 (run 105) — the 12/13 seam measured; the
-  night key is structurally innocent; the lever is scatter.** Row
-  sample across the seam (numbers in ROADMAP 185): a legitimate
-  value cliff (backlight boundary) plus the REAL fault, a chroma
-  cliff to S 0.13 near-grey at y~800. Re-measured after the hour
-  key shipped: byte-identical — the dusk ground albedo is warm-
-  olive, ANTI-FAMILY to the violet key, protected by the same
-  construction that protects the fire. The mechanism is the
-  recorded complementary-multiplication drain; the codebase's own
-  answer is the additive SKY_SCATTER term, starved at/below the
-  horizon. Next run: scatter strength at dusk, tuned against the
-  row sample (y 800-1000 keeps S ≥ ~0.25, violet family), judged
-  on 12/13. NOTE: a GitHub Actions MAJOR OUTAGE stalled PRs this
-  run — #228 (consolidation) is armed for automerge and will land
-  when runners recover; this entry ships with it. No game code
-  changed this run (measurement only).
-
-- **HANDOFF, 2026-08-06 (run 104) — CONSOLIDATION (drift control,
-  ~10th run; last was 90, this one ran overdue at 14).** DESIGN.md
-  reread against runs 91-103: every shipped change is rendering
-  (finishing pass, hour-key system, fog), harness (postcard poses),
-  character craft (elder), or HUD chrome (captions) — presentation
-  and readouts of the one tap mechanic; zero new runtime deps;
-  bundle 890 kB of 5 MB; no conflict markers; no drift found.
-  ROUGH EDGE FIXED: the critique rubric has been lost and
-  reconstructed TWICE (waves 10, 13) because it lived only in
-  session workflow scripts — it is now `docs/critique-rubric.md`
-  (exact lens texts, judge prompt, protocol, and a same-rubric score
-  ledger; waves 13/14 ran on it verbatim, future waves copy from
-  there). PILLAR-5 REFRESH: no returning-player surface changed
-  since run 90's full recommendation-by-recommendation refresh
-  except the road greeting's hour word (run 100 — kind, honest
-  wording; no banned pattern involved); 157 remains the one open
-  ranked recommendation (human-gated). THREE FINDINGS appended to
-  docs/research/art-quality.md: post-pipelines move alpha blending
-  into linear light (check every tuned alpha); a LUT cannot express
-  hour-relighting (the attraction was needed); aerial-perspective
-  chroma is bounded by the FOREGROUND's, not by reference absolutes.
-  Tests 1235 green, build green.
-
-- **HANDOFF, 2026-08-06 (run 103) — 185 piece 4: the low warm sun
-  gets its lean.** hourKeyMode's third band: horizon-keyed, amount
-  0.22, breadth 0.5, sun heights 0.08-0.30 (dawn + golden in,
-  morning out, zero before the daylight rise). 05's bushes lean
-  olive-warm into the wash; cast-shadow coolness untouched (albedo-
-  side attraction). All gauges PASS. The hour-key system now covers
-  night/low-sun/high-sun with per-mode tests. Visual count since
-  wave 14: TWO (102 night, 103 this) — wave 15 after at most one
-  more visual task. Remaining 185: 12/13 midground seam, escape
-  hatches, noon-village accents. 1235 tests (+1), build green.
-
-- **HANDOFF, 2026-08-06 (run 102) — 185 piece 3: the ground takes
-  the night.** Wave 14's seven-frame family answered at its clearest
-  site: hourKeyMode (landKey.ts) points the key at the night sky's
-  own zenith with breadth 0.65 (captures the orthogonal green-under-
-  violet case; the fire's warmth is anti-family and provably
-  untouched), amount 0.38 fading out before dawn. 07's field beyond
-  the firelight reads violet-dark; night gauge 6.45 stops, all PASS.
-  Golden-hour version + the 12/13 midground seam + escape hatches
-  remain in ROADMAP 185. Visual count since wave 14: ONE. 1234
-  tests (+5), build green.
-
-- **HANDOFF, 2026-08-06 (run 101) — WAVE-14 BLIND PANEL: mean 4.33,
-  FLAT against wave 13's 4.38 UNDER THE SAME RUBRIC TEXT (the first
-  same-rubric pair since wave 12; same 13 frames, same day's road
-  family).** Lens means (w13): colour 5.09 (5.22), value 4.80
-  (5.10), mobile 4.35 (4.19, up), composition 4.51 (4.07, up),
-  silhouette 3.73 (4.02), emotion 3.52 (3.67). Frames: 07 best 5.48,
-  04 5.00, 12 4.93; worst 09 3.68, 03 3.73, 08 3.85. REGISTERED:
-  the land key moved its target (03 colour 3.4 → 4.8, "closest
-  daytime frame to a real complementary pair"); mobile and
-  composition rose (caption backing + the arc). OVERSHOT AND
-  CORRECTED SAME RUN: the ×1.6 fog step — colour lens: "receding
-  trees MORE chromatic than the near greens; aerial perspective
-  reads as a fog bug" — walked back to ×1.3 (S ~0.34; hexes in
-  sky.ts, gauges PASS). THE DOMINANT FAMILY SHARPENED: "two colour
-  systems per frame — the sky is graded, the ground is not" (7
-  frames: night field still chlorophyll green under a violet sky,
-  golden bushes stay forest green inside the amber wash, 12/13's
-  gold-to-slate hard band at the midground seam). This is run 93's
-  hour-relighting family stated at its root: the GROUND must take
-  the hour's light — the ambient/skylight tint on land at
-  night/golden/dusk is too weak against albedo. That is the arc's
-  big remaining piece (multi-run; painterly's ambient terms), ahead
-  of "escape hatches" (assets missing the grade: 04's teal tile,
-  05/12's unwashed bushes). Emotion (3.52, worst) repeats
-  nobody-lives-here + mannequins; silhouette's drop names the same
-  soft-mass families. The plateau reading after three waves
-  (4.65/4.38/4.33): single-knob pieces register locally but the
-  mean is carried by the STRUCTURAL families — ground-takes-the-
-  light, figures, world-dressing, camera. Full verdicts in the
-  run-101 workflow output (six opus judges, 617k tokens).
-
-- **HANDOFF, 2026-08-06 (run 100) — 175 caption piece: the prose
-  stands on its wash, and the greeting follows the sky.** Wave 13's
-  nine-frame "unbacked hairline italic" answered inside the idiom:
-  wash peak 0.34 → 0.44 (between the original panel-feeling 0.55
-  and the invisible retreat), caption weight 500, compact shrink
-  0.88 → 0.94. Plus run 94's diegetic find fixed: the road greeting
-  derives its hour word from shownDayFraction (sayRoadAside), and
-  pose() recomposes it — 12-dusk now reads "this evening". HUD-only
-  + one RoadStage method; walk-on door affordance and orientation
-  audit remain the human-flagged rest of 175. Visual count since
-  wave 13: THREE (98 land key, 99 fog, 100 this) — WAVE 14 DUE NEXT
-  ITERATION. 1229 tests, build green.
-
-- **HANDOFF, 2026-08-06 (run 99) — 185 piece 2: the air gets its
-  colour back.** The three daylight fog colours chroma-scaled 1.6
-  about their exact lumas (S ~0.27 → ~0.40 each; hexes and the
-  arithmetic in ROADMAP 185) — the same value-pinned hue lever
-  sky.ts's fog comments record using twice before, taken one step
-  further because wave 13 still read "hueless cutouts". 10-tablet's
-  distance now reads as blue woods; 11 carries hue under morning
-  fog; golden/night byte-identical. All gauges PASS, 1229 tests.
-  Visual count since wave 13: TWO (98 land key, 99 this) — wave 14
-  due after at most one more visual task. Remaining 185 pieces:
-  10's cloud medium mismatch, the white building, noon-village
-  accents.
-
-- **HANDOFF, 2026-08-06 (run 98) — 185 piece 1: the daylight land
-  key.** Wave 13's five-frame "engine default daylight" family
-  answered at its root: a chroma-plane attraction in painterly binds
-  near-family albedos toward the biome's grass-family key, scheduled
-  by sun height (zero at the carrying hours — golden/night gauges
-  byte-identical; full 0.35 at noon). Dissenters (terracotta, the
-  bard's red, flowers, fire) untouched by construction — the
-  attraction only pulls chroma within 90° of the key. Frames: 03/10's
-  green ladder binds into one family, teal water comes into family;
-  all gauges PASS (noon hueSpread 0.317 → 0.271 — bound, not
-  collapsed). Remaining arc pieces queued in ROADMAP 185: fog hue
-  authorship (lerp-to-sky distance), 10's cloud medium mismatch,
-  the white building, noon-village accents. Visual count since wave
-  13: ONE. 1229 tests (+8), build green.
-
-- **HANDOFF, 2026-08-06 (run 97) — WAVE-13 BLIND PANEL: mean 4.38
-  over 13 frames, with TWO instrument caveats that make the cross-
-  wave mean weak evidence: the rubric text was RECONSTRUCTED again
-  (the wave 10-12 text lived in the old session's workflow output),
-  and this is the first wave judging the run-94 sheet (13 frames vs
-  wave 12's 10 — the new 12-dusk-walk debuted SECOND-BEST at 5.10).**
-  Lens means: colour 5.22, value 5.10, mobile 4.19, composition 4.07,
-  silhouette 4.02, emotion 3.67. Frames: 07 best 5.28, 12 next 5.10,
-  04 5.02; worst 08 3.73, 03 3.88, 02 4.00 (the stable ranking
-  holds). WHAT THE FINISHING PASS BOUGHT (run 95, judged blind for
-  the first time): colour is now the TOP lens; "hued darks —
-  aubergine and plum-brown rather than black", "blue-violet shadow
-  ribbons — a genuine complementary temperature story", dawn/golden
-  sky ladders "reference-grade"; and the three-wave GHOST-BAND family
-  is ABSENT — no lens names the milky slab (linear blending did not
-  re-brighten the paper; watch item closed). THE STRUCTURE NOW:
-  (1) STRONGEST cross-lens agreement on record — colour and value
-  independently name the SAME FIVE frames (02/03/08/10/11, exactly
-  the daylight hours) as "engine defaults": no dominant hue field,
-  mid-key compression, lerp-to-sky aerial perspective, rogue teal
-  water. The sunset frames are authored; daylight is not. This is
-  run 93's family (1) — the hour-relighting of the LAND — confirmed
-  with a frame list; NEXT ARC. (2) Emotion worst lens: "nobody lives
-  here" (no evidence of other lives in the world), NPC mannequins
-  (05/06/09 — the run-96 elder note is sub-pixel at postcard range),
-  the caption prose "carries emotion the image refuses to supply".
-  (3) Composition: one-camera-thirteen-times (harness artifact,
-  standing), no foreground plane, dead corners. (4) Mobile: unbacked
-  hairline captions, tap-affordance chrome (HUMAN-flagged, four
-  waves), D/E glyph blob at phone size. (5) Silhouette: bard's
-  unarticulated box stack, rock≈bush one outline (169), conifer
-  picket fence. KEEPS: campfire staging + prose voice, hat-brim
-  signature at every size, 03's S-bend road, caption slot
-  consistency. Full verdicts in the run-97 workflow output (six opus
-  judges, 617k tokens; refs re-downloaded — 7 ASH + 5 SF STEAM
-  GAMEPLAY frames, first wave with real SF gameplay since wave 7).
-  dayKey 2026-08-06 (same day as wave 12's road).
-
-- **HANDOFF, 2026-08-06 (run 96) — 150 audited and its live piece
-  fixed: the elder gets her light note.** The task's list was mostly
-  stale (bard face test-pinned long since; 06 frontal face reads; 02
-  "crown-brim gap" is the brim's own lit top face; 05 floating boxes
-  don't reproduce) — full audit in ROADMAP 150. The live symptom:
-  the elder read as a rock at every range because her design's "one
-  small light note at the top" didn't exist — face patch flush with
-  the hood, in its shade, shared material. Now a fifth larger, 1 cm
-  prouder, own lifted material; palettes untouched (her file's two
-  lamp rejections respected). Same-frame A/B also cleared the new
-  finishing grade of blame (pass-off crop equally dark). Re-shot
-  05/06: face note reads at postcard distance, no lamp. What 150
-  still owes if a wave asks: pose variety (stiffness), not anatomy.
-  Visual count since wave 12: TWO (95 finishing, 96 this) — WAVE 13
-  DUE after at most one more visual task. 1221 tests, build green.
-
-- **HANDOFF, 2026-08-06 (run 95) — 168 DONE: the finishing pass ships
-  whole.** The wave-12 recommendation taken: scene renders into a
-  half-float target at 0.8 scale, composited through a code-generated
-  33³ LUT (gentle S-curve + vibrance + cool-shadow/warm-highlight
-  split-tone; knobs in finishingGrade.ts, all test-pinned). The
-  structural fact the whole design hangs on: three applies NO tone
-  mapping / sRGB to render-target renders, so the composite owns
-  ACES + encode + LUT, and transparency now blends in LINEAR light —
-  watch item for wave 13: every tuned alpha (paper veil, smoke,
-  washes) shifted subtly; the frames read fine (veil NOT re-brightened,
-  campfire pool richer, noon finally has colour conviction) but the
-  panel judges, not me. frame-quality ALL PASS with margin (noon 3.73).
-  fps measured on real GPU: free at DPR 1, net-POSITIVE at DPR 2 —
-  the task's "can be net-cheaper on phones" holds on desktop numbers;
-  phone tiers ride item 127. HARNESS LESSON in ROADMAP 168: never
-  trust SwiftShader RT-vs-canvas timings (gl.finish() sync artifact,
-  measured to 3.5 s/frame truth via readPixels). Visual count since
-  wave 12: ONE (this). Next per the wave-12 arc: 150 faces, then
-  wave 13 after one more visual task. Human-gated items unchanged.
 
 - **HANDOFF, 2026-08-06 (run 94) — the postcard sheet grows three
   poses (harness-only; no game code).** Three waves called the
