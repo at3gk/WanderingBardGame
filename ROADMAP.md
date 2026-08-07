@@ -2885,7 +2885,93 @@ full verdict map and the measure-first suspicion list):
     the lerp-to-sky hueless distance (fog hue authorship), the cloud
     medium mismatch on 10, the unhued white building, noon-village
     accents. 1229 tests (+8), build green.
-    **Piece 4 (2026-08-06, run 103): the low warm sun gets its lean.**
+    **Piece 6 (2026-08-06, run 110): the road stops being a colour
+    hole.** Wave 15's new family, identical in both panel samples
+    ("the lowest-chroma region in the image while taking the most
+    area", six daylight frames) with the reference policy stated:
+    ASH makes the path a saturated ochre, THE WARMEST OBJECT IN
+    FRAME. The three biome road albedos chroma-scaled 1.35 about
+    their exact lumas (village 0xb19065 → 0xbb8f55 S 0.43 → 0.55;
+    forest 0x8f785d → 0x967752 S 0.35 → 0.45; riverside 0x9b8870 →
+    0xa18767 S 0.28 → 0.36) — the value break each entry's comment
+    defends is untouched by construction, and run 87's drift still
+    rides on top. 02's road reads as warm sienna earth, the warmest
+    large shape in frame; morning hueSpread 0.419 → 0.447; ALL
+    POSES PASS. 1235 tests, build green.
+    **Piece 5 (2026-08-06, run 108): the deep water follows the
+    hour.** The "escape hatch" family's biggest member (waves 13/14:
+    "rogue cyan/teal water and marsh materials that belong to no
+    frame's palette", 01/04/09/11): paintWater's SHALLOW end has
+    always been the horizon (the puddle entry's own argument — water
+    shows you the sky) but the deep end mixed toward palette
+    waterDeep at a FIXED hue, so a deep cell at golden hour stayed
+    teal inside a fully amber frame. Deep water is the same sky
+    attenuated by depth: the deep colour now leans 30% into the
+    hour's horizon before the mix runs — a near no-op at noon, a
+    warm lean at golden. 04's marsh pools read as cool notes inside
+    the wash instead of foreign tiles; the biome's waterDeep still
+    names the water's identity. All gauges PASS. 1235 tests, build
+    green.
+    **Seam measurement (2026-08-06, run 105 — measurement only, the
+    next run's brief).** The 12/13 gold-to-slate midground seam
+    sampled row-by-row (x 400-1400 of 3200, y 600-1100): it is TWO
+    stacked cliffs. (1) A value cliff at y~620-650 (V 0.80 → 0.38) —
+    the backlit-glow-to-unlit-land boundary, legitimate dusk
+    structure. (2) The real fault, a CHROMA cliff at y~780-800:
+    warm-dark S 0.35 → S 0.13 near-grey — the "cold slate" is not
+    cold, it is chroma-DEAD. Re-measured after the run-102/103 hour
+    key shipped: byte-identical, and the reason is structural — the
+    dusk ground albedo is warm-OLIVE, which is anti-family to the
+    violet night key, and the anti-family exemption that protects
+    the fire protects it too. The attraction cannot fix this family.
+    The actual mechanism is the complementary-multiplication drain
+    the codebase already names (FOG_HUE_LEAD's comment: "a
+    low-saturation cool mixed into a saturated warm lands on grey"):
+    warm-olive albedo × violet dusk ambient = grey. The codebase's
+    own answer to exactly this class is the ADDITIVE sky-scatter
+    term (SKY_SCATTER: "a warm albedo cannot be multiplied into a
+    cool shadow, so the shade side is given its colour additively")
+    — and LOW_SUN_SCATTER's note records it starving at low sun
+    once before. THE NEXT RUN'S LEVER: the scatter strength at and
+    below the horizon (dusk sun height ≈ −0.14), tuned against this
+    exact row sample (target: the y 800-1000 band keeps S ≥ ~0.25 in
+    the violet family) and judged on re-shot 12/13; NOT more key
+    amount, NOT albedo work, NOT the value cliff (structure).
+    **THE SCATTER LEVER REFUTED SAME RUN (run 106), twice more, and
+    the family re-attributed.** Widening lowSun's below-horizon fade
+    (-0.22,0 → -0.30,-0.06; dusk moves from 30-55% to near-full
+    scatter): the band byte-identical. Enriching the dusk fog's
+    chroma ×1.8 luma-pinned (0x8a7c96 → 0x9178a7, the daylight-fog
+    move): byte-identical again. Both REVERTED — nothing unverified
+    ships. The row pattern is the tell the first reading missed: the
+    grey rows ALTERNATE with warm-lit rows (y900 S0.32 warm, y950
+    S0.06), so the "slate band" is the raking band STRIPES — and at
+    dusk sunHeight = max(0, -0.14) = 0 gates every cast-shadow
+    colour term (castShade, CAST_SHADOW_SKY) to zero by
+    construction, while the stripes themselves are most plausibly
+    the terrain's BAKED tone field, the same family the run-67
+    shadowcast ablation exposed at noon ("the big diagonals are NOT
+    shadows"). This is the 144/169 value-ladder family wearing dusk
+    light, and its lever is a presentation decision (the tone
+    field's dusk chroma), not a lighting knob. Three refuted levers
+    is the stopping rule; the next attempt on this family should
+    START with shadowcast.mjs on the 12 pose to partition
+    band-ownership before touching anything.
+    **Shadowcast partition run (run 107) — the shadows are innocent
+    and the family is now fully attributed.** At the 12-dusk pose:
+    cast shadows cover 17.6% of frame (61.7% trees, 12.3% the bard),
+    and their photometrics are HEALTHY — vShadow 0.19 vs vLit 0.24,
+    sShadow 0.36 vs sLit 0.31 (MORE saturated than lit), hue 220°
+    blue vs 129° green lit: the dusk cast shadows carry hue exactly
+    as the colour script demands. The grey S 0.13 band rows are
+    therefore LIT ground: dark albedo at V ~0.21, where ACES (and
+    the finishing S-curve's quarter-tone dip) crush chroma toward
+    the display floor. The family's true owners: the baked terrain
+    tone field's dusk values + the display transform at low V — a
+    value/exposure design decision for the 144/169 pass (raise the
+    dusk midground's VALUE floor so its chroma survives the
+    transform; hue work alone cannot reach it, as three refuted
+    levers and this partition now jointly prove).
     The family's second site (wave 14: "noon-green bushes under a
     saffron dawn sky" in 01; "bushes stay forest green inside a fully
     golden wash" in 05/12): hourKeyMode gains a LOW-SUN band —

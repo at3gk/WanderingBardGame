@@ -1,8 +1,9 @@
 # STATE
 
-Run counter: 94 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 104 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
-runs 82+ are the third overnight loop; run 90 was the consolidation pass)
+runs 82+ are the third overnight loop; run 90 was the consolidation pass;
+runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -39,6 +40,122 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-06 (run 110) — 185 piece 6: the road stops
+  being a colour hole.** The three biome road albedos chroma-scaled
+  1.35 about exact luma (hexes in ROADMAP 185) per wave 15's
+  both-samples family and ASH's stated policy (the path is the
+  warmest object in frame). Value breaks untouched by construction;
+  run 87's drift rides on top. 02's road reads as warm sienna, the
+  warmest large shape; morning hueSpread up; ALL POSES PASS.
+  Visual count since wave 15: ONE. Next: the tuft-hour follow
+  (wave 15's other family), or the emotion queue. GitHub outage
+  6+ hours — PR #228 carries runs 104-110; land and reconcile
+  first thing once runners recover. 1235 tests, build green.
+
+- **HANDOFF, 2026-08-06 (run 109) — WAVE-15 BLIND PANEL: mean 4.40,
+  the three-wave same-rubric block reads 4.38 / 4.33 / 4.40 — flat,
+  WITH a new instrument-calibration fact: an accidental full re-run
+  of the same wave (a workflow resume that missed cache) moved lens
+  means ±0.3-0.6 on identical frames and rubric (silhouette 4.38 vs
+  3.79, emotion 4.23 vs 3.95), so WAVE DELTAS UNDER ~0.3 ARE JUDGE
+  NOISE — treat only larger moves and repeated fault families as
+  signal.** Both samples agree on the structure: 12 top (5.12/5.23
+  — the new pose is now the set's best), 07 5.10/5.28, 04 strong;
+  03 worst (3.4-3.5), 02/08 low; emotion/silhouette/composition all
+  ROSE vs wave 14 in at least one sample (the night/low-sun/water
+  pieces registered — 09 3.68 → 4.2-4.4, 13 4.43 → 4.5-4.8). THE
+  TWO DOMINANT FAULTS, IDENTICAL IN BOTH SAMPLES: (1) "terrain
+  green refuses the hour" (7 frames) — the grass TUFTS specifically
+  stay yellow-olive inside committed washes (olive is only
+  half-captured by the warm key's cone; the family's remaining
+  member after the hour-key arc); (2) NEW and sharply actionable:
+  "the road is a colour hole occupying the largest shape in frame"
+  (6 daylight frames) with the reference policy stated — ASH makes
+  the path a saturated ochre-orange, THE WARMEST OBJECT IN FRAME,
+  so the largest shape is the loudest colour decision; ours is the
+  lowest-chroma region in every daylight frame. That is the next
+  licensed lever (roadSurface/meadowAt chroma policy, building on
+  run 87's drift machinery). Also repeated: accents don't survive
+  analogous fields (bard's red on golden), NPC chroma identity,
+  07's fire pool edge. Full verdicts in the run-109 workflow
+  outputs (two six-judge samples, ~1.1M tokens).
+
+- **HANDOFF, 2026-08-06 (run 108) — 185 piece 5: the deep water
+  follows the hour.** paintWater's deep end now leans 30% into the
+  hour's horizon (the shallow end always did — same argument, "water
+  shows you the sky", extended to depth). 04's rogue teal tiles read
+  as cool notes inside the amber wash. Gauges PASS, 1235 tests.
+  Visual count since wave 14: THREE (102 night, 103 low-sun, 108
+  this; 105-107 were measurement) — WAVE 15 DUE NEXT ITERATION,
+  pending the GitHub outage clearing so the backlog (PR #228,
+  runs 104-108) can land first.
+
+- **HANDOFF, 2026-08-06 (run 107) — shadowcast partition: the dusk
+  shadows are INNOCENT; the grey band is lit ground crushed by the
+  display transform.** Numbers in ROADMAP 185: shadows 17.6% of the
+  12 frame, 61.7% trees, and MORE saturated than the lit ground
+  (0.36 vs 0.31, blue 220°) — the cast-shadow colour system works
+  at dusk. The S 0.13 band is lit dark albedo at V 0.21 where ACES
+  + the finishing S-curve crush chroma; the fix is a VALUE floor
+  for the dusk midground (144/169 design territory), not hue work
+  — three refuted levers plus this partition jointly prove it.
+  Family parked with complete data. GitHub outage ~3h; PR #228
+  carries runs 104-107 when runners recover.
+
+- **HANDOFF, 2026-08-06 (run 106) — the seam's scatter lever
+  refuted twice; family re-attributed to the baked tone field.**
+  Widened lowSun fade: byte-identical. Enriched dusk fog ×1.8:
+  byte-identical. Both reverted. The tell: the grey rows ALTERNATE
+  with warm rows — the "slate band" is the raking stripes, and at
+  dusk sunHeight=0 gates every cast-shadow colour term off by
+  construction; the stripes are most plausibly the BAKED terrain
+  tone field (run-67's noon finding, now at dusk) — the 144/169
+  family, a presentation decision, not a lighting knob. Full
+  refutation ledger in ROADMAP 185. Next attempt: START with
+  shadowcast.mjs on the 12 pose. No code shipped (measurement +
+  reverts). GitHub outage ongoing; PR #228 carries runs 104-106's
+  docs when it lands.
+
+- **HANDOFF, 2026-08-06 (run 105) — the 12/13 seam measured; the
+  night key is structurally innocent; the lever is scatter.** Row
+  sample across the seam (numbers in ROADMAP 185): a legitimate
+  value cliff (backlight boundary) plus the REAL fault, a chroma
+  cliff to S 0.13 near-grey at y~800. Re-measured after the hour
+  key shipped: byte-identical — the dusk ground albedo is warm-
+  olive, ANTI-FAMILY to the violet key, protected by the same
+  construction that protects the fire. The mechanism is the
+  recorded complementary-multiplication drain; the codebase's own
+  answer is the additive SKY_SCATTER term, starved at/below the
+  horizon. Next run: scatter strength at dusk, tuned against the
+  row sample (y 800-1000 keeps S ≥ ~0.25, violet family), judged
+  on 12/13. NOTE: a GitHub Actions MAJOR OUTAGE stalled PRs this
+  run — #228 (consolidation) is armed for automerge and will land
+  when runners recover; this entry ships with it. No game code
+  changed this run (measurement only).
+
+- **HANDOFF, 2026-08-06 (run 104) — CONSOLIDATION (drift control,
+  ~10th run; last was 90, this one ran overdue at 14).** DESIGN.md
+  reread against runs 91-103: every shipped change is rendering
+  (finishing pass, hour-key system, fog), harness (postcard poses),
+  character craft (elder), or HUD chrome (captions) — presentation
+  and readouts of the one tap mechanic; zero new runtime deps;
+  bundle 890 kB of 5 MB; no conflict markers; no drift found.
+  ROUGH EDGE FIXED: the critique rubric has been lost and
+  reconstructed TWICE (waves 10, 13) because it lived only in
+  session workflow scripts — it is now `docs/critique-rubric.md`
+  (exact lens texts, judge prompt, protocol, and a same-rubric score
+  ledger; waves 13/14 ran on it verbatim, future waves copy from
+  there). PILLAR-5 REFRESH: no returning-player surface changed
+  since run 90's full recommendation-by-recommendation refresh
+  except the road greeting's hour word (run 100 — kind, honest
+  wording; no banned pattern involved); 157 remains the one open
+  ranked recommendation (human-gated). THREE FINDINGS appended to
+  docs/research/art-quality.md: post-pipelines move alpha blending
+  into linear light (check every tuned alpha); a LUT cannot express
+  hour-relighting (the attraction was needed); aerial-perspective
+  chroma is bounded by the FOREGROUND's, not by reference absolutes.
+  Tests 1235 green, build green.
 
 - **HANDOFF, 2026-08-06 (run 103) — 185 piece 4: the low warm sun
   gets its lean.** hourKeyMode's third band: horizon-keyed, amount
