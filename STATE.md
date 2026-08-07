@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 115 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 116 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass;
@@ -41,6 +41,22 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 116) — the low-sun value floor ships;
+  the 144/169 crush family finally has its lever in the build.**
+  `valueFloor.ts`: the painterly sky floor (hue-carrying, dark-gated)
+  is boosted ×2.6 at sun heights −0.16..0.15 — full at golden/dawn/
+  dusk, zero at night and high day by schedule. Measured: 05 pedlar
+  V 0.205 → 0.292 with S held (the NPC prescription exactly);
+  12-dusk midtones open (64% of pixels); night byte-close, gauge
+  6.47 identical. Honest trade: golden 4.29 → 3.59 stops (still >>
+  floor) for hueSpread 0.083 → 0.105. ALL POSES PASS, 1239 tests.
+  Visual count since wave 16: TWO (114 trough, 116 this; 115 was
+  measurement) — wave 17 after ~one more visual task, and it judges
+  the floor on 05/09/12/13 plus the trough on 01/02. Next
+  candidates: emotion's faceless-protagonist family (150, bottom
+  lens two waves), mobile's unbacked HUD text (175), 166 skylight
+  ambient, or silhouette's broadleaf lump-on-a-stick.
 
 - **HANDOFF, 2026-08-07 (run 115) — NPC voids measured: albedo
   refuted, family re-attributed to 144/169.** The waves-15/16 "unlit

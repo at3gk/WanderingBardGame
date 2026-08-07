@@ -35,6 +35,7 @@ import {
 } from 'three';
 import type { PainterlyGlobals } from './painterly';
 import { hourKeyMode } from './landKey';
+import { lowSunFloorAmount } from './valueFloor';
 // The one number the shader and the profile generator must agree on. Imported
 // rather than written twice: a silent mismatch here would read as a skyline
 // that is *nearly* tomorrow's road, which is the worst possible failure for a
@@ -576,6 +577,9 @@ export function applyTimeOfDay(
   const keyMode = hourKeyMode(state.sunDirection.y);
   globals.uLandKeyAmount.value = keyMode.amount;
   globals.uLandKeyBreadth.value = keyMode.breadth;
+  // The low-sun value floor (valueFloor.ts): boost the fragment's sky
+  // floor at the horizon hours, zero at night and high day.
+  globals.uLowSunFloor.value = lowSunFloorAmount(state.sunDirection.y);
   if (keyMode.source === 'sky') globals.uLandKeyColor.value.copy(state.zenith);
   else if (keyMode.source === 'horizon') globals.uLandKeyColor.value.copy(state.horizon);
 

@@ -71,6 +71,13 @@ export interface PainterlyGlobals {
   uLandKeyAmount: IUniform<number>;
   uLandKeyBreadth: IUniform<number>;
   /**
+   * The low-sun value floor (valueFloor.ts): how much the sky floor is
+   * boosted at the horizon hours, where the ambient it is sized from is
+   * dim exactly when the display transform crushes the V ~0.2 band's
+   * chroma. Zero at night and high day by that module's schedule.
+   */
+  uLowSunFloor: IUniform<number>;
+  /**
    * The hearth: one warm point source, shared by every painterly surface.
    *
    * There is exactly one because the whole art direction rests on there
@@ -196,6 +203,7 @@ export function createPainterlyGlobals(): PainterlyGlobals {
     uExposure: { value: 1 },
     uLandKeyColor: { value: new Color(0x568752) },
     uLandKeyAmount: { value: 0 },
+    uLowSunFloor: { value: 0 },
     uLandKeyBreadth: { value: 0 },
     uHearthPosition: { value: new Vector3(0, 0, 0) },
     uHearthColor: { value: new Color(0xff9a4e) },
@@ -1147,6 +1155,7 @@ uniform vec3 uSunDirection;
 uniform vec3 uSunColor;
 uniform vec3 uLandKeyColor;
 uniform float uLandKeyAmount;
+uniform float uLowSunFloor;
 uniform float uLandKeyBreadth;
 uniform vec3 uSkyColor;
 uniform vec3 uHorizonColor;
@@ -1863,6 +1872,15 @@ void main() {
    */
   vec3 hue = albedo / max(max(albedo.r, max(albedo.g, albedo.b)), 0.001);
   vec3 floorLight = ambient * mix(vec3(1.0), hue, 0.5) * 0.28;
+  // The low-sun boost (valueFloor.ts): this floor is sized from the
+  // ambient, so it shrinks at dusk and golden exactly when the display
+  // transform is crushing the V ~0.2 band to grey — the 144/169 family's
+  // mechanism, measured at three independent sites (the 12/13 dusk
+  // stripes, wave 16's "midtones scooped" verdict, the travellers'
+  // "navy voids"). uLowSunFloor scales the SAME term at the horizon
+  // hours only, so the darkness gate below keeps choosing the fragments
+  // and night/noon stay untouched by schedule.
+  floorLight *= 1.0 + uLowSunFloor;
   color += floorLight * foregroundTier * exp(-dot(color, vec3(0.30, 0.59, 0.11)) * 22.0);
 
   /*

@@ -2547,6 +2547,32 @@ The wave-5 queue, from the wave-4 panel (mean ~5.5; take these next):
     is EXHAUSTED — six measured rounds; do not reopen without new
     evidence. The figure-shadow half of this task (bard casts
     nothing) remains real and untouched.
+    **The low-sun value floor (2026-08-07, run 116) — the 144/169
+    crush family's lever, enacted.** Three independent sites had
+    converged on one mechanism (runs 105-107's dusk-stripe
+    partition, wave 16's blind "bimodal frame — midtones scooped
+    out", run 115's NPC-void refutation): surfaces at V ~0.2 lose
+    their chroma through ACES + the finishing curve, and the
+    painterly SKY FLOOR — the existing hue-carrying additive term
+    gated on darkness — is sized from the ambient, so it shrinks at
+    dusk/golden exactly when that crush is worst ("the floor comes
+    down with the sky" is right at night and is the fault at the
+    horizon hours). `valueFloor.ts` (pure schedule, 3 tests):
+    uLowSunFloor boosts the SAME floor term ×2.6 across sun heights
+    −0.16..0.15 (golden, dawn, dusk full; ZERO at the night pose
+    −0.296 and at morning/noon by construction — the darkness gate
+    keeps choosing the fragments, the hour gate only funds it).
+    Measured: 05's pedlar V 0.205 → 0.292 with S HELD (0.386 →
+    0.393) — value without chroma loss, the exact NPC prescription;
+    12-dusk moves 64% of pixels, midtones open, figures read as lit
+    people (frame read); 07-night 0.6% (byte-close), night gauge
+    6.47 IDENTICAL. The trade, stated honestly: golden/landscape
+    give back ~0.7 stops of range (4.29 → 3.59, still far above
+    floors) and buy hueSpread 0.083 → 0.105 — the crushed band now
+    carries colour. The colour script's "golden is carrying — spend
+    no runs there" was traded against three waves of measured fault
+    convergence; wave 17 judges on re-shot 05/09/12/13. ALL POSES
+    PASS, 1239 tests (+3), build green.
 145. **Anchor the anchorless frames.** 03/08/10 are one chalky plane: no
     dark mass, no authored landmark inside the first third. Noon and the
     phone framings need a composed anchor (landmark placement bias near
