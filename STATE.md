@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 117 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 118 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass;
@@ -41,6 +41,40 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 118) — WAVE-17 BLIND PANEL: mean 4.31,
+  the five-wave same-rubric block reads 4.38/4.33/4.40/4.45/4.31 —
+  flat at the ±0.3 noise floor, and the STRATEGIC READ is now
+  unmistakable: the colour/value engine arc has moved its lenses to
+  5+ (value 5.23, its fault INVERTED — "no true black in daylight,
+  the ladder has no bottom" REPLACING "midtones scooped": the run-116
+  value floor registered and overshot nothing, but daylight dark
+  accents are now the value ask; colour 5.12, the fog-to-white and
+  shadow-hue families persisting), while the STUCK LENSES ARE
+  DESIGN-LEVEL: emotion 3.77 ("the protagonist has no face — and
+  gets less human the closer you look"; "NPCs are mannequins, so the
+  busk has no audience"; "an unpeopled world"), silhouette 3.62
+  ("one convex-lump vocabulary serves every object class",
+  clone-stamping, "scarecrow mannequins"), mobile 3.69 (the
+  scrim/no-panel collision, FOUR waves running — the idiom itself is
+  now the disputed design decision, not the tuning). Composition
+  4.46 ("no foreground plane — the near band is always empty
+  ground"; "leading line terminates in a void"). Frame moves:
+  07-night 4.92 → 5.25 (the floor + fire), 03 +0.34, 11/13 up;
+  09 3.83 → 3.42; 10-TABLET COLLAPSED 4.08 → 3.08 ("the dominant
+  note is GREY... even the cloak has gone muddy maroon") — 10 sits
+  at sunH 0.333, OUTSIDE both hour gates; measure what greyed it
+  before touching anything (suspect: it was always grey and the
+  panel's calibration wandered, ±0.3-0.6 per-lens noise binds
+  per-frame too). NEXT ARCS, sized honestly: (1) the character
+  pass — face-at-distance is a DESIGN decision (150's standing
+  note: try behind a comparison shoot), NPC identity/grouping at
+  the busk; (2) silhouette vocabulary variety (concave/spire/split
+  forms beyond the convex lump); (3) the mobile scrim decision —
+  either commit to a real plate idiom or accept the trade in
+  writing; (4) daylight dark accents (the value ladder's bottom).
+  Full verdicts: scratchpad wave17-verdicts.json, 6 opus judges,
+  ~615k tokens, dayKey 2026-08-07. Ledger updated.
 
 - **HANDOFF, 2026-08-07 (run 117) — 175 corner presence: the purse
   wash hugs its numbers, the corners hold their stroke.** Wave 16's
