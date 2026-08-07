@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 126 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 127 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -59,6 +59,18 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 127) — the scrim ruling: adaptive wash,
+  idiom kept.** Four waves of "unplated text fails on bright sky"
+  settled in-idiom: every HUD wash's peak alpha now scales with the
+  sky's own luma (1x at dusk/night — previous calibrations
+  byte-kept — to ~1.45x under noon white, cap 0.68). "Contrast is a
+  lottery decided by time of day" answered by making contrast a
+  function of the time of day. Also fixed: setTone was clobbering
+  the run-117 purse wash. Verified live (peak 0.596 at noon-phone).
+  1249 tests, build green. Visual count since wave 18: ONE (this).
+  Next: canopy asymmetry (geometry.ts), bard reaction poses,
+  escort-dog, or daylight dark accents.
 
 - **HANDOFF, 2026-08-07 (run 126) — wave 18's tree-clone lever
   REFUTED at the placement level; the residual is geometry-side.**

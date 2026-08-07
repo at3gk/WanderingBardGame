@@ -2330,6 +2330,23 @@ iPad household needs none of it; logged under Blocked on human.
     item in STATE). Boot-smoked live (high/shadowed on this desktop,
     zero errors). 1156 tests green (+7), build green.
 175. **Touch-target and orientation audit.**
+    **The scrim ruling (2026-08-07, run 127), settling four waves of
+    the same mobile verdict.** The no-panel idiom STANDS — no plate,
+    no border, no hard edge — and the wash now enforces its own
+    premise: "the sky going quiet behind the words" means a BRIGHT
+    sky must go quieter. Every wash's peak alpha scales with the
+    sky's own luma (1x at the dusk/night tones all previous
+    calibrations were judged against — those hours keep their tuning
+    to the byte — rising to ~1.45x, peak 0.44 → 0.64 capped 0.68,
+    under a noon-white sky). Wave 16's exact complaint — "contrast is
+    a lottery decided by time of day" — is answered by making the
+    contrast a function OF the time of day. Verified live at the
+    style level: peak 0.596 at the noon-phone pose, purse ellipse
+    intact. ALSO FIXED en route: setTone was clobbering run 117's
+    purse wash with the generic trailing ellipse on the first sky
+    change — the purse now keeps its tight geometry through every
+    hour. 1249 tests, build green. Wave 19 judges the bright-hour
+    captions.
     **Corner-presence piece (2026-08-07, run 117), aimed by wave 16's
     mobile lens.** Two of its five families answered inside the
     no-panel idiom: (1) "the coin counter is thin cream with no

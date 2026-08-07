@@ -183,8 +183,16 @@ const INK_SOFT = 'rgba(240, 226, 198, 0.84)';
  * two-layer text shadow underneath doing more of the contrast work. The card
  * should read as the sky going quiet behind the words, not as a panel.
  */
-function journalWash(r: number, g: number, b: number, atX = 50, radiusX = 49): string {
-  const stop = (alpha: number) => `rgba(${r}, ${g}, ${b}, ${alpha})`;
+function journalWash(
+  r: number,
+  g: number,
+  b: number,
+  atX = 50,
+  radiusX = 49,
+  alphaScale = 1,
+): string {
+  const stop = (alpha: number) =>
+    `rgba(${r}, ${g}, ${b}, ${Math.min(0.68, alpha * alphaScale).toFixed(3)})`;
   // Peak 0.44: down from the original 0.55 (a panel), up from the 0.34
   // retreat — four waves running read the card as "unbacked hairline
   // italic that fails the moment the sky is light", judged on phones in
@@ -1098,16 +1106,30 @@ export class Hud {
     const key = (quantise(r) << 16) | (quantise(g) << 8) | quantise(b);
     if (key === this.toneKey) return;
     this.toneKey = key;
-    const wash = journalWash(quantise(r) + 8, quantise(g) + 6, quantise(b) + 8);
+    // The scrim ruling (run 127), settling four waves of the same mobile
+    // verdict — "contrast is a lottery decided by time of day". The
+    // no-panel idiom STANDS; what changes is that the wash now enforces
+    // its own premise: "the sky going quiet behind the words" means a
+    // BRIGHT sky must go quieter. Peak alpha scales with the sky's own
+    // luma — up to ~1.45x (0.44 → 0.64) under a noon-white sky, exactly
+    // 1x at the dusk/night tones every previous calibration was judged
+    // against, so the hours that already read keep their tuning to the
+    // byte. Contrast stops being a lottery without a single hard edge.
+    const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    const alphaScale = 1 + 0.45 * Math.max(0, Math.min(1, (luma - 0.25) / 0.5));
+    const wr = quantise(r) + 8;
+    const wg = quantise(g) + 6;
+    const wb = quantise(b) + 8;
+    const wash = journalWash(wr, wg, wb, 50, 49, alphaScale);
     this.journalBox.style.background = wash;
     this.caseBox.style.background = wash;
     this.bookBox.style.background = wash;
     // The corner washes follow the same sky, biased toward their content.
-    this.instrumentBox.style.background =
-      journalWash(quantise(r) + 8, quantise(g) + 6, quantise(b) + 8, 32);
-    const trailing = journalWash(quantise(r) + 8, quantise(g) + 6, quantise(b) + 8, 68);
-    this.coinsBox.style.background = trailing;
-    this.songBox.style.background = trailing;
+    // The purse keeps its own tighter ellipse (run 117 — this line used to
+    // clobber it with the generic trailing wash on the first sky change).
+    this.instrumentBox.style.background = journalWash(wr, wg, wb, 32, 49, alphaScale);
+    this.coinsBox.style.background = journalWash(wr, wg, wb, 78, 34, alphaScale);
+    this.songBox.style.background = journalWash(wr, wg, wb, 68, 49, alphaScale);
   }
 
   /** Take the card down early, when the moment it described has passed. */
