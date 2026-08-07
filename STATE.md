@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 124 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 125 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -59,6 +59,29 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 125) — WAVE-18 BLIND PANEL: mean 4.21,
+  six-wave block 4.21-4.45, flat at the noise floor.** THE DEER
+  REGISTERED: silhouette's KEEP verbatim — "the best character
+  silhouette in the entire set - better than the player" — the
+  creature-staging arc's first external validation. Lens means:
+  colour 5.00, value 4.23 (down 1.0 — beyond usual lens noise, but
+  its ask is unchanged: "no true black, no true white"; treat the
+  drop as judge-harshness until wave 19 confirms), composition 4.27,
+  emotion 4.23 (the deer's LINE praised again; its close-up build
+  called "a rectangular box on four sticks" and the bard's
+  NON-REACTION to deer/sunset named — pose variety, the 150 residue),
+  mobile 3.81 (plates again — the scrim decision is now four-plus
+  waves overdue for an explicit design ruling), silhouette 3.73
+  (bard-is-a-slab + clone-stamped foliage rotation variety — a NEW
+  concrete cheap lever: per-instance rotation on tree kits). Top
+  frames 07 (5.58), 06/08 (4.83), 13 (4.75); worst 09 (3.33). NEXT
+  CANDIDATES, sized: (1) tree-kit rotation variety (cheap, concrete,
+  silhouette's second fault); (2) the scrim ruling — write the
+  decision in DESIGN (plate idiom or accept in writing), then enact;
+  (3) bard pose variety/reaction (150 residue, emotion's ask); (4)
+  the escort-dog. Verdicts: scratchpad wave18-verdicts.json, ~590k
+  tokens, dayKey 2026-08-07.
 
 - **HANDOFF, 2026-08-07 (run 124) — 186 piece 2: the fox and the
   cat.** SmallCreatures.ts (seated fox with brush + pretending
