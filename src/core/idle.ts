@@ -32,6 +32,7 @@
  * storage is unavailable.
  */
 
+import { bookmarkKey } from './profiles';
 import { hashString } from './rng';
 
 export interface IdleState {
@@ -232,7 +233,7 @@ export function saveIdle(state: IdleState | null, nowMs: number = Date.now()): v
   if (!store) return;
   try {
     if (state === null || state === undefined) {
-      store.removeItem(IDLE_STORAGE_KEY);
+      store.removeItem(bookmarkKey(IDLE_STORAGE_KEY));
       return;
     }
     const now = finite(nowMs) ?? Date.now();
@@ -243,7 +244,7 @@ export function saveIdle(state: IdleState | null, nowMs: number = Date.now()): v
       i: typeof state.instrumentId === 'string' ? state.instrumentId : '',
       q: Math.round(clamp01(finite(state.quality) ?? 0) * 1000) / 1000,
     };
-    store.setItem(IDLE_STORAGE_KEY, JSON.stringify(record));
+    store.setItem(bookmarkKey(IDLE_STORAGE_KEY), JSON.stringify(record));
   } catch {
     // Quota, private browsing, partitioned storage. The game plays the same;
     // the player simply gets no idle progress, which is the honest failure.
@@ -263,7 +264,7 @@ export function loadIdle(): IdleState | null {
   const store = storage();
   if (!store) return null;
   try {
-    const raw = store.getItem(IDLE_STORAGE_KEY);
+    const raw = store.getItem(bookmarkKey(IDLE_STORAGE_KEY));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<Stored> | null;
     if (!parsed || typeof parsed !== 'object' || parsed.v !== 1) return null;

@@ -1,3 +1,4 @@
+import { bookmarkKey } from './profiles';
 import { beginSession, createScaffold, decayForDaysAway, ScaffoldState } from './scaffold';
 
 /**
@@ -97,7 +98,7 @@ export function loadScaffold(nowMs: number = Date.now()): ScaffoldState {
   if (!store) return state;
 
   try {
-    const raw = store.getItem(KEY);
+    const raw = store.getItem(bookmarkKey(KEY));
     if (!raw) return state;
     const parsed = JSON.parse(raw) as Stored;
     if (!parsed || parsed.v !== 1 || typeof parsed.p !== 'object') return state;
@@ -144,7 +145,7 @@ export function saveScaffold(state: ScaffoldState, force = false, nowMs: number 
     const record: Stored = { v: 1, t: nowMs, p };
     if (songChoice) record.s = songChoice;
     if (Object.keys(songWalks).length > 0) record.w = songWalks;
-    store.setItem(KEY, JSON.stringify(record));
+    store.setItem(bookmarkKey(KEY), JSON.stringify(record));
   } catch {
     // Quota, private browsing, partitioned storage — the game is unaffected.
   }

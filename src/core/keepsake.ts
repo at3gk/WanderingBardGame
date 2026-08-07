@@ -30,6 +30,7 @@
  * the bytes that were never exported at all.
  */
 
+import { bookmarkKey } from './profiles';
 import { IDLE_STORAGE_KEY } from './idle';
 import { JOURNEY_STORAGE_KEY } from './journey';
 
@@ -76,7 +77,7 @@ export function exportKeepsake(nowMs: number = Date.now()): string | null {
 
   for (const key of KNOWN_KEYS) {
     try {
-      const raw = store.getItem(key);
+      const raw = store.getItem(bookmarkKey(key));
       if (!raw) continue;
       records[key] = JSON.parse(raw);
       found = true;
@@ -147,7 +148,7 @@ export function importKeepsake(text: string): KeepsakeImportResult {
       const value = records[key];
       if (!asRecord(value)) continue;
       try {
-        store.setItem(key, JSON.stringify(value));
+        store.setItem(bookmarkKey(key), JSON.stringify(value));
         written += 1;
       } catch {
         // Quota, private browsing, partitioned storage. Try the next record;
