@@ -2575,6 +2575,28 @@ top task fits its energy.
     world resumed at 154 m, save intact. Remaining 157: the shared
     journal pages (each bookmark reading the other's PAGES, never
     anything gradable). 1246 tests, build green.
+    **Piece 3 done (2026-08-07, run 123) — TASK 157 COMPLETE, and
+    with it the whole v0.9 retention queue (151-157).** The shared
+    pages: `peekJournal(bookmark)` (journey.ts) reads the sibling's
+    stored record raw and side-effect-free — loadJourney normalizes
+    and rolls the day for the bookmark about to PLAY, and reading a
+    sibling's pages must never do either — returning ONLY the day's
+    name and the prose lines by construction ("pages, not progress"
+    enforced by the return type: no coins, metres, legs, or festivals
+    can pass through it). `otherBookmarkPage` (campfirePage.ts, 3
+    tests) composes a read-only page: their last six moments, the
+    quiet line for an empty day, NO festival line (their progress),
+    no invitation, no walk-on door (their road is not yours to walk).
+    Tonight's page gains its quietest row — "Or turn to the other
+    bookmark's page" — offered only when the other cushion holds a
+    journey, gated to the fire's own page by the festival-line tell
+    so the doors never recurse onto the sibling's sheet; their road
+    is named from their own day's shared-leg seed. Verified live:
+    seeded sibling record → row on tonight's page → tap → their fox
+    line on their page, no festival distance anywhere. Journal lines
+    are prose-only by construction (coins live in hud.say, never in
+    recordEntry), re-checked across all six entry kinds. 1249 tests
+    (+3), build green.
 
 The wave-5 queue, from the wave-4 panel (mean ~5.5; take these next):
 

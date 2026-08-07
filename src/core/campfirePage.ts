@@ -18,7 +18,7 @@
  */
 
 import { IDLE_JOURNAL_KIND } from './idle';
-import { FESTIVAL_LEGS, legsToFestival, type JourneyState } from './journey';
+import { FESTIVAL_LEGS, legsToFestival, type JourneyState, type PeekedJournal } from './journey';
 import { rehearsalInvitation } from './rehearsal';
 
 export interface CampfirePageLine {
@@ -211,6 +211,38 @@ export function campfirePage(
     page.invitation = rehearsalInvitation(carriedTitle);
   }
   return page;
+}
+
+
+/**
+ * The other bookmark's page (task 157 piece 3) — what one bench cushion
+ * may read of the other. Composed from a `peekJournal` result, so by
+ * construction it can only ever hold the day's name and the prose lines:
+ * no festival distance (that is THEIR progress), no invitation, no
+ * walk-on door (their road is not yours to walk), no welcome logic. A
+ * bookmark with no moments yet still gets the quiet line — an empty page
+ * would read as a verdict on a day that simply had no audience.
+ */
+export function otherBookmarkPage(
+  peeked: PeekedJournal,
+  roadNameText: string | null = null,
+): CampfirePage {
+  const kept = peeked.entries.slice(Math.max(0, peeked.entries.length - PAGE_MOMENTS_MAX));
+  const moments: CampfirePageLine[] =
+    kept.length > 0
+      ? kept.map((entry) => ({
+          text: entry.line,
+          dayFraction: entry.dayFraction,
+          kind: entry.kind,
+        }))
+      : [{ text: QUIET_LINE, dayFraction: 0.5, kind: 'note' }];
+  return {
+    title: roadNameText
+      ? `${roadNameText} — the other bookmark's page`
+      : "The other bookmark's page",
+    moments,
+    festival: '',
+  };
 }
 
 /**

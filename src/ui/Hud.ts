@@ -267,6 +267,7 @@ export class Hud {
   private keepsakeCb: ((action: KeepsakeAction) => void) | null = null;
   private walkOnCb: (() => void) | null = null;
   private postcardCb: (() => void) | null = null;
+  private otherPageCb: (() => void) | null = null;
 
   /** Seconds of brightness left on each piece. */
   private coinsAttention = 0;
@@ -620,6 +621,15 @@ export class Hud {
    * contract again: no handler, no row. The postcard is a file operation
    * and belongs to whoever owns the canvas, so the HUD only ever offers it.
    */
+  /**
+   * Called when the player opens the other bookmark's page from tonight's
+   * (task 157 piece 3). Same contract as the rows above: no handler, no
+   * row — a single-bookmark bench never sees the offer.
+   */
+  onOtherPage(handler: () => void): void {
+    this.otherPageCb = handler;
+  }
+
   onPostcard(handler: () => void): void {
     this.postcardCb = handler;
   }
@@ -678,15 +688,19 @@ export class Hud {
       rows.push(row);
     }
 
-    const festival = element('div', {
-      marginTop: '16px',
-      fontStyle: 'italic',
-      lineHeight: '1.45',
-      color: INK,
-      textShadow: shadow,
-    });
-    festival.textContent = page.festival;
-    rows.push(festival);
+    // Empty means the page carries no festival line at all — the other
+    // bookmark's page (task 157) reads pages, never their progress.
+    if (page.festival) {
+      const festival = element('div', {
+        marginTop: '16px',
+        fontStyle: 'italic',
+        lineHeight: '1.45',
+        color: INK,
+        textShadow: shadow,
+      });
+      festival.textContent = page.festival;
+      rows.push(festival);
+    }
 
     if (page.invitation) {
       const invitation = element('div', {
@@ -732,7 +746,7 @@ export class Hud {
     // folding the page to press one would read as though the offer had
     // ended the night. Soft ink rather than full — it sits a shade quieter
     // than the road on, because it is optional in a way the road is not.
-    if (this.postcardCb) {
+    if (this.postcardCb && page.festival) {
       const press = element('div', {
         marginTop: '4px',
         padding: '12px 0 4px',
@@ -750,6 +764,30 @@ export class Hud {
         this.postcardCb?.();
       });
       rows.push(press);
+    }
+
+    // The other bookmark's page (task 157): the quietest row of all, and
+    // only on TONIGHT's page — a festival line is the tell that this page
+    // is the fire's own, so the doors never recurse onto the sibling's
+    // page. Reading it replaces the sheet; folding returns to the fire.
+    if (this.otherPageCb && page.festival) {
+      const other = element('div', {
+        marginTop: '2px',
+        padding: '12px 0 4px',
+        fontStyle: 'italic',
+        fontSize: '0.85em',
+        lineHeight: '1.45',
+        color: INK_SOFT,
+        textShadow: shadow,
+        cursor: 'pointer',
+      });
+      other.textContent = "Or turn to the other bookmark's page";
+      other.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.otherPageCb?.();
+      });
+      rows.push(other);
     }
 
     for (const [i, row] of rows.entries()) {

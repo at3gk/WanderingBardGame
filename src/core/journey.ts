@@ -718,6 +718,45 @@ export function saveJourney(state: object, force = false, nowMs: number = Date.n
  * other bench cushion is occupied, never anything about how far that
  * bookmark walked.
  */
+/**
+ * The other bookmark's journal, read without waking it (task 157 piece
+ * 3). Raw and side-effect-free on purpose: `loadJourney` normalizes and
+ * rolls the day over for the bookmark that is about to PLAY, and reading
+ * a sibling's pages must never do either. Only the pages come back —
+ * their day's name and their prose lines — never coins, metres, legs, or
+ * anything else the record holds, which is the research's ethics rule
+ * ("pages, not progress") enforced by the return type.
+ */
+export interface PeekedJournal {
+  dayKey: string;
+  entries: Array<{ line: string; dayFraction: number; kind: string }>;
+}
+
+export function peekJournal(bookmark: 0 | 1): PeekedJournal | null {
+  const store = storage();
+  if (!store) return null;
+  try {
+    const raw = store.getItem(bookmarkKey(JOURNEY_STORAGE_KEY, bookmark));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { day?: unknown; journal?: unknown } | null;
+    if (!parsed || typeof parsed.day !== 'string') return null;
+    const journal = Array.isArray(parsed.journal) ? parsed.journal : [];
+    const entries = journal
+      .filter(
+        (e): e is [number, number, string, string] =>
+          Array.isArray(e) && typeof e[3] === 'string' && typeof e[2] === 'string',
+      )
+      .map((e) => ({
+        line: e[3],
+        dayFraction: typeof e[1] === 'number' && Number.isFinite(e[1]) ? e[1] : 0.5,
+        kind: e[2],
+      }));
+    return { dayKey: parsed.day, entries };
+  } catch {
+    return null;
+  }
+}
+
 export function hasJourneyRecord(bookmark: 0 | 1): boolean {
   const store = storage();
   if (!store) return false;

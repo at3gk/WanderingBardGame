@@ -6,6 +6,7 @@ import {
   WELCOME_LINE,
   campfirePage,
   festivalLine,
+  otherBookmarkPage,
 } from './campfirePage';
 import { MEMENTO_KIND } from './encounters';
 import { IDLE_JOURNAL_KIND } from './idle';
@@ -241,5 +242,48 @@ describe('campfirePage — the welcome back', () => {
     // Hud.ts's boot card already says this; the fire is a different voice
     // hours later, so it may share the sentiment and none of the words.
     expect(WELCOME_LINE).not.toContain('kept your place');
+  });
+});
+
+describe('otherBookmarkPage', () => {
+  it('carries only pages: prose moments, no festival, no doors', () => {
+    const page = otherBookmarkPage(
+      {
+        dayKey: '2026-08-07',
+        entries: [
+          { line: 'A fox sat down to listen.', dayFraction: 0.4, kind: 'encounter' },
+          { line: 'Two stayed to the end.', dayFraction: 0.8, kind: 'busk' },
+        ],
+      },
+      'Barleymow Path',
+    );
+    expect(page.title).toContain('Barleymow Path');
+    expect(page.title).toContain("other bookmark's page");
+    expect(page.moments.map((m) => m.text)).toEqual([
+      'A fox sat down to listen.',
+      'Two stayed to the end.',
+    ]);
+    // The ethics rule enforced by shape: no festival distance (their
+    // progress), no invitation, no walk-on door onto their road.
+    expect(page.festival).toBe('');
+    expect(page.invitation).toBeUndefined();
+    expect(page.walkOn).toBeUndefined();
+  });
+
+  it('caps at the page window and keeps the newest', () => {
+    const entries = Array.from({ length: 10 }, (_, i) => ({
+      line: `moment ${i}`,
+      dayFraction: 0.5,
+      kind: 'busk',
+    }));
+    const page = otherBookmarkPage({ dayKey: 'd', entries });
+    expect(page.moments).toHaveLength(PAGE_MOMENTS_MAX);
+    expect(page.moments[page.moments.length - 1].text).toBe('moment 9');
+  });
+
+  it('gives an empty day the quiet line, not an empty page', () => {
+    const page = otherBookmarkPage({ dayKey: 'd', entries: [] });
+    expect(page.moments).toHaveLength(1);
+    expect(page.moments[0].text.length).toBeGreaterThan(0);
   });
 });
