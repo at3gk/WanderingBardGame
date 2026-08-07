@@ -1470,9 +1470,17 @@ void main() {
   // it; everything pointing away — the terracotta road, the bard's red,
   // flowers, firelight — is untouched by construction, which is the
   // palette's one-family-one-dissenter rule enforced by the hour. Luma
-  // is preserved exactly; chroma magnitude is preserved up to the chord
-  // of the rotation, so the pull can only bind hues, never brighten or
-  // saturate them.
+  // is preserved exactly, and chroma MAGNITUDE is preserved exactly too:
+  // the mix below walks the chord between the two directions, and a raw
+  // chord mix loses up to a fifth of its length near ninety degrees —
+  // measured on the golden frames as the pull literally desaturating the
+  // grass it was binding (mean dS -0.03 at amount 0.45), which is the
+  // "chroma-dead" read three panel waves have faulted, being manufactured
+  // by the fix. Renormalising to the original magnitude makes the pull a
+  // true rotation: it can only bind hues, never brighten, and now never
+  // drain either. Safe by construction: the chord only nears zero length
+  // when the pull is large AND the albedo is anti-family, and the weight
+  // is zero exactly there.
   if (uLandKeyAmount > 0.0) {
     float albLuma = dot(albedo, LUMA_W);
     vec3 albChroma = albedo - albLuma;
@@ -1486,7 +1494,9 @@ void main() {
     // hues fully and still leaves the anti-family — the fire's warmth —
     // at zero by construction.
     float pull = uLandKeyAmount * (max(sim, 0.0) + uLandKeyBreadth * (1.0 - abs(sim)));
-    albedo = max(vec3(0.0), albLuma + mix(albChroma, keyDir * albMag, pull));
+    vec3 mixedChroma = mix(albChroma, keyDir * albMag, pull);
+    mixedChroma *= albMag / max(length(mixedChroma), 1e-4);
+    albedo = max(vec3(0.0), albLuma + mixedChroma);
   }
 
   // --- banded diffuse ----------------------------------------------------

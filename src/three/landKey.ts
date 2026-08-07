@@ -95,17 +95,27 @@ export const NIGHT_KEY_OUT = 0.08;
  * The low warm sun (wave 14, second site of the same family): "bright
  * noon-green bushes and rocks under a saffron dawn sky" (01), "bushes
  * stay forest green inside a fully golden wash" (05/12). The key is the
- * HORIZON's own warm colour — the wash the panel says the greens refuse —
- * and the pull is the gentlest of the three modes: these hours already
- * carry themselves (the colour script's verdict stands for value); this
- * only asks the albedo greens to lean toward the light everything else
- * already obeys. The reference for what it should look like is 04's own
- * praised foliage — "warm near-black silhouettes", aubergine — not
- * saturated mid-green. Cast-shadow coolness is untouched by construction:
- * the attraction acts on ALBEDO, and the complement rule lives in the
- * lighting terms.
+ * HORIZON's own warm colour — the wash the panel says the greens refuse.
+ * The reference for what it should look like is 04's own praised foliage
+ * — "warm near-black silhouettes", aubergine — not saturated mid-green.
+ * Cast-shadow coolness is untouched by construction: the attraction acts
+ * on ALBEDO, and the complement rule lives in the lighting terms.
+ *
+ * 0.45, re-derived from 0.22 (wave 15). The first calibration argued
+ * "these hours carry themselves — the gentlest of the three modes", and
+ * the panels answered by repeating the exact fault family a third wave
+ * running ("the grass TUFTS stay yellow-olive inside committed washes",
+ * 7 frames, identical in both run-109 samples). Measured before moving:
+ * at 0.22 the pull was sub-perceptual — widening the cone (breadth 0.5 →
+ * 0.85) changed under half a per cent of golden-frame pixels, and the
+ * amount itself rotates a hue at most a fifth of the way. The committed
+ * wash is the one hour whose light is the frame's law, so the albedo
+ * constraint is now TIGHTEST there, not loosest — still under the 0.5
+ * erasure ceiling, and the anti-family (the bard's red, firelight) is
+ * exempt by construction as ever. Judge on re-shot 01/04/05 at the next
+ * wave.
  */
-export const LOW_SUN_KEY_MAX = 0.22;
+export const LOW_SUN_KEY_MAX = 0.45;
 export const LOW_SUN_KEY_BREADTH = 0.5;
 /** The band: dawn (y≈0.16) and golden (y≈0.12) inside, morning out. */
 export const LOW_SUN_IN_START = 0.08;
