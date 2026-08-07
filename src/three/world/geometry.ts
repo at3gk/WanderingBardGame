@@ -1367,18 +1367,53 @@ export function broadleafGeometry(options: TreeOptions): BufferGeometry {
   // like a jellyfish. Real branches are inside the foliage where nobody
   // sees them, so the cheapest correct answer is not to build them.
 
+  // Run 127's asymmetry lever. Every instance of this tree already gets a
+  // random full-circle yaw at placement, but a yaw does nothing to a shape
+  // that is rotationally symmetric — four evenly spaced lobes on the trunk
+  // axis look identical from every heading, which is why a blind panel read
+  // the forest as one kit clone-stamped at zero rotation variance. The fix
+  // has to live in the geometry: give each seed a *direction* and the free
+  // yaw turns into genuinely different silhouettes.
+  //
+  // The direction is the light. A real broadleaf grows toward its gap in the
+  // canopy, so the whole crown is carried off the trunk axis and the lobes on
+  // that side are both further out and larger.
+  const leanAngle = rand() * Math.PI * 2;
+  // Nominal canopy radius is spread plus lobe radius, about 2.0 m. Offsetting
+  // by 16-24% of that is the window either side of which the lever stops
+  // working: under about 0.3 m the lean is lost in the lumpiness of the domes
+  // by the time the tree is eighty metres off, and much over 0.5 m the trunk
+  // is leaving the crown at its rim and the tree reads as falling over.
+  const leanOffset = 2.0 * (0.16 + rand() * 0.08);
+  const leanX = Math.cos(leanAngle) * leanOffset;
+  const leanZ = Math.sin(leanAngle) * leanOffset;
+
   const lobes = 4;
   for (let b = 0; b < lobes; b++) {
     const a = (b / lobes) * Math.PI * 2 + rand() * 0.6;
-    const spread = 0.75 + rand() * 0.4;
-    const radius = 1.0 + rand() * 0.3;
+    // +1 for the lobe facing into the lean, -1 for the one in its shadow.
+    const bias = Math.cos(a - leanAngle);
+    // Mass, not just position. Shifting four equal lobes sideways gives a
+    // crown that is off-centre but still round; making the far side reach
+    // further and carry a bigger dome is what puts a heavy shoulder on one
+    // side of the outline and a thin one on the other. 30% on the reach and
+    // 18% on the radius are as far as this goes before the small lobe stops
+    // overlapping its neighbours and the canopy comes apart into blobs — the
+    // domes have to stay interpenetrating for the AO bake below to read the
+    // canopy as one mass.
+    const spread = (0.75 + rand() * 0.4) * (1 + bias * 0.3);
+    const radius = (1.0 + rand() * 0.3) * (1 + bias * 0.18);
     const lobe = lumpDome(radius, 7, 3, 0.85, 0.24, rand);
-    translateY(lobe, trunkH + radius * 0.66 + rand() * 0.35);
-    translateXZ(lobe, Math.cos(a) * spread, Math.sin(a) * spread);
+    // The loaded side also sags: a heavy limb sits lower than a light one,
+    // and that tilt across the top of the crown is the part of the asymmetry
+    // that survives being seen from directly downwind of the lean.
+    translateY(lobe, trunkH + radius * 0.66 + rand() * 0.35 - bias * 0.18);
+    translateXZ(lobe, Math.cos(a) * spread + leanX, Math.sin(a) * spread + leanZ);
     parts.push(paint(lobe, options.canopyColor, 0.18, rand));
   }
   const crown = lumpDome(1.1 + rand() * 0.28, 7, 3, 0.8, 0.2, rand);
   translateY(crown, trunkH + 1.5 + rand() * 0.35);
+  translateXZ(crown, leanX, leanZ);
   parts.push(paint(crown, options.canopyColor, 0.14, rand));
 
   const merged = mergeGeometries(parts);
@@ -1419,6 +1454,34 @@ export function willowGeometry(options: TreeOptions): BufferGeometry {
   const trunkH = 1.6 + rand() * 0.6;
 
   parts.push(paint(taperedCylinder(0.17, 0.33, trunkH, 5, rand), options.trunkColor, 0.14, rand));
+  // The trunk is the first part merged, so its vertices are the first block of
+  // the merged buffer. Remembering the count here is what lets the sway pass
+  // at the bottom of this function tell trunk from frond without guessing from
+  // radius — see the note down there; run 127's lean broke the guess.
+  const trunkVerts = parts[0].attributes.position.count;
+
+  // Run 127's asymmetry lever, the willow's half of it. Instance yaw is
+  // already random and already invisible here for the same reason it is on
+  // the broadleaf: a curtain hung on a circle centred on the trunk is the
+  // same curtain from every heading. So the canopy — cap and curtain
+  // together — is carried off the trunk axis by a seeded direction.
+  //
+  // Rigidly, and that word is doing all the work. The comments below spend
+  // three paragraphs on the strips overlapping their neighbours by a quarter,
+  // because the moment a gap opens the tree stops being a skirt and becomes
+  // an elephant on four legs. Translating the entire ring by one vector moves
+  // every strip identically, so every overlap is exactly what it was; any
+  // per-strip variation here would reopen the gaps the frond count was raised
+  // to close. The asymmetry comes from the trunk emerging near the skirt's
+  // edge instead of its middle.
+  //
+  // Nominal canopy radius is about 1.55 m (the outer frond ring), and 15-22%
+  // of it is the same window as the broadleaf's: enough to read at eighty
+  // metres, not so much that the trunk leaves the curtain.
+  const leanAngle = rand() * Math.PI * 2;
+  const leanOffset = 1.55 * (0.15 + rand() * 0.07);
+  const leanX = Math.cos(leanAngle) * leanOffset;
+  const leanZ = Math.sin(leanAngle) * leanOffset;
 
   // A rounded cap, not the flat plate this had at first. At 0.5 flatten the
   // canopy read as a dinner plate balanced on a pole; a willow's crown is a
@@ -1429,6 +1492,7 @@ export function willowGeometry(options: TreeOptions): BufferGeometry {
   // underneath.
   const cap = lumpDome(1.42 + rand() * 0.22, 7, 3, 0.74, 0.16, rand);
   translateY(cap, trunkH + 0.75);
+  translateXZ(cap, leanX, leanZ);
   parts.push(paint(cap, options.canopyColor, 0.13, rand));
 
   // Two rings of them. One ring leaves gaps you can see the trunk through,
@@ -1476,19 +1540,19 @@ export function willowGeometry(options: TreeOptions): BufferGeometry {
     // than the ring they sit on does.
     const tipX = x * 0.66;
     const tipZ = z * 0.66;
-    const tlx = x + sx * w;
-    const tlz = z + sz * w;
-    const trx = x - sx * w;
-    const trz = z - sz * w;
+    const tlx = x + sx * w + leanX;
+    const tlz = z + sz * w + leanZ;
+    const trx = x - sx * w + leanX;
+    const trz = z - sz * w + leanZ;
     // The taper stops at two thirds rather than a third. A strip that
     // narrows almost to a point leaves a triangle of daylight between it and
     // its neighbour for the whole lower half of the curtain, which is the
     // part of the tree nearest the ground and so the part that decides
     // whether it has a skirt or legs.
-    const blx = tipX + sx * w * 0.66;
-    const blz = tipZ + sz * w * 0.66;
-    const brx = tipX - sx * w * 0.66;
-    const brz = tipZ - sz * w * 0.66;
+    const blx = tipX + sx * w * 0.66 + leanX;
+    const blz = tipZ + sz * w * 0.66 + leanZ;
+    const brx = tipX - sx * w * 0.66 + leanX;
+    const brz = tipZ - sz * w * 0.66 + leanZ;
     parts.push(
       paint(
         fromPositions([
@@ -1524,10 +1588,16 @@ export function willowGeometry(options: TreeOptions): BufferGeometry {
   for (let i = 0; i < position.count; i++) {
     const y = position.getY(i);
     if (y < trunkH + 0.6) {
-      // Trunk and low hanging fronds: distinguish them by radius, since the
-      // trunk is the only thing near the axis.
-      const radius = Math.hypot(position.getX(i), position.getZ(i));
-      sway.setX(i, radius > 0.8 ? 1.0 : 0.05);
+      // Trunk and low hanging fronds share this height band and have to be
+      // told apart. This used to ask whether the vertex was more than 0.8 m
+      // from the world axis, on the reasoning that the trunk is the only
+      // thing near it — true only while the curtain is centred on the trunk,
+      // which run 127's lean ended. Under the lean the inner ring's hem
+      // crosses that radius on the lee side and its tips would have frozen
+      // solid, which on the one plant whose motion *is* its silhouette is the
+      // worst thing that could happen to it. The merge order answers the
+      // question exactly and for free: the trunk is the first block.
+      sway.setX(i, i < trunkVerts ? 0.05 : 1.0);
     } else {
       sway.setX(i, 0.35);
     }

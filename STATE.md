@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 127 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 128 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -59,6 +59,26 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 128) — the canopies grow toward their
+  light: run 126's queued asymmetry lever enacted (delegated to an
+  opus agent, verified in the main loop).** Broadleaf and willow
+  canopies now carry a seeded lateral lean (centroid 19-24% of canopy
+  radius off the trunk axis, measured across four seeds — squarely in
+  the 15-25% target band) with per-lobe mass bias toward the lean
+  (reach +30%, size +18%, sag on the loaded side), so the existing
+  random instance yaw finally produces DIFFERENT silhouettes — the
+  true fix for wave 18's "clone-stamped foliage" after the placement
+  knobs were proven innocent. Conifers stay symmetric (a spruce is a
+  cone). ZERO triangle cost (positions only: broadleaf 220 tris,
+  willow 148, unchanged). One honest follow-on: the willow's sway
+  pass identified its trunk by radius-from-axis, which the lean
+  breaks — now an exact first-merged-part test; some hem vertices
+  that were already wrongly frozen now sway. Frame read: 02's
+  broadleafs each lean their own way. 1249 tests, build green.
+  Visual count since wave 18: TWO (127 scrim, 128 this). Next:
+  bard reaction poses, escort-dog, daylight dark accents, or wave 19
+  after one more.
 
 - **HANDOFF, 2026-08-07 (run 127) — the scrim ruling: adaptive wash,
   idiom kept.** Four waves of "unplated text fails on bright sky"
