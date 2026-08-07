@@ -3188,6 +3188,26 @@ full verdict map and the measure-first suspicion list):
     shade + backlit staging. Remaining 150, honestly: the mannequin
     family is now stiffness/pose-variety, not anatomy — an idle-pose
     piece if a wave asks again. 1221 tests, build green.
+    **NPC-void measurement (2026-08-07, run 115) — the "unlit navy
+    voids" family REFUTED as an albedo problem and re-attributed to
+    the 144/169 value family.** Waves 15+16 both named the travellers
+    "flat unlit navy-black voids at the exact focal point" of the
+    golden frames (05/09). Sampled before obeying: the NPC bodies sit
+    at the SAME value as the bard's praised cloak (V 0.20-0.24) with
+    warm hues — the light lands; "unlit" is false — but at HALF his
+    saturation (S 0.29-0.39 vs 0.66). The prescribed-looking fix
+    (raise the palettes' chroma, cloth/under/crown ×1.7 about exact
+    luma, values pinned) was BUILT, SHOT AND REVERTED: it moved 0.63%
+    of frame pixels and the body samples by ±0.03 S — because V ~0.21
+    is the ACES + finishing-curve chroma-crush regime run 107
+    partitioned at the 12/13 dusk band. Albedo chroma cannot survive
+    the display transform at that value. THE FAMILY'S TRUE LEVER is
+    the shade-side VALUE floor at low sun — the same 144/169 lever as
+    the dusk band, now with a THIRD independent site (dusk stripes,
+    wave-16 value lens's "midtones scooped", NPC voids). The
+    traveller palettes' own guardrails (never lighten a part) bind
+    the albedo, not the lighting — the value floor is lighting-side
+    and does not collide. No code shipped (measurement + revert).
 
 143. **The road's soft edge.** Wave 3's ablation identified the road's
     soft-blended boundary against the grass as the biggest remaining
