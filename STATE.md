@@ -42,6 +42,25 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-08-07 (run 112) — 166 noon-accent piece: the
+  flowers become drifts.** The village-noon accent gap enacted as one
+  lever, twice calibrated and shot both times: flower clump 3 → 7
+  over 0.8 m (patches over specks, the grass entry's own argument),
+  then density 0.07 → 0.12/m² — through the village's 2.4× multiplier
+  the meadow now carries coherent terracotta/periwinkle drifts at the
+  flattest hour. Instrument finding: frame-quality's hueSpread CANNOT
+  SEE this lever (flat at 2.63/0.401 through both moves — flowers are
+  too few pixels for a percentile spread); gauges gate regressions,
+  the panel judges the win. All poses PASS, 1235 tests. PR #229
+  landed and reconciled before this run. Visual count since wave 15:
+  THREE (110 road, 111 hour-key, 112 this) — **WAVE 16 IS DUE NEXT
+  ITERATION** (six-lens blind panel, re-downloaded references, same
+  rubric; judge-noise floor ±0.3 from run 109 binds). Wave 16 should
+  specifically judge: re-shot 01/04/05 (hour-key grip), noon-village/
+  02/08 (flower drifts), and the road family (piece 6). Remaining
+  166: skylight ambient saturation. Night-side olive stays parked
+  (144/169).
+
 - **HANDOFF, 2026-08-07 (run 111) — 185 piece 7: the pull stops
   draining what it binds; the committed hours get their grip.** Wave
   15's tuft family measured before touching: the cone story was
