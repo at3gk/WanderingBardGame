@@ -78,6 +78,7 @@ only the frame/reference file paths.
 | 16   | 4.45 | this text    | flat overall; colour became the TOP lens (5.46) — road/golden/flower fixes registered by name; dominant fault narrowed to the hours the key schedule leaves uncovered (01 dawn trough, 12/13 dusk) |
 | 17   | 4.31 | this text    | flat (five-wave block 4.31-4.45); value rose to 5.23 and its fault INVERTED ("no true black" replacing "midtones scooped" — the value floor registered); colour holds 5.12; the stuck lenses are design-level: emotion 3.77 (faceless bard, mannequin NPCs), silhouette 3.62 (convex-lump vocabulary), mobile 3.69 (the scrim question, four waves). 10-tablet collapsed to 3.08 ("the dominant note is GREY") — measure before touching |
 | 18   | 4.21 | this text    | flat (six-wave block 4.21-4.45); the deer is silhouette's KEEP ("best character silhouette in the entire set — better than the player"); emotion praises its line, faults its close build + the bard's non-reaction; value asks for true black again; mobile still asks for plates |
+| 19   | 4.40 | this text    | block recovers (4.21-4.45 flat); colour top again (5.46); the deer beat is emotion's KEEP with the thesis stated back ("rewards only attention"); silhouette rises to 3.85 (deer "strongest read in the set", 13-bard praised); mobile 3.62 holds its no-plate verdict post-ruling — the ruling stands, recorded, not re-litigated per wave |
 
 Earlier waves (5-12) ran on two prior, now-lost rubric texts; their means
 live in STATE.md's HANDOFF entries with their own caveats.
