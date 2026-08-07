@@ -74,6 +74,8 @@ only the frame/reference file paths.
 | ---- | ---- | ------------ | ----- |
 | 13   | 4.38 | this text    | first wave on the 13-frame sheet |
 | 14   | 4.33 | this text    | flat; land key registered locally (03 colour 3.4 → 4.8) |
+| 15   | 4.40 | this text    | flat; accidental same-wave re-run measured judge noise at ±0.3-0.6 per lens — wave deltas under ~0.3 are noise |
+| 16   | 4.45 | this text    | flat overall; colour became the TOP lens (5.46) — road/golden/flower fixes registered by name; dominant fault narrowed to the hours the key schedule leaves uncovered (01 dawn trough, 12/13 dusk) |
 
 Earlier waves (5-12) ran on two prior, now-lost rubric texts; their means
 live in STATE.md's HANDOFF entries with their own caveats.
