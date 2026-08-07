@@ -2094,6 +2094,28 @@ interviews) — read it before taking any task; its not-recommended list
     postcard A/B pairs must always be same-day. Remaining 166:
     per-biome noon accents + skylight ambient saturation (the
     "unmodulated khaki road" halves of wave 10's noon verdict).
+    **Piece 5 done (2026-08-07, run 112): the flowers become drifts —
+    the village-noon accent voice.** The script's village-noon section
+    ("colour must come from its accents — it has no treeline to lean
+    on") measured against the noon-village frame: both accent hues
+    were on screen and INAUDIBLE — a 3-flower clump with 6 cm petals
+    is a speck at postcard distance. Two calibrated moves of the one
+    lever (the flower's voice), each shot separately: clump 3 → 7
+    over 0.8 m (the grass entry's own "patches over specks"
+    redistribution — a patch of terracotta or periwinkle instead of
+    confetti) read as real drifts but left the frame-level voice
+    flat; density 0.07 → 0.12/m² (×2.4 village multiplier, so the
+    raise lands in the biome that needs it while forest stays at
+    0.042 effective) peppers the meadow with coherent drifts — the
+    wildflower-pasture read. INSTRUMENT FINDING, recorded in the
+    script's changelog: frame-quality's hueSpread is blind to this
+    lever (2.63/0.401 → 2.63/0.401 — flowers are too few pixels for
+    a percentile spread), so the gauges gate regressions only and
+    the panel judges the win: re-shot noon-village + 02/08 at wave
+    16. All poses PASS, 02-morning unharmed by eye, 1235 tests,
+    build green. Remaining 166: skylight ambient saturation;
+    village noon's built accents (roofs/painted doors) belong to
+    the props queue, not scatter.
     **Piece 4 done (2026-08-06, run 87): the road changes colour
     along its length.** Wave 10's loudest colour fault by area —
     "the largest area of every frame is one unmodulated hue", the

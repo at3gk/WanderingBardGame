@@ -220,3 +220,10 @@ one hue family, one dissenter each):
 
 - 2026-08-05: written (166 piece 1). No runtime values changed in
   this piece; the noon targets above are the spec for piece 2.
+- 2026-08-07: 166 noon-accent piece (run 112) — the flower clump
+  became a drift (3 over 0.55 m → 7 over 0.8 m) and the scatter
+  density rose 0.07 → 0.12/m², which through the village's own 2.4×
+  multiplier lands mostly in the biome this section names as needing
+  it. Instrument note: frame-quality's hueSpread cannot see this
+  lever (flowers are too few pixels for a percentile spread) — the
+  judge is the panel on re-shot noon-village/02/08.

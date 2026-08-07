@@ -1083,9 +1083,22 @@ const SCATTER_KINDS: ScatterKind[] = [
   {
     key: 'flower',
     geometry: () => cachedGeometry('flower', () => flowerGeometry(13)),
-    clump: 3,
-    clumpRadius: 0.55,
-    perSquareMetre: 0.07,
+    /*
+     * 7 over 0.8 m, up from 3 over 0.55 (166's noon-accent piece, run
+     * 112). The colour script's village-noon section says the hour's
+     * colour "must come from its accents (roofs, flowers, painted
+     * doors)" — and the noon-village frame showed why it wasn't: a
+     * 3-flower clump is a speck at postcard distance, so both accent
+     * hues were on screen and inaudible. Same instance density, so this
+     * is the grass entry's own argument — a redistribution rather than
+     * more flowers: fewer clump centres, each a genuine PATCH of
+     * terracotta or periwinkle, which is the reference's flower-drift
+     * read (colour events, not confetti). The land key never touches
+     * them at any hour — accents are anti-family by construction.
+     */
+    clump: 7,
+    clumpRadius: 0.8,
+    perSquareMetre: 0.12,
     densityKey: 'flower',
     spread: 20,
     clearance: VERGE.flower,
