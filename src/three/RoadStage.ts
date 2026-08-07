@@ -91,6 +91,7 @@ import {
   startNextLeg,
   unlockInstrument,
   hasJourneyRecord,
+  peekJournal,
   type JourneyState,
   type Phase,
 } from '../core/journey';
@@ -141,7 +142,8 @@ import {
 } from '../core/encounters';
 import { describeIdleYield, idleYield, IDLE_JOURNAL_KIND, loadIdle, saveIdle } from '../core/idle';
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
-import { campfirePage, type CampfirePage } from '../core/campfirePage';
+import { campfirePage,
+  otherBookmarkPage, type CampfirePage } from '../core/campfirePage';
 import { postcardLines, POSTCARD_FILENAME, type PostcardCard } from '../core/postcardCard';
 import { roadName } from '../core/roadName';
 import { encounter } from '../core/scaffold';
@@ -586,6 +588,18 @@ export class RoadStage implements Stage {
     this.hud.onKeepsake((action) => this.keepsake(action));
     this.hud.onWalkOn(() => this.walkOn());
     this.hud.onPostcard(() => this.pressPostcard());
+    // The other bookmark's page (task 157 piece 3): offered only when the
+    // other bench cushion holds a journey at all. Composed lazily at tap
+    // time so it reads whatever their record says TONIGHT, and their road
+    // is named from their own day's shared-leg seed.
+    if (hasJourneyRecord(activeBookmark() === 1 ? 0 : 1)) {
+      this.hud.onOtherPage(() => {
+        const other: 0 | 1 = activeBookmark() === 1 ? 0 : 1;
+        const peeked = peekJournal(other);
+        if (!peeked) return;
+        this.hud.showPage(otherBookmarkPage(peeked, roadName(legSeed(peeked.dayKey, 0))));
+      });
+    }
     this.hud.setMode(this.journey.phase === 'resting' ? 'resting' : 'walking');
     if (this.journey.phase === 'resting') this.makeCamp();
     this.collectIdle();

@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 122 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 123 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -59,6 +59,18 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 123) — 157 COMPLETE; the v0.9 retention
+  queue (151-157) CLOSES.** The shared pages shipped: peekJournal
+  (raw, side-effect-free, pages-not-progress enforced by the return
+  type), otherBookmarkPage (no festival line, no doors), and tonight's
+  page's quietest row, gated by the festival-line tell so doors never
+  recurse onto the sibling's sheet. Verified live end-to-end. All
+  seven retention recommendations are now enacted or standing. 1249
+  tests (+3), build green. Open queues remaining: 186 creatures
+  (cat/dog/fox next), the wave-17 design asks (silhouette
+  vocabulary, scrim decision, daylight dark accents), 161 (blocked
+  on human), 144-148 wave-5 residuals, v1.3 (176-178, unlocked).
 
 - **HANDOFF, 2026-08-07 (run 122) — 157 piece 2: the bookmark door.**
   The title card's third, quietest door switches bookmarks by piece
