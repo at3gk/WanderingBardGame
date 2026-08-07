@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 118 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 119 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass;
@@ -41,6 +41,21 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 119) — 186 piece 1: the deer is real,
+  and the staging follows the writing.** Wave 17's sharpest emotion
+  finding enacted: `actors/Deer.ts` (alert neck + splayed ears — the
+  silhouette marks nothing else has; breath + ear-flick only, because
+  the line is stillness), stood at 6.5-9 m through the real staging
+  path, leaving without hurrying when the walk resumes. THE DEEPER
+  FIX: placeMeeting stood a random HUMAN for every encounter — on a
+  deer day the frame contradicted its caption. `meetingFigureFor`
+  (pure, table-swept test): traveller → person, creature → own
+  figure where one exists, otherwise NOTHING; weather stands nothing.
+  Frame verified live: dusk, deer off-road, caption agreeing. 1240
+  tests (+1). Visual count since wave 17: ONE. Next candidates: more
+  creatures (cat/dog/fox per 186), silhouette vocabulary, the scrim
+  decision, or daylight dark accents (wave 17's value ask).
 
 - **HANDOFF, 2026-08-07 (run 118) — WAVE-17 BLIND PANEL: mean 4.31,
   the five-wave same-rubric block reads 4.38/4.33/4.40/4.45/4.31 —

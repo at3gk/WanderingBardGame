@@ -6,6 +6,7 @@ import {
   ASK_NEEDED,
   ASK_NOTES,
   ENCOUNTERS,
+  meetingFigureFor,
   EncounterAsk,
   EncounterDef,
   EncounterKind,
@@ -843,6 +844,21 @@ describe('the road, spoken', () => {
       expect(aside).not.toMatch(pressure);
       expect(aside).toContain(NAME);
       expect(aside.length).toBeLessThan(120);
+    }
+  });
+});
+
+describe('meetingFigureFor', () => {
+  it('stands a person for travellers, the deer for the deer, nothing else', () => {
+    for (const def of ENCOUNTERS) {
+      const figure = meetingFigureFor(def);
+      if (def.kind === 'traveller') expect(figure).toBe('person');
+      else if (def.id === 'still-deer') expect(figure).toBe('deer');
+      // A creature without its own figure stands NOTHING: for most of the
+      // game's life every encounter stood a random human, so a deer day
+      // showed a walker playing understudy. Unstaged is honest; mis-staged
+      // contradicts the caption.
+      else expect(figure).toBeNull();
     }
   });
 });

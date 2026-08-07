@@ -47,6 +47,7 @@ import { roadSurfaceHeight, TERRAIN_REACH, WorldStreamer } from './world/WorldSt
 import { Bard } from './actors/Bard';
 import { ContactShadow } from './actors/ContactShadow';
 import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
+import { Deer } from './actors/Deer';
 import { Campfire } from './scenes/Campfire';
 import { FestivalGrounds } from './scenes/FestivalGrounds';
 import { ParticleField, fallingLeaves, fireflies, seedFluff, sunDust } from './fx/Particles';
@@ -131,8 +132,10 @@ import {
   MEMENTO_KIND,
   resolveAsk,
   rollAsk,
+  meetingFigureFor,
   rollEncounter,
   type EncounterAsk,
+  type EncounterDef,
 } from '../core/encounters';
 import { describeIdleYield, idleYield, IDLE_JOURNAL_KIND, loadIdle, saveIdle } from '../core/idle';
 import { exportKeepsake, importKeepsake, KEEPSAKE_FILENAME } from '../core/keepsake';
@@ -264,6 +267,15 @@ export class RoadStage implements Stage {
    * frame budget where a hitch would actually be heard.
    */
   private readonly people: Traveller[] = [];
+  /**
+   * The deer, built the first time a deer encounter is met (most walks
+   * never meet one, and an unused quadruped is not worth its triangles at
+   * boot). Its drift record works like a listener slot's: `departing`
+   * flips when the walk resumes and the deer leaves without hurrying —
+   * which is the encounter line, staged.
+   */
+  private deer: Deer | null = null;
+  private deerDrift: { angle: number; radius: number; departing: boolean } | null = null;
   private readonly shown: Traveller[] = [];
   private readonly actors = new Group();
   private readonly notes: SongNotes;
@@ -834,10 +846,13 @@ export class RoadStage implements Stage {
       this.gatherListeners();
     }
     if (phase === 'encounter') {
-      this.startEncounter();
-      this.placeMeeting();
+      const met = this.startEncounter();
+      this.placeMeeting(met);
       this.fadeLayers();
     }
+    // The deer leaves when the walk resumes — without hurrying, which is
+    // the line. The drift itself runs in updateDeer.
+    if (phase !== 'encounter' && this.deerDrift) this.deerDrift.departing = true;
     if (phase === 'resting') {
       // A request still open at the fire goes quietly with the day. No
       // journal line: an opportunity that passed unplayed is not an event,
@@ -1316,6 +1331,7 @@ export class RoadStage implements Stage {
       }
     }
     this.updateListeners(dt);
+    this.updateDeer(dt);
 
     this.bard.setWarmth(performance.warmth);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
@@ -1712,22 +1728,75 @@ export class RoadStage implements Stage {
    * encounter camera already swings its look toward, so the figure arrives
    * where the frame is already pointed.
    */
-  private placeMeeting(): void {
+  private placeMeeting(met: EncounterDef): void {
     const rand = mulberry32(
       subSeed(this.currentStop ? this.currentStop.seed : this.road.seed, 'meeting'),
     );
-    const person = this.people[Math.floor(rand() * this.people.length)];
     const bearing = withinBand(MEETING_BEARING, rand());
-    this.stand(person, bearing, withinBand(MEETING_RADIUS, rand()), 1);
+    // The staging follows the writing (meetingFigureFor): a person for a
+    // traveller, the creature's own figure where one exists, and NOTHING
+    // where one does not — for most of this game's life every encounter
+    // stood a random human, so on a deer day the prose said deer and the
+    // frame showed a walker playing understudy (wave 17's emotion lens
+    // caught it verbatim). An unstaged line is honest; a mis-staged one
+    // actively contradicts the caption.
+    const figure = meetingFigureFor(met);
+    if (figure === 'person') {
+      const person = this.people[Math.floor(rand() * this.people.length)];
+      this.stand(person, bearing, withinBand(MEETING_RADIUS, rand()), 1);
+    } else if (figure === 'deer') {
+      if (!this.deer) {
+        this.deer = new Deer(this.app.globals, this.road.seed);
+        this.actors.add(this.deer.group);
+      }
+      // Further out than a person stops to talk: a deer that held still at
+      // conversation distance would read as tame, and the line is about a
+      // wild thing choosing to stay.
+      const radius = 6.5 + rand() * 2.5;
+      const angle = this.subject.heading + bearing;
+      const x = this.subject.position.x + Math.sin(angle) * radius;
+      const z = this.subject.position.z + Math.cos(angle) * radius;
+      this.deer.group.position.set(x, roadSurfaceHeight(this.road, x, z), z);
+      this.deer.setHeading(angle + Math.PI);
+      this.deer.group.visible = true;
+      this.deerDrift = { angle, radius, departing: false };
+    }
+    // The bard turns toward what the line describes even when nothing is
+    // stood there — a creature the frame cannot show yet still happened in
+    // a particular direction. Weather is everywhere, so he stays square.
     // The whole way round, not part of it. See `BUSK_FACING_OFFSET`: a half
     // turn from this camera is the one angle that hides the instrument, and a
     // full one comes out the other side at the same three-quarter view.
-    this.facing = bearing;
+    this.facing = met.kind === 'weather' ? 0 : bearing;
+  }
+
+  /**
+   * The deer's stillness, and its unhurried leaving. Mirrors the listener
+   * drift: a slow walk out along its own bearing, gone a few metres later.
+   */
+  private updateDeer(dt: number): void {
+    if (!this.deer || !this.deer.group.visible || !this.deerDrift) return;
+    this.deer.update(dt);
+    if (!this.deerDrift.departing) return;
+    const DEPART_SPEED = 0.8;
+    const GONE_M = 11;
+    this.deerDrift.radius += DEPART_SPEED * dt;
+    const { angle, radius } = this.deerDrift;
+    const x = this.subject.position.x + Math.sin(angle) * radius;
+    const z = this.subject.position.z + Math.cos(angle) * radius;
+    this.deer.group.position.set(x, roadSurfaceHeight(this.road, x, z), z);
+    // Leaving, it faces out along its own bearing, exactly as a departing
+    // listener does.
+    this.deer.setHeading(angle);
+    if (radius > GONE_M) {
+      this.deer.group.visible = false;
+      this.deerDrift = null;
+    }
   }
 
   // --- meetings and camp -------------------------------------------------
 
-  private startEncounter(): void {
+  private startEncounter(): EncounterDef {
     const stop = this.currentStop;
     const roll = rollEncounter(
       stop ? stop.seed : this.road.seed,
@@ -1754,6 +1823,7 @@ export class RoadStage implements Stage {
     // the walk resumes and its tune is in the air — see `startWalkingTune`
     // — and settles against that tune's first notes in `updateWalkTune`.
     this.pendingAsk = rollAsk(stop ? stop.seed : this.road.seed, roll.def);
+    return roll.def;
   }
 
   private makeCamp(): void {
