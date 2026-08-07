@@ -2556,6 +2556,25 @@ top task fits its energy.
     reachable by players (no UI). Remaining 157: the bookmark door
     (title-card family, the guarded switch), then the shared journal
     pages. 1246 tests (+6), build green.
+    **Piece 2 done (2026-08-07, run 122): the bookmark door.** The
+    title card gains its third, quietest door — "The second bookmark"
+    / "The first bookmark" — and the card's gate widens by exactly
+    one case: it ALSO shows when the OTHER bookmark holds a journey,
+    because a fresh second bookmark has walked nowhere and this card
+    is its only way back. A fresh bookmark's card greets honestly ("A
+    fresh page on the same bench." / "Begin the walk") instead of
+    claiming a kept place. The switch enacts piece 1's contract to
+    the letter (`switchBookmark`): persist under the leaving
+    bookmark → `restoring = true` (the keepsake import's guard — the
+    reload's own pagehide would otherwise write the leaving session
+    into the arriving bookmark) → move the pointer → reload. The
+    door label never says anything about how far either bookmark
+    walked (pages, not progress). Verified live with REAL TAPS:
+    walked card → "The second bookmark" → pointer 1, fresh world at
+    4 m, fresh-page card → "The first bookmark" → pointer removed,
+    world resumed at 154 m, save intact. Remaining 157: the shared
+    journal pages (each bookmark reading the other's PAGES, never
+    anything gradable). 1246 tests, build green.
 
 The wave-5 queue, from the wave-4 panel (mean ~5.5; take these next):
 

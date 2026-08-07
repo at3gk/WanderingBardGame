@@ -879,7 +879,18 @@ export class Hud {
    * and live underneath it the whole time, so playable-in-five-seconds
    * holds either way: the card costs exactly one tap.
    */
-  showTitleCard(onSongbook: () => void): void {
+  showTitleCard(
+    onSongbook: () => void,
+    /**
+     * The other bench cushion (task 157): a third, quietest door that
+     * switches bookmarks. Label is the card's business only — the ethics
+     * rule is pages-not-progress, so it never says anything about how far
+     * either bookmark has walked.
+     */
+    bookmarkDoor?: { label: string; open: () => void },
+    /** True when THIS bookmark has never walked — the card greets a fresh page. */
+    fresh = false,
+  ): void {
     const veil = element('div', {
       position: 'fixed',
       inset: '0',
@@ -920,7 +931,7 @@ export class Hud {
       textShadow: shadow,
       marginBottom: '26px',
     });
-    sub.textContent = 'The road kept your place.';
+    sub.textContent = fresh ? 'A fresh page on the same bench.' : 'The road kept your place.';
     rows.push(sub);
 
     const doorStyle = {
@@ -932,12 +943,24 @@ export class Hud {
     } as const;
 
     const go = element('div', { ...doorStyle, fontSize: '21px' });
-    go.textContent = 'Continue the journey';
+    go.textContent = fresh ? 'Begin the walk' : 'Continue the journey';
     rows.push(go);
 
     const book = element('div', { ...doorStyle, fontSize: '16px', color: INK_SOFT });
     book.textContent = 'The songbook';
     rows.push(book);
+
+    // The quietest door, last: the other bookmark. It reads a step
+    // smaller and softer than the songbook because it is the door taken
+    // least often — but it must exist HERE, because a fresh second
+    // bookmark has no other surface at all.
+    const bookmark = bookmarkDoor
+      ? element('div', { ...doorStyle, fontSize: '14px', color: INK_SOFT })
+      : null;
+    if (bookmark && bookmarkDoor) {
+      bookmark.textContent = bookmarkDoor.label;
+      rows.push(bookmark);
+    }
 
     const dismiss = () => {
       veil.style.opacity = '0';
@@ -955,6 +978,15 @@ export class Hud {
       dismiss();
       onSongbook();
     });
+    if (bookmark && bookmarkDoor) {
+      bookmark.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        // No dismiss: the switch reloads the page, and a veil that
+        // lifted first would flash the wrong bookmark's road.
+        bookmarkDoor.open();
+      });
+    }
 
     for (const [i, row] of rows.entries()) {
       row.style.opacity = '0';

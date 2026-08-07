@@ -712,6 +712,22 @@ export function saveJourney(state: object, force = false, nowMs: number = Date.n
  * saves it, so a player who opens the tab and closes it again has not yet
  * spent their previous day.
  */
+/**
+ * Whether a bookmark holds any journey at all (task 157). Read-only and
+ * deliberately shallow — the title card only needs to know whether the
+ * other bench cushion is occupied, never anything about how far that
+ * bookmark walked.
+ */
+export function hasJourneyRecord(bookmark: 0 | 1): boolean {
+  const store = storage();
+  if (!store) return false;
+  try {
+    return store.getItem(bookmarkKey(JOURNEY_STORAGE_KEY, bookmark)) !== null;
+  } catch {
+    return false;
+  }
+}
+
 export function loadJourney(dayKey: string): JourneyState | null {
   const store = storage();
   if (!store) return null;

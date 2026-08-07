@@ -48,6 +48,7 @@ import { Bard } from './actors/Bard';
 import { ContactShadow } from './actors/ContactShadow';
 import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
 import { Deer } from './actors/Deer';
+import { activeBookmark, setActiveBookmark } from '../core/profiles';
 import { Campfire } from './scenes/Campfire';
 import { FestivalGrounds } from './scenes/FestivalGrounds';
 import { ParticleField, fallingLeaves, fireflies, seedFluff, sunDust } from './fx/Particles';
@@ -89,6 +90,7 @@ import {
   saveJourney,
   startNextLeg,
   unlockInstrument,
+  hasJourneyRecord,
   type JourneyState,
   type Phase,
 } from '../core/journey';
@@ -618,8 +620,22 @@ export class RoadStage implements Stage {
     // existence of a record: someone who opened the tab once and never
     // walked has nothing to continue, and DESIGN's rule is that a player
     // with nothing to choose goes straight to the road.
-    if (resumed && resumed.totalMetres > 0) {
-      this.hud.showTitleCard(() => this.hud.openBook());
+    //
+    // Task 157 widens the gate by one case: the card ALSO shows when the
+    // OTHER bookmark holds a journey — a fresh second bookmark has walked
+    // nowhere, but the family's first bookmark is a real thing to choose,
+    // and this card is the only surface that can offer the way back.
+    const walked = !!resumed && resumed.totalMetres > 0;
+    const otherBookmark: 0 | 1 = activeBookmark() === 1 ? 0 : 1;
+    if (walked || hasJourneyRecord(otherBookmark)) {
+      this.hud.showTitleCard(
+        () => this.hud.openBook(),
+        {
+          label: otherBookmark === 1 ? 'The second bookmark' : 'The first bookmark',
+          open: () => this.switchBookmark(otherBookmark),
+        },
+        !walked,
+      );
     }
   }
 
@@ -2347,6 +2363,22 @@ export class RoadStage implements Stage {
     } catch {
       // One silent note; the sheet still shows the sign.
     }
+  }
+
+  /**
+   * Change bench cushions (task 157), by the contract profiles.ts wrote
+   * down after the race was measured: every save path keys through the
+   * pointer at WRITE time, so the order here is load-bearing —
+   * force-save the leaving session under its own bookmark, then guard
+   * every later save (the keepsake import's `restoring` pattern; the
+   * reload's own pagehide would otherwise write this session into the
+   * arriving bookmark's keys), then move the pointer, then reload.
+   */
+  private switchBookmark(to: 0 | 1): void {
+    this.persist();
+    this.restoring = true;
+    setActiveBookmark(to);
+    location.reload();
   }
 
   private persist(): void {
