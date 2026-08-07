@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 125 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 126 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -59,6 +59,24 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 126) — wave 18's tree-clone lever
+  REFUTED at the placement level; the residual is geometry-side.**
+  The silhouette lens claimed "one tree kit repeated at matched scale
+  with zero rotation variance". Measured against WorldStreamer's
+  placement (lines ~3427-3448): every tree instance gets a random
+  full-circle Y-rotation, scale 0.75-1.35 with an INDEPENDENT height
+  stretch 0.85-1.25, one of 4 variant geometries per species, and a
+  species-banded colour draw. Both halves of the claim are false at
+  placement. THE TRUE RESIDUAL, recorded for the next silhouette run:
+  rotation variance is INVISIBLE on rotationally-symmetric canopies —
+  a lumpy sphere looks the same at every yaw — so the lever is
+  geometry-side asymmetry (offset canopy lobes per variant in
+  geometry.ts's broadleaf/conifer builders), not placement knobs.
+  Fourth case of the panels-see-symptoms-misattribute-causes rule
+  this session (runs 105-107, 115, 117's counter arithmetic, this).
+  Docs-only run. Next candidates: canopy asymmetry (geometry.ts,
+  fresh session), the scrim ruling, bard reaction poses, escort-dog.
 
 - **HANDOFF, 2026-08-07 (run 125) — WAVE-18 BLIND PANEL: mean 4.21,
   six-wave block 4.21-4.45, flat at the noise floor.** THE DEER
