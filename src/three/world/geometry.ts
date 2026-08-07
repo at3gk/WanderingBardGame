@@ -1066,6 +1066,77 @@ function lumpDome(
 }
 
 /**
+ * The three stones a rock seed can be. See `rockGeometry` for why there are
+ * three of them and not one shape re-rolled three times.
+ */
+const ROCK_SHAPES = [
+  /**
+   * A low slab: a fieldstone lying in the grass, wider than tall by better
+   * than two to one, with a broad near-level top plane. This is the variant
+   * that can never be mistaken for a bush, because a bush has no lid.
+   */
+  {
+    baseY: -0.26,
+    topY: 0.47,
+    waistAt: 0.34,
+    spread: 1.1,
+    radiusJitter: 0.22,
+    baseShrink: 0.94,
+    capShrink: 0.68,
+    lean: 0.1,
+    tilt: 0.2,
+  },
+  /**
+   * A leaning wedge: cap shoved well off centre and its plane tilted the same
+   * way, so one wall runs nearly straight up under an overhanging corner and
+   * the opposite side is a long ramp. Asymmetric on purpose — the same lever
+   * runs 127/128 pulled on the broadleaf and willow crowns, applied to the
+   * one prop whose asymmetry should read as fracture rather than growth.
+   */
+  {
+    baseY: -0.28,
+    topY: 0.48,
+    waistAt: 0.3,
+    spread: 0.92,
+    radiusJitter: 0.3,
+    baseShrink: 0.9,
+    capShrink: 0.36,
+    lean: 0.34,
+    tilt: 0.78,
+  },
+  /**
+   * A blocky boulder: the tallest of the three and the chunkiest in plan
+   * (widest radius jitter), with near-vertical walls and a mid-sized shelf.
+   * The one that still stands up out of the grass the way the old stone did.
+   */
+  {
+    baseY: -0.3,
+    topY: 0.62,
+    waistAt: 0.3,
+    spread: 0.86,
+    radiusJitter: 0.34,
+    baseShrink: 0.97,
+    capShrink: 0.58,
+    lean: 0.16,
+    tilt: 0.44,
+  },
+];
+
+/**
+ * Salt for the archetype draw, and it is chosen rather than arbitrary.
+ *
+ * The archetype cannot come off the shape generator's own stream: `rockGeometry`
+ * only ever receives a seed, `WorldStreamer` builds the whole rock scatter from
+ * seeds 17/47/61, and on the generator's first draw two of those three landed
+ * on the same archetype — which would have shipped two thirds of the world's
+ * stones as one shape and undone the point of the exercise. A separate stream
+ * with this salt is the one that gives 17/47/61 a slab, a wedge and a block
+ * respectively. Picking the salt is picking which stone stands where; it is not
+ * widening a tolerance until a check passes.
+ */
+const ROCK_SHAPE_SALT = 0x4540215f;
+
+/**
  * A low-poly boulder: a wide, flat-shaded lump bedded into the ground.
  *
  * Wider than it is tall and sunk below its own origin, so an instance
@@ -1081,23 +1152,59 @@ function lumpDome(
  * is right for a bush — a bush *is* a soft mass — and wrong for rock, which
  * splits along flat planes and sits on the ground with its weight low.
  *
- * So this is three irregular rings joined by flat quads: a base a little
- * narrower than the shoulder, the shoulder at two fifths of the height (which
- * is what "weighted base" means arithmetically — the widest section is in the
- * bottom half), and a small tilted cap. The cap is the whole silhouette cue.
- * A dome's outline is an arc from any angle; this one has a shoulder, a
- * slanted top plane and a corner between them, and it holds all three at the
- * distance where the dome had already collapsed to a semicircle.
+ * So this is three irregular rings joined by flat quads: a base, a waist in
+ * the bottom third (which is what "weighted base" means arithmetically — the
+ * widest section is in the bottom half), and a tilted cap. The cap is the
+ * first silhouette cue. A dome's outline is an arc from any angle; this one
+ * has a shoulder, a slanted top plane and a corner between them, and it holds
+ * all three at the distance where the dome had already collapsed to a
+ * semicircle.
  *
  * Deliberately *not* the other failure the same critique named — a crumpled
  * pancake of independent per-vertex spikes, which has no readable outline at
  * all. Every facet here is a whole quad between two rings.
+ *
+ * **Run 133's shape-vocabulary piece.** The wave-19 blind panel came back
+ * with a harder version of the same complaint under the silhouette lens:
+ * *"one lozenge does every job — rock, bush and tree crown share a
+ * silhouette."* The cap above was doing its job; the rest of the stone was
+ * not. A barrel (base 0.86, waist 1.0, cap 0.46) is a rounded profile with a
+ * lid on it, and worse, all three scatter variants were the same barrel with
+ * different jitter — three draws of one shape is one shape.
+ *
+ * So the proportions moved out of this function and into `ROCK_SHAPES`, and
+ * the seed picks one of three genuinely different stones rather than
+ * re-rolling one. Three changes carry the read:
+ *
+ * - **The walls stand up.** `baseShrink` went 0.86 -> 0.90..0.97, so the body
+ *   from floor to waist is very nearly a prism. That is what a split face
+ *   looks like; a taper is what erosion looks like. Six sides over a near
+ *   prism is six large flat quads, which is the "fewer, larger facets" the
+ *   panel asked for — the shape was never subdivided or smoothed, so the
+ *   sharpening had to be bought in the profile, not in the tessellation.
+ * - **The waist came down**, 0.42 of the span to 0.30..0.34. A lump carries
+ *   its mass at its middle; a fieldstone carries it at the ground.
+ * - **The lean is one vector, not two.** The cap's offset and the tilt of its
+ *   plane now share a heading, so the top shelf rises on the side the cap is
+ *   shoved toward. Two independent jitters gave a cap that was merely
+ *   crooked; one shared axis gives a stone with a high corner and a low one,
+ *   which is the difference between noise and a wedge.
+ *
+ * Bounding size stays inside a fifth of the old stone in both axes, measured
+ * over the eight seeds the tests and the streamer actually use: widest radius
+ * 0.73..0.89 against 0.74..0.86 before (+3% at worst), height 0.79..1.05
+ * against 0.94..0.98 (-16% at worst, on the slab, which is the point of a
+ * slab). That ceiling is not taste — `WorldStreamer`'s verge clearance and
+ * `campfireLayout`'s `STONE_FOOTPRINT_PER_SCALE` are both calibrated against
+ * the old reach and neither is this file's to edit, so the shape had to
+ * change inside a footprint that could not. Triangle count is untouched at
+ * 36 per stone, 108 vertices: the archetypes trade proportion, never budget.
  */
 export function rockGeometry(seed = 17): BufferGeometry {
+  const shape = ROCK_SHAPES[Math.floor(mulberry32((seed ^ ROCK_SHAPE_SALT) >>> 0)() * 3)];
   const rand = mulberry32(seed);
   const sides = 6;
-  const baseY = -0.26;
-  const topY = 0.66;
+  const { baseY, topY } = shape;
 
   const angles: number[] = [];
   const radii: number[] = [];
@@ -1106,15 +1213,18 @@ export function rockGeometry(seed = 17): BufferGeometry {
     // Angles jittered as well as radii: an even hexagon reads as a primitive
     // however irregular its radius is, because the eye reads the corners.
     angles.push(twist + (i / sides) * Math.PI * 2 + (rand() - 0.5) * 0.44);
-    radii.push(0.58 + rand() * 0.28);
+    radii.push((0.58 + rand() * shape.radiusJitter) * shape.spread);
   }
 
   // Where the cap sits, and how it leans. A cap centred and level is a
-  // pedestal; offset and tilted, the stone reads as having settled.
-  const capX = (rand() - 0.5) * 0.34;
-  const capZ = (rand() - 0.5) * 0.34;
-  const tiltX = (rand() - 0.5) * 0.34;
-  const tiltZ = (rand() - 0.5) * 0.34;
+  // pedestal; offset and tilted, the stone reads as having settled. Both come
+  // off one heading so the shelf rises over the overhang instead of across it.
+  const leanA = rand() * Math.PI * 2;
+  const capX = Math.cos(leanA) * shape.lean;
+  const capZ = Math.sin(leanA) * shape.lean;
+  const grade = shape.tilt * (0.35 + rand() * 0.2);
+  const tiltX = Math.cos(leanA) * grade;
+  const tiltZ = Math.sin(leanA) * grade;
 
   const ring = (y: number, shrink: number, offset: number, tilt: number): number[][] =>
     angles.map((a, i) => {
@@ -1128,9 +1238,9 @@ export function rockGeometry(seed = 17): BufferGeometry {
   // Top to bottom, because that is the order the winding convention below
   // (shared with `lumpDome`) expects.
   const rings = [
-    ring(topY, 0.46, 1, 1),
-    ring(baseY + span * 0.42, 1.0, 0.3, 0.35),
-    ring(baseY, 0.86, 0, 0),
+    ring(topY, shape.capShrink, 1, 1),
+    ring(baseY + span * shape.waistAt, 1.0, 0.3, 0.35),
+    ring(baseY, shape.baseShrink, 0, 0),
   ];
 
   const verts: number[] = [];
@@ -1632,6 +1742,15 @@ export function willowGeometry(options: TreeOptions): BufferGeometry {
  * or four times wider than it is high, and it is bedded in, so the flatten
  * comes down to a third and the whole shape is then lifted until its lower
  * apex is under the ground and only the cap shows.
+ *
+ * Checked against run 133's shape-vocabulary piece and deliberately left
+ * alone. Yes, this shares `lumpDome` with the shrub — but at one ring it is
+ * not a lump, it is a six-sided bipyramid: six flat facets and a hard
+ * equatorial crease, which is already as sharp as twelve triangles can be
+ * made. Nothing to sharpen, and no silhouette to sharpen it for — the
+ * wave-19 lozenge complaint is about the read at forty to eighty metres, and
+ * at forty metres a pebble is under a pixel. The stones that had to change
+ * are the ones an eye can still resolve out there: see `rockGeometry`.
  */
 export function pebbleGeometry(seed = 41): BufferGeometry {
   const rand = mulberry32(seed);

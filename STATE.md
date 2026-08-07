@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 132 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 133 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -59,6 +59,27 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 133) — shape vocabulary, first piece:
+  stones stop being lumps.** Wave 19's "one lozenge does every job"
+  enacted for rocks (delegated, geometry.ts ownership): the single
+  re-jittered barrel profile became a ROCK_SHAPES table of three
+  seeded archetypes — a low SLAB (2:1 wide, dominant flat cap: the
+  variant a bush can never be, because a bush has no lid), a LEANING
+  WEDGE (cap shrunk and shoved off-centre along the shelf's own
+  heading), and a BLOCKY BOULDER (near-prism walls). Walls went
+  0.86 → 0.90-0.97 shrink so the body is six large flat quads, not a
+  taper. A salted selector stream maps the world's three rock seeds
+  to three DIFFERENT archetypes (the raw stream dealt two wedges —
+  the salt was searched for and the file says so). 108 verts/36 tris
+  unchanged; bounding reach +2.8% worst case (clearances safe);
+  pebble checked and left (already a hard-facet bipyramid,
+  sub-pixel at the read distance). The existing rock invariant tests
+  pass unmoved — same claims, made harder. tsc clean, 1249 tests,
+  build green. Visual count since wave 19: TWO (132 posture, 133
+  this) — wave 20 due after ~one more, judging the posture, the
+  stones, and the scrim brights. Next: the hue-free distance wall,
+  the empty lower-left quadrant, or wave 20.
 
 - **HANDOFF, 2026-08-07 (run 132) — the listening posture: attention
   now reads at silhouette level.** Run 131's sized lever enacted
