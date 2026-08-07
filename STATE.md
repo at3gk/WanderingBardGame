@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 130 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 131 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -59,6 +59,23 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 131) — the mannequin-audience claim
+  measured: the staging is innocent AGAIN; the fault is that FACING
+  DOES NOT RENDER on a box figure.** Re-probed the live 05 busk pose:
+  4 listeners present, all at 3-4.4 m, all heading-faced toward the
+  bard (same numbers as run 111). The panel's "none turned toward
+  the bard" is nonetheless what the PIXELS show: a traveller's front
+  and back are the same silhouette; the face marks are sub-pixel at
+  5-8 m; the attention head-tilt is 3.4° — invisible. FIFTH measured
+  misattribution this session, and like the others the symptom is
+  real. THE SIZED LEVER (Traveller.ts, next session): a listening
+  posture that reads at SILHOUETTE level — raise the attention tilt
+  to a visible head-up angle (~12-15°), and/or clasp both hands
+  forward at attention 1 (arms leave the body's sides, which is
+  visible from every bearing — the elder's clasped hands already
+  prove the read). Keep the 2°-per-figure idle budget for everyone
+  NOT listening. Docs-only run.
 
 - **HANDOFF, 2026-08-07 (run 130) — WAVE-19 BLIND PANEL: mean 4.40,
   seven-wave block 4.21-4.45 flat.** Colour top again (5.46), value
