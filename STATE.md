@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 131 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 132 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -59,6 +59,24 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 132) — the listening posture: attention
+  now reads at silhouette level.** Run 131's sized lever enacted
+  (delegated, Traveller.ts ownership): attention head-tilt 3.4° →
+  12.6° (a listener looks UP toward the music), a 3.4° whole-body
+  lean-in ADDED to any base lean (the elder's static 0.12 hunch
+  preserved via a captured base — would otherwise have been silently
+  overwritten), rock amplitude 0.038 → 0.055, and a 1 cm head bob
+  out of phase with the breath (0.61 vs 1.1 Hz, 2.1 offset). Every
+  raised term is attention-gated: a non-listener's idle is
+  bit-identical, so the 2°-per-figure budget still binds
+  standing-about figures. Feet stay grounded (body origin is at the
+  feet; the 3.4 mm rear-corner dip is a third of the breath's own
+  travel). tsc clean, 1249 tests, build green. HONEST FLAG: verified
+  by typecheck+tests only — the posture's READ is exactly what blind
+  panels measure, so WAVE 20 judges it on the 05/09 busks. Visual
+  count since wave 19: ONE. Next: shape-vocabulary first piece,
+  the hue-free distance wall, v1.3, or wave 20 after 1-2 more.
 
 - **HANDOFF, 2026-08-07 (run 131) — the mannequin-audience claim
   measured: the staging is innocent AGAIN; the fault is that FACING
