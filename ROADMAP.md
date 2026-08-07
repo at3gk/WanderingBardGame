@@ -2633,6 +2633,38 @@ The wave-5 additions, from the wave-5 blind panel (2026-08-01; anchor
 "ships beside ASH without apology", mean 4.42 — see STATE.md for the
 full verdict map and the measure-first suspicion list):
 
+186. **Stage the creatures (emotion arc, wave 17).** The emotion lens's
+    sharpest finding: "the caption carries the feeling; the picture
+    doesn't stage it — 06 says a deer held still through the whole
+    verse; there is no deer in the frame." Worse than unstaged: every
+    encounter, creature and weather alike, stood a random HUMAN through
+    placeMeeting, so on a deer day the frame actively contradicted its
+    own caption. Eleven creature encounters exist and all were
+    prose-only. Give the most-met creatures real figures, one or two
+    per run, in the travellers' own build idiom (boxPart, painterly,
+    outline-first).
+    **Piece 1 done (2026-08-07, run 119): the deer, and honest
+    staging.** `actors/Deer.ts` — horizontal body over four legs, a
+    steeply-risen ALERT neck and two splayed pale-lined EARS (the two
+    marks no other silhouette has; at eighty metres a head-high
+    quadruped with tall ears is unmistakable), quiet russet family at
+    traveller values, the travellers' own lifted shadow floor. It
+    breathes and occasionally flicks one ear — nothing else, because
+    the line is about stillness and a fidgeting deer would unwrite it.
+    Stood at 6.5-9 m (a wild thing choosing to stay, not a tame one at
+    conversation distance), facing the bard; when the walk resumes it
+    turns and leaves at 0.8 m/s — "without hurrying", staged. AND the
+    staging now follows the writing generally: pure
+    `meetingFigureFor(def)` (pinned by test over the whole table)
+    routes traveller → person, creature → its own figure where one
+    exists, and NOTHING otherwise — an unstaged line is honest, a
+    mis-staged one contradicts the caption; weather stands nothing and
+    the bard stays square. The bard still turns toward a described-but
+    -unshown creature (it happened in a particular direction). Frame
+    verified live through the real staging path: dusk, deer off-road
+    right, ears reading, caption agreeing. 1240 tests (+1), build
+    green. Remaining creatures by meet-frequency for later pieces:
+    cat/dog/fox (village/forest commons), then the birds.
 179. **Figure/ground value floor.** The panel's one measured-everywhere
     fault: bard-vs-surround dL 0.7 (02), 2.0 (01), 2.4 (07), 4.0
     (04/06) against the reference floor of 13.6-25.2 — the protagonist

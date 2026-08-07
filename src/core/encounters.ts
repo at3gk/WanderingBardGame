@@ -913,3 +913,28 @@ function triangular(rand: Rand): number {
 function tailDraw(rand: Rand): number {
   return Math.min(TAIL_CAP, -Math.log(1 - rand()));
 }
+
+/**
+ * What figure the stage should stand for an encounter, if any.
+ *
+ * For most of the game's life every encounter — creature and weather
+ * included — stood a random HUMAN, so on a deer day the prose said deer
+ * and the frame showed a walker playing understudy (wave 17's emotion
+ * lens: "06 says a deer held still through the whole verse — there is no
+ * deer in the frame"). The staging now follows the writing:
+ *
+ * - a traveller encounter stands a person, exactly as before;
+ * - a creature encounter stands its OWN figure where one exists ('deer'
+ *   so far), and deliberately nothing where one does not yet — an
+ *   unstaged line is honest, a mis-staged one is a contradiction;
+ * - weather stands nothing: the sky is not a figure.
+ *
+ * Pure, so the routing is pinned by test rather than by screenshot.
+ */
+export type MeetingFigure = 'person' | 'deer' | null;
+
+export function meetingFigureFor(def: EncounterDef): MeetingFigure {
+  if (def.kind === 'traveller') return 'person';
+  if (def.kind === 'creature') return def.id === 'still-deer' ? 'deer' : null;
+  return null;
+}
