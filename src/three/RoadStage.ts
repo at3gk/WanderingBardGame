@@ -48,6 +48,7 @@ import { Bard } from './actors/Bard';
 import { ContactShadow } from './actors/ContactShadow';
 import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
 import { Deer } from './actors/Deer';
+import { Cat, Fox, type StagedCreature } from './actors/SmallCreatures';
 import { activeBookmark, setActiveBookmark } from '../core/profiles';
 import { Campfire } from './scenes/Campfire';
 import { FestivalGrounds } from './scenes/FestivalGrounds';
@@ -272,14 +273,20 @@ export class RoadStage implements Stage {
    */
   private readonly people: Traveller[] = [];
   /**
-   * The deer, built the first time a deer encounter is met (most walks
-   * never meet one, and an unused quadruped is not worth its triangles at
-   * boot). Its drift record works like a listener slot's: `departing`
-   * flips when the walk resumes and the deer leaves without hurrying —
-   * which is the encounter line, staged.
+   * The staged creatures (task 186), built lazily the first time each is
+   * met — most walks meet none, and unused quadrupeds are not worth their
+   * triangles at boot. One drift record serves whoever is currently
+   * stood: `departing` flips when the walk resumes and the animal leaves
+   * without hurrying — which is the deer line, staged, and the kind exit
+   * for all of them.
    */
-  private deer: Deer | null = null;
-  private deerDrift: { angle: number; radius: number; departing: boolean } | null = null;
+  private readonly creatures = new Map<string, StagedCreature>();
+  private creatureDrift: {
+    figure: string;
+    angle: number;
+    radius: number;
+    departing: boolean;
+  } | null = null;
   private readonly shown: Traveller[] = [];
   private readonly actors = new Group();
   private readonly notes: SongNotes;
@@ -882,7 +889,7 @@ export class RoadStage implements Stage {
     }
     // The deer leaves when the walk resumes — without hurrying, which is
     // the line. The drift itself runs in updateDeer.
-    if (phase !== 'encounter' && this.deerDrift) this.deerDrift.departing = true;
+    if (phase !== 'encounter' && this.creatureDrift) this.creatureDrift.departing = true;
     if (phase === 'resting') {
       // A request still open at the fire goes quietly with the day. No
       // journal line: an opportunity that passed unplayed is not an event,
@@ -1361,7 +1368,7 @@ export class RoadStage implements Stage {
       }
     }
     this.updateListeners(dt);
-    this.updateDeer(dt);
+    this.updateCreature(dt);
 
     this.bard.setWarmth(performance.warmth);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
@@ -1774,22 +1781,31 @@ export class RoadStage implements Stage {
     if (figure === 'person') {
       const person = this.people[Math.floor(rand() * this.people.length)];
       this.stand(person, bearing, withinBand(MEETING_RADIUS, rand()), 1);
-    } else if (figure === 'deer') {
-      if (!this.deer) {
-        this.deer = new Deer(this.app.globals, this.road.seed);
-        this.actors.add(this.deer.group);
+    } else if (figure) {
+      let creature = this.creatures.get(figure);
+      if (!creature) {
+        creature =
+          figure === 'deer'
+            ? new Deer(this.app.globals, this.road.seed)
+            : figure === 'fox'
+              ? new Fox(this.app.globals, this.road.seed)
+              : new Cat(this.app.globals, this.road.seed);
+        this.creatures.set(figure, creature);
+        this.actors.add(creature.group);
       }
-      // Further out than a person stops to talk: a deer that held still at
-      // conversation distance would read as tame, and the line is about a
-      // wild thing choosing to stay.
-      const radius = 6.5 + rand() * 2.5;
+      // Each animal keeps its own distance. The deer stands furthest — a
+      // wild thing at conversation distance would read as tame, and its
+      // line is about choosing to stay. The fox sits a little closer; the
+      // cat closest of all, because a cat concedes nothing by proximity.
+      const radius =
+        figure === 'deer' ? 6.5 + rand() * 2.5 : figure === 'fox' ? 5 + rand() * 2 : 3.5 + rand() * 1.5;
       const angle = this.subject.heading + bearing;
       const x = this.subject.position.x + Math.sin(angle) * radius;
       const z = this.subject.position.z + Math.cos(angle) * radius;
-      this.deer.group.position.set(x, roadSurfaceHeight(this.road, x, z), z);
-      this.deer.setHeading(angle + Math.PI);
-      this.deer.group.visible = true;
-      this.deerDrift = { angle, radius, departing: false };
+      creature.group.position.set(x, roadSurfaceHeight(this.road, x, z), z);
+      creature.setHeading(angle + Math.PI);
+      creature.group.visible = true;
+      this.creatureDrift = { figure, angle, radius, departing: false };
     }
     // The bard turns toward what the line describes even when nothing is
     // stood there — a creature the frame cannot show yet still happened in
@@ -1801,26 +1817,29 @@ export class RoadStage implements Stage {
   }
 
   /**
-   * The deer's stillness, and its unhurried leaving. Mirrors the listener
-   * drift: a slow walk out along its own bearing, gone a few metres later.
+   * The staged creature's stillness, and its unhurried leaving. Mirrors
+   * the listener drift: a slow walk out along its own bearing, gone a few
+   * metres later.
    */
-  private updateDeer(dt: number): void {
-    if (!this.deer || !this.deer.group.visible || !this.deerDrift) return;
-    this.deer.update(dt);
-    if (!this.deerDrift.departing) return;
+  private updateCreature(dt: number): void {
+    if (!this.creatureDrift) return;
+    const creature = this.creatures.get(this.creatureDrift.figure);
+    if (!creature || !creature.group.visible) return;
+    creature.update(dt);
+    if (!this.creatureDrift.departing) return;
     const DEPART_SPEED = 0.8;
     const GONE_M = 11;
-    this.deerDrift.radius += DEPART_SPEED * dt;
-    const { angle, radius } = this.deerDrift;
+    this.creatureDrift.radius += DEPART_SPEED * dt;
+    const { angle, radius } = this.creatureDrift;
     const x = this.subject.position.x + Math.sin(angle) * radius;
     const z = this.subject.position.z + Math.cos(angle) * radius;
-    this.deer.group.position.set(x, roadSurfaceHeight(this.road, x, z), z);
+    creature.group.position.set(x, roadSurfaceHeight(this.road, x, z), z);
     // Leaving, it faces out along its own bearing, exactly as a departing
     // listener does.
-    this.deer.setHeading(angle);
+    creature.setHeading(angle);
     if (radius > GONE_M) {
-      this.deer.group.visible = false;
-      this.deerDrift = null;
+      creature.group.visible = false;
+      this.creatureDrift = null;
     }
   }
 

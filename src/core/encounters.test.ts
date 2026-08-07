@@ -849,11 +849,16 @@ describe('the road, spoken', () => {
 });
 
 describe('meetingFigureFor', () => {
-  it('stands a person for travellers, the deer for the deer, nothing else', () => {
+  it('stands a person for travellers, each staged creature for its own line, nothing else', () => {
+    const staged: Record<string, string> = {
+      'still-deer': 'deer',
+      'listening-fox': 'fox',
+      'wall-cat': 'cat',
+    };
     for (const def of ENCOUNTERS) {
       const figure = meetingFigureFor(def);
       if (def.kind === 'traveller') expect(figure).toBe('person');
-      else if (def.id === 'still-deer') expect(figure).toBe('deer');
+      else if (staged[def.id]) expect(figure).toBe(staged[def.id]);
       // A creature without its own figure stands NOTHING: for most of the
       // game's life every encounter stood a random human, so a deer day
       // showed a walker playing understudy. Unstaged is honest; mis-staged

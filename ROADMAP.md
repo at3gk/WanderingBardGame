@@ -2732,6 +2732,22 @@ full verdict map and the measure-first suspicion list):
     right, ears reading, caption agreeing. 1240 tests (+1), build
     green. Remaining creatures by meet-frequency for later pieces:
     cat/dog/fox (village/forest commons), then the birds.
+    **Piece 2 done (2026-08-07, run 124): the fox and the cat.**
+    `actors/SmallCreatures.ts`, same idiom, one life signature each:
+    the FOX ("sits down to listen, and pretends... it was only
+    resting") is a seated triangle with tall pointed ears and the
+    pale-tipped brush curled round its feet, whose only motion is a
+    slow head-turn aside every ~9 s — the pretending, staged; the CAT
+    ("tail going, deciding whether you are worth getting up for") is
+    the game's smallest silhouette, a loaf whose tail is the entire
+    performance and the only thing that moves. The deer's machinery
+    generalized: a creatures Map + one drift record in RoadStage, a
+    CREATURE_FIGURES table in meetingFigureFor (table-swept test
+    extended), per-animal distances (deer 6.5-9 m, fox 5-7, cat
+    3.5-5 — a cat concedes nothing by proximity). Both verified
+    staged through the real path. Remaining: the escort-dog (needs
+    walk-along behaviour, its own piece), then the birds. 1249
+    tests, build green.
 179. **Figure/ground value floor.** The panel's one measured-everywhere
     fault: bard-vs-surround dL 0.7 (02), 2.0 (01), 2.4 (07), 4.0
     (04/06) against the reference floor of 13.6-25.2 — the protagonist
