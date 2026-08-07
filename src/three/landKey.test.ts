@@ -68,7 +68,7 @@ describe('hourKeyMode', () => {
     expect(mode.breadth).toBe(NIGHT_KEY_BREADTH);
   });
 
-  it('gives dawn and golden the horizon key, gently', () => {
+  it('gives dawn and golden the horizon key, at full family strength', () => {
     // Dawn's sun height is ~0.16, golden's ~0.12 — both inside the
     // low-sun warm band (wave 14 named green-refusing-the-wash at both).
     for (const y of [0.16, 0.12]) {
@@ -77,10 +77,18 @@ describe('hourKeyMode', () => {
       expect(mode.amount).toBeGreaterThan(0);
       expect(mode.amount).toBeLessThanOrEqual(LOW_SUN_KEY_MAX);
     }
-    // And the low-sun pull is the gentlest of the three modes — these
-    // hours carry themselves; the key only leans the greens.
-    expect(LOW_SUN_KEY_MAX).toBeLessThan(LAND_KEY_MAX);
-    expect(LOW_SUN_KEY_MAX).toBeLessThan(NIGHT_KEY_MAX);
+    // Re-derived (wave 15): this pull began at 0.22 as "the gentlest of
+    // the three modes — these hours carry themselves", and two panel
+    // waves then repeated the same fault family against it (greens/tufts
+    // refusing the wash). Measured, 0.22 was sub-perceptual: a breadth
+    // ablation moved the golden frames by under half a per cent of
+    // pixels, and doubling the amount moved the mean grass hue only ~5°.
+    // So the low-sun pull is now the STRONGEST mode — at the committed
+    // hours the wash is the frame's law, so the albedo constraint is
+    // tightest exactly there — while staying under the 0.5 erasure
+    // ceiling the daylight ramp test defends.
+    expect(LOW_SUN_KEY_MAX).toBeGreaterThan(NIGHT_KEY_MAX);
+    expect(LOW_SUN_KEY_MAX).toBeLessThanOrEqual(0.5);
   });
 
   it('is fully out of the warm band before the daylight rise begins', () => {
@@ -100,7 +108,9 @@ describe('hourKeyMode', () => {
     for (let y = -1; y <= 1; y += 0.02) {
       const mode = hourKeyMode(y);
       expect(mode.amount).toBeGreaterThanOrEqual(0);
-      expect(mode.amount).toBeLessThanOrEqual(Math.max(NIGHT_KEY_MAX, LAND_KEY_MAX));
+      expect(mode.amount).toBeLessThanOrEqual(
+        Math.max(NIGHT_KEY_MAX, LAND_KEY_MAX, LOW_SUN_KEY_MAX),
+      );
     }
   });
 

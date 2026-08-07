@@ -2885,6 +2885,39 @@ full verdict map and the measure-first suspicion list):
     the lerp-to-sky hueless distance (fog hue authorship), the cloud
     medium mismatch on 10, the unhued white building, noon-village
     accents. 1229 tests (+8), build green.
+    **Piece 7 (2026-08-07, run 111): the pull stops draining what it
+    binds, and the committed hours get their grip.** Wave 15's other
+    family ("terrain green refuses the hour", 7 frames, identical in
+    both samples — the grass tufts stay yellow-olive inside committed
+    washes) taken to measurement first, and the cone attribution was
+    HALF-RIGHT: the chroma-plane arithmetic confirms olive sits at
+    sim ≈ 0 to the warm key in forest/riverside (breadth 0.5 → exactly
+    half capture) and ANTI-family to the violet night key (pull ≈ 0 —
+    the fire's exemption protects dry grass too, as run 105 recorded
+    for the dusk seam). But the binding constraint was elsewhere:
+    ablating breadth 0.5 → 0.85 changed under half a per cent of
+    golden-frame pixels. Two shipped changes, each measured alone:
+    (1) the painterly attraction was a chord LERP that lost up to a
+    fifth of chroma magnitude near 90° — the fix was literally
+    desaturating the grass it bound (mean dS −0.03 at amount 0.45),
+    manufacturing the "chroma-dead" read three waves have faulted;
+    it is now a true magnitude-preserving rotation (renormalised
+    post-mix; safe because the chord only nears zero where the weight
+    is already zero). Noon 03 re-shot: 16% of pixels move, dS +0.011,
+    hue shift −0.4° — chroma returned, hue untouched. Night/dusk dS
+    +0.036/+0.014. (2) LOW_SUN_KEY_MAX 0.22 → 0.45, re-derived from
+    piece 4's own "gentlest mode" claim after two waves repeated the
+    fault family against it: the committed wash is the hour whose
+    light is the frame's law, so the albedo constraint is tightest
+    there, not loosest (test re-derived with the argument, not
+    weakened; 0.5 erasure ceiling holds; anti-family exempt by
+    construction). Golden 04/05 re-shot: lit grass crests lean into
+    the amber (hue +3.5-5.5° warm, dS now POSITIVE), shadow stays
+    cool. ALL GAUGES PASS (golden 4.29 stops, night 6.47, noon 3.72,
+    hueSpread floors held). 1235 tests, build green. Judge on re-shot
+    01/04/05 at wave 16. Remaining family sites: the night-side olive
+    exemption (parked — it is the 144/169 value family per runs
+    105-107), escape hatches, noon-village accents.
     **Piece 6 (2026-08-06, run 110): the road stops being a colour
     hole.** Wave 15's new family, identical in both panel samples
     ("the lowest-chroma region in the image while taking the most

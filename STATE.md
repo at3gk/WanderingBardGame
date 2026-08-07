@@ -1,9 +1,10 @@
 # STATE
 
-Run counter: 104 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 111 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
-runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass)
+runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass;
+runs 111+ are the 2026-08-07 overnight loop)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -40,6 +41,23 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 111) — 185 piece 7: the pull stops
+  draining what it binds; the committed hours get their grip.** Wave
+  15's tuft family measured before touching: the cone story was
+  half-right (olive at sim ≈ 0 → half capture; anti-family at night →
+  zero), but the binding constraint was (1) the attraction LERP losing
+  up to a fifth of chroma near 90° — now a true magnitude-preserving
+  rotation (noon re-shot: 16% of pixels, dS +0.011; night +0.036) —
+  and (2) LOW_SUN_KEY_MAX 0.22 being sub-perceptual (breadth ablation
+  moved <0.5% of pixels), now 0.45 with the "gentlest mode" test
+  re-derived, not weakened. Golden lit grass leans into the amber,
+  shadows stay cool, ALL GAUGES PASS, 1235 tests. PR #228 landed
+  before this run; branch reconciled. Visual count since wave 15:
+  TWO (110 road, 111 this) — wave 16 after roughly one more visual
+  task. Next: the emotion queue, an art task (166-170), or wave 16.
+  Night-side olive exemption stays parked with the 144/169 value
+  family (runs 105-107's partition binds).
 
 - **HANDOFF, 2026-08-06 (run 110) — 185 piece 6: the road stops
   being a colour hole.** The three biome road albedos chroma-scaled
