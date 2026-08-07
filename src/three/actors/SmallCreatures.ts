@@ -15,10 +15,20 @@
  *   in the game — whose life is the tail, going. The tail is the only
  *   part that moves at all, which is the entire character.
  *
- * Both are quiet-valued like the travellers. The fox leans rust because
- * a fox IS rust — but held well under the bard's saturation; warmth
- * belongs to him, and a fox six metres off in the verge is an accent,
- * not a rival.
+ * - The DOG ("a grey-muzzled dog walks you to the end of his street and
+ *   no further") stands, four-square, village-street sized: between the
+ *   fox and the deer, which is the size the line needs — an animal with
+ *   a job. Two marks carry him. The EARS hang DOWN, which is the whole
+ *   difference from the fox at forty pixels (the fox's point up), and
+ *   the MUZZLE is pale grey against a warm-brown coat, because the line
+ *   named that detail before the model existed. His life is the tail:
+ *   a wag that arrives every six seconds, swings twice, and stops. An
+ *   old dog's acknowledgment, not a puppy's greeting.
+ *
+ * All three are quiet-valued like the travellers. The fox leans rust
+ * because a fox IS rust — but held well under the bard's saturation;
+ * warmth belongs to him, and a fox six metres off in the verge is an
+ * accent, not a rival.
  */
 
 import { Group, Mesh, type BufferGeometry, type ShaderMaterial } from 'three';
@@ -123,6 +133,95 @@ export class Fox implements StagedCreature {
     const cycle = (t * 0.11) % 1;
     const aside = cycle < 0.3 ? Math.sin((cycle / 0.3) * Math.PI) : 0;
     this.headPivot.rotation.y = aside * 0.55;
+  }
+
+  dispose(): void {
+    for (const material of this.materials) material.dispose();
+    this.materials.length = 0;
+    this.group.traverse((child) => {
+      if (child instanceof Mesh) child.geometry.dispose();
+    });
+  }
+}
+
+export class Dog implements StagedCreature {
+  readonly group = new Group();
+  private readonly body = new Group();
+  private readonly tail = new Group();
+  private readonly materials: ShaderMaterial[] = [];
+  private elapsed = 0;
+  private readonly phase: number;
+
+  constructor(globals: PainterlyGlobals, seed = 0) {
+    this.phase = (seed % 71) * 0.47;
+    this.group.name = 'dog';
+    const solid = solidFactory(globals, this.materials);
+    // Warm brown, and the line's own detail: a muzzle in pale grey. The
+    // grey is the only cool value on him, so it reads as age rather than
+    // as a second coat colour.
+    const coat = solid(0x7d5a3e, 0.45);
+    const under = solid(0x4e3a2a, 0.32);
+    const grey = solid(0xaea79c, 0.6, 0.72);
+    const add = adder(this.body);
+
+    // Standing: four columns, in the darker tone so the body reads as a
+    // mass over them — the deer's value-break rule.
+    const legGeo = boxPart(0.055, 0.32, 0.055, 0.85);
+    for (const [lx, lz] of [
+      [-0.085, 0.17],
+      [0.085, 0.17],
+      [-0.085, -0.19],
+      [0.085, -0.19],
+    ] as const) {
+      add(legGeo, under, lx, 0, lz);
+    }
+
+    // Body along +Z, with the CHEST a deeper box than the haunches: the
+    // working-dog outline, heavy at the front, light behind.
+    add(boxPart(0.19, 0.2, 0.44, 0.86), coat, 0, 0.31, -0.05);
+    add(boxPart(0.21, 0.26, 0.2, 0.8), coat, 0, 0.29, 0.14);
+
+    // Head: squarish, low-slung — no deer neck. Grey muzzle stepped
+    // forward of it.
+    add(boxPart(0.15, 0.15, 0.18, 0.85), coat, 0, 0.55, 0.22);
+    add(boxPart(0.095, 0.09, 0.11, 0.8), grey, 0, 0.57, 0.36);
+
+    // The ears HANG. Two small boxes rotated past horizontal so they fall
+    // beside the head — the one mark that says dog and not fox at range.
+    const earGeo = boxPart(0.045, 0.13, 0.035, 0.5);
+    const earL = add(earGeo, under, -0.075, 0.67, 0.22);
+    earL.rotation.z = 2.6;
+    const earR = add(earGeo, under, 0.075, 0.67, 0.22);
+    earR.rotation.z = -2.6;
+
+    // A plain tail — no brush — held low and relaxed, on its own pivot so
+    // the wag can swing the whole thing.
+    this.tail.position.set(0, 0.44, -0.26);
+    const tailMesh = adder(this.tail)(boxPart(0.05, 0.24, 0.05, 0.62), coat, 0, 0, 0);
+    tailMesh.rotation.x = -2.3;
+    this.body.add(this.tail);
+    this.group.add(this.body);
+  }
+
+  setHeading(heading: number): void {
+    this.group.rotation.y = heading;
+  }
+
+  update(dt: number): void {
+    this.elapsed += dt;
+    const t = this.elapsed + this.phase;
+    this.body.position.y = Math.sin(t * 0.8) * 0.005;
+    // The wag, rationed. A six-second clock; the tail is live for the
+    // first 30% of it (1.8 s) and dead still for the other 4.2. Inside
+    // the burst: two full swings under a sine envelope, so it starts and
+    // finishes at rest instead of snapping on. Old dog, brief opinion.
+    const cycle = (t / 6) % 1;
+    if (cycle < 0.3) {
+      const p = cycle / 0.3;
+      this.tail.rotation.y = Math.sin(p * Math.PI) * Math.sin(p * Math.PI * 4) * 0.5;
+    } else {
+      this.tail.rotation.y = 0;
+    }
   }
 
   dispose(): void {

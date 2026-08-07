@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 128 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 129 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -59,6 +59,23 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 129) — 186 piece 3: the escort dog.**
+  Delegated build (opus agent, SmallCreatures.ts + routing table +
+  test ownership), wired in the main loop: a standing grey-muzzled
+  dog — floppy DOWN ears (the fox's point up: the forty-pixel
+  distinction), pale-grey muzzle as the line's own detail, chest
+  deeper than haunch — whose life is a two-swing tail wag every six
+  seconds (an old dog's acknowledgment). He stands at MEETING
+  distance (3.5-5 m — he has a job, and the job is you); the
+  existing depart-drift enacts "walks you to the end of his street
+  and no further". Staged through the real path (visible ✓); frame
+  READ deferred to wave 19's sheet (context-critical session end —
+  the class mirrors three verified siblings and tsc/tests/build are
+  green). 1249 tests, build green. Remaining 186: birds, bard
+  reaction poses. Visual count since wave 18: THREE (127 scrim, 128
+  canopies, 129 this) — WAVE 19 DUE NEXT ITERATION, judging scrim
+  brights, canopy leans, and the dog if today rolls him.
 
 - **HANDOFF, 2026-08-07 (run 128) — the canopies grow toward their
   light: run 126's queued asymmetry lever enacted (delegated to an

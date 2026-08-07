@@ -48,7 +48,7 @@ import { Bard } from './actors/Bard';
 import { ContactShadow } from './actors/ContactShadow';
 import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
 import { Deer } from './actors/Deer';
-import { Cat, Fox, type StagedCreature } from './actors/SmallCreatures';
+import { Cat, Dog, Fox, type StagedCreature } from './actors/SmallCreatures';
 import { activeBookmark, setActiveBookmark } from '../core/profiles';
 import { Campfire } from './scenes/Campfire';
 import { FestivalGrounds } from './scenes/FestivalGrounds';
@@ -1789,7 +1789,9 @@ export class RoadStage implements Stage {
             ? new Deer(this.app.globals, this.road.seed)
             : figure === 'fox'
               ? new Fox(this.app.globals, this.road.seed)
-              : new Cat(this.app.globals, this.road.seed);
+              : figure === 'dog'
+                ? new Dog(this.app.globals, this.road.seed)
+                : new Cat(this.app.globals, this.road.seed);
         this.creatures.set(figure, creature);
         this.actors.add(creature.group);
       }
@@ -1797,8 +1799,14 @@ export class RoadStage implements Stage {
       // wild thing at conversation distance would read as tame, and its
       // line is about choosing to stay. The fox sits a little closer; the
       // cat closest of all, because a cat concedes nothing by proximity.
+      // The dog stands at meeting distance — he has a job, and the job is
+      // you; the wild things keep theirs.
       const radius =
-        figure === 'deer' ? 6.5 + rand() * 2.5 : figure === 'fox' ? 5 + rand() * 2 : 3.5 + rand() * 1.5;
+        figure === 'deer'
+          ? 6.5 + rand() * 2.5
+          : figure === 'fox'
+            ? 5 + rand() * 2
+            : 3.5 + rand() * 1.5;
       const angle = this.subject.heading + bearing;
       const x = this.subject.position.x + Math.sin(angle) * radius;
       const z = this.subject.position.z + Math.cos(angle) * radius;
