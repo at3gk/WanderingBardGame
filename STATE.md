@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 114 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 115 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass;
@@ -41,6 +41,24 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-07 (run 115) — NPC voids measured: albedo
+  refuted, family re-attributed to 144/169.** The waves-15/16 "unlit
+  navy voids at the focal point" family taken to pixels: NPC bodies
+  in 05 sit at the bard's own value (V 0.20-0.24, warm hues — the
+  light lands) but half his saturation. Chroma-scaling their
+  cloth/under/crown ×1.7 (values pinned) was built, shot and
+  REVERTED — 0.63% of pixels moved, samples ±0.03 S — because
+  V ~0.21 is the ACES/finishing chroma-crush regime run 107 already
+  partitioned. The 144/169 shade-side VALUE floor at low sun now has
+  THREE independent sites (12/13 dusk stripes, wave-16's "midtones
+  scooped" value verdict, NPC voids) and is the highest-leverage
+  visual task remaining — TAKE IT NEXT: start from run 107's numbers
+  (S 0.13 band = lit dark albedo at V 0.21), find the finishing
+  S-curve's quarter-tone dip + the low-sun ambient floor, lift the
+  V ~0.2 band's display value only as far as chroma survival
+  requires, judge on re-shot 12/13/05 + NPC samples + all gauges
+  (night 6.47 must hold). Docs-only run (measurement + revert).
 
 - **HANDOFF, 2026-08-07 (run 114) — 185 piece 8: first light reaches
   the ground.** Wave 16's licensed lever enacted: NIGHT_KEY_OUT
