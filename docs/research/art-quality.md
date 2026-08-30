@@ -371,6 +371,33 @@ the panels are not asking for fur).
   as "a fog bug" because the FOREGROUND at that hour sat lower.
   Relative, not absolute, saturation is the constraint.
 
+- 2026-08-30 (runs 120-134, the wave 14-19 block, folded in by the run-135
+  consolidation): the dominant lesson wasn't a rendering fact so much as a
+  process one — a plausible-sounding blind-panel complaint is not evidence
+  of its own cause, and three separate "obvious" levers were measured and
+  REFUTED before anything got tuned. Wave 18's "clone-stamped foliage"
+  blamed tree placement; the placement code already randomized rotation,
+  scale and variant per instance, and the real cause was geometry-side
+  (canopies with no asymmetry, fixed by run 128's lateral lean). Waves
+  15-16's "unlit navy voids" at NPCs blamed albedo; a chroma boost moved
+  0.63% of pixels and was reverted, because the value band in question was
+  already inside the finishing pipeline's own chroma-crush regime. Wave
+  19's "empty lower-left quadrant" looked like a camera or placement fault;
+  a 9-position sweep across the rest of the same day's road showed the
+  pattern is healthy everywhere else, and the one pinned frame is ordinary
+  per-seed scatter variance. In all three cases the panel's symptom
+  description was accurate and its attributed cause was wrong — a
+  discipline this note under-weighted when it framed "recommendations,"
+  which are more provisional than they read: verify against the actual
+  rendering/placement code before spending a run on the fix a critique
+  names. Separately, the same block found that once the engine-level
+  lenses (colour, value) plateaued at 5+/6 on this rubric, the STUCK
+  lenses were design-level ones — emotion (faceless protagonist, mannequin
+  NPCs) and silhouette (one shape vocabulary per object class) — that no
+  amount of lighting/grading work moves; those needed actual new geometry
+  and posing (the deer, canopy asymmetry, the listening posture, the rock
+  shape table), not tuning.
+
 ## Source access notes
 
 Reached directly (fetched): adamgryu's effects thread (ThreadReader)

@@ -8,9 +8,23 @@ changelog) but don't skip ahead — each task assumes the previous ones landed.
 This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
-- **What to do next** is the **v0.7 queue**, task 122 onward, right below
-  this list — it supersedes the v0.6 queue, which follows it. Read STATE.md's
-  HANDOFF block first.
+- **What to do next**: read STATE.md's HANDOFF block first — it is the
+  authoritative, every-run-updated pointer. As of run 135, the live queue
+  is **v1.1, "the crafted frame"** (task 166 onward, further below): a
+  wave-based art-quality loop, judged by blind panels of opus judges
+  standing in for the human eyes v0.7 assumed weren't available, plus the
+  186 creature family it's tracked only in STATE.md's handoffs so far.
+  **v0.9** (retention, "the road home") and **v1.0** (the Festival of the
+  Long Road arc) are both complete as of run 135 — read them for *why*, not
+  for open work. **v1.3** ("the family songbook," task 176 onward) is
+  queued and entirely untouched since being written 2026-08-01 — a
+  reasonable next arc once the art-quality loop reaches a natural pause.
+- The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
+  it was written on the premise that "no agent in this environment can
+  judge art quality," which the v1.1 queue's blind-panel system (run 135
+  consolidation note) proved wrong — those six tasks are on hold because a
+  working substitute was built, not because the questions stopped
+  mattering.
 - The **v0.6 queue**, task 115 onward, sits below v0.7. It supersedes the numbered entries below: a human reset the
   direction on 2026-07-28 and the game is now a 3D one (DESIGN.md, "The
   road in three dimensions"). Entries up to 113 remain the record of how
