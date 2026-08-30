@@ -1,10 +1,10 @@
 # STATE
 
-Run counter: 133 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 134 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
-runs 111+ are the 2026-08-07 overnight loop)
+runs 111+ are the 2026-08-07 overnight loop; run 134 resumes 2026-08-30)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -59,6 +59,44 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-30 (run 134) — the empty lower-left quadrant measured:
+  per-seed placement luck in one pinned frame, not a placement or camera
+  fault.** Wave 19's composition finding, taken next off run 133's list.
+  `postcard.mjs`'s `04-golden-vista` (s 900, day 0.8, the pinned `vista`
+  mood shot) reads with almost nothing in its lower-left — grass and one
+  rock — while the rest of the frame carries a river, trees and a distant
+  landmark. Before touching `CameraRig.ts` (whose vista framing has ~0.1
+  stop of headroom on the noon tonal gate and a documented history of
+  refuted blind levers — runs 105-107, 115, 126, 131), the standing rule
+  applied: measure first. A 9-position sweep of the same `vista` mood
+  across the rest of today's road (s 100-1900, plus the already-pinned
+  `11-morning-vista` at s 500) shows healthy, well-distributed foreground
+  mass on BOTH sides of frame at every other sampled position — 04 is the
+  outlier, not the pattern. `waysideSentinelSites` (task 167/180's tree
+  cadence guarantee) was queried directly for the chunks spanning s 900:
+  it is intact there (a left sentinel at s 874/920, a right one at s 862/
+  979 — both sides covered within ~80 m), so this is not the sentinel
+  system leaking a third time. What is left, uninvestigated, is ordinary
+  scatter (bush/rock/flower): unlike trees, those kinds have no cross-side
+  balance guarantee at all, and this frame's low roll on its near-camera
+  side is consistent with that gap rather than with any systemic bug —
+  the same shape of false alarm task 182 found in the noon gate ("rolling
+  dice on the road of the day"), except this ticket is pinned and will
+  read exactly this way every future wave, since 04's s/day never change.
+  NOT done, deliberately: no density or placement constant was tuned
+  blind. The sized next step, if this is worth a run: measure actual
+  world-space object positions inside the vista frustum at s 900 (not
+  infer from screenshots) before deciding whether a scatter-density floor
+  or a lateral-balance rule is the real lever. Also confirmed in passing,
+  not investigated: "horizon pinned to vertical midline" is true by
+  construction — `CameraRig`'s per-mood pitch is a fixed constant with no
+  variety term, so every frame in a given mood shares the exact same
+  horizon height forever. A deliberate camera-variety pass is a distinct,
+  properly-sized future task, not a side effect of this one. Docs-only;
+  1249 tests and the build are unchanged and green. Next: the hue-free
+  distance wall, the scatter-balance measurement above, or wave 20 (due
+  after ~one more visual-change run per 133's count).
 
 - **HANDOFF, 2026-08-07 (run 133) — shape vocabulary, first piece:
   stones stop being lumps.** Wave 19's "one lozenge does every job"
