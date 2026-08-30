@@ -553,6 +553,26 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
 
 ## Changelog
 
+- 2026-08-30 (runs 121-134, consolidated at 135) — **the v0.9 arc closes
+  for good, and the art loop turns to characters and shapes.** Task 157
+  (two device bookmarks, zero-migration) shipped across three pieces,
+  closing the v0.9 "road home" retention queue entirely — all seven of
+  its ranked recommendations are now shipped or standing design. The rest
+  of the block was the wave 18/19 art-quality loop: two more creatures
+  (fox, cat, escort dog — 186 pieces 2-3), a settled scrim ruling
+  (HUD wash contrast now scales with the sky's own luma instead of being
+  a per-wave argument), canopy asymmetry (the true fix for "clone-stamped
+  foliage," after tree *placement* was measured innocent), a listening
+  posture that finally reads at silhouette level (after two waves of
+  "mannequin audience" turned out to be a real posture invisible at
+  render distance, not staging), and a first piece of rock shape
+  vocabulary (three archetypes replacing one re-jittered lozenge). Three
+  panel-named complaints were individually measured and REFUTED before
+  any code changed — see the new finding in `docs/research/art-quality.md`
+  for the pattern. Drift check clean: every run was a readout, a
+  retention arc closing, or rendering/posing fidelity on the existing
+  world; no new systems, bundle 902 KB of 5 MB. NOTHING CUT.
+
 - 2026-08-07 (runs 105-120, consolidated at 120) — **the hour reaches
   the ground, and the picture starts agreeing with the prose.** The
   colour arc that wave 13 licensed ran to its honest end: the land key

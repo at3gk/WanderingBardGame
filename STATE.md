@@ -1,10 +1,11 @@
 # STATE
 
-Run counter: 134 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 135 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
-runs 111+ are the 2026-08-07 overnight loop; run 134 resumes 2026-08-30)
+runs 111-133 are the 2026-08-07 overnight loop; run 134 resumed 2026-08-30;
+run 135 was the consolidation pass)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -44,6 +45,17 @@ lesson worth adding to the note eventually: the deer staging (186)
 suggests recommendation 4's mementos gain more from being SEEN at the
 encounter than from the journal line alone — the picture agreeing
 with the prose is itself a return-warmth feature.
+
+**Run-135 refresh (2026-08-30):** recommendation 6 is now SHIPPED —
+task 157 (two bookmarks, zero-migration storage + the switch UI)
+completed across runs 121-123, closing the v0.9 queue's one remaining
+arc. All seven ranked recommendations are now SHIPPED or standing
+design; the v0.9 queue itself is complete. Rejected-on-principle list
+re-checked against runs 120-134 (the wave 18/19 art-quality loop and
+the 186 creature family): nothing shipped there touches player
+retention mechanics at all — it is entirely rendering/staging fidelity
+on the existing world, so the list has nothing new to check against
+this cycle.
 
 ## The true goal (standing pointer)
 
@@ -98,223 +110,65 @@ mastery display must read that section first.
   distance wall, the scatter-balance measurement above, or wave 20 (due
   after ~one more visual-change run per 133's count).
 
-- **HANDOFF, 2026-08-07 (run 133) — shape vocabulary, first piece:
-  stones stop being lumps.** Wave 19's "one lozenge does every job"
-  enacted for rocks (delegated, geometry.ts ownership): the single
-  re-jittered barrel profile became a ROCK_SHAPES table of three
-  seeded archetypes — a low SLAB (2:1 wide, dominant flat cap: the
-  variant a bush can never be, because a bush has no lid), a LEANING
-  WEDGE (cap shrunk and shoved off-centre along the shelf's own
-  heading), and a BLOCKY BOULDER (near-prism walls). Walls went
-  0.86 → 0.90-0.97 shrink so the body is six large flat quads, not a
-  taper. A salted selector stream maps the world's three rock seeds
-  to three DIFFERENT archetypes (the raw stream dealt two wedges —
-  the salt was searched for and the file says so). 108 verts/36 tris
-  unchanged; bounding reach +2.8% worst case (clearances safe);
-  pebble checked and left (already a hard-facet bipyramid,
-  sub-pixel at the read distance). The existing rock invariant tests
-  pass unmoved — same claims, made harder. tsc clean, 1249 tests,
-  build green. Visual count since wave 19: TWO (132 posture, 133
-  this) — wave 20 due after ~one more, judging the posture, the
-  stones, and the scrim brights. Next: the hue-free distance wall,
-  the empty lower-left quadrant, or wave 20.
+- **HANDOFF, 2026-08-30 (run 135) — CONSOLIDATION (drift control, every
+  ~10th run; last was 120).** Drift check over runs 121-134: CLEAN — every
+  run was retention-arc feature work that closed a named queue (121-123,
+  task 157), a character/creature build (124, 129), a blind panel or a
+  measurement it licensed (125-128, 130-134), or a pure geometry
+  refinement of an existing object class (128, 133); no new systems, no
+  new runtime dependencies, bundle 902 KB of the 5 MB budget (up from
+  697 KB at run 120 — the creature family and shape-vocabulary geometry,
+  not bloat). The retention research (pillar 5) reread: recommendation 6
+  (family bookmarks) is now SHIPPED (task 157, runs 121-123), closing the
+  v0.9 queue entirely — all seven ranked recommendations are SHIPPED or
+  standing design, and the rejected-on-principle list stayed clean against
+  a run block that never touched retention mechanics at all. Added a
+  finding to `docs/research/art-quality.md`'s shipped-work section: the
+  wave 14-19 block's dominant lesson was that a plausible-sounding visual
+  complaint is not evidence of its own cause — three separate "obvious"
+  levers (tree-clone placement, NPC albedo, the empty-quadrant frame) were
+  each measured and REFUTED before being tuned, and the real fix in each
+  case was narrower or lived somewhere else entirely (grep `art-quality.md`
+  for "Findings from shipped work" for the full entry). Also fixed a stale
+  pointer in ROADMAP.md's "Start here": it named the v0.7 queue (tasks
+  122-128) as "what to do next," but that queue predates and is superseded
+  by the wave/blind-panel system — its own premise ("no agent here can
+  judge art quality") turned out to be wrong once art-quality.md's
+  research made agent judgment possible, so those six tasks are on hold,
+  not next. STATE trimmed: handoffs 121-133 compressed to a run index
+  below (ROADMAP's done-entries, named there, carry the full accounts) —
+  this file 3887 → 3741 lines. DESIGN.md's changelog gains the runs
+  121-134 entry. No code touched; `npm test` 1249 green (unchanged),
+  `npm run build` green (unchanged). Next: the hue-free distance wall, the
+  scatter-balance measurement (run 134's), wave 20, or v1.3 (the family
+  songbook queue, entirely untouched since it was written 2026-08-01 —
+  worth a look once the current art-quality loop reaches a natural pause).
 
-- **HANDOFF, 2026-08-07 (run 132) — the listening posture: attention
-  now reads at silhouette level.** Run 131's sized lever enacted
-  (delegated, Traveller.ts ownership): attention head-tilt 3.4° →
-  12.6° (a listener looks UP toward the music), a 3.4° whole-body
-  lean-in ADDED to any base lean (the elder's static 0.12 hunch
-  preserved via a captured base — would otherwise have been silently
-  overwritten), rock amplitude 0.038 → 0.055, and a 1 cm head bob
-  out of phase with the breath (0.61 vs 1.1 Hz, 2.1 offset). Every
-  raised term is attention-gated: a non-listener's idle is
-  bit-identical, so the 2°-per-figure budget still binds
-  standing-about figures. Feet stay grounded (body origin is at the
-  feet; the 3.4 mm rear-corner dip is a third of the breath's own
-  travel). tsc clean, 1249 tests, build green. HONEST FLAG: verified
-  by typecheck+tests only — the posture's READ is exactly what blind
-  panels measure, so WAVE 20 judges it on the 05/09 busks. Visual
-  count since wave 19: ONE. Next: shape-vocabulary first piece,
-  the hue-free distance wall, v1.3, or wave 20 after 1-2 more.
-
-- **HANDOFF, 2026-08-07 (run 131) — the mannequin-audience claim
-  measured: the staging is innocent AGAIN; the fault is that FACING
-  DOES NOT RENDER on a box figure.** Re-probed the live 05 busk pose:
-  4 listeners present, all at 3-4.4 m, all heading-faced toward the
-  bard (same numbers as run 111). The panel's "none turned toward
-  the bard" is nonetheless what the PIXELS show: a traveller's front
-  and back are the same silhouette; the face marks are sub-pixel at
-  5-8 m; the attention head-tilt is 3.4° — invisible. FIFTH measured
-  misattribution this session, and like the others the symptom is
-  real. THE SIZED LEVER (Traveller.ts, next session): a listening
-  posture that reads at SILHOUETTE level — raise the attention tilt
-  to a visible head-up angle (~12-15°), and/or clasp both hands
-  forward at attention 1 (arms leave the body's sides, which is
-  visible from every bearing — the elder's clasped hands already
-  prove the read). Keep the 2°-per-figure idle budget for everyone
-  NOT listening. Docs-only run.
-
-- **HANDOFF, 2026-08-07 (run 130) — WAVE-19 BLIND PANEL: mean 4.40,
-  seven-wave block 4.21-4.45 flat.** Colour top again (5.46), value
-  5.15, silhouette UP to 3.85 — the deer is "the strongest read in
-  the set" and 13's bard read praised (brim/cape/lute/boots all
-  separate). EMOTION'S KEEP is the project thesis stated back by a
-  blind judge: the deer beat is "an event that asks nothing of the
-  player and rewards only attention — exactly the game's thesis."
-  Its top faults remain the mannequin audience (05's listeners
-  "standing apart like traffic cones, none turned toward the bard" —
-  NOTE: the listener-facing machinery EXISTS and was probe-verified
-  in run 111; measure why the posed busk doesn't show it before
-  believing the panel) and the faceless bard. Mobile 3.62 holds the
-  no-plate verdict post-ruling — the run-127 ruling STANDS; do not
-  re-litigate per wave. New concrete faults worth queueing: colour's
-  "distance fade resolves to a single hue-free wall" (10 frames —
-  the fog-chroma family again, hour-specific), composition's
-  "empty lower-left quadrant" + "horizon pinned to vertical midline"
-  (rig family), silhouette's "one lozenge does every job — rock,
-  bush and tree crown share a silhouette" (the shape-vocabulary arc
-  proper). Verdicts: scratchpad wave19-verdicts.json, dayKey
-  2026-08-07. Next: the busk-audience staging measurement (why
-  don't listeners face in the 05 pose?), or a shape-vocabulary
-  first piece, or v1.3.
-
-- **HANDOFF, 2026-08-07 (run 129) — 186 piece 3: the escort dog.**
-  Delegated build (opus agent, SmallCreatures.ts + routing table +
-  test ownership), wired in the main loop: a standing grey-muzzled
-  dog — floppy DOWN ears (the fox's point up: the forty-pixel
-  distinction), pale-grey muzzle as the line's own detail, chest
-  deeper than haunch — whose life is a two-swing tail wag every six
-  seconds (an old dog's acknowledgment). He stands at MEETING
-  distance (3.5-5 m — he has a job, and the job is you); the
-  existing depart-drift enacts "walks you to the end of his street
-  and no further". Staged through the real path (visible ✓); frame
-  READ deferred to wave 19's sheet (context-critical session end —
-  the class mirrors three verified siblings and tsc/tests/build are
-  green). 1249 tests, build green. Remaining 186: birds, bard
-  reaction poses. Visual count since wave 18: THREE (127 scrim, 128
-  canopies, 129 this) — WAVE 19 DUE NEXT ITERATION, judging scrim
-  brights, canopy leans, and the dog if today rolls him.
-
-- **HANDOFF, 2026-08-07 (run 128) — the canopies grow toward their
-  light: run 126's queued asymmetry lever enacted (delegated to an
-  opus agent, verified in the main loop).** Broadleaf and willow
-  canopies now carry a seeded lateral lean (centroid 19-24% of canopy
-  radius off the trunk axis, measured across four seeds — squarely in
-  the 15-25% target band) with per-lobe mass bias toward the lean
-  (reach +30%, size +18%, sag on the loaded side), so the existing
-  random instance yaw finally produces DIFFERENT silhouettes — the
-  true fix for wave 18's "clone-stamped foliage" after the placement
-  knobs were proven innocent. Conifers stay symmetric (a spruce is a
-  cone). ZERO triangle cost (positions only: broadleaf 220 tris,
-  willow 148, unchanged). One honest follow-on: the willow's sway
-  pass identified its trunk by radius-from-axis, which the lean
-  breaks — now an exact first-merged-part test; some hem vertices
-  that were already wrongly frozen now sway. Frame read: 02's
-  broadleafs each lean their own way. 1249 tests, build green.
-  Visual count since wave 18: TWO (127 scrim, 128 this). Next:
-  bard reaction poses, escort-dog, daylight dark accents, or wave 19
-  after one more.
-
-- **HANDOFF, 2026-08-07 (run 127) — the scrim ruling: adaptive wash,
-  idiom kept.** Four waves of "unplated text fails on bright sky"
-  settled in-idiom: every HUD wash's peak alpha now scales with the
-  sky's own luma (1x at dusk/night — previous calibrations
-  byte-kept — to ~1.45x under noon white, cap 0.68). "Contrast is a
-  lottery decided by time of day" answered by making contrast a
-  function of the time of day. Also fixed: setTone was clobbering
-  the run-117 purse wash. Verified live (peak 0.596 at noon-phone).
-  1249 tests, build green. Visual count since wave 18: ONE (this).
-  Next: canopy asymmetry (geometry.ts), bard reaction poses,
-  escort-dog, or daylight dark accents.
-
-- **HANDOFF, 2026-08-07 (run 126) — wave 18's tree-clone lever
-  REFUTED at the placement level; the residual is geometry-side.**
-  The silhouette lens claimed "one tree kit repeated at matched scale
-  with zero rotation variance". Measured against WorldStreamer's
-  placement (lines ~3427-3448): every tree instance gets a random
-  full-circle Y-rotation, scale 0.75-1.35 with an INDEPENDENT height
-  stretch 0.85-1.25, one of 4 variant geometries per species, and a
-  species-banded colour draw. Both halves of the claim are false at
-  placement. THE TRUE RESIDUAL, recorded for the next silhouette run:
-  rotation variance is INVISIBLE on rotationally-symmetric canopies —
-  a lumpy sphere looks the same at every yaw — so the lever is
-  geometry-side asymmetry (offset canopy lobes per variant in
-  geometry.ts's broadleaf/conifer builders), not placement knobs.
-  Fourth case of the panels-see-symptoms-misattribute-causes rule
-  this session (runs 105-107, 115, 117's counter arithmetic, this).
-  Docs-only run. Next candidates: canopy asymmetry (geometry.ts,
-  fresh session), the scrim ruling, bard reaction poses, escort-dog.
-
-- **HANDOFF, 2026-08-07 (run 125) — WAVE-18 BLIND PANEL: mean 4.21,
-  six-wave block 4.21-4.45, flat at the noise floor.** THE DEER
-  REGISTERED: silhouette's KEEP verbatim — "the best character
-  silhouette in the entire set - better than the player" — the
-  creature-staging arc's first external validation. Lens means:
-  colour 5.00, value 4.23 (down 1.0 — beyond usual lens noise, but
-  its ask is unchanged: "no true black, no true white"; treat the
-  drop as judge-harshness until wave 19 confirms), composition 4.27,
-  emotion 4.23 (the deer's LINE praised again; its close-up build
-  called "a rectangular box on four sticks" and the bard's
-  NON-REACTION to deer/sunset named — pose variety, the 150 residue),
-  mobile 3.81 (plates again — the scrim decision is now four-plus
-  waves overdue for an explicit design ruling), silhouette 3.73
-  (bard-is-a-slab + clone-stamped foliage rotation variety — a NEW
-  concrete cheap lever: per-instance rotation on tree kits). Top
-  frames 07 (5.58), 06/08 (4.83), 13 (4.75); worst 09 (3.33). NEXT
-  CANDIDATES, sized: (1) tree-kit rotation variety (cheap, concrete,
-  silhouette's second fault); (2) the scrim ruling — write the
-  decision in DESIGN (plate idiom or accept in writing), then enact;
-  (3) bard pose variety/reaction (150 residue, emotion's ask); (4)
-  the escort-dog. Verdicts: scratchpad wave18-verdicts.json, ~590k
-  tokens, dayKey 2026-08-07.
-
-- **HANDOFF, 2026-08-07 (run 124) — 186 piece 2: the fox and the
-  cat.** SmallCreatures.ts (seated fox with brush + pretending
-  head-turn; loaf cat whose tail is the whole performance); the
-  deer's staging generalized to a creatures Map + CREATURE_FIGURES
-  routing table (test extended); per-animal distances. Verified
-  staged live. Remaining 186: escort-dog (walk-along behaviour, own
-  piece), birds. 1249 tests, build green. Visual count since wave
-  17: THREE-ish (119 deer, 124 this; plus the 116/117 already
-  judged) — wave 18 is reasonable next, or the silhouette/scrim/
-  dark-accent design asks.
-
-- **HANDOFF, 2026-08-07 (run 123) — 157 COMPLETE; the v0.9 retention
-  queue (151-157) CLOSES.** The shared pages shipped: peekJournal
-  (raw, side-effect-free, pages-not-progress enforced by the return
-  type), otherBookmarkPage (no festival line, no doors), and tonight's
-  page's quietest row, gated by the festival-line tell so doors never
-  recurse onto the sibling's sheet. Verified live end-to-end. All
-  seven retention recommendations are now enacted or standing. 1249
-  tests (+3), build green. Open queues remaining: 186 creatures
-  (cat/dog/fox next), the wave-17 design asks (silhouette
-  vocabulary, scrim decision, daylight dark accents), 161 (blocked
-  on human), 144-148 wave-5 residuals, v1.3 (176-178, unlocked).
-
-- **HANDOFF, 2026-08-07 (run 122) — 157 piece 2: the bookmark door.**
-  The title card's third, quietest door switches bookmarks by piece
-  1's exact contract (persist → restoring guard → pointer → reload);
-  the card also shows on a fresh bookmark when the other one holds a
-  journey (its only way back), greeting honestly ("A fresh page on
-  the same bench"). Verified with real taps: walked → fresh 4 m →
-  resumed 154 m, save intact. The family feature is now LIVE — a
-  parent and child genuinely share the bench. Remaining 157: piece 3,
-  the shared journal pages. 1246 tests, build green. Next: 157 piece
-  3, 186 creatures piece 2, or the wave-17 design asks.
-
-- **HANDOFF, 2026-08-07 (run 121) — 157 piece 1: the bookmark
-  storage layer, zero-migration.** Bookmark 0 IS the legacy keys
-  (passthrough by construction — nothing to migrate, stale builds
-  interop, keepsakes stay bookmark-agnostic); bookmark 1 suffixes
-  `.b1`; the pointer is removed, not written, for 0. Nine call sites
-  routed. THE SWITCH CONTRACT (probed before the UI exists): a
-  pointer moved under a live session lands that session's unload
-  save in the NEW bookmark — piece 2's UI must force-save, guard
-  saves (keepsake's restoring-flag pattern), move the pointer, then
-  reload. Verified live across three sessions: 121 m → fresh 4 m →
-  resume 125 m, keys separated. Not yet player-reachable. 1246
-  tests (+6). Next: 157 piece 2 (the bookmark door) or 186 piece 2
-  (more creatures).
+- **Runs 121-133 (2026-08-07), compressed by the run-135 consolidation —
+  full accounts live in the ROADMAP done-entries named here.** 121: 157
+  piece 1, the bookmark storage layer (zero-migration — bookmark 0 IS the
+  legacy keys). 122: 157 piece 2, the bookmark door (family feature goes
+  live). 123: TASK 157 COMPLETE — the v0.9 queue closes, all bookmarks
+  wired end to end. 124: 186 piece 2, the fox and the cat. 125: WAVE-18
+  BLIND PANEL (mean 4.21 — emotion/silhouette/mobile stuck as the
+  design-level lenses, engine lenses at 5+). 126: the tree-clone lever
+  wave 18 blamed for clone-stamped foliage REFUTED at the placement level
+  (every instance already gets random rotation/scale/variant) — residual
+  pushed to geometry. 127: the scrim ruling — HUD wash alpha now scales
+  with the sky's own luma, settling four waves of "unplated text fails on
+  bright sky." 128: the canopies grow toward their light — seeded lateral
+  lean + per-lobe mass bias fixes the true clone-stamp cause run 126
+  found. 129: 186 piece 3, the escort dog. 130: WAVE-19 BLIND PANEL (mean
+  4.40, seven-wave block flat 4.21-4.45 — the deer beat named "the
+  strongest read in the set," mannequin audience and faceless bard the
+  top faults). 131: the mannequin-audience claim measured again — staging
+  is innocent a second time, the real fault is that listener FACING does
+  not render on a box figure (sub-pixel head-tilt, no silhouette change).
+  132: the listening posture enacted (head-tilt 3.4° → 12.6°, a lean-in,
+  more rock) so attention finally reads at silhouette level. 133: shape
+  vocabulary first piece — rocks gain a three-archetype shape table
+  (slab/wedge/boulder) so "one lozenge does every job" stops being true
+  for stones.
 
 - **HANDOFF, 2026-08-07 (run 120) — CONSOLIDATION (drift control,
   every ~10th run; last was 104).** Drift check over runs 105-119:
