@@ -163,6 +163,27 @@ bard and reports where each would land, which is how the slot table in
 box, the bard's own column — are pinned in `roadStaging.test.ts`; re-run this
 if the notation or a framing moves.
 
+## `scatter-probe.mjs`
+
+Not a pass/fail check — a census of the ordinary scatter (grass, fern,
+flower, reed, bankreed, bankgrass, shrub, log, rock, roadgrass, roadstone,
+puddle; never trees, which have their own `waysideSentinelSites` balance
+guarantee). Where `staging-probe.mjs` answers "is this figure where it
+should be", this answers "what is actually inside this frame" for the
+much larger, much more random population of background dressing — the
+question STATE.md's run-134 handoff left open when a vista shot's
+lower-left quadrant read as visually empty and the camera rig and the
+tree system were both cleared by measurement.
+
+Poses the exact pinned vista shots plus a sweep of unpinned points along
+the same `vista` mood, walks the live scene for every scatter
+`InstancedMesh`, projects each instance through the live camera (same
+`v.project(camera)` staging-probe.mjs uses), and buckets what actually
+lands inside the frame by screen quadrant — with a further breakdown by
+kind, since a quadrant full of thin grass and a quadrant full of nothing
+read very differently on screen but can both show up as "low count" if
+mass isn't distinguished from headcount. Prints a table; always exits 0.
+
 ## `shot.mjs [prefix] [settleMs]`
 
 Plain screenshot of the running game after a delay. For far-off states
