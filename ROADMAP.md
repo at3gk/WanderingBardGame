@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. As of run 136, the live queue
+  authoritative, every-run-updated pointer. As of run 137, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
   standing in for the human eyes v0.7 assumed weren't available, plus the
@@ -19,7 +19,15 @@ makes it long. You do not need to read it top to bottom.
   scatter (rock/shrub/log) in one quadrant, same shape as the tree
   sentinel guarantee before it existed — see STATE.md's run-136 handoff
   and `tools/scatter-probe.mjs` before deciding whether that's worth a
-  `waysideSentinelSites`-style fix or is fine left as-is. **v0.9**
+  `waysideSentinelSites`-style fix or is fine left as-is. Run 137 closed
+  task 143 (the road's soft edge, a real fix — see its done-note) and
+  corrected a stale claim on task 144 (the bard already casts a shadow;
+  only its terrain self-shadow half is still parked). Task 169 ("terrain
+  as the hero surface") folds in 143/144/149: 143 is now done, 144's
+  shader-knob family is EXHAUSTED and its figure-shadow half shipped
+  long ago, 149 has one open sliver (07's night spikes) — 169 itself is
+  close to able to be marked done outright; worth a look before treating
+  it as open. **v0.9**
   (retention, "the road home") and **v1.0** (the Festival of the Long Road
   arc) are both complete as of run 135 — read them for *why*, not for open
   work. **v1.3** ("the family songbook," task 176 onward) is queued and
@@ -2671,6 +2679,18 @@ The wave-5 queue, from the wave-4 panel (mean ~5.5; take these next):
     is EXHAUSTED — six measured rounds; do not reopen without new
     evidence. The figure-shadow half of this task (bard casts
     nothing) remains real and untouched.
+    **Correction (2026-08-31, run 137): the figure-shadow half was
+    already done by this point, this note was just stale.** Checked
+    while scoping 143/169: `Bard.ts` already sets `castShadow = true`
+    on the torso/thigh/shin/boot/cloak/arm/head/hat/lute-body meshes,
+    `App.ts`'s shadow-camera frustum was widened to 110 m specifically
+    so mid-ground actors would contact-shadow (see its own comment),
+    ground sets `receiveShadow = true`, and `tools/shadowcast.mjs`
+    already treats "bard" as a named caster family it measures
+    photometrically — task 179 (figure/ground value floor, run ~108)
+    is the entry that shipped it and later tuned it. Nothing to do
+    here; only the terrain self-shadow "casterless plaid bands" half
+    stays EXHAUSTED/parked as written above.
     **The low-sun value floor (2026-08-07, run 116) — the 144/169
     crush family's lever, enacted.** Three independent sites had
     converged on one mechanism (runs 105-107's dusk-stripe
@@ -3413,6 +3433,32 @@ full verdict map and the measure-first suspicion list):
     family). A crisper, more deliberate carriageway edge — wheel-rut
     lines, verge break — in RoadStage/world geometry. Flagged by the
     shadow agent, not yet attempted.
+    **Done (2026-08-31, run 137): the shoulder commits instead of
+    dissolving.** `buildTerrain`'s shoulder blend (`WorldStreamer.ts`)
+    carries the road-to-meadow transition in vertex colour across two
+    intermediate columns (u 2.1, 2.5) between the carriageway edge
+    (1.7) and the shoulder's end (2.9) — the blend WEIGHT's shape is
+    what those intermediate vertices commit to, and it used to be
+    `t * t`, spending the whole 1.2 m band easing gradually toward
+    meadow from the road edge onward. art-quality.md's adamgryu note
+    names exactly this ("winner-take-all... kills the soft road edge",
+    the splatmap's highest-channel-wins trick) as the fix family. Full
+    winner-take-all (a hard per-vertex step) was rejected: this file's
+    own recurring lesson is that a value corner at a vertex survives
+    as a crease no tuning removes, and a stepped edge would be exactly
+    that. The middle path: `smoothstep(0.55, 1, t)` — track holds
+    essentially unchanged through both intermediate columns (0%, 17%
+    meadow at u 2.1/2.5) and the transition concentrates into the
+    final 0.4 m, while staying zero-slope at both ends like every
+    other blend in this function. Postcard pairs shot before/after on
+    01/02/03 (the walking-phase frames closest to the road): the
+    carriageway now reads as ending at a place instead of bleeding
+    into the field, no new seam or crease visible at any of the three.
+    `frame-quality`/`shader-check` both PASS unchanged, 1249 tests
+    green, build green. Untouched: the wheel-rut lines themselves
+    (already crisp per task 149/166's earlier work) and RoadStage —
+    the whole fix lives in the terrain vertex-colour function, no
+    RoadStage change was needed.
 
 133. ~~**The songboard as presentation, not billboard.**~~ Done
     (2026-07-31, wave 2 — superseded mid-task by the human's "notes coming
