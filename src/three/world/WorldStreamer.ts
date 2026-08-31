@@ -2802,7 +2802,15 @@ export class WorldStreamer {
           hi = mixColor(color, dryColor, 0.3);
         } else if (absU <= SHOULDER) {
           const t = (absU - ROAD_HALF_WIDTH) / (SHOULDER - ROAD_HALF_WIDTH);
-          const w = t * t;
+          // Task 143: the shoulder used to spend its whole 1.2 m committing
+          // gradually to meadow (`t * t` from the road edge onward), which
+          // is exactly the soft splat blend art-quality.md's adamgryu note
+          // flags — "winner-take-all... kills the soft road edge". Held at
+          // track through the two intermediate columns (2.1, 2.5) and
+          // concentrated into the final 0.4 m instead: still zero slope at
+          // both ends (no new crease), but the carriageway now reads as
+          // ending at a place rather than dissolving into the field.
+          const w = smoothstep(0.55, 1, t);
           const meadow = meadowAt(x, z, y);
           const track = trackAt();
           color = mixColor(track, meadow, w);

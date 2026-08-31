@@ -1,12 +1,12 @@
 # STATE
 
-Run counter: 135 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 137 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
 runs 111-133 are the 2026-08-07 overnight loop; run 134 resumed 2026-08-30;
 run 135 was the consolidation pass; run 136 measured the scatter
-lower-left question left open by 134)
+lower-left question left open by 134; run 137 shipped task 143)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -72,6 +72,45 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-31 (run 137) — task 143 shipped: the road's edge
+  commits instead of dissolving.** Picked up from run 136's "next" list
+  (task 169's family, folded from 143/144/149) rather than the scatter
+  design question, which the run-136 handoff explicitly left as a sized
+  future decision, not a default next step. `buildTerrain`'s shoulder
+  blend (`WorldStreamer.ts`, between the carriageway edge at u=1.7 and
+  the shoulder's end at u=2.9) carries the road-to-meadow transition in
+  vertex colour across two intermediate columns (u 2.1, 2.5); the blend
+  WEIGHT those columns commit to used to be `t * t`, easing gradually
+  toward meadow across the whole 1.2 m band from the road edge onward —
+  exactly the soft splat blend `docs/research/art-quality.md`'s adamgryu
+  note names ("winner-take-all... kills the soft road edge," the
+  splatmap highest-channel-wins trick). A literal hard step (true
+  winner-take-all) was considered and rejected: this file's own repeated
+  lesson is that a value corner at a vertex survives as a crease no
+  tuning removes, and a stepped blend would be exactly that corner.
+  Landed instead: `smoothstep(0.55, 1, t)`, which holds the two
+  intermediate columns at ~0% and ~17% meadow (vs. the old 11%/44%) and
+  concentrates the visible transition into the final 0.4 m, while
+  staying zero-slope at both ends like every other blend in the
+  function — no new crease. VERIFIED, not just built: postcards shot
+  before/after on 01-dawn-road, 02-morning-open and 03-noon-forest (the
+  three walking-phase frames closest to the road) — the carriageway
+  reads as ending at a place instead of bleeding into the field on all
+  three, no seam or artifact at the transition. `frame-quality` and
+  `shader-check` both PASS unchanged, 1249 tests green, build green.
+  Also corrected in passing: task 144's "the bard casts nothing" note
+  was stale — checked while scoping this, and the figure-shadow half
+  shipped long ago (task 179); only the terrain self-shadow half stays
+  parked/EXHAUSTED as already written. Task 169 itself (143/144/149
+  folded together) is now close to fully resolved — 149 has one open
+  sliver (07's night spikes, a value-at-night question) and nothing
+  else stands between it and being marked done; worth a direct look
+  next run rather than treating it as three separate open items. Next:
+  close out 169 (audit the 149 sliver, then mark it), the scatter
+  lower-left design question run 136 sized but didn't decide, the
+  hue-free distance wall, or wave 20 (due after ~one more visual-change
+  run per 133's count).
 
 - **HANDOFF, 2026-08-31 (run 136) — the scatter lower-left question run
   134 left open, answered with real numbers instead of a screenshot.**
