@@ -1,12 +1,13 @@
 # STATE
 
-Run counter: 137 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 138 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
 runs 111-133 are the 2026-08-07 overnight loop; run 134 resumed 2026-08-30;
 run 135 was the consolidation pass; run 136 measured the scatter
-lower-left question left open by 134; run 137 shipped task 143)
+lower-left question left open by 134; run 137 shipped task 143; run 138
+measured (and refuted) the 149/169 night-spike lead)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -72,6 +73,58 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-31 (run 138) — the 149/169 "night spikes" lead
+  measured and REFUTED; no code shipped.** Took up run 137's "worth a
+  direct look next run" pointer: task 149's one open sliver, "07's black
+  night spikes (value at night)." First hypothesis, from reading
+  `grassTuftGeometry` cold: its `paintGradient(root, tip)` call darkens a
+  blade's root and leaves the tip at pure white ("leave the instance
+  colour alone," the function's own doc comment) — a FIXED, hour-blind
+  contrast that could plausibly read as a stark bright/dark pair once
+  night's ambient crushes everything else dark. Built a fix (soften the
+  tip from 0xffffff toward the root colour) and went to verify it against
+  the pinned `07-night-campfire` pose before trusting it — this file's own
+  history is a long list of exactly this kind of plausible lever turning
+  out to be wrong (grep "REFUTED" for the pattern), and the standing rule
+  is to measure, not infer.
+  **First measurement attempt was itself wrong**: a scan line across the
+  meadow (`app.renderer.render()` + `gl.readPixels`, land-histogram.mjs's
+  own method) found a real spike — luma 17 baseline, 7 at one sample, 47
+  four pixels later — but it didn't move AT ALL after the fix shipped,
+  byte-identical RGB. That meant the fix was touching the wrong geometry
+  entirely, not that it didn't work. Root cause, found by raycasting every
+  instance's world position through the live camera to the nearest match
+  for that screen pixel (the same projection `scatter-probe.mjs` uses):
+  the closest object was `tree-conifer-30`, not a blade of grass — the
+  probe's own `app.renderer.render()` call also turned out to skip
+  `App`'s `finishing` pass (task 168's LUT/composite step, added after
+  `land-histogram.mjs` was written), so even the "trusted" method was
+  reading a pre-finishing buffer; routing through `app.finishing.render()`
+  instead changed the exact numbers but not the conclusion, and a SECOND
+  scan elsewhere in the open meadow (away from both trees and the fire's
+  light pool) found the same ~46-47 luma spike again, isolated to a single
+  4px sample with nothing but baseline on either side — the size and
+  repeatability point at a firefly/ember particle sprite (the campfire
+  scene's own floating embers, visibly present in a zoomed crop taken
+  along the way), not ground cover. The fix was REVERTED (`git checkout`)
+  rather than shipped on a refuted premise; tests and build confirmed
+  back to the unmodified green baseline (`dist` hash byte-identical to
+  before the attempt). The real, still-open question the wide screenshot
+  crops DID support by eye — a faint wavy/streaky texture across the dark
+  meadow that reads as less smooth than a "patch" should — was not
+  reduced to a number this run; a scanline that happens to cross a
+  particle or a tree edge is not a way to measure ground cover, and the
+  right instrument is `scatter-probe.mjs`'s own per-instance raycast
+  approach extended to sample actual rendered colour (not just
+  visibility) at many random ground points, excluding anything that
+  isn't a grass/fern instance. Sized as that instrument, not as a code
+  fix, for whichever run picks it up next. 1249 tests and the build are
+  unchanged and green (docs-only run). Next: build the ground-cover-colour
+  probe above and re-take this question with it, close out the rest of
+  169 (the 07 night-spike sliver was its one open item), the scatter
+  lower-left design question run 136 sized but didn't decide, the
+  hue-free distance wall, or wave 20.
 
 - **HANDOFF, 2026-08-31 (run 137) — task 143 shipped: the road's edge
   commits instead of dissolving.** Picked up from run 136's "next" list

@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. As of run 137, the live queue
+  authoritative, every-run-updated pointer. As of run 138, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
   standing in for the human eyes v0.7 assumed weren't available, plus the
@@ -23,11 +23,14 @@ makes it long. You do not need to read it top to bottom.
   task 143 (the road's soft edge, a real fix — see its done-note) and
   corrected a stale claim on task 144 (the bard already casts a shadow;
   only its terrain self-shadow half is still parked). Task 169 ("terrain
-  as the hero surface") folds in 143/144/149: 143 is now done, 144's
-  shader-knob family is EXHAUSTED and its figure-shadow half shipped
-  long ago, 149 has one open sliver (07's night spikes) — 169 itself is
-  close to able to be marked done outright; worth a look before treating
-  it as open. **v0.9**
+  as the hero surface") folds in 143/144/149: 143 is done, 144's
+  shader-knob family is EXHAUSTED and its figure-shadow half shipped long
+  ago, and 149's one open sliver (07's night spikes) had its first
+  candidate cause (a grass-blade vertex-colour gradient) measured and
+  REFUTED by run 138 — see STATE.md's run-138 handoff and its proposed
+  next instrument before touching that sliver again; 169 is NOT yet
+  safe to mark done, since the sliver is still genuinely open, just
+  better understood. **v0.9**
   (retention, "the road home") and **v1.0** (the Festival of the Long Road
   arc) are both complete as of run 135 — read them for *why*, not for open
   work. **v1.3** ("the family songbook," task 176 onward) is queued and
@@ -3371,6 +3374,30 @@ full verdict map and the measure-first suspicion list):
     blades would exceed it). Frames: 03's foreground tufts read as
     grounded clumps. All gauges PASS, 1209 tests. Remaining 149:
     07's night spikes only (value-at-night question).
+    **Investigated, not fixed (2026-08-31, run 138): the first candidate
+    cause was measured and REFUTED.** `grassTuftGeometry`'s root-to-tip
+    vertex colour gradient (dark root, pure-white tip — a fixed,
+    hour-blind contrast) looked like a plausible source of a bright/dark
+    pair once night's ambient crushes everything else dark. A fix was
+    built (soften the tip) but checked against `07-night-campfire`
+    before shipping and found to change NOTHING — the actual spike
+    sampled turned out, via a per-instance camera-projection raycast
+    (the method `scatter-probe.mjs` uses), to be a conifer tree in one
+    sample and, on a second sample elsewhere in the open meadow, an
+    isolated single-pixel ~46-47 luma fleck consistent with a
+    campfire-scene firefly/ember particle — neither is ground cover. The
+    fix was reverted; tests and build confirmed back to the unmodified
+    green baseline. The wavy/streaky texture across the dark meadow that
+    motivated the original complaint is still visible by eye in real
+    screenshots and was NOT explained this run — the right next
+    instrument is a ground-cover-colour probe (raycast every grass/fern
+    instance, sample its own rendered colour, exclude everything else),
+    not a blind scan line, which is too easy to snag a tree edge or a
+    particle on. See STATE.md's run-138 handoff for the full account,
+    including the incidental finding that `land-histogram.mjs`'s direct
+    `app.renderer.render()` measurement method skips task 168's
+    finishing/LUT pass and reads a pre-finishing buffer — worth knowing
+    for whoever next trusts a number out of that tool.
 150. **Close-range character pass.** Near-frontal face is eyeless in 06
     (face marks exist — check angles/culling), rear head reads as a void
     cube (hair mass value), hat crown-brim gap leaks background in 02,
