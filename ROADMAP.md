@@ -9,16 +9,22 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. As of run 135, the live queue
+  authoritative, every-run-updated pointer. As of run 136, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
   standing in for the human eyes v0.7 assumed weren't available, plus the
   186 creature family it's tracked only in STATE.md's handoffs so far.
-  **v0.9** (retention, "the road home") and **v1.0** (the Festival of the
-  Long Road arc) are both complete as of run 135 — read them for *why*, not
-  for open work. **v1.3** ("the family songbook," task 176 onward) is
-  queued and entirely untouched since being written 2026-08-01 — a
-  reasonable next arc once the art-quality loop reaches a natural pause.
+  Run 136 measured (not fixed — it's a real design call, sized separately)
+  a candidate next lever: vista frames occasionally show zero large-form
+  scatter (rock/shrub/log) in one quadrant, same shape as the tree
+  sentinel guarantee before it existed — see STATE.md's run-136 handoff
+  and `tools/scatter-probe.mjs` before deciding whether that's worth a
+  `waysideSentinelSites`-style fix or is fine left as-is. **v0.9**
+  (retention, "the road home") and **v1.0** (the Festival of the Long Road
+  arc) are both complete as of run 135 — read them for *why*, not for open
+  work. **v1.3** ("the family songbook," task 176 onward) is queued and
+  entirely untouched since being written 2026-08-01 — a reasonable next
+  arc once the art-quality loop reaches a natural pause.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3749,6 +3755,19 @@ warm-vs-cool palette).
   *wrong*.
 - **Solfège (do-re-mi) letter option** — locale question, letters ship
   first.
+- **Large-form scatter anchor per near-camera quadrant?** (run 136,
+  `tools/scatter-probe.mjs`) — a measured, not inferred, finding: vista
+  frames occasionally show a screen quadrant with zero rock/shrub/log
+  (only thin grass/flower/roadgrass cover), because each scatter clump's
+  side is an independent coin flip with no cross-side guarantee, unlike
+  trees (`waysideSentinelSites`). 2 of 8 sampled frames showed this, not
+  just the one that prompted the question, so it reads as ordinary rather
+  than broken. A `waysideSentinelSites`-style guarantee (at least one
+  large-form clump per near-camera quadrant per chunk) is the shape a fix
+  would take, but it's a real design call — does a guaranteed anchor
+  object read as "the world was arranged for the camera"? — not an
+  obvious bug fix, so it wasn't done blind. Worth a proper look, not a
+  blind tune.
 
 ## Needs human playtest
 

@@ -5,7 +5,8 @@ run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
 runs 111-133 are the 2026-08-07 overnight loop; run 134 resumed 2026-08-30;
-run 135 was the consolidation pass)
+run 135 was the consolidation pass; run 136 measured the scatter
+lower-left question left open by 134)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -71,6 +72,53 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-08-31 (run 136) — the scatter lower-left question run
+  134 left open, answered with real numbers instead of a screenshot.**
+  New instrument `tools/scatter-probe.mjs`: poses the live game to a
+  vista shot, walks the scene for every ordinary-scatter `InstancedMesh`
+  (`grass`/`fern`/`flower`/`reed`/`bankreed`/`bankgrass`/`shrub`/`log`/
+  `rock`/`roadgrass`/`roadstone`/`puddle` — never `tree-*`, which has its
+  own sentinel guarantee), projects each instance through the live
+  camera the same way `staging-probe.mjs` does, and buckets what's
+  actually inside the frame by screen quadrant. Run against
+  `04-golden-vista` (the pinned s=900 frame in question), the other
+  pinned vista shot (`11-morning-vista`), and six unpinned probe points
+  along the same `vista` mood (matching run 134's screenshot sweep
+  positions). Two findings, neither predicted by inference from the
+  screenshot: (1) **total scatter count in the lower-left is NOT
+  anomalously low at s=900** — 109-110 instances, squarely inside the
+  109-215 range the other seven sampled frames show (mean 156); the
+  "almost nothing there" read a judge gave the screenshot does not match
+  a raw census of what's actually placed there. (2) **What IS true, and
+  is the real, narrower fact underneath the visual complaint: s=900's
+  lower-left has zero instances of any large-form kind** (rock/shrub/
+  log/fern) — its 110 instances are entirely grass, flower, roadgrass
+  and roadstone, all thin ground cover with little silhouette mass. But
+  this is not unique to s=900 either: `probe s=1500`'s lower-left is
+  *also* entirely thin cover (grass/roadgrass/fern/flower/roadstone,
+  zero rock/shrub/log) — 2 of the 8 sampled frames come up empty of
+  large-form scatter in one quadrant, which is what "rare and
+  independently-drawn" (each clump's kind and side are separate coin
+  flips, `WorldStreamer.buildScatter` line ~3202) predicts, not what a
+  systemic placement fault would produce. **Conclusion: confirms and
+  sharpens run 134's "per-seed luck, not a fault"** — the lever isn't a
+  density bug (density is normal) or a placement bug (it recurs
+  elsewhere), it's that large-form scatter is sparse enough per-frame
+  (0-1 instances per quadrant in every sample here) that a quadrant
+  drawing zero of it is ordinary, not special to the pinned complaint
+  frame. NOT done, deliberately, per the standing measure-first rule:
+  no density constant or a rock/shrub/log-in-every-quadrant guarantee
+  (the `waysideSentinelSites`-style fix this would suggest) was added —
+  that's a real design decision (is a guaranteed anchor object per
+  near-camera quadrant worth the world feeling less randomly grown?),
+  sized as its own future task, not a side effect of this measurement.
+  `tools/scatter-probe.mjs` stays in the toolkit for the next time this
+  question comes up (documented in `tools/README.md`). Docs+tool-only;
+  1249 tests and the build are unchanged and green. Next: the hue-free
+  distance wall, wave 20 (due after ~one more visual-change run per
+  133's count), the large-form-anchor-per-quadrant design question this
+  run surfaced, or v1.3 (the family songbook queue).
 
 - **HANDOFF, 2026-08-30 (run 134) — the empty lower-left quadrant measured:
   per-seed placement luck in one pinned frame, not a placement or camera
