@@ -1,4 +1,4 @@
-const { BASE_URL, launch } = await import('file:///G:/WanderingBardGame/tools/browser.mjs');
+import { BASE_URL, launch } from './browser.mjs';
 const SHOTS = [
   { name: '01-dawn', s: 60, day: 0.24, phase: 'walking' },
   { name: '02-morn', s: 265, day: 0.42, phase: 'walking' },
@@ -17,7 +17,9 @@ for (const shot of SHOTS) {
   const r = await page.evaluate(() => {
     const app = window.bard.app, stage = window.bard.stage, g = stage.bard.group;
     const gl = app.renderer.getContext(), w = gl.drawingBufferWidth, h = gl.drawingBufferHeight;
-    const grab = () => { app.renderer.render(stage.scene, stage.camera);
+    // Full pipeline (task 168's finishing/LUT composite), not a bare
+    // renderer.render() — see tools/README.md's discrepancy note.
+    const grab = () => { app.renderFrame(stage.scene, stage.camera);
       const px = new Uint8Array(w*h*4); gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,px); return px; };
     const sr=(c)=>{const s=c/255;return s<=0.04045?s/12.92:Math.pow((s+0.055)/1.055,2.4);};
     const Ls=(r,gg,b)=>{const Y=0.2126*sr(r)+0.7152*sr(gg)+0.0722*sr(b);return Y>0.008856?116*Math.cbrt(Y)-16:903.3*Y;};

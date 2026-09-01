@@ -196,7 +196,9 @@ for (const shot of SHOTS) {
     const app = window.bard?.app;
     const stage = window.bard?.stage;
     if (!app || !stage) return { ok: false, reason: 'no handle' };
-    app.renderer.render(stage.scene, stage.camera);
+    // Full pipeline (task 168's finishing/LUT composite), not a bare
+    // renderer.render() — see tools/README.md's discrepancy note.
+    app.renderFrame(stage.scene, stage.camera);
     const gl = app.renderer.getContext();
     const w = gl.drawingBufferWidth;
     const h = gl.drawingBufferHeight;
