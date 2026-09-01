@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. As of run 139, the live queue
+  authoritative, every-run-updated pointer. As of run 140, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
   standing in for the human eyes v0.7 assumed weren't available, plus the
@@ -36,9 +36,10 @@ makes it long. You do not need to read it top to bottom.
   construction; where grass/fern IS in view (a corrected pose matching real
   play), its rendered colour shows a low, ordinary spatial-banding share —
   no real streak. See STATE.md's run-139 handoff and ROADMAP task 149's own
-  done-note for the full account, including two things this run explicitly
-  did NOT chase (both flagged as follow-ups, not fixed): the postcard.mjs
-  `s: 1400` resting-pose mismatch itself, and an incidental observation
+  done-note for the full account, including two things run 139 explicitly
+  did NOT chase (both flagged as follow-ups, not fixed then): the
+  postcard.mjs `s: 1400` resting-pose mismatch itself — **now fixed, task
+  187, run 140** — and an incidental observation
   that the wider meadow's lumpy look in a correctly-posed resting frame may
   be SHRUB silhouette density rather than grass/fern colour at all — a
   different vocabulary question. **v0.9**
@@ -2291,6 +2292,44 @@ interviews) — read it before taking any task; its not-recommended list
     gradation, nothing reads as dirt. 1149 tests green (+5), build
     873.34 kB. The dial if a critique ever calls canopies dirty:
     broadleaf/willow maxDist.
+187. ~~**Fix `postcard.mjs`'s resting-pose `s` mismatch.**~~ Done
+    (2026-09-01, run 140). Run 139's ground-cover-probe.mjs finding named
+    this as a genuine tooling bug and deliberately deferred it to its own
+    run rather than fixing it as a side effect: `postcard.mjs`'s pinned
+    `07-night-campfire` shot posed at a hardcoded `s: 1400`, but
+    `RoadStage.makeCamp` (the resting-phase handler) ignores whatever `s`
+    a pose asks for and always builds the camp at `road.stops[stops.length
+    - 1]` — the road's real last stop, which moves every UTC day since the
+    road is seeded from the day. Once the two diverged far enough, the
+    camera posed at the stale `s` while `WorldStreamer`'s grass/fern LOD
+    window (which follows `journey.s`, the value the pose call DID set)
+    streamed nothing in — a resting frame with zero ground cover anywhere
+    on screen, not a rendering fault but a harness pose bug. Fixed by
+    querying `road.stops` at runtime, once per postcard run, before the
+    shot loop, and overwriting the resting shot's `s` with the road's true
+    last stop — the same pattern `ground-cover-probe.mjs` already used to
+    build its own corrected-pose measurement. The SHOTS entry's literal
+    `s: 1400` is now an unused placeholder (commented as such); the pose's
+    *intent* (resting, day 0.95, at the camp) stays pinned, only the
+    number that can't hold a fixed value does not. `frame-quality.mjs` has
+    its own separate `night` pose at `s: 1400` but never sets `phase:
+    'resting'`, so `makeCamp` never fires for it — checked, and it does
+    not share this bug, so it was left untouched. Verified live, not just
+    read: re-shot `07-night-campfire` against the running preview server
+    and it now shows blade geometry and a stippled ground texture around
+    the fire (screenshot compared against run 139's "featureless flat
+    terrain" description of the old, mis-posed frame) — the fix does what
+    the diagnosis predicted. Docs/tool-only: no game `src/` file touched,
+    1249 tests and the build unchanged and green, `shader-check` PASS
+    (quick verify-all; `frame-quality` is the slow half and wasn't run,
+    since nothing it measures was touched). Next: the scatter lower-left
+    design question (run 136), the app.renderer/finishing.render
+    discrepancy still standing in the OTHER pixel tools (land-histogram/
+    frame-quality/figground/figground-partition/shader-check — flagged in
+    runs 138 and 139, still unfixed), the hue-free distance wall, or
+    wave 20 (now clearly overdue — four visual-change tasks have landed
+    since wave 19 with none of this run's own tool-only work counting
+    toward that tally).
 
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 

@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 139 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 140 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -8,7 +8,8 @@ runs 111-133 are the 2026-08-07 overnight loop; run 134 resumed 2026-08-30;
 run 135 was the consolidation pass; run 136 measured the scatter
 lower-left question left open by 134; run 137 shipped task 143; run 138
 measured (and refuted) the 149/169 night-spike lead; run 139 built the
-ground-cover-colour probe and closed tasks 149/169)
+ground-cover-colour probe and closed tasks 149/169; run 140 fixed the
+postcard.mjs resting-pose `s` mismatch run 139 flagged and deferred (task 187))
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -74,6 +75,59 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-01 (run 140) — task 187: `postcard.mjs`'s pinned
+  `07-night-campfire` shot no longer poses a camp with no ground cover in
+  it.** Took up the one concrete tooling bug run 139 flagged and
+  deliberately did NOT fix ("deserves its own deliberate run rather than a
+  side effect of this one"): the pinned shot posed at a hardcoded `s: 1400`
+  for `phase: 'resting'`, but `RoadStage.makeCamp` (`src/three/RoadStage.ts`)
+  ignores whatever `s` a resting pose sets and always builds the camp at
+  `road.stops[stops.length - 1]` — the road's real last stop, which moves
+  every UTC day since the daily road is seeded from the day. Once the
+  pinned number and the real stop drift far enough apart (390 m on the day
+  run 139 measured), the camera poses at the stale `s` while
+  `WorldStreamer`'s grass/fern LOD window (which correctly follows
+  `journey.s`, the value the pose call DOES set) streams in nothing at that
+  position — a "resting" postcard with zero ground cover anywhere on
+  screen, which is exactly what run 139's ground-cover-probe traced the old
+  `07` frame to. Fix, in `tools/postcard.mjs`: before the shot loop runs,
+  open one short-lived page, query `window.bard.stage.road.stops` for the
+  live last stop's `s`, close it, and overwrite the resting shot's `s` with
+  that value — the identical pattern `tools/ground-cover-probe.mjs` already
+  used at runtime to build its own corrected-pose measurement (run 139),
+  now applied to the tool that actually produces the postcard a critic
+  sees. The SHOTS array keeps a `s: 1400` placeholder on that entry (never
+  read — a comment says so) so the array's shape is untouched; what's
+  pinned is the shot's *intent* (resting, day 0.95, at the camp), not a
+  literal number that the game's own logic can't hold fixed. Checked
+  `frame-quality.mjs`'s separate `night` pose (also `s: 1400`) before
+  assuming it shared the bug: it never sets `phase: 'resting'`, so
+  `makeCamp` never fires for it, and it was confirmed unaffected and left
+  alone. **Verified live, not just reasoned about**: ran the fixed
+  `postcard.mjs` against the running preview server and re-shot
+  `07-night-campfire` — the frame now shows blade geometry near the fire
+  and a stippled ground texture across the wider meadow, matching exactly
+  what run 139's corrected-pose measurement described and what the OLD
+  pinned frame (per run 139's own account) did not have at all. Docs/tool-
+  only: no game `src/` file touched, `npm test` 1249 green (unchanged),
+  `npm run build` green (unchanged, 902 KB of the 5 MB budget), `verify-all
+  quick`'s one fast check (`shader-check`) PASS — `frame-quality` is the
+  suite's slow half and wasn't run, since nothing this task touched is
+  what it measures. Next: the scatter lower-left design question (run 136,
+  `tools/scatter-probe.mjs`, still a real, un-decided design call), the
+  `app.renderer.render()` vs `app.renderFrame()`/finishing-pass discrepancy
+  still standing unfixed in `land-histogram.mjs`, `frame-quality.mjs`,
+  `figground.mjs`, `figground-partition.mjs`, `shader-check.mjs` and (as of
+  this run, confirmed still present) `postcard.mjs`'s own `drew`/pixel-
+  aliveness check at line ~158 (flagged by runs 138 and 139, not touched
+  by this run either — fixing the shot itself was this task's whole scope,
+  and that check only gauges "did anything draw," not colour, so it isn't
+  wrong the way the resting-pose `s` was), the hue-free distance wall, or
+  **wave 20** — now clearly overdue on its own established rhythm (three
+  visual-change tasks landed since wave 19 per run 139's own count; this
+  run's tool-only fix doesn't add to that tally either way, so the case for
+  wave 20 next is unchanged from what run 139 already said).
 
 - **HANDOFF, 2026-09-01 (run 139) — the ground-cover-colour probe built and
   run; TASK 149 CLOSED (and 169 with it) — REFUTED, with a positive cause
