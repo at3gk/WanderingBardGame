@@ -35,6 +35,9 @@ const SHOTS = [
   { name: '04-golden-vista', s: 900, day: 0.8, phase: 'vista', viewport: [1600, 900] },
   { name: '05-golden-busk', s: 940, day: 0.82, phase: 'busking', viewport: [1600, 900] },
   { name: '06-dusk-encounter', s: 1120, day: 0.88, phase: 'encounter', viewport: [1600, 900] },
+  // `s` here is a placeholder, overwritten below at runtime with the road's
+  // true last stop before the shot loop runs — see the comment above that
+  // override. Never rely on the literal value in this entry.
   { name: '07-night-campfire', s: 1400, day: 0.95, phase: 'resting', viewport: [1600, 900] },
   { name: '08-phone-portrait', s: 420, day: 0.5, phase: 'walking', viewport: [390, 844] },
   { name: '09-phone-landscape', s: 900, day: 0.82, phase: 'busking', viewport: [844, 390] },
@@ -56,7 +59,14 @@ const SHOTS = [
    * ever to face a judge it needs its own pose plumbing first.
    *
    * 01-10 are PINNED for cross-wave frame comparability: never renumber,
-   * retime, or reframe them; add, don't touch.
+   * retime, or reframe them; add, don't touch. The one exception is 07's
+   * `s`, which is deliberately NOT pinned to a literal number (see the
+   * override below the SHOTS array) — its *intent* (resting, day 0.95, at
+   * the camp) is what's pinned, and holding the number instead of the
+   * intent is exactly the bug run 139/140 found: `RoadStage.makeCamp`
+   * always places the fire at the road's real last stop, which moves every
+   * UTC day, so a fixed `s` drifts out of step with where the camp actually
+   * sits and can pose a frame with no ground cover streamed in at all.
    */
   { name: '11-morning-vista', s: 500, day: 0.35, phase: 'vista', viewport: [1600, 900] },
   { name: '12-dusk-walk', s: 1300, day: 0.92, phase: 'walking', viewport: [1600, 900] },
@@ -83,6 +93,37 @@ const DSF = Number(process.env.BARD_DSF ?? 1);
 const browser = await launch();
 const problems = [];
 const written = [];
+
+// '07-night-campfire' is posed at phase: 'resting', but `RoadStage.makeCamp`
+// ignores whatever `s` a resting pose is given and always builds the camp at
+// `road.stops[stops.length - 1]` — the road's true last stop, which moves
+// every UTC day since the road is seeded from the day. A stale, hardcoded
+// `s` therefore drifts out of step with where the camp actually sits: the
+// camera poses at the old `s` while `WorldStreamer`'s grass/fern LOD window
+// follows it too, so once the two diverge enough the frame can show a camp
+// with no ground cover streamed in at all (ground-cover-probe.mjs, run 139
+// — see its own header for the full account). Queried here, once, before the
+// shot loop, so every 07 shot this run poses at the road's real camp.
+const restingShot = SHOTS.find((shot) => shot.phase === 'resting');
+if (restingShot) {
+  const stopsPage = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+  await stopsPage.goto(BASE_URL, { waitUntil: 'load', timeout: 90000 });
+  await stopsPage
+    .waitForFunction(() => window.bard?.pose !== undefined, null, { timeout: 60000 })
+    .catch(() => {});
+  const lastStopS = await stopsPage.evaluate(() => {
+    const stops = window.bard?.stage?.road?.stops;
+    return stops && stops.length ? stops[stops.length - 1].s : null;
+  });
+  await stopsPage.close();
+  if (lastStopS !== null) {
+    restingShot.s = lastStopS;
+  } else {
+    problems.push(
+      `${restingShot.name}: could not query the road's last stop — s left at its stale placeholder value`,
+    );
+  }
+}
 
 for (const shot of SHOTS) {
   if (only && !shot.name.includes(only)) continue;
