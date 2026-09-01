@@ -184,6 +184,53 @@ kind, since a quadrant full of thin grass and a quadrant full of nothing
 read very differently on screen but can both show up as "low count" if
 mass isn't distinguished from headcount. Prints a table; always exits 0.
 
+## `ground-cover-probe.mjs`
+
+Not a pass/fail check — the instrument STATE.md's run-138 handoff sized to
+settle task 149's last open sliver: is the faint wavy/streaky texture across
+the dark meadow in `07-night-campfire` crops real grass/fern *colour*
+banding, or another false positive like the tree/particle run 138 already
+caught? Extends `scatter-probe.mjs`'s instance-projection method (world
+matrix → camera projection → screen-space filtering) with actual rendered-
+pixel sampling, the way `land-histogram.mjs`/`frame-quality.mjs` sample —
+but through `app.renderFrame(scene, camera)` (task 168's finishing/LUT
+composite), not a bare `renderer.render()`, which is the exact pre-finishing-
+buffer bug run 138 found in the older tools and flagged as unfixed there.
+
+Narrowed strictly to `grass`/`fern` InstancedMesh instances (never
+roadgrass/roadstone/puddle/flower/reed/bankreed/bankgrass/shrub/log/rock —
+scatter, but a different vocabulary question from task 149's "ground
+cover"). For every instance that projects on screen, averages a 3×3 pixel
+patch at its projected position and reports luma statistics (mean, stdev,
+CV, percentiles) split into a firelit near band and a "dark meadow" far
+band (`>= 20m` from camera), plus a variance-decomposition "banding" check
+in both screen-x and depth — what share of the dark meadow's luma spread is
+explained by an instance's *position* in frame rather than its own random
+per-instance colour. A real spatial streak inflates that share; ordinary
+per-instance noise does not.
+
+**Run 139's finding, worth knowing before trusting a `07-night-campfire`
+screenshot again**: `postcard.mjs`'s pinned resting pose (`s: 1400`) does
+not match where `RoadStage.makeCamp` actually builds the camp
+(`road.stops[stops.length - 1]`, ignoring the pose's own `s`) — on the day
+measured the real last stop sat at `s: 1790`, 390 m past the grass/fern LOD
+window that follows `journey.s`. The pinned pose therefore measures **zero**
+grass/fern instances anywhere on screen — confirmed both by this tool and by
+eye in the postcard itself — so whatever texture a human sees in that exact
+image cannot be ground-cover colour. A second pose, built at runtime by
+querying `road.stops` for the real last stop, reproduces what a resting
+frame actually looks like (matching real play, where `arrivedAt` only fires
+`resting` once `journey.s` is already within 4 m of the stop): grass/fern
+*is* present there, with an elevated-but-explicable CV (~0.5, vs. ~0.32 on
+a daylight baseline — expected from the low absolute luma and a single
+falloff point light rather than a diffuse sun) and a LOW banding share
+(7-13%, comparable to or below the uncomplained-about daylight baseline's
+own 16%/2%) — no evidence of real spatial streaking beyond ordinary
+per-instance variation. See ROADMAP task 149 and STATE.md's run-139 handoff
+for the full account and the caveat about small far-band bucket counts.
+Each pose gets its own fresh page (a resting pose's camp state was found to
+leak into a later pose sharing one page — see the file's own comment).
+
 ## `shot.mjs [prefix] [settleMs]`
 
 Plain screenshot of the running game after a delay. For far-off states

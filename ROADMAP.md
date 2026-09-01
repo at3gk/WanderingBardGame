@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. As of run 138, the live queue
+  authoritative, every-run-updated pointer. As of run 139, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
   standing in for the human eyes v0.7 assumed weren't available, plus the
@@ -22,15 +22,26 @@ makes it long. You do not need to read it top to bottom.
   `waysideSentinelSites`-style fix or is fine left as-is. Run 137 closed
   task 143 (the road's soft edge, a real fix — see its done-note) and
   corrected a stale claim on task 144 (the bard already casts a shadow;
-  only its terrain self-shadow half is still parked). Task 169 ("terrain
-  as the hero surface") folds in 143/144/149: 143 is done, 144's
-  shader-knob family is EXHAUSTED and its figure-shadow half shipped long
-  ago, and 149's one open sliver (07's night spikes) had its first
-  candidate cause (a grass-blade vertex-colour gradient) measured and
-  REFUTED by run 138 — see STATE.md's run-138 handoff and its proposed
-  next instrument before touching that sliver again; 169 is NOT yet
-  safe to mark done, since the sliver is still genuinely open, just
-  better understood. **v0.9**
+  only its terrain self-shadow half is still parked). **TASK 169 ("terrain
+  as the hero surface") IS NOW DONE (run 139)**: it folded in 143/144/149,
+  and the last open piece — 149's one sliver, "07's night spikes"/the
+  dark-meadow wavy read — closed this run with `tools/ground-cover-probe.mjs`
+  (built on `scatter-probe.mjs`'s projection method, sampling actual
+  rendered pixel colour through the finishing pass). The finding is a
+  REFUTAL with a positive cause, not a shrug: the pinned `07-night-campfire`
+  postcard pose (`s: 1400`) puts ZERO grass/fern instances anywhere on
+  screen (a harness pose bug — `RoadStage.makeCamp` builds the camp at the
+  road's real last stop, not at whatever `s` a pose asks for), so the
+  texture a human sees in that exact image cannot be ground-cover colour by
+  construction; where grass/fern IS in view (a corrected pose matching real
+  play), its rendered colour shows a low, ordinary spatial-banding share —
+  no real streak. See STATE.md's run-139 handoff and ROADMAP task 149's own
+  done-note for the full account, including two things this run explicitly
+  did NOT chase (both flagged as follow-ups, not fixed): the postcard.mjs
+  `s: 1400` resting-pose mismatch itself, and an incidental observation
+  that the wider meadow's lumpy look in a correctly-posed resting frame may
+  be SHRUB silhouette density rather than grass/fern colour at all — a
+  different vocabulary question. **v0.9**
   (retention, "the road home") and **v1.0** (the Festival of the Long Road
   arc) are both complete as of run 135 — read them for *why*, not for open
   work. **v1.3** ("the family songbook," task 176 onward) is queued and
@@ -2238,6 +2249,18 @@ interviews) — read it before taking any task; its not-recommended list
     road edge, task 143), clustered ground-cover patches inheriting
     ground colour with distance fade (task 149's fix, with LESS
     overdraw). One coherent pass, three existing tasks folded in.
+    **Done (2026-09-01, run 139) — all three folded tasks now resolved.**
+    143 shipped (run 137, the road's soft edge). 144's shader-knob family
+    was exhausted (run 84) and its figure-shadow half shipped long ago
+    (task 179); only its terrain self-shadow half stays parked, which this
+    task never claimed to cover. 149's one remaining sliver (07's night
+    spikes / the dark-meadow wavy read) closed this run — see its own
+    done-note: the ground-cover-colour hypothesis is REFUTED, not merely
+    unconfirmed, for a positive, measured reason (a harness pose bug puts
+    zero grass/fern in the pinned frame at all; where grass/fern IS in
+    view, its colour shows no real spatial banding beyond ordinary
+    variance). Nothing left blocking this task's closure; docs-only, no
+    code changed here.
 170. **Bake vertex AO at generation time** on props and the bard — the
     strongest "crafted" signal at close range; precomputed into vertex
     colours, no UVs, feeds the existing lighting model. (geometry.ts
@@ -3398,6 +3421,56 @@ full verdict map and the measure-first suspicion list):
     `app.renderer.render()` measurement method skips task 168's
     finishing/LUT pass and reads a pre-finishing buffer — worth knowing
     for whoever next trusts a number out of that tool.
+    **Final piece done (2026-09-01, run 139) — TASK 149 COMPLETE: the
+    ground-cover-colour probe, and the sliver closes as NOT ground cover.**
+    Built the instrument run 138 sized: `tools/ground-cover-probe.mjs`
+    extends `scatter-probe.mjs`'s per-instance camera projection (narrowed
+    strictly to `grass`/`fern` — never roadgrass/flower/reed/bankgrass/
+    shrub/log/rock, a different vocabulary question) with actual
+    rendered-pixel sampling through `app.renderFrame` (task 168's
+    finishing/LUT pass — not the bare `renderer.render()` run 138 caught
+    the older tools skipping it with). Posing the exact pinned
+    `07-night-campfire` (`s: 1400`) turned up something better than a
+    variance number: **zero grass/fern instances land on screen at that
+    pose at all.** Cause, traced and confirmed: `RoadStage.makeCamp`
+    always places the fire at `road.stops[stops.length - 1]`, ignoring
+    whatever `s` a resting pose asks for, while `WorldStreamer`'s
+    grass/fern LOD window (~90 m) follows `journey.s` itself — on the day
+    measured the road's real last stop sat at `s: 1790`, 390 m past the
+    pinned pose's LOD window. Real play never hits this (`arriveAt` only
+    fires `setPhase('resting')` once `journey.s` is already within the 4 m
+    `ARRIVE_RADIUS` of the stop), so this is a HARNESS mismatch, not a game
+    fault — but it means the exact pinned postcard everyone has been
+    reading the "wavy/streaky" complaint off has no grass/fern in it at
+    all, confirmed both by the probe and by eye in a re-shot postcard (the
+    dark meadow is bare terrain, no blade geometry visible). Whatever
+    texture is there is provably not ground-cover colour. Reposing at the
+    road's actual last stop (queried at runtime, matching what real play
+    produces) DOES put grass/fern in view (~970 instances, almost all
+    `grass`): dark-meadow-only luma CV measured 0.49-0.52, higher than a
+    `03-noon-forest` daylight baseline's 0.32-0.33 — expected from the
+    much lower absolute luma at night (CV's denominator) and a single
+    falloff point light rather than a diffuse sun, not evidence of a
+    texture fault on its own. The decisive number: a variance-decomposition
+    "banding" check (does an instance's screen position predict its luma,
+    independent of its own random per-instance colour) put only 7-9% of
+    the dark meadow's luma spread on screen-x position and 10-13% on
+    depth — LOWER than or comparable to the SAME check on the
+    never-complained-about noon baseline (16% screen-x, 2% depth). If real
+    spatial streaking were present in grass/fern colour, this share would
+    be elevated, not merely in line with an ordinary daylight frame's own
+    banding. Both threads point the same way: the ground-cover-colour
+    hypothesis for 149's sliver is REFUTED, this time with a positive
+    mechanism (a harness pose bug) rather than a shrug. TASK 149 IS DONE.
+    What is left, explicitly out of this task's "ground cover" remit: the
+    postcard.mjs `s: 1400` resting-pose mismatch itself (a real tooling
+    bug, unfixed — see STATE.md's run-139 handoff), and an incidental
+    observation from the corrected-pose screenshot that the wider meadow's
+    lumpy look may be SHRUB silhouette density rather than grass colour at
+    all — a different vocabulary question, sized as its own future task if
+    a critique names it again. `frame-quality`/`shader-check` both PASS
+    unchanged, 1249 tests green, build green (docs+tool-only run — no
+    game code touched).
 150. **Close-range character pass.** Near-frontal face is eyeless in 06
     (face marks exist — check angles/culling), rear head reads as a void
     cube (hair mass value), hat crown-brim gap leaks background in 02,
