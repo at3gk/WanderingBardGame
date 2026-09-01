@@ -84,8 +84,10 @@ function measureLandHistogram() {
   try {
     // Same discipline as every other pixel-reading tool in this directory:
     // render and read in ONE task. preserveDrawingBuffer is false, so a
-    // presented frame is gone and a later read returns black.
-    app.renderer.render(stage.scene, stage.camera);
+    // presented frame is gone and a later read returns black. Full pipeline
+    // (task 168's finishing/LUT composite), not a bare renderer.render() —
+    // see tools/README.md's discrepancy note.
+    app.renderFrame(stage.scene, stage.camera);
     const gl = app.renderer.getContext();
     const w = gl.drawingBufferWidth;
     const h = gl.drawingBufferHeight;
@@ -134,7 +136,7 @@ function measureLandHistogram() {
     // same page (postcard.mjs, another pose).
     app.renderer.setClearColor(priorClear.hex, priorAlpha);
     for (let i = 0; i < sky.length; i++) sky[i].visible = skyWasVisible[i];
-    app.renderer.render(stage.scene, stage.camera);
+    app.renderFrame(stage.scene, stage.camera);
   }
 }
 

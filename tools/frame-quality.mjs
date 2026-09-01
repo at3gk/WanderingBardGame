@@ -169,8 +169,10 @@ function analyse() {
 
   // Same discipline as shader-check: render and read in ONE task. The
   // renderer runs preserveDrawingBuffer:false, so a frame that has been
-  // presented is gone and a later read returns black.
-  app.renderer.render(stage.scene, stage.camera);
+  // presented is gone and a later read returns black. Full pipeline (task
+  // 168's finishing/LUT composite), not a bare renderer.render() — see
+  // tools/README.md's discrepancy note.
+  app.renderFrame(stage.scene, stage.camera);
   const gl = app.renderer.getContext();
   const w = gl.drawingBufferWidth;
   const h = gl.drawingBufferHeight;

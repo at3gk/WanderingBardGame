@@ -1,5 +1,5 @@
 // figure/ground measurement — exact silhouette by render-diff.
-const { BASE_URL, launch } = await import('file:///G:/WanderingBardGame/tools/browser.mjs');
+import { BASE_URL, launch } from './browser.mjs';
 
 const SHOTS = [
   { name: '01-dawn-road', s: 60, day: 0.24, phase: 'walking', viewport: [1600, 900] },
@@ -29,7 +29,9 @@ for (const shot of SHOTS) {
     const gl = app.renderer.getContext();
     const w = gl.drawingBufferWidth, h = gl.drawingBufferHeight;
     const grab = () => {
-      app.renderer.render(stage.scene, stage.camera);
+      // Full pipeline (task 168's finishing/LUT composite), not a bare
+      // renderer.render() — see tools/README.md's discrepancy note.
+      app.renderFrame(stage.scene, stage.camera);
       const px = new Uint8Array(w * h * 4);
       gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
       return px;

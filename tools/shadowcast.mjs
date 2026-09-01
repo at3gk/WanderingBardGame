@@ -52,7 +52,9 @@ async function measureShot(page) {
     const h = gl.drawingBufferHeight;
 
     const capture = () => {
-      renderer.render(stage.scene, stage.camera);
+      // Full pipeline (task 168's finishing/LUT composite), not a bare
+      // renderer.render() — see tools/README.md's discrepancy note.
+      app.renderFrame(stage.scene, stage.camera);
       const px = new Uint8Array(w * h * 4);
       gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
       return px;

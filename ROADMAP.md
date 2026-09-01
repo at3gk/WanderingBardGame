@@ -38,8 +38,10 @@ makes it long. You do not need to read it top to bottom.
   no real streak. See STATE.md's run-139 handoff and ROADMAP task 149's own
   done-note for the full account, including two things run 139 explicitly
   did NOT chase (both flagged as follow-ups, not fixed then): the
-  postcard.mjs `s: 1400` resting-pose mismatch itself — **now fixed, task
-  187, run 140** — and an incidental observation
+  postcard.mjs `s: 1400` resting-pose mismatch itself — **fixed, task
+  187, run 140** — and the app.renderer/finishing.render discrepancy in
+  the rest of the pixel-reading tools — **now fixed too, task 188, run
+  141** (see STATE.md's run-141 handoff) — and an incidental observation
   that the wider meadow's lumpy look in a correctly-posed resting frame may
   be SHRUB silhouette density rather than grass/fern colour at all — a
   different vocabulary question. **v0.9**
@@ -2330,6 +2332,61 @@ interviews) — read it before taking any task; its not-recommended list
     wave 20 (now clearly overdue — four visual-change tasks have landed
     since wave 19 with none of this run's own tool-only work counting
     toward that tally).
+188. ~~**Fix the `app.renderer.render()` vs `app.renderFrame()` discrepancy
+    across every remaining pixel-reading tool.**~~ Done (2026-09-01,
+    run 141). Runs 138 and 139 found and flagged, but deliberately did not
+    chase, the same bug in the harness's own measurement tools: several of
+    them call the bare `renderer.render(scene, camera)` and read the
+    result straight back with `gl.readPixels`, which skips `App.renderFrame`
+    (task 168's finishing pass — the offscreen half-float render + 3D-LUT
+    composite that is the LAST thing that happens to a frame a player
+    actually sees). A tool built this way samples a pre-grade, pre-tonemap
+    buffer and reports numbers about a frame nobody ever looks at.
+    `ground-cover-probe.mjs` (run 139) already carried the fix for itself;
+    this run applied the identical one-line swap
+    (`app.renderer.render(stage.scene, stage.camera)` →
+    `app.renderFrame(stage.scene, stage.camera)`) to every other tool still
+    carrying the bug: `postcard.mjs`, `frame-quality.mjs`,
+    `land-histogram.mjs` (both its measurement render and its post-`finally`
+    restore render), `figground.mjs`, `figground-partition.mjs`,
+    `shader-check.mjs` and `shadowcast.mjs`. `FinishingPass.render` (
+    `src/three/finishing.ts`) was read first to confirm the swap is safe:
+    it is a pure, stateless per-call composite (scene → offscreen half-float
+    target at `RENDER_SCALE` 0.8 → LUT-graded to the full-resolution canvas),
+    so repeated calls behave exactly like repeated `renderer.render()` calls
+    for a tool's purposes, just through the pipeline a player's screen
+    actually runs. Found one more bug while in these files: `figground.mjs`
+    and `figground-partition.mjs` both imported their shared browser helper
+    via a hardcoded Windows path (`file:///G:/WanderingBardGame/tools/
+    browser.mjs`, apparently left over from whatever machine first wrote
+    them) instead of the relative `./browser.mjs` import every other tool in
+    the directory uses — both scripts were unconditionally broken (a
+    `MODULE_NOT_FOUND` crash) outside that one machine, not just carrying
+    stale pixel data. Fixed the import in both. Verified live, not just
+    reasoned about: ran `shader-check` (part of `verify-all quick`) and
+    `frame-quality` (the slow half, run in full since this task touched it
+    directly) against the running preview server — both PASS, `frame-quality`'s
+    seven-pose gauge table reads in the same range prior runs recorded
+    (night gauge 6.39, in line with run 116's 6.47 baseline and the small
+    run-to-run drift STATE.md already documents); also ran `land-histogram`,
+    `postcard` (all eight shots, including the `07-night-campfire` pose task
+    187 fixed last run), and `figground`/`figground-partition` (which could
+    not run AT ALL before this run's import fix) end to end, all completing
+    without error. `shadowcast.mjs` was launched against the live preview
+    server too; it is the slowest tool in the directory (many caster-family
+    render passes per shot), and its first shot produced a real, sane
+    result (33.1% shadow share, trees owning 66.9% of it, plausible
+    photometrics) before this run moved on rather than waiting out its
+    other two shots — its one touched line (the `capture()` closure) is
+    mechanically identical to the swap verified working in every other
+    tool, and the live first-shot result confirms it. `tools/README.md`'s discrepancy note (in the
+    `ground-cover-probe.mjs` section) updated to record that the older
+    tools are fixed rather than still flagged. Docs/tool-only: no game
+    `src/` file touched, 1249 tests and the build unchanged and green
+    (902 KB, unchanged). Next: the scatter lower-left design question (run
+    136), the hue-free distance wall, or wave 20 (now five visual-change
+    tasks past wave 19, since neither this run's nor run 140's tool-only
+    work count toward that tally).
 
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 

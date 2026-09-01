@@ -193,9 +193,14 @@ banding, or another false positive like the tree/particle run 138 already
 caught? Extends `scatter-probe.mjs`'s instance-projection method (world
 matrix → camera projection → screen-space filtering) with actual rendered-
 pixel sampling, the way `land-histogram.mjs`/`frame-quality.mjs` sample —
-but through `app.renderFrame(scene, camera)` (task 168's finishing/LUT
+through `app.renderFrame(scene, camera)` (task 168's finishing/LUT
 composite), not a bare `renderer.render()`, which is the exact pre-finishing-
-buffer bug run 138 found in the older tools and flagged as unfixed there.
+buffer bug run 138 found in the older tools. **Run 141 fixed that
+discrepancy everywhere else it lived**: `postcard.mjs`, `frame-quality.mjs`,
+`land-histogram.mjs`, `figground.mjs`, `figground-partition.mjs`,
+`shader-check.mjs` and `shadowcast.mjs` all now render through
+`app.renderFrame()` too, so every pixel-reading tool in this directory
+samples the same finished/graded buffer a player actually sees.
 
 Narrowed strictly to `grass`/`fern` InstancedMesh instances (never
 roadgrass/roadstone/puddle/flower/reed/bankreed/bankgrass/shrub/log/rock —
