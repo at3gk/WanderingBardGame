@@ -14,7 +14,9 @@ run 141 fixed the app.renderer/finishing.render discrepancy in the rest
 of the pixel-reading tools (task 188); run 142 found and fixed
 land-histogram.mjs's own broken sky mask while building a new hue-band
 probe, then took a first, inconclusive reading on the hue-free-distance-
-wall lead (task 189))
+wall lead (task 189); run 143 widened that probe's pose set and found the
+far-band spread rise tracks landKey.ts's pull amount, not the hour
+(task 189 piece 2))
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -4060,6 +4062,24 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   into `verify-all.mjs` for the first time turned up). `npm test` 745
   green, `npm run build` green, bundle 686 KB. No feature work; this was
   the first item STATE.md had flagged as next after the v0.6 merge.
+
+- (Runs 45-142 are logged in ROADMAP.md's numbered task entries rather
+  than here — see the Run counter note at the top of this file and the
+  task list for the detail of each.)
+
+- Run 143 (2026-09-02, scheduled): ROADMAP task 189 piece 2 — widened
+  `fog-hue-band.mjs`'s pose set from 3 to 5 and had it report each pose's
+  `sunHeight`/`landKeyAmount`, to test piece 1's "milkier distance" finding
+  against more than two enacting-hour samples. Full detail and the numbers
+  are in ROADMAP.md under task 189. Headline: the far-band hue-spread rise
+  tracks `landKey.ts`'s pull amount (every zero-pull pose has far ≤ near;
+  every nonzero-pull pose has far well above near, regardless of hour),
+  which is a sharper and more falsifiable hypothesis than "enacting vs
+  carrying hours" was. Not chased into a shader change — a mechanism is
+  proposed but unmeasured, and the panel/wave-20 validation task 189
+  itself requires is still network-blocked (see Blocked on human below).
+  `npm test` 1249 green (unchanged), `npm run build` green (902 KB,
+  unchanged), `shader-check` PASS. No new runtime dependency.
 
 ## Needs human playtest
 

@@ -2439,6 +2439,51 @@ interviews) — read it before taking any task; its not-recommended list
     lever or a dead end; the scatter lower-left design question (run 136);
     or wave 20 once un-blocked.
 
+    **Piece 2 done (2026-09-02, run 143) — widened the pose set to 5 and
+    found a sharper, falsifiable hypothesis than "enacting vs carrying
+    hours": the far-band spread rise tracks `landKey.ts`'s pull amount,
+    not the hour.** `fog-hue-band.mjs` now also reports each pose's
+    `sunHeight` and the exact `landKeyAmount` (`landKey.ts`'s own formula,
+    duplicated into the page-evaluated function with a comment pointing
+    back — it can't import the module, see the file's existing note on
+    why). Two poses reused from `postcard.mjs`'s already-vetted set were
+    added specifically to separate the two candidate explanations:
+    `11-morning-vista` (day 0.35, a different biome/vista than 02, sun
+    height 0.267 — below `LAND_KEY_RISE_START` 0.3, so a second
+    **zero-pull** control alongside golden) and `10-tablet-afternoon`
+    (day 0.7, sun height 0.445 — a partial-pull regime past noon that
+    nothing here had tested, distinct from morning's partial pull on the
+    way up). Result, landKeyAmount vs (far hueSpread − near hueSpread):
+    `04-golden-vista` 0 → −0.063 (far cleaner than near), `11-morning-
+    vista` 0 → −0.060 (far cleaner than near, same direction, different
+    hour and biome), `02-morning` 0.034 → +0.182, `10-tablet-afternoon`
+    0.217 → +0.193, `03-noon` 0.35 → +0.297. Every zero-pull pose has far
+    ≤ near; every nonzero-pull pose has far substantially > near, and the
+    two afternoon/noon partial-to-full-pull poses land close together
+    despite one being on the falling side of the sun's arc — a pattern
+    "enacting vs carrying hour" alone doesn't predict (afternoon's sun is
+    lower than noon's, but its landKeyAmount and its spread-rise both sit
+    near noon's). The likely mechanism, not yet tested: `landKey.ts`'s
+    pull only rotates chroma within 90° of the biome key, leaving anything
+    outside that cone (the road, rock, a dissenter) untouched by
+    construction — which turns one loose cluster into two tighter ones (a
+    majority pulled toward the key, a minority left alone), and the
+    circular hueSpread formula (1 − resultant length) reads that as MORE
+    spread than the original single loose cluster, not less, because it
+    scores overall variance rather than modality. Still not chased into a
+    shader change — this is a mechanism hypothesis inferred from the
+    correlation, not itself measured, and confirming it means comparing
+    the same poses with the land-key pass forced off, which is next
+    piece's work rather than this one's. `npm test` 1249 green
+    (unchanged), `npm run build` green (902 KB, unchanged), `verify-all
+    quick` (`shader-check`) PASS. Next: a piece 3 that toggles
+    `landKeyAmount` to 0 (a temporary in-page override, no shader edit)
+    on the three nonzero poses and re-measures — if the far/near gap
+    collapses with the key off, that confirms the mechanism and turns
+    this from a correlation into a real lever description ready for a
+    validated (panel or wave-20) tune; if it doesn't collapse, the
+    hypothesis above is wrong and the search moves elsewhere.
+
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 
 From docs/research/mobile-friendly.md — read it first. The urgent fact:

@@ -29,10 +29,26 @@
 // Instrument, not a gate — always exits 0.
 import { BASE_URL, launch } from './browser.mjs';
 
+// Piece 2 (run 143): the first reading (piece 1) drew its "milkier, less
+// confident distance" verdict from exactly two enacting-hour samples —
+// 02-morning (partial land-key pull) and 03-noon (full pull) — against one
+// carrying-hour control. That's a pattern claim resting on two points. The
+// three added below are existing, already-vetted postcard.mjs poses chosen
+// to separate "does milkiness track the land-key pull amount" from "did we
+// just get two odd samples": 11-morning-vista sits BELOW landKey.ts's
+// LAND_KEY_RISE_START (sunHeight ~0.267 vs the 0.3 floor — zero pull, like
+// the golden control, but a different biome/vista than 02) and 10-tablet
+// sits in the afternoon's partial-pull band (sunHeight ~0.333) — a sun
+// height nothing here has tested, past noon rather than approaching it.
+// landKeyAmount (below) reports the actual pull each pose gets so the
+// table itself carries the classification instead of relying on this
+// comment to stay in sync with landKey.ts's constants.
 const POSES = [
   { name: '02-morning', s: 265, day: 0.42, phase: 'walking' },
   { name: '03-noon', s: 620, day: 0.55, phase: 'walking' },
   { name: '04-golden-vista', s: 900, day: 0.8, phase: 'vista' },
+  { name: '11-morning-vista', s: 500, day: 0.35, phase: 'vista' },
+  { name: '10-tablet-afternoon', s: 700, day: 0.7, phase: 'walking' },
 ];
 
 const VIEWPORT = { width: 1600, height: 900 };
@@ -192,7 +208,29 @@ function measureFogHueBands(bandCount) {
       };
     });
 
-    return { bands, fogHueDeg, landRowExtent: extent, minRow, maxRow, bufferHeight: h };
+    // landKey.ts's own formula, duplicated rather than imported — this
+    // function ships as source text into the page (see the file-level
+    // note above), so it cannot reference the module. Kept in lockstep by
+    // the constants comment below; if landKey.ts's numbers move, this
+    // classification goes stale silently, same caveat as every other
+    // hardcoded-elsewhere value in this file.
+    const sunHeight = app.globals.uSunDirection.value.y;
+    const RISE_START = 0.3; // LAND_KEY_RISE_START
+    const RISE_END = 0.55; // LAND_KEY_RISE_END
+    const KEY_MAX = 0.35; // LAND_KEY_MAX
+    const rt = Math.min(1, Math.max(0, (sunHeight - RISE_START) / (RISE_END - RISE_START)));
+    const landKeyAmount = Math.round(KEY_MAX * rt * rt * (3 - 2 * rt) * 1000) / 1000;
+
+    return {
+      bands,
+      fogHueDeg,
+      landRowExtent: extent,
+      minRow,
+      maxRow,
+      bufferHeight: h,
+      sunHeight: Math.round(sunHeight * 1000) / 1000,
+      landKeyAmount,
+    };
   } finally {
     app.renderer.setClearColor(priorClear.hex, priorAlpha);
     for (let i = 0; i < sky.length; i++) sky[i].visible = skyWasVisible[i];
@@ -242,7 +280,10 @@ await browser.close();
 
 const pad = (s, n) => String(s).padEnd(n);
 for (const r of rows) {
-  console.log(`\n${r.name}  (fog hue ${r.fogHueDeg}°, land rows ${r.landRowExtent}px)`);
+  console.log(
+    `\n${r.name}  (fog hue ${r.fogHueDeg}°, land rows ${r.landRowExtent}px, ` +
+      `sunHeight ${r.sunHeight}, landKeyAmount ${r.landKeyAmount})`,
+  );
   console.log(`  ${pad('band', 8)}${pad('hueSpread', 11)}${pad('hueDeg', 9)}${pad('meanSat', 9)}pixels`);
   for (const b of r.bands) {
     console.log(
