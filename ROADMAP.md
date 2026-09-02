@@ -2484,6 +2484,49 @@ interviews) — read it before taking any task; its not-recommended list
     validated (panel or wave-20) tune; if it doesn't collapse, the
     hypothesis above is wrong and the search moves elsewhere.
 
+    **Piece 3 done (2026-09-02, run 144) — the toggle test, and it
+    refutes piece 2's mechanism.** `fog-hue-band.mjs` now takes an
+    optional `forcedLandKeyAmount` per render (an in-page override of
+    `app.globals.uLandKeyAmount.value`, restored after — no shader edit,
+    since every material already shares that one uniform object via
+    `painterly.ts`'s `bindGlobals`) and applies it automatically to the
+    three nonzero-pull poses, re-measuring right after the natural
+    reading on the same page. If piece 2's "two tighter clusters read as
+    more spread" mechanism were real, forcing the key to 0 should
+    **collapse** the far/near gap toward the zero-pull controls'
+    negative gaps (golden −0.066, morning-vista −0.067). It does the
+    opposite on every pose: `02-morning` gap 0.243 → 0.301 (key off is
+    24% *bigger*), `03-noon` 0.294 → 0.298 (flat, within this metric's
+    noise), `10-tablet-afternoon` 0.194 → 0.464 (more than doubles with
+    the key off). Looking at which band moves: the NEAR band barely
+    changes with the key toggled either way (±0.01–0.02 across all
+    three poses) while the FAR band jumps up substantially every time it
+    is turned off (e.g. afternoon's far hueSpread 0.215 → 0.489, far
+    meanSat 0.278 → 0.192) — the reverse of "the key is manufacturing
+    far-band spread that isn't really there": if anything the key is
+    mildly *damping* far-band spread relative to what it would otherwise
+    be, just less effectively than it damps the near band. Piece 2's
+    mechanism hypothesis is falsified; the landKeyAmount correlation it
+    found was real but not causal — whatever actually drives the
+    far-band spread rise on enacting hours is still open, and sun
+    height/hour is back on the table as a candidate now that the land-key
+    explanation is ruled out (not confirmed either — piece 1's original
+    "enacting vs carrying" framing was itself only a two-point pattern).
+    Deliberately not chased further this run: three toggles is enough to
+    kill a specific causal claim, not enough to build a replacement one,
+    and the panel/wave-20 validation this whole task has been waiting on
+    is still network-blocked (see Blocked on human in STATE.md). `npm
+    test` 1249 green (unchanged), `npm run build` green (902 KB,
+    unchanged), `verify-all quick` (`shader-check`) PASS. See
+    `tools/README.md`'s `fog-hue-band.mjs` section for the full table.
+    Next: now that the land-key mechanism is ruled out, look for what the
+    far band's rendering actually shares across the three risen poses
+    versus the two flat ones — camera distance to the horizon, object mix
+    at the far row band (sky bleed vs a specific prop), or the fog
+    uniforms themselves — before proposing another mechanism; the scatter
+    lower-left design question (run 136, still open) or wave 20 once
+    network-unblocked remain the other two threads.
+
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 
 From docs/research/mobile-friendly.md — read it first. The urgent fact:

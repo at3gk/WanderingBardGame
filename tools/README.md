@@ -337,6 +337,26 @@ far/near gap collapses — that's the next piece, not this one. Still not
 worth a shader change yet: the panel/wave-20 validation this section already
 asked for is still network-blocked.
 
+**Piece 3 (run 144): the toggle test, and it refutes piece 2's mechanism.**
+`measureFogHueBands` now accepts an optional `forcedLandKeyAmount`, applied
+by writing `app.globals.uLandKeyAmount.value` directly for one render and
+restoring it afterward — no shader edit, since every material already
+shares that one uniform object (`painterly.ts`'s `bindGlobals`). Run
+automatically against the three nonzero-pull poses right after their
+natural reading, on the same page. Piece 2's mechanism predicted the
+far/near gap should **collapse** toward the zero-pull controls' negative
+gaps when the key is forced off; instead it grows on every pose:
+`02-morning` 0.243 → 0.301, `03-noon` 0.294 → 0.298 (flat), `10-tablet-
+afternoon` 0.194 → 0.464 (more than doubles). The near band barely moves
+either way; the far band jumps up substantially every time the key is
+turned off (afternoon's far hueSpread 0.215 → 0.489) — the opposite of
+"the key manufactures far-band spread". If anything the key mildly damps
+far-band spread, just less than it damps the near band. Piece 2's
+mechanism is falsified: the landKeyAmount correlation was real but not
+causal. What actually drives the far-band spread rise on enacting hours is
+still open — camera distance to the horizon, the object mix in the far row
+band, or the fog uniforms are the next candidates, not the land key.
+
 ## `shot.mjs [prefix] [settleMs]`
 
 Plain screenshot of the running game after a delay. For far-off states

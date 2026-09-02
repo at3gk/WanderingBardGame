@@ -54,11 +54,21 @@ const POSES = [
 const VIEWPORT = { width: 1600, height: 900 };
 const BANDS = 3; // near / mid / far, by position within the land pixels' own row extent
 
+// Piece 3 (run 144): does the far/near hueSpread gap piece 2 tied to
+// landKeyAmount actually come FROM the land key? `measureFogHueBands`
+// takes an optional `forcedLandKeyAmount` — an in-page override of
+// `app.globals.uLandKeyAmount.value` for this one render, restored
+// afterward — no shader edit, since the uniform is already the shared
+// object every material binds to (see `painterly.ts`'s `bindGlobals`).
+// Forcing it to 0 on a pose that naturally pulls answers "does the gap
+// collapse with the key off" directly, rather than only correlating.
+const FORCE_ZERO_POSES = ['02-morning', '03-noon', '10-tablet-afternoon'];
+
 /**
  * Runs in the page. Self-contained per page.evaluate's own rule (see
  * land-histogram.mjs) — no reference to anything outside this function.
  */
-function measureFogHueBands(bandCount) {
+function measureFogHueBands({ bandCount, forcedLandKeyAmount = null }) {
   const handle = window.bard;
   const app = handle?.app;
   const stage = handle?.stage;
@@ -103,6 +113,13 @@ function measureFogHueBands(bandCount) {
     Math.abs(r - sentinelR) <= TOLERANCE &&
     Math.abs(g - sentinelG) <= TOLERANCE &&
     Math.abs(b - sentinelB) <= TOLERANCE;
+
+  // Applied only to the LAND render below — the calibration render above
+  // hides the whole scene, so the key can't have touched it either way.
+  const landKeyUniform = app.globals.uLandKeyAmount;
+  const priorLandKeyAmount = landKeyUniform.value;
+  const overriding = forcedLandKeyAmount !== null;
+  if (overriding) landKeyUniform.value = forcedLandKeyAmount;
 
   try {
     app.renderFrame(stage.scene, stage.camera);
@@ -230,8 +247,10 @@ function measureFogHueBands(bandCount) {
       bufferHeight: h,
       sunHeight: Math.round(sunHeight * 1000) / 1000,
       landKeyAmount,
+      appliedLandKeyAmount: overriding ? forcedLandKeyAmount : landKeyUniform.value,
     };
   } finally {
+    if (overriding) landKeyUniform.value = priorLandKeyAmount;
     app.renderer.setClearColor(priorClear.hex, priorAlpha);
     for (let i = 0; i < sky.length; i++) sky[i].visible = skyWasVisible[i];
     app.renderFrame(stage.scene, stage.camera);
@@ -266,31 +285,64 @@ for (const pose of POSES) {
   );
   await page.waitForTimeout(1800);
 
-  const result = await page.evaluate(measureFogHueBands, BANDS);
-  await page.close();
+  const result = await page.evaluate(measureFogHueBands, { bandCount: BANDS });
 
   if (result.error) {
     problems.push(`${pose.name}: ${result.error}`);
+    await page.close();
     continue;
   }
-  rows.push({ name: pose.name, ...result });
+
+  let forcedZero = null;
+  if (FORCE_ZERO_POSES.includes(pose.name)) {
+    forcedZero = await page.evaluate(measureFogHueBands, { bandCount: BANDS, forcedLandKeyAmount: 0 });
+    if (forcedZero.error) {
+      problems.push(`${pose.name} (forced landKeyAmount=0): ${forcedZero.error}`);
+      forcedZero = null;
+    }
+  }
+
+  await page.close();
+  rows.push({ name: pose.name, ...result, forcedZero });
 }
 
 await browser.close();
 
 const pad = (s, n) => String(s).padEnd(n);
-for (const r of rows) {
-  console.log(
-    `\n${r.name}  (fog hue ${r.fogHueDeg}°, land rows ${r.landRowExtent}px, ` +
-      `sunHeight ${r.sunHeight}, landKeyAmount ${r.landKeyAmount})`,
-  );
+const printBands = (bands) => {
   console.log(`  ${pad('band', 8)}${pad('hueSpread', 11)}${pad('hueDeg', 9)}${pad('meanSat', 9)}pixels`);
-  for (const b of r.bands) {
+  for (const b of bands) {
     console.log(
       `  ${pad(b.band, 8)}${pad(b.hueSpread, 11)}${pad(b.hueDeg === null ? '-' : b.hueDeg, 9)}${pad(
         b.meanSat === null ? '-' : b.meanSat,
         9,
       )}${b.pixels}`,
+    );
+  }
+};
+const gap = (bands) => {
+  const near = bands[0];
+  const far = bands[bands.length - 1];
+  return Math.round((far.hueSpread - near.hueSpread) * 1000) / 1000;
+};
+
+for (const r of rows) {
+  console.log(
+    `\n${r.name}  (fog hue ${r.fogHueDeg}°, land rows ${r.landRowExtent}px, ` +
+      `sunHeight ${r.sunHeight}, landKeyAmount ${r.landKeyAmount})`,
+  );
+  printBands(r.bands);
+  console.log(`  far-near hueSpread gap: ${gap(r.bands)}`);
+
+  if (r.forcedZero) {
+    console.log(`  -- forced landKeyAmount=0 (natural was ${r.landKeyAmount}) --`);
+    printBands(r.forcedZero.bands);
+    const forcedGap = gap(r.forcedZero.bands);
+    const naturalGap = gap(r.bands);
+    console.log(`  far-near hueSpread gap: ${forcedGap}`);
+    console.log(
+      `  gap with key on vs off: ${naturalGap} -> ${forcedGap} ` +
+        `(${naturalGap !== 0 ? Math.round((1 - forcedGap / naturalGap) * 100) : '-'}% change)`,
     );
   }
 }
