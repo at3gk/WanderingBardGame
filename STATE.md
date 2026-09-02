@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 142 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 144 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -16,7 +16,9 @@ land-histogram.mjs's own broken sky mask while building a new hue-band
 probe, then took a first, inconclusive reading on the hue-free-distance-
 wall lead (task 189); run 143 widened that probe's pose set and found the
 far-band spread rise tracks landKey.ts's pull amount, not the hour
-(task 189 piece 2))
+(task 189 piece 2); run 144 toggled landKeyAmount to 0 and found the
+opposite of piece 2's prediction, refuting its mechanism (task 189
+piece 3))
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -82,6 +84,41 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-02 (run 144) — task 189 piece 3: the toggle test
+  refutes piece 2's land-key mechanism.** `fog-hue-band.mjs` now forces
+  `app.globals.uLandKeyAmount.value` to 0 for one render (in-page
+  override, no shader edit — every material shares that uniform object)
+  on the three poses that naturally pull, right after their normal
+  reading, on the same page. Piece 2 proposed that `landKey.ts`'s
+  90°-cone rotation turns one loose far-band hue cluster into two
+  tighter ones that the circular hueSpread formula scores as MORE spread
+  — predicting the far/near gap should collapse toward the zero-pull
+  controls' negative gaps (−0.066/−0.067) once the key is forced off.
+  Measured the opposite on all three: `02-morning` gap 0.243 → 0.301,
+  `03-noon` 0.294 → 0.298 (flat), `10-tablet-afternoon` 0.194 → 0.464
+  (more than doubles). The near band barely moves with the key toggled
+  either way; the far band jumps up substantially every time the key is
+  turned OFF (afternoon's far hueSpread 0.215 → 0.489, far meanSat 0.278
+  → 0.192) — if anything the key mildly damps far-band spread, less
+  effectively than it damps the near band, the reverse of "the key
+  manufactures the far-band spread". Piece 2's correlation
+  (landKeyAmount tracking the gap) was real but not causal; what
+  actually drives the far-band spread rise on enacting hours is open
+  again. Not chased further this run: three toggles kills a specific
+  causal claim, not enough evidence to build a replacement one, and the
+  panel/wave-20 validation this task has needed throughout is still
+  network-blocked (see Blocked on human, below — unchanged). `npm test`
+  1249 green (unchanged), `npm run build` green (902 KB, unchanged),
+  `verify-all quick` (`shader-check`) PASS. Docs/tool-only: no game
+  `src/` file touched. See `tools/README.md`'s `fog-hue-band.mjs` section
+  and ROADMAP task 189 for the full table. Next: with the land-key
+  mechanism ruled out, look at what the far row band's rendering shares
+  across the risen poses versus the flat ones (camera distance to the
+  horizon, the object mix sampled there, or the fog uniforms) before
+  proposing a replacement mechanism; the scatter lower-left design
+  question (run 136, still open); or wave 20 once the network block
+  lifts.
 
 - **HANDOFF, 2026-09-02 (run 142) — task 189 piece 1: `land-histogram.mjs`'s
   sky mask has been broken since run 95, fixed; the hue-free-distance-wall
@@ -4080,6 +4117,18 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   itself requires is still network-blocked (see Blocked on human below).
   `npm test` 1249 green (unchanged), `npm run build` green (902 KB,
   unchanged), `shader-check` PASS. No new runtime dependency.
+- Run 144 (2026-09-02, scheduled): ROADMAP task 189 piece 3 — the toggle
+  test piece 2 called for: forced `landKeyAmount` to 0 (in-page override,
+  no shader edit) on the three nonzero-pull poses and re-measured. Full
+  detail and the numbers are in ROADMAP.md under task 189 and this file's
+  latest HANDOFF above. Headline: the result is the opposite of piece 2's
+  prediction — the far/near hueSpread gap does not collapse with the key
+  off, it grows on every pose (0.243→0.301, 0.294→0.298, 0.194→0.464), so
+  piece 2's "two tighter clusters" mechanism is refuted. The landKeyAmount
+  correlation was real but not causal; what drives the far-band spread
+  rise is open again. `npm test` 1249 green (unchanged), `npm run build`
+  green (902 KB, unchanged), `shader-check` PASS. No new runtime
+  dependency.
 
 ## Needs human playtest
 
