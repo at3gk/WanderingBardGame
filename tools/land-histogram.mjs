@@ -70,16 +70,41 @@ function measureLandHistogram() {
   const priorAlpha = app.renderer.getClearAlpha();
   app.renderer.setClearColor(0xff00ff, 1);
 
-  // How close to pure magenta a pixel has to be to count as sentinel
+  // What pure magenta clear actually reads back as, THROUGH the finishing
+  // pass's ACES tonemap + code-generated 3D LUT (task 168) — not the literal
+  // (255,0,255) this tool assumed until this bug was found live: the grade
+  // moves it to roughly (253,40,240), a 40-level green shift that blew every
+  // tolerance this file has ever used and made `isSentinel` false for
+  // essentially all sky, so every prior run of this tool measured LAND and
+  // SKY together while its own `landShare` column silently read ~100% (the
+  // giveaway, once someone looked at that column instead of trusting the
+  // tool). Calibrated live rather than hardcoded again: hide the whole
+  // scene, render, read back the one colour that's left. Deterministic for
+  // a fixed clear colour and grade, so one calibration render is enough for
+  // the whole measurement.
+  const gl = app.renderer.getContext();
+  const sceneWasVisible = stage.scene.visible;
+  stage.scene.visible = false;
+  app.renderFrame(stage.scene, stage.camera);
+  const calib = new Uint8Array(4);
+  gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, calib);
+  stage.scene.visible = sceneWasVisible;
+  const sentinelR = calib[0];
+  const sentinelG = calib[1];
+  const sentinelB = calib[2];
+
+  // How close to the calibrated sentinel a pixel has to be to count as
   // background rather than land. Not zero: the renderer antialiases
   // geometry edges against the clear colour, so a silhouette's rim blends a
-  // few levels of land colour into magenta for a pixel or two. A wide
+  // few levels of land colour into the sentinel for a pixel or two. A wide
   // tolerance would eat land pixels near every edge; a narrow one still
   // classifies those AA fringe pixels as land, which is correct — they
   // carry real edge colour, not background.
   const TOLERANCE = 24;
   const isSentinel = (r, g, b) =>
-    Math.abs(r - 255) <= TOLERANCE && Math.abs(g - 0) <= TOLERANCE && Math.abs(b - 255) <= TOLERANCE;
+    Math.abs(r - sentinelR) <= TOLERANCE &&
+    Math.abs(g - sentinelG) <= TOLERANCE &&
+    Math.abs(b - sentinelB) <= TOLERANCE;
 
   try {
     // Same discipline as every other pixel-reading tool in this directory:
@@ -88,7 +113,6 @@ function measureLandHistogram() {
     // (task 168's finishing/LUT composite), not a bare renderer.render() —
     // see tools/README.md's discrepancy note.
     app.renderFrame(stage.scene, stage.camera);
-    const gl = app.renderer.getContext();
     const w = gl.drawingBufferWidth;
     const h = gl.drawingBufferHeight;
     const px = new Uint8Array(w * h * 4);

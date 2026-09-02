@@ -236,6 +236,76 @@ for the full account and the caveat about small far-band bucket counts.
 Each pose gets its own fresh page (a resting pose's camp state was found to
 leak into a later pose sharing one page — see the file's own comment).
 
+## `land-histogram.mjs`'s sentinel bug (found run 142, building `fog-hue-band.mjs`)
+
+`land-histogram.mjs` masks the sky by hiding the sky dome and painting the
+clear colour pure magenta (0xff00ff), then classifying any pixel within a
+tolerance of that literal value as background. That assumption predates task
+168's finishing pass (the offscreen half-float render + ACES tonemap + a
+code-generated 3D LUT, the last thing that happens to a frame before a
+player — or this tool — sees it): the grade moves pure magenta clear to
+roughly **(253, 40, 240)**, a 40-level green shift that blew every tolerance
+this file ever used. The result: `isSentinel` matched almost nothing, and
+every run of this tool since task 168 shipped measured LAND and SKY pixels
+together — silently, because nobody had looked hard at its own `landShare`
+column, which read **~100%** on poses that are visibly half sky. Same root
+family as run 138/141's `renderer.render()` vs `renderFrame()` bug: a
+pixel-reading tool built one assumption behind a pipeline change.
+
+Fixed by calibrating live instead of hardcoding a target: hide the whole
+scene (not just the sky), render once, read back the one colour left — that
+*is* the sentinel, whatever the current grade makes of pure magenta — then
+proceed as before. Deterministic for a fixed clear colour and grade, so one
+extra render pays for the whole measurement. Re-measured land-only stats
+changed materially (e.g. `03-noon`'s land p50 158→174, landShare 100%→78%),
+so anything anyone concluded from this tool's land-only numbers between task
+168 (run 95) and this fix should be treated as measuring the whole frame, sky
+included, not the land alone.
+
+## `fog-hue-band.mjs`
+
+Built to size ROADMAP/STATE's long-standing "hue-free distance wall"
+pointer (STATE.md's run-131 handoff: wave 19's colour lens named "distance
+fade resolves to a single hue-free wall" across 10 of 13 frames, a fault
+family independent of the FOG_CHROMA/FOG_HUE_LEAD fix `painterly.ts` already
+carries for the plainer "distance goes grey" complaint — see the file's own
+long comment on those two constants). No existing tool separates near from
+far *hue*, only near from far *value* (`land-histogram.mjs`) or whole-frame
+hue (`frame-quality.mjs`'s `hueSpread`, which a blue-sky-over-green-field
+frame can pass while the land alone reads as one hue underfoot).
+
+Same land-only masking as `land-histogram.mjs` (calibrated sentinel, same
+bug independently hit and fixed while building this), then splits land
+pixels into near/mid/far bands by their position within the land pixels' own
+row extent (GL readback convention: row 0 is the bottom/near, the top row is
+whatever's furthest away that's still on screen) — not the viewport's full
+height, since the horizon sits wherever the camera's pitch and the terrain's
+silhouette put it. Runs `frame-quality.mjs`'s own saturation×value-weighted
+circular hue-spread formula separately per band, plus the mean hue angle and
+mean saturation, against `02-morning`, `03-noon` and `04-golden-vista`.
+
+**First real reading (run 142, post-fix), and it does NOT cleanly confirm
+the "everything converges on the fog's hue" hypothesis**: `04-golden-vista`
+is the one pose where the far band's hue (28°) sits close to the live fog
+hue (20°) with *higher* saturation than nearer bands — but golden hour is a
+CARRYING hour by the colour script's own ruling (`docs/color-script.md`),
+off-limits to tune regardless. The two enacting hours read differently:
+`02-morning`'s far-band hue spread (0.458) is *higher* than its near band
+(0.276), and `03-noon`'s far band (0.331) dwarfs its near band (0.038) —
+distance is adding hue variety, not collapsing it, while far-band mean
+saturation is only modestly lower than near (0.399 vs 0.408/0.51). That
+reads as a milkier, less confident distance rather than a literal
+one-hue wall, which is a different lever (or no lever at all) from what the
+wave-19 wording suggested. Not chased further this run — the metric here is
+new and unvalidated against an actual blind panel (wave 20 is
+network-blocked this session; see STATE.md's Blocked on human section), so
+pulling FOG_HUE_LEAD/FOG_CHROMA/the fogAmount cap on this single reading
+alone would be exactly the "blind tune" ROADMAP's own discipline warns
+against. Whoever picks this up next: re-read this section's numbers, decide
+whether they still support the "hue-free wall" framing at all, and treat a
+panel confirmation (once the reference-image network block clears) as the
+real judge, not this instrument alone.
+
 ## `shot.mjs [prefix] [settleMs]`
 
 Plain screenshot of the running game after a delay. For far-off states

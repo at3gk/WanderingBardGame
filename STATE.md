@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 141 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 142 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -11,7 +11,10 @@ measured (and refuted) the 149/169 night-spike lead; run 139 built the
 ground-cover-colour probe and closed tasks 149/169; run 140 fixed the
 postcard.mjs resting-pose `s` mismatch run 139 flagged and deferred (task 187);
 run 141 fixed the app.renderer/finishing.render discrepancy in the rest
-of the pixel-reading tools (task 188))
+of the pixel-reading tools (task 188); run 142 found and fixed
+land-histogram.mjs's own broken sky mask while building a new hue-band
+probe, then took a first, inconclusive reading on the hue-free-distance-
+wall lead (task 189))
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -77,6 +80,48 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-02 (run 142) — task 189 piece 1: `land-histogram.mjs`'s
+  sky mask has been broken since run 95, fixed; the hue-free-distance-wall
+  lead got its first real (inconclusive) reading.** Building
+  `tools/fog-hue-band.mjs` — a new probe sized to the "distance fade
+  resolves to a single hue-free wall" fault wave 19's colour lens named
+  (run-131 handoff, below) — surfaced that `land-histogram.mjs`'s sentinel
+  check (mask the sky, paint the clear colour pure magenta, classify
+  anything close to `0xff00ff` as background) has been silently wrong
+  since task 168 (run 95) shipped the finishing pass's ACES tonemap + LUT
+  grade: that grade moves pure magenta to roughly (253, 40, 240), outside
+  every tolerance the file used, so `isSentinel` matched almost nothing.
+  Every run of the tool since has measured LAND AND SKY TOGETHER while its
+  own `landShare` column silently read ~100% on poses that are visibly
+  half sky — the same shape of bug as run 138/141's
+  `renderer.render()`/`renderFrame()` discrepancy, just in the masking
+  instead of the render call. Fixed in both `land-histogram.mjs` and the
+  new tool by calibrating the sentinel live (hide the whole scene, render
+  once, read back whatever colour is left) instead of hardcoding a target.
+  Re-measured land-only numbers moved materially (`03-noon` land p50
+  158→174, landShare 100%→78%) — anyone reading this tool's land-only
+  stats from between run 95 and today was reading whole-frame numbers.
+  With masking corrected, `fog-hue-band.mjs`'s first live reading does
+  **not** cleanly confirm the "everything converges on the fog's hue"
+  hypothesis: `04-golden-vista` shows real convergence, but golden hour is
+  a CARRYING hour by the colour script's own ruling (off-limits to tune);
+  the two enacting hours (`02-morning`, `03-noon`) instead show far-band
+  hue SPREAD rising above their near band, with only a modest saturation
+  drop — a milkier distance, not a literal one-hue wall. Deliberately not
+  chased into a shader change: the metric is new and unvalidated against
+  an actual blind panel, and wave 20 is **network-blocked this session**
+  (CONNECT to `ashorthike.com` and `store.steampowered.com` both 403;
+  logged under Blocked on human, below — not a new limitation, this
+  environment 403s every external host, wave 20 just hadn't hit it
+  before). `npm test` 1249 green (unchanged), `npm run build` green
+  (902 KB, unchanged), `verify-all quick` (`shader-check`) PASS.
+  Docs/tool-only: no game `src/` file touched. See `tools/README.md`'s new
+  sections and ROADMAP task 189 for the full numbers. Next: re-read
+  `fog-hue-band.mjs`'s numbers (or widen its pose set) before deciding
+  whether the hue-free-wall framing survives at all; the scatter
+  lower-left design question (run 136, still open); or wave 20 once the
+  network block lifts.
 
 - **HANDOFF, 2026-09-01 (run 141) — task 188: the app.renderer/
   finishing.render discrepancy is fixed everywhere it was left standing.**
@@ -4036,6 +4081,18 @@ still needs a human:
   protocol is written for exactly that.
 
 ## Blocked on human
+- **Wave 20 (the next blind-panel art critique)** (2026-09-02, run 142).
+  The protocol (`docs/critique-rubric.md`) re-downloads 12 reference frames
+  every wave — 7 A Short Hike press shots, 5 Spiritfarer Steam screenshots —
+  and this run's attempt got a 403 on CONNECT to both `ashorthike.com` and
+  `store.steampowered.com`. Not a new limitation: this file already logs
+  (twice, below) that this environment's network policy 403s CONNECT to
+  every external host it's been tried against; wave 20 is simply the first
+  time that standing block has hit the reference-image step specifically.
+  Waves 13-19 evidently ran in a session with broader network access than
+  this one has. Needs either a run in an environment with those two hosts
+  reachable, or a human to hand a run the 12 reference images some other
+  way (committing them isn't an option — they're not CC0).
 - **Promoting `headless-checks.yml` from informational to a real merge
   gate** (2026-07-26, Run 36). The check has gone 19/19 green since it
   landed (task 79) — a real pattern now, not a single lucky run. But making

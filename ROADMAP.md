@@ -2387,6 +2387,57 @@ interviews) — read it before taking any task; its not-recommended list
     136), the hue-free distance wall, or wave 20 (now five visual-change
     tasks past wave 19, since neither this run's nor run 140's tool-only
     work count toward that tally).
+189. **Size the "hue-free distance wall" lead** (wave 19's colour-lens fault,
+    STATE.md's run-131 handoff — "distance fade resolves to a single
+    hue-free wall" across 10 of 13 frames), the way run 139's
+    ground-cover-probe sized task 149: build the instrument, measure, don't
+    tune blind.
+    **Piece 1 done (2026-09-02, run 142) — a real tooling bug found and
+    fixed first, then a first, inconclusive measurement of the actual
+    question.** Building `tools/fog-hue-band.mjs` (a new per-distance-band
+    hue probe — no existing tool separates near/far *hue*, only near/far
+    *value* or whole-frame hue) surfaced that `land-histogram.mjs`'s sky
+    mask has been silently broken since task 168 (run 95): it classifies
+    background by comparing pixels to hardcoded pure magenta (0xff00ff),
+    an assumption from before the finishing pass's ACES tonemap + LUT grade
+    existed. That grade moves pure magenta clear to roughly (253, 40, 240)
+    — outside every tolerance the file used — so `isSentinel` matched
+    almost nothing and every run of the tool since has measured land AND
+    sky together while its own `landShare` column read ~100% on poses that
+    are visibly half sky, unnoticed until this run looked at that column.
+    Same family as the run 138/141 `renderer.render()`/`renderFrame()`
+    bug: a pixel tool built one assumption behind a pipeline change. Fixed
+    in both `land-histogram.mjs` and the new tool by calibrating live
+    (hide the whole scene, render once, read back whatever colour is left)
+    instead of hardcoding a target — deterministic for a fixed clear
+    colour and grade, so one extra render pays for the whole measurement.
+    Re-measured land-only stats moved materially (`03-noon`'s land p50
+    158→174, landShare 100%→78%), so any land-only number read from this
+    tool between run 95 and this fix should be treated as whole-frame, not
+    land-only. With masking corrected, `fog-hue-band.mjs`'s first real
+    reading does **not** cleanly confirm "everything converges on the
+    fog's hue": `04-golden-vista` shows real convergence (far-band hue 28°
+    against a live fog hue of 20°, with *higher* saturation than nearer
+    bands) but golden hour is a CARRYING hour by the colour script's own
+    ruling — off-limits to tune. The two enacting hours (`02-morning`,
+    `03-noon`) instead show far-band hue SPREAD rising above their near
+    band (0.458 vs 0.276; 0.331 vs 0.038) with only a modest saturation
+    drop — a milkier, less confident distance, not a literal one-hue wall.
+    Deliberately not chased into a shader change this run: the metric is
+    new and unvalidated against an actual blind panel (wave 20 is
+    network-blocked this session — CONNECT to `ashorthike.com` and
+    `store.steampowered.com` both get a 403 from this environment's proxy
+    policy; logged under Blocked on human in STATE.md), and pulling
+    FOG_HUE_LEAD/FOG_CHROMA/the fogAmount cap on one unvalidated reading
+    would be exactly the "blind tune" this task's own framing (and the
+    scatter lower-left question's precedent) warns against. `npm test`
+    1249 green (unchanged), `npm run build` green (902 KB, unchanged),
+    `verify-all quick` (`shader-check`) PASS. See `tools/README.md`'s new
+    sections for both the bug and the tool. Next: re-read
+    `fog-hue-band.mjs`'s numbers against a wider pose set or a real panel
+    once the network block lifts, before deciding whether this is a real
+    lever or a dead end; the scatter lower-left design question (run 136);
+    or wave 20 once un-blocked.
 
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 
