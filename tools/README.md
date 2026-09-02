@@ -282,7 +282,11 @@ whatever's furthest away that's still on screen) — not the viewport's full
 height, since the horizon sits wherever the camera's pitch and the terrain's
 silhouette put it. Runs `frame-quality.mjs`'s own saturation×value-weighted
 circular hue-spread formula separately per band, plus the mean hue angle and
-mean saturation, against `02-morning`, `03-noon` and `04-golden-vista`.
+mean saturation, against five poses (`02-morning`, `03-noon`,
+`04-golden-vista`, `11-morning-vista`, `10-tablet-afternoon` — the last two
+added run 143, see below) and reports each pose's `sunHeight` and
+`landKeyAmount` (`landKey.ts`'s own pull-amount formula, duplicated into the
+page-evaluated function since it can't import the module).
 
 **First real reading (run 142, post-fix), and it does NOT cleanly confirm
 the "everything converges on the fog's hue" hypothesis**: `04-golden-vista`
@@ -305,6 +309,33 @@ against. Whoever picks this up next: re-read this section's numbers, decide
 whether they still support the "hue-free wall" framing at all, and treat a
 panel confirmation (once the reference-image network block clears) as the
 real judge, not this instrument alone.
+
+**Piece 2 (run 143): widened to 5 poses, and the pattern sharpened into a
+falsifiable hypothesis.** `11-morning-vista` and `10-tablet-afternoon` (both
+reused from `postcard.mjs`'s vetted set) were chosen to separate "is this
+about the hour" from "is this about `landKey.ts`'s pull": `11-morning-vista`
+has sun height 0.267, below `LAND_KEY_RISE_START` (0.3) — a second zero-pull
+pose, different biome/vista than golden — and `10-tablet-afternoon` has sun
+height 0.445, a partial-pull regime on the *falling* side of the sun's arc
+that nothing here had tested. Result (`landKeyAmount` → far hueSpread minus
+near hueSpread): `04-golden-vista` 0 → −0.063, `11-morning-vista` 0 → −0.060,
+`02-morning` 0.034 → +0.182, `10-tablet-afternoon` 0.217 → +0.193, `03-noon`
+0.35 → +0.297. Every zero-`landKeyAmount` pose has far ≤ near; every nonzero
+one has far well above near — including the afternoon pose, whose sun is
+*lower* than noon's but whose pull amount and spread-rise both land close to
+noon's, which "enacting vs carrying hour" alone doesn't predict.
+
+Likely mechanism, proposed but **not yet measured**: `landKey.ts` only
+rotates chroma within 90° of the biome key, leaving anything outside that
+cone untouched by construction. That can turn one loose hue cluster into two
+tighter ones (most pixels pulled toward the key, a dissenter left alone),
+and the circular hueSpread formula scores overall variance, not modality —
+so two tight clusters can read as *more* spread than one loose one, not
+less. Confirming this means comparing the same poses with the land-key pass
+forced to 0 (an in-page override, no shader edit) and checking whether the
+far/near gap collapses — that's the next piece, not this one. Still not
+worth a shader change yet: the panel/wave-20 validation this section already
+asked for is still network-blocked.
 
 ## `shot.mjs [prefix] [settleMs]`
 
