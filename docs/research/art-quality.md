@@ -398,6 +398,35 @@ the panels are not asking for fur).
   and posing (the deer, canopy asymmetry, the listening posture, the rock
   shape table), not tuning.
 
+- 2026-09-02 (runs 138-144, the 149/169 night-spike and 189 hue-band
+  threads): two more process lessons, both about the harness rather than
+  the game itself. (1) **A measurement tool that renders independently of
+  the game's own render call goes stale the moment a post-process pass
+  ships, and nothing forces it to notice.** `land-histogram.mjs`'s sky-mask
+  sentinel (a hardcoded pure-magenta compare) silently broke when task
+  168's ACES/LUT grade shipped at run 95 and wasn't caught until run 142 —
+  47 runs and every measurement the tool produced in between were reading
+  land-plus-sky as land alone. The same shape of bug (calling the bare
+  `renderer.render()` instead of the app's own `renderFrame()`, which
+  skips the finishing pass entirely) was independently found and fixed
+  across seven different tools at run 141. Both fixes calibrate live
+  (render a known-empty scene, read back whatever colour comes out)
+  instead of hardcoding an assumption about the pipeline — the lesson for
+  any future post-process addition is to audit every offline pixel-reading
+  tool, not just the game's own render path, the moment the pipeline
+  changes. (2) **A real, measured correlation is not a mechanism.** Run
+  143 found `landKeyAmount` tracking the far-band hue-spread rise cleanly
+  across five poses and proposed a specific causal story (a 90°-cone pull
+  splits one loose hue cluster into two tighter ones that the circular-
+  variance formula scores as MORE spread, not less). Run 144's toggle test
+  — force the pull to zero, re-measure the same poses — refuted it
+  outright: the gap grew on every pose when the key was turned off, the
+  opposite of the prediction. The correlation was real; the causal story
+  built on top of it was wrong. Consistent with the run-135 finding above:
+  a plausible mechanism inferred from a pattern still needs its own direct
+  (toggle/ablation) test before it's trusted, even when the pattern itself
+  replicates cleanly across every sample.
+
 ## Source access notes
 
 Reached directly (fetched): adamgryu's effects thread (ThreadReader)
