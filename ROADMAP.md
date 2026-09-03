@@ -50,6 +50,14 @@ makes it long. You do not need to read it top to bottom.
   work. **v1.3** ("the family songbook," task 176 onward) is queued and
   entirely untouched since being written 2026-08-01 — a reasonable next
   arc once the art-quality loop reaches a natural pause.
+- **Run 146 update**: three straight runs (142-144) investigating task 189
+  without landing a replacement mechanism counted as that natural pause,
+  so run 146 shipped v1.3's **task 176 piece 1** (the song maker's data
+  layer — see its done-note, below its own numbered entry) instead of
+  continuing the art-quality loop. The live queue as of run 146 is v1.3,
+  task 176 piece 2 (the recording UI) next — task 189's far-band lead and
+  the v1.1 queue are still open and worth returning to, just not
+  automatically "next" anymore.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -2048,6 +2056,29 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     named song and walk the road with it. Zero parsing, existing
     surface, and composing is itself pedagogy. (freePlay + songChoice +
     journey save.)
+    **Piece 1 done (2026-09-03, run 146): the data layer.**
+    `core/customSongs.ts` (pure, 21 tests): `notesFromSteps` turns a
+    tapped free-play step sequence straight into quarter notes via
+    `notation.ts`'s `semitoneAtStep` — zero parsing, because the
+    composing already happened at the tap. `engravingProblem(song)`
+    runs the SAME rules `songs.test.ts` holds the built-in songbook to
+    (naturals-only, legal durations, whole bars, no note over a bar
+    line, drawable range, ≥16 notes, never opens with a rest) and
+    returns the first problem in words a save dialog can show directly
+    — declined kindly, never mangled, same promise task 177/178 will
+    need. `saveCustomSong`/`loadCustomSongs`/`deleteCustomSong` follow
+    task 157's exact storage shape: wrapped localStorage, keyed through
+    `profiles.ts`'s `bookmarkKey` so each bookmark's tunes stay separate
+    with zero migration risk, capped at `MAX_CUSTOM_SONGS` (8) so a
+    child can't fill the whole save with tunes, corrupt/foreign data
+    reads as none rather than throwing. NOT yet reachable by players —
+    no recording UI on `freePlay.ts`, no "my songs" shelf in
+    `songChoice.ts`'s menu, nothing plugged into `RoadStage.ts`.
+    Remaining 176: the recording door (start/stop capture in free play,
+    a name prompt, the declined-kindly message shown), then listing
+    custom songs in the songbook picker so a walk can carry one. 1270
+    tests (+21), build green (902 KB, unchanged — pure logic, no new
+    dependency).
 177. **MIDI import.** Dependency-free parser (the format is simple);
     melody extraction (single track direct, polyphonic via top-note
     skyline); quantize to the songbook's note values; auto-transpose

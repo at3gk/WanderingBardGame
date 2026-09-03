@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 145 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 146 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -10,7 +10,8 @@ investigation and task 143's shoulder-blend fix (compressed into a run
 index in "At a glance" by the run-145 consolidation — see there); run 144
 toggled landKeyAmount to 0 and found the opposite of piece 2's prediction,
 refuting its mechanism (task 189 piece 3); run 145 was the consolidation
-pass)
+pass; run 146 turned to the untouched v1.3 queue and shipped task 176's
+data layer, the song maker's storage/validation core)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -92,6 +93,41 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-03 (run 146) — task 176 piece 1: the song maker's
+  data layer.** Run 145's own "Next" pointer offered task 189's far-band
+  lead, the scatter design question, wave 20 (network-blocked), or v1.3
+  "once the art-quality loop reaches a natural pause" — three straight
+  investigation runs (142-144) into task 189 without landing a mechanism
+  is that pause, so this run picked v1.3's task 176 instead: entirely
+  untouched since 2026-08-01. New `core/customSongs.ts` (pure, 21 tests):
+  `notesFromSteps` turns a tapped free-play step sequence into quarter
+  notes via `notation.ts`'s `semitoneAtStep` — no format, no parser,
+  because "zero parsing" means the composing already happened at the tap.
+  `engravingProblem(song)` re-implements the exact checks
+  `songs.test.ts` holds the built-in songbook to (naturals-only, legal
+  durations, whole bars, no note over a bar line, drawable range, ≥16
+  notes, never opens with a rest) as a runtime validator that returns the
+  first problem in plain words instead of failing a test — "declined
+  kindly, never mangled" the way ROADMAP promises for both this task and
+  178's MIDI import. Storage follows task 157's shape exactly:
+  `saveCustomSong`/`loadCustomSongs`/`deleteCustomSong` wrap localStorage
+  and key everything through `profiles.ts`'s `bookmarkKey`, so a second
+  bookmark's tunes never mix with the first's, capped at 8 songs so a
+  child can't fill the whole save, corrupt data reads as none rather
+  than throwing. Deliberately NOT done this run, left for piece 2: any
+  UI at all — no recording start/stop on `freePlay.ts`'s ladder, no name
+  prompt, no shelf for custom songs in `songChoice.ts`'s picker, nothing
+  wired into `RoadStage.ts`, so a saved song cannot yet be walked. `npm
+  test` 1270 green (+21), `npm run build` green, bundle unchanged at 902
+  KB (pure logic, zero new dependencies). Next: task 176 piece 2 (the
+  recording door — capture taps in free play while "recording", a name
+  prompt on stop, and listing custom songs where the songbook picker
+  offers a choice) is the natural next step now that the data layer it
+  needs exists and is tested; task 189's far-band lead and the scatter
+  design question are still open if the art-quality loop is preferred
+  instead; wave 20 stays network-blocked (see Blocked on human,
+  unchanged).
 
 - **HANDOFF, 2026-09-03 (run 145) — CONSOLIDATION (drift control, every
   ~10th run; last was 135).** Drift check over runs 136-144: CLEAN — every
