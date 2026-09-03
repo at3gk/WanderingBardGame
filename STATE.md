@@ -1,24 +1,16 @@
 # STATE
 
-Run counter: 144 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 145 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
 runs 111-133 are the 2026-08-07 overnight loop; run 134 resumed 2026-08-30;
-run 135 was the consolidation pass; run 136 measured the scatter
-lower-left question left open by 134; run 137 shipped task 143; run 138
-measured (and refuted) the 149/169 night-spike lead; run 139 built the
-ground-cover-colour probe and closed tasks 149/169; run 140 fixed the
-postcard.mjs resting-pose `s` mismatch run 139 flagged and deferred (task 187);
-run 141 fixed the app.renderer/finishing.render discrepancy in the rest
-of the pixel-reading tools (task 188); run 142 found and fixed
-land-histogram.mjs's own broken sky mask while building a new hue-band
-probe, then took a first, inconclusive reading on the hue-free-distance-
-wall lead (task 189); run 143 widened that probe's pose set and found the
-far-band spread rise tracks landKey.ts's pull amount, not the hour
-(task 189 piece 2); run 144 toggled landKeyAmount to 0 and found the
-opposite of piece 2's prediction, refuting its mechanism (task 189
-piece 3))
+run 135 was the consolidation pass; runs 136-143 are task 189's hue-band
+investigation and task 143's shoulder-blend fix (compressed into a run
+index in "At a glance" by the run-145 consolidation — see there); run 144
+toggled landKeyAmount to 0 and found the opposite of piece 2's prediction,
+refuting its mechanism (task 189 piece 3); run 145 was the consolidation
+pass)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -70,6 +62,22 @@ retention mechanics at all — it is entirely rendering/staging fidelity
 on the existing world, so the list has nothing new to check against
 this cycle.
 
+**Run-145 refresh (2026-09-03, consolidation):** no change since the
+run-135 refresh — retention's v0.9 queue stays complete (all seven
+recommendations SHIPPED or standing design) and the rejected-on-principle
+list re-checked against runs 135-144 finds nothing to flag: every one of
+those runs was task 189's hue-band investigation (measurement and tooling
+fixes, zero shader/gameplay changes shipped) or task 143's shoulder-blend
+fix, neither touching returning-player behaviour at all. `mobile-friendly.md`'s
+URGENT save-protection item (task 171) remains shipped and unchanged;
+its queue (v1.2) still carries one genuinely open, real-device-only item
+(task 173, iOS audio-session behaviour) already tracked under Needs
+human playtest, not new this refresh. Two new
+findings went into `docs/research/art-quality.md`'s "Findings from shipped
+work" section this run (the stale-measurement-tool pattern and the
+correlation-is-not-a-mechanism lesson from task 189) — see there for the
+detail.
+
 ## The true goal (standing pointer)
 
 DESIGN.md's "The true goal" section (2026-07-31, human-grilled to shared
@@ -84,6 +92,40 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-03 (run 145) — CONSOLIDATION (drift control, every
+  ~10th run; last was 135).** Drift check over runs 136-144: CLEAN — every
+  run was task 189's hue-band investigation (two real tooling bugs found
+  and fixed — a sky-mask sentinel silently broken since run 95, and a
+  finishing-pass-skipping render call in seven tools — plus a correlation
+  proposed at piece 2 and refuted by piece 1's own toggle test at piece 3,
+  never landing a shader change) or task 143's shoulder-blend fix (a real,
+  small, verified-live terrain fix). No new system, no scope growth beyond
+  the standing v1.1 "crafted frame" art-quality queue; bundle unchanged at
+  902 KB of the 5 MB budget throughout. STATE trimmed the way run 135 did
+  it: the individual HANDOFF blocks for runs 134 and 136-143 (nine blocks,
+  434 lines) compressed into one run-index paragraph immediately below
+  run 144's (kept in full as the most recent) — this file's "At a glance"
+  section 4227 → 3858 lines from that edit alone. `docs/research/art-
+  quality.md` gained a new "Findings from shipped work" entry (runs
+  138-144): the stale-measurement-tool pattern (a tool that renders
+  outside the game's own `App.renderFrame` call goes silently wrong the
+  moment a post-process pass ships, and nothing forces it to notice) and
+  the correlation-is-not-a-mechanism lesson task 189's own piece 2/3 arc
+  just lived through. Direction research refreshed per CLAUDE.md pillar 5
+  (see above): retention's v0.9 queue and mobile-friendly's urgent item
+  both unchanged and complete; nothing in runs 135-144 touches either
+  research note's recommendations or its rejected-on-principle list.
+  DESIGN.md's changelog gains the runs 136-144 entry. No game `src/` file
+  touched; `npm test` and `npm run build` unchanged and green. Next: with
+  the land-key mechanism ruled out, look at what the far row band's
+  rendering actually shares across the risen poses (camera distance to
+  the horizon, the object mix sampled there, or the fog uniforms) before
+  proposing a replacement mechanism for task 189; the scatter lower-left
+  design question (run 136, still open); wave 20 once the network block
+  lifts (see Blocked on human, unchanged); or v1.3 (the family songbook
+  queue, entirely untouched since it was written 2026-08-01 — worth a
+  look once the current art-quality loop reaches a natural pause).
 
 - **HANDOFF, 2026-09-02 (run 144) — task 189 piece 3: the toggle test
   refutes piece 2's land-key mechanism.** `fog-hue-band.mjs` now forces
@@ -120,439 +162,54 @@ mastery display must read that section first.
   question (run 136, still open); or wave 20 once the network block
   lifts.
 
-- **HANDOFF, 2026-09-02 (run 142) — task 189 piece 1: `land-histogram.mjs`'s
-  sky mask has been broken since run 95, fixed; the hue-free-distance-wall
-  lead got its first real (inconclusive) reading.** Building
-  `tools/fog-hue-band.mjs` — a new probe sized to the "distance fade
-  resolves to a single hue-free wall" fault wave 19's colour lens named
-  (run-131 handoff, below) — surfaced that `land-histogram.mjs`'s sentinel
-  check (mask the sky, paint the clear colour pure magenta, classify
-  anything close to `0xff00ff` as background) has been silently wrong
-  since task 168 (run 95) shipped the finishing pass's ACES tonemap + LUT
-  grade: that grade moves pure magenta to roughly (253, 40, 240), outside
-  every tolerance the file used, so `isSentinel` matched almost nothing.
-  Every run of the tool since has measured LAND AND SKY TOGETHER while its
-  own `landShare` column silently read ~100% on poses that are visibly
-  half sky — the same shape of bug as run 138/141's
-  `renderer.render()`/`renderFrame()` discrepancy, just in the masking
-  instead of the render call. Fixed in both `land-histogram.mjs` and the
-  new tool by calibrating the sentinel live (hide the whole scene, render
-  once, read back whatever colour is left) instead of hardcoding a target.
-  Re-measured land-only numbers moved materially (`03-noon` land p50
-  158→174, landShare 100%→78%) — anyone reading this tool's land-only
-  stats from between run 95 and today was reading whole-frame numbers.
-  With masking corrected, `fog-hue-band.mjs`'s first live reading does
-  **not** cleanly confirm the "everything converges on the fog's hue"
-  hypothesis: `04-golden-vista` shows real convergence, but golden hour is
-  a CARRYING hour by the colour script's own ruling (off-limits to tune);
-  the two enacting hours (`02-morning`, `03-noon`) instead show far-band
-  hue SPREAD rising above their near band, with only a modest saturation
-  drop — a milkier distance, not a literal one-hue wall. Deliberately not
-  chased into a shader change: the metric is new and unvalidated against
-  an actual blind panel, and wave 20 is **network-blocked this session**
-  (CONNECT to `ashorthike.com` and `store.steampowered.com` both 403;
-  logged under Blocked on human, below — not a new limitation, this
-  environment 403s every external host, wave 20 just hadn't hit it
-  before). `npm test` 1249 green (unchanged), `npm run build` green
-  (902 KB, unchanged), `verify-all quick` (`shader-check`) PASS.
-  Docs/tool-only: no game `src/` file touched. See `tools/README.md`'s new
-  sections and ROADMAP task 189 for the full numbers. Next: re-read
-  `fog-hue-band.mjs`'s numbers (or widen its pose set) before deciding
-  whether the hue-free-wall framing survives at all; the scatter
-  lower-left design question (run 136, still open); or wave 20 once the
-  network block lifts.
-
-- **HANDOFF, 2026-09-01 (run 141) — task 188: the app.renderer/
-  finishing.render discrepancy is fixed everywhere it was left standing.**
-  Runs 138 and 139 found and flagged (but didn't chase) a bug in the
-  harness's own pixel-reading tools: several called the bare
-  `renderer.render(scene, camera)` + `gl.readPixels`, which skips
-  `App.renderFrame` — task 168's finishing pass (offscreen half-float
-  render, then a code-generated 3D-LUT composite to the canvas), the LAST
-  thing that happens to a frame before a player sees it. A tool built that
-  way measures a pre-grade, pre-tonemap buffer, not the frame it claims to
-  be reporting on. `ground-cover-probe.mjs` (run 139) already carried the
-  fix for itself; this run applied the same one-line swap
-  (`app.renderer.render(stage.scene, stage.camera)` →
-  `app.renderFrame(stage.scene, stage.camera)`) to every tool still
-  carrying the bug: `postcard.mjs`, `frame-quality.mjs`,
-  `land-histogram.mjs` (its measurement render AND its `finally`-block
-  restore render), `figground.mjs`, `figground-partition.mjs`,
-  `shader-check.mjs`, `shadowcast.mjs`. Read `src/three/finishing.ts`
-  first to confirm the swap is safe: `FinishingPass.render` is a pure,
-  stateless per-call composite, so repeated calls behave exactly like
-  repeated `renderer.render()` calls for a tool's purposes, just through
-  the pipeline a player's screen actually runs. **A second bug found in
-  passing**: `figground.mjs` and `figground-partition.mjs` both imported
-  their shared browser helper via a hardcoded Windows path
-  (`file:///G:/WanderingBardGame/tools/browser.mjs`) instead of the
-  relative `./browser.mjs` every other tool in the directory uses — both
-  scripts crashed with `MODULE_NOT_FOUND` on any machine but the one that
-  originally wrote them, not just carrying stale numbers. Fixed both
-  imports. **Verified live**, not just reasoned about: built the
-  production bundle, served it via `npm run preview`, and ran the actual
-  tools against it. `shader-check` (part of `verify-all quick`) and
-  `frame-quality` (the slow half, run in full since this task touched it
-  directly) both PASS — `frame-quality`'s seven-pose gauge table reads in
-  the range prior runs recorded (night gauge 6.39, in line with run 116's
-  6.47 baseline and the run-to-run drift STATE.md already documents).
-  `land-histogram`, `postcard` (all eight shots, `07-night-campfire`
-  included), and `figground`/`figground-partition` (which could not run
-  AT ALL before this run's import fix) all ran end to end without error.
-  `shadowcast.mjs` was also launched against the same live server; it is
-  the slowest tool in the directory (many caster-family render passes per
-  shot), and it produced a real, sane result for its first shot (33.1%
-  shadow share, trees owning 66.9% of it, plausible photometrics) before
-  this run's remaining time went to writing up rather than waiting out its
-  other two shots — the one touched line (the `capture()` closure) is
-  mechanically identical to the swap already verified working in every
-  other tool, and the first shot's live result confirms it. `tools/README.md`'s
-  discrepancy note updated to record the fix instead of still flagging it.
-  Docs/tool-only: no game `src/` file touched, 1249 tests and the build
-  unchanged and green (902 KB, unchanged). Next: the scatter lower-left
-  design question (run 136, still a real, undecided design call), the
-  hue-free distance wall, or wave 20 — now clearly overdue on its own
-  established rhythm (five visual-change tasks landed since wave 19 per
-  run 139's count, with neither this run's nor run 140's tool-only work
-  adding to that tally either way).
-
-- **HANDOFF, 2026-09-01 (run 140) — task 187: `postcard.mjs`'s pinned
-  `07-night-campfire` shot no longer poses a camp with no ground cover in
-  it.** Took up the one concrete tooling bug run 139 flagged and
-  deliberately did NOT fix ("deserves its own deliberate run rather than a
-  side effect of this one"): the pinned shot posed at a hardcoded `s: 1400`
-  for `phase: 'resting'`, but `RoadStage.makeCamp` (`src/three/RoadStage.ts`)
-  ignores whatever `s` a resting pose sets and always builds the camp at
-  `road.stops[stops.length - 1]` — the road's real last stop, which moves
-  every UTC day since the daily road is seeded from the day. Once the
-  pinned number and the real stop drift far enough apart (390 m on the day
-  run 139 measured), the camera poses at the stale `s` while
-  `WorldStreamer`'s grass/fern LOD window (which correctly follows
-  `journey.s`, the value the pose call DOES set) streams in nothing at that
-  position — a "resting" postcard with zero ground cover anywhere on
-  screen, which is exactly what run 139's ground-cover-probe traced the old
-  `07` frame to. Fix, in `tools/postcard.mjs`: before the shot loop runs,
-  open one short-lived page, query `window.bard.stage.road.stops` for the
-  live last stop's `s`, close it, and overwrite the resting shot's `s` with
-  that value — the identical pattern `tools/ground-cover-probe.mjs` already
-  used at runtime to build its own corrected-pose measurement (run 139),
-  now applied to the tool that actually produces the postcard a critic
-  sees. The SHOTS array keeps a `s: 1400` placeholder on that entry (never
-  read — a comment says so) so the array's shape is untouched; what's
-  pinned is the shot's *intent* (resting, day 0.95, at the camp), not a
-  literal number that the game's own logic can't hold fixed. Checked
-  `frame-quality.mjs`'s separate `night` pose (also `s: 1400`) before
-  assuming it shared the bug: it never sets `phase: 'resting'`, so
-  `makeCamp` never fires for it, and it was confirmed unaffected and left
-  alone. **Verified live, not just reasoned about**: ran the fixed
-  `postcard.mjs` against the running preview server and re-shot
-  `07-night-campfire` — the frame now shows blade geometry near the fire
-  and a stippled ground texture across the wider meadow, matching exactly
-  what run 139's corrected-pose measurement described and what the OLD
-  pinned frame (per run 139's own account) did not have at all. Docs/tool-
-  only: no game `src/` file touched, `npm test` 1249 green (unchanged),
-  `npm run build` green (unchanged, 902 KB of the 5 MB budget), `verify-all
-  quick`'s one fast check (`shader-check`) PASS — `frame-quality` is the
-  suite's slow half and wasn't run, since nothing this task touched is
-  what it measures. Next: the scatter lower-left design question (run 136,
-  `tools/scatter-probe.mjs`, still a real, un-decided design call), the
-  `app.renderer.render()` vs `app.renderFrame()`/finishing-pass discrepancy
-  still standing unfixed in `land-histogram.mjs`, `frame-quality.mjs`,
-  `figground.mjs`, `figground-partition.mjs`, `shader-check.mjs` and (as of
-  this run, confirmed still present) `postcard.mjs`'s own `drew`/pixel-
-  aliveness check at line ~158 (flagged by runs 138 and 139, not touched
-  by this run either — fixing the shot itself was this task's whole scope,
-  and that check only gauges "did anything draw," not colour, so it isn't
-  wrong the way the resting-pose `s` was), the hue-free distance wall, or
-  **wave 20** — now clearly overdue on its own established rhythm (three
-  visual-change tasks landed since wave 19 per run 139's own count; this
-  run's tool-only fix doesn't add to that tally either way, so the case for
-  wave 20 next is unchanged from what run 139 already said).
-
-- **HANDOFF, 2026-09-01 (run 139) — the ground-cover-colour probe built and
-  run; TASK 149 CLOSED (and 169 with it) — REFUTED, with a positive cause
-  this time, not a shrug.** Took up run 138's sized instrument exactly:
-  `tools/ground-cover-probe.mjs` extends `scatter-probe.mjs`'s per-instance
-  camera-projection method (world matrix → project → screen-space filter)
-  with actual rendered-pixel sampling — a 3×3 patch averaged at each
-  instance's projected screen position, read back from
-  `app.renderFrame(scene, camera)` (task 168's finishing/LUT composite,
-  NOT the bare `renderer.render()` run 138 caught `land-histogram.mjs`/
-  `frame-quality.mjs` using, which reads a pre-finishing buffer — that
-  discrepancy is STILL unfixed in those other tools, flagged again below,
-  deliberately not chased this run). Narrowed strictly to `grass`/`fern`
-  instances, per the task's own scoping (roadgrass/flower/reed/bankgrass/
-  shrub/log/rock excluded — scatter, but a different vocabulary question).
-  **First result, before any colour statistic was even computed: posing
-  the exact pinned `07-night-campfire` (`s: 1400, day: 0.95,
-  phase: 'resting'`) finds ZERO grass/fern instances anywhere on screen.**
-  Not a probe bug — traced to a real cause and confirmed twice over. Cause:
-  `RoadStage.makeCamp` (`src/three/RoadStage.ts`) always places the
-  campfire at `this.road.stops[stops.length - 1]` — the road's actual last
-  stop — ignoring whatever `s` a `pose()` call set; `WorldStreamer`'s
-  grass/fern LOD window (~90 m, `lodRange`) follows `journey.s` itself, the
-  value the pose call DID set. On the day measured (`2026-09-01`), the
-  road's real last stop sat at `s: 1790` — 390 m past the LOD window the
-  pinned `s: 1400` pose actually streams grass/fern into. Confirmed by a
-  direct query of `stage.road.stops` (last stop's `s` matches `road.lengthM`
-  exactly, since a day's walk by construction ends at the road's end) and
-  by eye: a re-shot `07-night-campfire` postcard shows the meadow as
-  featureless flat terrain, no blade geometry visible anywhere, exactly
-  matching the 0-instance count. **This means: whatever "wavy/streaky"
-  texture a human critic has been reading off that exact pinned image
-  cannot be ground-cover colour, full stop — there is no ground cover in
-  that frame to have a colour.** In REAL PLAY this mismatch cannot occur
-  (`RoadStage.arriveAt` only fires `setPhase('resting')` once `journey.s`
-  is already within the 4 m `ARRIVE_RADIUS` of the stop, so journey.s and
-  the camp's true position never diverge) — this is a HARNESS/tooling
-  finding, not a game-code fault, and was deliberately NOT fixed in
-  `postcard.mjs` this run (see "Next," below; matches this file's own
-  precedent of flagging rather than chasing a sibling-tool bug, same as
-  run 138's finishing-buffer finding). Built a SECOND pose at runtime
-  (queries `road.stops` live, since the road and therefore the last stop's
-  `s` change every UTC day) reposed at the road's true last stop, which
-  reproduces what a resting frame actually looks like in real play: grass
-  and fern ARE present there (~970 instances on screen, almost all
-  `grass`, confirmed visually too — a re-shot postcard at the corrected
-  pose shows blade geometry near the fire and a stippled ground texture
-  across the wider field). Measured its rendered colour, split into a
-  firelit near band (<20 m from camera) and a "dark meadow" far band
-  (>=20 m, what the original complaint means): dark-meadow luma CV
-  0.49-0.52 across repeat runs — higher than a `03-noon-forest` daylight
-  baseline's CV 0.32-0.33, but that alone proves nothing (CV's denominator
-  is much smaller at night, and a single falloff point light produces more
-  per-instance brightness spread than a distant diffuse sun even on a
-  perfectly uniform surface). **The decisive check**: a variance-
-  decomposition "banding" statistic — what share of the dark meadow's luma
-  spread is explained by an instance's POSITION in the frame (screen-x or
-  camera distance) rather than its own random per-instance colour. A real
-  spatial streak would inflate this share; ordinary per-instance noise
-  would not. Measured 7-9% (screen-x) and 10-13% (depth) at night, across
-  repeat runs — LOWER than or comparable to the SAME check run against the
-  never-complained-about noon baseline (16% screen-x, 2% depth). If real
-  streaking were present in grass/fern colour at night, this share should
-  be elevated relative to an ordinary, unremarkable daylight frame; it is
-  not. Both threads — the pinned pose's literal absence of ground cover,
-  and the corrected pose's ordinary (low) banding share when ground cover
-  IS present — point the same way, so task 149's sliver is marked CLOSED
-  this run rather than left open pending a third measurement: ground-cover
-  colour is REFUTED as the cause, this time for a positive, traced reason
-  rather than an inconclusive "didn't find it." Task 169 (which folded in
-  143/144/149 and was explicitly held open only on 149's sliver) closes
-  with it — see both tasks' ROADMAP done-notes for the full numbers and the
-  small-sample caveat on the far depth-band bucket (some bins carried as
-  few as 4-19 instances, which is why the depth-banding share moved a bit
-  run to run; still consistently well under any share that would signal a
-  dominant streak). Docs+tool-only: no game `src/` file was touched, 1249
-  tests and the build are unchanged and green, `frame-quality`/
-  `shader-check` both PASS unchanged (re-ran the full `verify-all.mjs`
-  suite as an extra check, since this run's claim rests on the finishing
-  pass specifically). Two things this run explicitly did NOT chase, sized
-  for whoever picks either up: (1) `postcard.mjs`'s own `s: 1400` for the
-  `07-night-campfire` pose should be corrected to track the road's real
-  last stop the way `tools/ground-cover-probe.mjs` now does at runtime —
-  it is a genuine tooling bug (every future pinned `07` postcard is a
-  bare-terrain shot of a scene with no ground cover in it, not what a
-  resting frame is meant to look like), but fixing a PINNED postcard pose
-  changes what every future wave's judges see for that frame number, which
-  deserves its own deliberate run rather than a side effect of this one.
-  (2) The corrected-pose postcard's wider meadow shows a lumpy, stippled
-  look that reads by eye as coming from SHRUB silhouette density/placement,
-  not grass/fern colour — shrub is explicitly out of this task's "ground
-  cover" scope (task 149 has always meant grass/fern/litter; shrub already
-  has its own history under this same task's earlier "clones break" piece,
-  run 91). If a future wave names a lumpy/patchy meadow fault again, look
-  at shrub density and placement before grass colour a second time. Next:
-  fix `postcard.mjs`'s resting-pose `s` mismatch (above), the scatter
-  lower-left design question run 136 sized but didn't decide, the
-  app.renderer/finishing.render discrepancy still standing in
-  `land-histogram.mjs`/`frame-quality.mjs`/`figground.mjs`/
-  `figground-partition.mjs`/`shader-check.mjs`/`postcard.mjs` (run 138
-  flagged it once, this run flagged it again — still nobody's fixed it),
-  the hue-free distance wall, or **wave 20, which looks overdue on its own
-  established rhythm**: three visual-change tasks have landed since wave 19
-  (132's listening posture, 133's rock shape vocabulary, 137's road-edge
-  fix), and every prior wave in this file fired after one to three such
-  tasks — worth checking the exact "visual count since wave N" trigger
-  language on run 133's own account (compressed into the run-135
-  consolidation's run index further down this file) before assuming a
-  panel is still owed rather than already due.
-
-- **HANDOFF, 2026-08-31 (run 138) — the 149/169 "night spikes" lead
-  measured and REFUTED; no code shipped.** Took up run 137's "worth a
-  direct look next run" pointer: task 149's one open sliver, "07's black
-  night spikes (value at night)." First hypothesis, from reading
-  `grassTuftGeometry` cold: its `paintGradient(root, tip)` call darkens a
-  blade's root and leaves the tip at pure white ("leave the instance
-  colour alone," the function's own doc comment) — a FIXED, hour-blind
-  contrast that could plausibly read as a stark bright/dark pair once
-  night's ambient crushes everything else dark. Built a fix (soften the
-  tip from 0xffffff toward the root colour) and went to verify it against
-  the pinned `07-night-campfire` pose before trusting it — this file's own
-  history is a long list of exactly this kind of plausible lever turning
-  out to be wrong (grep "REFUTED" for the pattern), and the standing rule
-  is to measure, not infer.
-  **First measurement attempt was itself wrong**: a scan line across the
-  meadow (`app.renderer.render()` + `gl.readPixels`, land-histogram.mjs's
-  own method) found a real spike — luma 17 baseline, 7 at one sample, 47
-  four pixels later — but it didn't move AT ALL after the fix shipped,
-  byte-identical RGB. That meant the fix was touching the wrong geometry
-  entirely, not that it didn't work. Root cause, found by raycasting every
-  instance's world position through the live camera to the nearest match
-  for that screen pixel (the same projection `scatter-probe.mjs` uses):
-  the closest object was `tree-conifer-30`, not a blade of grass — the
-  probe's own `app.renderer.render()` call also turned out to skip
-  `App`'s `finishing` pass (task 168's LUT/composite step, added after
-  `land-histogram.mjs` was written), so even the "trusted" method was
-  reading a pre-finishing buffer; routing through `app.finishing.render()`
-  instead changed the exact numbers but not the conclusion, and a SECOND
-  scan elsewhere in the open meadow (away from both trees and the fire's
-  light pool) found the same ~46-47 luma spike again, isolated to a single
-  4px sample with nothing but baseline on either side — the size and
-  repeatability point at a firefly/ember particle sprite (the campfire
-  scene's own floating embers, visibly present in a zoomed crop taken
-  along the way), not ground cover. The fix was REVERTED (`git checkout`)
-  rather than shipped on a refuted premise; tests and build confirmed
-  back to the unmodified green baseline (`dist` hash byte-identical to
-  before the attempt). The real, still-open question the wide screenshot
-  crops DID support by eye — a faint wavy/streaky texture across the dark
-  meadow that reads as less smooth than a "patch" should — was not
-  reduced to a number this run; a scanline that happens to cross a
-  particle or a tree edge is not a way to measure ground cover, and the
-  right instrument is `scatter-probe.mjs`'s own per-instance raycast
-  approach extended to sample actual rendered colour (not just
-  visibility) at many random ground points, excluding anything that
-  isn't a grass/fern instance. Sized as that instrument, not as a code
-  fix, for whichever run picks it up next. 1249 tests and the build are
-  unchanged and green (docs-only run). Next: build the ground-cover-colour
-  probe above and re-take this question with it, close out the rest of
-  169 (the 07 night-spike sliver was its one open item), the scatter
-  lower-left design question run 136 sized but didn't decide, the
-  hue-free distance wall, or wave 20.
-
-- **HANDOFF, 2026-08-31 (run 137) — task 143 shipped: the road's edge
-  commits instead of dissolving.** Picked up from run 136's "next" list
-  (task 169's family, folded from 143/144/149) rather than the scatter
-  design question, which the run-136 handoff explicitly left as a sized
-  future decision, not a default next step. `buildTerrain`'s shoulder
-  blend (`WorldStreamer.ts`, between the carriageway edge at u=1.7 and
-  the shoulder's end at u=2.9) carries the road-to-meadow transition in
-  vertex colour across two intermediate columns (u 2.1, 2.5); the blend
-  WEIGHT those columns commit to used to be `t * t`, easing gradually
-  toward meadow across the whole 1.2 m band from the road edge onward —
-  exactly the soft splat blend `docs/research/art-quality.md`'s adamgryu
-  note names ("winner-take-all... kills the soft road edge," the
-  splatmap highest-channel-wins trick). A literal hard step (true
-  winner-take-all) was considered and rejected: this file's own repeated
-  lesson is that a value corner at a vertex survives as a crease no
-  tuning removes, and a stepped blend would be exactly that corner.
-  Landed instead: `smoothstep(0.55, 1, t)`, which holds the two
-  intermediate columns at ~0% and ~17% meadow (vs. the old 11%/44%) and
-  concentrates the visible transition into the final 0.4 m, while
-  staying zero-slope at both ends like every other blend in the
-  function — no new crease. VERIFIED, not just built: postcards shot
-  before/after on 01-dawn-road, 02-morning-open and 03-noon-forest (the
-  three walking-phase frames closest to the road) — the carriageway
-  reads as ending at a place instead of bleeding into the field on all
-  three, no seam or artifact at the transition. `frame-quality` and
-  `shader-check` both PASS unchanged, 1249 tests green, build green.
-  Also corrected in passing: task 144's "the bard casts nothing" note
-  was stale — checked while scoping this, and the figure-shadow half
-  shipped long ago (task 179); only the terrain self-shadow half stays
-  parked/EXHAUSTED as already written. Task 169 itself (143/144/149
-  folded together) is now close to fully resolved — 149 has one open
-  sliver (07's night spikes, a value-at-night question) and nothing
-  else stands between it and being marked done; worth a direct look
-  next run rather than treating it as three separate open items. Next:
-  close out 169 (audit the 149 sliver, then mark it), the scatter
-  lower-left design question run 136 sized but didn't decide, the
-  hue-free distance wall, or wave 20 (due after ~one more visual-change
-  run per 133's count).
-
-- **HANDOFF, 2026-08-31 (run 136) — the scatter lower-left question run
-  134 left open, answered with real numbers instead of a screenshot.**
-  New instrument `tools/scatter-probe.mjs`: poses the live game to a
-  vista shot, walks the scene for every ordinary-scatter `InstancedMesh`
-  (`grass`/`fern`/`flower`/`reed`/`bankreed`/`bankgrass`/`shrub`/`log`/
-  `rock`/`roadgrass`/`roadstone`/`puddle` — never `tree-*`, which has its
-  own sentinel guarantee), projects each instance through the live
-  camera the same way `staging-probe.mjs` does, and buckets what's
-  actually inside the frame by screen quadrant. Run against
-  `04-golden-vista` (the pinned s=900 frame in question), the other
-  pinned vista shot (`11-morning-vista`), and six unpinned probe points
-  along the same `vista` mood (matching run 134's screenshot sweep
-  positions). Two findings, neither predicted by inference from the
-  screenshot: (1) **total scatter count in the lower-left is NOT
-  anomalously low at s=900** — 109-110 instances, squarely inside the
-  109-215 range the other seven sampled frames show (mean 156); the
-  "almost nothing there" read a judge gave the screenshot does not match
-  a raw census of what's actually placed there. (2) **What IS true, and
-  is the real, narrower fact underneath the visual complaint: s=900's
-  lower-left has zero instances of any large-form kind** (rock/shrub/
-  log/fern) — its 110 instances are entirely grass, flower, roadgrass
-  and roadstone, all thin ground cover with little silhouette mass. But
-  this is not unique to s=900 either: `probe s=1500`'s lower-left is
-  *also* entirely thin cover (grass/roadgrass/fern/flower/roadstone,
-  zero rock/shrub/log) — 2 of the 8 sampled frames come up empty of
-  large-form scatter in one quadrant, which is what "rare and
-  independently-drawn" (each clump's kind and side are separate coin
-  flips, `WorldStreamer.buildScatter` line ~3202) predicts, not what a
-  systemic placement fault would produce. **Conclusion: confirms and
-  sharpens run 134's "per-seed luck, not a fault"** — the lever isn't a
-  density bug (density is normal) or a placement bug (it recurs
-  elsewhere), it's that large-form scatter is sparse enough per-frame
-  (0-1 instances per quadrant in every sample here) that a quadrant
-  drawing zero of it is ordinary, not special to the pinned complaint
-  frame. NOT done, deliberately, per the standing measure-first rule:
-  no density constant or a rock/shrub/log-in-every-quadrant guarantee
-  (the `waysideSentinelSites`-style fix this would suggest) was added —
-  that's a real design decision (is a guaranteed anchor object per
-  near-camera quadrant worth the world feeling less randomly grown?),
-  sized as its own future task, not a side effect of this measurement.
-  `tools/scatter-probe.mjs` stays in the toolkit for the next time this
-  question comes up (documented in `tools/README.md`). Docs+tool-only;
-  1249 tests and the build are unchanged and green. Next: the hue-free
-  distance wall, wave 20 (due after ~one more visual-change run per
-  133's count), the large-form-anchor-per-quadrant design question this
-  run surfaced, or v1.3 (the family songbook queue).
-
-- **HANDOFF, 2026-08-30 (run 134) — the empty lower-left quadrant measured:
-  per-seed placement luck in one pinned frame, not a placement or camera
-  fault.** Wave 19's composition finding, taken next off run 133's list.
-  `postcard.mjs`'s `04-golden-vista` (s 900, day 0.8, the pinned `vista`
-  mood shot) reads with almost nothing in its lower-left — grass and one
-  rock — while the rest of the frame carries a river, trees and a distant
-  landmark. Before touching `CameraRig.ts` (whose vista framing has ~0.1
-  stop of headroom on the noon tonal gate and a documented history of
-  refuted blind levers — runs 105-107, 115, 126, 131), the standing rule
-  applied: measure first. A 9-position sweep of the same `vista` mood
-  across the rest of today's road (s 100-1900, plus the already-pinned
-  `11-morning-vista` at s 500) shows healthy, well-distributed foreground
-  mass on BOTH sides of frame at every other sampled position — 04 is the
-  outlier, not the pattern. `waysideSentinelSites` (task 167/180's tree
-  cadence guarantee) was queried directly for the chunks spanning s 900:
-  it is intact there (a left sentinel at s 874/920, a right one at s 862/
-  979 — both sides covered within ~80 m), so this is not the sentinel
-  system leaking a third time. What is left, uninvestigated, is ordinary
-  scatter (bush/rock/flower): unlike trees, those kinds have no cross-side
-  balance guarantee at all, and this frame's low roll on its near-camera
-  side is consistent with that gap rather than with any systemic bug —
-  the same shape of false alarm task 182 found in the noon gate ("rolling
-  dice on the road of the day"), except this ticket is pinned and will
-  read exactly this way every future wave, since 04's s/day never change.
-  NOT done, deliberately: no density or placement constant was tuned
-  blind. The sized next step, if this is worth a run: measure actual
-  world-space object positions inside the vista frustum at s 900 (not
-  infer from screenshots) before deciding whether a scatter-density floor
-  or a lateral-balance rule is the real lever. Also confirmed in passing,
-  not investigated: "horizon pinned to vertical midline" is true by
-  construction — `CameraRig`'s per-mood pitch is a fixed constant with no
-  variety term, so every frame in a given mood shares the exact same
-  horizon height forever. A deliberate camera-variety pass is a distinct,
-  properly-sized future task, not a side effect of this one. Docs-only;
-  1249 tests and the build are unchanged and green. Next: the hue-free
-  distance wall, the scatter-balance measurement above, or wave 20 (due
-  after ~one more visual-change run per 133's count).
+- **Runs 134, 136-143 (2026-08-30 – 2026-09-02), compressed by the run-145
+  consolidation — full accounts live in ROADMAP's numbered done-entries and
+  `tools/README.md`; run 144 above stays uncompressed as the most recent.**
+  134: the scatter lower-left question first measured (`scatter-probe.mjs`
+  built) — the pinned `04-golden-vista` frame's near-empty lower-left is
+  per-seed placement luck (healthy scatter at every other sampled
+  position), not a camera or sentinel fault; left as a design question
+  rather than tuned blind. 136: the same question answered with a full run
+  across eight frames — confirms per-seed luck; the real narrower fact is
+  that *large-form* scatter (rock/shrub/log/fern) is sparse enough per
+  quadrant that a quadrant drawing zero of it is ordinary; a
+  guaranteed-anchor-per-quadrant fix was sized but deliberately left as an
+  open design call, not built. 137: task 143 shipped — the road's shoulder
+  blend now commits to meadow in its final 0.4 m (`smoothstep`) instead of
+  dissolving gradually across the whole band; task 144's "no self-shadow"
+  note corrected (the figure-shadow half already shipped, task 179). 138:
+  the 149/169 "night spikes" lead measured and REFUTED — a speculative
+  grass-tuft contrast fix was built, found not to move the flagged pixel at
+  all, and traced instead to a firefly/ember particle plus a first-pass
+  measurement that (like 141 later confirmed project-wide) skipped the
+  finishing pass; fix reverted, instrument sized instead. 139:
+  `ground-cover-probe.mjs` built; TASK 149 CLOSED (folding in 169) — the
+  pinned `07-night-campfire` postcard poses at a stale `s` that streams in
+  zero grass/fern (a harness bug, not a game fault — real play can't
+  reproduce it), and at a corrected pose the dark-meadow banding share
+  (7-13%) sits at or below the noon baseline (16%/2%) — REFUTED with a
+  positive, traced cause rather than a shrug. 140: task 187 — fixed
+  `postcard.mjs`'s stale `s: 1400` for the `07` shot itself, so future
+  postcards show the resting camp's real ground cover instead of bare
+  terrain. 141: task 188 — the `app.renderer.render()` vs
+  `app.renderFrame()` finishing-pass discrepancy runs 138/139 flagged is
+  now fixed in every remaining tool (`postcard`, `frame-quality`,
+  `land-histogram`, `figground`, `figground-partition`, `shader-check`,
+  `shadowcast`); also fixed two tools' hardcoded Windows import paths that
+  had been crashing them outright on any other machine. 142: task 189
+  piece 1 — building a new fog-hue-band probe surfaced that
+  `land-histogram.mjs`'s sky mask has been silently broken since run 95 (a
+  magenta-sentinel check invalidated by the ACES/LUT grade, so it measured
+  land+sky together while its own `landShare` column read ~100%); fixed,
+  and the first corrected hue-band reading is inconclusive — a milkier
+  distance on enacting hours, not a literal one-hue wall. 143: task 189
+  piece 2 — widened the probe's pose set to 5 and found a sharper,
+  falsifiable hypothesis: far-band hue-spread rise tracks `landKey.ts`'s
+  pull amount, not the hour (later refuted by run 144's toggle test,
+  above). Every one of these runs was measurement, tooling, or a small
+  traced fix on the existing world — no new system, no code outside
+  `tools/` and one terrain-blend function, bundle unchanged at 902 KB
+  throughout.
 
 - **HANDOFF, 2026-08-30 (run 135) — CONSOLIDATION (drift control, every
   ~10th run; last was 120).** Drift check over runs 121-134: CLEAN — every

@@ -553,6 +553,29 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
 
 ## Changelog
 
+- 2026-09-03 (runs 136-144, consolidated at 145) — **the hue-band
+  investigation, and two harness lessons worth more than the fix it
+  didn't land.** Task 189 (v1.1's "hue-free distance wall" lead) ran three
+  measurement pieces without ever landing a shader change: piece 1 found
+  and fixed a real bug on the way in (`land-histogram.mjs`'s sky mask had
+  been silently broken since run 95's finishing-pass grade, reading
+  land-and-sky together on every measurement since); piece 2 found a clean
+  correlation (far-band hue spread tracks `landKey.ts`'s pull amount) and
+  proposed a mechanism; piece 3's toggle test refuted that mechanism
+  outright — the gap grew, not collapsed, with the key forced off. Task
+  143 shipped alongside it: the road's shoulder now commits to meadow in
+  its final 0.4 m instead of dissolving across the whole band. Both
+  lessons — audit every offline pixel-reading tool when a post-process
+  pass ships, and a real correlation still needs its own direct test
+  before the mechanism built on it is trusted — are now recorded in
+  `docs/research/art-quality.md`'s "Findings from shipped work" section.
+  Drift check clean: every run in the block was measurement, a tooling
+  fix, or a small verified-live terrain fix on the existing world; no new
+  systems, bundle 902 KB of 5 MB. STATE trimmed: the individual handoffs
+  for runs 134 and 136-143 compressed to a run index (ROADMAP's numbered
+  done-entries carry the full accounts) — this file's "At a glance"
+  section 4227 → 3858 lines. NOTHING CUT.
+
 - 2026-08-30 (runs 121-134, consolidated at 135) — **the v0.9 arc closes
   for good, and the art loop turns to characters and shapes.** Task 157
   (two device bookmarks, zero-migration) shipped across three pieces,
