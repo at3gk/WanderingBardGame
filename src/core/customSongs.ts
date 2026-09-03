@@ -16,9 +16,15 @@ import { bookmarkKey } from './profiles';
  * because the composing already happened at the tap — this only records
  * it.
  *
- * Piece 2 wires a recording UI onto `freePlay.ts` and a "my songs" shelf
- * into `songChoice.ts`'s menu; this piece is deliberately usable and
- * fully tested on its own first.
+ * Piece 2 (below, `RecordingSession` onward) is the recording door's own
+ * state machine — still pure, still no UI. It turned out free play itself
+ * (`freePlay.ts`) has no live screen yet: nothing in `three/RoadStage.ts`
+ * imports it, so "point at staff positions and hear them" today only
+ * happens inside a carried song's fireside rehearsal, not in an open,
+ * tap-anything mode. That changes what the next piece is — it must build
+ * free play's screen for the first time, recording built in from the
+ * start, not bolt a record button onto an existing one. See ROADMAP task
+ * 176's piece-2 done-note.
  */
 
 /** One tap in, one quarter note out — the only duration this mode writes. Longer/shorter notes are a later piece, not "zero parsing". */
@@ -193,4 +199,64 @@ export function deleteCustomSong(id: string): void {
   const existing = loadCustomSongs();
   const next = existing.filter((s) => s.id !== id);
   if (next.length !== existing.length) writeCustomSongs(next);
+}
+
+/**
+ * The recording door (ROADMAP task 176, piece 2): the state a "record my
+ * own tune" screen needs, kept as plain, immutable data so a UI can hold
+ * it in whatever form it likes (component state, a Three.js scene field)
+ * without this module knowing about either. `recording` gates whether a
+ * tap counts; `steps` is exactly the sequence `saveCustomSong` wants.
+ */
+export interface RecordingSession {
+  readonly recording: boolean;
+  readonly steps: readonly number[];
+}
+
+/** Before the first tap, or after a save/cancel — nothing captured yet. */
+export const EMPTY_RECORDING: RecordingSession = { recording: false, steps: [] };
+
+/** The record button, pressed: a fresh, empty take. Any earlier take not yet saved is simply gone — silent discard is right here, the same as walking away from an unsent draft. */
+export function startRecording(): RecordingSession {
+  return { recording: true, steps: [] };
+}
+
+/**
+ * One tap on the free-play staff, while recording. Taps that arrive
+ * outside a recording (the mode a child is in most of the time) are a
+ * no-op, returning the same session unchanged — free play's ordinary
+ * point-and-hear behaviour is untouched by this module.
+ */
+export function recordTap(session: RecordingSession, step: number): RecordingSession {
+  if (!session.recording) return session;
+  return { recording: true, steps: [...session.steps, step] };
+}
+
+/** The stop button: freezes the take (no more taps accepted) so the name prompt can show a stable count while it's open. */
+export function stopRecording(session: RecordingSession): RecordingSession {
+  return { recording: false, steps: session.steps };
+}
+
+/** "Not yet, keep tapping": reopens a stopped take without losing what was already captured — what the declined-kindly message leads into when the problem is simply too few notes so far. */
+export function resumeRecording(session: RecordingSession): RecordingSession {
+  return { recording: true, steps: session.steps };
+}
+
+/**
+ * A live read on whether the take so far could be saved, without needing
+ * a name yet — lets the screen show the same words `saveCustomSong` would
+ * decline with (e.g. "needs at least 16 notes to sound like a tune")
+ * while the child is still tapping, rather than only at the name prompt.
+ * `null` while recording is active is not a promise the take is done —
+ * only `engravingProblem` on the frozen take, after stop, is the real
+ * gate; this is guidance, not validation.
+ */
+export function recordingProblem(steps: readonly number[]): string | null {
+  if (steps.length === 0) return 'needs at least one note';
+  return engravingProblem(buildCustomSong('preview', 'preview', steps));
+}
+
+/** The name prompt, confirmed: hands the frozen take to `saveCustomSong`, which validates and declines kindly exactly as piece 1 already does. */
+export function finishRecording(session: RecordingSession, title: string): SaveCustomSongResult {
+  return saveCustomSong(title, session.steps);
 }

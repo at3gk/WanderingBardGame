@@ -54,10 +54,16 @@ makes it long. You do not need to read it top to bottom.
   without landing a replacement mechanism counted as that natural pause,
   so run 146 shipped v1.3's **task 176 piece 1** (the song maker's data
   layer — see its done-note, below its own numbered entry) instead of
-  continuing the art-quality loop. The live queue as of run 146 is v1.3,
-  task 176 piece 2 (the recording UI) next — task 189's far-band lead and
-  the v1.1 queue are still open and worth returning to, just not
-  automatically "next" anymore.
+  continuing the art-quality loop.
+- **Run 147 update**: piece 2 turned out to need a scope split of its own
+  — free play has no live screen anywhere in `three/`, so "wire a record
+  button onto it" was never actually one run's work; see task 176's
+  piece-2 done-note for the full account. Run 147 shipped the recording
+  door's pure state machine only. The live queue as of run 147 is v1.3,
+  task 176 piece 3 (build free play's actual tap screen, record button
+  and name prompt included) next — task 189's far-band lead and the v1.1
+  queue are still open and worth returning to, just not automatically
+  "next" anymore.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -2079,6 +2085,36 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     custom songs in the songbook picker so a walk can carry one. 1270
     tests (+21), build green (902 KB, unchanged — pure logic, no new
     dependency).
+    **Piece 2 done (2026-09-03, run 147): the recording door's own state
+    machine — and a real scope correction.** Before writing UI, checked
+    what "practice mode already lets a child point at staff positions"
+    (this task's own premise) is actually wired to: nothing. `freePlay.ts`
+    is imported by no `three/` file — grep across `src` finds it only in
+    its own test and in `customSongs.ts`. The tap-and-hear experience that
+    exists live (`RoadStage.ts`'s fireside rehearsal) plays a CARRIED
+    song's own notes from the walk's beat clock; it is not an open,
+    tap-anywhere free-play screen. So "wire a record button onto the
+    existing free-play screen" was never actually this piece's size —
+    that screen has to be built once before anything can be recorded on
+    it, which is a bigger, riskier (visual/input) piece than one run
+    should take blind. This run instead built and fully tested the part
+    that doesn't need a screen to exist first: `customSongs.ts` gains
+    `RecordingSession` (`{recording, steps}`, plain immutable data so any
+    future UI shape can hold it) and `startRecording`/`recordTap`
+    (no-ops once stopped or on `EMPTY_RECORDING`, by reference equality)/
+    `stopRecording`/`resumeRecording` (the declined-kindly path: too few
+    notes leads back into capture, nothing already tapped is lost)/
+    `recordingProblem` (previews `engravingProblem`'s own words while
+    still tapping, so a live count can read "needs 3 more notes" before
+    the name prompt ever opens)/`finishRecording` (hands the frozen take
+    to piece 1's `saveCustomSong` unchanged). 10 new tests. Remaining 176,
+    now sized honestly: build free play's actual screen (the staff render
+    + tap input `freePlay.ts`'s geometry functions were always meant to
+    back), with the record button and this session type wired in from
+    day one, then the name-prompt dialog calling `finishRecording`, then
+    the "my songs" shelf in `songChoice.ts`'s picker so a walk can carry
+    one. 1280 tests (+10), build green (902 KB, unchanged — pure logic,
+    no new dependency).
 177. **MIDI import.** Dependency-free parser (the format is simple);
     melody extraction (single track direct, polyphonic via top-note
     skyline); quantize to the songbook's note values; auto-transpose
