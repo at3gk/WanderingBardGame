@@ -11,7 +11,9 @@ index in "At a glance" by the run-145 consolidation — see there); run 144
 toggled landKeyAmount to 0 and found the opposite of piece 2's prediction,
 refuting its mechanism (task 189 piece 3); run 145 was the consolidation
 pass; run 146 turned to the untouched v1.3 queue and shipped task 176's
-data layer, the song maker's storage/validation core)
+data layer, the song maker's storage/validation core; run 147 shipped task
+176 piece 2, the recording door's state machine, and found free play has
+no live screen yet to attach it to)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -93,6 +95,44 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-03 (run 147) — task 176 piece 2: the recording
+  door's state machine, and a scope correction worth knowing before the
+  next run touches this task.** Set out to wire a record button onto free
+  play's existing screen; found there isn't one. `freePlay.ts` — the
+  staff-layout module task 176's own description assumes is already
+  live ("practice mode already lets a child point at staff positions and
+  hear them") — is imported nowhere under `three/`; grep across `src`
+  turns it up only in its own test and in `customSongs.ts`. The tap-and-
+  hear experience that DOES exist live is `RoadStage.ts`'s fireside
+  rehearsal, and it plays a carried song's own notes off the walk's beat
+  clock — an unguided *replay*, not an open tap-anywhere instrument.
+  So "add recording to the existing free-play UI" was never this piece's
+  actual size; that UI has to be built first, and building a staff-render-
+  plus-touch-input screen blind, in one run, with no way to eyeball it
+  before pushing, is a materially riskier piece than a pure-logic one.
+  Shipped what doesn't need the screen to exist first instead:
+  `customSongs.ts` gains `RecordingSession` (`{recording, steps}`, plain
+  immutable data so whatever UI shape gets built later can hold it
+  without this module caring), `startRecording`/`recordTap` (a genuine
+  no-op — same object reference back — once stopped or on
+  `EMPTY_RECORDING`)/`stopRecording`/`resumeRecording` (the declined-
+  kindly path: too few notes reopens capture without losing what was
+  already tapped)/`recordingProblem` (previews `engravingProblem`'s own
+  words live, so a "needs 3 more notes" readout can show while still
+  tapping, before the name prompt ever opens)/`finishRecording` (hands
+  the frozen take straight to piece 1's `saveCustomSong`, unchanged). 10
+  new tests, all pure — no game `src/three` or `src/ui` file touched.
+  `npm test` 1280 green (+10), `npm run build` green, bundle unchanged at
+  902 KB (pure logic, zero new dependencies). Next: task 176 piece 3 is
+  now correctly sized as "build free play's actual tap screen" (staff
+  render + touch input, `freePlay.ts`'s geometry functions are already
+  there and tested, waiting) with the record button and this run's
+  `RecordingSession` wired in from the start, then the name-prompt
+  dialog, then the "my songs" shelf in `songChoice.ts`'s picker — this is
+  a bigger, UI-risk piece and may itself want splitting further once
+  it's actually started; task 189's far-band lead and the scatter design
+  question are still open if the art-quality loop is preferred instead.
 
 - **HANDOFF, 2026-09-03 (run 146) — task 176 piece 1: the song maker's
   data layer.** Run 145's own "Next" pointer offered task 189's far-band

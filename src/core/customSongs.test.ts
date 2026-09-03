@@ -3,15 +3,22 @@ import { setActiveBookmark } from './profiles';
 import { semitoneAtStep } from './notation';
 import {
   CUSTOM_SONG_BEATS_PER_BAR,
+  EMPTY_RECORDING,
   MAX_CUSTOM_SONGS,
   MIN_CUSTOM_SONG_NOTES,
   buildCustomSong,
   deleteCustomSong,
   engravingProblem,
+  finishRecording,
   isCustomSongId,
   loadCustomSongs,
   notesFromSteps,
+  recordTap,
+  recordingProblem,
+  resumeRecording,
   saveCustomSong,
+  startRecording,
+  stopRecording,
 } from './customSongs';
 
 // Same in-memory localStorage stub profiles.test.ts uses — the node test
@@ -203,5 +210,93 @@ describe('saveCustomSong / loadCustomSongs / deleteCustomSong', () => {
   it('ignores corrupt storage instead of throwing', () => {
     globalThis.localStorage.setItem('wb.customsongs.v1', '{not json');
     expect(loadCustomSongs()).toEqual([]);
+  });
+});
+
+describe('the recording door (task 176 piece 2)', () => {
+  it('starts empty and recording', () => {
+    const session = startRecording();
+    expect(session.recording).toBe(true);
+    expect(session.steps).toEqual([]);
+  });
+
+  it('appends each tap to the take, in order, while recording', () => {
+    let session = startRecording();
+    session = recordTap(session, 4);
+    session = recordTap(session, 7);
+    expect(session.steps).toEqual([4, 7]);
+    expect(session.recording).toBe(true);
+  });
+
+  it('ignores taps once stopped — the same session comes back unchanged', () => {
+    let session = startRecording();
+    session = recordTap(session, 4);
+    session = stopRecording(session);
+    const after = recordTap(session, 7);
+    expect(after).toBe(session); // same reference: a genuine no-op
+    expect(after.steps).toEqual([4]);
+  });
+
+  it('ignores taps on a session that was never recording (EMPTY_RECORDING)', () => {
+    expect(recordTap(EMPTY_RECORDING, 4)).toBe(EMPTY_RECORDING);
+  });
+
+  it('stop freezes the take without losing it', () => {
+    let session = startRecording();
+    session = recordTap(session, 1);
+    session = recordTap(session, 2);
+    const stopped = stopRecording(session);
+    expect(stopped.recording).toBe(false);
+    expect(stopped.steps).toEqual([1, 2]);
+  });
+
+  it('resume reopens a stopped take for more taps without dropping what was captured', () => {
+    let session = startRecording();
+    session = recordTap(session, 1);
+    session = stopRecording(session);
+    session = resumeRecording(session);
+    expect(session.recording).toBe(true);
+    session = recordTap(session, 2);
+    expect(session.steps).toEqual([1, 2]);
+  });
+
+  it('starting a fresh recording discards whatever the last take held', () => {
+    let session = startRecording();
+    session = recordTap(session, 1);
+    session = stopRecording(session);
+    const fresh = startRecording();
+    expect(fresh.steps).toEqual([]);
+    expect(fresh.recording).toBe(true);
+  });
+
+  describe('recordingProblem', () => {
+    it('mirrors engravingProblem\'s words for a live, in-progress take', () => {
+      expect(recordingProblem([])).toMatch(/at least one note/);
+      expect(recordingProblem([0, 1, 2, 3])).toMatch(/at least/); // one whole bar, still short
+      expect(recordingProblem(validSteps())).toBeNull();
+    });
+  });
+
+  describe('finishRecording', () => {
+    it('saves the frozen take under the given title, same as saveCustomSong', () => {
+      let session = startRecording();
+      for (const step of validSteps()) session = recordTap(session, step);
+      session = stopRecording(session);
+
+      const result = finishRecording(session, 'My Recorded Tune');
+      expect('song' in result).toBe(true);
+      expect(loadCustomSongs()).toHaveLength(1);
+      expect(loadCustomSongs()[0].title).toBe('My Recorded Tune');
+    });
+
+    it('declines kindly, same as saveCustomSong, without touching storage', () => {
+      let session = startRecording();
+      session = recordTap(session, 0);
+      session = stopRecording(session);
+
+      const result = finishRecording(session, 'Too Short');
+      expect('error' in result).toBe(true);
+      expect(loadCustomSongs()).toEqual([]);
+    });
   });
 });
