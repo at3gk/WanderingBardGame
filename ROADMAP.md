@@ -64,6 +64,17 @@ makes it long. You do not need to read it top to bottom.
   and name prompt included) next — task 189's far-band lead and the v1.1
   queue are still open and worth returning to, just not automatically
   "next" anymore.
+- **Run 148 update**: piece 3 split again, on purpose — this environment
+  now has a headless browser available (Playwright/Chromium, pre-installed
+  but not previously used by any run), which removes the "no way to
+  eyeball it before pushing" reason runs 146-147 gave for staying off the
+  screen, but the screen's *reachability* (a menu entry, `App`/`Hud`'s mode
+  machinery, no human review before auto-merge) is still a separately-sized
+  risk from the screen's *rendering*. So piece 3 shipped the rendering half
+  only — see task 176's piece-3 done-note. Live queue as of run 148: task
+  176 piece 4 (wire the screen into a real entry point, plus the record
+  button and name prompt) next; task 189's far-band lead and the v1.1
+  queue remain open alternatives.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -2115,6 +2126,54 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     the "my songs" shelf in `songChoice.ts`'s picker so a walk can carry
     one. 1280 tests (+10), build green (902 KB, unchanged — pure logic,
     no new dependency).
+    **Piece 3 done (2026-09-04, run 148): the screen itself — staff render
+    and tap-to-hear, verified live, not yet reachable.** New
+    `src/ui/freePlayScreen.ts`: a full-screen DOM overlay (styled off
+    `Hud.ts`'s own tokens — `BOOK_FACE`, the ink colour — for a consistent
+    voice) that draws the five real staff lines (`notation.ts`'s
+    `STAFF_LINE_STEPS`) plus the two ledger marks `needsLedger` names at
+    the ladder's own ends, using `freePlay.ts`'s existing, already-tested
+    `freePlayStaff`/`freePlayStepY` geometry unchanged. One `pointerdown`
+    listener spanning the whole screen (not thirteen per-row hit targets)
+    calls `freePlayStepAt`, which was always written to clamp to the
+    nearest step across the *whole* ladder — a tap short of the top or
+    bottom note plays that note, never nothing, by the module's own
+    design. A tap plays the pitch (`instrumentVoice.ts`'s `playVoiceNote`,
+    the exact call `RoadStage.ts`'s own `playPitch` already makes for
+    every other sounded note in the game, so this reuses rather than
+    reinvents the audio path) and shows the letter name at the tapped
+    step for under a second — "position → sound → name", `freePlay.ts`'s
+    own phrase for the pedagogy this screen exists to serve.
+    Deliberately split from reachability: no menu, corner, or mode
+    anywhere offers this screen yet, and no recording UI is wired in —
+    both stay piece 4's work, because in this project's auto-merge cycle
+    (green CI merges with no human review) those are integration risk
+    genuinely separate from rendering risk, and bundling them would have
+    made one run's diff both the first live screen AND the first change
+    to `App`/`Hud`'s mode machinery. Verified live rather than by unit
+    test, matching how this codebase already treats every DOM-heavy
+    module (`Hud.ts` itself has no test file; vitest's own config runs
+    `environment: 'node'`, not `jsdom`) — a temporary harness page (not
+    committed) driven by the `tools/browser.mjs` Playwright setup other
+    tools already use confirmed: the five lines and two ledger marks
+    render at the right screen positions; a tap at the vertical middle
+    sounds and labels B4 (the middle staff line); a tap above the top
+    ledger and a tap below the bottom one both clamp instead of missing,
+    landing on A5 and C4 respectively; the close mark unmounts the screen
+    cleanly with no console errors beyond the expected autoplay-policy
+    warning. This is the first run to use the environment's headless
+    browser at all — worth other runs knowing it is there now for any
+    future DOM/UI verification. No existing file was touched (additive
+    only, zero behaviour change to anything shipped today); `npm test`
+    1280 green (unchanged — this file has no tests of its own, by the
+    same convention as `Hud.ts`), `npm run build` green (902 KB,
+    unchanged: an unimported module is tree-shaken out entirely). Next:
+    piece 4 — wire `FreePlayScreen` into an actual entry point (a corner
+    or menu row, `App`/`Hud`'s mode machinery), then the record button
+    (`customSongs.ts`'s `RecordingSession` calls slot into `tap()`
+    alongside `sound()`) and the name-prompt dialog calling
+    `finishRecording`, then the "my songs" shelf in `songChoice.ts`'s
+    picker.
 177. **MIDI import.** Dependency-free parser (the format is simple);
     melody extraction (single track direct, polyphonic via top-note
     skyline); quantize to the songbook's note values; auto-transpose
