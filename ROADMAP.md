@@ -75,6 +75,14 @@ makes it long. You do not need to read it top to bottom.
   176 piece 4 (wire the screen into a real entry point, plus the record
   button and name prompt) next; task 189's far-band lead and the v1.1
   queue remain open alternatives.
+- **Run 149 update**: piece 4 split too, along the same seam run 148
+  named ("the record button plus name prompt" is its own UI-risk piece,
+  separate from reachability). Shipped reachability only: the songbook's
+  "Make a song ♪" row opens `FreePlayScreen` live, no new `HudMode`
+  needed — see task 176's piece-4 done-note. Live queue as of run 149:
+  task 176 piece 4's remainder (the record toggle, the name-prompt
+  dialog, the "my songs" shelf in the songbook) next; task 189's
+  far-band lead and the v1.1 queue remain open alternatives.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -2174,6 +2182,46 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     alongside `sound()`) and the name-prompt dialog calling
     `finishRecording`, then the "my songs" shelf in `songChoice.ts`'s
     picker.
+    **Piece 4 done, first slice (2026-09-04, run 149): reachability —
+    the songbook's "Make a song ♪" row.** Checked `App`/`Hud`'s mode
+    machinery before touching it: a new `HudMode` was the feared cost,
+    but the row is gated by the *existing* `bookPickable()` rule (mode
+    `'walking'`/`'resting'`, never `'busking'`) every other book row
+    already gets, so none was needed. Also checked `hudLayout.ts`
+    before reaching for a new corner: there are exactly four
+    (`coins`/`instrument`/`song`/`journal`), each hand-tuned, and a
+    fixed offset hung off a proportional anchor is this codebase's own
+    named recurring bug — a fifth corner for one row would have risked
+    exactly that. The songbook already has the right shape instead: a
+    "no handler, no row" contract (`onKeepsake`/`onWalkOn`/`onPostcard`
+    each add a row only once wired) and paging that already handles one
+    more row than fits. So `Hud.ts` gains `onFreePlay(handler)`, and
+    `bookRows()` appends "Make a song ♪" last (after every song, so
+    paging to it never bumps a song off the first page), carrying a
+    `freePlay: true` flag rather than reusing the wander row's `id:
+    null` shape, so the existing row click-handler can route it to the
+    new callback instead of `songChosen(null)`. `RoadStage.ts` wires
+    `hud.onFreePlay(() => this.openFreePlay())`; `openFreePlay()` calls
+    `startAudio()` first (the row's own tap is the required gesture,
+    same reasoning `tap()` already uses) then constructs
+    `FreePlayScreen` on the stage's own `hudHost` (now a stored field;
+    was inline-only before) with `musicBus ?? master` and
+    `instrument().voice` — everything `FreePlayScreen` needs was already
+    held by `RoadStage`, so this needed no new plumbing. Verified live
+    with `tools/browser.mjs` (Playwright installed ad hoc per
+    `tools/README.md`, not a project dependency): the row is present and
+    tappable from a fresh load, tapping it opens the screen (piece 3's
+    hint text visible), a mid-screen tap sounds and labels B4 exactly as
+    piece 3's own harness found, and the × control closes it cleanly —
+    zero console/page errors. `npm test` 1280 green (unchanged — a menu
+    wire-up, no new pure logic), `npm run build` green, bundle 902→906 KB
+    (`freePlayScreen.ts` is no longer unimported and tree-shaken out, now
+    that something reaches it — the task's first real bundle cost, still
+    well under budget). No new runtime dependency. Deliberately NOT this
+    slice: the record toggle, `finishRecording`/name-prompt wiring
+    (run 147's `RecordingSession` machinery is still unattached to any
+    UI), and the "my songs" shelf in `songChoice.ts`'s picker — all
+    still piece 4's remaining, UI-risk work.
 177. **MIDI import.** Dependency-free parser (the format is simple);
     melody extraction (single track direct, polyphonic via top-note
     skyline); quantize to the songbook's note values; auto-transpose

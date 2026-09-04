@@ -64,6 +64,7 @@ import {
   withinBand,
 } from './roadStaging';
 import { BOOK_FACE, Hud, type SongEntry } from '../ui/Hud';
+import { FreePlayScreen } from '../ui/freePlayScreen';
 import { tomorrowSkyline } from '../core/skyline';
 import { dayKey, legRoadKey, legSeed, mulberry32, randRange, subSeed } from '../core/rng';
 import {
@@ -291,6 +292,9 @@ export class RoadStage implements Stage {
   private readonly actors = new Group();
   private readonly notes: SongNotes;
   private readonly hud: Hud;
+  private readonly hudHost: HTMLElement;
+  /** The free-play staff (task 176 piece 4), open at most one at a time. */
+  private freePlayScreen: FreePlayScreen | null = null;
 
   private journey: JourneyState;
   /**
@@ -587,7 +591,8 @@ export class RoadStage implements Stage {
     this.world.update(this.journey.s);
     this.syncSubject();
 
-    this.hud = new Hud(options.hudHost ?? document.body);
+    this.hudHost = options.hudHost ?? document.body;
+    this.hud = new Hud(this.hudHost);
     this.hud.setCoins(this.journey.coins);
     this.hud.setInstrument(this.instrument().name);
     this.hud.onInstrumentChosen((id) => this.takeOut(id));
@@ -595,6 +600,7 @@ export class RoadStage implements Stage {
     this.hud.onKeepsake((action) => this.keepsake(action));
     this.hud.onWalkOn(() => this.walkOn());
     this.hud.onPostcard(() => this.pressPostcard());
+    this.hud.onFreePlay(() => this.openFreePlay());
     // The other bookmark's page (task 157 piece 3): offered only when the
     // other bench cushion holds a journey at all. Composed lazily at tap
     // time so it reads whatever their record says TONIGHT, and their road
@@ -2387,6 +2393,31 @@ export class RoadStage implements Stage {
     });
   }
 
+  /**
+   * Open the free-play staff (task 176 piece 4): the songbook's "Make a
+   * song" door. `startAudio` runs first for the same reason `tap()` runs
+   * it — this row's own pointerdown is the gesture, and a browser will not
+   * hand out an AudioContext without one. If audio genuinely cannot start
+   * (`audioFailed`), the screen stays unopened rather than opening silent
+   * and unexplained; the songbook itself remains reachable either way.
+   */
+  private openFreePlay(): void {
+    if (this.freePlayScreen) return;
+    this.startAudio();
+    const ctx = this.ctx;
+    const destination = this.musicBus ?? this.master;
+    if (!ctx || !destination) return;
+    this.freePlayScreen = new FreePlayScreen(this.hudHost, ctx, destination, {
+      voice: this.instrument().voice,
+      onClose: () => this.closeFreePlay(),
+    });
+  }
+
+  private closeFreePlay(): void {
+    this.freePlayScreen?.destroy();
+    this.freePlayScreen = null;
+  }
+
   /** One exact pitch through the current instrument, `delaySec` from now. */
   private playPitch(semitone: number, delaySec: number): void {
     const ctx = this.ctx;
@@ -2858,6 +2889,7 @@ export class RoadStage implements Stage {
     this.app.renderer.domElement.removeEventListener('pointerdown', this.onPointerDown);
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('pagehide', this.onPageHide);
+    this.freePlayScreen?.destroy();
     this.hud.dispose();
     this.notes.dispose();
     for (const entry of this.fields) {
