@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 146 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 148 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -10,10 +10,12 @@ investigation and task 143's shoulder-blend fix (compressed into a run
 index in "At a glance" by the run-145 consolidation — see there); run 144
 toggled landKeyAmount to 0 and found the opposite of piece 2's prediction,
 refuting its mechanism (task 189 piece 3); run 145 was the consolidation
-pass; run 146 turned to the untouched v1.3 queue and shipped task 176's
-data layer, the song maker's storage/validation core; run 147 shipped task
-176 piece 2, the recording door's state machine, and found free play has
-no live screen yet to attach it to)
+pass; run 146 shipped task 176 piece 1 (the song maker's data layer); run
+147 shipped task 176 piece 2 (the recording door's state machine) and
+found free play had no live screen to attach it to; run 148 shipped task
+176 piece 3 (the screen itself — staff render + tap-to-hear), verified
+live for the first time with this environment's headless browser, still
+not wired into any real entry point)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -95,6 +97,54 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-04 (run 148) — task 176 piece 3: free play's screen
+  itself, built and verified live, deliberately not yet reachable.** Run
+  147 left piece 3 sized as "build free play's actual tap screen," flagged
+  as UI-risk and likely needing its own split. Before starting, checked
+  whether this environment can actually verify DOM/canvas UI live — it
+  can: Chromium is pre-installed (`PLAYWRIGHT_BROWSERS_PATH`) and
+  `tools/browser.mjs` already knows how to launch it; `playwright` itself
+  just wasn't an npm dependency, so `npm install --no-save playwright` (not
+  committed, not in package.json/lock) made it importable for this run's
+  manual check. That resolves the "no way to eyeball it before pushing"
+  reason runs 146-147 gave for staying off this task — but it does NOT
+  resolve the other risk: this project's auto-merge cycle has no human
+  review, and wiring a brand-new screen into `App`/`Hud`'s mode machinery
+  (today: `'walking' | 'busking' | 'encounter' | 'resting'`, nothing else)
+  is integration risk genuinely separate from rendering risk. So piece 3
+  split again, cleanly along that seam: new `src/ui/freePlayScreen.ts`
+  (~230 lines) renders the ladder — five staff lines at `notation.ts`'s
+  `STAFF_LINE_STEPS`, two ledger marks at the ends `needsLedger` names,
+  laid out with `freePlay.ts`'s own untouched `freePlayStaff`/
+  `freePlayStepY` — and wires a tap anywhere on the screen (one listener,
+  not thirteen hit targets, because `freePlayStepAt` already clamps to the
+  nearest step by design) to `instrumentVoice.ts`'s `playVoiceNote` (the
+  same call `RoadStage.ts`'s `playPitch` makes for every other note in the
+  game) plus a fading letter label — "position → sound → name". No menu,
+  button, or mode offers this screen to a player yet, and no recording is
+  wired in; both are piece 4. Verified with a throwaway, uncommitted
+  harness page (`freeplay-harness.html`/`.ts`, deleted before this commit)
+  driven by a Playwright script against `npm run dev`: five lines + two
+  ledgers render at the right y-positions; a mid-screen tap sounds and
+  labels B4 (the middle line); a tap above the top ledger and below the
+  bottom one both clamp to A5/C4 instead of missing; the close mark
+  unmounts cleanly with zero console errors beyond the expected
+  autoplay-policy warning (an automated click isn't a real user gesture).
+  This is the first run to use the environment's browser at all — it is
+  there for any future run that needs to actually look at a screen instead
+  of reasoning about it blind. `Hud.ts` itself has no test file and vitest
+  runs `environment: 'node'`, so this module follows the same
+  verify-live-not-in-vitest convention rather than adding a DOM test
+  framework dependency. No existing file touched: `npm test` 1280 green
+  (unchanged, this file has no tests of its own), `npm run build` green
+  (902 KB, unchanged — an unimported module is tree-shaken out entirely).
+  Next: task 176 piece 4 — give `FreePlayScreen` an actual entry point
+  (a corner or menu row, and the `App`/`Hud` mode wiring that needs), then
+  the record button (`customSongs.ts`'s `RecordingSession` calls slot into
+  `tap()` next to `sound()`) and the name-prompt dialog, then the "my
+  songs" shelf in `songChoice.ts`'s picker; task 189's far-band lead and
+  the v1.1 queue remain open if a change of lane is preferred instead.
 
 - **HANDOFF, 2026-09-03 (run 147) — task 176 piece 2: the recording
   door's state machine, and a scope correction worth knowing before the
