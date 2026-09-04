@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 148 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 150 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -18,7 +18,10 @@ live for the first time with this environment's headless browser, still
 not wired into any real entry point; run 149 shipped task 176 piece 4's
 first slice — the songbook's "Make a song" row, the free-play screen's
 first real entry point, reachability only — recording and the name
-prompt still don't exist)
+prompt still don't exist; run 150 shipped task 176 piece 4's next slice —
+the record toggle and name-prompt dialog, wiring run 147's
+`RecordingSession` machinery into the screen for the first time — the
+"my songs" shelf in the songbook picker is piece 4's one remaining slice)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -100,6 +103,56 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-04 (run 150) — task 176 piece 4, next slice: the
+  record toggle and name-prompt dialog.** Run 149 shipped reachability
+  (the songbook's "Make a song ♪" row); this run wired run 147's
+  `RecordingSession` machinery (still untouched since it shipped) into
+  `freePlayScreen.ts` for the first time. The record button reuses
+  `customSongs.ts`'s own documented semantics rather than inventing new
+  ones: pressed while idle it calls `startRecording`; pressed while
+  recording it calls `stopRecording`, which freezes the take. A frozen
+  take `recordingProblem` still declines (too few notes, doesn't fill a
+  bar, etc.) shows that exact engraving-rule message plus one "keep
+  tapping" link (`resumeRecording`) — no separate "discard" concept was
+  built, because the module's own doc comment on `startRecording` already
+  says pressing record again from that state silently discards the
+  earlier take, so the record button IS the discard action. A frozen
+  take with no problem opens a name dialog automatically (scrim + panel,
+  styled off `Hud.ts`'s own tokens); "Cancel" there calls `resumeRecording`
+  too, so an accidental cancel never loses tapped work. "Save" calls
+  `finishRecording`, which validates through piece 1's `saveCustomSong`
+  unchanged and shows its error inline on failure (e.g. the songbook page
+  full at 8) rather than closing the dialog. On success the hint line
+  flashes "Saved "&lt;title&gt;" — find it in your songbook." for 2.6s
+  before reverting to whatever state applies. While recording, every tap
+  still sounds and labels exactly as before (`tap()` gained one line:
+  `recordTap` alongside `sound()`/`showLabel()`) — free play's ordinary
+  point-and-hear behaviour is unchanged when not recording, per
+  `recordTap`'s own no-op guarantee.
+  Verified live with `tools/browser.mjs` (Playwright, ad hoc per
+  `tools/README.md`) end to end from a fresh load: opened the songbook,
+  turned the page to reach "Make a song ♪" (it's the LAST row, after
+  every song — a detail worth other runs knowing since it means the row
+  is never on the book's first page once there are enough songs to
+  paginate), tapped it, recorded 16 notes, stopped, named it "Test Tune",
+  saved — `localStorage['wb.customsongs.v1']` held exactly one song with
+  that title and 16 notes afterward. Separately verified: a 4-note take
+  (a full bar, still under the 16-note floor) declines with "needs at
+  least 16 notes to sound like a tune"; "keep tapping" resumes it;
+  pressing record again from that stopped-with-problem state silently
+  discards it and starts a fresh 0-note take; cancelling the name dialog
+  on a clean 16-note take resumes recording rather than losing it, and
+  nothing extra got saved. Zero console/page errors across the whole
+  run. `npm test` 1280 green (unchanged — this file still has no test of
+  its own, by the same DOM-heavy-module convention `Hud.ts` set), `npm
+  run build` green, bundle 906→913 KB (record-UI markup and its wiring
+  are the only addition — no new runtime dependency). Only
+  `src/ui/freePlayScreen.ts` touched; nothing else in the diff.
+  **Not this slice**: the "my songs" shelf in `songChoice.ts`'s picker,
+  so a saved tune still can't be walked with — task 176's one remaining
+  piece. A saved song is real and sitting in storage; nothing yet reads
+  `loadCustomSongs()` to offer it back.
 
 - **HANDOFF, 2026-09-04 (run 149) — task 176 piece 4, first slice: the
   free-play screen's first real entry point, reachability only.** Run

@@ -83,6 +83,14 @@ makes it long. You do not need to read it top to bottom.
   task 176 piece 4's remainder (the record toggle, the name-prompt
   dialog, the "my songs" shelf in the songbook) next; task 189's
   far-band lead and the v1.1 queue remain open alternatives.
+- **Run 150 update**: piece 4's remainder split once more — the record
+  toggle and name-prompt dialog shipped this run (see task 176's
+  piece-4 "next slice" done-note); the "my songs" shelf in
+  `songChoice.ts`'s picker is now task 176's one remaining piece, since
+  it needs its own integration (the songbook's row list, `RoadStage.ts`
+  wiring a chosen custom song into a walk) separate from the recording UI
+  just shipped. Live queue as of run 150: that shelf next; task 189's
+  far-band lead and the v1.1 queue remain open alternatives.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -2222,6 +2230,45 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     (run 147's `RecordingSession` machinery is still unattached to any
     UI), and the "my songs" shelf in `songChoice.ts`'s picker — all
     still piece 4's remaining, UI-risk work.
+    **Piece 4 done, next slice (2026-09-04, run 150): the record toggle
+    and name-prompt dialog.** Wired run 147's `RecordingSession` machinery
+    into `freePlayScreen.ts` for the first time, reusing its documented
+    semantics rather than inventing new ones: the record button, pressed
+    while idle, calls `startRecording`; pressed while recording, calls
+    `stopRecording` (freezes the take). `tap()` gained one line —
+    `recordTap` runs alongside `sound()`/`showLabel()` whenever
+    `session.recording`, a no-op otherwise by `recordTap`'s own
+    contract, so ordinary point-and-hear play is unchanged. A frozen take
+    `recordingProblem` still declines (too few notes, doesn't fill a
+    bar, off-staff, etc.) shows that exact message plus one "keep
+    tapping" link (`resumeRecording`); no separate "discard" control was
+    built, because `startRecording`'s own doc comment already calls
+    pressing record again from that state a silent discard — the record
+    button IS the discard action, reusing the module's own design rather
+    than adding a second one next to it. A frozen take with no problem
+    opens a name dialog automatically (a scrim + centered panel, styled
+    off `Hud.ts`'s tokens); "Cancel" there also calls `resumeRecording`,
+    so a stray tap on Cancel never loses tapped work. "Save" calls
+    `finishRecording` (piece 1's `saveCustomSong` unchanged underneath),
+    showing its error inline on failure (e.g. the page full at
+    `MAX_CUSTOM_SONGS`) rather than closing the dialog; on success the
+    hint line flashes a confirmation for 2.6s. Verified live with
+    `tools/browser.mjs`: recorded 16 taps end to end (open songbook →
+    turn the page, since "Make a song ♪" is always the last row → tap
+    it → record → stop → name "Test Tune" → save) and confirmed
+    `localStorage['wb.customsongs.v1']` held exactly that one 16-note
+    song afterward; separately confirmed the decline-and-resume path (a
+    4-note take, a full bar but under the 16-note floor, declines with
+    the exact `recordingProblem` wording), the discard-on-re-record path,
+    and that cancelling the name dialog resumes recording rather than
+    losing the take or saving twice. Zero console/page errors. `npm
+    test` 1280 green (unchanged — no test file for this DOM-heavy
+    module, same convention as `Hud.ts`), `npm run build` green, bundle
+    906→913 KB. No new runtime dependency. Only `freePlayScreen.ts`
+    touched. Remaining 176, now down to one piece: the "my songs" shelf
+    in `songChoice.ts`'s picker, so a saved tune can actually be walked
+    with — a saved song is real and in storage, but nothing yet calls
+    `loadCustomSongs()` to offer it back.
 177. **MIDI import.** Dependency-free parser (the format is simple);
     melody extraction (single track direct, polyphonic via top-note
     skyline); quantize to the songbook's note values; auto-transpose
