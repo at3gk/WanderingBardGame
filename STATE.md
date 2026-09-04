@@ -15,7 +15,10 @@ pass; run 146 shipped task 176 piece 1 (the song maker's data layer); run
 found free play had no live screen to attach it to; run 148 shipped task
 176 piece 3 (the screen itself — staff render + tap-to-hear), verified
 live for the first time with this environment's headless browser, still
-not wired into any real entry point)
+not wired into any real entry point; run 149 shipped task 176 piece 4's
+first slice — the songbook's "Make a song" row, the free-play screen's
+first real entry point, reachability only — recording and the name
+prompt still don't exist)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -97,6 +100,58 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-04 (run 149) — task 176 piece 4, first slice: the
+  free-play screen's first real entry point, reachability only.** Run
+  148 split piece 4 into "wire the screen into a real entry point" and
+  "record button + name prompt + my-songs shelf," flagging the entry
+  point alone as still the safer first bite (a new `App`/`Hud` mode was
+  the feared risk, not actually needed — see below). Read `Hud.ts`'s
+  chrome geometry first: there are exactly four corners (`coins`,
+  `instrument`, `song`, `journal`), each hand-tuned and load-bearing —
+  this codebase's own flagged recurring bug is a fixed pixel offset hung
+  off a proportional anchor, and a fifth corner would have been exactly
+  that risk for one row. The open songbook already has a "no handler, no
+  row" contract for exactly this shape (`onKeepsake`/`onWalkOn`/
+  `onPostcard` each add a row only when wired) and a paging system
+  (`bookPage`/`bookCapacity`) that already handles "one more row than
+  fits." So the entry point is a **menu row**, not a corner: `Hud.ts`
+  gains `onFreePlay(handler)`, and `bookRows()` appends a "Make a song ♪"
+  row last (after every song, so it never bumps a song off the first
+  page) whenever a handler is registered. The row carries a `freePlay:
+  true` flag rather than reusing the wander row's `id: null` shape, so
+  the click handler can route it to the new callback instead of
+  `songChosen(null)`. `RoadStage.ts` wires `hud.onFreePlay(() =>
+  this.openFreePlay())`; `openFreePlay()` calls `startAudio()` first (the
+  row's own tap is the required gesture, same reasoning as `tap()`),
+  then constructs `FreePlayScreen` on the stage's own `hudHost` with the
+  current instrument's voice and an `onClose` that tears it down —
+  `RoadStage` already held everything `FreePlayScreen`'s constructor
+  needs (`ctx`, `musicBus ?? master`, `instrument().voice`), so this
+  needed no new plumbing, only a stored `hudHost` field (was inline-only
+  before). No new `HudMode` — the row is gated by the exact same
+  `bookPickable()` rule (mode `'walking'`/`'resting'` only, never mid-
+  busk) every other book row already gets for free. Verified live with
+  `tools/browser.mjs` (Playwright still not a project dependency —
+  installed ad hoc per `tools/README.md`, not committed): opened the
+  songbook from a fresh load, the "Make a song ♪" row is present and
+  tappable, tapping it opens the free-play screen (piece 3's own hint
+  text visible), a mid-screen tap sounds and labels B4 exactly as piece
+  3's harness found, and the × control closes it cleanly — zero
+  console/page errors. `npm test` 1280 green (unchanged — this is a menu
+  wire-up, no new pure logic), `npm run build` green, bundle 902→906 KB
+  (`freePlayScreen.ts` is no longer an unimported, tree-shaken module
+  now that something reaches it — the first real cost this task has had,
+  and still under 1% of the 5 MB budget). No new runtime dependency.
+  Deliberately NOT this run: the record button, the name-prompt dialog,
+  and `finishRecording` wiring (piece 3's `RecordingSession` machinery
+  from run 147 is still unattached to any UI), and the "my songs" shelf
+  in the songbook picker. Next: task 176 piece 4's remainder — wire
+  `customSongs.ts`'s `RecordingSession` into `FreePlayScreen`'s `tap()`
+  (a record toggle control, calls alongside `sound()`), the name-prompt
+  dialog calling `finishRecording`, then list saved custom songs as
+  `SongEntry` rows in `songChoice.ts`'s book so a walk can carry one;
+  task 189's far-band lead and the v1.1 queue remain open alternatives.
 
 - **HANDOFF, 2026-09-04 (run 148) — task 176 piece 3: free play's screen
   itself, built and verified live, deliberately not yet reachable.** Run

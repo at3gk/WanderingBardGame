@@ -130,6 +130,8 @@ function pageInk(dayFraction: number): string {
 const WANDERING_LABEL = 'Wandering';
 /** The row that hands the rotation back. */
 const WANDER_ROW_LABEL = 'Wander the songbook';
+/** The row that opens the free-play staff (task 176 piece 4). */
+const MAKE_A_SONG_LABEL = 'Make a song ♪';
 
 /**
  * The page's second door: press today's road into a small painted card.
@@ -276,6 +278,7 @@ export class Hud {
   private walkOnCb: (() => void) | null = null;
   private postcardCb: (() => void) | null = null;
   private otherPageCb: (() => void) | null = null;
+  private freePlayCb: (() => void) | null = null;
 
   /** Seconds of brightness left on each piece. */
   private coinsAttention = 0;
@@ -640,6 +643,17 @@ export class Hud {
 
   onPostcard(handler: () => void): void {
     this.postcardCb = handler;
+  }
+
+  /**
+   * Called when the player opens the free-play staff from the songbook's
+   * "Make a song" row (task 176 piece 4). Same no-handler-no-row contract
+   * as the rows above — a host that never wires this (tests, the proof
+   * sheets) sees the book exactly as it always was.
+   */
+  onFreePlay(handler: () => void): void {
+    this.freePlayCb = handler;
+    this.buildBook();
   }
 
   /** Whether tonight's page is open. The stage re-opens it on a tap at the fire. */
@@ -1352,14 +1366,31 @@ export class Hud {
     this.applyOpacity();
   }
 
-  /** What the open book would list: wander (when pinned), then every other song. */
-  private bookRows(): Array<{ id: string | null; name: string; heading?: true; wear?: 0 | 1 | 2 | 3 }> {
-    const rows: Array<{ id: string | null; name: string; heading?: true; wear?: 0 | 1 | 2 | 3 }> = [];
+  /**
+   * What the open book would list: wander (when pinned), then every other
+   * song, then the door to the free-play staff (when wired) — last, so
+   * paging to it never bumps an existing song off the first page.
+   */
+  private bookRows(): Array<{
+    id: string | null;
+    name: string;
+    heading?: true;
+    wear?: 0 | 1 | 2 | 3;
+    freePlay?: true;
+  }> {
+    const rows: Array<{
+      id: string | null;
+      name: string;
+      heading?: true;
+      wear?: 0 | 1 | 2 | 3;
+      freePlay?: true;
+    }> = [];
     if (this.pinnedSongId !== null) rows.push({ id: null, name: WANDER_ROW_LABEL });
     for (const entry of this.songEntries) {
       if (entry.heading) rows.push(entry);
       else if (entry.id !== this.pinnedSongId) rows.push(entry);
     }
+    if (this.freePlayCb) rows.push({ id: null, name: MAKE_A_SONG_LABEL, freePlay: true });
     return rows;
   }
 
@@ -1433,7 +1464,8 @@ export class Hud {
       row.addEventListener('pointerdown', (event) => {
         event.preventDefault();
         this.setBookOpen(false);
-        this.songChosen?.(entry.id);
+        if (entry.freePlay) this.freePlayCb?.();
+        else this.songChosen?.(entry.id);
       });
       this.bookBox.appendChild(row);
     }
