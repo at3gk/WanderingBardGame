@@ -28,10 +28,10 @@
  * the name dialog automatically; "Cancel" there also calls
  * `resumeRecording` rather than losing the take.
  *
- * Deliberately NOT in this piece: the "my songs" shelf in
- * `songChoice.ts`'s picker, so a saved tune has nowhere to be walked with
- * yet — reachability for *playing* a custom song, not for *making* one,
- * remains piece 4's last remaining slice.
+ * The "my songs" shelf that lets a saved tune actually be walked with lives
+ * in `RoadStage.ts`'s `refreshSongbook` (task 176's last piece, run 151),
+ * not here — this file only makes the tune, `songChoice.ts`'s `songForPass`
+ * and the songbook resolve it.
  */
 import {
   FREE_PLAY_LOW_STEP,
