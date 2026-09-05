@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 151 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 152 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -23,7 +23,9 @@ the record toggle and name-prompt dialog, wiring run 147's
 `RecordingSession` machinery into the screen for the first time — the
 "my songs" shelf in the songbook picker is piece 4's one remaining slice;
 run 151 shipped that shelf, closing task 176 and the whole v1.3 arc — a
-family can now record a tune, name it, and walk the road with it)
+family can now record a tune, name it, and walk the road with it; run 152
+picked task 177 (MIDI import), split the same way, and shipped piece 1 —
+the dependency-free byte parser)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -105,6 +107,75 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-05 (run 152) — task 177 piece 1: the MIDI parser
+  itself.** Picked up v1.3's remaining tasks (177/178) now that 176 closed
+  the arc, per run 151's own "Live queue" pointer. Task 177's one-line
+  description ("dependency-free parser; melody extraction; quantize;
+  transpose; validate") bundles the same amount of separately-riskable
+  work task 176 needed five pieces for, so it got the same treatment:
+  split along the seam between "read the bytes" and everything that
+  interprets them. New `core/midi.ts` (pure, no npm dependency, ~260
+  lines, 15 tests): `parseMidi(bytes: Uint8Array)` hand-parses the actual
+  Standard MIDI File format — `MThd`/`MTrk` chunk headers, delta-time
+  variable-length quantities, running status (with the easy-to-miss rule
+  that a meta event resets it, so the next channel event needs an
+  explicit status byte even if it repeats the previous one), note-on/off
+  pairs (velocity-0 note-on counts as note-off), tempo and time-signature
+  meta events, SysEx and unknown-chunk skipping. Never throws — a bad
+  magic number, an SMPTE-timed division (a real format this reader
+  doesn't speak), or truncation all decline as `{error, <plain words>}`,
+  same "declined kindly" stance `customSongs.ts`'s `engravingProblem`
+  already set for this task's own promise ("an uploaded song that cannot
+  be engraved correctly is declined kindly, never mangled") — extended
+  here to cover a file that isn't valid MIDI at all, one step earlier
+  than engraving. Tests hand-build the exact bytes a real MIDI writer
+  emits (no fixture files, no library, matching how `midi.test.ts`'s
+  sibling core tests construct their own inputs) and specifically check
+  running status, the post-meta-event status reset, 1-byte vs 2-byte
+  channel messages (program change vs. everything else — getting this
+  wrong desyncs every event after it), SysEx skipping, independent
+  per-track tick zeroing in a multi-track file, a 3-byte variable-length
+  delta, and four decline cases including a track with no end-of-track
+  byte (proving the reader stops at the chunk's declared length rather
+  than hanging). Also fixed a design bug caught while writing the
+  unknown-chunk test: the first draft counted any chunk (even a
+  non-`MTrk` one) against the header's declared track count, which would
+  silently under-read a file with a stray chunk before its last real
+  track; reading now loops until `ntrks` actual `MTrk` chunks are found,
+  skipping anything else without counting it. Deliberately NOT this
+  piece, all needing the parser's output first: turning parsed note-on/
+  off events into a single melody (direct for one track, top-note
+  skyline for several), quantizing to the songbook's note-value set,
+  transposing into the staff's drawable range, and running the result
+  through `engravingProblem` (Book Two's key machinery is the accidental
+  escape hatch the task names — not built here). No UI, no file-upload
+  control, no `songs`/`songChoice` plumbing touched. `npm test` 1298
+  green (+15), `npm run build` green (913 KB, unchanged — an unimported
+  pure module tree-shakes out, same as `customSongs.ts` before anything
+  called it). No new runtime dependency (the task's own "the format is
+  simple" claim held: writing a byte-level SMF reader by hand took
+  about the same size as `customSongs.ts`'s data layer). Next: task 177
+  piece 2 — melody extraction from `MidiFile`'s raw events, the
+  single-track/top-note-skyline split the task names; task 178
+  (MusicXML) and task 189's far-band lead remain open alternatives.
+
+- **HANDOFF, 2026-09-05 (run 151) — task 176 DONE: the "my songs" shelf,
+  closing the whole v1.3 arc.** Brief note (full account lives in
+  ROADMAP task 176's own "176 DONE" done-note — this run's STATE handoff
+  was missed at the time and is being filled in now rather than left
+  silent). `core/songChoice.ts`'s `songForPass` now resolves a
+  `custom:`-prefixed id via `loadCustomSongs()` before falling to the
+  wander default; `three/RoadStage.ts`'s `refreshSongbook` adds a "Your
+  songs" shelf (same earned-not-default shape as Book Two's festival
+  gate) whenever any custom songs exist, and `closeFreePlay` refreshes it
+  so a tune saved this visit shows up immediately. Three new pure tests
+  in `songChoice.test.ts`; verified live end to end with
+  `tools/browser.mjs` (seeded a custom song into `localStorage`, opened
+  the songbook, confirmed the shelf and the walk-with-it path). **Task
+  176 is fully done**: a family can record a tune in free play, name it,
+  and walk the road with it. `npm test` 1283 green (+3), `npm run build`
+  green (913 KB, unchanged). No new runtime dependency.
 
 - **HANDOFF, 2026-09-04 (run 150) — task 176 piece 4, next slice: the
   record toggle and name-prompt dialog.** Run 149 shipped reachability
