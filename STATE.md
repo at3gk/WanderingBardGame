@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 152 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 153 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -25,7 +25,8 @@ the record toggle and name-prompt dialog, wiring run 147's
 run 151 shipped that shelf, closing task 176 and the whole v1.3 arc — a
 family can now record a tune, name it, and walk the road with it; run 152
 picked task 177 (MIDI import), split the same way, and shipped piece 1 —
-the dependency-free byte parser)
+the dependency-free byte parser; run 153 shipped task 177 piece 2 — the
+top-note-skyline melody extractor)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -107,6 +108,49 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-05 (run 153) — task 177 piece 2: the melody
+  extractor.** Full detail is in ROADMAP task 177's own piece-2 done-note
+  — this is the short version. New `extractMelody(file: MidiFile)` in
+  `core/midi.ts`, returning `{melody: MelodyNote[]} | {error}`;
+  `MelodyNote` is `SongNote`'s own shape (`semitone`/`beats`/`rest?`)
+  since that's exactly what it becomes once pieces 3-4 finish it. One
+  algorithm, not two: every track's note-on/off events merge into a
+  single tick-ordered timeline and the highest currently-sounding note is
+  tracked throughout (a top-note skyline); an ordinary monophonic
+  single-track melody just never has more than one note active, so
+  "single track direct" is this algorithm's own trivial case rather than
+  a second path that could disagree with it. A stretch with nothing
+  sounding becomes a rest; leading silence before the first note and
+  trailing silence after the last are both dropped (file setup, not
+  melody — and it means the result never opens with silence, one thing
+  piece 4's `engravingProblem` pass won't have to catch). Ticks convert
+  to beats via the file's own `ticksPerQuarter`; the tempo event piece 1
+  parsed turned out not to matter for this piece after all — durations
+  stay beat-relative, which is what the songbook and this game's one-tap
+  mechanic both run on anyway, not real seconds. MIDI note 60 = C4 =
+  semitone 0 is the anchor (same root `notation.ts` already uses), so
+  pitch conversion is a plain subtraction. 8 new tests (23 total in the
+  file), built as `MidiFile` objects directly rather than through bytes
+  (`parseMidi`'s own tests already cover the byte layer): a monophonic
+  two-note melody, a mid-tune rest, leading/trailing silence dropped, the
+  skyline following the moving voice over a held drone across two
+  tracks, the skyline picking a chord's top note within one track, a
+  non-96 `ticksPerQuarter` tick-to-beat conversion, a same-pitch overlap
+  collapsing correctly rather than cutting short at the first note-off,
+  and a no-notes-found file declining rather than returning an empty
+  melody silently. `npm test` 1306 green (+8), `npm run build` green
+  (913 KB, unchanged — still unimported, still tree-shaken out). No new
+  runtime dependency. Next: task 177 piece 3 — quantize `beats` to the
+  songbook's legal note values (`customSongs.ts`'s `LEGAL_DURATIONS`) and
+  auto-transpose `semitone` into the staff's drawable range
+  (`MIN_DRAWABLE_STEP`/`MAX_DRAWABLE_STEP`, same file) — both need a real
+  rounding/shifting policy this piece left untouched on purpose, since a
+  real MIDI file's durations and register rarely land exactly on either
+  boundary already. Piece 4 (validate through `engravingProblem`, wire up
+  a file-upload control) follows after that; task 178 (MusicXML) and task
+  189's far-band lead remain open alternatives if MIDI import pauses
+  again.
 
 - **HANDOFF, 2026-09-05 (run 152) — task 177 piece 1: the MIDI parser
   itself.** Picked up v1.3's remaining tasks (177/178) now that 176 closed
