@@ -97,6 +97,12 @@ makes it long. You do not need to read it top to bottom.
   Live queue as of run 151: task 177 (MIDI import) or 178 (MusicXML
   import) next if v1.3 continues, otherwise task 189's far-band lead or
   the rest of the v1.1 queue — both still open and worth returning to.
+- **Run 152 update**: picked task 177 (MIDI import) and split it the
+  same way 176 split — piece 1, the dependency-free byte parser itself,
+  shipped this run (see task 177's own piece-1 done-note). Live queue as
+  of run 152: task 177 piece 2 (melody extraction from the parsed event
+  list) next if MIDI import continues; task 178 (MusicXML), task 189's
+  far-band lead, and the rest of the v1.1 queue remain open alternatives.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -2324,6 +2330,59 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     built-in songbook passes — an uploaded song that cannot be engraved
     correctly is declined kindly, never mangled. Accidentals route into
     the Book Two machinery. (New core/midi.ts + songs plumbing.)
+    **Piece 1 done (2026-09-05, run 152): the parser itself.** Sized the
+    same way task 176 piece 1 was — pure data layer first, no UI, no
+    melody logic yet. New `core/midi.ts` (pure, no npm dependency, 15
+    tests): `parseMidi(bytes: Uint8Array)` reads the actual Standard MIDI
+    File byte layout by hand — the `MThd`/`MTrk` chunk headers, delta-
+    time-prefixed events via variable-length quantities, running status
+    (a channel event that omits its own status byte, reusing the
+    previous one — resets after any meta event, per the spec, since a
+    decoder that forgets this misreads the next event's data as a status
+    byte), note-on/note-off pairs (a note-on with velocity 0 counts as a
+    note-off, the common-in-the-wild convention), tempo and time-
+    signature meta events, and SysEx/unknown-chunk skipping. Returns
+    `{file}` or `{error}` — never throws — for the same "declined
+    kindly" reason `customSongs.ts`'s `engravingProblem` never throws:
+    an uploaded file a family picked by hand should fail in words, not a
+    stack trace, whether the failure is "not a MIDI file", an SMPTE-timed
+    file (a real but rare division format this reader doesn't speak,
+    ticks-per-quarter-note only), or plain truncation. Deliberately NOT
+    this piece: turning the parsed event list into a melody (a
+    single-track file is direct; a multi-track/polyphonic one needs the
+    top-note skyline the task describes), quantizing note-on/off tick
+    gaps to the songbook's beat values, transposing into the staff's
+    drawable range, or running the result through `engravingProblem` —
+    all four need this parser's output to exist first and are their own
+    pieces, the same split 176 used. Tests build the exact bytes a real
+    MIDI writer would emit (no fixture files, no library) and check
+    running status, the meta-event status-reset rule, one- vs two-data-
+    byte channel messages, SysEx skipping, multi-track files ticking
+    from independent zeros, a multi-byte variable-length delta, and four
+    "declined kindly" cases (bad magic, SMPTE division, truncation, a
+    missing end-of-track byte) — the last one matters because an
+    unbounded read loop on a track missing its terminator would hang
+    rather than decline; this reader always stops at the chunk's own
+    declared byte length regardless of what events it contains. `npm
+    test` 1298 green (+15), `npm run build` green (913 KB, unchanged —
+    an unimported pure module is tree-shaken out entirely, same as
+    `customSongs.ts` was before anything called it). No new runtime
+    dependency (justifying that: none was added — the task's own premise
+    that "the format is simple" held up in practice, about 260 lines).
+    Next: piece 2, melody extraction — turn `MidiFile`'s raw note-on/off
+    events (paired by tick, per track) into a single pitch-and-duration
+    sequence: direct for a single-track file, top-note skyline (highest
+    sounding pitch at each moment) for a multi-track or polyphonic one,
+    using the tempo event(s) already parsed to relate ticks to real time
+    if that ends up mattering for quantization. Piece 3 would then
+    quantize durations to the songbook's legal note values and
+    auto-transpose into the staff's drawable range; piece 4 runs the
+    result through `engravingProblem` (declining kindly on an
+    accidental, same as any tapped song — Book Two's key machinery is
+    the accidental escape hatch the task names, not built here) and
+    wires a file-upload control into the UI. Each remaining piece can
+    stand alone and be tested without a screen, the same way 176's
+    pieces 1-2 did.
 178. **MusicXML import.** Second format, richer (it is already
     notation); reuses 177's validation path.
 
