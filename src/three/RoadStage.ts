@@ -108,6 +108,7 @@ import { expandSong, songDurationMs, songKey, type Song, type SongBeat } from '.
 import { rehearsalLine } from '../core/rehearsal';
 import { BOOK_TWO_SONGS, SONGS } from '../core/songs';
 import { songForPass } from '../core/songChoice';
+import { loadCustomSongs } from '../core/customSongs';
 import {
   extendWalkTune,
   startWalkTune as newWalkTune,
@@ -2127,6 +2128,17 @@ export class RoadStage implements Stage {
         entries.push({ id: song.id, name: song.title, wear: wearTier(walks[song.id] ?? 0) });
       }
     }
+    // A family's own tunes (task 176's last piece): a shelf that exists only
+    // once something has been recorded, same no-shelf-until-earned pattern
+    // as Book Two above. Wear tracks like any other song — a custom tune
+    // carried on the road wears in exactly the same way.
+    const customSongs = loadCustomSongs();
+    if (customSongs.length > 0) {
+      entries.push({ id: '', name: 'Your songs', heading: true });
+      for (const song of customSongs) {
+        entries.push({ id: song.id, name: song.title, wear: wearTier(walks[song.id] ?? 0) });
+      }
+    }
     this.hud.setSongbook(entries, this.journey.songChoice);
   }
 
@@ -2416,6 +2428,9 @@ export class RoadStage implements Stage {
   private closeFreePlay(): void {
     this.freePlayScreen?.destroy();
     this.freePlayScreen = null;
+    // Picks up anything saved this visit (task 176's last piece) — cheap
+    // either way, so this doesn't need to know whether a save happened.
+    this.refreshSongbook();
   }
 
   /** One exact pitch through the current instrument, `delaySec` from now. */

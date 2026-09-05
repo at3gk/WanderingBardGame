@@ -1,5 +1,6 @@
 import { Song } from './song';
 import { BOOK_TWO_SONGS, SONGS, SONGS_BY_BIOME, songForBiome } from './songs';
+import { isCustomSongId, loadCustomSongs } from './customSongs';
 
 /**
  * Choosing one song to learn, instead of letting the songbook rotate.
@@ -21,6 +22,12 @@ export function songForPass(choice: SongChoice, biomeId: string, pass: number): 
     // scenery-matched curriculum; Book Two is only ever chosen.
     const chosen = SONGS.find((s) => s.id === choice) ?? BOOK_TWO_SONGS.find((s) => s.id === choice);
     if (chosen) return chosen;
+    // A family's own tune (task 176) resolves the same way — a saved song
+    // is the walk's tune like any other, no home biome required.
+    if (isCustomSongId(choice)) {
+      const custom = loadCustomSongs().find((s) => s.id === choice);
+      if (custom) return custom;
+    }
   }
   return songForBiome(biomeId, pass);
 }

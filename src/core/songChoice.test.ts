@@ -1,6 +1,30 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { homeBiomeOf, songForPass, songGridLayout, songMenu } from './songChoice';
 import { SONGS, SONGS_BY_BIOME } from './songs';
+import { MIN_CUSTOM_SONG_NOTES, saveCustomSong } from './customSongs';
+
+// Same in-memory localStorage stub customSongs.test.ts uses — the node test
+// environment has none.
+function memoryStorage(): Storage {
+  const map = new Map<string, string>();
+  return {
+    get length() {
+      return map.size;
+    },
+    clear: () => map.clear(),
+    getItem: (k: string) => map.get(k) ?? null,
+    key: (i: number) => [...map.keys()][i] ?? null,
+    removeItem: (k: string) => void map.delete(k),
+    setItem: (k: string, v: string) => void map.set(k, String(v)),
+  };
+}
+
+/** Sixteen quarter notes, in range, filling exactly 4 bars of 4/4 — a minimal valid tune (same shape customSongs.test.ts uses). */
+function validSteps(): number[] {
+  const steps: number[] = [];
+  for (let i = 0; i < MIN_CUSTOM_SONG_NOTES; i++) steps.push(i % 8);
+  return steps;
+}
 
 describe('choosing one song to learn', () => {
   it('plays the chosen song on every pass, whatever the biome says', () => {
@@ -100,6 +124,34 @@ describe('Book Two resolution (task 165)', () => {
 
   it('gives a Book Two song no home biome — the road keeps wandering', () => {
     expect(homeBiomeOf(BOOK_TWO_SONGS[0].id)).toBeNull();
+  });
+});
+
+describe('a family\'s own song resolves too (task 176)', () => {
+  beforeEach(() => {
+    (globalThis as { localStorage?: Storage }).localStorage = memoryStorage();
+  });
+
+  afterEach(() => {
+    delete (globalThis as { localStorage?: Storage }).localStorage;
+  });
+
+  it('plays a saved custom song on every pass, whatever the biome says', () => {
+    const result = saveCustomSong('Test Tune', validSteps());
+    if ('error' in result) throw new Error(result.error);
+    for (const biomeId of Object.keys(SONGS_BY_BIOME)) {
+      expect(songForPass(result.song.id, biomeId, 0).id).toBe(result.song.id);
+    }
+  });
+
+  it('falls back to wandering for a custom id that is no longer saved', () => {
+    expect(songForPass('custom:gone', 'village', 0).id).toBe(SONGS_BY_BIOME.village[0].id);
+  });
+
+  it('gives a custom song no home biome — the road keeps wandering', () => {
+    const result = saveCustomSong('Test Tune', validSteps());
+    if ('error' in result) throw new Error(result.error);
+    expect(homeBiomeOf(result.song.id)).toBeNull();
   });
 });
 

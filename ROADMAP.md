@@ -91,6 +91,12 @@ makes it long. You do not need to read it top to bottom.
   wiring a chosen custom song into a walk) separate from the recording UI
   just shipped. Live queue as of run 150: that shelf next; task 189's
   far-band lead and the v1.1 queue remain open alternatives.
+- **Run 151 update**: shipped that shelf — see task 176's own "176 DONE"
+  done-note for the full account. **v1.3 ("the family songbook") is now
+  entirely done**: a family can record a tune, name it, and walk with it.
+  Live queue as of run 151: task 177 (MIDI import) or 178 (MusicXML
+  import) next if v1.3 continues, otherwise task 189's far-band lead or
+  the rest of the v1.1 queue — both still open and worth returning to.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -2269,6 +2275,48 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     in `songChoice.ts`'s picker, so a saved tune can actually be walked
     with — a saved song is real and in storage, but nothing yet calls
     `loadCustomSongs()` to offer it back.
+    **176 DONE (2026-09-05, run 151): the "my songs" shelf, closing the
+    task.** Two small changes, no new module. `core/songChoice.ts`'s
+    `songForPass` — the one choke point every walk/busk/rehearsal/
+    festival call already goes through to turn a chosen id into a `Song`
+    — now falls through to `loadCustomSongs().find(...)` for an id
+    `isCustomSongId` recognises, after the two built-in books and before
+    the wander fallback; a custom id that no longer exists (deleted, or a
+    stale save from another bookmark) wanders exactly like a dropped
+    built-in id already did. `homeBiomeOf` needed no change — it already
+    returns null for anything outside `SONGS_BY_BIOME`, which is the
+    right answer for a family's own tune (no register to sit in, same as
+    Book Two). `three/RoadStage.ts`'s `refreshSongbook` gains a third
+    shelf, same no-shelf-until-earned shape as Book Two's `festivals >=
+    1` gate: `loadCustomSongs().length > 0` appends a "Your songs"
+    heading and one row per saved tune, wear-tracked through the same
+    `allSongWalks()`/`wearTier` call every other row uses (a custom
+    song's id is just a string to that lookup, so a family's tune wears
+    in exactly like Twinkle does). `closeFreePlay` now also calls
+    `refreshSongbook()`, so a song saved this visit is on the shelf the
+    moment the songbook is next opened, without needing to know whether
+    a save actually happened this visit — the call is cheap either way.
+    Three new pure tests in `songChoice.test.ts` (custom song resolves on
+    every pass/biome, a missing custom id wanders, a custom song has no
+    home biome), reusing `customSongs.test.ts`'s own in-memory
+    `localStorage` stub and `validSteps()` shape. Verified live with
+    `tools/browser.mjs` beyond the unit tests, since `RoadStage.ts`/
+    `Hud.ts` carry none of their own (same DOM-heavy convention piece 3
+    named): seeded a custom song straight into `localStorage` (the shape
+    `writeCustomSongs` writes), reloaded, opened the songbook through
+    `stage.refreshSongbook()`/`hud.setBookOpen(true)` exactly as the
+    "Make a song ♪" row's own handler would, paged to it (a fresh
+    12-song Book One fills the first page on a 1280x720 viewport, so the
+    shelf sits on page 2), confirmed both the "Your songs" heading and
+    "Test Tune" row render, clicked the row and confirmed
+    `journey.songChoice` became `custom:verify1`, then called the
+    private `pinSong` path directly and confirmed the walking tune
+    rebuilds with no console/page errors. **Task 176 is now fully done**:
+    a family can record a tune in free play, name it, and walk the road
+    with it — the whole promise this task opened with five pieces ago.
+    `npm test` 1283 green (+3), `npm run build` green (913 KB,
+    unchanged — the two touched files were already in the bundle). No
+    new runtime dependency.
 177. **MIDI import.** Dependency-free parser (the format is simple);
     melody extraction (single track direct, polyphonic via top-note
     skyline); quantize to the songbook's note values; auto-transpose

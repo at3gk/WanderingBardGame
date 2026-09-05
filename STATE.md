@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 150 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 151 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -21,7 +21,9 @@ first real entry point, reachability only — recording and the name
 prompt still don't exist; run 150 shipped task 176 piece 4's next slice —
 the record toggle and name-prompt dialog, wiring run 147's
 `RecordingSession` machinery into the screen for the first time — the
-"my songs" shelf in the songbook picker is piece 4's one remaining slice)
+"my songs" shelf in the songbook picker is piece 4's one remaining slice;
+run 151 shipped that shelf, closing task 176 and the whole v1.3 arc — a
+family can now record a tune, name it, and walk the road with it)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
