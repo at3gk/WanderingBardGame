@@ -72,6 +72,121 @@ export interface MidiFile {
 export type ParseMidiResult = { file: MidiFile } | { error: string };
 
 /**
+ * One note (or rest) of a melody, mid-extraction: a MIDI file's own pitch
+ * and duration, before piece 3 quantizes `beats` to the songbook's legal
+ * note values or transposes `semitone` into the staff's drawable range.
+ * Shaped like `SongNote` (`core/song.ts`) on purpose — same field names,
+ * same "semitones from middle C (C4)" convention, same rest contract —
+ * because that is exactly what this becomes once piece 3/4 are done; the
+ * only thing missing here is validation.
+ */
+export interface MelodyNote {
+  semitone: number;
+  beats: number;
+  rest?: true;
+}
+
+export type ExtractMelodyResult = { melody: MelodyNote[] } | { error: string };
+
+/** MIDI note number 60 is defined as middle C (C4) — the same anchor `notation.ts` uses. */
+const MIDDLE_C_MIDI_NOTE = 60;
+
+interface TimedNote {
+  tick: number;
+  kind: 'on' | 'off';
+  note: number;
+}
+
+/**
+ * Turns a parsed file's raw note-on/note-off events into a single
+ * pitch-and-duration sequence (ROADMAP task 177, piece 2). One algorithm
+ * covers both cases the task names: every track's events are merged into
+ * one tick-ordered timeline and the *highest currently-sounding* note is
+ * tracked at every moment (a "top-note skyline"). For an ordinary
+ * single-track, monophonic melody, nothing is ever sounding but one note
+ * at a time, so the skyline degenerates to that note directly — the
+ * "single track direct" case is this algorithm's trivial output, not a
+ * separate code path that could disagree with it. A gap where nothing is
+ * sounding becomes a rest, exactly like a written song's own rests; the
+ * leading silence before the first note-on and any trailing silence after
+ * the last note-off are both dropped rather than kept as rests, since
+ * they carry no melody, only file setup (a DAW's count-in, a fixed
+ * end-of-track padding) — the extracted melody starts on its own first
+ * note, matching `engravingProblem`'s "should not start with silence"
+ * rule that piece 4 will hold every uploaded song to anyway.
+ *
+ * Ticks are converted to beats via the file's own `ticksPerQuarter` (1
+ * beat = 1 quarter note, `song.ts`'s convention). Tempo events are not
+ * needed for this: durations stay tick-relative, and it's beats — not
+ * real seconds — that the songbook's note values and this game's
+ * one-tap-per-arrival mechanic both run on.
+ */
+export function extractMelody(file: MidiFile): ExtractMelodyResult {
+  const timed: TimedNote[] = [];
+  for (const track of file.tracks) {
+    for (const event of track.events) {
+      if (event.type === 'noteOn') timed.push({ tick: event.tick, kind: 'on', note: event.note });
+      else if (event.type === 'noteOff') timed.push({ tick: event.tick, kind: 'off', note: event.note });
+    }
+  }
+  if (timed.length === 0) return { error: 'no notes found in this MIDI file' };
+
+  // Stable sort by tick; at an equal tick, offs land before ons so a note
+  // ending exactly when the next begins never briefly reads as a chord.
+  timed.sort((a, b) => a.tick - b.tick || (a.kind === b.kind ? 0 : a.kind === 'off' ? -1 : 1));
+
+  const active = new Map<number, number>();
+  const melody: MelodyNote[] = [];
+  let started = false;
+  let segmentStartTick = 0;
+  let segmentTopNote: number | null = null;
+
+  const closeSegment = (endTick: number): void => {
+    const beats = (endTick - segmentStartTick) / file.ticksPerQuarter;
+    if (beats <= 0) return;
+    melody.push(segmentTopNote === null ? { semitone: 0, beats, rest: true } : { semitone: segmentTopNote - MIDDLE_C_MIDI_NOTE, beats });
+  };
+
+  let i = 0;
+  while (i < timed.length) {
+    const tick = timed[i].tick;
+    while (i < timed.length && timed[i].tick === tick) {
+      const event = timed[i];
+      if (event.kind === 'on') {
+        active.set(event.note, (active.get(event.note) ?? 0) + 1);
+      } else {
+        const count = active.get(event.note) ?? 0;
+        if (count <= 1) active.delete(event.note);
+        else active.set(event.note, count - 1);
+      }
+      i++;
+    }
+
+    const topNote = active.size === 0 ? null : Math.max(...active.keys());
+    if (!started) {
+      if (topNote === null) continue; // still in the leading silence — nothing to record yet
+      started = true;
+      segmentStartTick = tick;
+      segmentTopNote = topNote;
+      continue;
+    }
+    if (topNote !== segmentTopNote) {
+      closeSegment(tick);
+      segmentStartTick = tick;
+      segmentTopNote = topNote;
+    }
+  }
+
+  // Whatever is still sounding when the data runs out (a missing note-off,
+  // rare but real — the parser itself already tolerates a missing
+  // end-of-track for the same reason) is closed at the final tick seen;
+  // trailing silence (segmentTopNote === null) is dropped, not kept.
+  if (started && segmentTopNote !== null) closeSegment(timed[timed.length - 1].tick);
+
+  return { melody };
+}
+
+/**
  * Parses a Standard MIDI File. Never throws: a truncated file, a bad magic
  * number, or an SMPTE (frames-per-second) division — real but rare, and
  * this reader only speaks ticks-per-quarter-note — all decline as `{error}`

@@ -103,6 +103,12 @@ makes it long. You do not need to read it top to bottom.
   of run 152: task 177 piece 2 (melody extraction from the parsed event
   list) next if MIDI import continues; task 178 (MusicXML), task 189's
   far-band lead, and the rest of the v1.1 queue remain open alternatives.
+- **Run 153 update**: shipped task 177 piece 2 (see its own done-note,
+  below task 177's entry). Live queue as of run 153: task 177 piece 3
+  (quantize durations to the songbook's legal note values and
+  auto-transpose into the staff's drawable range) next if MIDI import
+  continues; task 178 (MusicXML), task 189's far-band lead, and the rest
+  of the v1.1 queue remain open alternatives.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -2369,14 +2375,53 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     `customSongs.ts` was before anything called it). No new runtime
     dependency (justifying that: none was added — the task's own premise
     that "the format is simple" held up in practice, about 260 lines).
-    Next: piece 2, melody extraction — turn `MidiFile`'s raw note-on/off
-    events (paired by tick, per track) into a single pitch-and-duration
-    sequence: direct for a single-track file, top-note skyline (highest
-    sounding pitch at each moment) for a multi-track or polyphonic one,
-    using the tempo event(s) already parsed to relate ticks to real time
-    if that ends up mattering for quantization. Piece 3 would then
-    quantize durations to the songbook's legal note values and
-    auto-transpose into the staff's drawable range; piece 4 runs the
+    **Piece 2 done (2026-09-05, run 153): melody extraction.** New
+    `extractMelody(file: MidiFile)` in `core/midi.ts` (8 new tests, 23
+    total in the file), returning `{melody: MelodyNote[]} | {error}` —
+    `MelodyNote` is shaped exactly like `song.ts`'s `SongNote`
+    (`semitone`/`beats`/`rest?`), because that is what it becomes once
+    pieces 3-4 quantize and validate it. One algorithm covers both cases
+    the task named rather than two: every track's note-on/off events are
+    merged into one tick-ordered timeline and the *highest
+    currently-sounding* note is tracked at every moment (a top-note
+    skyline). An ordinary single-track melody never has more than one
+    note sounding at once, so "single track direct" falls out of the
+    same algorithm as its trivial case — there is no second code path
+    that could disagree with the skyline one. A stretch where nothing is
+    sounding becomes a rest, matching a written song's own rests; the
+    leading silence before the first note-on and any trailing silence
+    after the last note-off are both dropped rather than kept as rests
+    (a DAW's count-in or end-of-track padding carries no melody, and
+    dropping the leading one means the extracted melody never starts
+    with silence — one fewer thing piece 4's `engravingProblem` run
+    would have to decline). Ticks convert to beats via the file's own
+    `ticksPerQuarter` (1 beat = 1 quarter note, `song.ts`'s convention);
+    the tempo event piece 1 parsed turned out not to matter here after
+    all — durations stay tick/beat-relative, never real seconds, since
+    beats are what the songbook's note values and this game's
+    one-tap-per-arrival mechanic both run on, so piece 3's quantizer
+    inherits that same tempo-independence for free. MIDI note number 60
+    is the anchor (`= C4 = semitone 0`, same root `notation.ts` already
+    uses), so pitch mapping is exact subtraction, not a lookup table.
+    Tests build `MidiFile` objects directly (parseMidi's own tests
+    already cover the byte layer) and check: a monophonic two-note
+    melody, a silent gap becoming a rest, leading/trailing silence
+    dropped, the skyline picking the moving top voice over a held drone
+    across two tracks, the skyline picking a chord's top note within one
+    track, tick-to-beat conversion at a non-96 `ticksPerQuarter`, a
+    same-pitch overlap (a note re-triggered before its own note-off)
+    collapsing correctly instead of being cut short by the first
+    note-off, and a no-notes-found file declining with an `{error}`
+    rather than returning an empty melody silently. `npm test` 1306
+    green (+8), `npm run build` green (913 KB, unchanged — still
+    unimported). No new runtime dependency. Next: piece 3, quantize
+    `MelodyNote.beats` to the songbook's legal note values
+    (`customSongs.ts`'s `LEGAL_DURATIONS`: 0.5/1/1.5/2/3/4) and
+    auto-transpose `semitone` into the staff's drawable range
+    (`MIN_DRAWABLE_STEP`/`MAX_DRAWABLE_STEP`, also already in
+    `customSongs.ts`) — both need a real rounding/shifting policy this
+    piece deliberately left untouched (a real MIDI file's durations and
+    register rarely land exactly on either). Piece 4 then runs the
     result through `engravingProblem` (declining kindly on an
     accidental, same as any tapped song — Book Two's key machinery is
     the accidental escape hatch the task names, not built here) and

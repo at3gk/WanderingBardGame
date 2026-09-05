@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseMidi } from './midi';
+import { extractMelody, parseMidi, type MidiFile } from './midi';
 
 // Hand-built Standard MIDI File bytes — no fixture files, no MIDI library,
 // same "construct the exact bytes a real writer would emit" approach a
@@ -242,5 +242,139 @@ describe('parseMidi', () => {
 
     expect(result.file.tracks).toHaveLength(1);
     expect(result.file.tracks[0].events[0]).toEqual({ type: 'noteOn', tick: 0, channel: 0, note: 60, velocity: 80 });
+  });
+});
+
+// extractMelody works on an already-parsed MidiFile, so its tests build
+// that structure directly rather than round-tripping through bytes —
+// parseMidi's own tests already cover the byte layer.
+
+function file(ticksPerQuarter: number, tracksEvents: MidiFile['tracks'][number]['events'][]): MidiFile {
+  return { format: tracksEvents.length > 1 ? 1 : 0, ticksPerQuarter, tracks: tracksEvents.map((events) => ({ events })) };
+}
+
+describe('extractMelody', () => {
+  it('extracts a monophonic single-track melody directly, note by note', () => {
+    const f = file(96, [
+      [
+        { type: 'noteOn', tick: 0, channel: 0, note: 60, velocity: 80 },
+        { type: 'noteOff', tick: 96, channel: 0, note: 60 },
+        { type: 'noteOn', tick: 96, channel: 0, note: 64, velocity: 80 },
+        { type: 'noteOff', tick: 192, channel: 0, note: 64 },
+      ],
+    ]);
+    const result = extractMelody(f);
+    if ('error' in result) throw new Error(result.error);
+    expect(result.melody).toEqual([
+      { semitone: 0, beats: 1 }, // MIDI 60 = C4 = semitone 0
+      { semitone: 4, beats: 1 }, // MIDI 64 = E4 = semitone 4
+    ]);
+  });
+
+  it('turns a silent gap between two notes into a rest', () => {
+    const f = file(96, [
+      [
+        { type: 'noteOn', tick: 0, channel: 0, note: 60, velocity: 80 },
+        { type: 'noteOff', tick: 96, channel: 0, note: 60 },
+        { type: 'noteOn', tick: 192, channel: 0, note: 62, velocity: 80 },
+        { type: 'noteOff', tick: 288, channel: 0, note: 62 },
+      ],
+    ]);
+    const result = extractMelody(f);
+    if ('error' in result) throw new Error(result.error);
+    expect(result.melody).toEqual([
+      { semitone: 0, beats: 1 },
+      { semitone: 0, beats: 1, rest: true },
+      { semitone: 2, beats: 1 },
+    ]);
+  });
+
+  it('drops leading silence before the first note and trailing silence after the last', () => {
+    const f = file(96, [
+      [
+        { type: 'noteOn', tick: 480, channel: 0, note: 60, velocity: 80 },
+        { type: 'noteOff', tick: 576, channel: 0, note: 60 },
+        { type: 'endOfTrack', tick: 960 },
+      ],
+    ]);
+    const result = extractMelody(f);
+    if ('error' in result) throw new Error(result.error);
+    expect(result.melody).toEqual([{ semitone: 0, beats: 1 }]);
+  });
+
+  it('picks the top-note skyline across two overlapping tracks (polyphonic)', () => {
+    // Track 1 holds a low drone the whole time; track 2 plays the tune on
+    // top of it — the melody should follow track 2 alone, never the drone.
+    const f = file(96, [
+      [
+        { type: 'noteOn', tick: 0, channel: 0, note: 48, velocity: 80 },
+        { type: 'noteOff', tick: 192, channel: 0, note: 48 },
+      ],
+      [
+        { type: 'noteOn', tick: 0, channel: 1, note: 67, velocity: 80 },
+        { type: 'noteOff', tick: 96, channel: 1, note: 67 },
+        { type: 'noteOn', tick: 96, channel: 1, note: 72, velocity: 80 },
+        { type: 'noteOff', tick: 192, channel: 1, note: 72 },
+      ],
+    ]);
+    const result = extractMelody(f);
+    if ('error' in result) throw new Error(result.error);
+    expect(result.melody).toEqual([
+      { semitone: 7, beats: 1 }, // MIDI 67, above the MIDI-48 drone
+      { semitone: 12, beats: 1 }, // MIDI 72, still above the drone
+    ]);
+  });
+
+  it('picks the top note of a simultaneous chord within one track', () => {
+    const f = file(96, [
+      [
+        { type: 'noteOn', tick: 0, channel: 0, note: 60, velocity: 80 },
+        { type: 'noteOn', tick: 0, channel: 0, note: 64, velocity: 80 },
+        { type: 'noteOn', tick: 0, channel: 0, note: 67, velocity: 80 },
+        { type: 'noteOff', tick: 96, channel: 0, note: 60 },
+        { type: 'noteOff', tick: 96, channel: 0, note: 64 },
+        { type: 'noteOff', tick: 96, channel: 0, note: 67 },
+      ],
+    ]);
+    const result = extractMelody(f);
+    if ('error' in result) throw new Error(result.error);
+    expect(result.melody).toEqual([{ semitone: 7, beats: 1 }]);
+  });
+
+  it('converts ticks to beats using the file\'s own ticksPerQuarter', () => {
+    const f = file(480, [
+      [
+        { type: 'noteOn', tick: 0, channel: 0, note: 60, velocity: 80 },
+        { type: 'noteOff', tick: 240, channel: 0, note: 60 }, // half a beat
+      ],
+    ]);
+    const result = extractMelody(f);
+    if ('error' in result) throw new Error(result.error);
+    expect(result.melody).toEqual([{ semitone: 0, beats: 0.5 }]);
+  });
+
+  it('re-derives the same note from an overlapping repeat (a note re-triggered before its own note-off)', () => {
+    // Same pitch on, on again, off, off — the second off must not delete
+    // the note out from under the first still-held instance.
+    const f = file(96, [
+      [
+        { type: 'noteOn', tick: 0, channel: 0, note: 60, velocity: 80 },
+        { type: 'noteOn', tick: 48, channel: 0, note: 60, velocity: 80 },
+        { type: 'noteOff', tick: 96, channel: 0, note: 60 },
+        { type: 'noteOff', tick: 144, channel: 0, note: 60 },
+      ],
+    ]);
+    const result = extractMelody(f);
+    if ('error' in result) throw new Error(result.error);
+    // The overlap does not change the top note (nothing else ever
+    // sounds), so this collapses to one continuous note the full 144
+    // ticks (1.5 beats) rather than being cut short by the first note-off.
+    expect(result.melody).toEqual([{ semitone: 0, beats: 1.5 }]);
+  });
+
+  it('declines a file with no note events at all', () => {
+    const f = file(96, [[{ type: 'tempo', tick: 0, microsecondsPerQuarter: 500000 }, { type: 'endOfTrack', tick: 0 }]]);
+    const result = extractMelody(f);
+    expect(result).toEqual({ error: 'no notes found in this MIDI file' });
   });
 });
