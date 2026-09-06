@@ -25,6 +25,14 @@ import { bookmarkKey } from './profiles';
  * free play's screen for the first time, recording built in from the
  * start, not bolt a record button onto an existing one. See ROADMAP task
  * 176's piece-2 done-note.
+ *
+ * `saveImportedSong` (ROADMAP task 177, piece 4's last slice) is this
+ * module's second save path, for a melody that already has real notes —
+ * a MIDI import's own quantized durations and interior rests — rather
+ * than a tapped sequence of same-length quarter notes. It shares
+ * `saveCustomSong`'s validate-then-store body (`storeValidatedSong`
+ * below) so an imported song can never end up held to different rules,
+ * or stored a different way, than a tapped one.
  */
 
 /** One tap in, one quarter note out — the only duration this mode writes. Longer/shorter notes are a later piece, not "zero parsing". */
@@ -122,8 +130,15 @@ const STORAGE_KEY = 'wb.customsongs.v1';
 interface StoredSong {
   id: string;
   title: string;
-  /** [semitone, beats] pairs — rests never reach here (see `notesFromSteps`), so there is nothing to encode for one. */
-  n: [number, number][];
+  /**
+   * [semitone, beats] pairs, or [semitone, beats, 1] for a rest (`semitone`
+   * unused in that case, kept only so every entry has the same shape). A
+   * tapped song never has a rest (see `notesFromSteps`) but an imported one
+   * can (`saveImportedSong`), so the third slot has existed since the format
+   * was introduced — no version bump needed, and a v1 record with no third
+   * element still reads back exactly as it always did.
+   */
+  n: ([number, number] | [number, number, 1])[];
 }
 
 interface Stored {
@@ -146,10 +161,10 @@ export function loadCustomSongs(): Song[] {
       if (!s || typeof s.id !== 'string' || typeof s.title !== 'string' || !Array.isArray(s.n)) continue;
       const notes: SongNote[] = [];
       for (const pair of s.n) {
-        if (!Array.isArray(pair) || pair.length !== 2) continue;
-        const [semitone, beats] = pair;
+        if (!Array.isArray(pair) || (pair.length !== 2 && pair.length !== 3)) continue;
+        const [semitone, beats, rest] = pair;
         if (!Number.isFinite(semitone) || !Number.isFinite(beats)) continue;
-        notes.push({ semitone, beats });
+        notes.push(rest === 1 ? { semitone, beats, rest: true } : { semitone, beats });
       }
       if (notes.length === 0) continue;
       songs.push({ id: s.id, title: s.title, beatsPerBar: CUSTOM_SONG_BEATS_PER_BAR, notes });
@@ -166,7 +181,11 @@ function writeCustomSongs(songs: readonly Song[]): void {
   try {
     const record: Stored = {
       v: 1,
-      songs: songs.map((s) => ({ id: s.id, title: s.title, n: s.notes.map((n) => [n.semitone, n.beats] as [number, number]) })),
+      songs: songs.map((s) => ({
+        id: s.id,
+        title: s.title,
+        n: s.notes.map((n) => (n.rest ? [n.semitone, n.beats, 1] : [n.semitone, n.beats]) as StoredSong['n'][number]),
+      })),
     };
     store.setItem(bookmarkKey(STORAGE_KEY), JSON.stringify(record));
   } catch {
@@ -183,15 +202,15 @@ function newCustomSongId(): string {
 export type SaveCustomSongResult = { song: Song } | { error: string };
 
 /**
- * Saves a tapped sequence as a named song. Validates first — a song that
- * cannot be engraved correctly is declined, never mangled, per ROADMAP
- * task 176's own promise — then checks the page isn't full.
+ * The body both save paths below share: validate, check the page has room,
+ * store. Neither `title` nor `notes` is trusted yet — that's the whole
+ * point of the two checks before anything is written.
  */
-export function saveCustomSong(title: string, steps: readonly number[]): SaveCustomSongResult {
+function storeValidatedSong(title: string, notes: readonly SongNote[]): SaveCustomSongResult {
   const trimmedTitle = title.trim();
   if (trimmedTitle === '') return { error: 'needs a name' };
 
-  const song = buildCustomSong(newCustomSongId(), trimmedTitle, steps);
+  const song: Song = { id: newCustomSongId(), title: trimmedTitle, beatsPerBar: CUSTOM_SONG_BEATS_PER_BAR, notes: notes.slice() };
   const problem = engravingProblem(song);
   if (problem) return { error: problem };
 
@@ -202,6 +221,29 @@ export function saveCustomSong(title: string, steps: readonly number[]): SaveCus
 
   writeCustomSongs([...existing, song]);
   return { song };
+}
+
+/**
+ * Saves a tapped sequence as a named song. Validates first — a song that
+ * cannot be engraved correctly is declined, never mangled, per ROADMAP
+ * task 176's own promise — then checks the page isn't full.
+ */
+export function saveCustomSong(title: string, steps: readonly number[]): SaveCustomSongResult {
+  return storeValidatedSong(title, notesFromSteps(steps));
+}
+
+/**
+ * Saves an already-validated imported melody as a named song (ROADMAP task
+ * 177, piece 4's last slice) — `core/midi.ts`'s `importMidi`/
+ * `validateImportedMelody` produce real durations and interior rests a
+ * tapped sequence never has, so this takes `notes` directly rather than
+ * `steps`. Still re-runs `engravingProblem` here rather than trusting the
+ * caller's own check: a save path that could store something it never
+ * itself validated is the one way this module's "declined, never mangled"
+ * promise could quietly stop being true.
+ */
+export function saveImportedSong(title: string, notes: readonly SongNote[]): SaveCustomSongResult {
+  return storeValidatedSong(title, notes);
 }
 
 /** Removes a saved song by id. Removing one that isn't there is a no-op, not an error. */

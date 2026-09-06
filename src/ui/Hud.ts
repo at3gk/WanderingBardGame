@@ -132,6 +132,8 @@ const WANDERING_LABEL = 'Wandering';
 const WANDER_ROW_LABEL = 'Wander the songbook';
 /** The row that opens the free-play staff (task 176 piece 4). */
 const MAKE_A_SONG_LABEL = 'Make a song ♪';
+/** The row that opens the MIDI file picker (task 177 piece 4's last slice). */
+const IMPORT_SONG_LABEL = 'Import a song ♪';
 
 /**
  * The page's second door: press today's road into a small painted card.
@@ -279,6 +281,7 @@ export class Hud {
   private postcardCb: (() => void) | null = null;
   private otherPageCb: (() => void) | null = null;
   private freePlayCb: (() => void) | null = null;
+  private importMidiCb: (() => void) | null = null;
 
   /** Seconds of brightness left on each piece. */
   private coinsAttention = 0;
@@ -653,6 +656,17 @@ export class Hud {
    */
   onFreePlay(handler: () => void): void {
     this.freePlayCb = handler;
+    this.buildBook();
+  }
+
+  /**
+   * Called when the player opens the MIDI file picker from the songbook's
+   * "Import a song" row (task 177, piece 4's last slice). Same
+   * no-handler-no-row contract as `onFreePlay` — a host that never wires
+   * this (tests, the proof sheets) sees the book exactly as it always was.
+   */
+  onImportMidi(handler: () => void): void {
+    this.importMidiCb = handler;
     this.buildBook();
   }
 
@@ -1377,6 +1391,7 @@ export class Hud {
     heading?: true;
     wear?: 0 | 1 | 2 | 3;
     freePlay?: true;
+    importMidi?: true;
   }> {
     const rows: Array<{
       id: string | null;
@@ -1384,6 +1399,7 @@ export class Hud {
       heading?: true;
       wear?: 0 | 1 | 2 | 3;
       freePlay?: true;
+      importMidi?: true;
     }> = [];
     if (this.pinnedSongId !== null) rows.push({ id: null, name: WANDER_ROW_LABEL });
     for (const entry of this.songEntries) {
@@ -1391,6 +1407,7 @@ export class Hud {
       else if (entry.id !== this.pinnedSongId) rows.push(entry);
     }
     if (this.freePlayCb) rows.push({ id: null, name: MAKE_A_SONG_LABEL, freePlay: true });
+    if (this.importMidiCb) rows.push({ id: null, name: IMPORT_SONG_LABEL, importMidi: true });
     return rows;
   }
 
@@ -1465,6 +1482,7 @@ export class Hud {
         event.preventDefault();
         this.setBookOpen(false);
         if (entry.freePlay) this.freePlayCb?.();
+        else if (entry.importMidi) this.importMidiCb?.();
         else this.songChosen?.(entry.id);
       });
       this.bookBox.appendChild(row);

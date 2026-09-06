@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 154 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 156 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -30,7 +30,10 @@ top-note-skyline melody extractor; run 154 shipped task 177 piece 3 — the
 duration quantizer and the octave-shift range transposer, both pure
 functions with no screen; run 155 shipped task 177 piece 4's first
 slice — `validateImportedMelody`/`importMidi`, composing the whole
-pipeline and holding it to `engravingProblem`, still no screen)
+pipeline and holding it to `engravingProblem`, still no screen; run 156
+shipped piece 4's last slice — the file-upload control itself
+(`ImportSongDialog`, the songbook's "Import a song" row, and
+`saveImportedSong`) — closing task 177 end to end)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -112,6 +115,38 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-06 (run 156) — task 177 piece 4's last slice: the
+  file-upload control, and MIDI import is DONE end to end.** Full detail
+  (the new `ImportSongDialog`, `saveImportedSong`, the storage-format
+  extension for rests, and the live-verification steps) is in ROADMAP
+  task 177's own final done-note — short version here. The songbook's
+  "Import a song ♪" row (next to "Make a song ♪", same no-handler-no-row
+  pattern) opens a hidden `<input type="file">` on the row's own
+  pointerdown, reads the chosen file as bytes, runs it through
+  `core/midi.ts`'s `importMidi`, and on success opens a name prompt (same
+  DOM/CSS shapes `freePlayScreen.ts`'s own naming dialog already uses)
+  that saves via a new `customSongs.ts` function, `saveImportedSong`. That
+  function had to exist because the old `saveCustomSong(title, steps:
+  number[])` can only express one tapped position = one quarter note —
+  it cannot carry a MIDI file's real durations or interior rests — so this
+  piece also extended `StoredSong`'s on-disk shape to allow a rest (no
+  version bump; old two-element records still read back unchanged) and
+  refactored `saveCustomSong`/`saveImportedSong` to share one
+  validate-then-store body. Verified live with an ad-hoc Playwright
+  install (1.56.1, `tools/browser.mjs`) against `npm run preview`: a
+  hand-built 16-note test MIDI round-tripped into a named custom song
+  that shows up on the "Your songs" shelf, and a plain text file declined
+  with a dismissible message and left no dialog state behind — zero
+  console/page errors either way. `npm test` 1329 green (+3), `npm run
+  build` green, bundle 913→921 KB (`midi.ts`/`importSongDialog.ts` are no
+  longer tree-shaken now that something reaches them). No new runtime
+  dependency. Task 177 is closed. Next: task 178 (MusicXML import, reuses
+  177's validation path) is the natural continuation of this arc; task
+  189's far-band lead and the v1.1 "crafted frame" queue remain open
+  alternatives, and this run's own count (156, eleven since the run-145
+  consolidation) makes the next run a reasonable candidate for the next
+  consolidation pass instead of another feature.
 
 - **HANDOFF, 2026-09-06 (run 155) — task 177 piece 4, first slice:
   validate, still no screen.** Full detail is in ROADMAP task 177's own

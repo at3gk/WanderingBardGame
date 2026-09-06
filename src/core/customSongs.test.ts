@@ -17,9 +17,11 @@ import {
   recordingProblem,
   resumeRecording,
   saveCustomSong,
+  saveImportedSong,
   startRecording,
   stopRecording,
 } from './customSongs';
+import type { SongNote } from './song';
 
 // Same in-memory localStorage stub profiles.test.ts uses — the node test
 // environment has none.
@@ -51,6 +53,20 @@ function validSteps(): number[] {
   const steps: number[] = [];
   for (let i = 0; i < MIN_CUSTOM_SONG_NOTES; i++) steps.push(i % 8);
   return steps;
+}
+
+/**
+ * The shape `core/midi.ts`'s `validateImportedMelody` hands to
+ * `saveImportedSong`: real quarter notes plus one interior rest, still
+ * exactly `MIN_CUSTOM_SONG_NOTES` non-rest notes and a whole final bar —
+ * something `notesFromSteps` (fixed quarter notes, never a rest) could
+ * never produce, which is the whole reason this second save path exists.
+ */
+function validImportedNotes(): SongNote[] {
+  const notes: SongNote[] = validSteps().map((step) => ({ semitone: semitoneAtStep(step), beats: 1 }));
+  notes.splice(4, 0, { semitone: 0, beats: 1, rest: true });
+  notes.push({ semitone: semitoneAtStep(0), beats: 3 });
+  return notes;
 }
 
 describe('notesFromSteps', () => {
@@ -210,6 +226,43 @@ describe('saveCustomSong / loadCustomSongs / deleteCustomSong', () => {
   it('ignores corrupt storage instead of throwing', () => {
     globalThis.localStorage.setItem('wb.customsongs.v1', '{not json');
     expect(loadCustomSongs()).toEqual([]);
+  });
+});
+
+describe('saveImportedSong (task 177 piece 4)', () => {
+  it('round-trips a melody with real durations and an interior rest, unlike a tapped song', () => {
+    const notes = validImportedNotes();
+    const result = saveImportedSong('  My Import  ', notes);
+    expect('song' in result).toBe(true);
+    const saved = (result as { song: { id: string } }).song;
+    expect(isCustomSongId(saved.id)).toBe(true);
+
+    const loaded = loadCustomSongs();
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].title).toBe('My Import'); // trimmed, same as saveCustomSong
+    expect(loaded[0].notes).toEqual(notes);
+  });
+
+  it('declines the same way saveCustomSong does: bad name, failed engraving, full page', () => {
+    expect('error' in saveImportedSong('   ', validImportedNotes())).toBe(true);
+    expect(loadCustomSongs()).toEqual([]);
+
+    const tooShort = validImportedNotes().slice(0, 4);
+    expect('error' in saveImportedSong('Too Short', tooShort)).toBe(true);
+    expect(loadCustomSongs()).toEqual([]);
+
+    for (let i = 0; i < MAX_CUSTOM_SONGS; i++) {
+      expect('song' in saveImportedSong(`Song ${i}`, validImportedNotes())).toBe(true);
+    }
+    expect('error' in saveImportedSong('One Too Many', validImportedNotes())).toBe(true);
+    expect(loadCustomSongs()).toHaveLength(MAX_CUSTOM_SONGS);
+  });
+
+  it('sits on the same per-bookmark shelf as a tapped song', () => {
+    saveCustomSong('Tapped', validSteps());
+    saveImportedSong('Imported', validImportedNotes());
+    const loaded = loadCustomSongs();
+    expect(loaded.map((s) => s.title).sort()).toEqual(['Imported', 'Tapped']);
   });
 });
 
