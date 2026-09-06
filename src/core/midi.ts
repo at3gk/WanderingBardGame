@@ -18,6 +18,9 @@
  * for a tapped song that can't be engraved.
  */
 
+import { staffStepAt } from './notation';
+import { LEGAL_DURATIONS, MIN_DRAWABLE_STEP, MAX_DRAWABLE_STEP } from './customSongs';
+
 export interface MidiNoteOnEvent {
   type: 'noteOn';
   tick: number;
@@ -90,6 +93,9 @@ export type ExtractMelodyResult = { melody: MelodyNote[] } | { error: string };
 
 /** MIDI note number 60 is defined as middle C (C4) — the same anchor `notation.ts` uses. */
 const MIDDLE_C_MIDI_NOTE = 60;
+
+/** How many octaves either side of the file's own written register to try when auto-transposing (task 177, piece 3). Ten MIDI octaves (0-127) means a file's melody is never more than about ±8 octaves from middle C. */
+const MAX_OCTAVE_SHIFT = 8;
 
 interface TimedNote {
   tick: number;
@@ -184,6 +190,82 @@ export function extractMelody(file: MidiFile): ExtractMelodyResult {
   if (started && segmentTopNote !== null) closeSegment(timed[timed.length - 1].tick);
 
   return { melody };
+}
+
+/**
+ * Rounds one raw beat duration (a MIDI file's own tick gap, converted to
+ * beats) to the nearest value the songbook's engraver can actually draw
+ * (`LEGAL_DURATIONS`). A real MIDI file's durations essentially never land
+ * exactly on one of these — human performance timing, a `ticksPerQuarter`
+ * that doesn't divide evenly, a DAW's own swing/humanize — which is exactly
+ * the "real rounding policy" piece 2 left undone. Ties (equally close to
+ * two legal values) round down to the shorter one; deterministic, and
+ * consistent with `nearestLegalDuration`/`transposeIntoRange` both scanning
+ * their candidates in ascending order and only replacing the current best
+ * on a strict improvement.
+ */
+function nearestLegalDuration(beats: number): number {
+  let best = LEGAL_DURATIONS[0];
+  let bestDiff = Math.abs(beats - best);
+  for (const candidate of LEGAL_DURATIONS) {
+    const diff = Math.abs(beats - candidate);
+    if (diff < bestDiff) {
+      best = candidate;
+      bestDiff = diff;
+    }
+  }
+  return best;
+}
+
+/**
+ * Quantizes every note in a melody — rests included — to a legal notated
+ * duration (ROADMAP task 177, piece 3). Rests are quantized too:
+ * `engravingProblem` checks `LEGAL_DURATIONS` against every note
+ * unconditionally, before it ever looks at whether the note is a rest.
+ */
+export function quantizeDurations(melody: readonly MelodyNote[]): MelodyNote[] {
+  return melody.map((note) => ({ ...note, beats: nearestLegalDuration(note.beats) }));
+}
+
+/**
+ * Shifts an entire melody by whole octaves — never a smaller interval,
+ * which would change the tune's intervals rather than just its register —
+ * so it sits inside the staff's drawable range (`MIN_DRAWABLE_STEP`/
+ * `MAX_DRAWABLE_STEP`) as well as one uniform shift can manage (task 177,
+ * piece 3). Only a note already on a natural pitch class can ever land in
+ * range at all: an accidental's pitch class is unchanged by any octave
+ * shift, so a MIDI file that uses one stays out of range no matter what
+ * this function does — correctly left for `engravingProblem` to decline
+ * (piece 4), not silently "fixed" here by picking a different pitch.
+ * Scores every candidate shift by how many notes it lands in range and
+ * keeps the first strict improvement seen while scanning shifts from
+ * the deepest drop to the highest lift; a tie in score keeps whichever
+ * shift has the smaller magnitude, and a tie in magnitude (a drop and a
+ * lift of the same size) keeps the drop, simply because it was reached
+ * first by that ascending scan — a deterministic pick, not a claim that
+ * dropping an octave is musically better than lifting one.
+ */
+export function transposeIntoRange(melody: readonly MelodyNote[]): MelodyNote[] {
+  const pitched = melody.filter((note) => !note.rest);
+  if (pitched.length === 0) return melody.slice();
+
+  let bestOctave = 0;
+  let bestScore = -1;
+  for (let octave = -MAX_OCTAVE_SHIFT; octave <= MAX_OCTAVE_SHIFT; octave++) {
+    const shift = octave * 12;
+    let score = 0;
+    for (const note of pitched) {
+      const step = staffStepAt(note.semitone + shift);
+      if (step !== null && step >= MIN_DRAWABLE_STEP && step <= MAX_DRAWABLE_STEP) score++;
+    }
+    if (score > bestScore || (score === bestScore && Math.abs(octave) < Math.abs(bestOctave))) {
+      bestScore = score;
+      bestOctave = octave;
+    }
+  }
+
+  const shift = bestOctave * 12;
+  return melody.map((note) => (note.rest ? note : { ...note, semitone: note.semitone + shift }));
 }
 
 /**

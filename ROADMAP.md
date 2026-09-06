@@ -109,6 +109,13 @@ makes it long. You do not need to read it top to bottom.
   auto-transpose into the staff's drawable range) next if MIDI import
   continues; task 178 (MusicXML), task 189's far-band lead, and the rest
   of the v1.1 queue remain open alternatives.
+- **Run 154 update**: shipped task 177 piece 3 (see its own done-note,
+  below task 177's entry). Live queue as of run 154: task 177 piece 4
+  (run the result through `engravingProblem` and wire an actual
+  file-upload control into the UI — the first piece of this task that
+  needs a screen) next if MIDI import continues; task 178 (MusicXML),
+  task 189's far-band lead, and the rest of the v1.1 queue remain open
+  alternatives.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -2428,6 +2435,54 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     wires a file-upload control into the UI. Each remaining piece can
     stand alone and be tested without a screen, the same way 176's
     pieces 1-2 did.
+    **Piece 3 done (2026-09-06, run 154): quantize + auto-transpose.**
+    Two small pure functions in `core/midi.ts`, each independently
+    testable exactly as pieces 1-2 were. `quantizeDurations(melody)`
+    rounds every note's `beats` — rests included, since `engravingProblem`
+    checks `LEGAL_DURATIONS` on every note unconditionally before it ever
+    asks whether the note is a rest — to the nearest value in that same
+    set; an exact tie (e.g. 1.25, equidistant from 1 and 1.5) rounds down
+    to the shorter value, a real but arbitrary policy decision, picked for
+    determinism rather than any claimed musical rightness.
+    `transposeIntoRange(melody)` shifts an entire melody by whole octaves
+    only — never a smaller interval, which would change the tune's own
+    intervals rather than just its register — choosing whichever shift
+    puts the most notes' `staffStepAt` result inside
+    `MIN_DRAWABLE_STEP`/`MAX_DRAWABLE_STEP`. Both constants (and
+    `LEGAL_DURATIONS`) are now `export`ed from `customSongs.ts` instead of
+    being re-declared, so the quantizer/transposer can never silently
+    drift out of sync with the exact rules `engravingProblem` checks.
+    Ties prefer the smallest shift, found by scanning candidate octaves
+    from -8 to +8 in ascending order and only replacing the current best
+    on a strict improvement — so between two equally-good opposite-
+    direction shifts of the same size, the negative (downward) one wins
+    simply by being reached first; documented as a deterministic tie-break,
+    not a musical claim. An accidental (a MIDI note whose pitch class
+    isn't natural) is deliberately left alone by this function: no octave
+    shift ever changes a pitch class, so an accidental stays out of range
+    under any shift and is correctly left for piece 4's `engravingProblem`
+    run to decline, the same "Book Two is the escape hatch, not built
+    here" boundary pieces 1-2 already drew. 12 new tests (35 total in
+    `midi.test.ts`): for the quantizer, an already-legal duration left
+    alone, a near-miss rounding up, both tie cases rounding down,
+    clamping below the shortest and above the longest legal value, and
+    quantizing a rest; for the transposer, an in-range melody left
+    untouched, a too-low and a too-high melody each shifted by the
+    smallest sufficient octave count, every note (including a rest, left
+    alone) shifted by the one shift chosen for the melody as a whole, an
+    accidental riding along on that same shift without influencing which
+    shift was picked, and an all-rest melody returned unchanged rather
+    than picking an arbitrary shift. `npm test` 1318 green (+12), `npm
+    run build` green (913 KB, unchanged — `midi.ts` is still unimported
+    by anything reachable, so it tree-shakes out completely, same as
+    pieces 1-2). No new runtime dependency. Not run
+    through the headless browser tools — pure logic, no UI, same call
+    pieces 1-2 made. Next: piece 4 — run the quantized/transposed melody
+    through `engravingProblem` (declining kindly on anything it still
+    doesn't like, e.g. a bar-crossing note this piece's per-note
+    quantizing doesn't guarantee against) and wire an actual file-upload
+    control into the free-play/songbook UI, the first piece of task 177
+    that needs a screen at all.
 178. **MusicXML import.** Second format, richer (it is already
     notation); reuses 177's validation path.
 

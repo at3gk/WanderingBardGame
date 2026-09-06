@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 153 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 154 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -26,7 +26,9 @@ run 151 shipped that shelf, closing task 176 and the whole v1.3 arc — a
 family can now record a tune, name it, and walk the road with it; run 152
 picked task 177 (MIDI import), split the same way, and shipped piece 1 —
 the dependency-free byte parser; run 153 shipped task 177 piece 2 — the
-top-note-skyline melody extractor)
+top-note-skyline melody extractor; run 154 shipped task 177 piece 3 — the
+duration quantizer and the octave-shift range transposer, both pure
+functions with no screen)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -108,6 +110,32 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-06 (run 154) — task 177 piece 3: quantize +
+  auto-transpose.** Full detail is in ROADMAP task 177's own piece-3
+  done-note — short version here. Two new pure functions in
+  `core/midi.ts`: `quantizeDurations(melody)` rounds every note's `beats`
+  (rests included) to the nearest value in `LEGAL_DURATIONS`, ties
+  rounding down; `transposeIntoRange(melody)` shifts an entire melody by
+  whole octaves only, picking whichever shift lands the most notes inside
+  `MIN_DRAWABLE_STEP`/`MAX_DRAWABLE_STEP` (ties prefer the smallest
+  shift). `LEGAL_DURATIONS`/`MIN_DRAWABLE_STEP`/`MAX_DRAWABLE_STEP` are
+  now `export`ed from `customSongs.ts` rather than re-declared, so the two
+  can never drift out of sync with what `engravingProblem` actually
+  checks. An accidental note is deliberately left alone by the
+  transposer — no octave shift changes a pitch class, so it stays out of
+  range under any shift and is correctly left for piece 4's
+  `engravingProblem` run to decline, same boundary pieces 1-2 already
+  drew ("Book Two is the escape hatch, not built here"). 12 new tests (35
+  total in `midi.test.ts`). `npm test` 1318 green (+12), `npm run build`
+  green (913 KB, unchanged — `midi.ts` is still unimported, still
+  tree-shaken out). No new runtime dependency. Not run through the
+  headless browser tools — pure logic, no UI, same call pieces 1-2 made.
+  Next: task 177 piece 4 — run the quantized/transposed melody through
+  `engravingProblem` and wire an actual file-upload control into the
+  free-play/songbook UI, the first piece of this task that needs a
+  screen; task 178 (MusicXML) and task 189's far-band lead remain open
+  alternatives if MIDI import pauses again.
 
 - **HANDOFF, 2026-09-05 (run 153) — task 177 piece 2: the melody
   extractor.** Full detail is in ROADMAP task 177's own piece-2 done-note
