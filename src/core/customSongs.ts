@@ -39,12 +39,22 @@ export const MAX_CUSTOM_SONGS = 8;
 
 const ID_PREFIX = 'custom:';
 
-/** Same set `songs.test.ts` calls "writable note values". */
-const LEGAL_DURATIONS = [0.5, 1, 1.5, 2, 3, 4];
+/**
+ * Same set `songs.test.ts` calls "writable note values". Exported so
+ * `core/midi.ts`'s quantizer (ROADMAP task 177, piece 3) rounds a MIDI
+ * file's raw tick-derived durations to the exact same set this module's
+ * own `engravingProblem` checks, rather than keeping a second copy that
+ * could drift out of sync with it.
+ */
+export const LEGAL_DURATIONS = [0.5, 1, 1.5, 2, 3, 4];
 
-/** Same range `songs.test.ts` calls "a range the staff can draw legibly". */
-const MIN_DRAWABLE_STEP = -2;
-const MAX_DRAWABLE_STEP = 12;
+/**
+ * Same range `songs.test.ts` calls "a range the staff can draw legibly".
+ * Exported for the same reason as `LEGAL_DURATIONS` — `core/midi.ts`'s
+ * auto-transposer (task 177, piece 3) targets this exact range.
+ */
+export const MIN_DRAWABLE_STEP = -2;
+export const MAX_DRAWABLE_STEP = 12;
 
 /** Whether an id names a custom, locally-composed song rather than a built-in one. */
 export function isCustomSongId(id: string): boolean {

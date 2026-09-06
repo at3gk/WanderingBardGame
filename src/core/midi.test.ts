@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractMelody, parseMidi, type MidiFile } from './midi';
+import { extractMelody, parseMidi, quantizeDurations, transposeIntoRange, type MidiFile, type MelodyNote } from './midi';
 
 // Hand-built Standard MIDI File bytes — no fixture files, no MIDI library,
 // same "construct the exact bytes a real writer would emit" approach a
@@ -376,5 +376,97 @@ describe('extractMelody', () => {
     const f = file(96, [[{ type: 'tempo', tick: 0, microsecondsPerQuarter: 500000 }, { type: 'endOfTrack', tick: 0 }]]);
     const result = extractMelody(f);
     expect(result).toEqual({ error: 'no notes found in this MIDI file' });
+  });
+});
+
+// Piece 3 (ROADMAP task 177): rounds a raw MIDI duration to the songbook's
+// legal note values, and shifts an out-of-register melody by whole octaves
+// into the staff's drawable range. Both operate on plain MelodyNote arrays,
+// same as extractMelody's own output, so tests build those directly.
+
+describe('quantizeDurations', () => {
+  it('leaves an already-legal duration unchanged', () => {
+    expect(quantizeDurations([{ semitone: 0, beats: 2 }])).toEqual([{ semitone: 0, beats: 2 }]);
+  });
+
+  it('rounds a slightly-off duration to the nearest legal value', () => {
+    expect(quantizeDurations([{ semitone: 0, beats: 0.97 }])).toEqual([{ semitone: 0, beats: 1 }]);
+  });
+
+  it('rounds an exact tie between two legal values down to the shorter one', () => {
+    // 1.25 is equally close to 1 and 1.5; 2.5 is equally close to 2 and 3.
+    expect(quantizeDurations([{ semitone: 0, beats: 1.25 }])).toEqual([{ semitone: 0, beats: 1 }]);
+    expect(quantizeDurations([{ semitone: 0, beats: 2.5 }])).toEqual([{ semitone: 0, beats: 2 }]);
+  });
+
+  it('clamps a duration shorter than the shortest legal value up to it', () => {
+    expect(quantizeDurations([{ semitone: 0, beats: 0.1 }])).toEqual([{ semitone: 0, beats: 0.5 }]);
+  });
+
+  it('clamps a duration longer than the longest legal value down to it', () => {
+    expect(quantizeDurations([{ semitone: 0, beats: 5.9 }])).toEqual([{ semitone: 0, beats: 4 }]);
+  });
+
+  it('quantizes a rest exactly like a pitched note', () => {
+    expect(quantizeDurations([{ semitone: 0, beats: 0.97, rest: true }])).toEqual([{ semitone: 0, beats: 1, rest: true }]);
+  });
+});
+
+describe('transposeIntoRange', () => {
+  it('leaves a melody already inside the drawable range unchanged', () => {
+    const melody: MelodyNote[] = [{ semitone: 0, beats: 1 }, { semitone: 4, beats: 1 }];
+    expect(transposeIntoRange(melody)).toEqual(melody);
+  });
+
+  it('shifts a melody sitting below the range up by whole octaves, picking the smallest sufficient shift', () => {
+    // A2 (semitone -15): +1 octave already reaches semitone -3 (A3),
+    // exactly MIN_DRAWABLE_STEP — the smallest shift that works, even
+    // though +2 octaves (to A4) would also land inside the range.
+    const result = transposeIntoRange([{ semitone: -15, beats: 1 }]);
+    expect(result).toEqual([{ semitone: -3, beats: 1 }]);
+  });
+
+  it('shifts a melody sitting above the range down by whole octaves, picking the smallest sufficient shift', () => {
+    // Semitone 45 (a natural, A6) could drop into range at -2, -3, or -4
+    // octaves; the smallest of those (-2 octaves, to A4 = semitone 21,
+    // exactly MAX_DRAWABLE_STEP) is the one that should be picked.
+    const result = transposeIntoRange([{ semitone: 45, beats: 1 }]);
+    expect(result).toEqual([{ semitone: 21, beats: 1 }]);
+  });
+
+  it('shifts every note by the same amount, chosen to serve the pitched notes as a whole', () => {
+    const melody: MelodyNote[] = [
+      { semitone: -15, beats: 1 },
+      { semitone: -15, beats: 1, rest: true },
+      { semitone: -13, beats: 1 }, // a second above -15, same octave shift keeps the interval
+    ];
+    const result = transposeIntoRange(melody);
+    // +1 octave (the smallest shift getting -15 in range) also happens to
+    // land -13 in range, so it wins outright over the larger +2-octave shift.
+    expect(result).toEqual([
+      { semitone: -3, beats: 1 },
+      { semitone: -15, beats: 1, rest: true }, // rests are never shifted
+      { semitone: -1, beats: 1 },
+    ]);
+  });
+
+  it('leaves an accidental out of range (not this function\'s job) without disturbing the shift chosen for the rest of the melody', () => {
+    // semitone -14 is C#/Db, an accidental — no octave shift ever makes it
+    // natural, so it should never affect which shift wins, and it should
+    // move by that same shift anyway rather than being left behind.
+    const melody: MelodyNote[] = [
+      { semitone: -15, beats: 1 }, // natural, drives the +1-octave shift
+      { semitone: -14, beats: 1 }, // accidental, along for the ride
+    ];
+    const result = transposeIntoRange(melody);
+    expect(result).toEqual([
+      { semitone: -3, beats: 1 },
+      { semitone: -2, beats: 1 },
+    ]);
+  });
+
+  it('returns an all-rest melody unchanged rather than picking an arbitrary shift', () => {
+    const melody: MelodyNote[] = [{ semitone: 0, beats: 1, rest: true }];
+    expect(transposeIntoRange(melody)).toEqual(melody);
   });
 });
