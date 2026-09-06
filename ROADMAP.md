@@ -116,6 +116,14 @@ makes it long. You do not need to read it top to bottom.
   needs a screen) next if MIDI import continues; task 178 (MusicXML),
   task 189's far-band lead, and the rest of the v1.1 queue remain open
   alternatives.
+- **Run 155 update**: piece 4 split again — too big for one run once "needs
+  a screen" is unpacked into "validate" and "build a control," the same
+  seam 176's own piece 4 was split along. This run shipped the validate
+  half only (see task 177's own piece-4 "first slice" done-note); still no
+  screen. Live queue as of run 155: task 177 piece 4's remaining slice
+  (the file-upload control itself, wired into free play/the songbook UI)
+  next if MIDI import continues; task 178 (MusicXML), task 189's far-band
+  lead, and the rest of the v1.1 queue remain open alternatives.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -2483,6 +2491,50 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     quantizing doesn't guarantee against) and wire an actual file-upload
     control into the free-play/songbook UI, the first piece of task 177
     that needs a screen at all.
+    **Piece 4, first slice done (2026-09-06, run 155): validate, still no
+    screen.** "Needs a screen" turned out to bundle two separately-riskable
+    things, same as every other multi-part piece in this task: holding the
+    quantized/transposed melody to `engravingProblem`, and building the
+    control that gets a family's file into this pipeline at all. Split
+    along that seam — this slice is the first, pure logic only. New
+    `validateImportedMelody(melody)` in `core/midi.ts` composes pieces 3's
+    two functions and then wraps the result in a throwaway `Song`
+    (`beatsPerBar` from `customSongs.ts`'s own `CUSTOM_SONG_BEATS_PER_BAR`)
+    to run it through `engravingProblem` unchanged — the exact rules the
+    built-in songbook and a tapped custom song both already pass, kept as
+    one function rather than re-implemented, so an uploaded song can never
+    end up held to different rules than either. Not run in a loop:
+    quantizing and transposing are each one-shot passes over the whole
+    melody (piece 3's own docs), so whatever `engravingProblem` still
+    objects to afterward — an accidental (no octave shift changes a pitch
+    class, so it's still off the naturals-only staff), a note quantizing
+    didn't stop from crossing a bar line, too few notes to sound like a
+    tune — is a real decline to surface, not a bug to retry past. New
+    `importMidi(bytes)` composes the entire pipeline end to end (parse →
+    extract → quantize/transpose/validate) for the UI slice to call once it
+    exists; nothing in either function reads a `File`, touches the DOM, or
+    needs a browser, so both are tested exactly like pieces 1-3 were. 8 new
+    tests (43 total in `midi.test.ts`): for `validateImportedMelody`, an
+    already-legal melody passed through unchanged, a raw melody quantized
+    and transposed before validating, and the three real decline paths
+    (too few notes, an uncorrectable accidental, a bar-crossing note); for
+    `importMidi`, a full byte-to-melody round trip and both a parse-level
+    and an extract-level decline propagated unchanged. The end-to-end test
+    needed alternating pitches (C4/D4), not one repeated note, to avoid an
+    extractMelody edge its own tests already document: back-to-back
+    note-on/note-off pairs on the SAME pitch never change the "current top
+    note" the skyline tracks, so they read as one held note rather than
+    several separate ones — a real property of piece 2, re-confirmed here
+    rather than a new bug. `npm test` 1326 green (+8), `npm run build`
+    green (913 KB, unchanged — `midi.ts` is still unimported by anything
+    reachable, so it tree-shakes out completely, same as every piece
+    before it). No new runtime dependency. **Next: piece 4's remaining
+    slice — the file-upload control itself**, wired into free play or the
+    songbook UI (`<input type="file">`, reading the chosen file as bytes,
+    calling `importMidi`, and on success either handing the melody to
+    `saveCustomSong`'s save path with a name prompt or building an
+    equivalent one) — the first piece of this task that actually needs a
+    screen, same milestone task 176's own piece 3 was.
 178. **MusicXML import.** Second format, richer (it is already
     notation); reuses 177's validation path.
 

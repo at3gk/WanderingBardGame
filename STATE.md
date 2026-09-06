@@ -28,7 +28,9 @@ picked task 177 (MIDI import), split the same way, and shipped piece 1 —
 the dependency-free byte parser; run 153 shipped task 177 piece 2 — the
 top-note-skyline melody extractor; run 154 shipped task 177 piece 3 — the
 duration quantizer and the octave-shift range transposer, both pure
-functions with no screen)
+functions with no screen; run 155 shipped task 177 piece 4's first
+slice — `validateImportedMelody`/`importMidi`, composing the whole
+pipeline and holding it to `engravingProblem`, still no screen)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -110,6 +112,40 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-06 (run 155) — task 177 piece 4, first slice:
+  validate, still no screen.** Full detail is in ROADMAP task 177's own
+  piece-4 "first slice" done-note — short version here. Piece 4's own
+  description ("run the result through `engravingProblem`... and wire an
+  actual file-upload control") bundles pure logic with a screen, so it got
+  split the same way task 176's piece 4 was: this slice is the pure half
+  only. New `validateImportedMelody(melody)` in `core/midi.ts` composes
+  piece 3's `quantizeDurations`/`transposeIntoRange` and then wraps the
+  result in a throwaway `Song` to run it through `customSongs.ts`'s own
+  `engravingProblem` unchanged — the same rules the built-in songbook and
+  a tapped custom song both already pass, kept as one function so an
+  uploaded song can never be held to different rules than either. New
+  `importMidi(bytes)` composes the entire pipeline (parse → extract →
+  quantize/transpose/validate) end to end, ready for a future upload
+  control to call. Neither function touches a `File` or the DOM. 8 new
+  tests (43 total in `midi.test.ts`): `validateImportedMelody` passing an
+  already-legal melody through, quantizing/transposing a raw one before
+  validating, and three real decline paths (too few notes, an accidental
+  no octave shift fixes, a note crossing a bar line after quantizing);
+  `importMidi` a full byte round trip plus a parse-level and an
+  extract-level decline propagated unchanged. One thing worth other runs
+  knowing: the end-to-end byte test needed alternating pitches, not one
+  repeated note — back-to-back note-on/off pairs on the same pitch never
+  change the "current top note" `extractMelody` tracks, so they collapse
+  into one held note rather than several (a real, already-documented
+  property of piece 2, not a bug). `npm test` 1326 green (+8), `npm run
+  build` green (913 KB, unchanged — `midi.ts` is still unimported, still
+  tree-shaken out). No new runtime dependency. Next: piece 4's remaining
+  slice — the actual file-upload control, wired into free play or the
+  songbook UI, calling `importMidi` and handing a clean melody to a save
+  path — the first piece of task 177 that needs a screen at all; task 178
+  (MusicXML) and task 189's far-band lead remain open alternatives if MIDI
+  import pauses again.
 
 - **HANDOFF, 2026-09-06 (run 154) — task 177 piece 3: quantize +
   auto-transpose.** Full detail is in ROADMAP task 177's own piece-3
