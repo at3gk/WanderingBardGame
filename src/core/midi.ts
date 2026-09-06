@@ -19,7 +19,7 @@
  */
 
 import { staffStepAt } from './notation';
-import { LEGAL_DURATIONS, MIN_DRAWABLE_STEP, MAX_DRAWABLE_STEP } from './customSongs';
+import { LEGAL_DURATIONS, MIN_DRAWABLE_STEP, MAX_DRAWABLE_STEP, CUSTOM_SONG_BEATS_PER_BAR, engravingProblem } from './customSongs';
 
 export interface MidiNoteOnEvent {
   type: 'noteOn';
@@ -266,6 +266,48 @@ export function transposeIntoRange(melody: readonly MelodyNote[]): MelodyNote[] 
 
   const shift = bestOctave * 12;
   return melody.map((note) => (note.rest ? note : { ...note, semitone: note.semitone + shift }));
+}
+
+export type ImportMidiResult = { melody: MelodyNote[] } | { error: string };
+
+/**
+ * Quantizes and transposes a raw extracted melody, then holds the result to
+ * the SAME engraving rules the built-in songbook and a tapped custom song
+ * both pass — `customSongs.ts`'s `engravingProblem` — by wrapping it in a
+ * throwaway `Song` (ROADMAP task 177, piece 4, first slice). "Declined
+ * kindly, never mangled" is this task's own promise from the moment it was
+ * written; this is where it's finally kept, since pieces 2-3 only ever
+ * produced melodies, never validated them. Deliberately not quantized/
+ * transposed and then re-checked in a loop: both are one-shot fixes over
+ * the whole melody (piece 3's own docs), so whatever `engravingProblem`
+ * still objects to afterward — an accidental, still off the naturals-only
+ * staff no octave shift can fix; a note that quantizing to a legal length
+ * didn't stop from crossing a bar line; too few notes to sound like a tune
+ * — is a real decline, not a bug in this step.
+ */
+export function validateImportedMelody(melody: readonly MelodyNote[]): ImportMidiResult {
+  const fixed = transposeIntoRange(quantizeDurations(melody));
+  const problem = engravingProblem({ id: 'preview', title: 'preview', beatsPerBar: CUSTOM_SONG_BEATS_PER_BAR, notes: fixed });
+  if (problem) return { error: problem };
+  return { melody: fixed };
+}
+
+/**
+ * The whole pipeline, bytes to an engraving-clean melody: parse (piece 1),
+ * extract (piece 2), then quantize/transpose/validate (piece 3 and this
+ * piece's own `validateImportedMelody`). This is what the next slice of
+ * piece 4 — the actual file-upload control — will call; nothing here reads
+ * a `File` or touches the DOM, so it's testable exactly like pieces 1-3
+ * were, without a screen.
+ */
+export function importMidi(bytes: Uint8Array): ImportMidiResult {
+  const parsed = parseMidi(bytes);
+  if ('error' in parsed) return parsed;
+
+  const extracted = extractMelody(parsed.file);
+  if ('error' in extracted) return extracted;
+
+  return validateImportedMelody(extracted.melody);
 }
 
 /**

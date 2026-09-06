@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { extractMelody, parseMidi, quantizeDurations, transposeIntoRange, type MidiFile, type MelodyNote } from './midi';
+import {
+  extractMelody,
+  importMidi,
+  parseMidi,
+  quantizeDurations,
+  transposeIntoRange,
+  validateImportedMelody,
+  type MidiFile,
+  type MelodyNote,
+} from './midi';
 
 // Hand-built Standard MIDI File bytes — no fixture files, no MIDI library,
 // same "construct the exact bytes a real writer would emit" approach a
@@ -468,5 +477,91 @@ describe('transposeIntoRange', () => {
   it('returns an all-rest melody unchanged rather than picking an arbitrary shift', () => {
     const melody: MelodyNote[] = [{ semitone: 0, beats: 1, rest: true }];
     expect(transposeIntoRange(melody)).toEqual(melody);
+  });
+});
+
+// Piece 4, first slice (ROADMAP task 177): quantize + transpose a raw
+// extracted melody and hold the RESULT to `engravingProblem` — the same
+// promise the task made from its own one-line description ("declined
+// kindly, never mangled") but that pieces 2-3 never actually kept, since
+// neither of them validates. Sixteen identical, already-legal, in-range
+// quarter notes is the minimum shape `engravingProblem` accepts at all
+// (MIN_CUSTOM_SONG_NOTES), so most tests below build exactly that and
+// perturb one thing.
+
+function legalMelody(length = 16): MelodyNote[] {
+  return Array.from({ length }, () => ({ semitone: 0, beats: 1 }));
+}
+
+describe('validateImportedMelody', () => {
+  it('passes an already-legal, in-range melody through unchanged', () => {
+    const melody = legalMelody();
+    expect(validateImportedMelody(melody)).toEqual({ melody });
+  });
+
+  it('quantizes and transposes before validating, so a raw MIDI melody can still pass', () => {
+    const melody = [...legalMelody(15), { semitone: -15, beats: 0.97 }]; // out of range, slightly-off duration
+    const result = validateImportedMelody(melody);
+    if ('error' in result) throw new Error(result.error);
+    // -15 (+1 octave) lands at -3, exactly MIN_DRAWABLE_STEP; 0.97 rounds to 1.
+    expect(result.melody[15]).toEqual({ semitone: -3, beats: 1 });
+  });
+
+  it('declines a melody with too few notes to sound like a tune', () => {
+    expect(validateImportedMelody(legalMelody(4))).toEqual({ error: 'needs at least 16 notes to sound like a tune' });
+  });
+
+  it('declines an accidental that no octave shift can fix', () => {
+    const melody = [...legalMelody(15), { semitone: 1, beats: 1 }]; // C#, an accidental
+    expect(validateImportedMelody(melody)).toEqual({ error: 'has a note off the naturals-only staff' });
+  });
+
+  it('declines a note that quantizing did not stop from crossing a bar line', () => {
+    // Two 3-beat notes back to back: the second starts at beat 3 and ends at
+    // beat 6, crossing the 4/4 bar line at beat 4.
+    const melody: MelodyNote[] = [{ semitone: 0, beats: 3 }, { semitone: 0, beats: 3 }];
+    expect(validateImportedMelody(melody)).toEqual({ error: 'has a note that runs over a bar line' });
+  });
+});
+
+// importMidi is the whole pipeline end to end (parse -> extract -> quantize
+// -> transpose -> validate), so its own tests round-trip through real bytes
+// rather than the file()/MelodyNote shortcuts the earlier pieces used —
+// each stage above already has its own focused coverage.
+
+// Alternating pitches, not a single repeated one: back-to-back note-on/
+// note-off pairs on the SAME pitch never change the "current top note", so
+// extractMelody (correctly, per its own tests above) reads them as one held
+// note rather than sixteen — see "re-derives the same note from an
+// overlapping repeat". Alternating avoids that and still keeps every note
+// natural and in range.
+function noteBytes(notes: readonly number[], tickGap: number): number[] {
+  const bytes: number[] = [];
+  for (const note of notes) {
+    bytes.push(0x00, 0x90, note, 80); // note-on, no gap after the previous note-off
+    bytes.push(...vlq(tickGap), 0x80, note, 0); // note-off after tickGap ticks
+  }
+  return bytes;
+}
+
+describe('importMidi', () => {
+  it('parses, extracts, quantizes, transposes and validates a real MIDI file end to end', () => {
+    const notes = Array.from({ length: 16 }, (_, i) => (i % 2 === 0 ? 60 : 62)); // C4/D4 alternating
+    const trackData = [...noteBytes(notes, 96), 0x00, ...END_OF_TRACK];
+    const bytes = midiBytes([header(0, 1, 96), track(trackData)]);
+    const result = importMidi(bytes);
+    if ('error' in result) throw new Error(result.error);
+    expect(result.melody).toEqual(notes.map((note) => ({ semitone: note - 60, beats: 1 })));
+  });
+
+  it('propagates a parseMidi-level decline unchanged', () => {
+    const bytes = midiBytes([chunk('XXXX', [0, 0, 0, 0, 0, 0]), track([0x00, ...END_OF_TRACK])]);
+    expect(importMidi(bytes)).toEqual({ error: 'not a MIDI file (missing MThd header)' });
+  });
+
+  it('propagates an extractMelody-level decline unchanged', () => {
+    const trackData = [0x00, ...TEMPO_120BPM, 0x00, ...END_OF_TRACK]; // no notes at all
+    const bytes = midiBytes([header(0, 1, 96), track(trackData)]);
+    expect(importMidi(bytes)).toEqual({ error: 'no notes found in this MIDI file' });
   });
 });
