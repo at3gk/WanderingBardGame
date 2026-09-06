@@ -2535,6 +2535,77 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     `saveCustomSong`'s save path with a name prompt or building an
     equivalent one) — the first piece of this task that actually needs a
     screen, same milestone task 176's own piece 3 was.
+    **Piece 4's last slice done (2026-09-06, run 156): the file-upload
+    control, and task 177 DONE end to end.** New `src/ui/importSongDialog.ts`
+    (`ImportSongDialog`, ~215 lines): a hidden `<input type="file"
+    accept=".mid,.midi,...">` created and `.click()`ed in the constructor —
+    the songbook row's own pointerdown is the gesture a file picker needs,
+    the same reasoning `openFreePlay`'s `startAudio()` call already rests
+    on. On a chosen file, reads it as bytes (`File.arrayBuffer()`) and
+    calls piece 4's own `importMidi`; a parse/extract/validate failure
+    shows the declined-kindly message in a plain dismissible panel (no
+    dead end — "OK" ends the round trip, same as cancelling the picker
+    outright), and a clean melody opens a name prompt built from the exact
+    same DOM/CSS shapes `freePlayScreen.ts`'s own naming dialog already
+    uses. Saving needed a second save path: `customSongs.ts`'s
+    `saveCustomSong` only ever took `steps: number[]` (one tapped position,
+    one hard-coded quarter note) via `notesFromSteps`, which cannot
+    represent an imported melody's real durations or its interior rests —
+    a genuine gap in the existing API, not a detail this piece could route
+    around. New `saveImportedSong(title, notes: SongNote[])` shares
+    `saveCustomSong`'s validate-then-store body (`storeValidatedSong`, was
+    `saveCustomSong`'s own body) so an imported song is held to the exact
+    same engraving/full-page checks a tapped one is, just skipping the
+    steps-to-quarter-notes conversion that does not apply. That in turn
+    meant `customSongs.ts`'s storage format needed a rest to actually
+    survive a reload: `StoredSong.n` was `[semitone, beats]` pairs only
+    (the file's own comment noted "rests never reach here" — true until
+    this piece), now `[semitone, beats]` or `[semitone, beats, 1]` for a
+    rest, read and written without a version bump since a bare two-element
+    pair still round-trips exactly as it always did. `RoadStage.ts` wires
+    `hud.onImportMidi(() => this.openImportMidi())` next to the existing
+    `onFreePlay` wiring, and `Hud.ts` gained the row itself the same
+    no-handler-no-row way `MAKE_A_SONG_LABEL` did — "Import a song ♪",
+    right after "Make a song ♪" so neither can bump a real song off its
+    page.
+    Verified live rather than trusting the reading, the same standard
+    task 176's UI pieces held to: installed Playwright 1.56.1 ad hoc
+    (`tools/browser.mjs`, not a project dependency) against `npm run
+    preview`, generated a real 16-note two-pitch Standard MIDI File by
+    hand (a dependency-free writer, mirroring `midi.ts`'s own
+    dependency-free reader), opened the songbook, confirmed the new row
+    only appears on the page it earns (after every built-in song and
+    "Make a song ♪", same paging task 165 already handles), tapped it,
+    caught Playwright's `filechooser` event on the hidden input, fed it
+    the generated file, named the result, and confirmed all three: the
+    song round-tripped through `localStorage` with the correct pitches and
+    durations, "Your songs" gained a "Test Import Song" row on reopening
+    the book, and zero console/page errors throughout. Separately fed a
+    plain text file through the same picker: declined with a plain
+    message, "OK" dismissed it cleanly, and the dialog's own DOM (the
+    hidden input included) was gone afterward — confirmed by reading
+    `RoadStage`'s own `importDialog` field back from `window.bard`, not
+    by inference. One harness surprise worth naming for whoever reads a
+    Playwright dump next: `document.body.innerText` did not show either
+    overlay's text reliably (some evaluate calls came back missing it
+    entirely) even though the same elements were genuinely visible and
+    interactable — Playwright's own `getByText`/`fill`/`click` locators
+    (which wait for real visibility) found and used them correctly every
+    time. Trust the locator-driven interactions and their outcomes
+    (`localStorage`, the reopened book's contents) over a bare
+    `innerText` snapshot if this ever needs re-checking.
+    `npm test` 1329 green (+3 — `saveImportedSong`'s round-trip, its
+    decline paths, and sharing the shelf with a tapped song;
+    `customSongs.test.ts` only, `Hud.ts`/`importSongDialog.ts` follow the
+    same verify-live-not-in-vitest convention `freePlayScreen.ts` set),
+    `npm run build` green, bundle 913→921 KB (`midi.ts` and
+    `importSongDialog.ts` are no longer unimported/tree-shaken now that
+    something reaches them — the same one-time cost task 176's entry-point
+    piece paid). No new runtime dependency (Playwright stayed
+    dev-machine-only, exactly as `tools/README.md` already documents).
+    Task 177 is now fully done: parse, extract, quantize, transpose,
+    validate, and — as of this piece — actually reachable by a family
+    from the songbook itself.
 178. **MusicXML import.** Second format, richer (it is already
     notation); reuses 177's validation path.
 

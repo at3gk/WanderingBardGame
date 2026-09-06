@@ -65,6 +65,7 @@ import {
 } from './roadStaging';
 import { BOOK_FACE, Hud, type SongEntry } from '../ui/Hud';
 import { FreePlayScreen } from '../ui/freePlayScreen';
+import { ImportSongDialog } from '../ui/importSongDialog';
 import { tomorrowSkyline } from '../core/skyline';
 import { dayKey, legRoadKey, legSeed, mulberry32, randRange, subSeed } from '../core/rng';
 import {
@@ -296,6 +297,7 @@ export class RoadStage implements Stage {
   private readonly hudHost: HTMLElement;
   /** The free-play staff (task 176 piece 4), open at most one at a time. */
   private freePlayScreen: FreePlayScreen | null = null;
+  private importDialog: ImportSongDialog | null = null;
 
   private journey: JourneyState;
   /**
@@ -602,6 +604,7 @@ export class RoadStage implements Stage {
     this.hud.onWalkOn(() => this.walkOn());
     this.hud.onPostcard(() => this.pressPostcard());
     this.hud.onFreePlay(() => this.openFreePlay());
+    this.hud.onImportMidi(() => this.openImportMidi());
     // The other bookmark's page (task 157 piece 3): offered only when the
     // other bench cushion holds a journey at all. Composed lazily at tap
     // time so it reads whatever their record says TONIGHT, and their road
@@ -2433,6 +2436,26 @@ export class RoadStage implements Stage {
     this.refreshSongbook();
   }
 
+  /**
+   * Open the MIDI file picker (task 177, piece 4's last slice): the
+   * songbook's "Import a song" door. No audio to start here — nothing
+   * plays until the imported tune is actually walked with — so unlike
+   * `openFreePlay` this needs no `AudioContext`, only the row's own
+   * pointerdown as the gesture the browser's file picker requires.
+   */
+  private openImportMidi(): void {
+    if (this.importDialog) return;
+    this.importDialog = new ImportSongDialog(this.hudHost, {
+      onSaved: () => this.refreshSongbook(),
+      onDone: () => this.closeImportMidi(),
+    });
+  }
+
+  private closeImportMidi(): void {
+    this.importDialog?.destroy();
+    this.importDialog = null;
+  }
+
   /** One exact pitch through the current instrument, `delaySec` from now. */
   private playPitch(semitone: number, delaySec: number): void {
     const ctx = this.ctx;
@@ -2905,6 +2928,7 @@ export class RoadStage implements Stage {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('pagehide', this.onPageHide);
     this.freePlayScreen?.destroy();
+    this.importDialog?.destroy();
     this.hud.dispose();
     this.notes.dispose();
     for (const entry of this.fields) {
