@@ -553,6 +553,34 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
 
 ## Changelog
 
+- 2026-09-07 (runs 146-156, consolidated at 157) — **v1.3, "the family
+  songbook," ships end to end.** Task 176 (record a tune in free play,
+  name it, walk with it) landed across five pieces — the data layer, the
+  recording state machine, the free-play tap screen, its songbook entry
+  point, and the record/name UI plus a "Your songs" shelf — closing the
+  arc a household can actually use. Task 177 (MIDI import) followed the
+  same split — a dependency-free byte parser, top-note-skyline melody
+  extraction, quantize/auto-transpose, validation through the same
+  `engravingProblem` every song is held to, and a file-upload control —
+  so an uploaded tune is declined kindly, never mangled, on the exact
+  rules the built-in songbook and a tapped custom song already pass.
+  Nothing here is a new mechanic: both arcs are the one core mechanic
+  (tap notes, hear them, no fail state) gaining a way in (record) and a
+  way to bring outside music in (import), never a second way to play.
+  Drift check over the block: CLEAN — every run was one of these two
+  named arcs, each screen-touching piece verified live with this
+  environment's Playwright/Chromium before merging, not typed and
+  trusted. Bundle grew 902 → 921 KB (free play and MIDI import stopped
+  tree-shaking out once something reachable called them) — still under
+  2% of the 5 MB budget. STATE trimmed the same way runs 135/145 did it:
+  the ten individual handoffs for runs 146-155 compressed to one run-index
+  paragraph, run 156 kept in full as the most recent. Direction research
+  refreshed per CLAUDE.md pillar 5: nothing in the block touches
+  returning-player mechanics or mobile/save behaviour, so
+  `retention-design.md` and `mobile-friendly.md` stay unchanged from
+  their run-145 refresh; `art-quality.md` likewise untouched — the block
+  was UI/data work, not rendering. NOTHING CUT.
+
 - 2026-09-03 (runs 136-144, consolidated at 145) — **the hue-band
   investigation, and two harness lessons worth more than the fix it
   didn't land.** Task 189 (v1.1's "hue-free distance wall" lead) ran three

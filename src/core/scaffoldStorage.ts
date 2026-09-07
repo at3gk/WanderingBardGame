@@ -68,17 +68,6 @@ export function recordSongWalk(songId: string, state: ScaffoldState): void {
   saveScaffold(state);
 }
 
-/** The song the child chose to learn, or null to wander. Reflects the last load or set. */
-export function getSongChoice(): string | null {
-  return songChoice;
-}
-
-/** Chooses a song (or null to wander) and writes it out immediately — a choice must survive a closed tab. */
-export function setSongChoice(choice: string | null, state: ScaffoldState): void {
-  songChoice = choice;
-  saveScaffold(state, true);
-}
-
 function storage(): Storage | null {
   try {
     const s = globalThis.localStorage;
