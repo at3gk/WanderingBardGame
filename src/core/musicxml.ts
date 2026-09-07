@@ -33,7 +33,7 @@
  * there unchanged rather than re-implemented, per the task's own framing.
  */
 
-import type { MelodyNote } from './midi';
+import { validateImportedMelody, type ImportMidiResult, type MelodyNote } from './midi';
 
 export type ParseMusicXmlResult = { melody: MelodyNote[] } | { error: string };
 
@@ -292,4 +292,18 @@ export function parseMusicXml(text: string): ParseMusicXmlResult {
 
   if (melody.length === 0) return { error: 'no notes found in this MusicXML file' };
   return { melody };
+}
+
+/**
+ * The whole pipeline, MusicXML text to an engraving-clean melody: parse
+ * (above), then quantize/transpose/validate — `midi.ts`'s
+ * `validateImportedMelody`, imported unchanged rather than re-implemented,
+ * exactly as this file's own header promised piece 1 would eventually wire
+ * in. This is what piece 2's file-upload control calls; nothing here reads
+ * a `File` or touches the DOM.
+ */
+export function importMusicXml(text: string): ImportMidiResult {
+  const parsed = parseMusicXml(text);
+  if ('error' in parsed) return parsed;
+  return validateImportedMelody(parsed.melody);
 }

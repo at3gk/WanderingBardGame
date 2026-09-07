@@ -37,7 +37,13 @@ shipped piece 4's last slice — the file-upload control itself
 consolidation pass; run 158 picked task 178 (MusicXML import) and shipped
 piece 1 — the dependency-free XML parser straight to a melody, no
 separate extraction step since MusicXML already states pitch/duration/
-rest per note)
+rest per note; run 159 shipped task 178 piece 2 — `importMusicXml` (the
+quantize/transpose/validate pipeline, reusing `midi.ts`'s
+`validateImportedMelody` unchanged) and `ImportSongDialog`'s extension to
+route `.musicxml`/`.xml` files to it by extension, `.mid`/`.midi` and
+anything unrecognised still to the MIDI byte parser, and `.mxl`
+(compressed/zip MusicXML) declined by name — closing task 178 and the
+MusicXML import arc end to end)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -137,6 +143,51 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-07 (run 159) — task 178 piece 2: MusicXML import wired
+  in end to end, and task 178 is DONE.** `core/musicxml.ts` gained
+  `importMusicXml(text)`, the same shape as `midi.ts`'s `importMidi(bytes)`:
+  parse (piece 1), then quantize/transpose/validate through
+  `validateImportedMelody`, imported from `midi.ts` unchanged — exactly the
+  "reuses 177's validation path" call piece 1's own header had already
+  promised. `ImportSongDialog` (`ui/importSongDialog.ts`) now decides which
+  parser to run by file extension, not MIME type — `.musicxml`/`.xml` go to
+  `importMusicXml` via `file.text()`; `.mid`/`.midi` and anything
+  unrecognised still go to `importMidi` via `file.arrayBuffer()`, so an
+  odd extension gets the MIDI parser's own kind decline rather than a
+  second "unknown file" error path. `.mxl` (compressed MusicXML — a zip
+  container) is declined by name with a message pointing at uncompressed
+  export instead: unzipping without a bundled library is real scope beyond
+  one file-format piece, the same boundary call `musicxml.ts` itself
+  already made for `score-timewise` documents. The file input's `accept`
+  list grew to match. `musicxml.test.ts` gained 3 tests for
+  `importMusicXml` (end-to-end parse+validate on a real 16-note melody, a
+  propagated parse-level decline, and a propagated engraving-level decline
+  on a too-short "tune"). Verified live with an ad-hoc Playwright install
+  (1.56.1, `tools/browser.mjs`, `--no-save` so nothing lands in
+  `package.json`) against `npm run preview`: a hand-built 4-measure
+  MusicXML file round-tripped into a named custom song that shows up on
+  the "Your songs" shelf, and a plain text file declined kindly with a
+  dismissible message and no leftover dialog state — zero console/page
+  errors across the whole run. One thing learned running the check itself:
+  Playwright's `locator.click()` actionability wait never settled on this
+  HUD (element resolves, reports visible/stable, then the click step
+  itself times out) — probably the corner's own continuous
+  attention/opacity bookkeeping reads as "unstable" to Playwright's
+  frame-to-frame stability check even though nothing visibly moves;
+  `page.mouse.click()` at the locator's `boundingBox()` center worked every
+  time and is what the check now uses throughout. `npm test` 1352 green
+  (+3), `npm run build` green, bundle 920.92 → 926.08 KB (`musicxml.ts`'s
+  parser is no longer tree-shaken now that `importSongDialog.ts` reaches
+  it, the same one-time jump 177's own last slice caused for `midi.ts`).
+  No new runtime dependency (Playwright was a dev-only, `--no-save`
+  verification tool, removed after the check; the hand-rolled XML parser
+  itself was already committed in piece 1). Task 178 is closed, closing
+  the whole "family songbook" import arc (176 record, 177 MIDI, 178
+  MusicXML) started 2026-09-03. Next: task 189's far-band lead and the
+  rest of the v1.1 "crafted frame" queue are the open alternative; this
+  run's own count (159, two since the run-157 consolidation) is far short
+  of another consolidation pass.
 
 - **HANDOFF, 2026-09-07 (run 158) — task 178 piece 1: the MusicXML parser,
   straight to a melody.** `src/core/musicxml.ts` — a dependency-free XML
