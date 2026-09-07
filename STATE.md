@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 156 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 157 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -33,7 +33,8 @@ slice — `validateImportedMelody`/`importMidi`, composing the whole
 pipeline and holding it to `engravingProblem`, still no screen; run 156
 shipped piece 4's last slice — the file-upload control itself
 (`ImportSongDialog`, the songbook's "Import a song" row, and
-`saveImportedSong`) — closing task 177 end to end)
+`saveImportedSong`) — closing task 177 end to end; run 157 was the
+consolidation pass)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -101,6 +102,24 @@ work" section this run (the stale-measurement-tool pattern and the
 correlation-is-not-a-mechanism lesson from task 189) — see there for the
 detail.
 
+**Run-157 refresh (2026-09-07, consolidation):** no change since the
+run-145 refresh — the v0.9 queue stays complete and the rejected-on-
+principle list re-checked against runs 146-156 (v1.3's task 176, free
+play/recording, and task 177, MIDI import) finds nothing to flag: neither
+arc adds a counter, timer, grade, or anything exclusive-to-today, and the
+"Your songs"/imported-song shelf is a plain uncapped-looking list (capped
+at 8 for storage only, the cap never shown) rather than an "X of Y"
+checklist. `mobile-friendly.md`'s URGENT item and its one open real-device
+task (173) are unchanged; the block touched no mobile/save-path code.
+`art-quality.md` is likewise unchanged — the block was UI/data work, not
+rendering, so nothing to re-check there. One thing worth a future refresh
+rather than action now: a family's recorded/imported songs are a third
+kind of collection alongside instruments (rec 7) and journal mementos
+(rec 4), and unlike either they're a visible shelf rather than something
+gated by earning — nothing shipped violates rule 4 today, but any later
+work on that shelf (badges, counts, sorting by "most played") should be
+checked against it as carefully as the journal already is.
+
 ## The true goal (standing pointer)
 
 DESIGN.md's "The true goal" section (2026-07-31, human-grilled to shared
@@ -115,6 +134,46 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-07 (run 157) — CONSOLIDATION (drift control, every
+  ~10th run; last was 145).** Drift check over runs 146-156: CLEAN — the
+  whole block was v1.3's two remaining arcs (task 176, the family
+  songbook's free-play/recording UI; task 177, MIDI import), each split
+  into small pieces the same way task 189's investigation was, every
+  screen-touching piece verified live before merging. No new system
+  beyond what each task's own one-line description already promised;
+  bundle grew 902 → 921 KB across the block (free play and MIDI import
+  no longer tree-shaken once something reachable called them), still
+  under 2% of the 5 MB budget. Compressed the ten individual HANDOFF
+  blocks for runs 146-155 into one run-index paragraph below (ROADMAP's
+  numbered done-entries carry the full accounts), keeping run 156 in
+  full as the most recent — this file 4334 → 3961 lines from that
+  edit alone (see it just below). Code cleanup, found by a targeted
+  Explore-agent survey rather than blind grepping: `src/three/smoke.ts`
+  (176 lines, the pre-Three.js-integration `SmokeStage` render-smoke-test
+  class `tools/shader-check.mjs` used before it started booting the real
+  game — confirmed dead by grep, no import anywhere) deleted outright;
+  `scaffoldStorage.ts`'s `getSongChoice`/`setSongChoice` (unused exports —
+  the module's own internal `songChoice` variable is still read/written
+  by `loadScaffold`/`saveScaffold` for backward-compatible round-tripping
+  of old saves, just never through a public setter any live caller uses)
+  removed, the internal variable and its load/save handling left alone
+  since it still protects old save data. Direction research refreshed per
+  CLAUDE.md pillar 5 (see the run-157 refresh paragraph above, in
+  "Direction research"): nothing in runs 146-156 touches returning-player
+  mechanics, mobile/save behaviour, or rendering, so all three research
+  notes' recommendations and rejected-on-principle lists stay as the
+  run-145 refresh left them; one forward-looking note added to the
+  retention refresh about the new songbook shelves being a collection
+  surface worth checking against the mementos-not-checklists rule if a
+  later run touches them. DESIGN.md's changelog gains the runs 146-156
+  entry. `npm test` 1329 green (unchanged — the deleted code had no tests
+  of its own), `npm run build` green, 920.92 KB (unchanged — both removals
+  were already tree-shaken out, so the bundle doesn't move; `tsc --noEmit`
+  is what actually confirms nothing else referenced them). Next: task 178
+  (MusicXML import, reuses 177's validation path) is the natural
+  continuation of the songbook arc; task 189's far-band lead and the rest
+  of the v1.1 "crafted frame" queue remain open alternatives.
 
 - **HANDOFF, 2026-09-06 (run 156) — task 177 piece 4's last slice: the
   file-upload control, and MIDI import is DONE end to end.** Full detail
@@ -148,400 +207,26 @@ mastery display must read that section first.
   consolidation) makes the next run a reasonable candidate for the next
   consolidation pass instead of another feature.
 
-- **HANDOFF, 2026-09-06 (run 155) — task 177 piece 4, first slice:
-  validate, still no screen.** Full detail is in ROADMAP task 177's own
-  piece-4 "first slice" done-note — short version here. Piece 4's own
-  description ("run the result through `engravingProblem`... and wire an
-  actual file-upload control") bundles pure logic with a screen, so it got
-  split the same way task 176's piece 4 was: this slice is the pure half
-  only. New `validateImportedMelody(melody)` in `core/midi.ts` composes
-  piece 3's `quantizeDurations`/`transposeIntoRange` and then wraps the
-  result in a throwaway `Song` to run it through `customSongs.ts`'s own
-  `engravingProblem` unchanged — the same rules the built-in songbook and
-  a tapped custom song both already pass, kept as one function so an
-  uploaded song can never be held to different rules than either. New
-  `importMidi(bytes)` composes the entire pipeline (parse → extract →
-  quantize/transpose/validate) end to end, ready for a future upload
-  control to call. Neither function touches a `File` or the DOM. 8 new
-  tests (43 total in `midi.test.ts`): `validateImportedMelody` passing an
-  already-legal melody through, quantizing/transposing a raw one before
-  validating, and three real decline paths (too few notes, an accidental
-  no octave shift fixes, a note crossing a bar line after quantizing);
-  `importMidi` a full byte round trip plus a parse-level and an
-  extract-level decline propagated unchanged. One thing worth other runs
-  knowing: the end-to-end byte test needed alternating pitches, not one
-  repeated note — back-to-back note-on/off pairs on the same pitch never
-  change the "current top note" `extractMelody` tracks, so they collapse
-  into one held note rather than several (a real, already-documented
-  property of piece 2, not a bug). `npm test` 1326 green (+8), `npm run
-  build` green (913 KB, unchanged — `midi.ts` is still unimported, still
-  tree-shaken out). No new runtime dependency. Next: piece 4's remaining
-  slice — the actual file-upload control, wired into free play or the
-  songbook UI, calling `importMidi` and handing a clean melody to a save
-  path — the first piece of task 177 that needs a screen at all; task 178
-  (MusicXML) and task 189's far-band lead remain open alternatives if MIDI
-  import pauses again.
-
-- **HANDOFF, 2026-09-06 (run 154) — task 177 piece 3: quantize +
-  auto-transpose.** Full detail is in ROADMAP task 177's own piece-3
-  done-note — short version here. Two new pure functions in
-  `core/midi.ts`: `quantizeDurations(melody)` rounds every note's `beats`
-  (rests included) to the nearest value in `LEGAL_DURATIONS`, ties
-  rounding down; `transposeIntoRange(melody)` shifts an entire melody by
-  whole octaves only, picking whichever shift lands the most notes inside
-  `MIN_DRAWABLE_STEP`/`MAX_DRAWABLE_STEP` (ties prefer the smallest
-  shift). `LEGAL_DURATIONS`/`MIN_DRAWABLE_STEP`/`MAX_DRAWABLE_STEP` are
-  now `export`ed from `customSongs.ts` rather than re-declared, so the two
-  can never drift out of sync with what `engravingProblem` actually
-  checks. An accidental note is deliberately left alone by the
-  transposer — no octave shift changes a pitch class, so it stays out of
-  range under any shift and is correctly left for piece 4's
-  `engravingProblem` run to decline, same boundary pieces 1-2 already
-  drew ("Book Two is the escape hatch, not built here"). 12 new tests (35
-  total in `midi.test.ts`). `npm test` 1318 green (+12), `npm run build`
-  green (913 KB, unchanged — `midi.ts` is still unimported, still
-  tree-shaken out). No new runtime dependency. Not run through the
-  headless browser tools — pure logic, no UI, same call pieces 1-2 made.
-  Next: task 177 piece 4 — run the quantized/transposed melody through
-  `engravingProblem` and wire an actual file-upload control into the
-  free-play/songbook UI, the first piece of this task that needs a
-  screen; task 178 (MusicXML) and task 189's far-band lead remain open
-  alternatives if MIDI import pauses again.
-
-- **HANDOFF, 2026-09-05 (run 153) — task 177 piece 2: the melody
-  extractor.** Full detail is in ROADMAP task 177's own piece-2 done-note
-  — this is the short version. New `extractMelody(file: MidiFile)` in
-  `core/midi.ts`, returning `{melody: MelodyNote[]} | {error}`;
-  `MelodyNote` is `SongNote`'s own shape (`semitone`/`beats`/`rest?`)
-  since that's exactly what it becomes once pieces 3-4 finish it. One
-  algorithm, not two: every track's note-on/off events merge into a
-  single tick-ordered timeline and the highest currently-sounding note is
-  tracked throughout (a top-note skyline); an ordinary monophonic
-  single-track melody just never has more than one note active, so
-  "single track direct" is this algorithm's own trivial case rather than
-  a second path that could disagree with it. A stretch with nothing
-  sounding becomes a rest; leading silence before the first note and
-  trailing silence after the last are both dropped (file setup, not
-  melody — and it means the result never opens with silence, one thing
-  piece 4's `engravingProblem` pass won't have to catch). Ticks convert
-  to beats via the file's own `ticksPerQuarter`; the tempo event piece 1
-  parsed turned out not to matter for this piece after all — durations
-  stay beat-relative, which is what the songbook and this game's one-tap
-  mechanic both run on anyway, not real seconds. MIDI note 60 = C4 =
-  semitone 0 is the anchor (same root `notation.ts` already uses), so
-  pitch conversion is a plain subtraction. 8 new tests (23 total in the
-  file), built as `MidiFile` objects directly rather than through bytes
-  (`parseMidi`'s own tests already cover the byte layer): a monophonic
-  two-note melody, a mid-tune rest, leading/trailing silence dropped, the
-  skyline following the moving voice over a held drone across two
-  tracks, the skyline picking a chord's top note within one track, a
-  non-96 `ticksPerQuarter` tick-to-beat conversion, a same-pitch overlap
-  collapsing correctly rather than cutting short at the first note-off,
-  and a no-notes-found file declining rather than returning an empty
-  melody silently. `npm test` 1306 green (+8), `npm run build` green
-  (913 KB, unchanged — still unimported, still tree-shaken out). No new
-  runtime dependency. Next: task 177 piece 3 — quantize `beats` to the
-  songbook's legal note values (`customSongs.ts`'s `LEGAL_DURATIONS`) and
-  auto-transpose `semitone` into the staff's drawable range
-  (`MIN_DRAWABLE_STEP`/`MAX_DRAWABLE_STEP`, same file) — both need a real
-  rounding/shifting policy this piece left untouched on purpose, since a
-  real MIDI file's durations and register rarely land exactly on either
-  boundary already. Piece 4 (validate through `engravingProblem`, wire up
-  a file-upload control) follows after that; task 178 (MusicXML) and task
-  189's far-band lead remain open alternatives if MIDI import pauses
-  again.
-
-- **HANDOFF, 2026-09-05 (run 152) — task 177 piece 1: the MIDI parser
-  itself.** Picked up v1.3's remaining tasks (177/178) now that 176 closed
-  the arc, per run 151's own "Live queue" pointer. Task 177's one-line
-  description ("dependency-free parser; melody extraction; quantize;
-  transpose; validate") bundles the same amount of separately-riskable
-  work task 176 needed five pieces for, so it got the same treatment:
-  split along the seam between "read the bytes" and everything that
-  interprets them. New `core/midi.ts` (pure, no npm dependency, ~260
-  lines, 15 tests): `parseMidi(bytes: Uint8Array)` hand-parses the actual
-  Standard MIDI File format — `MThd`/`MTrk` chunk headers, delta-time
-  variable-length quantities, running status (with the easy-to-miss rule
-  that a meta event resets it, so the next channel event needs an
-  explicit status byte even if it repeats the previous one), note-on/off
-  pairs (velocity-0 note-on counts as note-off), tempo and time-signature
-  meta events, SysEx and unknown-chunk skipping. Never throws — a bad
-  magic number, an SMPTE-timed division (a real format this reader
-  doesn't speak), or truncation all decline as `{error, <plain words>}`,
-  same "declined kindly" stance `customSongs.ts`'s `engravingProblem`
-  already set for this task's own promise ("an uploaded song that cannot
-  be engraved correctly is declined kindly, never mangled") — extended
-  here to cover a file that isn't valid MIDI at all, one step earlier
-  than engraving. Tests hand-build the exact bytes a real MIDI writer
-  emits (no fixture files, no library, matching how `midi.test.ts`'s
-  sibling core tests construct their own inputs) and specifically check
-  running status, the post-meta-event status reset, 1-byte vs 2-byte
-  channel messages (program change vs. everything else — getting this
-  wrong desyncs every event after it), SysEx skipping, independent
-  per-track tick zeroing in a multi-track file, a 3-byte variable-length
-  delta, and four decline cases including a track with no end-of-track
-  byte (proving the reader stops at the chunk's declared length rather
-  than hanging). Also fixed a design bug caught while writing the
-  unknown-chunk test: the first draft counted any chunk (even a
-  non-`MTrk` one) against the header's declared track count, which would
-  silently under-read a file with a stray chunk before its last real
-  track; reading now loops until `ntrks` actual `MTrk` chunks are found,
-  skipping anything else without counting it. Deliberately NOT this
-  piece, all needing the parser's output first: turning parsed note-on/
-  off events into a single melody (direct for one track, top-note
-  skyline for several), quantizing to the songbook's note-value set,
-  transposing into the staff's drawable range, and running the result
-  through `engravingProblem` (Book Two's key machinery is the accidental
-  escape hatch the task names — not built here). No UI, no file-upload
-  control, no `songs`/`songChoice` plumbing touched. `npm test` 1298
-  green (+15), `npm run build` green (913 KB, unchanged — an unimported
-  pure module tree-shakes out, same as `customSongs.ts` before anything
-  called it). No new runtime dependency (the task's own "the format is
-  simple" claim held: writing a byte-level SMF reader by hand took
-  about the same size as `customSongs.ts`'s data layer). Next: task 177
-  piece 2 — melody extraction from `MidiFile`'s raw events, the
-  single-track/top-note-skyline split the task names; task 178
-  (MusicXML) and task 189's far-band lead remain open alternatives.
-
-- **HANDOFF, 2026-09-05 (run 151) — task 176 DONE: the "my songs" shelf,
-  closing the whole v1.3 arc.** Brief note (full account lives in
-  ROADMAP task 176's own "176 DONE" done-note — this run's STATE handoff
-  was missed at the time and is being filled in now rather than left
-  silent). `core/songChoice.ts`'s `songForPass` now resolves a
-  `custom:`-prefixed id via `loadCustomSongs()` before falling to the
-  wander default; `three/RoadStage.ts`'s `refreshSongbook` adds a "Your
-  songs" shelf (same earned-not-default shape as Book Two's festival
-  gate) whenever any custom songs exist, and `closeFreePlay` refreshes it
-  so a tune saved this visit shows up immediately. Three new pure tests
-  in `songChoice.test.ts`; verified live end to end with
-  `tools/browser.mjs` (seeded a custom song into `localStorage`, opened
-  the songbook, confirmed the shelf and the walk-with-it path). **Task
-  176 is fully done**: a family can record a tune in free play, name it,
-  and walk the road with it. `npm test` 1283 green (+3), `npm run build`
-  green (913 KB, unchanged). No new runtime dependency.
-
-- **HANDOFF, 2026-09-04 (run 150) — task 176 piece 4, next slice: the
-  record toggle and name-prompt dialog.** Run 149 shipped reachability
-  (the songbook's "Make a song ♪" row); this run wired run 147's
-  `RecordingSession` machinery (still untouched since it shipped) into
-  `freePlayScreen.ts` for the first time. The record button reuses
-  `customSongs.ts`'s own documented semantics rather than inventing new
-  ones: pressed while idle it calls `startRecording`; pressed while
-  recording it calls `stopRecording`, which freezes the take. A frozen
-  take `recordingProblem` still declines (too few notes, doesn't fill a
-  bar, etc.) shows that exact engraving-rule message plus one "keep
-  tapping" link (`resumeRecording`) — no separate "discard" concept was
-  built, because the module's own doc comment on `startRecording` already
-  says pressing record again from that state silently discards the
-  earlier take, so the record button IS the discard action. A frozen
-  take with no problem opens a name dialog automatically (scrim + panel,
-  styled off `Hud.ts`'s own tokens); "Cancel" there calls `resumeRecording`
-  too, so an accidental cancel never loses tapped work. "Save" calls
-  `finishRecording`, which validates through piece 1's `saveCustomSong`
-  unchanged and shows its error inline on failure (e.g. the songbook page
-  full at 8) rather than closing the dialog. On success the hint line
-  flashes "Saved "&lt;title&gt;" — find it in your songbook." for 2.6s
-  before reverting to whatever state applies. While recording, every tap
-  still sounds and labels exactly as before (`tap()` gained one line:
-  `recordTap` alongside `sound()`/`showLabel()`) — free play's ordinary
-  point-and-hear behaviour is unchanged when not recording, per
-  `recordTap`'s own no-op guarantee.
-  Verified live with `tools/browser.mjs` (Playwright, ad hoc per
-  `tools/README.md`) end to end from a fresh load: opened the songbook,
-  turned the page to reach "Make a song ♪" (it's the LAST row, after
-  every song — a detail worth other runs knowing since it means the row
-  is never on the book's first page once there are enough songs to
-  paginate), tapped it, recorded 16 notes, stopped, named it "Test Tune",
-  saved — `localStorage['wb.customsongs.v1']` held exactly one song with
-  that title and 16 notes afterward. Separately verified: a 4-note take
-  (a full bar, still under the 16-note floor) declines with "needs at
-  least 16 notes to sound like a tune"; "keep tapping" resumes it;
-  pressing record again from that stopped-with-problem state silently
-  discards it and starts a fresh 0-note take; cancelling the name dialog
-  on a clean 16-note take resumes recording rather than losing it, and
-  nothing extra got saved. Zero console/page errors across the whole
-  run. `npm test` 1280 green (unchanged — this file still has no test of
-  its own, by the same DOM-heavy-module convention `Hud.ts` set), `npm
-  run build` green, bundle 906→913 KB (record-UI markup and its wiring
-  are the only addition — no new runtime dependency). Only
-  `src/ui/freePlayScreen.ts` touched; nothing else in the diff.
-  **Not this slice**: the "my songs" shelf in `songChoice.ts`'s picker,
-  so a saved tune still can't be walked with — task 176's one remaining
-  piece. A saved song is real and sitting in storage; nothing yet reads
-  `loadCustomSongs()` to offer it back.
-
-- **HANDOFF, 2026-09-04 (run 149) — task 176 piece 4, first slice: the
-  free-play screen's first real entry point, reachability only.** Run
-  148 split piece 4 into "wire the screen into a real entry point" and
-  "record button + name prompt + my-songs shelf," flagging the entry
-  point alone as still the safer first bite (a new `App`/`Hud` mode was
-  the feared risk, not actually needed — see below). Read `Hud.ts`'s
-  chrome geometry first: there are exactly four corners (`coins`,
-  `instrument`, `song`, `journal`), each hand-tuned and load-bearing —
-  this codebase's own flagged recurring bug is a fixed pixel offset hung
-  off a proportional anchor, and a fifth corner would have been exactly
-  that risk for one row. The open songbook already has a "no handler, no
-  row" contract for exactly this shape (`onKeepsake`/`onWalkOn`/
-  `onPostcard` each add a row only when wired) and a paging system
-  (`bookPage`/`bookCapacity`) that already handles "one more row than
-  fits." So the entry point is a **menu row**, not a corner: `Hud.ts`
-  gains `onFreePlay(handler)`, and `bookRows()` appends a "Make a song ♪"
-  row last (after every song, so it never bumps a song off the first
-  page) whenever a handler is registered. The row carries a `freePlay:
-  true` flag rather than reusing the wander row's `id: null` shape, so
-  the click handler can route it to the new callback instead of
-  `songChosen(null)`. `RoadStage.ts` wires `hud.onFreePlay(() =>
-  this.openFreePlay())`; `openFreePlay()` calls `startAudio()` first (the
-  row's own tap is the required gesture, same reasoning as `tap()`),
-  then constructs `FreePlayScreen` on the stage's own `hudHost` with the
-  current instrument's voice and an `onClose` that tears it down —
-  `RoadStage` already held everything `FreePlayScreen`'s constructor
-  needs (`ctx`, `musicBus ?? master`, `instrument().voice`), so this
-  needed no new plumbing, only a stored `hudHost` field (was inline-only
-  before). No new `HudMode` — the row is gated by the exact same
-  `bookPickable()` rule (mode `'walking'`/`'resting'` only, never mid-
-  busk) every other book row already gets for free. Verified live with
-  `tools/browser.mjs` (Playwright still not a project dependency —
-  installed ad hoc per `tools/README.md`, not committed): opened the
-  songbook from a fresh load, the "Make a song ♪" row is present and
-  tappable, tapping it opens the free-play screen (piece 3's own hint
-  text visible), a mid-screen tap sounds and labels B4 exactly as piece
-  3's harness found, and the × control closes it cleanly — zero
-  console/page errors. `npm test` 1280 green (unchanged — this is a menu
-  wire-up, no new pure logic), `npm run build` green, bundle 902→906 KB
-  (`freePlayScreen.ts` is no longer an unimported, tree-shaken module
-  now that something reaches it — the first real cost this task has had,
-  and still under 1% of the 5 MB budget). No new runtime dependency.
-  Deliberately NOT this run: the record button, the name-prompt dialog,
-  and `finishRecording` wiring (piece 3's `RecordingSession` machinery
-  from run 147 is still unattached to any UI), and the "my songs" shelf
-  in the songbook picker. Next: task 176 piece 4's remainder — wire
-  `customSongs.ts`'s `RecordingSession` into `FreePlayScreen`'s `tap()`
-  (a record toggle control, calls alongside `sound()`), the name-prompt
-  dialog calling `finishRecording`, then list saved custom songs as
-  `SongEntry` rows in `songChoice.ts`'s book so a walk can carry one;
-  task 189's far-band lead and the v1.1 queue remain open alternatives.
-
-- **HANDOFF, 2026-09-04 (run 148) — task 176 piece 3: free play's screen
-  itself, built and verified live, deliberately not yet reachable.** Run
-  147 left piece 3 sized as "build free play's actual tap screen," flagged
-  as UI-risk and likely needing its own split. Before starting, checked
-  whether this environment can actually verify DOM/canvas UI live — it
-  can: Chromium is pre-installed (`PLAYWRIGHT_BROWSERS_PATH`) and
-  `tools/browser.mjs` already knows how to launch it; `playwright` itself
-  just wasn't an npm dependency, so `npm install --no-save playwright` (not
-  committed, not in package.json/lock) made it importable for this run's
-  manual check. That resolves the "no way to eyeball it before pushing"
-  reason runs 146-147 gave for staying off this task — but it does NOT
-  resolve the other risk: this project's auto-merge cycle has no human
-  review, and wiring a brand-new screen into `App`/`Hud`'s mode machinery
-  (today: `'walking' | 'busking' | 'encounter' | 'resting'`, nothing else)
-  is integration risk genuinely separate from rendering risk. So piece 3
-  split again, cleanly along that seam: new `src/ui/freePlayScreen.ts`
-  (~230 lines) renders the ladder — five staff lines at `notation.ts`'s
-  `STAFF_LINE_STEPS`, two ledger marks at the ends `needsLedger` names,
-  laid out with `freePlay.ts`'s own untouched `freePlayStaff`/
-  `freePlayStepY` — and wires a tap anywhere on the screen (one listener,
-  not thirteen hit targets, because `freePlayStepAt` already clamps to the
-  nearest step by design) to `instrumentVoice.ts`'s `playVoiceNote` (the
-  same call `RoadStage.ts`'s `playPitch` makes for every other note in the
-  game) plus a fading letter label — "position → sound → name". No menu,
-  button, or mode offers this screen to a player yet, and no recording is
-  wired in; both are piece 4. Verified with a throwaway, uncommitted
-  harness page (`freeplay-harness.html`/`.ts`, deleted before this commit)
-  driven by a Playwright script against `npm run dev`: five lines + two
-  ledgers render at the right y-positions; a mid-screen tap sounds and
-  labels B4 (the middle line); a tap above the top ledger and below the
-  bottom one both clamp to A5/C4 instead of missing; the close mark
-  unmounts cleanly with zero console errors beyond the expected
-  autoplay-policy warning (an automated click isn't a real user gesture).
-  This is the first run to use the environment's browser at all — it is
-  there for any future run that needs to actually look at a screen instead
-  of reasoning about it blind. `Hud.ts` itself has no test file and vitest
-  runs `environment: 'node'`, so this module follows the same
-  verify-live-not-in-vitest convention rather than adding a DOM test
-  framework dependency. No existing file touched: `npm test` 1280 green
-  (unchanged, this file has no tests of its own), `npm run build` green
-  (902 KB, unchanged — an unimported module is tree-shaken out entirely).
-  Next: task 176 piece 4 — give `FreePlayScreen` an actual entry point
-  (a corner or menu row, and the `App`/`Hud` mode wiring that needs), then
-  the record button (`customSongs.ts`'s `RecordingSession` calls slot into
-  `tap()` next to `sound()`) and the name-prompt dialog, then the "my
-  songs" shelf in `songChoice.ts`'s picker; task 189's far-band lead and
-  the v1.1 queue remain open if a change of lane is preferred instead.
-
-- **HANDOFF, 2026-09-03 (run 147) — task 176 piece 2: the recording
-  door's state machine, and a scope correction worth knowing before the
-  next run touches this task.** Set out to wire a record button onto free
-  play's existing screen; found there isn't one. `freePlay.ts` — the
-  staff-layout module task 176's own description assumes is already
-  live ("practice mode already lets a child point at staff positions and
-  hear them") — is imported nowhere under `three/`; grep across `src`
-  turns it up only in its own test and in `customSongs.ts`. The tap-and-
-  hear experience that DOES exist live is `RoadStage.ts`'s fireside
-  rehearsal, and it plays a carried song's own notes off the walk's beat
-  clock — an unguided *replay*, not an open tap-anywhere instrument.
-  So "add recording to the existing free-play UI" was never this piece's
-  actual size; that UI has to be built first, and building a staff-render-
-  plus-touch-input screen blind, in one run, with no way to eyeball it
-  before pushing, is a materially riskier piece than a pure-logic one.
-  Shipped what doesn't need the screen to exist first instead:
-  `customSongs.ts` gains `RecordingSession` (`{recording, steps}`, plain
-  immutable data so whatever UI shape gets built later can hold it
-  without this module caring), `startRecording`/`recordTap` (a genuine
-  no-op — same object reference back — once stopped or on
-  `EMPTY_RECORDING`)/`stopRecording`/`resumeRecording` (the declined-
-  kindly path: too few notes reopens capture without losing what was
-  already tapped)/`recordingProblem` (previews `engravingProblem`'s own
-  words live, so a "needs 3 more notes" readout can show while still
-  tapping, before the name prompt ever opens)/`finishRecording` (hands
-  the frozen take straight to piece 1's `saveCustomSong`, unchanged). 10
-  new tests, all pure — no game `src/three` or `src/ui` file touched.
-  `npm test` 1280 green (+10), `npm run build` green, bundle unchanged at
-  902 KB (pure logic, zero new dependencies). Next: task 176 piece 3 is
-  now correctly sized as "build free play's actual tap screen" (staff
-  render + touch input, `freePlay.ts`'s geometry functions are already
-  there and tested, waiting) with the record button and this run's
-  `RecordingSession` wired in from the start, then the name-prompt
-  dialog, then the "my songs" shelf in `songChoice.ts`'s picker — this is
-  a bigger, UI-risk piece and may itself want splitting further once
-  it's actually started; task 189's far-band lead and the scatter design
-  question are still open if the art-quality loop is preferred instead.
-
-- **HANDOFF, 2026-09-03 (run 146) — task 176 piece 1: the song maker's
-  data layer.** Run 145's own "Next" pointer offered task 189's far-band
-  lead, the scatter design question, wave 20 (network-blocked), or v1.3
-  "once the art-quality loop reaches a natural pause" — three straight
-  investigation runs (142-144) into task 189 without landing a mechanism
-  is that pause, so this run picked v1.3's task 176 instead: entirely
-  untouched since 2026-08-01. New `core/customSongs.ts` (pure, 21 tests):
-  `notesFromSteps` turns a tapped free-play step sequence into quarter
-  notes via `notation.ts`'s `semitoneAtStep` — no format, no parser,
-  because "zero parsing" means the composing already happened at the tap.
-  `engravingProblem(song)` re-implements the exact checks
-  `songs.test.ts` holds the built-in songbook to (naturals-only, legal
-  durations, whole bars, no note over a bar line, drawable range, ≥16
-  notes, never opens with a rest) as a runtime validator that returns the
-  first problem in plain words instead of failing a test — "declined
-  kindly, never mangled" the way ROADMAP promises for both this task and
-  178's MIDI import. Storage follows task 157's shape exactly:
-  `saveCustomSong`/`loadCustomSongs`/`deleteCustomSong` wrap localStorage
-  and key everything through `profiles.ts`'s `bookmarkKey`, so a second
-  bookmark's tunes never mix with the first's, capped at 8 songs so a
-  child can't fill the whole save, corrupt data reads as none rather
-  than throwing. Deliberately NOT done this run, left for piece 2: any
-  UI at all — no recording start/stop on `freePlay.ts`'s ladder, no name
-  prompt, no shelf for custom songs in `songChoice.ts`'s picker, nothing
-  wired into `RoadStage.ts`, so a saved song cannot yet be walked. `npm
-  test` 1270 green (+21), `npm run build` green, bundle unchanged at 902
-  KB (pure logic, zero new dependencies). Next: task 176 piece 2 (the
-  recording door — capture taps in free play while "recording", a name
-  prompt on stop, and listing custom songs where the songbook picker
-  offers a choice) is the natural next step now that the data layer it
-  needs exists and is tested; task 189's far-band lead and the scatter
-  design question are still open if the art-quality loop is preferred
-  instead; wave 20 stays network-blocked (see Blocked on human,
-  unchanged).
+- **HANDOFF, 2026-09-03 through 2026-09-06 (runs 146-155, compressed by
+  the run-157 consolidation — see there) — v1.3's two remaining arcs,
+  both closed.** Task 176 (the family songbook) shipped in five pieces:
+  the data layer (146), the recording state machine (147), the free-play
+  screen's render (148, first verified live with this environment's
+  Playwright/Chromium), its reachability via the songbook's "Make a
+  song ♪" row (149), the record toggle and name-prompt dialog (150), and
+  the "Your songs" shelf (151) — closing the arc: a family can record a
+  tune, name it, and walk the road with it. Task 177 (MIDI import) then
+  shipped in its own five pieces, same treatment: the dependency-free
+  byte parser (152), the top-note-skyline melody extractor (153), the
+  duration quantizer and octave-shift range transposer (154), the
+  validate/`importMidi` pipeline (155), and the file-upload control
+  itself — `ImportSongDialog`, the "Import a song ♪" row, `saveImportedSong`
+  (156) — closing that arc too: MIDI import is done end to end. Every
+  screen-touching piece was verified live before merging, not just typed.
+  Bundle grew 902 → 913 KB once free play became reachable (run 149) and
+  → 921 KB once `midi.ts`/`importSongDialog.ts` stopped tree-shaking
+  (run 156) — still under 2% of the 5 MB budget. No new runtime
+  dependency across the whole block.
 
 - **HANDOFF, 2026-09-03 (run 145) — CONSOLIDATION (drift control, every
   ~10th run; last was 135).** Drift check over runs 136-144: CLEAN — every

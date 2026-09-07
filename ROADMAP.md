@@ -124,6 +124,19 @@ makes it long. You do not need to read it top to bottom.
   (the file-upload control itself, wired into free play/the songbook UI)
   next if MIDI import continues; task 178 (MusicXML), task 189's far-band
   lead, and the rest of the v1.1 queue remain open alternatives.
+- **Run 156 update**: shipped task 177's last slice — the file-upload
+  control (see task 177's own final done-note). **Task 177 (MIDI import)
+  is now entirely done**, closing v1.3's whole songbook arc alongside 176.
+  Eleven runs since the run-145 consolidation made run 157 a reasonable
+  consolidation candidate instead of another feature.
+- **Run 157 update**: CONSOLIDATION (drift control, every ~10th run; last
+  was 145). Drift check over runs 146-156: CLEAN — see STATE.md's run-157
+  HANDOFF and DESIGN.md's changelog for the full account. Two small dead-
+  code removals (`src/three/smoke.ts`, `scaffoldStorage.ts`'s unused
+  `getSongChoice`/`setSongChoice`), no design or systems change. Live
+  queue as of run 157: task 178 (MusicXML import, reuses 177's validation
+  path) if the songbook arc continues; task 189's far-band lead and the
+  rest of the v1.1 "crafted frame" queue remain open alternatives.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
