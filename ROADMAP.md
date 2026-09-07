@@ -146,6 +146,17 @@ makes it long. You do not need to read it top to bottom.
   `ImportSongDialog` to also accept MusicXML) next if the songbook arc
   continues; task 189's far-band lead and the rest of the v1.1 queue
   remain open alternatives.
+- **Run 159 update**: shipped task 178's last piece — `importMusicXml`
+  (quantize/transpose/validate, reusing `midi.ts`'s `validateImportedMelody`
+  unchanged) and `ImportSongDialog`'s extension-based routing between it
+  and the existing MIDI pipeline, `.mxl` declined by name (see task 178's
+  own final done-note). **Task 178 (MusicXML import) is now entirely
+  done, closing the whole songbook-import arc (176, 177, 178) started
+  2026-09-03.** Live queue as of run 159: task 189's far-band lead and the
+  rest of the v1.1 "crafted frame" queue are the open alternatives; no
+  arc is currently in flight, so the next run should pick fresh from
+  there (or a consolidation pass, though 159 is only two runs past the
+  last one at 157).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -2673,6 +2684,48 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     quantize/transpose/validate/`saveImportedSong` pipeline 177's UI
     already built), the same second piece 176/177 both needed once their
     own core logic existed.
+    **Piece 2 done (2026-09-07, run 159) — the file-upload control, and
+    task 178 is DONE.** `musicxml.ts` gained `importMusicXml(text)`,
+    exactly the pipeline piece 1's own header promised: parse, then
+    `midi.ts`'s `validateImportedMelody` (quantize/transpose/engraving-
+    check) imported unchanged, not reimplemented. `ImportSongDialog`
+    (`ui/importSongDialog.ts`) now picks the parser by file extension —
+    the only reliable signal, since browsers report inconsistent MIME
+    types for MusicXML across OSes: `.musicxml`/`.xml` read as text via
+    `file.text()` and go to `importMusicXml`; `.mid`/`.midi` and any other
+    extension still read as bytes via `file.arrayBuffer()` and go to
+    `importMidi`, so an odd extension gets that parser's own kind decline
+    rather than a second "unknown file" error path. `.mxl` (compressed
+    MusicXML — a zip container) is declined by name with a message
+    pointing at uncompressed export: unzipping without a bundled library
+    is real scope beyond one file-format piece, the same boundary call
+    this file's own header already made for `score-timewise`. The file
+    input's `accept` list grew to match. No change to the "Import a
+    song ♪" row or its reachability — it already read as format-neutral.
+    `musicxml.test.ts` gained 3 tests for `importMusicXml`: a real 16-note
+    end-to-end parse+validate, a propagated parse-level decline, and a
+    propagated engraving-level decline on a melody too short to be a
+    "tune". Verified live, the same standard every screen-touching piece
+    in this arc has held to: an ad-hoc Playwright install (1.56.1,
+    `tools/browser.mjs`, `--no-save`) against `npm run preview` — a
+    hand-built 4-measure MusicXML file round-tripped into a named custom
+    song on the "Your songs" shelf, and a plain text file declined kindly
+    with no leftover dialog state, zero console/page errors either way.
+    One harness note for next time: `locator.click()`'s actionability
+    wait never settled on this HUD's corner controls (resolves, reports
+    visible/stable, then times out on the click itself, likely the
+    corner's own continuous attention/opacity bookkeeping reading as
+    "unstable" frame to frame) — `page.mouse.click()` at the locator's
+    `boundingBox()` center worked every time and is what the check used
+    throughout. `npm test` 1352 green (+3), `npm run build` green, bundle
+    920.92 → 926.08 KB (`musicxml.ts` is no longer tree-shaken now that
+    `importSongDialog.ts` reaches it — the same one-time jump 177's own
+    last slice caused for `midi.ts`). No new runtime dependency
+    (Playwright was dev-only and `--no-save`, removed after the check).
+    Task 178 is now fully done, closing the whole songbook-import arc —
+    176 (record), 177 (MIDI), 178 (MusicXML) — started 2026-09-03: a
+    family can record a tune, import a MIDI file, or import a MusicXML
+    file, and walk the road with any of them.
 
 Rejected on principle: **audio upload / transcription** (MP3, humming).
 Automatic transcription is wrong often enough that it would mis-teach —

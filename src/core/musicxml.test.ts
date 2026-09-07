@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseMusicXml } from './musicxml';
+import { importMusicXml, parseMusicXml } from './musicxml';
 
 // Hand-built MusicXML strings — no fixture files, no XML library, same
 // "construct the exact document a real writer would emit" approach
@@ -231,5 +231,35 @@ describe('parseMusicXml', () => {
     const result = parseMusicXml(xml);
     if ('error' in result) throw new Error(result.error);
     expect(result.melody).toEqual([{ semitone: 0, beats: 1 }]);
+  });
+});
+
+describe('importMusicXml', () => {
+  it('parses, quantizes, transposes and validates a real MusicXML file end to end', () => {
+    // Four measures of 4 quarter notes each, alternating C4/D4 — same shape midi.test.ts's importMidi test uses.
+    const notes = Array.from({ length: 16 }, (_, i) => (i % 2 === 0 ? 'C' : 'D'));
+    const measures = Array.from({ length: 4 }, (_, m) => {
+      const inMeasure = notes
+        .slice(m * 4, m * 4 + 4)
+        .map((step) => note({ step, octave: 4, duration: 1, type: 'quarter' }))
+        .join('');
+      const attrs = m === 0 ? '<attributes><divisions>1</divisions></attributes>' : '';
+      return `<measure number="${m + 1}">${attrs}${inMeasure}</measure>`;
+    }).join('');
+    const xml = score(measures);
+    const result = importMusicXml(xml);
+    if ('error' in result) throw new Error(result.error);
+    expect(result.melody).toEqual(notes.map((step) => ({ semitone: step === 'C' ? 0 : 2, beats: 1 })));
+  });
+
+  it('propagates a parseMusicXml-level decline unchanged', () => {
+    expect(importMusicXml('<not-a-score/>')).toEqual({ error: 'not a MusicXML file (missing score-partwise root)' });
+  });
+
+  it('declines a melody that fails engraving validation even though parsing succeeded', () => {
+    // A single note is real MusicXML but too short a "tune" for engravingProblem.
+    const xml = score(`<measure number="1"><attributes><divisions>1</divisions></attributes>${note({ step: 'C', octave: 4, duration: 1, type: 'quarter' })}</measure>`);
+    const result = importMusicXml(xml);
+    expect('error' in result).toBe(true);
   });
 });

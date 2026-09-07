@@ -553,6 +553,22 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
 
 ## Changelog
 
+- 2026-09-07 (runs 158-159) — **task 178, MusicXML import, ships end to
+  end — the songbook-import arc (176 record, 177 MIDI, 178 MusicXML) is
+  now entirely closed.** Run 158 built the dependency-free parser straight
+  to a melody (MusicXML already states each note's pitch/duration/rest, so
+  it does in one step what MIDI needed two pieces for); run 159 wired it
+  into `ImportSongDialog` alongside the existing MIDI path, routing by
+  file extension (the only reliable signal across browsers/OSes) and
+  reusing `midi.ts`'s quantize/transpose/validate pipeline unchanged, per
+  the task's own "reuses 177's validation path" framing. Compressed
+  MusicXML (`.mxl`, a zip container) is declined by name rather than
+  built — unzipping without a bundled library is a new scope question, not
+  this task's. Nothing here is a new mechanic: a third way to bring
+  outside music in, on the exact engraving rules the built-in songbook
+  already passes. Verified live with this environment's Playwright before
+  merging, matching every other screen-touching piece in this arc.
+
 - 2026-09-07 (runs 146-156, consolidated at 157) — **v1.3, "the family
   songbook," ships end to end.** Task 176 (record a tune in free play,
   name it, walk with it) landed across five pieces — the data layer, the

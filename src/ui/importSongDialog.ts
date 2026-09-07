@@ -1,16 +1,28 @@
 /**
- * The MIDI file-upload control (ROADMAP task 177, piece 4's last slice).
+ * The song-file upload control (ROADMAP task 177 piece 4, extended by task
+ * 178 piece 2 to also read MusicXML).
  *
- * Everything up to this point — `core/midi.ts`'s `parseMidi`/`extractMelody`/
- * `quantizeDurations`/`transposeIntoRange`/`validateImportedMelody`/
- * `importMidi`, and `core/customSongs.ts`'s `saveImportedSong` — is pure
- * logic with no screen, tested exactly like any other core module. This
- * file is the one piece that actually needs a browser: an `<input
- * type="file">` to get a family's own `.mid` file as bytes, and the two
- * small dialogs the result can lead to — a name prompt on success (the same
- * shape `freePlayScreen.ts`'s recording door already uses), or a plain
- * "declined kindly" message on failure, since a bad file is exactly as
- * expected here as it is anywhere else this codebase reads one.
+ * Everything up to this point — `core/midi.ts`'s whole MIDI pipeline,
+ * `core/musicxml.ts`'s `importMusicXml`, and `core/customSongs.ts`'s
+ * `saveImportedSong` — is pure logic with no screen, tested exactly like any
+ * other core module. This file is the one piece that actually needs a
+ * browser: an `<input type="file">` to get a family's own file as bytes or
+ * text, and the two small dialogs the result can lead to — a name prompt on
+ * success (the same shape `freePlayScreen.ts`'s recording door already
+ * uses), or a plain "declined kindly" message on failure, since a bad file
+ * is exactly as expected here as it is anywhere else this codebase reads
+ * one.
+ *
+ * Which parser runs is decided by file extension (`importKind` below), not
+ * MIME type — browsers report wildly inconsistent MIME types for MusicXML
+ * across OSes, but a `.musicxml`/`.xml`/`.mid`/`.midi` extension is reliable
+ * and is what every real notation program actually writes. An unrecognised
+ * extension falls through to the MIDI byte parser rather than a separate
+ * "unknown file" error, since `importMidi` already declines kindly on bytes
+ * that aren't a real MIDI file — one decline path instead of two. Compressed
+ * MusicXML (`.mxl`, a zip container) is declined by name: unzipping without
+ * a bundled library is real scope beyond one file-format piece, the same
+ * boundary call `musicxml.ts` itself already made for `score-timewise`.
  *
  * One instance is one file-picker round trip: `RoadStage.ts` creates it in
  * response to the songbook's "Import a song" row (the same user gesture a
@@ -19,9 +31,18 @@
  * sits open across two picks, unlike `FreePlayScreen`, which stays mounted
  * for a whole free-play session.
  */
-import { importMidi } from '../core/midi';
+import { importMidi, type MelodyNote } from '../core/midi';
+import { importMusicXml } from '../core/musicxml';
 import { saveImportedSong, type SaveCustomSongResult } from '../core/customSongs';
 import { BOOK_FACE } from './Hud';
+
+/** Extension-based routing only — see the file header for why. */
+function importKind(filename: string): 'musicxml' | 'mxl' | 'midi' {
+  const lower = filename.toLowerCase();
+  if (lower.endsWith('.musicxml') || lower.endsWith('.xml')) return 'musicxml';
+  if (lower.endsWith('.mxl')) return 'mxl';
+  return 'midi';
+}
 
 const INK = '#f0e2c6';
 const PANEL_BORDER = 'rgba(240, 226, 198, 0.5)';
@@ -54,7 +75,7 @@ export class ImportSongDialog {
 
     this.fileInput = document.createElement('input');
     this.fileInput.type = 'file';
-    this.fileInput.accept = '.mid,.midi,audio/midi,audio/x-midi';
+    this.fileInput.accept = '.mid,.midi,audio/midi,audio/x-midi,.musicxml,.xml,.mxl,application/vnd.recordare.musicxml+xml,application/vnd.recordare.musicxml';
     this.fileInput.style.display = 'none';
     this.fileInput.addEventListener('change', () => this.onFileChosen());
     // Modern Chromium/Firefox fire this when the picker is dismissed with
@@ -78,15 +99,33 @@ export class ImportSongDialog {
       return;
     }
 
-    let bytes: Uint8Array;
-    try {
-      bytes = new Uint8Array(await file.arrayBuffer());
-    } catch {
-      this.showMessage(`could not read "${file.name}"`);
+    const kind = importKind(file.name);
+    if (kind === 'mxl') {
+      this.showMessage('compressed MusicXML (.mxl) files are not supported yet — export as uncompressed .musicxml or .xml instead');
       return;
     }
 
-    const result = importMidi(bytes);
+    let result: { melody: MelodyNote[] } | { error: string };
+    if (kind === 'musicxml') {
+      let text: string;
+      try {
+        text = await file.text();
+      } catch {
+        this.showMessage(`could not read "${file.name}"`);
+        return;
+      }
+      result = importMusicXml(text);
+    } else {
+      let bytes: Uint8Array;
+      try {
+        bytes = new Uint8Array(await file.arrayBuffer());
+      } catch {
+        this.showMessage(`could not read "${file.name}"`);
+        return;
+      }
+      result = importMidi(bytes);
+    }
+
     if ('error' in result) {
       this.showMessage(result.error);
       return;
