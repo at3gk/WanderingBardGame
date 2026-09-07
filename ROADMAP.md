@@ -137,6 +137,15 @@ makes it long. You do not need to read it top to bottom.
   queue as of run 157: task 178 (MusicXML import, reuses 177's validation
   path) if the songbook arc continues; task 189's far-band lead and the
   rest of the v1.1 "crafted frame" queue remain open alternatives.
+- **Run 158 update**: picked task 178 (MusicXML import) and split it the
+  same way 176/177 both were — piece 1, the dependency-free parser
+  straight to a melody (no separate extraction step, unlike MIDI, because
+  MusicXML already states each note's pitch/duration/rest itself), shipped
+  this run (see task 178's own piece-1 done-note). Live queue as of run
+  158: task 178 piece 2 (the file-upload control, extending
+  `ImportSongDialog` to also accept MusicXML) next if the songbook arc
+  continues; task 189's far-band lead and the rest of the v1.1 queue
+  remain open alternatives.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -2621,6 +2630,49 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     from the songbook itself.
 178. **MusicXML import.** Second format, richer (it is already
     notation); reuses 177's validation path.
+    **Piece 1 done (2026-09-07, run 158): the parser, straight to a
+    melody.** `src/core/musicxml.ts` — a dependency-free XML tree reader
+    (tags, attributes skipped, text, comments, CDATA, entities, the
+    `<?xml?>`/DOCTYPE preamble) plus a `score-partwise` walker, same
+    "no npm library for a format this narrow" call `midi.ts` made for SMF
+    bytes. Because MusicXML already states each note's own pitch,
+    duration and rest-or-not, this piece does what MIDI's pieces 1 *and*
+    2 did together — there is no note-on/off timeline to reconstruct, so
+    parse and extract are one step here, not two. Scope held deliberately
+    narrow, same shape as every "declined kindly" boundary in this
+    codebase: only the first `<part>` is read (a later piece's question,
+    same punt MIDI piece 1 made on multi-track skyline); only voice "1"
+    is kept, so a second voice sharing a measure via `<backup>` is
+    skipped rather than misread as garbled timing; a same-position chord
+    collapses to its highest note (the same top-note-skyline idea 177
+    piece 2 used for real polyphony); grace notes are skipped (no
+    reliable duration to count); percussion (`<unpitched>`) and
+    `score-timewise` documents are declined by name. `quantizeDurations`/
+    `transposeIntoRange`/`validateImportedMelody` are NOT reimplemented —
+    they're imported straight from `midi.ts` unchanged, which is the
+    concrete meaning of "reuses 177's validation path" this task was
+    written with. `musicxml.test.ts`: 20 tests, all against hand-built
+    MusicXML strings (a `score()`/`note()` builder, same "construct the
+    exact document a real writer would emit" approach `midi.test.ts`
+    takes for SMF bytes) — a short recognisable melody across a
+    divisions>1 and a divisions-boundary change, an explicit rest, sharps
+    and flats via `<alter>`, a three-note chord collapsing to its top
+    note, a skipped second voice, a skipped grace note, octaves other
+    than the reference one, the real DOCTYPE preamble a MusicXML writer
+    emits, entity/comment/CDATA handling, and every decline path (missing
+    root, `score-timewise`, no parts, no measures, no notes, a note with
+    neither pitch nor rest, a missing duration, unpitched/percussion,
+    malformed/truncated XML). `npm test` 1349 green (+20), `npm run
+    build` green, bundle 920.92 KB unchanged (nothing reaches
+    `musicxml.ts` yet — same one-time tree-shaking gap 177 piece 1 had
+    before its own UI landed). No new runtime dependency: the whole
+    parser is hand-rolled, same call `midi.ts` made. No screen, no
+    `ImportSongDialog` wiring yet — piece 2 is the file-upload control
+    (extend `ImportSongDialog`'s existing MIDI file-picker to also accept
+    `.musicxml`/`.xml`/`.mxl`, calling `parseMusicXml` then the same
+    quantize/transpose/validate/`saveImportedSong` pipeline 177's UI
+    already built), the same second piece 176/177 both needed once their
+    own core logic existed.
 
 Rejected on principle: **audio upload / transcription** (MP3, humming).
 Automatic transcription is wrong often enough that it would mis-teach —

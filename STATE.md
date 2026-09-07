@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 157 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 158 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -34,7 +34,10 @@ pipeline and holding it to `engravingProblem`, still no screen; run 156
 shipped piece 4's last slice — the file-upload control itself
 (`ImportSongDialog`, the songbook's "Import a song" row, and
 `saveImportedSong`) — closing task 177 end to end; run 157 was the
-consolidation pass)
+consolidation pass; run 158 picked task 178 (MusicXML import) and shipped
+piece 1 — the dependency-free XML parser straight to a melody, no
+separate extraction step since MusicXML already states pitch/duration/
+rest per note)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -134,6 +137,43 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-07 (run 158) — task 178 piece 1: the MusicXML parser,
+  straight to a melody.** `src/core/musicxml.ts` — a dependency-free XML
+  tree reader (tags, attributes skipped as unneeded, text, comments, CDATA,
+  entities, the `<?xml?>`/DOCTYPE preamble) plus a `score-partwise` walker,
+  same "no npm library for a format this narrow" call `midi.ts` made for
+  SMF bytes (task 177). Because MusicXML already states each note's own
+  pitch, duration, and rest-or-not, this piece does what MIDI's pieces 1
+  *and* 2 did together — no note-on/off timeline to reconstruct, so parse
+  and extract collapse into one step. Scope held to the same narrow shape
+  every "declined kindly" boundary in this codebase uses: first `<part>`
+  only (multi-part is a later piece's question, matching MIDI piece 1's
+  own punt on multi-track skyline); voice "1" only (a second voice sharing
+  a measure via `<backup>` is skipped, not misread as garbled timing); a
+  same-position chord collapses to its highest note (177 piece 2's
+  top-note-skyline idea, reused); grace notes skipped (no reliable
+  duration); percussion (`<unpitched>`) and `score-timewise` documents
+  declined by name. `quantizeDurations`/`transposeIntoRange`/
+  `validateImportedMelody` are imported from `midi.ts` unchanged, not
+  reimplemented — the concrete meaning of "reuses 177's validation path"
+  the task was written with. `musicxml.test.ts`: 20 tests against
+  hand-built MusicXML strings (a `score()`/`note()` builder, same
+  "construct the exact document a real writer would emit" approach
+  `midi.test.ts` uses for SMF bytes) covering a recognisable melody across
+  a divisions change, an explicit rest, sharps/flats via `<alter>`, a
+  three-note chord, a skipped second voice, a skipped grace note, other
+  octaves, the real DOCTYPE preamble, entity/comment/CDATA handling, and
+  every decline path. `npm test` 1349 green (+20), `npm run build` green,
+  bundle 920.92 KB unchanged (nothing reaches `musicxml.ts` yet — the same
+  one-time tree-shaking gap 177 piece 1 had before its own UI landed). No
+  new runtime dependency (hand-rolled parser, same call `midi.ts` made).
+  Next: task 178 piece 2 — extend `ImportSongDialog`'s file picker to also
+  accept `.musicxml`/`.xml`/`.mxl` and call `parseMusicXml` into the same
+  quantize/transpose/validate/`saveImportedSong` pipeline 177's UI already
+  built (no new UI shape needed, just a second parser behind the same
+  dialog); task 189's far-band lead and the rest of the v1.1 "crafted
+  frame" queue remain open alternatives.
 
 - **HANDOFF, 2026-09-07 (run 157) — CONSOLIDATION (drift control, every
   ~10th run; last was 145).** Drift check over runs 146-156: CLEAN — the
