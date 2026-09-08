@@ -49,7 +49,7 @@ import { ContactShadow } from './actors/ContactShadow';
 import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
 import { Deer } from './actors/Deer';
 import { Cat, Dog, Fox, type StagedCreature } from './actors/SmallCreatures';
-import { Owl } from './actors/Birds';
+import { Nightingale, Owl } from './actors/Birds';
 import { activeBookmark, setActiveBookmark } from '../core/profiles';
 import { Campfire } from './scenes/Campfire';
 import { FestivalGrounds } from './scenes/FestivalGrounds';
@@ -763,6 +763,21 @@ export class RoadStage implements Stage {
     this.syncSubject();
     this.bard.update(dt, travelled);
     for (const person of this.shown) person.update(dt);
+    // Unconditional, like the travellers just above — not nested inside
+    // updateBusk (where this lived from the deer's own piece until this
+    // one). `LEGAL_TRANSITIONS` in journey.ts guarantees an encounter can
+    // never sit next to a busk (`walking: ['busking', 'encounter', ...]`,
+    // and `closeWalkTune`/`closeBusk` clear tuneMode before 'encounter'
+    // starts), so `this.tuneMode` is always null for the entire time a
+    // creature is staged and for the entire time it is departing after
+    // — the life-signature update (breathing, head-tilt, tail wag) and
+    // the departure drift were both dead code outside the ad-hoc
+    // forced-busking harness every prior piece's live check used to
+    // verify them, in real play a met creature never moved and never
+    // actually left, only silently snapping to its next encounter's spot
+    // (or a different species' stale ghost staying visible in the
+    // background) whenever `placeMeeting` next repositioned it.
+    this.updateCreature(dt);
 
     if (this.holdSec > 0) {
       this.holdSec -= dt;
@@ -1383,7 +1398,6 @@ export class RoadStage implements Stage {
       }
     }
     this.updateListeners(dt);
-    this.updateCreature(dt);
 
     this.bard.setWarmth(performance.warmth);
     this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
@@ -1808,7 +1822,9 @@ export class RoadStage implements Stage {
                 ? new Dog(this.app.globals, this.road.seed)
                 : figure === 'owl'
                   ? new Owl(this.app.globals, this.road.seed)
-                  : new Cat(this.app.globals, this.road.seed);
+                  : figure === 'nightingale'
+                    ? new Nightingale(this.app.globals, this.road.seed)
+                    : new Cat(this.app.globals, this.road.seed);
         this.creatures.set(figure, creature);
         this.actors.add(creature.group);
       }
@@ -1818,13 +1834,17 @@ export class RoadStage implements Stage {
       // cat closest of all, because a cat concedes nothing by proximity.
       // The dog stands at meeting distance — he has a job, and the job is
       // you; the wild things keep theirs. The owl sits with the fox: not
-      // tame, but not shy either — it means to be looked at.
+      // tame, but not shy either — it means to be looked at. The
+      // nightingale sits further out again, just inside the deer's own
+      // band: a hidden singer does not come close to be seen.
       const radius =
         figure === 'deer'
           ? 6.5 + rand() * 2.5
-          : figure === 'fox' || figure === 'owl'
-            ? 5 + rand() * 2
-            : 3.5 + rand() * 1.5;
+          : figure === 'nightingale'
+            ? 6 + rand() * 2
+            : figure === 'fox' || figure === 'owl'
+              ? 5 + rand() * 2
+              : 3.5 + rand() * 1.5;
       const angle = this.subject.heading + bearing;
       const x = this.subject.position.x + Math.sin(angle) * radius;
       const z = this.subject.position.z + Math.cos(angle) * radius;
@@ -1860,11 +1880,13 @@ export class RoadStage implements Stage {
     creature.update(dt);
     if (!this.creatureDrift.departing) return;
     const DEPART_SPEED = 0.8;
-    // The owl leaves the way an owl leaves: one push and it is gone, well
+    // A bird leaves the way a bird leaves: one push and it is gone, well
     // before a walking pace would carry it clear of the frame. Every
-    // ground animal drifts at the same walking-away speed; the owl is the
-    // first departure that is a flight and not a walk.
-    const OWL_DEPART_SPEED = 3.2;
+    // ground animal drifts at the same walking-away speed; the owl was the
+    // first departure that is a flight and not a walk, and the nightingale
+    // shares it rather than getting its own — both exits are a flight, the
+    // difference between the two birds is in the meeting, not the leaving.
+    const BIRD_DEPART_SPEED = 3.2;
     const GONE_M = 11;
     let heading = this.creatureDrift.angle;
     if (this.creatureDrift.figure === 'dog') {
@@ -1879,8 +1901,8 @@ export class RoadStage implements Stage {
         DEPART_SPEED,
       );
       if (walked < DOG_ESCORT_DISTANCE_M) heading = this.subject.heading;
-    } else if (this.creatureDrift.figure === 'owl') {
-      this.creatureDrift.radius += OWL_DEPART_SPEED * dt;
+    } else if (this.creatureDrift.figure === 'owl' || this.creatureDrift.figure === 'nightingale') {
+      this.creatureDrift.radius += BIRD_DEPART_SPEED * dt;
     } else {
       this.creatureDrift.radius += DEPART_SPEED * dt;
     }

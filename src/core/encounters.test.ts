@@ -856,6 +856,7 @@ describe('meetingFigureFor', () => {
       'wall-cat': 'cat',
       'escort-dog': 'dog',
       'answering-owl': 'owl',
+      nightingale: 'nightingale',
     };
     for (const def of ENCOUNTERS) {
       const figure = meetingFigureFor(def);

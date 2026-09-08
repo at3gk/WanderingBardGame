@@ -170,6 +170,15 @@ makes it long. You do not need to read it top to bottom.
   far-band lead, and the rest of the v1.1 "crafted frame" queue remain
   the open alternatives; consolidation is not yet due (161 is only 4
   runs past 157, next due around 167).
+- **Run 162 update**: picked task 186 piece 5 (the nightingale) and, while
+  verifying it live, found and fixed a real bug that had made every
+  staged creature's animation and departure dead code in actual play
+  since the deer's own piece 1 — see task 186's own piece-5 done-note and
+  STATE.md's run-162 HANDOFF for the full account. Task 186 is now down
+  to its one remaining piece (the kingfisher). Live queue as of run 162:
+  the kingfisher, task 189's far-band lead, and the rest of the v1.1
+  "crafted frame" queue remain the open alternatives; consolidation is
+  not yet due (162 is 5 runs past 157, next due around 167).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3816,6 +3825,79 @@ full verdict map and the measure-first suspicion list):
     file). No new runtime dependency (Playwright was a dev-only,
     `--no-save` verification tool, removed after the check). **Task 186
     down to two remaining pieces: the nightingale and the kingfisher.**
+    **Piece 5 done (2026-09-08, run 162): the nightingale, and a real bug
+    fixed underneath it.** `actors/Birds.ts` gained `Nightingale`, built
+    deliberately as the owl's opposite on every axis the owl set, because
+    its line ("takes your last phrase and returns it improved") and a
+    real nightingale's own reputation are both about being heard far more
+    than seen: smallest and dullest bird in the game rather than the
+    boldest, thin visible LEGS rather than none, a head turned
+    three-quarter AWAY rather than the owl's direct forward stare, and its
+    one life signature is a THROAT PULSE (the pale breast box scaling, on
+    a faster clock than the owl's head-tilt) standing in for the song
+    itself, since there is no audio channel here, rather than a
+    considering look. It keeps one thing from the owl's own design
+    grammar: a single colour accent, here a warm rufous tail held cocked
+    up — the one field mark a real nightingale actually carries.
+    `encounters.ts`'s `MeetingFigure`/`CREATURE_FIGURES` and the sweeping
+    test both gained `nightingale` -> `'nightingale'`. `RoadStage` stands
+    it at a new 6-8 m band, further out than the fox/owl's 5-7 m ("a
+    hidden singer does not come close to be seen"), and `OWL_DEPART_SPEED`
+    was renamed `BIRD_DEPART_SPEED` and shared by both birds rather than
+    given a second constant -- an exit is a flight either way, and the two
+    birds differ in the meeting, not the leaving.
+    The real find was underneath the model. Building this piece's own
+    live-verification check the way every animal piece since the deer has
+    (`placeMeeting` called directly, bypassing the random roll, TS-private
+    being compile-time only) at first showed the departure moving at the
+    GROUND animal's pace, not the bird's -- which led to driving the
+    creature through the actual `setPhase('encounter')` to
+    `setPhase('walking')` transition instead of the bypass, and that
+    showed the real cause: `journey.ts`'s `LEGAL_TRANSITIONS` only ever
+    lets `encounter` be entered from `walking` and exited back to it
+    (never adjacent to `busking`), and `closeWalkTune`/`closeBusk` both
+    clear `tuneMode` before `encounter`'s own logic runs -- so `tuneMode`
+    is `null` for the entire time any creature is staged and for the
+    entire time it departs afterward. But `updateCreature` (the function
+    that calls every staged creature's own `update(dt)` -- the breathing,
+    the head-tilt, the tail wag -- and runs the whole departure drift) was
+    called from exactly one place: inside `updateBusk`, itself gated on
+    `tuneMode === 'busk'`. Consequence, in real play, since the deer's own
+    piece 1 (run 119, 2026-08-07): a met creature never animated at all
+    and never actually left. It stood frozen and fully visible until the
+    next same-species encounter silently snapped it to a new position (or,
+    meeting a different species, left the old one standing as a stale
+    ghost in the background indefinitely) -- the identical "unstaged/
+    mis-staged" failure task 186 was opened to fix, one layer further in
+    than the wave-17 finding that started the task. Every prior piece's
+    own "verified live" claim was true, but only under the ad-hoc check's
+    forced-busking condition (posing to `'busking'` before calling
+    `placeMeeting`, which every piece's check did to get a running RAF
+    loop) -- a condition real play can never actually produce for an
+    encounter. Fixed by moving `this.updateCreature(dt);` out of
+    `updateBusk` and into the main `update(dt)`, unconditional, beside
+    `for (const person of this.shown) person.update(dt);` -- travellers
+    already ran regardless of tune state; creatures simply hadn't.
+    Verified three ways: deterministic single-step calls
+    (`stage.updateCreature(1.0)`, no RAF/timing involved) across all six
+    creatures confirmed no regression (deer/fox/cat still 0.8 m/s,
+    owl/nightingale still 3.2 m/s, the dog's escort hold unchanged); a
+    real `setPhase('encounter')` to `setPhase('walking')` round trip (not
+    the bypass) held the nightingale steady through the meeting and then
+    drove it out to `visible: false` over real frames, with `tuneMode`
+    staying `null` throughout the hold and becoming `'walk'` (never
+    `'busk'`) during the departure; and a deterministic 0.9 s step showed
+    the throat-pulse itself advancing during the held meeting (scale 1 to
+    1.084) where before the fix nothing could have moved it. `npm test`
+    1356 green (unchanged -- the fix relocates a call rather than adding
+    logic, and the new bird has no pure functions of its own beyond what
+    `meetingFigureFor`'s already-swept table covers), `npm run build`
+    green, bundle 927.92 -> 929.15 kB (+1.23 kB, one new actor class; the
+    relocation itself is net-zero size). No new runtime dependency
+    (Playwright again dev-only, `--no-save`, removed after). **Task 186
+    down to its one remaining piece: the kingfisher** (a fast flash
+    downstream -- different enough from both birds so far to stay its own
+    piece).
 179. **Figure/ground value floor.** The panel's one measured-everywhere
     fault: bard-vs-surround dL 0.7 (02), 2.0 (01), 2.4 (07), 4.0
     (04/06) against the reference floor of 13.6-25.2 — the protagonist
