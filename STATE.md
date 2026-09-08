@@ -45,7 +45,11 @@ anything unrecognised still to the MIDI byte parser, and `.mxl`
 (compressed/zip MusicXML) declined by name — closing task 178 and the
 MusicXML import arc end to end); run 160 picked task 186 piece 3 (the
 escort-dog's walk-along behaviour, from the v1.1 queue's open
-alternatives) and shipped it — see ROADMAP.md task 186's own done-note)
+alternatives) and shipped it — see ROADMAP.md task 186's own done-note;
+run 161 picked task 186 piece 4 (the owl, first of the three remaining
+birds) and shipped it, catching and fixing a real staging bug (the life
+signature was clobbering the ground-height field) via live verification
+before merging — see ROADMAP.md task 186's own done-note)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -145,6 +149,42 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-08 (run 161) — task 186 piece 4: the owl, the first
+  bird.** Full detail (the model, the distance/depart-speed picks, the
+  bug the live check caught) is in ROADMAP task 186's own piece-4
+  done-note — short version here. `src/three/actors/Birds.ts` is a new
+  file (birds are their own family; nightingale and kingfisher are
+  coming). The owl: a compact, neckless, rounded body with no legs shown,
+  a pale face-disc, two forward eyes (the one figure in the game that
+  looks straight at the bard), and narrow ear-tufts — one slow head-tilt
+  as its only motion. `encounters.ts`'s `MeetingFigure`/`CREATURE_FIGURES`
+  and its swept test gained the `answering-owl` → `owl` entry;
+  `RoadStage` gained the owl's distance band (shared with the fox,
+  5-7 m) and a faster `OWL_DEPART_SPEED` (3.2 vs the ground animals'
+  0.8 m/s) since a bird's exit is a flight, not a walk. The bug: the
+  first draft bobbed `this.group.position.y` for breathing, the exact
+  field `placeMeeting`/`updateCreature` use to hold ground height —
+  fox and dog avoid this by bobbing an inner sub-group instead, and the
+  owl now does too. An ad-hoc Playwright check (installed `--no-save`,
+  removed after, same as runs 148/156/159/160) is what caught it: it
+  read the owl's position right after staging and again ~2 s later
+  through the live per-frame loop and the two values disagreed. After
+  the fix, verified live end-to-end through the real `RoadStage`
+  (`stage.placeMeeting` called directly with an `answering-owl` def —
+  TS-private is compile-time only): staged at the bard's own ground
+  height, settled inside the encounter camera's frame, head-tilt
+  visibly moving, departs (flies off) in ~1.8 s versus the ground
+  animals' much slower walk-off, zero console errors. `npm test` 1356
+  green (unchanged — no new pure logic; the new constants aren't
+  functions), `npm run build` green, bundle 926.45 → 927.92 KB (a new
+  actor file). No new runtime dependency. Task 186 is now down to two
+  remaining pieces: the nightingale and the kingfisher — different
+  enough from each other and from the owl (a hidden singer, a fast
+  flash downstream) to stay separate pieces. Next: task 186's remaining
+  bird pieces, or task 189's far-band lead and the rest of the v1.1
+  "crafted frame" queue as open alternatives; consolidation is not yet
+  due (161 is 4 runs past 157, next due around 167).
 
 - **HANDOFF, 2026-09-07 (run 159) — task 178 piece 2: MusicXML import wired
   in end to end, and task 178 is DONE.** `core/musicxml.ts` gained

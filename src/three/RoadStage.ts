@@ -49,6 +49,7 @@ import { ContactShadow } from './actors/ContactShadow';
 import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
 import { Deer } from './actors/Deer';
 import { Cat, Dog, Fox, type StagedCreature } from './actors/SmallCreatures';
+import { Owl } from './actors/Birds';
 import { activeBookmark, setActiveBookmark } from '../core/profiles';
 import { Campfire } from './scenes/Campfire';
 import { FestivalGrounds } from './scenes/FestivalGrounds';
@@ -1805,7 +1806,9 @@ export class RoadStage implements Stage {
               ? new Fox(this.app.globals, this.road.seed)
               : figure === 'dog'
                 ? new Dog(this.app.globals, this.road.seed)
-                : new Cat(this.app.globals, this.road.seed);
+                : figure === 'owl'
+                  ? new Owl(this.app.globals, this.road.seed)
+                  : new Cat(this.app.globals, this.road.seed);
         this.creatures.set(figure, creature);
         this.actors.add(creature.group);
       }
@@ -1814,11 +1817,12 @@ export class RoadStage implements Stage {
       // line is about choosing to stay. The fox sits a little closer; the
       // cat closest of all, because a cat concedes nothing by proximity.
       // The dog stands at meeting distance — he has a job, and the job is
-      // you; the wild things keep theirs.
+      // you; the wild things keep theirs. The owl sits with the fox: not
+      // tame, but not shy either — it means to be looked at.
       const radius =
         figure === 'deer'
           ? 6.5 + rand() * 2.5
-          : figure === 'fox'
+          : figure === 'fox' || figure === 'owl'
             ? 5 + rand() * 2
             : 3.5 + rand() * 1.5;
       const angle = this.subject.heading + bearing;
@@ -1856,6 +1860,11 @@ export class RoadStage implements Stage {
     creature.update(dt);
     if (!this.creatureDrift.departing) return;
     const DEPART_SPEED = 0.8;
+    // The owl leaves the way an owl leaves: one push and it is gone, well
+    // before a walking pace would carry it clear of the frame. Every
+    // ground animal drifts at the same walking-away speed; the owl is the
+    // first departure that is a flight and not a walk.
+    const OWL_DEPART_SPEED = 3.2;
     const GONE_M = 11;
     let heading = this.creatureDrift.angle;
     if (this.creatureDrift.figure === 'dog') {
@@ -1870,6 +1879,8 @@ export class RoadStage implements Stage {
         DEPART_SPEED,
       );
       if (walked < DOG_ESCORT_DISTANCE_M) heading = this.subject.heading;
+    } else if (this.creatureDrift.figure === 'owl') {
+      this.creatureDrift.radius += OWL_DEPART_SPEED * dt;
     } else {
       this.creatureDrift.radius += DEPART_SPEED * dt;
     }

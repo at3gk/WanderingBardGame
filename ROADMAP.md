@@ -163,6 +163,13 @@ makes it long. You do not need to read it top to bottom.
   run 160: task 186's bird piece, task 189's far-band lead, and the rest
   of the v1.1 "crafted frame" queue remain the open alternatives; a
   consolidation pass is also reasonable (161 would be 4 runs past 157).
+- **Run 161 update**: picked task 186 piece 4 (the owl, first of the
+  three remaining birds) — see task 186's own piece-4 done-note. Task 186
+  is now down to two remaining pieces (nightingale, kingfisher). Live
+  queue as of run 161: task 186's two remaining bird pieces, task 189's
+  far-band lead, and the rest of the v1.1 "crafted frame" queue remain
+  the open alternatives; consolidation is not yet due (161 is only 4
+  runs past 157, next due around 167).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3762,6 +3769,53 @@ full verdict map and the measure-first suspicion list):
     radius held flat for the first 40 m walked, then grew and the dog
     vanished at ~62 m, no console errors. 1356 tests (+4), build green
     (926.45 kB). **Task 186 down to one remaining piece: the birds.**
+    **Piece 4 done (2026-09-08, run 161): the owl, the first bird.**
+    The three remaining creatures (`answering-owl`, `nightingale`,
+    `kingfisher`) are different enough in behaviour — a perched watcher, a
+    hidden singer, a fast flash downstream — to be their own pieces rather
+    than one, same split fox/cat got from the dog. Owl first, because its
+    line describes a creature holding still and looking back rather than
+    moving. `actors/Birds.ts` (a new file — birds are their own family,
+    and more are coming): a compact, rounded, NECKLESS body (no legs shown
+    at all — a perched owl's feet vanish into its own feathers), a flat
+    pale FACE-DISC, two dark forward EYES (the one figure in the game that
+    looks straight at the bard rather than in profile or three-quarter),
+    and narrow close-set EAR-TUFTS — the opposite arrangement from the
+    fox's tall wide-splayed pair, so the two never read as the same animal.
+    Life signature: a slow head-tilt on a long clock, the curious
+    sideways assessment "waits to see what you will do about it" asks
+    for, nothing else. Wired into `RoadStage` at the fox's own distance
+    band (5-7 m — not tame, not shy) and, since an owl's exit is a
+    flight and not a walk, a new `OWL_DEPART_SPEED` (3.2 m/s vs every
+    ground animal's 0.8) so it leaves the frame in about two seconds
+    instead of nine. `meetingFigureFor`'s table and its sweeping test
+    both gained the `answering-owl` → `'owl'` entry.
+    One real bug caught by live verification, not by the type checker:
+    the first draft bobbed `this.group.position.y` directly for the
+    breathing motion, exactly the field `placeMeeting`/`updateCreature`
+    use to hold the creature at ground height — the owl's own life
+    signature was silently teleporting it to y≈0 one frame after being
+    stood correctly. Fox and dog avoid this by bobbing an *inner*
+    sub-group (`headPivot`/`body`) rather than the outer `group`; the owl
+    now does the same (its own `body` sub-group holds the head pivot,
+    and only `body.position.y` bobs). Caught by an ad-hoc Playwright
+    check that read `owl.group.position` right after staging and again
+    ~2 s later through the live per-frame loop — the two disagreed,
+    which is what sent this looking for what else touches that field.
+    Verified live end-to-end through the real `RoadStage` after the fix
+    (`stage.placeMeeting` called directly with an `answering-owl` def,
+    same TS-private-is-compile-time-only trick every prior piece's check
+    used): staged at the correct ground height matching the bard's own,
+    settled inside the encounter camera's frame after the rig's turn
+    finished, head-tilt visibly moving, and on departure gone in ~53
+    frames at 30 fps (~1.8 s) — clearly faster than a ground animal's
+    walk-off, no console errors either side. 1356 tests (unchanged — no
+    new pure logic; the depart-speed and distance-band picks are
+    constants, not functions, the same treatment the fox/cat distance
+    picks got), build green, 926.45 → 927.92 kB (+1.47 kB, a new actor
+    file). No new runtime dependency (Playwright was a dev-only,
+    `--no-save` verification tool, removed after the check). **Task 186
+    down to two remaining pieces: the nightingale and the kingfisher.**
 179. **Figure/ground value floor.** The panel's one measured-everywhere
     fault: bard-vs-surround dL 0.7 (02), 2.0 (01), 2.4 (07), 4.0
     (04/06) against the reference floor of 13.6-25.2 — the protagonist
