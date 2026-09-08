@@ -21,8 +21,10 @@ import {
   BUSK_FACING_OFFSET,
   BUSK_LISTENER_SLOTS,
   BUSK_SLOT_JITTER,
+  DOG_ESCORT_DISTANCE_M,
   MEETING_BEARING,
   MEETING_RADIUS,
+  nextDogTrailRadius,
   withinBand,
   type StagedSpot,
 } from './roadStaging';
@@ -234,5 +236,41 @@ describe('somebody met, through the encounter camera', () => {
   it('is a conversational distance rather than a wave across a field', () => {
     expect(MEETING_RADIUS[0]).toBeGreaterThan(2.2);
     expect(MEETING_RADIUS[1]).toBeLessThan(3.6);
+  });
+});
+
+describe('the escort dog, walking beside before he falls behind', () => {
+  it('holds the meeting radius exactly while ground covered is under the escort distance', () => {
+    for (const radius of [3.5, 4.2, 5]) {
+      let r = radius;
+      for (let i = 0; i < 120; i++) {
+        r = nextDogTrailRadius(r, i * 0.3, 1 / 60, 0.8);
+      }
+      expect(r).toBe(radius);
+    }
+  });
+
+  it('starts growing the instant the escort distance is crossed, from wherever it was held', () => {
+    const held = 4.1;
+    const justUnder = nextDogTrailRadius(held, DOG_ESCORT_DISTANCE_M - 0.01, 1 / 60, 0.8);
+    const justOver = nextDogTrailRadius(held, DOG_ESCORT_DISTANCE_M + 0.01, 1 / 60, 0.8);
+    expect(justUnder).toBe(held);
+    expect(justOver).toBeGreaterThan(held);
+    expect(justOver - held).toBeCloseTo(0.8 / 60, 5);
+  });
+
+  it('keeps growing frame over frame once past the escort distance, same rate as every other creature', () => {
+    let r = 4;
+    const dt = 1 / 60;
+    for (let i = 0; i < 60; i++) {
+      r = nextDogTrailRadius(r, DOG_ESCORT_DISTANCE_M + 1, dt, 0.8);
+    }
+    expect(r).toBeCloseTo(4 + 0.8 * 1, 5);
+  });
+
+  it('is a real stretch of road, not a token distance', () => {
+    // "To the end of his street" is a walk. A handful of metres would be
+    // indistinguishable from the standing depart every other creature does.
+    expect(DOG_ESCORT_DISTANCE_M).toBeGreaterThan(20);
   });
 });

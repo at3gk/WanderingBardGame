@@ -157,6 +157,12 @@ makes it long. You do not need to read it top to bottom.
   arc is currently in flight, so the next run should pick fresh from
   there (or a consolidation pass, though 159 is only two runs past the
   last one at 157).
+- **Run 160 update**: picked task 186 piece 3 (the escort-dog's
+  walk-along behaviour) — see task 186's own piece-3 done-note. Task 186
+  is now down to its one remaining piece (the birds). Live queue as of
+  run 160: task 186's bird piece, task 189's far-band lead, and the rest
+  of the v1.1 "crafted frame" queue remain the open alternatives; a
+  consolidation pass is also reasonable (161 would be 4 runs past 157).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3735,6 +3741,27 @@ full verdict map and the measure-first suspicion list):
     staged through the real path. Remaining: the escort-dog (needs
     walk-along behaviour, its own piece), then the birds. 1249
     tests, build green.
+    **Piece 3 done (2026-09-08, run 160): the escort dog walks.**
+    `actors/SmallCreatures.ts`'s `Dog` model already existed (it landed,
+    unfinished, inside an unrelated squashed merge — #247's title names
+    this piece but its diff is five v0.8 waves; the model was there, the
+    behaviour was not: RoadStage wired him through the exact same
+    stand-then-drift-outward path as the fox and cat, which is wrong for
+    his own line — "walks you to the end of his street and no further"
+    is a walk, not a wave-off). Fixed in `roadStaging.ts`
+    (`DOG_ESCORT_DISTANCE_M` + the pure `nextDogTrailRadius(radius,
+    walkedSinceDeparture, dt, departSpeed)`, unit-tested in
+    `roadStaging.test.ts`) and `RoadStage.updateCreature`: once the walk
+    resumes, the dog holds the exact radius he was met at — no snap to a
+    new distance — and faces the direction of travel, for
+    `DOG_ESCORT_DISTANCE_M` (40 m) of ground covered; only past that does
+    he drop into the ordinary falling-behind every other creature starts
+    immediately, from wherever his held radius was, so the switch from
+    walking beside to being left behind has no seam. Verified live
+    end-to-end through the real `RoadStage` (not just the pure helper):
+    radius held flat for the first 40 m walked, then grew and the dog
+    vanished at ~62 m, no console errors. 1356 tests (+4), build green
+    (926.45 kB). **Task 186 down to one remaining piece: the birds.**
 179. **Figure/ground value floor.** The panel's one measured-everywhere
     fault: bard-vs-surround dL 0.7 (02), 2.0 (01), 2.4 (07), 4.0
     (04/06) against the reference floor of 13.6-25.2 — the protagonist

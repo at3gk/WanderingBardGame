@@ -43,7 +43,9 @@ quantize/transpose/validate pipeline, reusing `midi.ts`'s
 route `.musicxml`/`.xml` files to it by extension, `.mid`/`.midi` and
 anything unrecognised still to the MIDI byte parser, and `.mxl`
 (compressed/zip MusicXML) declined by name — closing task 178 and the
-MusicXML import arc end to end)
+MusicXML import arc end to end); run 160 picked task 186 piece 3 (the
+escort-dog's walk-along behaviour, from the v1.1 queue's open
+alternatives) and shipped it — see ROADMAP.md task 186's own done-note)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
