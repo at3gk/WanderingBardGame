@@ -170,3 +170,33 @@ export const BUSK_FACING_OFFSET = -0.24;
 export function withinBand(band: readonly [number, number], t: number): number {
   return band[0] + (band[1] - band[0]) * t;
 }
+
+/**
+ * How far the escort dog ("walks you to the end of his street and no
+ * further") keeps pace before the ordinary falling-behind rate takes over.
+ *
+ * Every other staged creature starts drifting outward the instant the walk
+ * resumes — that is the deer line, and it is a kind exit, but it is a
+ * *wave-off*, not a walk. The dog's own line describes a walk, so he is the
+ * only one who gets to cover ground first.
+ */
+export const DOG_ESCORT_DISTANCE_M = 40;
+
+/**
+ * The escort dog's next radius from the bard, one frame at a time.
+ *
+ * Below `DOG_ESCORT_DISTANCE_M` of ground covered since the walk resumed,
+ * the radius he was met at holds exactly — no snap to a new distance, just
+ * the meeting's own radius carried forward, which is what "keeping pace"
+ * looks like. Past it, the same per-frame growth every other creature uses
+ * takes over, starting from wherever that held radius was, so the switch
+ * from walking beside to falling behind has no seam.
+ */
+export function nextDogTrailRadius(
+  radius: number,
+  walkedSinceDeparture: number,
+  dt: number,
+  departSpeed: number,
+): number {
+  return walkedSinceDeparture < DOG_ESCORT_DISTANCE_M ? radius : radius + departSpeed * dt;
+}

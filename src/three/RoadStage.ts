@@ -59,8 +59,10 @@ import {
   BUSK_FACING_OFFSET,
   BUSK_LISTENER_SLOTS,
   BUSK_SLOT_JITTER,
+  DOG_ESCORT_DISTANCE_M,
   MEETING_BEARING,
   MEETING_RADIUS,
+  nextDogTrailRadius,
   withinBand,
 } from './roadStaging';
 import { BOOK_FACE, Hud, type SongEntry } from '../ui/Hud';
@@ -289,6 +291,8 @@ export class RoadStage implements Stage {
     angle: number;
     radius: number;
     departing: boolean;
+    /** `journey.s` at the moment departure began — the escort dog's own. */
+    departedAtS?: number;
   } | null = null;
   private readonly shown: Traveller[] = [];
   private readonly actors = new Group();
@@ -1838,6 +1842,12 @@ export class RoadStage implements Stage {
    * The staged creature's stillness, and its unhurried leaving. Mirrors
    * the listener drift: a slow walk out along its own bearing, gone a few
    * metres later.
+   *
+   * The escort dog is the one exception (task 186 piece 3): his own line
+   * is a walk ("to the end of his street"), so he keeps pace at the
+   * meeting's own radius, facing the road ahead, until `DOG_ESCORT_DISTANCE_M`
+   * is behind the bard — only then does he drop into the same falling-behind
+   * every other creature starts immediately.
    */
   private updateCreature(dt: number): void {
     if (!this.creatureDrift) return;
@@ -1847,14 +1857,30 @@ export class RoadStage implements Stage {
     if (!this.creatureDrift.departing) return;
     const DEPART_SPEED = 0.8;
     const GONE_M = 11;
-    this.creatureDrift.radius += DEPART_SPEED * dt;
+    let heading = this.creatureDrift.angle;
+    if (this.creatureDrift.figure === 'dog') {
+      if (this.creatureDrift.departedAtS === undefined) {
+        this.creatureDrift.departedAtS = this.journey.s;
+      }
+      const walked = this.journey.s - this.creatureDrift.departedAtS;
+      this.creatureDrift.radius = nextDogTrailRadius(
+        this.creatureDrift.radius,
+        walked,
+        dt,
+        DEPART_SPEED,
+      );
+      if (walked < DOG_ESCORT_DISTANCE_M) heading = this.subject.heading;
+    } else {
+      this.creatureDrift.radius += DEPART_SPEED * dt;
+    }
     const { angle, radius } = this.creatureDrift;
     const x = this.subject.position.x + Math.sin(angle) * radius;
     const z = this.subject.position.z + Math.cos(angle) * radius;
     creature.group.position.set(x, roadSurfaceHeight(this.road, x, z), z);
     // Leaving, it faces out along its own bearing, exactly as a departing
-    // listener does.
-    creature.setHeading(angle);
+    // listener does — except the escort dog, still walking, who faces
+    // where the bard is walking until he stops covering ground.
+    creature.setHeading(heading);
     if (radius > GONE_M) {
       creature.group.visible = false;
       this.creatureDrift = null;
