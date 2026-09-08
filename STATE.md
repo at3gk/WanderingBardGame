@@ -49,7 +49,11 @@ alternatives) and shipped it — see ROADMAP.md task 186's own done-note;
 run 161 picked task 186 piece 4 (the owl, first of the three remaining
 birds) and shipped it, catching and fixing a real staging bug (the life
 signature was clobbering the ground-height field) via live verification
-before merging — see ROADMAP.md task 186's own done-note)
+before merging — see ROADMAP.md task 186's own done-note; run 162 picked
+task 186 piece 5 (the nightingale) and, while verifying it live, found and
+fixed a much bigger cross-cutting bug that had been silently dead since the
+deer's own piece 1 — see the run-162 HANDOFF and ROADMAP task 186's own
+piece-5 done-note for the full account)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -149,6 +153,71 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-08 (run 162) — task 186 piece 5: the nightingale, and
+  a real cross-cutting bug fixed along the way.** `src/three/actors/Birds.ts`
+  gained `Nightingale`, built as the owl's opposite on every axis (the
+  class's own header explains why): smallest and dullest bird in the game
+  rather than the boldest, thin visible legs rather than none, a head
+  turned three-quarter AWAY rather than the owl's direct stare, and a
+  throat-pulse standing in for the song (there is no audio channel to give
+  it) rather than a considering head-tilt. Keeps the owl's one colour
+  break, a rufous cocked tail, as its sole accent. `encounters.ts` gained
+  `nightingale` in `MeetingFigure` and `CREATURE_FIGURES`; `RoadStage`
+  wired it in at a new 6-8 m band (further out than the fox/owl's 5-7 m —
+  "a hidden singer does not come close to be seen") and renamed
+  `OWL_DEPART_SPEED` to `BIRD_DEPART_SPEED`, shared by both birds, since an
+  exit is a flight for either of them.
+  While building the live-verification check (same `placeMeeting`-bypass
+  trick every bird/animal piece back to the deer has used), a real bug
+  surfaced: staging the nightingale through the actual `setPhase`
+  machinery rather than the bypass showed `tuneMode` is `null` for the
+  *entire* time a creature is met and for the entire time it departs
+  afterward — `journey.ts`'s `LEGAL_TRANSITIONS` guarantees `encounter` can
+  only be entered from and exited to `walking`, never `busking`, and
+  `closeWalkTune`/`closeBusk` clear `tuneMode` before `encounter`'s own
+  logic runs. But `updateCreature` — which drives every staged creature's
+  life-signature animation (breathing, head-tilt, tail wag, and now the
+  throat pulse) *and* the whole departure drift — was called from exactly
+  one place: inside `updateBusk`, gated on `tuneMode === 'busk'`. Net
+  effect, in real play, since the deer's piece 1 (run 119): a met creature
+  never animated and never actually left. It just sat frozen, fully
+  visible, until the next same-species encounter silently snapped it to a
+  new spot (or, for a different species, left an old stale ghost standing
+  in the background forever) — the exact "unstaged/mis-staged" failure
+  mode task 186 itself exists to fix, just one layer deeper than the
+  wave-17 finding that started it. Every prior piece's own "verified live"
+  claim was true only under the ad-hoc check's forced-busking condition,
+  which is not a condition real play ever produces for an encounter.
+  Fixed by moving the `this.updateCreature(dt);` call out of `updateBusk`
+  and into the main `update(dt)`, unconditional, right next to
+  `for (const person of this.shown) person.update(dt);` — travellers
+  already animated regardless of tune state; creatures now do too, which
+  is the one-line-sized version of the fix once the actual cause was
+  found. Verified live three ways: (1) deterministic single-step calls
+  (`stage.updateCreature(1.0)`, no RAF timing involved) confirmed every
+  creature still picks its own correct speed post-move — deer/fox/cat at
+  0.8 m/s, owl/nightingale at 3.2 m/s, dog's escort hold unchanged — so the
+  refactor introduced no regression; (2) a real `setPhase('encounter')` →
+  `setPhase('walking')` round trip (the actual transition path, not the
+  bypass) showed `tuneMode` staying `null`/becoming `'walk'` throughout
+  while the nightingale's position held steady through the encounter and
+  then correctly drifted out and vanished (`visible: false`) after enough
+  real frames; (3) a deterministic 0.9 s step confirmed the throat-pulse
+  life signature itself now advances during the held meeting (scale 1 →
+  1.084, matching the sine curve exactly), where before the fix it could
+  not have moved at all. `npm test` 1356 green (unchanged — the fix and
+  the new bird are both non-pure/constants, no new test surface beyond
+  `meetingFigureFor`'s table, which does cover the new entry), `npm run
+  build` green, bundle 927.92 → 929.15 KB (+1.23 KB, one new actor class;
+  the `updateCreature` relocation is net-zero size). No new runtime
+  dependency (Playwright was again a dev-only `--no-save` install, removed
+  after). Task 186 is now down to one remaining piece: the kingfisher.
+  Next: the kingfisher (a fast flash downstream — different enough in
+  behaviour from both birds so far to earn its own piece, same split the
+  quadrupeds got); task 189's far-band lead and the rest of the v1.1
+  "crafted frame" queue remain open alternatives; consolidation is not yet
+  due (162 is 5 runs past 157, next due around 167).
 
 - **HANDOFF, 2026-09-08 (run 161) — task 186 piece 4: the owl, the first
   bird.** Full detail (the model, the distance/depart-speed picks, the
