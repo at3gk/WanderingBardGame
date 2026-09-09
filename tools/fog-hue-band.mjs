@@ -64,6 +64,34 @@ const BANDS = 3; // near / mid / far, by position within the land pixels' own ro
 // collapse with the key off" directly, rather than only correlating.
 const FORCE_ZERO_POSES = ['02-morning', '03-noon', '10-tablet-afternoon'];
 
+// Piece 4 (run 164): piece 3 ruled the land key out as the cause and left
+// "camera distance to the horizon... before proposing another mechanism"
+// as the open lead. Looking at the pose table above with fresh eyes: every
+// pose whose far/near gap RISES (02-morning, 03-noon, 10-tablet-afternoon)
+// is shot in the `walking` camera mood; both poses whose gap FALLS
+// (04-golden-vista, 11-morning-vista) are shot in `vista`. That is a
+// perfect confound piece 1-3 never controlled for — the pose set varied
+// hour AND camera mood together, so "enacting hour" and "walking camera"
+// were never told apart. `CameraRig`'s own FRAMINGS document exactly the
+// kind of difference that could matter here: vista pulls back to 7.5 m and
+// climbs to 3.5 m (horizon at 0.25 of frame) where walking sits at 4.0 m/
+// 1.85 m (horizon at 0.32) — a vista's far band is a much larger, more
+// distant slab of land than a walk's.
+//
+// `RoadStage.pose` already supports testing this directly: its `mood`
+// option calls `CameraRig.setMood` on its own, independent of `phase` —
+// so the SAME s/dayFraction/world state can be shot through the OTHER
+// camera mood with nothing else changed. `ALT_MOOD` names, for each pose
+// above, the mood it was NOT naturally shot in; the render loop poses a
+// second time on the same page and re-measures.
+const ALT_MOOD = {
+  '02-morning': 'vista',
+  '03-noon': 'vista',
+  '04-golden-vista': 'walking',
+  '11-morning-vista': 'walking',
+  '10-tablet-afternoon': 'vista',
+};
+
 /**
  * Runs in the page. Self-contained per page.evaluate's own rule (see
  * land-histogram.mjs) — no reference to anything outside this function.
@@ -302,8 +330,23 @@ for (const pose of POSES) {
     }
   }
 
+  const naturalMood = pose.phase === 'vista' ? 'vista' : 'walking';
+  const altMood = ALT_MOOD[pose.name] ?? null;
+  let altMoodResult = null;
+  if (altMood) {
+    // Same page, same s/dayFraction/world — only the camera framing moves.
+    await page.evaluate((mood) => window.bard.pose({ mood }), altMood);
+    await page.waitForTimeout(2000);
+    const measured = await page.evaluate(measureFogHueBands, { bandCount: BANDS });
+    if (measured.error) {
+      problems.push(`${pose.name} (mood=${altMood}): ${measured.error}`);
+    } else {
+      altMoodResult = { mood: altMood, ...measured };
+    }
+  }
+
   await page.close();
-  rows.push({ name: pose.name, ...result, forcedZero });
+  rows.push({ name: pose.name, naturalMood, ...result, forcedZero, altMoodResult });
 }
 
 await browser.close();
@@ -328,7 +371,7 @@ const gap = (bands) => {
 
 for (const r of rows) {
   console.log(
-    `\n${r.name}  (fog hue ${r.fogHueDeg}°, land rows ${r.landRowExtent}px, ` +
+    `\n${r.name}  (mood ${r.naturalMood}, fog hue ${r.fogHueDeg}°, land rows ${r.landRowExtent}px, ` +
       `sunHeight ${r.sunHeight}, landKeyAmount ${r.landKeyAmount})`,
   );
   printBands(r.bands);
@@ -345,7 +388,35 @@ for (const r of rows) {
         `(${naturalGap !== 0 ? Math.round((1 - forcedGap / naturalGap) * 100) : '-'}% change)`,
     );
   }
+
+  if (r.altMoodResult) {
+    console.log(
+      `  -- same s/dayFraction, mood forced to '${r.altMoodResult.mood}' (natural was '${r.naturalMood}') --`,
+    );
+    printBands(r.altMoodResult.bands);
+    const altGap = gap(r.altMoodResult.bands);
+    const naturalGap = gap(r.bands);
+    console.log(`  far-near hueSpread gap: ${altGap}`);
+    console.log(`  gap by mood: ${r.naturalMood} ${naturalGap} -> ${r.altMoodResult.mood} ${altGap}`);
+  }
 }
+
+// Piece 4 summary: does the gap's sign track camera mood rather than
+// landKeyAmount/sun height? Every row here holds s and dayFraction fixed
+// and varies only the camera — the cleanest isolation this file can do.
+const moodRows = rows.filter((r) => r.altMoodResult);
+if (moodRows.length) {
+  console.log(`\nmood isolation (same scene, camera only) — gap by mood:`);
+  console.log(`  ${pad('pose', 24)}${pad('walking', 10)}vista`);
+  for (const r of moodRows) {
+    const naturalGap = gap(r.bands);
+    const altGap = gap(r.altMoodResult.bands);
+    const walkingGap = r.naturalMood === 'walking' ? naturalGap : altGap;
+    const vistaGap = r.naturalMood === 'vista' ? naturalGap : altGap;
+    console.log(`  ${pad(r.name, 24)}${pad(walkingGap, 10)}${vistaGap}`);
+  }
+}
+
 if (problems.length) {
   console.log(`\nproblems (${problems.length}):`);
   for (const p of problems) console.log(`  ${p}`);

@@ -185,6 +185,18 @@ makes it long. You do not need to read it top to bottom.
   far-band lead and the rest of the v1.1 "crafted frame" queue are the
   open alternatives; no arc is currently in flight. Consolidation is
   close (163 is 6 runs past 157, next due around 167).
+- **Run 164 update**: picked task 189 piece 4 (the camera-mood lead piece
+  3 left open) and refuted it too, plus found a real methodology gap (the
+  road regenerates from a real-calendar-date seed, so pose comparisons
+  across different run-dates aren't comparing the same world) — see task
+  189's own piece-4 done-note and STATE.md's run-164 HANDOFF. Three
+  single-variable mechanisms are now ruled out for the far-band spread
+  rise (landKeyAmount, camera mood, and sun height/hour never rose above a
+  2-point pattern); "object mix at the far row band" is the one untried
+  lead left from piece 3's list. Live queue as of run 164: that lead if
+  task 189 continues, the scatter lower-left design question (run 136,
+  still open), or wave 20 once network-unblocked; consolidation is not
+  yet due (164 is 7 runs past 157, next due around 167).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3223,6 +3235,59 @@ interviews) — read it before taking any task; its not-recommended list
     uniforms themselves — before proposing another mechanism; the scatter
     lower-left design question (run 136, still open) or wave 20 once
     network-unblocked remain the other two threads.
+
+    **Piece 4 done (2026-09-09, run 164) — the camera-mood lead piece 3
+    named is refuted too, and a real methodology gap surfaced along the
+    way.** `CameraRig`'s own `FRAMINGS` table shows `vista` pulling back to
+    7.5 m/3.5 m (horizon at 0.25 of frame) against `walking`'s 4.0 m/1.85 m
+    (horizon at 0.32) — and every pose piece 1-3 called "risen" happened to
+    be shot `walking`, every "flat" one `vista`. That confound was never
+    controlled for. `RoadStage.pose`'s `mood` option sets `CameraRig`'s mood
+    independently of `phase`, so `fog-hue-band.mjs` now renders each pose a
+    second time on the same page — same `s`/`dayFraction`/world, camera mood
+    forced to the one it was NOT naturally shot in (`ALT_MOOD`) — and prints
+    a same-scene gap-by-mood table. Result: mood moves the gap (it is not
+    inert — `03-noon` 0.02→-0.153, `10-tablet-afternoon` 0.242→-0.184, both
+    flip sign) but does not drive it: `04-golden-vista` stays deeply
+    negative in both moods (-0.555 natural, -0.834 forced-walking) and
+    `11-morning-vista` stays strongly positive in both (0.675 natural,
+    0.822 forced-vista) — forcing the "flat" pose into a "risen" mood does
+    not make it rise, and vice versa. `02-morning`'s gap barely moves at
+    all (0.381→0.373). Three single-variable mechanisms are now ruled out
+    (landKeyAmount piece 3, sun height/enacting-hour never more than a
+    2-point pattern, camera mood this piece) without landing a replacement;
+    what is left standing from piece 3's own list is "object mix at the far
+    row band" — a specific landmark or biome feature sitting in that band
+    on some poses and not others — which piece 4 did not test.
+    A second finding, arguably the more load-bearing one: `road.ts` builds
+    the whole road from `dailySeed()`/`dayKey()` (`src/core/rng.ts`) — a
+    real-calendar-date seed — so the SAME `s`/`dayFraction` pose is a
+    DIFFERENT generated world on a different real day. `11-morning-vista`
+    read -0.060 on 2026-09-02 (piece 2) and +0.675 today, 2026-09-09 — not
+    a contradiction in the game, a different road under the same pose
+    coordinates. Confirmed by eye: a screenshot at this pose (ad-hoc,
+    deleted after) shows a pale, heavily hazed background treeline at the
+    top of the land pixels, present in both camera moods, plausibly enough
+    hue variance on its own to swing the far band's spread either way
+    depending on exactly what got seeded there. Every comparison this
+    piece made was same-session (same real day, same seed), so its own
+    conclusions above hold; but it means no future piece of this
+    investigation may compare an absolute gap value against a number
+    recorded in an earlier piece's run unless both ran the same real day —
+    only same-session deltas (forced-zero, forced-mood) are safe, which is
+    the shape every piece so far has actually used, this one included. Not
+    chased further this run — a fourth ruled-out mechanism plus a
+    methodology finding is enough for one piece. `npm test` 1356 green
+    (unchanged), `npm run build` green (930.29 KB, unchanged), `verify-all
+    quick` (`shader-check`) PASS. No new runtime dependency (Playwright run via
+    `PLAYWRIGHT_PATH` against the pre-installed copy, per `tools/README.md`
+    — never a project dependency). Next:
+    "object mix at the far row band" is the one candidate from piece 3's
+    list not yet tried — probably needs per-object-type masking rather
+    than a row-position split, which is a bigger build than a toggle; the
+    scatter lower-left design question (run 136, still open) and wave 20
+    once network-unblocked remain the other two threads; consolidation
+    (163 was 6 runs past 157) is also due around now.
 
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 
