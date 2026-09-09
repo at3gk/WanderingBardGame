@@ -1,5 +1,6 @@
 /**
- * The birds (task 186 pieces 4-5 so far): the owl and the nightingale.
+ * The birds (task 186 pieces 4-6, the task's last three): the owl, the
+ * nightingale and the kingfisher.
  *
  * Task 186's remaining creatures were the village/forest quadrupeds (fox,
  * cat, dog — pieces 1-3) and then, by meet-frequency, the birds:
@@ -8,8 +9,10 @@
  * downstream) that they are their own pieces rather than one. The owl came
  * first because its line describes a creature holding still and looking
  * back rather than moving; the nightingale is deliberately built as the
- * owl's opposite on every design axis (see its own class doc below).
- * `kingfisher` remains.
+ * owl's opposite on every design axis (see its own class doc below); the
+ * kingfisher closes the three-way split with the one axis neither of the
+ * others claimed — colour and speed rather than pose (see its own class
+ * doc further below). This closes task 186 entirely.
  *
  * Every other staged animal so far reads in profile or three-quarter and
  * carries its identity in an outline mark unique to it (the deer's neck and
@@ -221,6 +224,98 @@ export class Nightingale implements StagedCreature {
     this.throat.scale.set(pulse, pulse, pulse);
     this.tail.rotation.x = -1.05 + Math.sin(t * 1.3) * 0.12;
     this.body.position.y = Math.sin(t * 0.7) * 0.003;
+  }
+
+  dispose(): void {
+    for (const material of this.materials) material.dispose();
+    this.materials.length = 0;
+    this.group.traverse((child) => {
+      if (child instanceof Mesh) child.geometry.dispose();
+    });
+  }
+}
+
+/**
+ * The kingfisher — the third and final bird (task 186 piece 6), "the fast
+ * flash". Its line describes motion, not a pose: "goes downstream like a
+ * thrown stone and leaves one blue note behind it" — the one creature in
+ * the family defined by how quickly it is gone rather than by how it holds
+ * still. It closes the three-way split the owl and nightingale started:
+ * the owl's identity is its face (disc, forward eyes, tufts) and the
+ * nightingale's is plain-brown restraint plus one rufous accent; the
+ * kingfisher's is built almost entirely around one oversized, straight
+ * dagger bill — real kingfishers are famously more bill than bird — on the
+ * most vividly coloured silhouette in the game (cobalt back, chestnut
+ * breast, a white throat flash), because a creature the player is meant to
+ * remember mainly as a streak of colour needs the colour itself to be
+ * memorable. No tail to speak of: real kingfishers are stub-tailed, and it
+ * is also the one silhouette slot the owl (no legs) and nightingale (long
+ * legs, cocked tail) had not already claimed.
+ */
+export class Kingfisher implements StagedCreature {
+  readonly group = new Group();
+  private readonly body = new Group();
+  private readonly headPivot = new Group();
+  private readonly materials: ShaderMaterial[] = [];
+  private elapsed = 0;
+  private readonly phase: number;
+
+  constructor(globals: PainterlyGlobals, seed = 0) {
+    this.phase = (seed % 61) * 0.83;
+    this.group.name = 'kingfisher';
+    const solid = solidFactory(globals, this.materials);
+    const back = solid(0x1c8fae, 0.5);
+    const breast = solid(0xc0632a, 0.4);
+    const throat = solid(0xdcd3bb, 0.55, 0.65);
+    const bill = solid(0x1c140c, 0.15, 0.4);
+    const leg = solid(0xb4472a, 0.2, 0.4);
+    const add = adder(this.body);
+
+    // Body: short and compact, the taper closing almost flush at the back
+    // rather than trailing into a tail — the opposite choice from the
+    // nightingale's held-up one.
+    add(boxPart(0.1, 0.11, 0.15, 0.55, 0.5), back, 0, 0.07, -0.01);
+    // The breast: chestnut-orange, wrapped low and forward where it reads.
+    add(boxPart(0.09, 0.08, 0.09, 0.6), breast, 0, 0.055, 0.05);
+    // Throat: a small pale flash just under the bill.
+    add(boxPart(0.05, 0.035, 0.03, 0.7), throat, 0, 0.075, 0.1);
+
+    // Head, on its own pivot: oversized relative to the body, the way a
+    // real kingfisher's is — it exists mainly to carry the bill.
+    this.headPivot.position.set(0, 0.15, 0.05);
+    const headAdd = adder(this.headPivot);
+    headAdd(boxPart(0.09, 0.09, 0.09, 0.75), back, 0, 0, 0);
+
+    // The bill: long, straight, black, dead ahead — the identity mark
+    // itself, nearly as long as the head that carries it.
+    headAdd(boxPart(0.025, 0.025, 0.13, 0.4), bill, 0, -0.01, 0.135);
+
+    // Legs: short, stubby, coral-red, barely load-bearing — a kingfisher
+    // perches almost bill-down, its legs doing little of the visible work
+    // the nightingale's long thin pair do.
+    const legGeo = boxPart(0.02, 0.035, 0.02, 0.9);
+    add(legGeo, leg, -0.025, 0, 0.01);
+    add(legGeo, leg, 0.025, 0, 0.01);
+
+    this.body.add(this.headPivot);
+    this.group.add(this.body);
+  }
+
+  setHeading(heading: number): void {
+    this.group.rotation.y = heading;
+  }
+
+  /**
+   * Neither the owl's slow considering tilt nor the nightingale's phrasing
+   * pulse — a small, fast bill-dip, the coiled-to-dive readiness a real
+   * kingfisher shows right before it goes. Fastest clock of the three
+   * birds, matching the line's own "thrown stone" urgency.
+   */
+  update(dt: number): void {
+    this.elapsed += dt;
+    const t = this.elapsed + this.phase;
+    this.headPivot.rotation.x = Math.max(0, Math.sin(t * 2.4)) * 0.16;
+    this.body.position.y = Math.sin(t * 1.1) * 0.003;
   }
 
   dispose(): void {
