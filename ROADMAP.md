@@ -179,6 +179,12 @@ makes it long. You do not need to read it top to bottom.
   the kingfisher, task 189's far-band lead, and the rest of the v1.1
   "crafted frame" queue remain the open alternatives; consolidation is
   not yet due (162 is 5 runs past 157, next due around 167).
+- **Run 163 update**: picked task 186 piece 6 (the kingfisher) and shipped
+  it, closing task 186 entirely — see task 186's own final done-note and
+  STATE.md's run-163 HANDOFF. Live queue as of run 163: task 189's
+  far-band lead and the rest of the v1.1 "crafted frame" queue are the
+  open alternatives; no arc is currently in flight. Consolidation is
+  close (163 is 6 runs past 157, next due around 167).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3898,6 +3904,73 @@ full verdict map and the measure-first suspicion list):
     down to its one remaining piece: the kingfisher** (a fast flash
     downstream -- different enough from both birds so far to stay its own
     piece).
+    **Piece 6 done (2026-09-09, run 163): the kingfisher, and task 186
+    closes.** `actors/Birds.ts` gained `Kingfisher`, closing the three-way
+    split with the one axis neither the owl (face/pose) nor the
+    nightingale (restraint/song) claimed: colour and speed. Built almost
+    entirely around one oversized, straight, black dagger bill (real
+    kingfishers are famously more bill than bird) on the most vividly
+    coloured silhouette in the game -- cobalt-turquoise back, chestnut-
+    orange breast, a small pale throat flash, coral-red stub legs -- and
+    no tail at all, the one silhouette slot the owl (no legs) and
+    nightingale (long legs, cocked tail) had not already claimed. Its life
+    signature is a fast bill-dip (`headPivot.rotation.x`, clock 2.4 --
+    faster than the owl's 0.42 head-tilt and the nightingale's 1.3 throat
+    pulse), the coiled-to-dive readiness a real kingfisher shows right
+    before it goes, matching the line's own "thrown stone" urgency more
+    than either prior bird's stillness does.
+    `encounters.ts`'s `MeetingFigure` union and `CREATURE_FIGURES` map,
+    and the sweeping test in `encounters.test.ts`, all gained
+    `kingfisher -> 'kingfisher'`. `RoadStage` stands it at the cat/dog
+    band (3.5-5 m, the closest of any staged creature) rather than
+    getting its own -- "a thrown stone" is a close-range image, and the
+    exit was always going to matter more than the meeting distance for
+    this one. The departure is where it actually earns its own piece
+    rather than folding into the existing bird branch: a new
+    `KINGFISHER_DEPART_SPEED` (6.4 m/s, double `BIRD_DEPART_SPEED`) makes
+    it the fastest exit of any creature in the game, on its own branch in
+    `updateCreature` ahead of the owl/nightingale check.
+    Verified live end to end, in two parts after an early false start.
+    First, deterministic: `stage.placeMeeting` called directly (bypassing
+    the random encounter roll -- TS-private is compile-time only, the same
+    trick every piece since the deer has used), then `stage.updateCreature`
+    single-stepped 0.2 s with `departing` forced true -- radius advanced
+    exactly 1.28 m (6.4 x 0.2), confirming the new speed constant is wired
+    to this creature specifically and not shared with the other two birds.
+    (A first attempt single-stepped 1.0 s instead and threw reading
+    `creatureDrift.radius` afterward -- not a game bug: at 6.4 m/s a full
+    second from this meeting's ~4.7 m radius overshoots `GONE_M` (11) in
+    one step, and the departure completing mid-step correctly nulls
+    `creatureDrift` by design. Fixed by shrinking the probe step, not the
+    game.) Second, the real transition: a genuine `setPhase('encounter')`
+    -> `setPhase('walking')` round trip (not the bypass), the same check
+    run 162 used to catch the dead-`updateCreature` regression, held the
+    kingfisher visible and undeparting through the encounter and then
+    departed it to `visible: false` over real frames after the phase
+    changed. This surfaced a real Playwright/CDP quirk worth recording:
+    the first attempt awaited `setTimeout` *inside* a single
+    `page.evaluate` call and measurably throttled the page's own rAF loop
+    under it (a 300 ms/1300 ms wait read back as ~1.9 s/~3.0 s of wall
+    time, and the simulation advanced barely 0.75 s of game time across
+    both) -- switching to Playwright's own `waitForTimeout` polled in
+    short hops between separate `evaluate` calls (matching every prior
+    piece's own check structure) fixed it and the departure completed on
+    schedule. A screenshot (bard posed mid-encounter, kingfisher pulled to
+    a close, unobstructed bearing) confirmed the silhouette reads as
+    intended: cobalt body, visible black bill, warm breast patch, no
+    tail-clutter competing with either.
+    `npm test` 1356 green (unchanged -- no new pure logic; the depart-speed
+    and distance-band picks are constants, like every prior bird/animal
+    piece), `npm run build` green, bundle 929.15 -> 930.29 kB (+1.14 kB,
+    one new actor class). No new runtime dependency (Playwright dev-only,
+    `--no-save`, removed after; the ad-hoc check script itself matched
+    `.gitignore`'s existing `tools/_*.mjs` pattern and was deleted when
+    done rather than needing manual exclusion). **TASK 186 IS NOW ENTIRELY
+    DONE.** All seven of its creatures (deer, fox, cat, dog, owl,
+    nightingale, kingfisher) are staged, animated, and depart correctly in
+    real play -- the original staging-vs-caption mismatch the task opened
+    to fix (a deer day showing a random walker standing in) is gone for
+    good.
 179. **Figure/ground value floor.** The panel's one measured-everywhere
     fault: bard-vs-surround dL 0.7 (02), 2.0 (01), 2.4 (07), 4.0
     (04/06) against the reference floor of 13.6-25.2 — the protagonist

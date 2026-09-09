@@ -49,7 +49,7 @@ import { ContactShadow } from './actors/ContactShadow';
 import { TRAVELLER_KINDS, Traveller } from './actors/Traveller';
 import { Deer } from './actors/Deer';
 import { Cat, Dog, Fox, type StagedCreature } from './actors/SmallCreatures';
-import { Nightingale, Owl } from './actors/Birds';
+import { Kingfisher, Nightingale, Owl } from './actors/Birds';
 import { activeBookmark, setActiveBookmark } from '../core/profiles';
 import { Campfire } from './scenes/Campfire';
 import { FestivalGrounds } from './scenes/FestivalGrounds';
@@ -1824,7 +1824,9 @@ export class RoadStage implements Stage {
                   ? new Owl(this.app.globals, this.road.seed)
                   : figure === 'nightingale'
                     ? new Nightingale(this.app.globals, this.road.seed)
-                    : new Cat(this.app.globals, this.road.seed);
+                    : figure === 'kingfisher'
+                      ? new Kingfisher(this.app.globals, this.road.seed)
+                      : new Cat(this.app.globals, this.road.seed);
         this.creatures.set(figure, creature);
         this.actors.add(creature.group);
       }
@@ -1836,7 +1838,10 @@ export class RoadStage implements Stage {
       // you; the wild things keep theirs. The owl sits with the fox: not
       // tame, but not shy either — it means to be looked at. The
       // nightingale sits further out again, just inside the deer's own
-      // band: a hidden singer does not come close to be seen.
+      // band: a hidden singer does not come close to be seen. The
+      // kingfisher shares the cat/dog band, the closest of all — "a thrown
+      // stone" is a close-range image, and it is gone almost as soon as
+      // it is seen either way.
       const radius =
         figure === 'deer'
           ? 6.5 + rand() * 2.5
@@ -1887,6 +1892,12 @@ export class RoadStage implements Stage {
     // shares it rather than getting its own — both exits are a flight, the
     // difference between the two birds is in the meeting, not the leaving.
     const BIRD_DEPART_SPEED = 3.2;
+    // The kingfisher gets its own, faster still — its line is the leaving
+    // ("goes downstream like a thrown stone"), not a considered pose held
+    // and then abandoned, so the exit itself has to read as the fastest
+    // thing in the family, not just another flight at the owl/nightingale's
+    // pace.
+    const KINGFISHER_DEPART_SPEED = 6.4;
     const GONE_M = 11;
     let heading = this.creatureDrift.angle;
     if (this.creatureDrift.figure === 'dog') {
@@ -1901,6 +1912,8 @@ export class RoadStage implements Stage {
         DEPART_SPEED,
       );
       if (walked < DOG_ESCORT_DISTANCE_M) heading = this.subject.heading;
+    } else if (this.creatureDrift.figure === 'kingfisher') {
+      this.creatureDrift.radius += KINGFISHER_DEPART_SPEED * dt;
     } else if (this.creatureDrift.figure === 'owl' || this.creatureDrift.figure === 'nightingale') {
       this.creatureDrift.radius += BIRD_DEPART_SPEED * dt;
     } else {

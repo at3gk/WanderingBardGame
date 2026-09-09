@@ -931,7 +931,16 @@ function tailDraw(rand: Rand): number {
  *
  * Pure, so the routing is pinned by test rather than by screenshot.
  */
-export type MeetingFigure = 'person' | 'deer' | 'fox' | 'cat' | 'dog' | 'owl' | 'nightingale' | null;
+export type MeetingFigure =
+  | 'person'
+  | 'deer'
+  | 'fox'
+  | 'cat'
+  | 'dog'
+  | 'owl'
+  | 'nightingale'
+  | 'kingfisher'
+  | null;
 
 /** The creatures that have figures so far, by encounter id. */
 const CREATURE_FIGURES: Record<string, Exclude<MeetingFigure, 'person' | null>> = {
@@ -941,6 +950,7 @@ const CREATURE_FIGURES: Record<string, Exclude<MeetingFigure, 'person' | null>> 
   'escort-dog': 'dog',
   'answering-owl': 'owl',
   nightingale: 'nightingale',
+  kingfisher: 'kingfisher',
 };
 
 export function meetingFigureFor(def: EncounterDef): MeetingFigure {

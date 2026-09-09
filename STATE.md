@@ -53,7 +53,9 @@ before merging — see ROADMAP.md task 186's own done-note; run 162 picked
 task 186 piece 5 (the nightingale) and, while verifying it live, found and
 fixed a much bigger cross-cutting bug that had been silently dead since the
 deer's own piece 1 — see the run-162 HANDOFF and ROADMAP task 186's own
-piece-5 done-note for the full account)
+piece-5 done-note for the full account); run 163 picked task 186 piece 6
+(the kingfisher) and shipped it, closing task 186 entirely — see the
+run-163 HANDOFF and ROADMAP task 186's own final done-note)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -153,6 +155,59 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-09 (run 163) — task 186 piece 6: the kingfisher, and
+  task 186 closes entirely.** Full detail (the model, the distance/depart-
+  speed picks, the verification story) is in ROADMAP task 186's own final
+  done-note — short version here. `src/three/actors/Birds.ts` gained
+  `Kingfisher`, closing the three-way split the owl and nightingale
+  started with the one axis neither claimed: colour and speed rather than
+  pose. Built around one oversized black dagger bill (real kingfishers are
+  famously more bill than bird) on the most vividly coloured silhouette in
+  the game — cobalt back, chestnut breast, a pale throat flash, coral stub
+  legs, no tail at all (the one silhouette slot neither the owl, no legs,
+  nor the nightingale, long legs and cocked tail, had claimed). Its life
+  signature is a fast bill-dip on the fastest clock of the three birds,
+  the coiled-to-dive readiness the line's own "thrown stone" urgency asks
+  for. Wired into `encounters.ts` (`MeetingFigure`, `CREATURE_FIGURES`, the
+  sweeping test) and `RoadStage` (staged at the cat/dog band, the closest
+  of any creature — "a thrown stone" is close-range — with its own new
+  `KINGFISHER_DEPART_SPEED`, 6.4 m/s, double `BIRD_DEPART_SPEED` and the
+  fastest exit in the game).
+  Verified live in two parts, with one real lesson from a wrong first
+  attempt at each. Deterministic: `placeMeeting` staged directly (the
+  usual TS-private-is-compile-time-only bypass), then `updateCreature`
+  single-stepped — the first attempt used a 1.0 s step and threw reading
+  `creatureDrift.radius` afterward, which turned out to be correct game
+  behaviour caught by a wrong test: at 6.4 m/s a full second from this
+  meeting's own ~4.7 m radius overshoots `GONE_M` (11) in one step, so the
+  departure legitimately completes and nulls `creatureDrift` mid-step;
+  shrinking the probe to 0.2 s (radius advanced exactly 1.28 m) was the
+  right fix, not a game change. Real transition: a genuine
+  `setPhase('encounter')` → `setPhase('walking')` round trip, the same
+  check that caught run 162's dead-`updateCreature` bug, held the
+  kingfisher steady through the meeting and then departed it to
+  `visible: false` over real frames — but the first attempt awaited
+  `setTimeout` *inside* one `page.evaluate` call and that measurably
+  throttles the page's own rAF loop under Playwright/CDP (a 300 ms/1300 ms
+  wait read back as ~1.9 s/~3.0 s of wall time, and the simulation only
+  advanced ~0.75 s of game time across both) — polling in short hops with
+  `waitForTimeout` between separate `evaluate` calls, the structure every
+  prior piece's check already used, fixed it. Worth remembering for any
+  future live check: never await a browser-side timer inside a single
+  `evaluate` call when the wait needs to actually advance the page's own
+  frame loop. A screenshot confirmed the silhouette reads as intended.
+  `npm test` 1356 green (unchanged — no new pure logic), `npm run build`
+  green, bundle 929.15 → 930.29 KB (+1.14 KB, one new actor class). No new
+  runtime dependency (Playwright dev-only `--no-save`, removed after; the
+  ad-hoc check script matched `.gitignore`'s existing `tools/_*.mjs`
+  pattern and was deleted when done). **TASK 186 IS NOW ENTIRELY DONE** —
+  all seven of its creatures (deer, fox, cat, dog, owl, nightingale,
+  kingfisher) stage, animate, and depart correctly in real play; the
+  staging-vs-caption mismatch the task opened to fix is gone for good.
+  Next: no arc is currently in flight — task 189's far-band lead and the
+  rest of the v1.1 "crafted frame" queue are the open alternatives, or a
+  consolidation pass (163 is 6 runs past 157, next due around 167).
 
 - **HANDOFF, 2026-09-08 (run 162) — task 186 piece 5: the nightingale, and
   a real cross-cutting bug fixed along the way.** `src/three/actors/Birds.ts`
