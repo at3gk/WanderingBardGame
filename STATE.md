@@ -55,7 +55,10 @@ fixed a much bigger cross-cutting bug that had been silently dead since the
 deer's own piece 1 — see the run-162 HANDOFF and ROADMAP task 186's own
 piece-5 done-note for the full account); run 163 picked task 186 piece 6
 (the kingfisher) and shipped it, closing task 186 entirely — see the
-run-163 HANDOFF and ROADMAP task 186's own final done-note)
+run-163 HANDOFF and ROADMAP task 186's own final done-note); run 164 picked task 189 piece 4 (the
+camera-mood lead) and refuted it too, plus found that the road's
+daily-calendar-date seed makes cross-run-date pose comparisons unsound —
+see the run-164 HANDOFF and ROADMAP task 189's own piece-4 done-note)
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -155,6 +158,48 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-09 (run 164) — task 189 piece 4: the camera-mood lead
+  refuted, and a real methodology gap found.** Full detail (the exact
+  numbers, the screenshot check) is in ROADMAP task 189's own piece-4
+  done-note — short version here. Piece 3 left "camera distance to the
+  horizon" as the open lead after ruling out the land key; looking at the
+  pose table with fresh eyes found that every pose piece 1-3 called
+  "risen" was shot in the `walking` camera mood and both "flat" poses were
+  `vista` — a confound nobody had controlled for. `tools/fog-hue-band.mjs`
+  now uses `RoadStage.pose`'s `mood` option (independent of `phase`) to
+  re-render each pose through the OTHER camera mood, same `s`/
+  `dayFraction`/world otherwise, and prints a same-scene gap-by-mood
+  table. Mood moves the gap (two poses flip sign) but does not drive it:
+  the two zero-pull control poses keep their own sign in both moods
+  (golden stays deeply negative, morning-vista stays strongly positive) —
+  forcing a "flat" pose into a "risen" mood doesn't make it rise. Three
+  single-variable mechanisms are now ruled out (landKeyAmount, camera
+  mood, and sun height/hour was never more than a 2-point pattern);
+  "object mix at the far row band" is the one untried lead from piece 3's
+  own list.
+  The bigger find: `road.ts` builds the whole road from `dailySeed()`
+  (`src/core/rng.ts`), a real-calendar-date seed, so the *same*
+  `s`/`dayFraction` pose is a *different generated world* on a different
+  real day. `11-morning-vista` read −0.060 on 2026-09-02 (piece 2) and
+  +0.675 today — not a contradiction in the game, a different road under
+  the same pose coordinates, confirmed by an ad-hoc screenshot (deleted
+  after) showing a heavily hazed background treeline that plausibly
+  supplies exactly this much hue variance on its own. Every comparison
+  this piece drew was same-session (same real day), so its own
+  conclusions hold, but no future piece of this investigation may compare
+  an absolute gap value against a number recorded in an earlier piece's
+  *run* unless both ran the same real day — only same-session deltas are
+  safe, which is the shape every piece so far actually used anyway.
+  `npm test` 1356 green (unchanged — tools/ only), `npm run build` green
+  (930.29 KB, unchanged), `verify-all quick` (`shader-check`) PASS. No new
+  runtime dependency (Playwright run via `PLAYWRIGHT_PATH` against the
+  pre-installed copy per `tools/README.md`, never a project dependency).
+  Next: "object mix at the far row band" if task 189 continues (probably
+  needs per-object masking, a bigger build than a toggle); the scatter
+  lower-left design question (run 136, still open) or wave 20 once
+  network-unblocked remain the other threads; consolidation is not yet
+  due (164 is 7 runs past 157, next due around 167).
 
 - **HANDOFF, 2026-09-09 (run 163) — task 186 piece 6: the kingfisher, and
   task 186 closes entirely.** Full detail (the model, the distance/depart-

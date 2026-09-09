@@ -357,6 +357,39 @@ causal. What actually drives the far-band spread rise on enacting hours is
 still open — camera distance to the horizon, the object mix in the far row
 band, or the fog uniforms are the next candidates, not the land key.
 
+**Piece 4 (run 164): the camera-mood lead, refuted, plus a methodology
+finding.** Every pose piece 1-3 called "risen" was shot in the `walking`
+camera mood; both "flat" ones (`04-golden-vista`, `11-morning-vista`) were
+`vista` — a confound nobody had controlled for, visible once you look at
+`CameraRig`'s own `FRAMINGS` (vista pulls back to 7.5 m/3.5 m, horizon at
+0.25 of frame; walking sits at 4.0 m/1.85 m, horizon at 0.32). `RoadStage
+.pose`'s `mood` option sets `CameraRig`'s mood independently of `phase`, so
+`measureFogHueBands` is now called a second time per pose, on the same
+page, same `s`/`dayFraction`/world, camera forced to `ALT_MOOD`'s entry
+(the mood it was NOT naturally shot in) — printed per-pose and in a
+same-scene "gap by mood" summary table. Mood is not inert (`03-noon`
+0.02→-0.153, `10-tablet-afternoon` 0.242→-0.184, both flip sign) but does
+not drive the pattern: `04-golden-vista` stays deeply negative in both
+moods (-0.555 natural / -0.834 forced-walking) and `11-morning-vista` stays
+strongly positive in both (0.675 natural / 0.822 forced-vista) — forcing a
+"flat" pose's camera into the "risen" mood does not make it rise. Object
+mix at the far row band is the one candidate left from piece 3's list.
+
+A second, arguably bigger finding surfaced confirming this: `road.ts`
+builds the entire road from `dailySeed()`/`dayKey()` (`src/core/rng.ts`), a
+real-calendar-date seed, so the *same* `s`/`dayFraction` coordinates are a
+*different generated world* on a different real day. `11-morning-vista`
+read -0.060 on 2026-09-02 (piece 2) and +0.675 on 2026-09-09 (this piece)
+— not a game regression, a different road under the same pose numbers,
+consistent with an ad-hoc screenshot (not committed) showing a heavily
+hazed background treeline at the top of the land pixels on today's road.
+**Every absolute gap number this file has ever printed is only comparable
+within the run that produced it.** A future piece may reuse
+`forcedLandKeyAmount`- or `ALT_MOOD`-style same-session deltas freely
+(every piece so far already has, piece 4 included), but must not read this
+section's or ROADMAP's older absolute numbers as ground truth for what
+today's build would print.
+
 ## `shot.mjs [prefix] [settleMs]`
 
 Plain screenshot of the running game after a delay. For far-off states
