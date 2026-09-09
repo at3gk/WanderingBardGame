@@ -427,6 +427,34 @@ the panels are not asking for fur).
   (toggle/ablation) test before it's trusted, even when the pattern itself
   replicates cleanly across every sample.
 
+- 2026-09-09 (runs 158-164, folded in by the run-165 consolidation): two
+  harness/process lessons, neither a rendering fact. (1) **A staging
+  bypass call is not the same code path as the real state transition.**
+  Every creature-encounter piece back to the deer (run 119) verified its
+  work by calling `RoadStage.placeMeeting` directly (a TS-private
+  bypass) and reading the result — which never exercises the real
+  `setPhase('encounter')` transition. `updateCreature`, the function
+  driving every staged creature's animation and departure, had been
+  called only from inside `updateBusk`, gated on a tune-mode value that
+  `encounter` phases never carry — so in real play, since run 119, a met
+  creature never actually animated or left; it just froze until silently
+  snapped elsewhere. Six runs of "verified live" claims were all true
+  only under the bypass's own artificial condition. Found only when run
+  162 finally drove the check through a real `setPhase` round trip
+  instead. The lesson for any future staging/animation check: a bypass
+  proves the object *can* render correctly, not that the real game *will*
+  reach that code at all — at least one check per feature needs to go
+  through the actual transition path. (2) **A daily-seeded world is a
+  different world on a different real day, even at identical pose
+  coordinates.** `road.ts` builds the whole road from `dailySeed()`, a
+  real-calendar-date seed, so task 189's `11-morning-vista` pose read
+  −0.060 on one real day and +0.675 on another — not a contradiction, a
+  different generated road under the same `s`/`dayFraction`. Every
+  measurement piece so far happened to compare only same-session deltas
+  (forced-zero, forced-mood), which stays valid, but no future piece may
+  compare an absolute number recorded on one real day against one
+  recorded on another without re-running both on the same day first.
+
 ## Source access notes
 
 Reached directly (fetched): adamgryu's effects thread (ThreadReader)

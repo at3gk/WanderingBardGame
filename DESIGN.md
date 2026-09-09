@@ -374,8 +374,8 @@ promise.
 never stuck, never anxious, and never unable to play. That frees the whole
 note's flight for the one genuinely new thing on screen: the symbol at its
 position. Fading like this would be reckless with generated melodies. It
-is only defensible because the songbook is nine tunes a child can already
-sing.
+is only defensible because the songbook is thirteen tunes a child can
+already sing.
 
 **What the game can and cannot know.** A tap proves *timing*, not reading —
 it is confounded by melodic memory, by repeated phrases, and by the fact
@@ -552,6 +552,34 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   game opens directly into the walk.
 
 ## Changelog
+
+- 2026-09-09 (runs 160-164, consolidated at 165) — **task 186 (stage the
+  creatures) closes entirely, and task 189's investigation adds a fourth
+  refutation.** The escort dog's walk-along (160), the owl (161), the
+  nightingale (162), and the kingfisher (163) closed out the seven-creature
+  arc opened by the deer at run 119 — every staged creature now animates
+  and departs correctly in real play. Run 162's build found the reason
+  some of them hadn't been: `updateCreature` was called only from inside
+  `updateBusk`, a condition an `encounter` phase never satisfies, so every
+  met creature had been freezing in place rather than animating or leaving
+  since the deer's own first piece — a real bug, not a design gap, fixed
+  by moving the call to the unconditional per-frame update. Run 164 ruled
+  out a fourth single-variable mechanism (camera mood) for task 189's
+  far-band hue-spread question and found a real methodology limit instead:
+  the road's daily-calendar-date seed makes the same pose coordinates a
+  different generated world on a different real day, so absolute
+  measurements may never be compared across a real-day boundary. Nothing
+  here is a new mechanic: creature staging is a readout of the walk's
+  encounters, and the investigation shipped no gameplay change at all.
+  Drift check over the block: CLEAN. `docs/research/art-quality.md`
+  gained a findings entry for both process lessons (the staging-bypass gap
+  and the daily-seed gap); retention and mobile-friendly stayed unchanged
+  since neither touches returning-player or mobile/save behaviour. The
+  run-165 consolidation also fixed two stale numbers this document and
+  README.md both carried — "nine"/"eleven" tunes, behind by two songs
+  since Mulberry Bush and My Bonnie shipped — and gave README its first
+  mention of the family-songbook feature (record/import) that tasks
+  176-178 built. NOTHING CUT.
 
 - 2026-09-07 (runs 158-159) — **task 178, MusicXML import, ships end to
   end — the songbook-import arc (176 record, 177 MIDI, 178 MusicXML) is
