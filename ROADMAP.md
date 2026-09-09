@@ -197,6 +197,22 @@ makes it long. You do not need to read it top to bottom.
   task 189 continues, the scatter lower-left design question (run 136,
   still open), or wave 20 once network-unblocked; consolidation is not
   yet due (164 is 7 runs past 157, next due around 167).
+- **Run 165 update**: CONSOLIDATION. Drift check over runs 158-164 clean
+  (task 178 closed the import arc, task 186 closed entirely, task 189's
+  investigation added a fourth refutation plus the methodology gap above
+  — see STATE.md's run-165 HANDOFF for the full account). A targeted code
+  survey found nothing to clean up in the files that block touched, but
+  did surface two stale numbers (README.md and DESIGN.md both still said
+  the songbook was eleven/nine tunes; it's thirteen) — fixed, along with
+  giving README its first mention of the record/import feature.
+  `art-quality.md` gained a findings entry for two process lessons (a
+  staging-bypass check verifies a different code path than the real
+  transition; the daily-seeded road is a different world on a different
+  real day). Live queue as of run 165: task 189's "object mix at the far
+  row band" lead if that investigation continues, the scatter lower-left
+  design question (run 136, still open), or wave 20 once
+  network-unblocked remain the open threads; no arc is currently in
+  flight; next consolidation due around run 175.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135

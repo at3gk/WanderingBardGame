@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 158 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 165 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -58,7 +58,8 @@ piece-5 done-note for the full account); run 163 picked task 186 piece 6
 run-163 HANDOFF and ROADMAP task 186's own final done-note); run 164 picked task 189 piece 4 (the
 camera-mood lead) and refuted it too, plus found that the road's
 daily-calendar-date seed makes cross-run-date pose comparisons unsound —
-see the run-164 HANDOFF and ROADMAP task 189's own piece-4 done-note)
+see the run-164 HANDOFF and ROADMAP task 189's own piece-4 done-note); run
+165 was the consolidation pass
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -144,6 +145,21 @@ gated by earning — nothing shipped violates rule 4 today, but any later
 work on that shelf (badges, counts, sorting by "most played") should be
 checked against it as carefully as the journal already is.
 
+**Run-165 refresh (2026-09-09, consolidation):** no change since the
+run-157 refresh — the v0.9 queue stays complete and the rejected-on-
+principle list re-checked against runs 158-164 (task 178's MusicXML
+import, task 186's last four creature pieces, and task 189's piece-4
+investigation) finds nothing to flag: the import arc adds a second way to
+bring a song in, not a counter or a checklist; the birds are staging and
+animation work with no player-facing collection mechanic at all; the
+investigation shipped no gameplay change. `mobile-friendly.md`'s URGENT
+item and its one open real-device task (173) are unchanged; the block
+touched no mobile/save-path code. `art-quality.md` gained a new "Findings
+from shipped work" entry this run (see there) — the run-162 dead-code find
+and the run-164 daily-seed methodology gap are both harness/process
+lessons, not rendering facts, but they belong in the same running record
+as the earlier ones.
+
 ## The true goal (standing pointer)
 
 DESIGN.md's "The true goal" section (2026-07-31, human-grilled to shared
@@ -158,6 +174,52 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-09 (run 165) — CONSOLIDATION (drift control, every
+  ~10th run; last was 157).** Drift check over runs 158-164: CLEAN — the
+  block was task 178 (MusicXML import, closing the whole family-songbook
+  import arc), task 186's last four pieces (closing it entirely — all
+  seven creatures now stage, animate, and depart correctly), and task
+  189's piece-4 investigation (a fourth mechanism refuted, no shader
+  change). Every screen-touching piece was verified live before merging;
+  no new system landed beyond what each task's own description already
+  promised; bundle 920.92 → 930.29 KB across the block, still under 20% of
+  the 5 MB budget. Compressed the five individual HANDOFF blocks for runs
+  158-163 into one run-index paragraph below (ROADMAP's own numbered
+  done-notes for tasks 178 and 186 carry the full accounts), keeping run
+  164 in full as the most recent — this file 4321 → 4116 lines from that
+  edit alone.
+  Code cleanup: a targeted Explore-agent survey of every file the block
+  touched (`musicxml.ts`, `midi.ts`, `importSongDialog.ts`,
+  `Birds.ts`, `RoadStage.ts`, and the four new `tools/` scripts) found
+  nothing to remove this time — no dead code, no unused exports, no
+  leftover debug scripts (the `tools/_*.mjs` throwaway pattern stayed
+  respected). Documentation staleness found instead: README.md and
+  DESIGN.md's pedagogy section both still said the songbook was
+  "eleven"/"nine" tunes, stale since Mulberry Bush and My Bonnie shipped
+  (thirteen now) — both corrected. README also never mentioned the
+  family-songbook feature (record in free play, import MIDI/MusicXML)
+  that shipped across tasks 176-178; added one sentence. STATE.md's own
+  historical "eleven tunes" mentions (2026-07-26 and earlier, dated
+  entries) are left as-is — this file is an append-only record and those
+  were true when written.
+  Direction research refreshed per CLAUDE.md pillar 5 (see the run-165
+  refresh paragraph above, in "Direction research"): retention and
+  mobile-friendly unchanged from the run-157 refresh; art-quality.md gained
+  a new findings entry (below) recording two harness/process lessons from
+  this block — a staging bypass call verifies a different code path than
+  the real state transition (the run-162 dead-`updateCreature` bug lived
+  behind exactly that gap for six runs), and the road's real-calendar-date
+  seed means the same pose coordinates are a different generated world on
+  a different real day, so no measurement piece may compare an absolute
+  number across a real-day boundary. DESIGN.md's changelog gains the runs
+  158-164 entry. `npm test` 1356 green (unchanged — doc/tooling only this
+  run), `npm run build` green, 930.29 KB (unchanged). No new runtime
+  dependency. Next: task 189's "object mix at the far row band" lead if
+  that investigation continues, the scatter lower-left design question
+  (run 136, still open), or wave 20 once network-unblocked remain the open
+  threads; no arc is currently in flight; next consolidation due around
+  run 175.
 
 - **HANDOFF, 2026-09-09 (run 164) — task 189 piece 4: the camera-mood lead
   refuted, and a real methodology gap found.** Full detail (the exact
@@ -201,241 +263,36 @@ mastery display must read that section first.
   network-unblocked remain the other threads; consolidation is not yet
   due (164 is 7 runs past 157, next due around 167).
 
-- **HANDOFF, 2026-09-09 (run 163) — task 186 piece 6: the kingfisher, and
-  task 186 closes entirely.** Full detail (the model, the distance/depart-
-  speed picks, the verification story) is in ROADMAP task 186's own final
-  done-note — short version here. `src/three/actors/Birds.ts` gained
-  `Kingfisher`, closing the three-way split the owl and nightingale
-  started with the one axis neither claimed: colour and speed rather than
-  pose. Built around one oversized black dagger bill (real kingfishers are
-  famously more bill than bird) on the most vividly coloured silhouette in
-  the game — cobalt back, chestnut breast, a pale throat flash, coral stub
-  legs, no tail at all (the one silhouette slot neither the owl, no legs,
-  nor the nightingale, long legs and cocked tail, had claimed). Its life
-  signature is a fast bill-dip on the fastest clock of the three birds,
-  the coiled-to-dive readiness the line's own "thrown stone" urgency asks
-  for. Wired into `encounters.ts` (`MeetingFigure`, `CREATURE_FIGURES`, the
-  sweeping test) and `RoadStage` (staged at the cat/dog band, the closest
-  of any creature — "a thrown stone" is close-range — with its own new
-  `KINGFISHER_DEPART_SPEED`, 6.4 m/s, double `BIRD_DEPART_SPEED` and the
-  fastest exit in the game).
-  Verified live in two parts, with one real lesson from a wrong first
-  attempt at each. Deterministic: `placeMeeting` staged directly (the
-  usual TS-private-is-compile-time-only bypass), then `updateCreature`
-  single-stepped — the first attempt used a 1.0 s step and threw reading
-  `creatureDrift.radius` afterward, which turned out to be correct game
-  behaviour caught by a wrong test: at 6.4 m/s a full second from this
-  meeting's own ~4.7 m radius overshoots `GONE_M` (11) in one step, so the
-  departure legitimately completes and nulls `creatureDrift` mid-step;
-  shrinking the probe to 0.2 s (radius advanced exactly 1.28 m) was the
-  right fix, not a game change. Real transition: a genuine
-  `setPhase('encounter')` → `setPhase('walking')` round trip, the same
-  check that caught run 162's dead-`updateCreature` bug, held the
-  kingfisher steady through the meeting and then departed it to
-  `visible: false` over real frames — but the first attempt awaited
-  `setTimeout` *inside* one `page.evaluate` call and that measurably
-  throttles the page's own rAF loop under Playwright/CDP (a 300 ms/1300 ms
-  wait read back as ~1.9 s/~3.0 s of wall time, and the simulation only
-  advanced ~0.75 s of game time across both) — polling in short hops with
-  `waitForTimeout` between separate `evaluate` calls, the structure every
-  prior piece's check already used, fixed it. Worth remembering for any
-  future live check: never await a browser-side timer inside a single
-  `evaluate` call when the wait needs to actually advance the page's own
-  frame loop. A screenshot confirmed the silhouette reads as intended.
-  `npm test` 1356 green (unchanged — no new pure logic), `npm run build`
-  green, bundle 929.15 → 930.29 KB (+1.14 KB, one new actor class). No new
-  runtime dependency (Playwright dev-only `--no-save`, removed after; the
-  ad-hoc check script matched `.gitignore`'s existing `tools/_*.mjs`
-  pattern and was deleted when done). **TASK 186 IS NOW ENTIRELY DONE** —
-  all seven of its creatures (deer, fox, cat, dog, owl, nightingale,
-  kingfisher) stage, animate, and depart correctly in real play; the
-  staging-vs-caption mismatch the task opened to fix is gone for good.
-  Next: no arc is currently in flight — task 189's far-band lead and the
-  rest of the v1.1 "crafted frame" queue are the open alternatives, or a
-  consolidation pass (163 is 6 runs past 157, next due around 167).
-
-- **HANDOFF, 2026-09-08 (run 162) — task 186 piece 5: the nightingale, and
-  a real cross-cutting bug fixed along the way.** `src/three/actors/Birds.ts`
-  gained `Nightingale`, built as the owl's opposite on every axis (the
-  class's own header explains why): smallest and dullest bird in the game
-  rather than the boldest, thin visible legs rather than none, a head
-  turned three-quarter AWAY rather than the owl's direct stare, and a
-  throat-pulse standing in for the song (there is no audio channel to give
-  it) rather than a considering head-tilt. Keeps the owl's one colour
-  break, a rufous cocked tail, as its sole accent. `encounters.ts` gained
-  `nightingale` in `MeetingFigure` and `CREATURE_FIGURES`; `RoadStage`
-  wired it in at a new 6-8 m band (further out than the fox/owl's 5-7 m —
-  "a hidden singer does not come close to be seen") and renamed
-  `OWL_DEPART_SPEED` to `BIRD_DEPART_SPEED`, shared by both birds, since an
-  exit is a flight for either of them.
-  While building the live-verification check (same `placeMeeting`-bypass
-  trick every bird/animal piece back to the deer has used), a real bug
-  surfaced: staging the nightingale through the actual `setPhase`
-  machinery rather than the bypass showed `tuneMode` is `null` for the
-  *entire* time a creature is met and for the entire time it departs
-  afterward — `journey.ts`'s `LEGAL_TRANSITIONS` guarantees `encounter` can
-  only be entered from and exited to `walking`, never `busking`, and
-  `closeWalkTune`/`closeBusk` clear `tuneMode` before `encounter`'s own
-  logic runs. But `updateCreature` — which drives every staged creature's
-  life-signature animation (breathing, head-tilt, tail wag, and now the
-  throat pulse) *and* the whole departure drift — was called from exactly
-  one place: inside `updateBusk`, gated on `tuneMode === 'busk'`. Net
-  effect, in real play, since the deer's piece 1 (run 119): a met creature
-  never animated and never actually left. It just sat frozen, fully
-  visible, until the next same-species encounter silently snapped it to a
-  new spot (or, for a different species, left an old stale ghost standing
-  in the background forever) — the exact "unstaged/mis-staged" failure
-  mode task 186 itself exists to fix, just one layer deeper than the
-  wave-17 finding that started it. Every prior piece's own "verified live"
-  claim was true only under the ad-hoc check's forced-busking condition,
-  which is not a condition real play ever produces for an encounter.
-  Fixed by moving the `this.updateCreature(dt);` call out of `updateBusk`
-  and into the main `update(dt)`, unconditional, right next to
-  `for (const person of this.shown) person.update(dt);` — travellers
-  already animated regardless of tune state; creatures now do too, which
-  is the one-line-sized version of the fix once the actual cause was
-  found. Verified live three ways: (1) deterministic single-step calls
-  (`stage.updateCreature(1.0)`, no RAF timing involved) confirmed every
-  creature still picks its own correct speed post-move — deer/fox/cat at
-  0.8 m/s, owl/nightingale at 3.2 m/s, dog's escort hold unchanged — so the
-  refactor introduced no regression; (2) a real `setPhase('encounter')` →
-  `setPhase('walking')` round trip (the actual transition path, not the
-  bypass) showed `tuneMode` staying `null`/becoming `'walk'` throughout
-  while the nightingale's position held steady through the encounter and
-  then correctly drifted out and vanished (`visible: false`) after enough
-  real frames; (3) a deterministic 0.9 s step confirmed the throat-pulse
-  life signature itself now advances during the held meeting (scale 1 →
-  1.084, matching the sine curve exactly), where before the fix it could
-  not have moved at all. `npm test` 1356 green (unchanged — the fix and
-  the new bird are both non-pure/constants, no new test surface beyond
-  `meetingFigureFor`'s table, which does cover the new entry), `npm run
-  build` green, bundle 927.92 → 929.15 KB (+1.23 KB, one new actor class;
-  the `updateCreature` relocation is net-zero size). No new runtime
-  dependency (Playwright was again a dev-only `--no-save` install, removed
-  after). Task 186 is now down to one remaining piece: the kingfisher.
-  Next: the kingfisher (a fast flash downstream — different enough in
-  behaviour from both birds so far to earn its own piece, same split the
-  quadrupeds got); task 189's far-band lead and the rest of the v1.1
-  "crafted frame" queue remain open alternatives; consolidation is not yet
-  due (162 is 5 runs past 157, next due around 167).
-
-- **HANDOFF, 2026-09-08 (run 161) — task 186 piece 4: the owl, the first
-  bird.** Full detail (the model, the distance/depart-speed picks, the
-  bug the live check caught) is in ROADMAP task 186's own piece-4
-  done-note — short version here. `src/three/actors/Birds.ts` is a new
-  file (birds are their own family; nightingale and kingfisher are
-  coming). The owl: a compact, neckless, rounded body with no legs shown,
-  a pale face-disc, two forward eyes (the one figure in the game that
-  looks straight at the bard), and narrow ear-tufts — one slow head-tilt
-  as its only motion. `encounters.ts`'s `MeetingFigure`/`CREATURE_FIGURES`
-  and its swept test gained the `answering-owl` → `owl` entry;
-  `RoadStage` gained the owl's distance band (shared with the fox,
-  5-7 m) and a faster `OWL_DEPART_SPEED` (3.2 vs the ground animals'
-  0.8 m/s) since a bird's exit is a flight, not a walk. The bug: the
-  first draft bobbed `this.group.position.y` for breathing, the exact
-  field `placeMeeting`/`updateCreature` use to hold ground height —
-  fox and dog avoid this by bobbing an inner sub-group instead, and the
-  owl now does too. An ad-hoc Playwright check (installed `--no-save`,
-  removed after, same as runs 148/156/159/160) is what caught it: it
-  read the owl's position right after staging and again ~2 s later
-  through the live per-frame loop and the two values disagreed. After
-  the fix, verified live end-to-end through the real `RoadStage`
-  (`stage.placeMeeting` called directly with an `answering-owl` def —
-  TS-private is compile-time only): staged at the bard's own ground
-  height, settled inside the encounter camera's frame, head-tilt
-  visibly moving, departs (flies off) in ~1.8 s versus the ground
-  animals' much slower walk-off, zero console errors. `npm test` 1356
-  green (unchanged — no new pure logic; the new constants aren't
-  functions), `npm run build` green, bundle 926.45 → 927.92 KB (a new
-  actor file). No new runtime dependency. Task 186 is now down to two
-  remaining pieces: the nightingale and the kingfisher — different
-  enough from each other and from the owl (a hidden singer, a fast
-  flash downstream) to stay separate pieces. Next: task 186's remaining
-  bird pieces, or task 189's far-band lead and the rest of the v1.1
-  "crafted frame" queue as open alternatives; consolidation is not yet
-  due (161 is 4 runs past 157, next due around 167).
-
-- **HANDOFF, 2026-09-07 (run 159) — task 178 piece 2: MusicXML import wired
-  in end to end, and task 178 is DONE.** `core/musicxml.ts` gained
-  `importMusicXml(text)`, the same shape as `midi.ts`'s `importMidi(bytes)`:
-  parse (piece 1), then quantize/transpose/validate through
-  `validateImportedMelody`, imported from `midi.ts` unchanged — exactly the
-  "reuses 177's validation path" call piece 1's own header had already
-  promised. `ImportSongDialog` (`ui/importSongDialog.ts`) now decides which
-  parser to run by file extension, not MIME type — `.musicxml`/`.xml` go to
-  `importMusicXml` via `file.text()`; `.mid`/`.midi` and anything
-  unrecognised still go to `importMidi` via `file.arrayBuffer()`, so an
-  odd extension gets the MIDI parser's own kind decline rather than a
-  second "unknown file" error path. `.mxl` (compressed MusicXML — a zip
-  container) is declined by name with a message pointing at uncompressed
-  export instead: unzipping without a bundled library is real scope beyond
-  one file-format piece, the same boundary call `musicxml.ts` itself
-  already made for `score-timewise` documents. The file input's `accept`
-  list grew to match. `musicxml.test.ts` gained 3 tests for
-  `importMusicXml` (end-to-end parse+validate on a real 16-note melody, a
-  propagated parse-level decline, and a propagated engraving-level decline
-  on a too-short "tune"). Verified live with an ad-hoc Playwright install
-  (1.56.1, `tools/browser.mjs`, `--no-save` so nothing lands in
-  `package.json`) against `npm run preview`: a hand-built 4-measure
-  MusicXML file round-tripped into a named custom song that shows up on
-  the "Your songs" shelf, and a plain text file declined kindly with a
-  dismissible message and no leftover dialog state — zero console/page
-  errors across the whole run. One thing learned running the check itself:
-  Playwright's `locator.click()` actionability wait never settled on this
-  HUD (element resolves, reports visible/stable, then the click step
-  itself times out) — probably the corner's own continuous
-  attention/opacity bookkeeping reads as "unstable" to Playwright's
-  frame-to-frame stability check even though nothing visibly moves;
-  `page.mouse.click()` at the locator's `boundingBox()` center worked every
-  time and is what the check now uses throughout. `npm test` 1352 green
-  (+3), `npm run build` green, bundle 920.92 → 926.08 KB (`musicxml.ts`'s
-  parser is no longer tree-shaken now that `importSongDialog.ts` reaches
-  it, the same one-time jump 177's own last slice caused for `midi.ts`).
-  No new runtime dependency (Playwright was a dev-only, `--no-save`
-  verification tool, removed after the check; the hand-rolled XML parser
-  itself was already committed in piece 1). Task 178 is closed, closing
-  the whole "family songbook" import arc (176 record, 177 MIDI, 178
-  MusicXML) started 2026-09-03. Next: task 189's far-band lead and the
-  rest of the v1.1 "crafted frame" queue are the open alternative; this
-  run's own count (159, two since the run-157 consolidation) is far short
-  of another consolidation pass.
-
-- **HANDOFF, 2026-09-07 (run 158) — task 178 piece 1: the MusicXML parser,
-  straight to a melody.** `src/core/musicxml.ts` — a dependency-free XML
-  tree reader (tags, attributes skipped as unneeded, text, comments, CDATA,
-  entities, the `<?xml?>`/DOCTYPE preamble) plus a `score-partwise` walker,
-  same "no npm library for a format this narrow" call `midi.ts` made for
-  SMF bytes (task 177). Because MusicXML already states each note's own
-  pitch, duration, and rest-or-not, this piece does what MIDI's pieces 1
-  *and* 2 did together — no note-on/off timeline to reconstruct, so parse
-  and extract collapse into one step. Scope held to the same narrow shape
-  every "declined kindly" boundary in this codebase uses: first `<part>`
-  only (multi-part is a later piece's question, matching MIDI piece 1's
-  own punt on multi-track skyline); voice "1" only (a second voice sharing
-  a measure via `<backup>` is skipped, not misread as garbled timing); a
-  same-position chord collapses to its highest note (177 piece 2's
-  top-note-skyline idea, reused); grace notes skipped (no reliable
-  duration); percussion (`<unpitched>`) and `score-timewise` documents
-  declined by name. `quantizeDurations`/`transposeIntoRange`/
-  `validateImportedMelody` are imported from `midi.ts` unchanged, not
-  reimplemented — the concrete meaning of "reuses 177's validation path"
-  the task was written with. `musicxml.test.ts`: 20 tests against
-  hand-built MusicXML strings (a `score()`/`note()` builder, same
-  "construct the exact document a real writer would emit" approach
-  `midi.test.ts` uses for SMF bytes) covering a recognisable melody across
-  a divisions change, an explicit rest, sharps/flats via `<alter>`, a
-  three-note chord, a skipped second voice, a skipped grace note, other
-  octaves, the real DOCTYPE preamble, entity/comment/CDATA handling, and
-  every decline path. `npm test` 1349 green (+20), `npm run build` green,
-  bundle 920.92 KB unchanged (nothing reaches `musicxml.ts` yet — the same
-  one-time tree-shaking gap 177 piece 1 had before its own UI landed). No
-  new runtime dependency (hand-rolled parser, same call `midi.ts` made).
-  Next: task 178 piece 2 — extend `ImportSongDialog`'s file picker to also
-  accept `.musicxml`/`.xml`/`.mxl` and call `parseMusicXml` into the same
-  quantize/transpose/validate/`saveImportedSong` pipeline 177's UI already
-  built (no new UI shape needed, just a second parser behind the same
-  dialog); task 189's far-band lead and the rest of the v1.1 "crafted
-  frame" queue remain open alternatives.
+- **HANDOFF, 2026-09-07 through 2026-09-09 (runs 158-163, compressed by
+  the run-165 consolidation — see there) — task 178 closes the
+  family-songbook import arc, and task 186 closes entirely.** Task 178
+  (MusicXML import) shipped in two pieces: a dependency-free XML parser
+  straight to a melody (158 — MusicXML already states pitch/duration/rest
+  per note, so it does in one step what MIDI needed two pieces for), then
+  wiring into `ImportSongDialog` alongside the existing MIDI path, routed
+  by file extension and reusing `midi.ts`'s quantize/transpose/validate
+  pipeline unchanged (159) — closing the whole "family songbook" import
+  arc (176 record, 177 MIDI, 178 MusicXML) started 2026-09-03. Task 186
+  (stage the creatures) closed its last four pieces: the escort dog's
+  walk-along behaviour (160); the owl, the first bird, whose live check
+  caught a bobbing-field bug shared with no other creature (161); the
+  nightingale (162), whose build surfaced a real cross-cutting bug —
+  `updateCreature`, which drives every staged creature's animation and
+  departure, was called only from inside `updateBusk`, so since the deer's
+  own piece 1 (run 119) a met creature never actually animated or left in
+  real play, just froze until silently snapped to a new spot; fixed by
+  moving the call into the main `update(dt)`, unconditional, and verified
+  via a real `setPhase` round trip rather than the usual staging bypass
+  (see ROADMAP task 186's piece-5 done-note for the full account — the
+  gap between a bypass check and the real transition path is worth
+  remembering, and is now in `art-quality.md`'s findings, below); and the
+  kingfisher (163), closing task 186 entirely — all seven creatures (deer,
+  fox, cat, dog, owl, nightingale, kingfisher) now stage, animate, and
+  depart correctly. Every piece verified live with this environment's
+  Playwright/Chromium before merging, `npm test` green throughout (1349 →
+  1356), `npm run build` green, bundle 920.92 → 930.29 KB, no new runtime
+  dependency. ROADMAP's own numbered done-notes for tasks 178 and 186
+  carry the full account of each piece.
 
 - **HANDOFF, 2026-09-07 (run 157) — CONSOLIDATION (drift control, every
   ~10th run; last was 145).** Drift check over runs 146-156: CLEAN — the
