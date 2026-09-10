@@ -240,6 +240,20 @@ makes it long. You do not need to read it top to bottom.
   guarantee into `buildScatter`, re-measure with `scatter-probe.mjs`) or
   wave 20 once network-unblocked; next consolidation still due around 175
   (167 is 2 runs past 165).
+- **Run 168 update**: shipped task 190 piece 2 — `chooseLargeFormAnchor`
+  wired into `buildScatter`, verified live with a stashed-vs-built A/B
+  against `scatter-probe.mjs`'s own 8 pinned/probe poses. **Task 190 is now
+  done.** The A/B also found the honest limit of what this metric can show:
+  the guarantee is real (every pose's total instance count rose) but the
+  *lower-left-quadrant* number the task's own text asked to watch didn't
+  move, because a per-chunk, camera-agnostic anchor was never going to
+  reliably land in one named quadrant of one named pose — see task 190's
+  own piece-2 done-note for the full account, including why that isn't a
+  bug. Live queue as of run 168: wave 20 once network-unblocked is the one
+  standing thread; no arc is currently in flight, and the idea backlog
+  (bottom of this file) is the place to pull a fresh task from if nothing
+  else surfaces. Next consolidation still due around 175 (168 is 3 runs
+  past 165).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3465,6 +3479,63 @@ interviews) — read it before taking any task; its not-recommended list
     2 wires the guarantee into the live scatter build and re-runs
     `scatter-probe.mjs` to confirm the empty-quadrant rate actually drops;
     wave 20 remains the other standing thread, still network-blocked.
+    **Piece 2 done (2026-09-10, run 168) — wired in, and a more honest
+    reading of what "confirm the rate drops" can mean than piece 1's own
+    text assumed.** `chooseLargeFormAnchor` (new `WorldStreamer` method)
+    resolves `largeFormAnchorSites`' one site per chunk once, shared by all
+    three `buildScatter(rock|shrub|log, ...)` calls exactly the way
+    `landmarks` already is; which of the three stands there is picked by the
+    same `weightedPick` the tree canopy uses, weighted by the biome's own
+    `density.rock/shrub/log`, so village (`log: 0`) can never draw its
+    anchor as a log — matching `buildScatter`'s own zero-density skip for
+    that kind, rather than fighting it. The kind choice and the instance's
+    own rotation/scale/colour draws share one continued `mulberry32(site.seed)`
+    stream (`LargeFormAnchor.look`), per the interface comment piece 1 wrote
+    for exactly this. The static exclusions (river, landmark, dressing) are
+    already baked into the site by `largeFormAnchorSites`; the one dynamic
+    exclusion, the campfire clearing, is checked at draw time, same as the
+    tree sentinel. `buildScatter`'s existing `count === 0` early return is
+    relaxed to `count === 0 && !isAnchorKind`, so a biome/kind pair with a
+    real anchor still builds a mesh even where the ordinary density-driven
+    count alone would have been zero.
+    Verified live rather than trusting the wiring read alone (STATE.md's
+    standing lesson): stashed this piece, rebuilt (930.29 KB, matching
+    piece 1's number exactly, confirming the stash was clean), served it on
+    `vite preview`, and ran `scatter-probe.mjs`'s exact 8 pinned/probe poses
+    — then popped the stash, rebuilt (931.73 KB), and ran the identical 8
+    poses again. The anchor is real and rendering: every pose's total
+    on-screen instance count rose by a few (+3 to +12, one extra large form
+    per nearby chunk that got one), and zero console/page errors either
+    side. But the specific metric task 190's own "next" line named — the
+    *lower-left* bucket, per pose, from this same tool — came back **byte-
+    identical before and after**: the same 2 of 8 poses (`11-morning-vista`,
+    `probe s=300`) still show zero rock/shrub/log in their lower-left
+    quadrant. That is not a wiring bug; it is what piece 1's own section
+    comment already said this guarantee is and is not. The anchor is placed
+    once per *chunk*, at a fixed world position — it has no notion of where
+    any particular camera is looking, on purpose (a quadrant-conditioned
+    guarantee was explicitly ruled out in piece 1 as "a real architecture
+    violation"). So the added instances this run measured landed in
+    whichever quadrant the anchor's fixed world position happened to
+    project into for each pose's camera — mostly upper bands, not these two
+    poses' lower-left — and a single per-chunk anchor was never going to
+    reliably land in one named quadrant of one named pose's frame. What it
+    actually guarantees — no chunk-and-side going a whole stretch of road
+    without a large form anywhere near it — is a property of a run of
+    chunks, not of one frame's one quadrant, and `scatter-probe.mjs` has no
+    metric for that broader claim; the 8-pose lower-left table was always
+    measuring a narrower, camera-specific question than the guarantee
+    answers. Recorded here rather than quietly reworded as a win, matching
+    task 189's own standing practice of reporting a measurement that didn't
+    move the number it was hoped to move. `npm test` 1364 green (unchanged),
+    `npm run build` green (931.73 KB vs 930.29 KB, the wiring's own weight),
+    `verify-all quick` (`shader-check`) PASS. Task 190 is done to the depth
+    its own text specified (wired, live-verified, no regressions); a true
+    per-chunk-side coverage measurement, if the lower-left finding is ever
+    revisited, would need a different instrument than `scatter-probe.mjs`'s
+    per-pose quadrant table. Wave 20 remains the other standing thread,
+    still network-blocked (not re-tested this run — nothing about the
+    block has changed since run 167's retest).
 
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 
