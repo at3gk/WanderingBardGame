@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 165 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 167 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -62,7 +62,11 @@ see the run-164 HANDOFF and ROADMAP task 189's own piece-4 done-note); run
 165 was the consolidation pass; run 166 picked task 189 piece 5 (the
 object-mix ablation) and found no single category holds up as a cause,
 plus a second, sharper instance of the daily-seed reclassification problem
-— see the run-166 HANDOFF and ROADMAP task 189's own piece-5 done-note
+— see the run-166 HANDOFF and ROADMAP task 189's own piece-5 done-note; run
+167 promoted the scatter lower-left design question to task 190 and shipped
+its piece 1, `largeFormAnchorSites` — a wayside-sentinel-shaped (not
+camera-aware) placement guarantee for rock/shrub/log — see the run-167
+HANDOFF and ROADMAP task 190's own piece-1 done-note
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -177,6 +181,54 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-10 (run 167) — task 190 piece 1: the scatter
+  lower-left question resolved to a design shape, and its guarantee
+  function shipped.** Full detail in ROADMAP task 190's own piece-1
+  done-note — short version here. Re-tested wave 20's network block first
+  (still 403 CONNECT on both `ashorthike.com` and `store.steampowered.com`
+  from this session's proxy policy — unchanged from every prior check), so
+  the run's slot went to the other standing thread: the run-136 backlog
+  item asking whether a `waysideSentinelSites`-style guarantee for
+  large-form scatter (rock/shrub/log) would read as "the world was
+  arranged for the camera." Answer: not if it's shaped like the tree
+  guarantee. `waysideSentinelSites`'s own section comment already states
+  the standing rule this file holds everywhere else — placement is a pure
+  function of road position and seed, never of the camera — and its
+  guarantee explicitly does NOT promise an anchor in every frame, only a
+  per-chunk, per-side cadence. A screen-quadrant-conditioned rule would be
+  a first and a real architecture break; a world-space per-chunk per-side
+  one is exactly precedented. Shipped `largeFormAnchorSites`
+  (`WorldStreamer.ts`, mirroring `waysideSentinelSites` in shape and
+  constants family) plus `largeFormAnchors.test.ts` (8 tests, one-for-one
+  with `waysideSentinels.test.ts`'s own suite). One sizing finding along
+  the way: rock/shrub/log's existing bands run 44-72 m off the centreline
+  (`VERGE.*` + each kind's `spread`) — far wider than the tree band — so a
+  naive "guarantee somewhere in the existing band" would not have touched
+  the near-camera problem at all; the new guarantee gets its own [7, 15] m
+  near band instead, chosen to clear the sentinel band (ends 5.9 m) and to
+  sit inside all three kinds' own legal range at once, so piece 2 can pick
+  any of the three at a guaranteed site without a fallback. Deliberately
+  NOT wired into `buildScatter` this run — piece 2's job, per the same
+  split `waysideSentinelSites` itself went through. `npm test` 1364 green
+  (8 new — `npm install` first, `node_modules` wasn't present at session
+  start), `npm run build` green (930.29 KB, unchanged — the new export is
+  unreferenced so far and tree-shakes out), `verify-all quick`
+  (`shader-check`) PASS (installed `playwright@1.56.1` ad hoc into
+  `/tmp/pw-install` per `tools/README.md`, never a project dependency; this
+  session's pre-installed Chromium at `PLAYWRIGHT_BROWSERS_PATH` resolved
+  automatically via `browser.mjs`'s existing probe). Direction research:
+  this run's scope was rendering/world-generation placement logic with no
+  live wiring yet, so no gameplay, save-path, or shipped-visual change to
+  re-check any of the three research notes' recommendations against; when
+  piece 2 actually changes what a player sees, that's the piece to check
+  `art-quality.md` against, not this one. Next: task 190 piece 2 (wire the
+  guarantee into `buildScatter`'s per-chunk build — choosing which of
+  rock/shrub/log to draw at each site, excluding ground a sentinel/
+  landmark/dressing/river already claims — then re-run `scatter-probe.mjs`
+  to confirm the empty-quadrant rate actually drops); wave 20 remains
+  blocked. Consolidation not yet due (167 is 2 runs past 165, next due
+  around 175).
 
 - **HANDOFF, 2026-09-10 (run 166) — task 189 piece 5: the object-mix
   ablation, and a sharper daily-seed finding.** Full detail (every

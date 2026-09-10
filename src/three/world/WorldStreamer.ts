@@ -1485,6 +1485,120 @@ export function waysideSentinelSites(
 }
 
 /* ======================================================================
+ * Large-form scatter anchors (task 190 piece 1, the "scatter lower-left"
+ * question from run 136's `tools/scatter-probe.mjs`).
+ *
+ * Rock, shrub and log are `buildScatter`'s three "big, dark, roadside"
+ * kinds — the ones the panel notes call out by name as what a near quadrant
+ * needs to read as more than thin ground cover. Unlike trees, none of them
+ * carry any cross-side guarantee at all: every clump of every kind draws its
+ * own side from an independent `rand() < 0.5` coin flip, with no
+ * coordination between kinds or between one side of the road and the other.
+ * `scatter-probe.mjs` measured the consequence directly (not inferred from a
+ * screenshot): 2 of 8 sampled vista frames showed a screen quadrant with
+ * grass/fern/flower but no large form anywhere in it — the exact shape of
+ * gap `waysideSentinelSites` exists to close for trees, just never built for
+ * these three kinds.
+ *
+ * What this deliberately does NOT attempt: an anchor guaranteed inside any
+ * particular screen quadrant. That would make placement a function of where
+ * a camera happens to be pointed, which nothing else in this file does (see
+ * `waysideSentinelSites`'s own note above: "stream position must not depend
+ * on content") and which would invert this game's generation order — the
+ * road is a property of the day's seed, generated long before anyone points
+ * a camera at any metre of it. A camera-aware placement rule would be a
+ * first, and not a small one.
+ *
+ * What it guarantees instead is exactly the shape the tree fix already
+ * uses, because that shape is what "camera-agnostic, but still a real
+ * cadence" looks like in this codebase: one large-form anchor per chunk,
+ * alternating sides by parity, sitting inside a fixed near-road band. That
+ * does not promise every frame shows one on both sides — the tree guarantee
+ * doesn't either, by the same design choice ("an avenue... reads as passing
+ * along a hedge") — but it removes the root cause found above: a whole side
+ * going without a single large form anywhere nearby, for chunk after chunk,
+ * purely because three independent coin flips happened to agree.
+ *
+ * The near band sits just past the sentinel band and is chosen to be legal
+ * ground for all three kinds at once (rock's clearance starts at 4.1 m,
+ * shrub's at 5.3 m, log's at 6.3 m — all comfortably inside [7, 15]), so
+ * whichever of the three a future piece chooses to draw at a given site
+ * never has to fall back to a different band. Piece 2 is choosing that kind
+ * (deterministically, from the site's own seed) and wiring the result into
+ * `buildScatter`'s per-chunk build, including excluding ground a sentinel,
+ * landmark, dressing or the river channel already claims — this piece is
+ * the pure placement function and its tests only, exactly the shape
+ * `waysideSentinelSites` shipped in before `buildScatter` ever consulted it.
+ * ====================================================================== */
+
+/** Same fractional band as the tree guarantee — see `SENTINEL_BAND`. */
+const LARGE_FORM_ANCHOR_BAND: [number, number] = [0.2, 0.8];
+/** Redraws allowed against the static exclusions before a slot gives up. */
+const LARGE_FORM_ANCHOR_TRIES = 12;
+/** Chance a slot stands opposite its parity side. Mirrors `SENTINEL_FLIP_CHANCE`. */
+const LARGE_FORM_ANCHOR_FLIP_CHANCE = 0.25;
+/**
+ * Lateral band, metres off the centreline. Starts past the sentinel band
+ * (5.9 m at its widest) so an anchor never stands shoulder-to-shoulder with
+ * a tree, and stays under every large-form kind's own clearance-to-spread
+ * range (see the section comment above).
+ */
+const LARGE_FORM_ANCHOR_OFFSET_MIN_M = ROAD_HALF_WIDTH + 5.3;
+const LARGE_FORM_ANCHOR_OFFSET_SPREAD_M = 8;
+
+/** One guaranteed large-form scatter anchor, resolved to a place on the road. */
+export interface LargeFormAnchorSite {
+  /** Metres along the road. */
+  s: number;
+  /** Signed lateral offset from the centreline, metres. */
+  u: number;
+  x: number;
+  z: number;
+  /** Seed for a future piece's kind choice (rock/shrub/log) and that kind's own appearance draws. */
+  seed: number;
+}
+
+/**
+ * The guaranteed large-form scatter anchor for one chunk — see the section
+ * comment above for what this does and does not promise.
+ *
+ * `excluded` is the *static* world only, exactly as `waysideSentinelSites`
+ * takes it — river water, landmark clearings, stop dressings, everything
+ * knowable from the seed alone.
+ */
+export function largeFormAnchorSites(
+  road: DailyRoad,
+  index: number,
+  excluded: (s: number, u: number, x: number, z: number) => boolean,
+): LargeFormAnchorSite[] {
+  const s0 = index * CHUNK_LENGTH;
+  const rand = mulberry32(subSeed(road.seed, `large-form-anchor:${index}`));
+  const parity = index % 2 === 0 ? 1 : -1;
+  const [lo, hi] = LARGE_FORM_ANCHOR_BAND;
+  for (let attempt = 0; attempt < LARGE_FORM_ANCHOR_TRIES; attempt++) {
+    const s = s0 + (lo + (hi - lo) * rand()) * CHUNK_LENGTH;
+    const flip = rand() < LARGE_FORM_ANCHOR_FLIP_CHANCE;
+    const side =
+      attempt < LARGE_FORM_ANCHOR_TRIES / 2
+        ? flip
+          ? -parity
+          : parity
+        : attempt % 2 === 0
+          ? parity
+          : -parity;
+    const u = side * (LARGE_FORM_ANCHOR_OFFSET_MIN_M + rand() * LARGE_FORM_ANCHOR_OFFSET_SPREAD_M);
+    const sample = sampleRoad(road, s);
+    const nx = Math.cos(sample.heading);
+    const nz = -Math.sin(sample.heading);
+    const x = sample.x + nx * u;
+    const z = roadZ(sample) + nz * u;
+    if (excluded(s, u, x, z)) continue;
+    return [{ s, u, x, z, seed: subSeed(road.seed, `large-form-anchor-look:${index}`) }];
+  }
+  return [];
+}
+
+/* ======================================================================
  * Stop dressing: seeing the event before you reach it.
  *
  * DESIGN.md v0.8 item 7, human-set: "A stop should announce itself down the
