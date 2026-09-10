@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 167 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 168 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -66,7 +66,9 @@ plus a second, sharper instance of the daily-seed reclassification problem
 167 promoted the scatter lower-left design question to task 190 and shipped
 its piece 1, `largeFormAnchorSites` — a wayside-sentinel-shaped (not
 camera-aware) placement guarantee for rock/shrub/log — see the run-167
-HANDOFF and ROADMAP task 190's own piece-1 done-note
+HANDOFF and ROADMAP task 190's own piece-1 done-note; run 168 shipped task
+190 piece 2 (wired the guarantee into `buildScatter`), closing task 190 —
+see the run-168 HANDOFF and ROADMAP task 190's own piece-2 done-note
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -4176,6 +4178,25 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   rise is open again. `npm test` 1249 green (unchanged), `npm run build`
   green (902 KB, unchanged), `shader-check` PASS. No new runtime
   dependency.
+- Run 168 (2026-09-10, scheduled): ROADMAP task 190 piece 2 — wired
+  `chooseLargeFormAnchor` into `buildScatter`, closing task 190 (the
+  scatter lower-left design question run 136 raised and run 167 promoted
+  off the backlog). Full detail in ROADMAP.md under task 190's own
+  piece-2 done-note. Headline: verified live with a stashed-vs-built A/B
+  against `scatter-probe.mjs`'s 8 pinned/probe poses — the anchor is real
+  and rendering (every pose's total on-screen instance count rose a few),
+  but the specific lower-left-quadrant number the piece-1 done-note asked
+  to watch came back byte-identical before and after (2 of 8 poses still
+  show none there). Not a wiring bug: the guarantee is a per-chunk,
+  camera-agnostic placement by design (piece 1's own section comment
+  already ruled out anything camera-aware), so it was never going to
+  reliably land in one named quadrant of one named pose's frame — it
+  protects a *stretch of road* from going without a large form on one
+  side, which `scatter-probe.mjs`'s per-pose quadrant table has no way to
+  measure. Recorded plainly rather than reworded as a win, the same way
+  task 189's refutations were. `npm test` 1364 green (unchanged), `npm run
+  build` green (931.73 KB vs 930.29 KB, the wiring's own weight),
+  `verify-all quick` (`shader-check`) PASS. No new runtime dependency.
 
 ## Needs human playtest
 

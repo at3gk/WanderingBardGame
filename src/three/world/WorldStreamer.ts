@@ -1522,13 +1522,20 @@ export function waysideSentinelSites(
  * The near band sits just past the sentinel band and is chosen to be legal
  * ground for all three kinds at once (rock's clearance starts at 4.1 m,
  * shrub's at 5.3 m, log's at 6.3 m — all comfortably inside [7, 15]), so
- * whichever of the three a future piece chooses to draw at a given site
- * never has to fall back to a different band. Piece 2 is choosing that kind
- * (deterministically, from the site's own seed) and wiring the result into
- * `buildScatter`'s per-chunk build, including excluding ground a sentinel,
- * landmark, dressing or the river channel already claims — this piece is
- * the pure placement function and its tests only, exactly the shape
- * `waysideSentinelSites` shipped in before `buildScatter` ever consulted it.
+ * whichever of the three ends up drawn at a given site never has to fall
+ * back to a different band.
+ *
+ * Piece 2 (task 190) wires this in: `chooseLargeFormAnchor` resolves the
+ * site once per chunk — shared by all three `buildScatter` calls, the same
+ * way `landmarks` already is — and picks which kind stands there with the
+ * same `weightedPick` the tree canopy uses, weighted by the biome's own
+ * `density.rock/shrub/log`. A biome that carries no logs at all (village,
+ * density 0) can therefore never have its anchor drawn as one, matching
+ * `buildScatter`'s own zero-density skip for that kind. The site's static
+ * exclusions (river, landmark, dressing) are already baked in by
+ * `largeFormAnchorSites` above; the one dynamic exclusion, the campfire
+ * clearing, is checked at draw time inside `buildScatter`, exactly the way
+ * the tree sentinel's is.
  * ====================================================================== */
 
 /** Same fractional band as the tree guarantee — see `SENTINEL_BAND`. */
@@ -1596,6 +1603,24 @@ export function largeFormAnchorSites(
     return [{ s, u, x, z, seed: subSeed(road.seed, `large-form-anchor-look:${index}`) }];
   }
   return [];
+}
+
+/** The three kinds `chooseLargeFormAnchor` may draw at a guaranteed site. */
+const LARGE_FORM_ANCHOR_KINDS = ['rock', 'shrub', 'log'] as const;
+
+/**
+ * What `chooseLargeFormAnchor` resolves once per chunk and every
+ * `buildScatter` call for rock/shrub/log reads.
+ */
+interface LargeFormAnchor {
+  site: LargeFormAnchorSite;
+  kind: (typeof LARGE_FORM_ANCHOR_KINDS)[number];
+  /**
+   * Continues past the kind draw, so appearance (rotation, scale, colour)
+   * is one unbroken stream from `site.seed` rather than a second generator
+   * re-reading the same first value the kind choice already spent.
+   */
+  look: Rand;
 }
 
 /* ======================================================================
@@ -2675,9 +2700,14 @@ export class WorldStreamer {
       water.push(river.field);
     }
 
+    // Resolved once and handed to every kind's own build, exactly like
+    // `landmarks` above — the site and which of rock/shrub/log stands there
+    // don't depend on which kind's `buildScatter` call is asking.
+    const largeFormAnchor = this.chooseLargeFormAnchor(index, landmarks);
+
     for (const kind of SCATTER_KINDS) {
       if (distanceM > kind.lodRange) continue;
-      for (const mesh of this.buildScatter(index, kind, landmarks, water)) {
+      for (const mesh of this.buildScatter(index, kind, landmarks, water, largeFormAnchor)) {
         group.add(mesh);
         meshes.push(mesh);
       }
@@ -3270,6 +3300,7 @@ export class WorldStreamer {
     kind: ScatterKind,
     landmarks: Landmark[],
     water: WaterField[],
+    largeFormAnchor: LargeFormAnchor | null,
   ): InstancedMesh[] {
     const s0 = index * CHUNK_LENGTH;
     const rand = mulberry32(subSeed(this.road.seed, `scatter:${kind.key}:${index}`));
@@ -3297,7 +3328,8 @@ export class WorldStreamer {
       0,
       Math.round(area * kind.perSquareMetre * palette.density[kind.densityKey] * this.density),
     );
-    if (count === 0) return [];
+    const isAnchorKind = largeFormAnchor !== null && largeFormAnchor.kind === kind.key;
+    if (count === 0 && !isAnchorKind) return [];
 
     const variants = Math.max(1, kind.variants ?? 1);
     const bias = kind.edgeBias ?? 1;
@@ -3463,6 +3495,36 @@ export class WorldStreamer {
       });
     }
 
+    /*
+     * The guaranteed large-form anchor (task 190), on top of the ordinary
+     * scatter above rather than counted in it — this chunk's `count` draws
+     * come from `scatter:${kind.key}:${index}`'s own stream and are
+     * untouched by whether an anchor lands here too. Placement is already
+     * resolved and excluded against the static world by
+     * `chooseLargeFormAnchor`; the one exclusion left to check here is the
+     * dynamic camp clearing, exactly the way the tree sentinel checks it at
+     * draw time rather than baking it into the site itself.
+     */
+    if (isAnchorKind && largeFormAnchor && !this.inClearing(largeFormAnchor.site.x, largeFormAnchor.site.z)) {
+      const { site, look } = largeFormAnchor;
+      const river = this.riverAt(site.s);
+      const riverD = Math.abs(site.u - river.u);
+      const ground = riverShape(river, riverD, terrainHeight(this.road, site.x, site.z));
+      const y = ground + rutDrop(site.u) + (kind.lift ?? 0);
+      this.scratchPos.set(site.x, y, site.z);
+      this.scratchQuat.setFromAxisAngle(this.upAxis, look() * Math.PI * 2);
+      if (kind.bedded) this.bedInGround(this.scratchQuat, site.x, site.z);
+      const scale = randRange(look, kind.scale[0], kind.scale[1]);
+      this.scratchScale.set(scale, scale * randRange(look, 0.85, 1.15), scale);
+      const variant = variants === 1 ? 0 : Math.floor(look() * variants);
+      const color = kind.colorOf ? kind.colorOf(palette, look) : 0xffffff;
+      buckets[variant].push({
+        matrix: new Matrix4().compose(this.scratchPos, this.scratchQuat, this.scratchScale),
+        color,
+        variation: 0,
+      });
+    }
+
     const material = kind.material === 'foliage' ? this.foliageMaterial : this.solidMaterial;
     const meshes: InstancedMesh[] = [];
     for (let v = 0; v < variants; v++) {
@@ -3494,6 +3556,37 @@ export class WorldStreamer {
       meshes.push(mesh);
     }
     return meshes;
+  }
+
+  /**
+   * Which of rock/shrub/log stands at this chunk's guaranteed large-form
+   * anchor (task 190), and where — or null if no legal site was found.
+   *
+   * Resolved once per chunk build and shared by all three `buildScatter`
+   * calls, exactly as `landmarks` already is: the site and which kind ends
+   * up drawn there don't depend on which of rock/shrub/log is asking, so
+   * computing it three times over would just repeat the same
+   * `largeFormAnchorSites` call for no reason.
+   *
+   * The kind is chosen with the same `weightedPick` the tree canopy uses,
+   * weighted by the biome's own `density.rock/shrub/log` — a biome that
+   * carries no logs at all (village, density 0) can therefore never draw
+   * its anchor as one, matching `buildScatter`'s own zero-density skip for
+   * that kind.
+   */
+  private chooseLargeFormAnchor(index: number, landmarks: Landmark[]): LargeFormAnchor | null {
+    const [site] = largeFormAnchorSites(this.road, index, (s, u, x, z) => {
+      const river = this.riverAt(s);
+      const riverD = Math.abs(u - river.u);
+      const y = riverShape(river, riverD, terrainHeight(this.road, x, z));
+      const drowned = river.strength > 0 && riverD < river.reach && y < river.surfaceY + 0.4;
+      return drowned || insideLandmark(landmarks, x, z) || this.insideDressing(x, z);
+    });
+    if (!site) return null;
+    const palette = paletteFor(biomeAt(this.road, site.s));
+    const look = mulberry32(site.seed);
+    const kind = weightedPick(look, LARGE_FORM_ANCHOR_KINDS, (k) => palette.density[k]);
+    return { site, kind, look };
   }
 
   /**
