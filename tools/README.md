@@ -390,6 +390,46 @@ within the run that produced it.** A future piece may reuse
 section's or ROADMAP's older absolute numbers as ground truth for what
 today's build would print.
 
+## `far-band-objects.mjs [only]`
+
+Task 189 piece 5 (run 166): tests the one lead piece 3 left untried —
+"object mix at the far row band" — by ablation rather than inference, the
+same house method piece 3 used on the land key. Reuses `fog-hue-band.mjs`'s
+own far-band hueSpread measurement (same sentinel-masking, same near/mid/far
+row split) but adds a same-session `.visible` toggle per whole object
+category before each render, restored after: `scatter` (`scatter-probe.mjs`'s
+own regex — grass/fern/flower/reed/bankreed/bankgrass/shrub/log/rock/
+roadgrass/roadstone/puddle), `trees` (`tree-*`), `landmarks` (`landmark-*` +
+`stop-*`). Terrain itself isn't a togglable category — hiding the ground
+mesh would leave nothing to sample — so it's the implicit baseline every
+ablation reads against. Same five poses as `fog-hue-band.mjs`, natural mood
+only (piece 4 already settled the mood question there, no need to
+re-litigate it here).
+
+**Result: no category holds up as a general cause.** Landmarks collapse
+`10-tablet-afternoon`'s gap 91% (0.409 → 0.037, the largest single effect
+this whole investigation has produced) but are inert on `03-noon` (−7%) and
+both flat controls (both effectively 0%) — a placement coincidence (a camp
+happens to sit in that one pose's far band), not a mechanism. Trees move
+every pose but in opposite directions depending which one: collapse toward
+zero on `10-tablet-afternoon` (29%) and both flat controls (04: 64%, 11:
+53%) while more than doubling `03-noon`'s gap (0.144 → 0.331) — they don't
+even agree with themselves pose to pose. Scatter's effects are smaller
+throughout and inconsistently signed too.
+
+Before any of that could be read cleanly, this run's own natural (nothing
+hidden) numbers broke the piece 1-4 risen/flat pose classification: `02-
+morning`, RISEN every prior day this investigation ran, read flat/negative
+today (−0.234); `11-morning-vista`, a FLAT zero-pull control since piece 2,
+read risen today (+0.127). This is the same `dailySeed()` fact `fog-hue-
+band.mjs`'s own section above already flagged, but sharper — it isn't just
+the absolute number that moves day to day, the *classification* built from
+those numbers can flip too, for coordinates nothing about the session
+changed. Any future piece must re-derive which poses are rising from that
+session's own natural reading, never from an earlier piece's label. See
+ROADMAP task 189's piece-5 done-note and `docs/research/art-quality.md`'s
+findings section for the full account.
+
 ## `shot.mjs [prefix] [settleMs]`
 
 Plain screenshot of the running game after a delay. For far-off states
