@@ -59,7 +59,10 @@ run-163 HANDOFF and ROADMAP task 186's own final done-note); run 164 picked task
 camera-mood lead) and refuted it too, plus found that the road's
 daily-calendar-date seed makes cross-run-date pose comparisons unsound —
 see the run-164 HANDOFF and ROADMAP task 189's own piece-4 done-note); run
-165 was the consolidation pass
+165 was the consolidation pass; run 166 picked task 189 piece 5 (the
+object-mix ablation) and found no single category holds up as a cause,
+plus a second, sharper instance of the daily-seed reclassification problem
+— see the run-166 HANDOFF and ROADMAP task 189's own piece-5 done-note
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -174,6 +177,47 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-10 (run 166) — task 189 piece 5: the object-mix
+  ablation, and a sharper daily-seed finding.** Full detail (every
+  category's numbers, per pose) is in ROADMAP task 189's own piece-5
+  done-note — short version here. Piece 4 left "object mix at the far row
+  band" as the one untried lead. `tools/far-band-objects.mjs` (new)
+  extends fog-hue-band.mjs's far-band hueSpread measurement with a
+  same-session `.visible` toggle per whole object category (scatter,
+  trees, landmarks — drawn from `WorldStreamer.ts`'s own name families),
+  the same ablation method piece 3 used on the land key. Result: no
+  category holds up as a general cause. Landmarks collapse
+  `10-tablet-afternoon`'s gap 91% (a real, large effect) but are inert on
+  `03-noon` and both flat controls — a placement coincidence (a camp
+  happens to sit in that pose's far band), not a mechanism. Trees move
+  every pose but in OPPOSITE directions depending which one (collapse
+  toward zero on three poses, more than double it on `03-noon`) — they
+  don't even agree with themselves. Before the object question could even
+  be asked cleanly, this run's *natural* (nothing hidden) readings failed
+  to reproduce the piece 1-4 risen/flat classification at all:
+  `02-morning`, RISEN on every prior day this investigation ran, read
+  flat/negative today (−0.234); `11-morning-vista`, a FLAT control since
+  piece 2, read risen today (+0.127). This is piece 4's `dailySeed()`
+  finding landing again, sharper — it is not just the absolute number
+  that moves day to day, the classification itself (which poses even
+  count as "risen") can flip for coordinates nothing about the session
+  changed. Filed in `art-quality.md`'s findings below, second entry in
+  that pattern. Task 189 is parked, not closed, after five pieces without
+  landing a replacement mechanism — a reasonable stop rather than a sixth
+  toggle. `npm test` 1356 green (unchanged — tools/ only), `npm run
+  build` green (930.29 KB, unchanged), `verify-all quick`
+  (`shader-check`) PASS. No new runtime dependency (Playwright via
+  `PLAYWRIGHT_PATH` against the pre-installed copy, per `tools/README.md`
+  — never a project dependency). Direction research: this run's whole
+  scope was a measurement tool and a written-up refutation, no gameplay,
+  save-path, or rendering change, so none of the three research notes'
+  recommendations need re-checking this run (only their findings section
+  gained an entry, per CLAUDE.md pillar 5's instruction to record what a
+  shipped run teaches even when nothing shipped is gameplay). Next: task
+  189 stays parked — the scatter lower-left design question (run 136,
+  still open) and wave 20 once the network block lifts are the two
+  standing threads; consolidation is not yet due (166 is 1 run past 165).
 
 - **HANDOFF, 2026-09-09 (run 165) — CONSOLIDATION (drift control, every
   ~10th run; last was 157).** Drift check over runs 158-164: CLEAN — the

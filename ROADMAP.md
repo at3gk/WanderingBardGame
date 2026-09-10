@@ -213,6 +213,22 @@ makes it long. You do not need to read it top to bottom.
   design question (run 136, still open), or wave 20 once
   network-unblocked remain the open threads; no arc is currently in
   flight; next consolidation due around run 175.
+- **Run 166 update**: picked task 189 piece 5 (the object-mix ablation,
+  the one lead piece 3 left untried) and shipped `tools/far-band-
+  objects.mjs`. No category (scatter/trees/landmarks) holds up as a
+  general cause — the largest single effect (landmarks collapsing one
+  pose's gap 91%) doesn't replicate on the other rising pose, and trees
+  move different poses in opposite directions. A second, sharper instance
+  of the daily-seed problem surfaced first: this run's own natural
+  readings broke the risen/flat pose classification pieces 1-4 had
+  carried as settled (a pose RISEN every prior day read flat today, and
+  vice versa) — see ROADMAP task 189's own piece-5 done-note, STATE.md's
+  run-166 HANDOFF, and `docs/research/art-quality.md`'s findings section.
+  Task 189 is parked (five pieces, no replacement mechanism), not closed.
+  Live queue as of run 166: the scatter lower-left design question (run
+  136, still open) or wave 20 once network-unblocked are the two open
+  threads; no arc is currently in flight; next consolidation still due
+  around run 175 (166 is 1 run past 165).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3304,6 +3320,87 @@ interviews) — read it before taking any task; its not-recommended list
     scatter lower-left design question (run 136, still open) and wave 20
     once network-unblocked remain the other two threads; consolidation
     (163 was 6 runs past 157) is also due around now.
+
+    **Piece 5 done (2026-09-10, run 166) — the object-mix lead, tested by
+    ablation; no single category collapses it, and a second, sharper
+    instance of piece 4's daily-seed problem surfaced along the way.**
+    `tools/far-band-objects.mjs` extends fog-hue-band.mjs's own far-band
+    hueSpread measurement with the toggle piece 3 established as the
+    house method: hide one whole object category at a time
+    (`.visible = false` on every scene object whose name matches, same
+    session, same page, restored after) and re-measure, rather than
+    inferring a cause from a screenshot. Three categories, drawn straight
+    from the name families `WorldStreamer.ts` actually writes: scatter
+    (scatter-probe.mjs's own regex — grass/fern/flower/reed/shrub/log/
+    rock/roadgrass/roadstone/puddle), trees (`tree-*`), landmarks
+    (`landmark-*` + `stop-*`). Terrain itself is not a togglable category
+    — hiding the ground would leave nothing to sample — so it is the
+    implicit baseline every ablation is read against.
+    First surprise, before the object question at all: this run's natural
+    (nothing hidden) far-near gap does **not** reproduce piece 1-4's
+    risen/flat classification. `02-morning` — RISEN on every prior day
+    this investigation ran — read gap **−0.231** today (i.e. flat/
+    negative); `11-morning-vista` — the second FLAT/zero-pull control —
+    read **+0.127** (i.e. risen). Only `03-noon` (+0.147) and
+    `10-tablet-afternoon` (+0.408) rose as labelled; `04-golden-vista`
+    stayed flat (−0.155) as labelled. This is piece 4's `dailySeed()`
+    finding landing a second time, sharper: it is not just that an
+    *absolute number* moves day to day (piece 4's finding), the
+    *classification itself* — which poses count as "risen" at all — can
+    flip on a different real day, for a pose/coordinate pair nothing
+    about this session changed. The four-pose RISEN/flat table this whole
+    task has carried since piece 1 is therefore not a fixed fact about
+    these `s`/`dayFraction` coordinates; it is a same-day reading that
+    must be re-taken each session, not assumed from the label. Filed as a
+    second finding in `art-quality.md` (below) alongside piece 4's.
+    With that caveat in hand, the ablation itself, read across all five
+    poses rather than only the labelled-rising two (the reclassification
+    above means "rising" is itself now a per-session fact): no category
+    shows one consistent direction. Landmarks produce the single largest
+    effect anywhere — hiding `landmark-*`/`stop-*` (12 objects) on
+    `10-tablet-afternoon` collapses its gap 0.409 → 0.037, a 91% fall,
+    the closest thing to a smoking gun this investigation has produced
+    across five pieces — but the same category is inert on `03-noon`
+    (13 objects hidden, gap 0.144 → 0.154, −7%) and on both flat controls
+    (04: 10 objects, −155 → −0.155 unchanged; 11: 11 objects, 0.127 →
+    0.129 unchanged). Trees produce large effects too, but in OPPOSITE
+    directions depending on the pose: hiding them COLLAPSES the gap
+    toward zero on `10-tablet-afternoon` (0.409 → 0.292, 29%) and both
+    flat controls (04: −0.157 → −0.056, 64%; 11: 0.127 → 0.060, 53%) but
+    more than DOUBLES it on `03-noon` (0.144 → 0.331, −130%) — the exact
+    opposite of a damping story on that one pose. Scatter's effects are
+    smaller throughout and not consistently signed either (biggest
+    single move: `10-tablet-afternoon` 47% collapse; `03-noon` actually
+    grows slightly, −19%). And on `02-morning` — today's reclassified
+    "actually flat" pose, natural gap −0.234 — every single category,
+    hidden separately, flips the sign to a small positive number (scatter
+    +0.117 region... landmarks and trees both land near +0.117), with no
+    agreement on how far. Reading: the far-band gap is not reducible to
+    any one object category's presence. Camp dressing (landmarks/stop
+    props) can produce a large local effect when a camp happens to sit in
+    the far band of that specific pose (`10-tablet-afternoon`), which is
+    a placement-coincidence explanation, not a systemic one — it does not
+    fire for `03-noon`, which has no camp in view at that `s`, and trees
+    do not even agree with themselves on direction pose to pose. Four
+    candidate single-variable mechanisms are now tested and none holds up
+    as a general explanation (landKeyAmount, camera mood, and now object
+    category); what's left standing is that the far band's rendering is
+    some combination of fog uniforms, the sky-dome ridge values (task 166
+    piece 3's own lever), and ordinary per-day world variance the seed
+    already introduces — none of which a same-session toggle can isolate
+    the way this task's earlier pieces isolated their candidates, because
+    they aren't independently togglable the way an object category or a
+    uniform value is. Not chased further this run — five pieces without
+    a replacement mechanism is a natural stop for this specific
+    investigation, not a reason to force a sixth. `npm test` 1356 green
+    (unchanged — tools/ only), `npm run build` green (930.29 KB,
+    unchanged), `verify-all quick` (`shader-check`) PASS. No new runtime
+    dependency (Playwright run via `PLAYWRIGHT_PATH` against the
+    pre-installed copy, per `tools/README.md`). Next: this task is
+    parked, not closed — the scatter lower-left design question (run
+    136, still open) and wave 20 once network-unblocked are the other two
+    standing threads; consolidation (165 was the last one) is not yet due
+    (166 is 1 run past 165, next due around 175).
 
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 

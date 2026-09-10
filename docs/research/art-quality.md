@@ -455,6 +455,32 @@ the panels are not asking for fur).
   compare an absolute number recorded on one real day against one
   recorded on another without re-running both on the same day first.
 
+- 2026-09-10 (run 166, task 189 piece 5): a sharper form of the run-165
+  daily-seed finding above — **the daily seed can flip which poses even
+  count as the fault under investigation, not just move their numbers.**
+  Piece 5 set out to test whether one object category (scatter/trees/
+  landmarks) causes the far-band hue-spread rise on the poses pieces 1-4
+  had labelled RISEN. Before the object question could even be asked,
+  this run's own natural readings broke the labels themselves:
+  `02-morning`, RISEN on every prior day this investigation touched it,
+  read flat/negative today; `11-morning-vista`, a FLAT zero-pull control
+  since piece 2, read risen today. The run-165 finding said an absolute
+  number isn't comparable across real days; this one says the
+  RISEN/FLAT *classification* built from those numbers isn't either — a
+  four-pose table carried as settled fact for five pieces turned out to
+  be a same-day snapshot the whole time. The fix applied here: re-derive
+  which poses are "rising" from the current session's own natural
+  reading before drawing any ablation conclusion, never from an earlier
+  piece's label, even when that label has held for several runs running.
+  A second, smaller lesson from the same piece: an ablation can produce a
+  real, large, reproducible effect (landmarks collapsing one pose's gap
+  91%) that is still not a general mechanism — it fired because a camp
+  happened to sit in that one pose's far band, and the same category was
+  inert on every other pose tested. A big effect size on one sample is
+  not evidence of causality any more than a clean correlation was in the
+  run-144 finding above; both need the same multi-sample discipline
+  before being trusted.
+
 ## Source access notes
 
 Reached directly (fetched): adamgryu's effects thread (ThreadReader)
