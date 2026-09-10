@@ -229,6 +229,17 @@ makes it long. You do not need to read it top to bottom.
   136, still open) or wave 20 once network-unblocked are the two open
   threads; no arc is currently in flight; next consolidation still due
   around run 175 (166 is 1 run past 165).
+- **Run 167 update**: re-tested wave 20's network block first (still 403 on
+  both hosts), then promoted the scatter lower-left question to task 190
+  and shipped its piece 1 — see task 190's own done-note. The design
+  question itself resolved to "yes, but shaped like the tree guarantee, not
+  like a camera-aware one" on a close reading of `waysideSentinelSites`'s
+  own standing rule; the actual piece 1 work is `largeFormAnchorSites`, a
+  pure per-chunk per-side guarantee for rock/shrub/log mirroring the tree
+  fix exactly. Live queue as of run 167: task 190 piece 2 (wire the
+  guarantee into `buildScatter`, re-measure with `scatter-probe.mjs`) or
+  wave 20 once network-unblocked; next consolidation still due around 175
+  (167 is 2 runs past 165).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3402,6 +3413,59 @@ interviews) — read it before taking any task; its not-recommended list
     standing threads; consolidation (165 was the last one) is not yet due
     (166 is 1 run past 165, next due around 175).
 
+190. **The scatter lower-left design question** (idea backlog, run 136's
+    `tools/scatter-probe.mjs` finding — a vista frame can show a screen
+    quadrant with only thin ground cover, no rock/shrub/log to anchor it,
+    because those three kinds have no cross-side placement guarantee at all,
+    unlike trees). Promoted off the backlog now that both open threads
+    (this and wave 20) have been reassessed post-task-189 and wave 20 is
+    still network-blocked (retested this run, still 403 on both hosts).
+    **Piece 1 done (2026-09-10, run 167) — the design call, and the pure
+    guarantee function it leads to.** The backlog item's own open question —
+    "does a guaranteed anchor object read as 'the world was arranged for
+    the camera'?" — has a real answer once `waysideSentinelSites`'s own
+    section comment is read closely: this file already has a standing rule
+    ("stream position must not depend on content") that placement is a pure
+    function of road position and seed, never of the camera, and the tree
+    guarantee's own doc comment is explicit that it deliberately does NOT
+    promise "an anchor in the frame at every instant" — only a per-chunk,
+    per-side cadence, because a stronger promise would need to know where
+    the camera is looking. A screen-quadrant-conditioned guarantee would be
+    a first in this codebase and a real architecture violation, not just a
+    style question; a world-space, per-chunk, per-side cadence — the exact
+    shape the tree fix already uses — is not, and it targets the actual
+    root cause `scatter-probe.mjs` named ("no cross-side balance guarantee
+    at all," unlike trees). One sizing correction the backlog note didn't
+    know yet: rock/shrub/log's own bands run out to 44-72 m off the
+    centreline (`VERGE.rock/shrub/log` + each kind's `spread`), far wider
+    than the ~1.4 m-wide band `waysideSentinelSites` pins trees to — a
+    naive "guarantee somewhere in the existing band" would still let every
+    large form land 40+ m away, nowhere near a near-camera quadrant. So the
+    new guarantee gets its own near band, [7, 15] m off the centreline —
+    past the sentinel band (starts at 5.9 m, so an anchor never stands
+    shoulder-to-shoulder with a tree) and inside all three kinds' own legal
+    range at once (rock from 4.1 m, shrub from 5.3 m, log from 6.3 m), so a
+    future piece can draw any of the three at a guaranteed site without
+    needing a fallback band. `largeFormAnchorSites` (`WorldStreamer.ts`,
+    next to `waysideSentinelSites`) is that function: one guaranteed anchor
+    per chunk, parity-alternating sides, band-redraw against exclusions,
+    same shape and same constants family as the tree guarantee, covered by
+    `largeFormAnchors.test.ts` (8 tests, mirroring `waysideSentinels.test.ts`
+    test-for-test: every chunk gets one, consecutive anchors never drift past
+    the arithmetic bound, the anchor stays in-band, both sides appear across
+    a day, exclusions move rather than delete the site, and results are
+    deterministic). Deliberately NOT wired into `buildScatter` this piece —
+    picking which of rock/shrub/log to draw at each site, and excluding
+    ground a sentinel/landmark/dressing/river channel already claims, is
+    real integration work and belongs in its own piece, exactly the split
+    `waysideSentinelSites` itself went through before `buildScatter`
+    consulted it. `npm test` 1364 green (8 new), `npm run build` green
+    (930.29 KB, unchanged — the new export is unreferenced so far and
+    tree-shakes out), `verify-all quick` (`shader-check`) PASS. Next: piece
+    2 wires the guarantee into the live scatter build and re-runs
+    `scatter-probe.mjs` to confirm the empty-quadrant rate actually drops;
+    wave 20 remains the other standing thread, still network-blocked.
+
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 
 From docs/research/mobile-friendly.md — read it first. The urgent fact:
@@ -5219,19 +5283,10 @@ warm-vs-cool palette).
   *wrong*.
 - **Solfège (do-re-mi) letter option** — locale question, letters ship
   first.
-- **Large-form scatter anchor per near-camera quadrant?** (run 136,
-  `tools/scatter-probe.mjs`) — a measured, not inferred, finding: vista
-  frames occasionally show a screen quadrant with zero rock/shrub/log
-  (only thin grass/flower/roadgrass cover), because each scatter clump's
-  side is an independent coin flip with no cross-side guarantee, unlike
-  trees (`waysideSentinelSites`). 2 of 8 sampled frames showed this, not
-  just the one that prompted the question, so it reads as ordinary rather
-  than broken. A `waysideSentinelSites`-style guarantee (at least one
-  large-form clump per near-camera quadrant per chunk) is the shape a fix
-  would take, but it's a real design call — does a guaranteed anchor
-  object read as "the world was arranged for the camera"? — not an
-  obvious bug fix, so it wasn't done blind. Worth a proper look, not a
-  blind tune.
+- ~~**Large-form scatter anchor per near-camera quadrant?**~~ — promoted to
+  task 190 (run 167): a `waysideSentinelSites`-style guarantee, not a
+  camera-aware one (the design question this item raised), piece 1 shipped
+  as `largeFormAnchorSites`. See task 190 in the v1.1 queue above.
 
 ## Needs human playtest
 
