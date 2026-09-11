@@ -254,6 +254,18 @@ makes it long. You do not need to read it top to bottom.
   (bottom of this file) is the place to pull a fresh task from if nothing
   else surfaces. Next consolidation still due around 175 (168 is 3 runs
   past 165).
+- **Run 169 update**: re-tested wave 20's network block first (still 403 on
+  both hosts), then pulled the idea backlog's one remaining live entry —
+  solfège syllables — as task 191 and shipped its piece 1 (the pure
+  `solfegeAt`/`solfegeAtStep` mapping, no UI reader wired yet — see task
+  191's own done-note for why: no settings/preference system exists
+  anywhere in this codebase, so "how does a family pick a label style"
+  is real design work, sized as its own piece rather than guessed at this
+  run). Live queue as of run 169: task 191 piece 2 (the settings-surface
+  design question, then wiring the two render call sites) if solfège
+  continues; wave 20 once network-unblocked and task 189's far-band lead
+  remain the other open threads; the idea backlog is now empty. Next
+  consolidation still due around 175 (169 is 4 runs past 165).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3537,6 +3549,57 @@ interviews) — read it before taking any task; its not-recommended list
     still network-blocked (not re-tested this run — nothing about the
     block has changed since run 167's retest).
 
+191. **Solfège (do-re-mi) syllable option** (idea backlog; DESIGN.md's
+    "Considered and rejected" note: "worth considering later as a locale
+    option; letters first, they're what beginner books here use"). Promoted
+    off the backlog — it was the one remaining live entry there, and both
+    other open threads (task 189's far-band investigation, wave 20) are
+    parked/network-blocked. **Piece 1 done (2026-09-11, run 169) — the pure
+    syllable mapping, no reader wired to it yet.** A survey of the notation
+    code first (this run, no code written until it was done) found: letter
+    display is reasonably central (`noteNameAt`/`noteNameAtStep`/
+    `letterForStep` in `src/core/notation.ts`, all backed by one `NATURALS`
+    table) with exactly two render call sites (`SongNotes.ts`'s canvas-atlas
+    note glyphs on the walk/staff, `freePlayScreen.ts`'s DOM tap-ladder
+    label) — but **no settings/preference system exists anywhere in this
+    codebase to hang a locale toggle on**. `scaffoldStorage.ts` (the closest
+    precedent) explicitly argues against adding "a settings key" alongside
+    its own data, for fear of two things to keep in sync; inventing the
+    first settings surface this game has ever had is a real design
+    decision, not a wiring detail, and is exactly the kind of thing the
+    session protocol's "too big → split, take the first piece" rule exists
+    for. So this piece stays where 176/177/178 (the import arc) each
+    started: a pure, fully-tested data layer with nothing downstream yet.
+    Added `solfegeAt(semitoneFromC4)` and `solfegeAtStep(step)` next to
+    their letter-name equivalents in `notation.ts`, backed by a `SOLFEGE`
+    lookup table (fixed-do: C→do, D→re, E→mi, F→fa, G→sol, A→la, B→ti,
+    keyed off the same `NATURALS` letters) — **fixed-do, not movable-do**,
+    chosen because the game world never modulates key inside Book One and
+    Book Two's `spellInKey` already carries the letter a movable-do reading
+    would need, so a plain fixed C-major mapping is the one reading that
+    cannot drift out of sync with a future key change. Both functions
+    mirror their letter counterparts exactly (null for accidentals, octave-
+    agnostic, always-defined for a staff step) and are covered by
+    `notation.test.ts` the same way: the C4-octave naming, octave-agnosticism,
+    null-on-accidental, and full agreement with `noteNameAt`/`noteNameAtStep`
+    on every drawable step (round-trip loops included, mirroring the
+    existing letter tests test-for-test). Deliberately NOT referenced from
+    `SongNotes.ts`, `freePlayScreen.ts`, or `scaffold.ts`'s identity grouping
+    (which correctly stays letter-keyed regardless of display, since it's
+    pedagogy bookkeeping, not a label) — no reader exists yet, so the new
+    exports tree-shake out of the bundle. `npm test` 1369 green (5 new),
+    `npm run build` green (931.73 KB, unchanged — confirms the tree-shake),
+    `verify-all quick` (`shader-check`) PASS. No new runtime dependency.
+    Next: piece 2 is the actual design work this backlog item was always
+    going to need — whether/how a family picks a label style at all (a
+    settings screen has no precedent to extend, so this is worth thinking
+    through rather than defaulting to "add a toggle"), and only once that's
+    decided does wiring the two render call sites make sense; `SongNotes.ts`'s
+    canvas atlas is also baked at fixed single-character cell sizes, so
+    multi-letter syllables ("do", "re", "ti") need a layout change there
+    too, not just a text swap. Wave 20 and task 189's far-band lead remain
+    the other open threads.
+
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 
 From docs/research/mobile-friendly.md — read it first. The urgent fact:
@@ -5352,8 +5415,9 @@ warm-vs-cool palette).
   dominant. Screenshot check agreed it reads as a treble clef; the
   spiral sits correctly on the G line, so it is stylized but not
   *wrong*.
-- **Solfège (do-re-mi) letter option** — locale question, letters ship
-  first.
+- ~~**Solfège (do-re-mi) letter option**~~ — promoted to task 191 (run
+  169): piece 1 (the pure syllable mapping) shipped; piece 2 (whether/how
+  to surface it at all — no settings system exists yet) is still open.
 - ~~**Large-form scatter anchor per near-camera quadrant?**~~ — promoted to
   task 190 (run 167): a `waysideSentinelSites`-style guarantee, not a
   camera-aware one (the design question this item raised), piece 1 shipped

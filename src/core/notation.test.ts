@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { needsLedger, noteNameAt, noteNameAtStep, semitoneAtStep, staffStepAt, stemDown } from './notation';
+import {
+  needsLedger,
+  noteNameAt,
+  noteNameAtStep,
+  semitoneAtStep,
+  solfegeAt,
+  solfegeAtStep,
+  staffStepAt,
+  stemDown,
+} from './notation';
 
 describe('noteNameAt', () => {
   it('names the naturals of the C4 octave', () => {
@@ -23,6 +32,34 @@ describe('noteNameAt', () => {
     expect(noteNameAt(1)).toBeNull();
     expect(noteNameAt(6)).toBeNull();
     expect(noteNameAt(-2)).toBeNull();
+  });
+});
+
+describe('solfegeAt', () => {
+  it('sings the fixed-do syllable of each natural in the C4 octave', () => {
+    expect(solfegeAt(0)).toBe('do');
+    expect(solfegeAt(2)).toBe('re');
+    expect(solfegeAt(4)).toBe('mi');
+    expect(solfegeAt(5)).toBe('fa');
+    expect(solfegeAt(7)).toBe('sol');
+    expect(solfegeAt(9)).toBe('la');
+    expect(solfegeAt(11)).toBe('ti');
+  });
+
+  it('is octave-agnostic, same as noteNameAt', () => {
+    expect(solfegeAt(12)).toBe('do');
+    expect(solfegeAt(-3)).toBe('la');
+  });
+
+  it('returns null for accidentals instead of guessing a spelling', () => {
+    expect(solfegeAt(1)).toBeNull();
+    expect(solfegeAt(6)).toBeNull();
+  });
+
+  it('agrees with noteNameAt on which pitches are natural', () => {
+    for (let semitone = -12; semitone <= 12; semitone++) {
+      expect(solfegeAt(semitone) === null).toBe(noteNameAt(semitone) === null);
+    }
   });
 });
 
@@ -98,6 +135,12 @@ describe('reading the staff the other way round', () => {
     for (let step = -3; step <= 13; step++) {
       expect(noteNameAtStep(step), `step ${step}`).toMatch(/^[A-G]$/);
       expect(noteNameAtStep(step)).toBe(noteNameAt(semitoneAtStep(step)));
+    }
+  });
+
+  it('sings every step a syllable too, matching solfegeAt', () => {
+    for (let step = -3; step <= 13; step++) {
+      expect(solfegeAtStep(step), `step ${step}`).toBe(solfegeAt(semitoneAtStep(step)));
     }
   });
 });
