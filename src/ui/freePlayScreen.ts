@@ -32,6 +32,16 @@
  * in `RoadStage.ts`'s `refreshSongbook` (task 176's last piece, run 151),
  * not here — this file only makes the tune, `songChoice.ts`'s `songForPass`
  * and the songbook resolve it.
+ *
+ * The label-style toggle (ROADMAP task 191 piece 2b, run 171) lives here
+ * rather than behind a settings screen this game doesn't have: free play is
+ * already the "position → sound → name" teaching screen, so a family
+ * choosing how names are spoken is choosing it exactly where they are
+ * reading them. It changes `scaffoldStorage.ts`'s one saved field
+ * (piece 2a), which `RoadStage.ts`'s walk staff will also read once
+ * `SongNotes.ts`'s fixed single-character glyph cells get the layout
+ * change multi-letter syllables need — deliberately not attempted here,
+ * since this DOM label has no such constraint and the walk staff does.
  */
 import {
   FREE_PLAY_LOW_STEP,
@@ -43,7 +53,7 @@ import {
   freePlayStepAt,
   FreePlayStaff,
 } from '../core/freePlay';
-import { STAFF_LINE_STEPS, needsLedger, letterForStep, semitoneAtStep } from '../core/notation';
+import { STAFF_LINE_STEPS, needsLedger, letterForStep, solfegeAtStep, semitoneAtStep } from '../core/notation';
 import { semitoneToFrequency } from '../audio/baseLoop';
 import { playVoiceNote } from '../audio/instrumentVoice';
 import type { InstrumentVoice } from '../core/instruments';
@@ -59,6 +69,8 @@ import {
   recordingProblem,
   finishRecording,
 } from '../core/customSongs';
+import { currentLabelStyle, setLabelStyle } from '../core/scaffoldStorage';
+import type { ScaffoldState } from '../core/scaffold';
 
 /** Room above/below the ladder for the hint line, the close mark and a phone's notch. */
 const TOP_MARGIN = MIN_TOP_MARGIN + 30;
@@ -76,6 +88,8 @@ const DEFAULT_HINT = 'Tap a line or a space to hear it';
 export interface FreePlayScreenOptions {
   /** Which instrument's voice a tap sounds through — the one currently in hand, once wired. */
   voice: InstrumentVoice;
+  /** The saved scaffold record, so the label-style toggle can persist through it (scaffoldStorage.ts). */
+  scaffold: ScaffoldState;
   onClose: () => void;
 }
 
@@ -90,6 +104,7 @@ export class FreePlayScreen {
   private readonly nameScrim: HTMLDivElement;
   private readonly nameInput: HTMLInputElement;
   private readonly nameError: HTMLDivElement;
+  private readonly labelToggle: HTMLDivElement;
   private readonly host: HTMLElement;
   private readonly ctx: AudioContext;
   private readonly destination: AudioNode;
@@ -201,6 +216,30 @@ export class FreePlayScreen {
     });
     this.root.appendChild(this.noteLabel);
 
+    // The label-style toggle: bottom-centred, in the margin `BOTTOM_MARGIN`
+    // already reserves below the ladder, styled like `keepTapping` below
+    // (italic, underlined, self-describing text rather than an icon a
+    // family would have to learn).
+    this.labelToggle = element('div', {
+      position: 'absolute',
+      left: '0',
+      right: '0',
+      bottom: '10px',
+      textAlign: 'center',
+      fontStyle: 'italic',
+      fontSize: '13px',
+      letterSpacing: '0.02em',
+      textDecoration: 'underline',
+      cursor: 'pointer',
+      opacity: '0.8',
+    });
+    this.labelToggle.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.onToggleLabelStyle();
+    });
+    this.root.appendChild(this.labelToggle);
+
     // The name dialog: a scrim (blocks staff taps underneath, per its own
     // pointerdown stop below) plus a centered panel. Hidden by default —
     // `renderRecordUI` toggles `display` rather than this ever being built
@@ -299,6 +338,7 @@ export class FreePlayScreen {
     host.appendChild(this.root);
     this.layout();
     this.renderRecordUI();
+    this.renderLabelToggle();
   }
 
   destroy(): void {
@@ -370,12 +410,25 @@ export class FreePlayScreen {
 
   private showLabel(step: number): void {
     this.noteLabel.style.top = `${freePlayStepY(step, this.staff)}px`;
-    this.noteLabel.textContent = letterForStep(step);
+    this.noteLabel.textContent =
+      currentLabelStyle() === 'solfege' ? solfegeAtStep(step) : letterForStep(step);
     this.noteLabel.style.opacity = '1';
     if (this.labelTimer !== null) clearTimeout(this.labelTimer);
     this.labelTimer = setTimeout(() => {
       this.noteLabel.style.opacity = '0';
     }, 900);
+  }
+
+  /** Switches and persists the label style, then redraws the toggle's own text. */
+  private onToggleLabelStyle(): void {
+    setLabelStyle(currentLabelStyle() === 'solfege' ? 'letter' : 'solfege', this.opts.scaffold);
+    this.renderLabelToggle();
+  }
+
+  /** The toggle always names the style tapping it would switch TO, like `keepTapping`'s own link. */
+  private renderLabelToggle(): void {
+    this.labelToggle.textContent =
+      currentLabelStyle() === 'solfege' ? 'Back to letters (A B C)' : 'Try solfège (do re mi)';
   }
 
   /** The record button: starts a fresh take, or freezes the one in progress. */

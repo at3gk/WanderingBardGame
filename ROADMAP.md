@@ -3643,6 +3643,55 @@ interviews) — read it before taking any task; its not-recommended list
     pulled in for `loadScaffold`/`saveScaffold`), `verify-all quick`
     (`shader-check`) PASS. No new runtime dependency.
 
+    **Piece 2b done (2026-09-11, run 171) — the toggle's home, and one of
+    its two render sites.** Piece 2a's own done-note left two questions for
+    this piece: where does a family find the toggle, and how does
+    `SongNotes.ts`'s fixed single-character glyph atlas take multi-letter
+    syllables. Both together was too big for one run (the session
+    protocol's own "too big → split, take the first piece" rule), and the
+    two render sites do not actually have the same cost: `freePlayScreen.ts`'s
+    note label is a plain DOM text node with no atlas to widen, while
+    `SongNotes.ts`'s walk-staff notes are billboarded instanced quads
+    sampling a 128×128-per-cell canvas atlas sized for one glyph — a real
+    layout change, not a text swap. So this piece takes the cheap render
+    site and the toggle decision, and leaves the atlas alone.
+    **Where**: free play, not a settings screen (none exists, and inventing
+    one just to hold a single toggle would be exactly the "two things to
+    keep in sync" scaffoldStorage's own module comment warns against, this
+    time between a new settings surface and the record it would set).
+    Free play is already the "position → sound → name" teaching screen
+    (this file's own header), so a family choosing how names sound is
+    choosing it exactly where they are reading them. Added a small
+    bottom-centred italic underlined line, styled like the existing
+    `keepTapping` link, that always names the style tapping it would
+    switch TO ("Try solfège (do re mi)" / "Back to letters (A B C)") — the
+    same self-describing-link pattern the record UI already uses, so no
+    new UI idiom for a game this small. Wired `showLabel` to
+    `currentLabelStyle()`/`solfegeAtStep`, and gave `FreePlayScreenOptions`
+    a `scaffold: ScaffoldState` field (`RoadStage.ts` already holds one)
+    so the toggle can call `setLabelStyle` and have it actually save.
+    **Left alone, deliberately**: `SongNotes.ts` and its atlas — still
+    letters only on the walk staff, which is now the one open half of task
+    191 and its own next piece. A tune walked right after toggling in free
+    play will show solfège on the ladder but letters on the road; that
+    split is real and stays real until the atlas piece ships, not a bug in
+    this one.
+    Verified live rather than trusting the reading (this file's own
+    history is why): a headless Playwright session opened free play via
+    `window.bard.stage`, tapped the ladder (label read "B"), tapped the
+    new toggle (text flipped to "Back to letters (A B C)"), tapped the
+    ladder again (label read "ti" — the correct fixed-do syllable for B),
+    confirmed `localStorage`'s `wb.learn.v1` record gained `"l":"solfege"`,
+    then reloaded the page and reopened free play to confirm the toggle
+    read "Back to letters" from a cold load. Zero console/page errors
+    throughout. `npm test` 1375 green (unchanged — the changed files are
+    DOM wiring with no dedicated test file, the same shape `RoadStage.ts`
+    and `Hud.ts` already are), `npm run build` green (932.67 KB vs 931.82
+    KB, the toggle's own small weight). No new runtime dependency.
+    Next: the atlas layout piece — widen or re-lay `SongNotes.ts`'s glyph
+    cells for multi-letter syllables, then read `currentLabelStyle()`
+    there too, closing task 191 end to end.
+
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 
 From docs/research/mobile-friendly.md — read it first. The urgent fact:
