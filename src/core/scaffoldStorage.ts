@@ -30,6 +30,15 @@ interface Stored {
    * answer, since it can only mean more help, never less.
    */
   w?: Record<string, number>;
+  /**
+   * Note-label style (ROADMAP task 191 piece 2a): 'solfege' or absent for
+   * the default (letters). Lives here, not a second key — the exact
+   * concern `scaffoldStorage`'s own module comment raises about a
+   * settings key is "two things to keep in sync," which one more field
+   * in this record doesn't create. No UI sets this yet (see
+   * `setLabelStyle`'s own comment).
+   */
+  l?: 'solfege';
 }
 
 /**
@@ -44,6 +53,33 @@ let songChoice: string | null = null;
 
 /** Held beside `songChoice` for the same module-scope reason it is. */
 let songWalks: Record<string, number> = {};
+
+/** Held beside `songChoice` for the same module-scope reason it is. */
+let labelStyle: 'letter' | 'solfege' = 'letter';
+
+/**
+ * The saved note-label style. Defaults to 'letter' — an unset field, an
+ * unreadable record, and "no storage at all" all read the same way, which
+ * is deliberate: a family that never sees a toggle keeps today's behaviour
+ * exactly.
+ */
+export function currentLabelStyle(): 'letter' | 'solfege' {
+  return labelStyle;
+}
+
+/**
+ * Sets and persists the label style. Not called from anywhere yet — piece
+ * 2a is the storage decision and the pure layer only; piece 2b still has
+ * to decide where a family would even find this toggle (no settings
+ * screen exists in this game yet) and wire `SongNotes.ts` /
+ * `freePlayScreen.ts` to read it, including `SongNotes.ts`'s fixed
+ * single-character glyph cells, which multi-letter syllables ("do", "re",
+ * "ti") don't fit without a layout change.
+ */
+export function setLabelStyle(style: 'letter' | 'solfege', state: ScaffoldState): void {
+  labelStyle = style;
+  saveScaffold(state, true);
+}
 
 /** Every carried song's walk count — the festival's set list is drawn from this. */
 export function allSongWalks(): Readonly<Record<string, number>> {
@@ -83,6 +119,7 @@ export function loadScaffold(nowMs: number = Date.now()): ScaffoldState {
   // A fresh load must not inherit another record's walks — the early
   // returns below (no storage, no record) all mean "never carried".
   songWalks = {};
+  labelStyle = 'letter';
   const store = storage();
   if (!store) return state;
 
@@ -110,6 +147,8 @@ export function loadScaffold(nowMs: number = Date.now()): ScaffoldState {
       }
     }
 
+    labelStyle = parsed.l === 'solfege' ? 'solfege' : 'letter';
+
     const hoursAway = Math.max(0, (nowMs - (parsed.t ?? nowMs)) / 3_600_000);
     decayForDaysAway(state, Math.floor(hoursAway / 24));
   } catch {
@@ -134,6 +173,7 @@ export function saveScaffold(state: ScaffoldState, force = false, nowMs: number 
     const record: Stored = { v: 1, t: nowMs, p };
     if (songChoice) record.s = songChoice;
     if (Object.keys(songWalks).length > 0) record.w = songWalks;
+    if (labelStyle === 'solfege') record.l = 'solfege';
     store.setItem(bookmarkKey(KEY), JSON.stringify(record));
   } catch {
     // Quota, private browsing, partitioned storage — the game is unaffected.

@@ -266,6 +266,20 @@ makes it long. You do not need to read it top to bottom.
   continues; wave 20 once network-unblocked and task 189's far-band lead
   remain the other open threads; the idea backlog is now empty. Next
   consolidation still due around 175 (169 is 4 runs past 165).
+- **Run 170 update**: shipped task 191 piece 2a — the storage decision
+  piece 2's done-note asked for. Reused `scaffoldStorage.ts`'s existing
+  single-key record (a third optional field, `l?: 'solfege'`) rather than
+  inventing a settings key: the module's own comment objects to a
+  *second* key, not to persisting a preference at all. Added
+  `currentLabelStyle`/`setLabelStyle`, both still uncalled from any UI or
+  render site — see task 191's own piece-2a done-note. Live queue as of
+  run 170: task 191 piece 2b (decide where a family finds the toggle,
+  wire `SongNotes.ts`/`freePlayScreen.ts` to read it, and give
+  `SongNotes.ts`'s fixed single-character glyph cells room for
+  multi-letter syllables) if solfège continues; wave 20 once
+  network-unblocked and task 189's far-band lead remain the other open
+  threads. Next consolidation still due around 175 (170 is 5 runs past
+  165).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3599,6 +3613,35 @@ interviews) — read it before taking any task; its not-recommended list
     multi-letter syllables ("do", "re", "ti") need a layout change there
     too, not just a text swap. Wave 20 and task 189's far-band lead remain
     the other open threads.
+
+    **Piece 2a done (2026-09-11, run 170) — the storage decision, still no
+    UI.** Piece 2's own text framed "where does this preference live" as
+    needing a whole settings-surface design first. A closer read of
+    `scaffoldStorage.ts`'s module comment found the actual objection isn't
+    to persisting a preference at all — it's to a *second* localStorage
+    key, "two things to keep in sync." One more optional field in the
+    record `songChoice`/`songWalks` already share doesn't create that
+    problem, so there was a real decision to make here but not the one
+    piece 1 assumed: reuse the existing record, don't invent a settings
+    key. Added `l?: 'solfege'` to `scaffoldStorage.ts`'s `Stored` interface
+    (absent means letters — the same safe-default shape `s`/`w` already
+    use) and a matching `currentLabelStyle()`/`setLabelStyle(style, state)`
+    pair, mirroring `songWalksFor`/`recordSongWalk`'s getter/setter-with-
+    state shape exactly. `setLabelStyle` forces the save (like the
+    page-hide path does) rather than letting a family's toggle wait out the
+    5-second throttle. Also added `scaffoldStorage.test.ts` — no test file
+    existed for this module at all before this run (`songWalksFor`/
+    `recordSongWalk`/`allSongWalks` are still untested; out of scope here,
+    left as found rather than expanded opportunistically). Deliberately
+    still not called from `SongNotes.ts`, `freePlayScreen.ts`, or anywhere
+    else — piece 2b is where the toggle's actual home in the UI gets
+    decided (no settings screen exists to hang it on) and where
+    `SongNotes.ts`'s fixed single-character glyph-atlas cells get whatever
+    layout change multi-letter syllables need. `npm test` 1375 green (6
+    new), `npm run build` green (931.82 KB vs 931.73 KB — the new exports'
+    own weight, not tree-shaken since `scaffoldStorage.ts` is already
+    pulled in for `loadScaffold`/`saveScaffold`), `verify-all quick`
+    (`shader-check`) PASS. No new runtime dependency.
 
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 

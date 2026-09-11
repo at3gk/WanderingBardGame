@@ -73,7 +73,11 @@ see the run-168 HANDOFF and ROADMAP task 190's own piece-2 done-note; run
 syllables) as task 191 and shipped its piece 1 — the pure
 `solfegeAt`/`solfegeAtStep` mapping, no UI reader wired yet, since no
 settings/preference system exists anywhere in this codebase to hang a
-locale toggle on — see ROADMAP task 191's own piece-1 done-note
+locale toggle on — see ROADMAP task 191's own piece-1 done-note; run 170
+shipped task 191 piece 2a — the label style now persists as a third
+optional field in `scaffoldStorage.ts`'s existing one-key record, not a
+new settings key, still with no UI toggle or render-site reader — see
+ROADMAP task 191's own piece-2a done-note
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -4220,6 +4224,29 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   tree-shake out of the bundle. `npm test` 1369 green (5 new), `npm run
   build` green (931.73 KB, unchanged — confirms the tree-shake),
   `verify-all quick` (`shader-check`) PASS. No new runtime dependency.
+- Run 170 (2026-09-11, scheduled): ROADMAP task 191 piece 2a — the storage
+  half of "how does a family pick a label style at all," split off piece
+  2's own done-note asked for. Full detail in ROADMAP.md under task 191's
+  own piece-2a done-note. Headline: read `scaffoldStorage.ts`'s module
+  comment closely and found its actual objection to "a settings key" is
+  a *second* localStorage key to keep in sync with the first, not to
+  ever persisting a preference at all — so the label style rides in the
+  same one-key record `songChoice`/`songWalks` already share, as a third
+  optional field (`l?: 'solfege'`, absent means letters, the safe
+  default an unreadable or missing record also falls back to). Added
+  `currentLabelStyle`/`setLabelStyle` to `scaffoldStorage.ts`, plus its
+  first-ever dedicated test file (`scaffoldStorage.test.ts` — no test
+  file existed for this module at all before this run, so `songWalks`'s
+  round-trip stayed untested too; only the new label-style behaviour is
+  covered here, `songWalks`/`songChoice` coverage is left as found).
+  Deliberately not called from anywhere: no UI toggle exists yet, and
+  `SongNotes.ts`'s canvas atlas is still baked at fixed single-character
+  cell sizes, so multi-letter syllables need a layout change piece 2b
+  owns, not this one. `npm test` 1375 green (6 new), `npm run build`
+  green (931.82 KB vs 931.73 KB, the new exports' own small weight —
+  not tree-shaken since the module is already pulled in for
+  `loadScaffold`/`saveScaffold`), `verify-all quick` (`shader-check`)
+  PASS. No new runtime dependency.
 
 ## Needs human playtest
 
