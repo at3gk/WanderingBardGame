@@ -21,10 +21,36 @@ const NATURALS: ReadonlyArray<{ semitone: number; letter: string }> = [
   { semitone: 11, letter: 'B' },
 ];
 
+/**
+ * Fixed-do solfège syllable for each letter (ROADMAP idea backlog /
+ * DESIGN.md "Considered and rejected": a locale option, letters first).
+ * Fixed rather than movable-do: the game world never modulates key inside
+ * Book One, and Book Two's `spellInKey` already carries the letter the
+ * signature would need for a movable reading, so a fixed C-major mapping
+ * is the one that can't drift out of sync with a key change later. Piece 1
+ * only — this table has no reader yet; no UI or settings surface exists to
+ * choose it (see DESIGN.md's "Considered and rejected" note on why not).
+ */
+const SOLFEGE: Readonly<Record<string, string>> = {
+  C: 'do',
+  D: 're',
+  E: 'mi',
+  F: 'fa',
+  G: 'sol',
+  A: 'la',
+  B: 'ti',
+};
+
 /** Letter name (C–B) for a natural note, or null for an accidental. Octave-agnostic. */
 export function noteNameAt(semitoneFromC4: number): string | null {
   const pitchClass = ((semitoneFromC4 % 12) + 12) % 12;
   return NATURALS.find((n) => n.semitone === pitchClass)?.letter ?? null;
+}
+
+/** Fixed-do solfège syllable (do–ti) for a natural note, or null for an accidental. */
+export function solfegeAt(semitoneFromC4: number): string | null {
+  const letter = noteNameAt(semitoneFromC4);
+  return letter === null ? null : SOLFEGE[letter];
 }
 
 /**
@@ -89,6 +115,12 @@ export function semitoneAtStep(step: number): number {
 export function noteNameAtStep(step: number): string {
   const index = ((step % 7) + 7) % 7;
   return NATURALS[index].letter;
+}
+
+/** Fixed-do solfège syllable for a staff step. Always defined — every step is a natural. */
+export function solfegeAtStep(step: number): string {
+  const index = ((step % 7) + 7) % 7;
+  return SOLFEGE[NATURALS[index].letter];
 }
 
 // ---------------------------------------------------------------------------

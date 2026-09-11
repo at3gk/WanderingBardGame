@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 168 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 169 (the 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -68,7 +68,12 @@ its piece 1, `largeFormAnchorSites` — a wayside-sentinel-shaped (not
 camera-aware) placement guarantee for rock/shrub/log — see the run-167
 HANDOFF and ROADMAP task 190's own piece-1 done-note; run 168 shipped task
 190 piece 2 (wired the guarantee into `buildScatter`), closing task 190 —
-see the run-168 HANDOFF and ROADMAP task 190's own piece-2 done-note
+see the run-168 HANDOFF and ROADMAP task 190's own piece-2 done-note; run
+169 pulled the idea backlog's one remaining live entry (solfège
+syllables) as task 191 and shipped its piece 1 — the pure
+`solfegeAt`/`solfegeAtStep` mapping, no UI reader wired yet, since no
+settings/preference system exists anywhere in this codebase to hang a
+locale toggle on — see ROADMAP task 191's own piece-1 done-note
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -4196,6 +4201,24 @@ written up in their ROADMAP done-entries and the `Recent runs` log below.
   measure. Recorded plainly rather than reworded as a win, the same way
   task 189's refutations were. `npm test` 1364 green (unchanged), `npm run
   build` green (931.73 KB vs 930.29 KB, the wiring's own weight),
+  `verify-all quick` (`shader-check`) PASS. No new runtime dependency.
+- Run 169 (2026-09-11, scheduled): re-tested wave 20's network block first
+  (still 403 on both hosts, unchanged), then pulled the idea backlog's one
+  remaining live entry — solfège syllables — as ROADMAP task 191 and
+  shipped piece 1. Full detail in ROADMAP.md under task 191's own piece-1
+  done-note. Headline: surveyed the notation code before writing anything
+  and found no settings/preference system exists anywhere in this
+  codebase, so "how does a family pick a label style" is real,
+  separately-sized design work (`scaffoldStorage.ts` explicitly argues
+  against a bolted-on settings key) — piece 1 stays a pure data layer,
+  the same shape 176/177/178's own piece 1s took. Added
+  `solfegeAt`/`solfegeAtStep` next to `noteNameAt`/`noteNameAtStep` in
+  `src/core/notation.ts`, fixed-do (not movable-do, since Book One never
+  modulates key and Book Two's `spellInKey` already carries the letter a
+  movable reading would need), covered test-for-test with the existing
+  letter tests. Not referenced from any render site yet, so the exports
+  tree-shake out of the bundle. `npm test` 1369 green (5 new), `npm run
+  build` green (931.73 KB, unchanged — confirms the tree-shake),
   `verify-all quick` (`shader-check`) PASS. No new runtime dependency.
 
 ## Needs human playtest
