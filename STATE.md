@@ -1,6 +1,7 @@
 # STATE
 
-Run counter: 169 (the 2026-08-05 overnight loop session was runs ~51-65;
+Run counter: 171 (next consolidation pass due around run 175; the
+2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
 runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
@@ -77,7 +78,16 @@ locale toggle on — see ROADMAP task 191's own piece-1 done-note; run 170
 shipped task 191 piece 2a — the label style now persists as a third
 optional field in `scaffoldStorage.ts`'s existing one-key record, not a
 new settings key, still with no UI toggle or render-site reader — see
-ROADMAP task 191's own piece-2a done-note
+ROADMAP task 191's own piece-2a done-note; run 171 shipped task 191 piece
+2b — free play (the "position → sound → name" screen, not a new settings
+surface) got a small self-describing toggle link that calls
+`setLabelStyle` and reads back through `currentLabelStyle()`/
+`solfegeAtStep` in its own DOM note label, verified live end to end with
+a headless Playwright session (tap → "B", toggle → "Back to letters",
+tap → "ti", survives a reload); `SongNotes.ts`'s walk-staff atlas is
+deliberately still letters-only (its fixed single-character glyph cells
+need a real layout change, not a text swap) — see ROADMAP task 191's own
+piece-2b done-note and its "Next" line
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 

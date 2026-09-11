@@ -35,7 +35,7 @@ interface Stored {
    * the default (letters). Lives here, not a second key — the exact
    * concern `scaffoldStorage`'s own module comment raises about a
    * settings key is "two things to keep in sync," which one more field
-   * in this record doesn't create. No UI sets this yet (see
+   * in this record doesn't create. Set from free play's own toggle (see
    * `setLabelStyle`'s own comment).
    */
   l?: 'solfege';
@@ -68,13 +68,13 @@ export function currentLabelStyle(): 'letter' | 'solfege' {
 }
 
 /**
- * Sets and persists the label style. Not called from anywhere yet — piece
- * 2a is the storage decision and the pure layer only; piece 2b still has
- * to decide where a family would even find this toggle (no settings
- * screen exists in this game yet) and wire `SongNotes.ts` /
- * `freePlayScreen.ts` to read it, including `SongNotes.ts`'s fixed
- * single-character glyph cells, which multi-letter syllables ("do", "re",
- * "ti") don't fit without a layout change.
+ * Sets and persists the label style. Called from `freePlayScreen.ts`'s
+ * label-style toggle (ROADMAP task 191 piece 2b, run 171) — free play is
+ * the "position → sound → name" teaching screen, so that is where a family
+ * finds this. `SongNotes.ts`'s walk staff does not read this yet: its
+ * fixed single-character glyph cells don't fit multi-letter syllables
+ * ("do", "re", "ti") without a layout change piece 2b left for a later
+ * piece.
  */
 export function setLabelStyle(style: 'letter' | 'solfege', state: ScaffoldState): void {
   labelStyle = style;

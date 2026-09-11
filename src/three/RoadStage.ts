@@ -2496,6 +2496,7 @@ export class RoadStage implements Stage {
     if (!ctx || !destination) return;
     this.freePlayScreen = new FreePlayScreen(this.hudHost, ctx, destination, {
       voice: this.instrument().voice,
+      scaffold: this.scaffold,
       onClose: () => this.closeFreePlay(),
     });
   }
