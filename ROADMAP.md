@@ -312,6 +312,24 @@ makes it long. You do not need to read it top to bottom.
   (network-blocked) and task 189's far-band lead are the open threads; the
   idea backlog is empty. Next consolidation still due around 175 (173 is 8
   runs past 165 — two runs out).
+- **Run 174 update**: with the idea backlog empty and all three run-173
+  open threads blocked or parked, picked up task 179's residual instead
+  of forcing a new arc — a genuine dropped thread (untouched since
+  2026-08-01, missed by six consolidation passes), not a fresh idea.
+  Re-measured with `figground.mjs` (extended this run to report hue/
+  saturation — tools-only, no game code) and confirmed the "lit road
+  behind the figure" mechanism the task's own text pointed to in 2026-08,
+  but found it hands this task no safe lever: the color script bans
+  ground/sky work at three of the four failing poses' CARRYING hours, and
+  the fourth shares its sun height exactly with two passing poses, so no
+  uniform-driven figure fix can target it without regressing them. See
+  task 179's own 2026-09-12 done-note and STATE.md's run-174 HANDOFF.
+  Moved to Blocked on human — the remaining move is a creative-direction
+  call, not engineering. Live queue as of run 174: unchanged from run
+  173 (task 173's remaining real-device half, wave 20, task 189's
+  far-band lead — all blocked or parked); the idea backlog is still
+  empty. Next consolidation due around 175 — one run out, and the
+  reasonable default if run 175 also finds nothing fresh to build.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -4708,6 +4726,52 @@ full verdict map and the measure-first suspicion list):
     frame-quality's noon gate ALREADY FAILS ON MAIN (1.91 stops vs
     2.5 floor, pre-existing; this change nudges 1.91→1.93) — some
     earlier merge regressed it unnoticed; investigate separately.
+    **Residual re-measured (2026-09-12, run 174) — the mechanism 03/10
+    "already do right" is real, quantified, and cannot be safely extended
+    to the failing frames.** This thread sat untouched since 2026-08-01
+    (six consolidation passes never re-surfaced it — a real drift miss,
+    logged so it isn't lost again) despite plenty of intervening lighting
+    changes (task 121's 35% grass/road albedo raise, task 185's daylight
+    land key). Re-ran `figground.mjs` against current main: the floor
+    still fails at three of seven poses and one of them got WORSE than
+    2026-08-01 — `04-golden-vista`'s full-band dL dropped from the
+    original 4.0 to 1.4, the worst reading in the set. Extended the tool
+    (still tools-only, no game code) to also report mean hue/saturation
+    for the figure and its surround, to test "the lit road behind the
+    figure" hint quantitatively instead of by eye. It holds up cleanly:
+    every PASSING pose (`03-noon-forest` 25.4, `08-phone-portrait` 22.3,
+    `10-tablet` 23.2) has a bright road directly behind the bard's legs
+    (`behindL` 61 / 49.9 / 57.9); every FAILING pose (`01-dawn-road` 8.1,
+    `02-morning-open` 4.8, `04-golden-vista` 1.4, `06-dusk-encounter` 2.9)
+    has a dim one (`behindL` 21.4 / 30.6 / 26 / 18.9) — a clean gap, not a
+    trend line. That confirms the mechanism; it does not hand this task a
+    lever. Two independent blockers rule out the obvious next move (a
+    day-aware figure-side brightness push, keyed to `sunHeight` the way
+    `uBaseShade` already rides it): (1) the color script (task 166) marks
+    dawn/golden/dusk CARRYING and binds "spend no runs there" — three of
+    the four failing poses are exactly these hours, so raising the ROAD
+    near the bard there (the real fix the data points to) is off-limits
+    without a human relaxing that rule for a bard-local patch specifically,
+    not the whole sky/palette. (2) `02-morning-open` is an ENACTING hour
+    (not carrying) but still fails, and it shares `sunHeight` 1.0 exactly
+    with the two best-passing poses `03-noon-forest` and `10-tablet` (all
+    three measured live via `uSunDirection.value.y`) — so no uniform driven
+    by sun height or day fraction can push `02` without pushing `03`/`10`
+    by the same amount, and this task's own re-aimed brief explicitly
+    forbids regressing them ("cannot regress 03/08/10 because it IS their
+    mechanism"). A figure-only shader has no way to sense what's actually
+    rendered behind it (no screen-space feedback in this pipeline, and
+    building one is exactly the kind of weight CLAUDE.md's small-bundle
+    pillar rules out for a single value-floor fix). Conclusion: this is
+    not an engineering task blocked on more measurement, the way it looked
+    on 2026-08-01 — it is now blocked on a human creative-direction call
+    (does a small bard-adjacent ground patch get an exception to the
+    CARRYING-hours rule, yes or no), logged under STATE.md's Blocked on
+    human rather than left to look like unclaimed engineering work. `npm
+    test` 1383 green (unchanged — tools/ only), `npm run build` green
+    (933.11 kB, unchanged), `verify-all quick` PASS. See
+    `tools/README.md`'s `figground.mjs` section for the new hue/sat
+    columns.
 180. **Close the frame: foreground occluders.** All ten postcards open
     on a clean ground plane; every ASH reference crops canopy, cliff or
     rock masses through its edges. Give the postcard framings (and the

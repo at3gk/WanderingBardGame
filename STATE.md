@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 173 (next consolidation pass due around run 175; the
+Run counter: 174 (next consolidation pass due around run 175; the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
@@ -101,7 +101,19 @@ independent, gave it a real regression test (`src/three/fixedStep.ts` +
 shipped `dt` never leaks the real frame rate even at this sandbox's own
 ~0.8fps — see the run-173 HANDOFF and ROADMAP task 173's own piece-1
 done-note; the two real-device halves (iOS silent switch, call/
-backgrounding interruption) stay open, unchanged, real-hardware-only
+backgrounding interruption) stay open, unchanged, real-hardware-only;
+run 174 re-measured task 179's residual (the dawn/low-sun figure-side
+value floor, untouched since 2026-08-01) with `figground.mjs` extended to
+report hue/saturation, confirmed the "lit road behind the figure"
+mechanism 03/08/10 already use is real and quantified (`behindL` high
+40s-60s on passing poses, high teens-low 30s on failing ones), and found
+it has no safe lever left: the color script bans touching ground/sky at
+three of the four failing poses' CARRYING hours, and the fourth
+(02-morning, an ENACTING hour) shares `sunHeight` 1.0 exactly with two
+passing poses, so no sun-height-keyed figure uniform can target it
+without regressing them — see the run-174 HANDOFF and ROADMAP task 179's
+own 2026-09-12 done-note; moved to Blocked on human below rather than
+left looking like unclaimed engineering work
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -216,6 +228,50 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-12 (run 174) — task 179's residual re-measured: the
+  mechanism is confirmed, and it turns out to have no safe lever.** Full
+  detail in ROADMAP task 179's own 2026-09-12 done-note — short version
+  here. Task 179's original 2026-08-01 work shipped a grounded contact
+  shadow and re-queued one residual: "the dawn/low-sun figure-side value
+  (dynamic, day-aware — no static albedo works)." That residual then sat
+  untouched for 173 runs and six consolidation passes — a real drift
+  miss, not a deliberate deprioritization; nothing in "Start here" or any
+  recent HANDOFF's "open threads" list had carried it forward. This run
+  re-ran `figground.mjs` (unchanged tool, current build) and found the
+  floor still fails at three of seven poses, with `04-golden-vista` worse
+  than 2026-08-01 (dL 4.0 → 1.4) after intervening lighting changes (task
+  121's albedo raise, task 185's land key) nobody had checked against it.
+  Extended the tool (tools-only, no game code) to report hue/saturation
+  alongside its existing L* columns, to test the task's own original hint
+  — "measure what 03/10 already do right, likely the lit road behind the
+  figure" — quantitatively. It holds: every passing pose has a bright
+  road directly behind the bard's legs (`behindL` 50-61), every failing
+  one a dim one (19-31), a clean gap. That confirms the mechanism but
+  hands this task no lever: three of the four failing poses sit in the
+  color script's CARRYING hours (dawn/golden/dusk), where task 166 binds
+  "spend no runs" on ground/sky brightness, and the fourth
+  (`02-morning-open`, an ENACTING hour) shares `sunHeight` 1.0 exactly
+  with two of the three passing poses — measured live via
+  `uSunDirection.value.y` — so a day-aware figure-uniform keyed to sun
+  height would have to push `02` and `03`/`10` by the same amount, and
+  this task's own brief explicitly forbids regressing 03/08/10. No
+  screen-space feedback exists in this pipeline for a figure-only shader
+  to sense what's actually behind it, and building one would be exactly
+  the bundle weight CLAUDE.md's mobile pillar rules out for a single
+  value-floor fix. Moved to Blocked on human below: the one lever left is
+  a creative-direction call (a bard-local exception to the CARRYING-hours
+  rule), not an engineering task. `npm test` 1383 green (unchanged,
+  tools-only), `npm run build` green (933.11 kB, unchanged), `verify-all
+  quick` PASS. Direction research: no recommendation in any of the three
+  `docs/research/` notes concerns figure/ground contrast; nothing to
+  re-check there. Next: with task 179 now correctly parked rather than
+  silently dropped, the idea backlog is still empty and the standing open
+  threads are unchanged — task 173's real-device half (hardware-blocked),
+  wave 20 (network-blocked), and task 189's far-band lead (parked, five
+  pieces without a mechanism). A future run without a fresh idea should
+  treat consolidation (due around 175, one run out) as the reasonable
+  default rather than forcing a new arc.
 
 - **HANDOFF, 2026-09-12 (run 173) — task 173 piece 1: the 30fps beat-clock
   claim verified, not assumed, with a real regression test.** Full detail
@@ -4423,6 +4479,30 @@ still needs a human:
   protocol is written for exactly that.
 
 ## Blocked on human
+- **Task 179's residual: a bard-local exception to the color script's
+  CARRYING-hours rule, yes or no** (2026-09-12, run 174). The dawn/
+  low-sun figure/ground value floor (re-queued as 179's residual on
+  2026-08-01) is confirmed, quantified, and still failing at three of
+  seven pinned poses (`figground.mjs`, extended this run with hue/
+  saturation — see ROADMAP task 179's 2026-09-12 done-note and
+  `tools/README.md`'s new `figground.mjs` section). The mechanism that
+  already works elsewhere (03-noon-forest, 08-phone-portrait, 10-tablet)
+  is a bright road directly behind the bard's legs; the failing poses'
+  road there is dim by comparison. Raising that road's brightness is the
+  fix the data points to, but three of the four failing poses
+  (01-dawn-road, 04-golden-vista, 06-dusk-encounter) sit in hours task
+  166's color script marks CARRYING, where it binds "spend no runs" on
+  ground/sky brightness — a rule an autonomous run should not overrule on
+  its own judgment, since it exists precisely to stop exactly this kind
+  of well-intentioned local tweak from eroding an authored mood. Needs a
+  human call: either license a narrow exception (brighten a small ground
+  patch immediately behind the bard specifically, leaving the rest of the
+  CARRYING-hour palette untouched) or accept the residual as a standing
+  limitation the way task 173's real-device half is accepted. Until that
+  call is made, no further run should re-attempt a lighting fix here —
+  the fourth failing pose (02-morning-open, an ENACTING hour) additionally
+  rules out any fix keyed to sun height or day fraction alone, since it
+  shares `sunHeight` 1.0 exactly with two of the three passing poses.
 - **Wave 20 (the next blind-panel art critique)** (2026-09-02, run 142).
   The protocol (`docs/critique-rubric.md`) re-downloads 12 reference frames
   every wave — 7 A Short Hike press shots, 5 Spiritfarer Steam screenshots —
