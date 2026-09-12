@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 171 (next consolidation pass due around run 175; the
+Run counter: 172 (next consolidation pass due around run 175; the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
@@ -87,7 +87,14 @@ a headless Playwright session (tap → "B", toggle → "Back to letters",
 tap → "ti", survives a reload); `SongNotes.ts`'s walk-staff atlas is
 deliberately still letters-only (its fixed single-character glyph cells
 need a real layout change, not a text swap) — see ROADMAP task 191's own
-piece-2b done-note and its "Next" line
+piece-2b done-note and its "Next" line; run 172 shipped task 191 piece 3
+— the walk-staff atlas now repaints its existing 32 cells in place
+(letters or solfège) rather than growing a second cell set, so a toggle
+mid-session relabels every note already on the ribbon instantly rather
+than only future spawns — closing task 191 end to end across all four
+pieces (1, 2a, 2b, 3); see ROADMAP task 191's own piece-3 done-note for
+the full account, including why doubling the atlas was considered and
+rejected
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -202,6 +209,59 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-12 (run 172) — task 191 piece 3: the walk-staff atlas
+  learns solfège, closing task 191 end to end.** Full detail in ROADMAP
+  task 191's own piece-3 done-note — short version here. Pieces 2a/2b
+  (runs 170-171) left the walk staff's `SongNotes.ts` letters-only because
+  its 128px-per-cell canvas atlas is fixed-size and fully packed (32/32
+  cells) — a real layout question, not a text swap. Considered doubling
+  the atlas (a second 28-cell solfège set, chosen at spawn time like task
+  178's import formats or task 165's key signature each added a fixed
+  block of cells) and rejected it: `cellFor` only runs when a beat becomes
+  live, so a note already travelling at the moment of a toggle would keep
+  its old label until it cycled out, splitting the ribbon against itself
+  mid-flight — worse than the split piece 2b already accepted between
+  screens. Shipped instead: the SAME 32 cells, repainted in place.
+  `drawNote` takes a `style` and draws `solfegeAtStep` in place of
+  `letterForStep` for the 28 note cells only; `SongNotes.update` compares
+  `currentLabelStyle()` against a new `atlasStyle` field once a frame (one
+  string compare) and calls `repaintNoteGlyphs` on a mismatch — clears and
+  redraws those cells into the *same* canvas region, `atlas.needsUpdate =
+  true`, no new texture, no new uniform. Because a note's `cell` index
+  never changes, every note already on the ribbon relabels the instant the
+  repaint uploads — not just future spawns. `ATLAS_COLS`/`ATLAS_ROWS`/
+  `cellFor` are untouched; the atlas is still the 32 cells it always was.
+  Font size stayed at the existing 36px rather than shrinking for the
+  wider text: measured in this environment's headless Chromium against the
+  exact font string `drawNote` uses, the widest syllable ("sol", 42px)
+  and the widest letter ("G", 28px) both sit well inside the note head's
+  own ~55px rotated footprint, itself well inside the 128px cell — nothing
+  to make room for. Verified live end to end (built + served the
+  production bundle, `window.bard.pose` to frame the ribbon, real
+  `pointerdown` dispatch on free play's actual toggle link — a plain
+  `click` event does nothing, the first attempt at this check found that
+  the hard way): screenshots show "D"/"G" on the staff, then "re"/"sol"
+  after toggling solfège through free play's real UI, then "D"/"G" again
+  after toggling back — legible, centred, no clipping into the ledger/stem
+  art, no bleed into a neighbouring cell, zero console errors. Also
+  confirmed via the atlas canvas's own pixel data: the red (body) channel
+  count is identical before/after (2066 — the note shapes never change)
+  while green (letter) rises 238 → 459 in a toggle and returns to 238 on
+  the way back. `npm test` 1375 green (unchanged — canvas-drawing code has
+  no dedicated test file in this project, same as `buildGlyphAtlas`/
+  `drawNote` always have been: `vitest.config.ts` runs in a Node
+  environment with no `document`, so live verification is the check for
+  this class of code, not a gap), `npm run build` green (933.02 KB vs
+  932.67 KB — the new functions' own weight), `verify-all quick`
+  (`shader-check`) PASS. No new runtime dependency. Task 191 (solfège
+  syllables, promoted off the idea backlog at run 169) is now closed end
+  to end across all four pieces (1, 2a, 2b, 3). Direction research: no
+  recommendation in any of the three notes touches note-label rendering;
+  nothing to re-check here. Next: wave 20 (still network-blocked as of
+  run 167's last retest) and task 189's far-band lead are the two
+  remaining open threads; the idea backlog is empty. Consolidation not yet
+  due (172 is 7 runs past 165, next due around 175 — three runs out).
 
 - **HANDOFF, 2026-09-10 (run 167) — task 190 piece 1: the scatter
   lower-left question resolved to a design shape, and its guarantee

@@ -280,6 +280,22 @@ makes it long. You do not need to read it top to bottom.
   network-unblocked and task 189's far-band lead remain the other open
   threads. Next consolidation still due around 175 (170 is 5 runs past
   165).
+- **Run 171 update**: shipped task 191 piece 2b — the toggle's home (free
+  play, not a new settings screen) and its cheap render site, verified
+  live end to end; `SongNotes.ts`'s walk-staff atlas deliberately left
+  letters-only for the next piece — see task 191's own piece-2b done-note.
+  Live queue as of run 171: task 191's remaining piece (the walk-staff
+  atlas layout) if solfège continues; wave 20 once network-unblocked and
+  task 189's far-band lead remain the other open threads. Next
+  consolidation still due around 175 (171 is 6 runs past 165).
+- **Run 172 update**: shipped task 191 piece 3 — the walk-staff atlas now
+  repaints its existing 32 cells in place when the label style changes,
+  rather than growing to a second cell set (see task 191's own piece-3
+  done-note for why that alternative was rejected). Task 191 is now closed
+  end to end across all four pieces. Live queue as of run 172: wave 20
+  once network-unblocked and task 189's far-band lead are the two
+  remaining open threads; the idea backlog is empty. Next consolidation
+  still due around 175 (172 is 7 runs past 165 — three runs out).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3691,6 +3707,107 @@ interviews) — read it before taking any task; its not-recommended list
     Next: the atlas layout piece — widen or re-lay `SongNotes.ts`'s glyph
     cells for multi-letter syllables, then read `currentLabelStyle()`
     there too, closing task 191 end to end.
+
+    **Piece 3 done (2026-09-12, run 172) — the atlas layout, closing task
+    191 end to end.** Piece 2b's own "Next" line framed this as "widen or
+    re-lay the glyph cells" and left both live. The real choice, once the
+    atlas was actually read closely, was narrower than that framing
+    suggested, and worth recording because the obvious first idea (the
+    task brief's own suggestion) was rejected with a concrete reason, not a
+    coin flip:
+
+    **Considered: doubling the atlas** — a second set of twenty-eight note
+    cells for solfège, chosen by `cellFor` at spawn time (`makeLive`)
+    alongside the existing letter set, same as the shape task 178's import
+    arc or task 165's key signature each added a fixed block of new cells.
+    **Rejected**, for a reason specific to this toggle and not to the
+    others: `cellFor` only runs when a beat *becomes* live, so a note
+    already travelling down the ribbon at the moment of a toggle would go
+    on showing its OLD label until it was struck or went past and a fresh
+    one spawned in its place — the ribbon and free play's ladder would
+    visibly disagree for up to one note's whole flight (`TRAVEL_TIME_MS`).
+    Piece 2b's own done-note already named this exact split as real and
+    accepted it *between the two screens* (free play instant, walk staff
+    not wired at all); doubling the atlas would have re-created a milder
+    version of the same split *within* the walk staff alone, between notes
+    already spawned and notes not yet spawned. That is a worse failure
+    mode than either "no toggle yet" or "both screens agree", and doubling
+    the atlas cells buys nothing that fixes it — the mismatch is about
+    *when* a cell's content is read, not how many cells exist.
+
+    **Shipped instead: repaint the existing 32 cells in place.** `cellFor`,
+    `ATLAS_COLS`, `ATLAS_ROWS` and every place that computes
+    `cell % ATLAS_COLS` / `Math.floor(cell / ATLAS_COLS)` are UNCHANGED —
+    the atlas is still exactly the 32 cells (8x4, 128px) it has always
+    been. What changed is that the 28 pitched-note cells' *pixels* are
+    style-dependent: `drawNote` now takes a `style` and draws
+    `solfegeAtStep(letterIndex)` instead of `letterForStep(letterIndex)`
+    when the family has switched. `SongNotes.update` compares
+    `currentLabelStyle()` against a new `atlasStyle` field once a frame (a
+    string compare — cheaper than plumbing a change event through free
+    play, `RoadStage` and this class for something that changes at most a
+    few times a session) and calls the new `repaintNoteGlyphs` the moment
+    they disagree: it clears and redraws cells 0-27 into the *same* canvas
+    region (`atlas.needsUpdate = true`, no new `CanvasTexture`, no
+    uniform rebind). Because a note's `cell` index never changes — only
+    what is painted at that index — every note on the ribbon, at every
+    stage of flight, changes label the instant the repaint uploads. The
+    rest cell and the three accidental cells are untouched by any of this
+    (`REST_CELL` is excluded from the repaint loop; none of the three
+    carries a letter).
+
+    **The font-size question** (the task brief's other suggestion, "a
+    variable-width/smaller-font label") turned out to have a measured
+    answer rather than a judgment call: this environment's headless
+    Chromium, asked to `measureText` the exact font string `drawNote`
+    already uses (`bold 36px Georgia, "Times New Roman", serif`), puts the
+    widest solfège syllable — "sol" — at 42px, against the widest letter —
+    "G" — at 28px. The note head's own rotated footprint (`ctx.rotate
+    (-0.34)` over an `HEAD_RX`=28 × `HEAD_RY`=21 ellipse) projects to about
+    55px wide (2 × sqrt((28·cos34°)² + (21·sin34°)²) ≈ 54.6), comfortably
+    clear of a 128px cell either way. "sol" therefore fits inside the same
+    footprint a single letter already occupies, at the same 36px size, with
+    no shrink needed — confirmed live (see below), not just measured in
+    isolation. Shrinking it anyway would have repeated the exact mistake
+    DESIGN.md's Pedagogy section already rejects for the letters
+    (opacity-fading a still-legible glyph "teaches exactly as much" while
+    reading worse); a syllable that already fits does not need to fit
+    harder.
+
+    Verified live rather than trusted from the measurement (this file's own
+    history is why): built and served the production bundle, opened a
+    headless Playwright session, posed the walk (`window.bard.pose({s:265,
+    day:0.42, phase:'walking'})`) and screenshotted the ribbon showing real
+    letters ("D", "G"); opened free play (`window.bard.stage.openFreePlay
+    ()`), dispatched a `pointerdown` on the real toggle link (matching
+    `freePlayScreen.ts`'s actual listener — a plain `click` event does
+    nothing, which the first attempt at this check discovered the hard
+    way), closed free play, re-posed the same walk and re-screenshotted:
+    the same staff positions now read "re" and "sol" — legible, centred,
+    no clipping into the ledger or stem art, no bleed into a neighbouring
+    cell. Toggled back through the same UI path and re-posed once more:
+    the staff read "D"/"G" again. Also confirmed via
+    `window.bard.stage.notes.atlas`/`.atlasStyle` directly (not just by
+    eye): the canvas's red (body) channel pixel count is identical before
+    and after a toggle (2066, the head/stem/ledger art never changes) while
+    the green (letter) channel count in cell 0 rises 238 → 459 — "do" wider
+    than "C", as expected — and returns to 238 after toggling back. Zero
+    console/page errors throughout. `npm test` 1375 green (unchanged — the
+    changed code is canvas-drawing and frame-update logic with no dedicated
+    test file, same as `buildGlyphAtlas`/`drawNote`/`drawRest` always have
+    been: `vitest.config.ts` runs in a Node environment with no `document`,
+    so nothing that touches a 2D canvas context is unit-testable here —
+    live verification is the check for this class of code, not a gap in
+    it), `npm run build` green (933.02 KB vs 932.67 KB — the new
+    `repaintNoteGlyphs`/`paintGlyphCell`/`labelForCell` functions' own
+    weight). No new runtime dependency.
+
+    Task 191 (solfège syllables, promoted off the idea backlog at run 169)
+    is now closed end to end across all four pieces: the pure mapping
+    (piece 1), the storage decision (piece 2a), the toggle's home and free
+    play's render site (piece 2b), and the walk staff's atlas (piece 3,
+    this one). A family can switch label style from free play and see it
+    honoured on both screens the walk actually uses.
 
 ## The v1.2 queue: "the pocket road" (human-set, 2026-08-01)
 
