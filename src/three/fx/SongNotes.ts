@@ -172,18 +172,23 @@ import {
   alteredLetters,
   letterForStep,
   needsLedger,
+  solfegeAtStep,
   spellInKey,
   staffStepAt,
   stemDown,
   type KeySignature,
 } from '../../core/notation';
 import type { Judgement } from '../../core/performance';
+import { currentLabelStyle } from '../../core/scaffoldStorage';
 import type { SongBeat } from '../../core/song';
 import {
   createPainterlyGlobals,
   createPainterlyMaterial,
   type PainterlyGlobals,
 } from '../painterly';
+
+/** What `currentLabelStyle()` answers — named here so the glyph code below reads. */
+type LabelStyle = ReturnType<typeof currentLabelStyle>;
 
 /**
  * One diatonic step, in metres. Two steps make a staff space, so the printed
@@ -1143,6 +1148,16 @@ export class SongNotes {
   private readonly sparksPerHit: number;
 
   private readonly atlas: CanvasTexture;
+  /**
+   * Which glyph set the atlas's note cells currently carry (task 191 piece
+   * 3, closing the arc pieces 1/2a/2b left open). Not a settings mirror to
+   * keep in sync — it is the *only* record of what is painted, read back
+   * every frame in `update` against `currentLabelStyle()` so a toggle
+   * flipped in free play (a separate screen, a separate `SongNotes`
+   * instance's worth of state) is caught here too. See `repaintNoteGlyphs`
+   * for why a mismatch means a repaint rather than a rebuild.
+   */
+  private atlasStyle: LabelStyle = 'letter';
 
   private beats: readonly SongBeat[] = [];
   /** Where in `beats` the visible window starts. Only ever moves forward. */
@@ -1229,7 +1244,8 @@ export class SongNotes {
     // only ever be wrong.
     this.group.frustumCulled = false;
 
-    this.atlas = buildGlyphAtlas();
+    this.atlasStyle = currentLabelStyle();
+    this.atlas = buildGlyphAtlas(this.atlasStyle);
 
     // The lighting model is read out of a painterly shader rather than copied
     // into this file. See `painterlyConstant` for the drift that cost.
@@ -1530,6 +1546,18 @@ export class SongNotes {
    * feel "off" without anyone being able to say why.
    */
   update(nowMs: number): void {
+    // A read, not a subscription: `currentLabelStyle()` is a module-scope
+    // variable behind a getter, so this costs one string compare a frame —
+    // cheaper than plumbing a change event through free play, `RoadStage`
+    // and this class for something that changes at most a few times a
+    // session. See `repaintNoteGlyphs` for why this rewrites cells in place
+    // rather than growing the atlas.
+    const style = currentLabelStyle();
+    if (style !== this.atlasStyle) {
+      this.atlasStyle = style;
+      repaintNoteGlyphs(this.atlas, style);
+    }
+
     const dtMs = Math.min(100, Math.max(0, nowMs - this.nowMs));
     this.nowMs = nowMs;
     if (!this.group.visible) return;
@@ -2763,8 +2791,14 @@ const HEAD_RY = 21;
  * coverage is read), the letter is composited in with `lighter` so it lands
  * in green *without* punching a hole in the body underneath. One texture
  * fetch then gives the shader both masks.
+ *
+ * `style` picks what the twenty-eight note cells' letters actually say
+ * (task 191): `letterForStep` or `solfegeAtStep`. The cell layout — which
+ * (letterIndex, stem, ledger) combination lives at which index — does not
+ * change with it; only the pixels painted into each cell do. See
+ * `repaintNoteGlyphs` for why that is the whole point.
  */
-function buildGlyphAtlas(): CanvasTexture {
+function buildGlyphAtlas(style: LabelStyle): CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = ATLAS_COLS * ATLAS_CELL_PX;
   canvas.height = ATLAS_ROWS * ATLAS_CELL_PX;
@@ -2772,17 +2806,12 @@ function buildGlyphAtlas(): CanvasTexture {
   if (!ctx) throw new Error('no 2d context for the note atlas');
 
   for (let cell = 0; cell <= REST_CELL; cell++) {
-    const col = cell % ATLAS_COLS;
-    const row = Math.floor(cell / ATLAS_COLS);
-    ctx.save();
-    ctx.translate(col * ATLAS_CELL_PX + ATLAS_CELL_PX / 2, row * ATLAS_CELL_PX + ATLAS_CELL_PX / 2);
-    if (cell === REST_CELL) drawRest(ctx);
-    else drawNote(ctx, cell);
-    ctx.restore();
+    paintGlyphCell(ctx, cell, style);
   }
 
   // The three accidental marks (task 165) in the atlas's three spare cells.
-  // Body channel only — an accidental carries no letter.
+  // Body channel only — an accidental carries no letter, so no label style
+  // ever touches these three.
   const accidentals: Array<[number, 'sharp' | 'flat' | 'natural']> = [
     [SHARP_CELL, 'sharp'],
     [FLAT_CELL, 'flat'],
@@ -2807,11 +2836,79 @@ function buildGlyphAtlas(): CanvasTexture {
   return texture;
 }
 
-function drawNote(ctx: CanvasRenderingContext2D, cell: number): void {
+/**
+ * Paint one atlas cell (a pitched note, or the rest at `REST_CELL`) at its
+ * fixed grid position. Shared by the initial build and by
+ * `repaintNoteGlyphs`'s in-place redraw, so the two can never paint a cell
+ * two different ways.
+ *
+ * `clearRect` first: on the initial build the canvas is already blank and
+ * this is a no-op, but a redraw is painting over a previous letter's
+ * pixels, still present in both channels this file uses (`lighter`
+ * compositing adds the new letter's green rather than replacing it). Skip
+ * the clear and a family that has toggled the style twice would be reading
+ * two solfège syllables laid on top of each other.
+ */
+function paintGlyphCell(ctx: CanvasRenderingContext2D, cell: number, style: LabelStyle): void {
+  const col = cell % ATLAS_COLS;
+  const row = Math.floor(cell / ATLAS_COLS);
+  ctx.clearRect(col * ATLAS_CELL_PX, row * ATLAS_CELL_PX, ATLAS_CELL_PX, ATLAS_CELL_PX);
+  ctx.save();
+  ctx.translate(col * ATLAS_CELL_PX + ATLAS_CELL_PX / 2, row * ATLAS_CELL_PX + ATLAS_CELL_PX / 2);
+  if (cell === REST_CELL) drawRest(ctx);
+  else drawNote(ctx, cell, style);
+  ctx.restore();
+}
+
+/**
+ * Repaint the twenty-eight pitched-note cells in place when the family's
+ * label-style choice changes mid-session (task 191, closing what pieces
+ * 1/2a/2b left open).
+ *
+ * The alternative this file considered and rejected was doubling the atlas
+ * — a second set of twenty-eight cells for solfège, chosen by `cellFor` at
+ * spawn time instead of by a repaint here. That shape has a real cost this
+ * one does not: `cellFor` only runs when a beat *becomes* live (`makeLive`),
+ * so a note already travelling down the ribbon at the moment of a toggle
+ * would keep showing its old label until it was struck or went by and a
+ * fresh one spawned in its place — the ribbon and free play's ladder would
+ * visibly disagree for the length of one flight. Repainting the existing
+ * cells instead means every note on the ribbon, at every stage of flight,
+ * changes label the instant the atlas texture uploads — because the note's
+ * `cell` index never changes, only what is drawn at that index. `cellFor`,
+ * `ATLAS_COLS` and `ATLAS_ROWS` are consequently untouched by this task:
+ * the atlas is still exactly the 32 cells it always was.
+ *
+ * `REST_CELL` and the three accidental cells are not repainted — none of
+ * them carries a letter, so neither label style ever changes their pixels.
+ */
+function repaintNoteGlyphs(atlas: CanvasTexture, style: LabelStyle): void {
+  const canvas = atlas.image as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  for (let cell = 0; cell < REST_CELL; cell++) {
+    paintGlyphCell(ctx, cell, style);
+  }
+  atlas.needsUpdate = true;
+}
+
+/**
+ * The label a note's cell carries: a letter name (`letterForStep`) or, once
+ * a family has switched to solfège (`currentLabelStyle`,
+ * `scaffoldStorage.ts`), the fixed-do syllable (`solfegeAtStep`) for the
+ * same staff position. Both are total over `letterIndex` (0-6, one of the
+ * seven natural letters) and neither ever returns null — a written note on
+ * this staff is always a natural, by the pedagogy's own naturals-only rule.
+ */
+function labelForCell(letterIndex: number, style: LabelStyle): string {
+  return style === 'solfege' ? solfegeAtStep(letterIndex) : letterForStep(letterIndex);
+}
+
+function drawNote(ctx: CanvasRenderingContext2D, cell: number, style: LabelStyle): void {
   const letterIndex = Math.floor(cell / 4);
   const down = (cell & 2) !== 0;
   const ledger = (cell & 1) !== 0;
-  const letter = letterForStep(letterIndex);
+  const label = labelForCell(letterIndex, style);
 
   ctx.fillStyle = 'rgb(255,0,0)';
 
@@ -2845,12 +2942,23 @@ function drawNote(ctx: CanvasRenderingContext2D, cell: number): void {
   // and the letter is the scaffold the whole pedagogy rests on. Measured, a
   // letter at 36 rather than 33 is worth about a fifth of the contrast
   // between a letter and the head it sits in on that screen.
+  //
+  // The same 36px size serves solfège syllables too — deliberately not
+  // shrunk to "make room". Measured in the real font stack (headless
+  // Chromium, this exact font string): the widest syllable, "sol", sets at
+  // 42px against a single letter's widest, "G", at 28px — both comfortably
+  // inside the note head's own rotated footprint, which spans about 55px
+  // (2x sqrt((HEAD_RX·cos34°)² + (HEAD_RY·sin34°)²)) horizontally, itself
+  // well short of the 128px cell. Shrinking the font to "fit" a syllable
+  // that already fits would only have repeated the opacity-fade mistake
+  // DESIGN.md's Pedagogy section rejects for the letters: smaller but still
+  // legible teaches nothing extra and reads worse for no reason.
   ctx.font = 'bold 36px Georgia, "Times New Roman", serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   // Optical centre, not geometric: capital letters in most serif faces sit
   // slightly high of the middle baseline.
-  ctx.fillText(letter, 0, 1.5);
+  ctx.fillText(label, 0, 1.5);
   ctx.globalCompositeOperation = 'source-over';
 }
 
