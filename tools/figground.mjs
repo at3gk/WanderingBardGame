@@ -80,13 +80,40 @@ for (const shot of SHOTS) {
     };
     const RING = Math.max(6, Math.round(bh * 0.22)); // surround radius in px
 
+    // Task 179's residual asks a chromatic question ("what does the
+    // surround behind a PASSING frame share that a failing one doesn't"),
+    // which the L*-only measurement above cannot answer — a bright green
+    // meadow and a bright grey road can share an L* while being nothing
+    // alike as a background. Accumulate mean display RGB alongside L* (A
+    // for the figure — his own rendered pixels — B for the surround, same
+    // convention as everything else here) and report hue/saturation via
+    // the ordinary HSL formula. Approximate on purpose: a mean-of-channel
+    // hue over a whole band is a diagnostic, not a colorimetric claim.
+    const hsl = (r, gg, b) => {
+      const rn = r / 255, gn = gg / 255, bn = b / 255;
+      const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn);
+      const l = (max + min) / 2;
+      if (max === min) return { h: 0, s: 0 };
+      const d = max - min;
+      const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      let h;
+      if (max === rn) h = (gn - bn) / d + (gn < bn ? 6 : 0);
+      else if (max === gn) h = (bn - rn) / d + 2;
+      else h = (rn - gn) / d + 4;
+      return { h: Math.round(h * 60), s: Math.round(s * 100) / 100 };
+    };
+
     const measure = ([y0, y1]) => {
       let fs = 0, fn = 0, bs = 0, bn = 0, behS = 0, behN = 0;
+      let frs = 0, fgs = 0, fbs = 0, srs = 0, sgs = 0, sbs = 0;
       const fig = [], sur = [];
       for (let y = y0; y <= y1; y++) {
         for (let x = Math.max(0, minX - RING); x <= Math.min(w - 1, maxX + RING); x++) {
           const i = y * w + x;
-          if (mask[i]) { fs += LA[i]; fn++; fig.push(LA[i]); behS += LB[i]; behN++; }
+          if (mask[i]) {
+            fs += LA[i]; fn++; fig.push(LA[i]); behS += LB[i]; behN++;
+            const p = i * 4; frs += A[p]; fgs += A[p + 1]; fbs += A[p + 2];
+          }
         }
       }
       // surround: within RING px of a mask pixel (in this band) but not masked
@@ -102,17 +129,24 @@ for (const shot of SHOTS) {
               if (mask[yy * w + xx]) { near = true; break; }
             }
           }
-          if (near) { bs += LB[i]; bn++; sur.push(LB[i]); }
+          if (near) {
+            bs += LB[i]; bn++; sur.push(LB[i]);
+            const p = i * 4; srs += B[p]; sgs += B[p + 1]; sbs += B[p + 2];
+          }
         }
       }
       const med = (a) => { if (!a.length) return 0; a.sort((p, q) => p - q); return a[a.length >> 1]; };
       const r2 = (v) => Math.round(v * 10) / 10;
+      const figHsl = hsl(frs / Math.max(1, fn), fgs / Math.max(1, fn), fbs / Math.max(1, fn));
+      const surHsl = hsl(srs / Math.max(1, bn), sgs / Math.max(1, bn), sbs / Math.max(1, bn));
       return {
         figL: r2(fs / Math.max(1, fn)), figMed: r2(med(fig)), figN: fn,
         surL: r2(bs / Math.max(1, bn)), surMed: r2(med(sur)), surN: bn,
         behindL: r2(behS / Math.max(1, behN)),         // what the road behind the figure reads as
         dL: r2(Math.abs(fs / Math.max(1, fn) - bs / Math.max(1, bn))),
         dLmed: r2(Math.abs(med(fig) - med(sur))),
+        figHue: figHsl.h, figSat: figHsl.s,
+        surHue: surHsl.h, surSat: surHsl.s,
       };
     };
     const res = {};
@@ -134,4 +168,11 @@ for (const r of rows) {
     r.name.padEnd(16) + '|' + pad(r.lower.figL, 9) + pad(r.lower.surL, 9) + pad(r.lower.dL, 8) +
     ' |' + pad(r.lower.behindL, 11) + ' |' + pad(r.full.figL, 8) + pad(r.full.surL, 8) + pad(r.full.dL, 7) +
     ' |' + pad(r.upper.dL, 8));
+}
+console.log('\nshot            | surHue surSat | figHue figSat');
+for (const r of rows) {
+  if (r.err) continue;
+  console.log(
+    r.name.padEnd(16) + '|' + pad(r.full.surHue, 6) + pad(r.full.surSat, 7) +
+    ' |' + pad(r.full.figHue, 6) + pad(r.full.figSat, 7));
 }

@@ -236,6 +236,38 @@ for the full account and the caveat about small far-band bucket counts.
 Each pose gets its own fresh page (a resting pose's camp state was found to
 leak into a later pose sharing one page — see the file's own comment).
 
+## `figground.mjs` / `figground-partition.mjs`
+
+ROADMAP task 179's instrument (built 2026-08-01): silhouette-diff the bard
+by rendering with and without his group visible (`stage.bard.group.visible`
+toggled, same page, same pose — the diff mask, not a guess), then measure
+figure-vs-surround L* (CIE lightness) in a lower ("knees-down") and upper
+band plus the full silhouette, at seven pinned poses spanning the daylight
+hours. `figground-partition.mjs` extends this with an albedo-flood step
+(paint the bard's own materials white and re-render) to separate his own
+pixels from his cast shadow — needed once the panel's "figure vanishes"
+complaint turned out to be shadow-vs-road contrast in some frames, not
+figure-vs-road at all (see ROADMAP task 179's measurement-phase done-note).
+
+**Run 174 addition**: mean hue/saturation (ordinary HSL over the same
+figure/surround pixel sets `dL` already uses) alongside the existing L*
+columns, plus a `behindL` column (the lower band's surround luma with the
+bard hidden — "what does the road actually read as here"). Built to test
+task 179's own original hint — "measure what 03/10 already do right,
+likely the lit road behind the figure" — quantitatively instead of by eye,
+after this residual sat untouched since 2026-08-01 and re-measuring showed
+one pose (04-golden-vista) had gotten worse. It held up: every pose passing
+the figure/ground floor has a bright road behind the bard's legs
+(`behindL` in the high 40s-60s), every failing pose has a dim one (high
+teens to low 30s). See ROADMAP task 179's 2026-09-12 done-note for why that
+confirmed mechanism still doesn't hand this task a safe lever (the color
+script's CARRYING-hours rule and a same-`sunHeight` collision with the
+passing poses both block the obvious next move) and why it moved to
+STATE.md's Blocked on human instead of staying an open engineering item.
+Approximate on purpose: a mean-of-channel hue over a whole band is a
+diagnostic, not a colorimetric claim — good enough to find a clean gap
+between two clusters, not precise enough to tune a shader constant from.
+
 ## `land-histogram.mjs`'s sentinel bug (found run 142, building `fog-hue-band.mjs`)
 
 `land-histogram.mjs` masks the sky by hiding the sky dome and painting the
