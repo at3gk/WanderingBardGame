@@ -296,6 +296,22 @@ makes it long. You do not need to read it top to bottom.
   once network-unblocked and task 189's far-band lead are the two
   remaining open threads; the idea backlog is empty. Next consolidation
   still due around 175 (172 is 7 runs past 165 — three runs out).
+- **Run 173 update**: shipped task 173 piece 1 — verified (rather than
+  assumed) that the walking tune's beat/note timing is already frame-rate
+  independent, and gave it a real regression test: `src/three/fixedStep.ts`
+  extracts `App.ts`'s fixed-step accumulator into pure, testable arithmetic
+  (`fixedStep.test.ts`, 8 new tests), and a live headless-Chromium check
+  confirmed the production `dt` passed into `stage.update()` stays
+  bit-exact regardless of real frame rate (measured at this sandbox's own
+  ~0.8fps, harsher than any real device) and that a real gesture puts the
+  game on the AudioContext-anchored, dt-free clock. See task 173's own
+  piece-1 done-note. NOT closed: the two real-device halves (iOS silent
+  switch, call/backgrounding interruption/resume) are untouched and still
+  need real hardware — task 173 stays open for those. Live queue as of run
+  173: task 173's remaining real-device half (blocked on hardware), wave 20
+  (network-blocked) and task 189's far-band lead are the open threads; the
+  idea backlog is empty. Next consolidation still due around 175 (173 is 8
+  runs past 165 — two runs out).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3871,6 +3887,81 @@ iPad household needs none of it; logged under Blocked on human.
     silent-switch handling (WebKit bug 237322), interruption/resume on
     calls and backgrounding, Low Power Mode's 30fps rAF (WebKit 168837)
     — the beat clock must stay honest at 30fps.
+    **Piece 1 done (2026-09-12, run 173) — the 30fps rAF half verified,
+    with a new regression test; the two real-device halves (silent
+    switch, call/backgrounding interruption) still untested and still
+    genuinely need real hardware.** Went in checking a specific,
+    testable claim rather than assuming it: does `RoadStage`'s beat/note
+    timing actually stay locked to the wall clock when the real frame
+    rate drops, or does it silently ride the frame count the way a naive
+    `dt`-accumulation scheme would? Two independent mechanisms turned
+    out to already do this, neither ever exercised by a test:
+    (1) **`App.ts`'s fixed-step accumulator.** `Stage.update()` has
+    always been called with a *constant* `FIXED_STEP_MS / 1000`
+    (~16.7ms) — never the raw rAF delta — looping the update as many
+    times as needed to catch up to real elapsed time (capped at
+    `MAX_CATCHUP_MS` = 250ms so a backgrounded tab doesn't fire a burst
+    of missed beats at once). That loop lived only inside `frame()`,
+    which touches a live `WebGLRenderer` and so cannot run under this
+    project's Node-environment `vitest` — the same reason there has
+    never been an `App.test.ts`. Pulled the accumulator's actual
+    arithmetic out into `src/three/fixedStep.ts`
+    (`computeFixedSteps`/`FIXED_STEP_MS`/`MAX_CATCHUP_MS`, `App.ts`
+    imports it back — behaviour-preserving, not a redesign) so it can be
+    asserted directly: `fixedStep.test.ts` (8 new tests) checks 1 step
+    per callback at steady 60fps, ~2 steps per callback at steady 30fps,
+    simulated time staying within one step of real elapsed time across
+    ten different steady frame rates and one irregular/stalling
+    sequence, the catch-up cap holding a long stall to ~15 steps instead
+    of replaying it whole, and the sub-step remainder carrying correctly
+    into the next callback (two of these tripped a real floating-point
+    boundary on the first pass — `250 / FIXED_STEP_MS` rounds down to 14
+    by division despite the accumulator's own repeated subtraction
+    landing on 15 — fixed by asserting with `Math.round`/a clear-margin
+    example rather than a razor's-edge equality). (2) **The walking
+    tune's own clock**, separately: `RoadStage.tuneNowMs()` is `(ctx
+    .currentTime - tuneAnchorSec) * 1000` whenever a real `AudioContext`
+    exists — no `dt` term at all, so it cannot be frame-rate coupled by
+    construction; `tuneSimMs` (the fixed-step-accumulated fallback) only
+    matters when there is no audio context, e.g. this repo's own
+    headless checks. Verified BOTH live, in this environment's headless
+    Chromium against the production build (`npm run build && npm run
+    preview`), because neither claim follows from the pure unit test
+    alone — it proves the accumulator's arithmetic, not that the shipped
+    game actually calls it that way: monkey-patched the live `stage
+    .update` to record every `dt` it was actually invoked with over a
+    real multi-second window plus one genuine ~600ms main-thread stall
+    (a `while (performance.now() < until)` spin, which blocks rAF
+    itself, unlike `waitForTimeout`). This sandbox's headless Chromium
+    (SwiftShader, no GPU, contended CPU — STATE.md's process notes
+    already log an 11fps ceiling under contention) turned out to run
+    this scene at an even harsher ~0.8fps here, which if anything made
+    it a stronger test than a real 30fps device: across 75 real
+    `update()` calls spanning that stretch, every single `dt` was
+    bit-exact `FIXED_STEP_MS / 1000` (max deviation 0.000000ms), and one
+    callback alone ran 18-19 fixed steps to catch back up — the
+    mechanism engaging exactly as designed. Separately confirmed `ctx`
+    was a real, running `AudioContext` and `tuneAnchorSec` finite once a
+    real gesture started audio (`RoadStage.onPointerDown` drops any
+    event whose `isPrimary` isn't `true`, and a `PointerEvent`
+    constructor's own default for an unset `isPrimary` is `false` — the
+    first version of this check dispatched a plain synthetic
+    `pointerdown` and silently never started audio at all) — confirming
+    production really does take the dt-free clock, not the fallback.
+    Screenshotted the live pose afterward purely as a sanity check
+    (note ribbon and staff correct, no console errors); `verify-all
+    quick` (`shader-check`) PASS. `npm test` 1383 green (+8), `npm run
+    build` green (933.11 KB vs 933.02 KB — the new module's own small
+    weight). No new runtime dependency. **What this does NOT close**:
+    the silent-switch behaviour (WebKit bug 237322) and interruption/
+    resume across a real phone call or app-backgrounding are exactly as
+    untested as before — nothing here touches `AudioContext` suspend/
+    resume handling, and nothing in this environment can trigger either
+    condition. Direction research: no recommendation in any of the
+    three notes concerns frame-rate/timing robustness; nothing to
+    re-check here. Task 173 stays open for that real-device half —
+    logged as the standing item in STATE's "Needs human playtest",
+    unchanged in substance, now narrower in scope.
 174. **Quality tiers that actually detect.** detectQuality() reads
     Chromium-only deviceMemory, so every iPad lands 'medium'; the 'low'
     tier still enables shadow maps. Detect by GPU/UA signals available
