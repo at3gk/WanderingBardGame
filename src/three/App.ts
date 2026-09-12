@@ -26,6 +26,7 @@ import {
 } from 'three';
 import { createPainterlyGlobals, type PainterlyGlobals } from './painterly';
 import { FinishingPass } from './finishing';
+import { computeFixedSteps, FIXED_STEP_MS } from './fixedStep';
 
 /** Anything the app can run. Stages own their own content and disposal. */
 export interface Stage {
@@ -59,15 +60,6 @@ export interface QualitySettings {
   /** How far the world is drawn, in metres. */
   viewDistance: number;
 }
-
-const FIXED_STEP_MS = 1000 / 60;
-/**
- * If the tab is backgrounded or the main thread stalls, don't try to catch
- * up on minutes of simulation at once — that spikes a frame to seconds and
- * on a rhythm game it would fire every missed beat in one burst. Clamp and
- * let the accumulated time go.
- */
-const MAX_CATCHUP_MS = 250;
 
 /**
  * Everything the tier decision reads, gathered in one bag so the decision
@@ -327,12 +319,12 @@ export class App {
     if (!stage) return;
 
     const frameDt = this.clock.getDelta();
-    this.accumulatorMs = Math.min(this.accumulatorMs + frameDt * 1000, MAX_CATCHUP_MS);
+    const { steps, accumulatorMs } = computeFixedSteps(this.accumulatorMs, frameDt * 1000);
+    this.accumulatorMs = accumulatorMs;
 
-    while (this.accumulatorMs >= FIXED_STEP_MS) {
+    for (let i = 0; i < steps; i++) {
       this.elapsedMs += FIXED_STEP_MS;
       stage.update(FIXED_STEP_MS / 1000, this.elapsedMs / 1000);
-      this.accumulatorMs -= FIXED_STEP_MS;
     }
 
     this.globals.uTime.value = this.elapsedMs / 1000;

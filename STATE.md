@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 172 (next consolidation pass due around run 175; the
+Run counter: 173 (next consolidation pass due around run 175; the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
@@ -94,7 +94,14 @@ mid-session relabels every note already on the ribbon instantly rather
 than only future spawns — closing task 191 end to end across all four
 pieces (1, 2a, 2b, 3); see ROADMAP task 191's own piece-3 done-note for
 the full account, including why doubling the atlas was considered and
-rejected
+rejected; run 173 shipped task 173 piece 1 — verified (rather than
+assumed) that the walking tune's beat/note timing is already frame-rate
+independent, gave it a real regression test (`src/three/fixedStep.ts` +
+`fixedStep.test.ts`), and confirmed live in headless Chromium that the
+shipped `dt` never leaks the real frame rate even at this sandbox's own
+~0.8fps — see the run-173 HANDOFF and ROADMAP task 173's own piece-1
+done-note; the two real-device halves (iOS silent switch, call/
+backgrounding interruption) stay open, unchanged, real-hardware-only
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -209,6 +216,77 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-12 (run 173) — task 173 piece 1: the 30fps beat-clock
+  claim verified, not assumed, with a real regression test.** Full detail
+  in ROADMAP task 173's own piece-1 done-note — short version here. Task
+  173 ("Audio that survives the pocket") has sat untouched in the v1.2
+  queue since 2026-08-01, flagged real-device-only in STATE's "Needs human
+  playtest" for iOS silent-switch behaviour, call/backgrounding
+  interruption, AND "Low Power Mode's 30fps rAF — the beat clock must stay
+  honest." That last clause is not actually real-device-only, and this run
+  checked it rather than continuing to defer it. Two mechanisms already
+  make it true, neither ever tested: (1) `App.ts`'s frame loop has always
+  called `Stage.update()` with a *constant* `FIXED_STEP_MS/1000` (~16.7ms),
+  looping it as many times as needed to catch real elapsed time up (capped
+  at `MAX_CATCHUP_MS` = 250ms) — never the raw, frame-rate-dependent rAF
+  delta — but that loop lives inside `frame()`, which touches a live
+  `WebGLRenderer` and so cannot run under this project's Node-environment
+  `vitest` (no `App.test.ts` has ever existed, same reason `SongNotes`'s
+  canvas code has none). Pulled the accumulator's arithmetic out into
+  `src/three/fixedStep.ts` (`computeFixedSteps`, behaviour-preserving —
+  `App.ts` imports it back) so `fixedStep.test.ts` (8 new tests) can assert
+  it directly: 1 step/callback at 60fps, ~2 steps/callback at 30fps,
+  simulated time within one step of real elapsed time across ten steady
+  frame rates and an irregular/stalling sequence, the catch-up cap holding
+  a stall to ~15 steps instead of replaying it whole. Two of these tripped
+  a genuine floating-point boundary on the first pass (`250 /
+  FIXED_STEP_MS` rounds down to 14 by division despite the accumulator's
+  own repeated subtraction landing on 15) — fixed by testing with a
+  rounding tolerance / a clear-margin example instead of a razor's-edge
+  equality, not by changing the accumulator. (2) The walking tune's own
+  clock is separate and stronger: `RoadStage.tuneNowMs()` is `(ctx
+  .currentTime - tuneAnchorSec) * 1000` whenever a real `AudioContext`
+  exists — no `dt` term at all, so it is frame-rate-coupled to nothing by
+  construction; the fixed-step-accumulated `tuneSimMs` is only a fallback
+  for when there is no audio context (this repo's own headless checks).
+  Verified BOTH live in headless Chromium against the production build,
+  because neither claim follows from the pure unit test alone: monkey-
+  patched the live `stage.update` to record every real `dt` it was called
+  with over a multi-second window plus a genuine ~600ms main-thread stall
+  (a busy-loop that blocks rAF itself, unlike `waitForTimeout`). This
+  sandbox's headless Chromium (SwiftShader, no GPU, contended CPU — see
+  "Process notes" below, which already logs an 11fps ceiling under
+  contention) ran the scene at an even harsher ~0.8fps here — a stronger
+  test than any real device's 30fps, not a weaker one: across 75 real
+  `update()` calls, every single `dt` was bit-exact `FIXED_STEP_MS/1000`
+  (max deviation 0.000000ms), with one callback alone running 18-19 fixed
+  steps to catch back up. Also confirmed `ctx` was a real, running
+  `AudioContext` with `tuneAnchorSec` finite once a real gesture started
+  audio (`RoadStage.onPointerDown` drops any event whose `isPrimary` isn't
+  `true`, and a `PointerEvent`'s own default for an unset `isPrimary` is
+  `false` — the first draft of this check dispatched a plain synthetic
+  `pointerdown` and silently never started audio at all) — confirming
+  production really runs on the dt-free clock, not the fallback.
+  Screenshotted the live pose afterward as a sanity check only (note
+  ribbon and staff render correctly, zero console errors). `npm test` 1383
+  green (+8 — `npm install` first, `node_modules` wasn't present at
+  session start), `npm run build` green (933.11 KB vs 933.02 KB — the new
+  module's own small weight), `verify-all quick` (`shader-check`) PASS. No
+  new runtime dependency. **What this does NOT close**: the silent-switch
+  behaviour (WebKit bug 237322) and interruption/resume across a real
+  phone call or app-backgrounding are exactly as untested as before —
+  nothing here touches `AudioContext` suspend/resume handling, and nothing
+  in this environment can trigger either condition; "Needs human
+  playtest" below is updated to say so precisely rather than leaving task
+  173 as one undifferentiated real-device item. Direction research: no
+  recommendation in any of the three notes concerns frame-rate/timing
+  robustness; nothing to re-check here. Next: task 173's remaining
+  real-device half (blocked on hardware — see "Needs human playtest"),
+  wave 20 (still network-blocked as of run 167's last retest) and task
+  189's far-band lead are the open threads; the idea backlog is empty.
+  Consolidation not yet due (173 is 8 runs past 165, next due around 175 —
+  two runs out).
 
 - **HANDOFF, 2026-09-12 (run 172) — task 191 piece 3: the walk-staff atlas
   learns solfège, closing task 191 end to end.** Full detail in ROADMAP
@@ -4331,8 +4409,15 @@ still needs a human:
   small child, does the 90ms hit window forgive a young hand, does the
   music actually sound cozy on real speakers.
 - **Real-device behaviours headless can't reproduce**: audio resume after
-  backgrounding the tab, gesture lockdown against pinch/double-tap zoom,
-  and the visible-viewport fit on a phone with browser chrome showing.
+  backgrounding the tab (iOS `AudioContext` interruption/resume across a
+  real phone call or app-backgrounding, and WebKit bug 237322's
+  silent-switch behaviour — ROADMAP task 173's still-open half), gesture
+  lockdown against pinch/double-tap zoom, and the visible-viewport fit on
+  a phone with browser chrome showing. NOT on this list any more: whether
+  the beat/note clock stays honest at Low Power Mode's 30fps rAF — that
+  was assumed real-device-only but turned out to be testable headless and
+  was verified live at run 173 (see the run-173 HANDOFF and ROADMAP task
+  173's own piece-1 done-note); a regression test now guards it.
 - **The teaching outcome**, which is the whole point and is not
   measurable here: does a child start naming notes? PLAYTEST.md's round-3
   protocol is written for exactly that.
