@@ -43,6 +43,7 @@ import type { App, Stage } from './App';
 import { CameraRig, type CameraMood } from './CameraRig';
 import { Sky, applyTimeOfDay, skyStateAt } from './sky';
 import { LAND_KEYS } from './landKey';
+import { isPrimaryContact } from './inputGesture';
 import { roadSurfaceHeight, TERRAIN_REACH, WorldStreamer } from './world/WorldStreamer';
 import { Bard } from './actors/Bard';
 import { ContactShadow } from './actors/ContactShadow';
@@ -472,8 +473,10 @@ export class RoadStage implements Stage {
 
   private readonly onPointerDown = (event: PointerEvent) => {
     // Only the primary contact. A second finger landing mid-tune is a hand
-    // shifting grip, not a second note.
-    if (event.isPrimary === false) return;
+    // shifting grip, not a second note. (task 175: pulled into
+    // `isPrimaryContact` so this guarantee is unit-tested, not just DOM
+    // wiring nobody can assert against.)
+    if (!isPrimaryContact(event)) return;
     this.tap();
   };
   private readonly onKeyDown = (event: KeyboardEvent) => {
