@@ -66,6 +66,7 @@ import {
   nextDogTrailRadius,
   withinBand,
 } from './roadStaging';
+import { applyPlaybackAudioSession, type NavigatorWithAudioSession } from '../audio/audioSession';
 import { BOOK_FACE, Hud, type SongEntry } from '../ui/Hud';
 import { FreePlayScreen } from '../ui/freePlayScreen';
 import { ImportSongDialog } from '../ui/importSongDialog';
@@ -2655,6 +2656,18 @@ export class RoadStage implements Stage {
     }
     try {
       const ctx = new AudioContext();
+      // The mute-switch and interruption/backgrounding fixes from
+      // docs/research/mobile-friendly.md finding 2: opt into the playback
+      // audio session (Safari-only, feature-detected — WebKit bug 237322),
+      // and nudge the context awake on any state it didn't ask to be in,
+      // rather than only on the next tap, so a call ending or the tab
+      // regaining focus recovers sound as soon as the OS allows it.
+      applyPlaybackAudioSession(navigator as unknown as NavigatorWithAudioSession);
+      ctx.onstatechange = () => {
+        if (ctx.state !== 'running' && ctx.state !== 'closed') {
+          void ctx.resume().catch(() => undefined);
+        }
+      };
       const master = ctx.createGain();
       master.gain.value = 0.9;
       master.connect(ctx.destination);
