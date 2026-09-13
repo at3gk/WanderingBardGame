@@ -330,6 +330,29 @@ makes it long. You do not need to read it top to bottom.
   far-band lead — all blocked or parked); the idea backlog is still
   empty. Next consolidation due around 175 — one run out, and the
   reasonable default if run 175 also finds nothing fresh to build.
+- **Run 175 update**: CONSOLIDATION, per its own due date and the run-174
+  note above — no fresh idea had turned up, so this ran the drift-control
+  pass instead of forcing a new arc. Drift check over runs 166-174: CLEAN
+  (task 189's fifth piece before parking, task 190's two-piece scatter-
+  anchor arc, task 191's four-piece solfège arc, task 173's first piece —
+  see STATE.md's run-175 HANDOFF for the full account). A code/doc survey
+  found DESIGN.md's "Considered and rejected" list still calling solfège
+  "worth considering later" three runs after task 191 shipped it, plus two
+  in-code comments quoting that stale line — all three fixed; one small
+  unused export (`notation.ts`'s `solfegeAt`) found and deliberately kept,
+  since it's `solfegeAtStep`'s own test oracle, not dead weight.
+  `art-quality.md` gained a findings entry for two process lessons (task
+  190's world-space guarantee not answering `scatter-probe.mjs`'s
+  camera-frame-quadrant question even after shipping; task 179's residual
+  being a confirmed mechanism with no permissible lever, now correctly a
+  human creative-direction call rather than open engineering work).
+  `retention-design.md` and `mobile-friendly.md` both re-checked with no
+  change, task 173's real-device halves narrowed correctly to just the two
+  genuinely hardware-only items. Live queue as of run 175: unchanged from
+  run 174 — task 173's remaining real-device half, wave 20 (retested,
+  still network-blocked), and task 189's far-band lead are the open
+  threads; the idea backlog is still empty. Next consolidation due around
+  185.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135

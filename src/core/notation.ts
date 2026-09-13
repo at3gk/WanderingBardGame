@@ -22,14 +22,13 @@ const NATURALS: ReadonlyArray<{ semitone: number; letter: string }> = [
 ];
 
 /**
- * Fixed-do solfège syllable for each letter (ROADMAP idea backlog /
- * DESIGN.md "Considered and rejected": a locale option, letters first).
+ * Fixed-do solfège syllable for each letter (ROADMAP task 191, shipped
+ * across runs 169-172 as an opt-in toggle in free play, also relabeling
+ * the walk staff's own note ribbon).
  * Fixed rather than movable-do: the game world never modulates key inside
  * Book One, and Book Two's `spellInKey` already carries the letter the
  * signature would need for a movable reading, so a fixed C-major mapping
- * is the one that can't drift out of sync with a key change later. Piece 1
- * only — this table has no reader yet; no UI or settings surface exists to
- * choose it (see DESIGN.md's "Considered and rejected" note on why not).
+ * is the one that can't drift out of sync with a key change later.
  */
 const SOLFEGE: Readonly<Record<string, string>> = {
   C: 'do',
