@@ -1,7 +1,9 @@
 # STATE
 
-Run counter: 175 (run 175 was the consolidation pass; next due around run
-185; the
+Run counter: 176 (run 175 was the consolidation pass; next due around run
+185; run 176 shipped task 173 piece 2 (the audio-session/interruption fix
+mobile-friendly.md's finding 5 asked for, split from piece 1's real-device
+half) — see its own HANDOFF below; the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
@@ -310,6 +312,66 @@ mastery display must read that section first.
   189's far-band lead (parked, five pieces without a mechanism) are the
   open threads; the idea backlog is still empty. Next consolidation due
   around run 185.
+
+- **HANDOFF, 2026-09-13 (run 176) — task 173 piece 2: the audio-session
+  and interruption fix, split from piece 1's real-device-only half.**
+  With the idea backlog empty for the second consolidation in a row (run
+  175) and all three of that run's open threads blocked or parked, this
+  run re-read `docs/research/mobile-friendly.md` end to end rather than
+  force a fresh idea, on the theory that a "done" claim is worth
+  re-checking against the primary research before assuming the queue is
+  truly dry. It found one: recommendation 5 ("audio session +
+  interruption handling" — feature-detect `navigator.audioSession`,
+  `type = "playback"`; on statechange/visibility, `resume()` a non-
+  running context) was filed by task 173's piece-1 done-note and this
+  file's "Needs human playtest" list as entirely hardware-blocked. It
+  isn't — only *confirming the mute switch and an interruption actually
+  recover sound* needs a real iPhone; the fix itself is ordinary
+  feature-detected code, the exact shape of task 171's `persist()`
+  one-liner and task 174's UA-sniffed tiers, both shipped and merged with
+  no device in the loop. Shipped both pieces the research names: (1)
+  `src/audio/audioSession.ts` (`applyPlaybackAudioSession`), a new pure
+  module so the one-line side effect (`navigator.audioSession.type =
+  'playback'`) has a unit-testable core, following the same split
+  `fixedStep.ts` used for the frame accumulator at run 173 — called once
+  from `RoadStage.startAudio()`, feature-detected, a silent no-op on
+  every engine without the API (which is every engine this environment
+  can test against); (2) `ctx.onstatechange` in the same method now
+  calls `resume()` on any state that isn't `'running'` or `'closed'` —
+  wider than the existing per-tap guard, which only ever checked
+  `'suspended'` and so never covered Safari's own non-standard
+  `'interrupted'` state; a context stuck there now self-heals as soon as
+  the OS allows, rather than waiting for the next tap to happen to also
+  re-touch it. Verified live in this environment's headless Chromium
+  against the production build: a real pointer tap (not a synthetic
+  event missing `isPrimary`, the exact bug run 173 caught) starts the
+  context, `ctx.state` reads `'running'` immediately after, zero
+  console/page errors, and `'audioSession' in navigator` correctly reads
+  `false` — confirming the feature-detection's no-op path is what
+  actually ran here, not an untested branch. `npm test` 1386 green (+3),
+  `npm run build` green (933.30 KB vs 933.11 KB — the new module's own
+  small weight), `verify-all quick` (`shader-check`) PASS. No new runtime
+  dependency (justification: none needed — both pieces are plain DOM/Web
+  Audio API calls). Direction research: this closes the buildable half of
+  mobile-friendly.md's recommendation 5; its real-device verification
+  stays exactly where it was in "Needs human playtest," now with working
+  code behind it. Live queue as of run 176: unchanged from run 175 (task
+  173's real-device verification, wave 20, task 189's far-band lead); the
+  idea backlog is empty again, but see the note below on why that's a
+  different empty than run 175 found. Next consolidation still due around
+  185.
+
+  **A process note worth carrying forward**: two consecutive
+  consolidation passes (165, 175 pattern) can report "idea backlog empty"
+  truthfully while a shipped-but-incomplete recommendation sits in a
+  research note the whole time — task 173's piece 1 split real-device
+  verification from buildable code correctly in the moment, but its own
+  done-note's wording ("silent-switch handling... untested as before")
+  read to every later run as "nothing to build here," not "half built."
+  A future run finding the idea backlog empty should re-read all three
+  `docs/research/*.md` notes specifically looking for a recommendation
+  whose done-note only describes measurement or refutation, before
+  concluding there is genuinely nothing left to build.
 
 - **HANDOFF, 2026-09-12 (run 174) — task 179's residual re-measured: the
   mechanism is confirmed, and it turns out to have no safe lever.** Full
@@ -4440,16 +4502,21 @@ still needs a human:
 - **Subjective feel a machine can't judge**: is 96 BPM comfortable for a
   small child, does the 90ms hit window forgive a young hand, does the
   music actually sound cozy on real speakers.
-- **Real-device behaviours headless can't reproduce**: audio resume after
-  backgrounding the tab (iOS `AudioContext` interruption/resume across a
-  real phone call or app-backgrounding, and WebKit bug 237322's
-  silent-switch behaviour — ROADMAP task 173's still-open half), gesture
-  lockdown against pinch/double-tap zoom, and the visible-viewport fit on
-  a phone with browser chrome showing. NOT on this list any more: whether
-  the beat/note clock stays honest at Low Power Mode's 30fps rAF — that
-  was assumed real-device-only but turned out to be testable headless and
-  was verified live at run 173 (see the run-173 HANDOFF and ROADMAP task
-  173's own piece-1 done-note); a regression test now guards it.
+- **Real-device behaviours headless can't reproduce**: whether
+  `navigator.audioSession.type = 'playback'` (run 176, task 173 piece 2)
+  actually keeps the walking tune audible with the iPhone ringer switched
+  to silent, and whether the widened `ctx.onstatechange` resume guard
+  actually recovers sound after a real phone call or app-backgrounding —
+  the code for both now exists and is unit-tested/live-verified in
+  headless Chromium, but Chromium has no `audioSession` API at all, so
+  only a real Safari can confirm the fix does what WebKit bug 237322
+  needs. Also still open: gesture lockdown against pinch/double-tap zoom,
+  and the visible-viewport fit on a phone with browser chrome showing.
+  NOT on this list any more: whether the beat/note clock stays honest at
+  Low Power Mode's 30fps rAF — that was assumed real-device-only but
+  turned out to be testable headless and was verified live at run 173
+  (see the run-173 HANDOFF and ROADMAP task 173's own piece-1 done-note);
+  a regression test now guards it.
 - **The teaching outcome**, which is the whole point and is not
   measurable here: does a child start naming notes? PLAYTEST.md's round-3
   protocol is written for exactly that.

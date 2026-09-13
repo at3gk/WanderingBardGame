@@ -353,6 +353,23 @@ makes it long. You do not need to read it top to bottom.
   still network-blocked), and task 189's far-band lead are the open
   threads; the idea backlog is still empty. Next consolidation due around
   185.
+- **Run 176 update**: with the idea backlog still empty and all three
+  run-175 open threads still blocked or parked, re-read
+  `docs/research/mobile-friendly.md` rather than force a new arc, and
+  found a real gap between what task 173's piece-1 done-note claimed was
+  closed and what the research actually asks for: recommendation 5
+  (audio-session type + interruption resume) was filed as entirely
+  hardware-blocked, but only its *verification* is — the fix itself is
+  buildable, feature-detected code, same shape as several already-shipped
+  mobile-track pieces. Shipped task 173 piece 2: `applyPlaybackAudioSession`
+  (a new pure, tested module) plus a broadened `onstatechange` resume
+  guard in `RoadStage.startAudio()` — see task 173's own piece-2
+  done-note for the full account. Live queue as of run 176: unchanged
+  open threads (task 173's real-device verification, wave 20, task 189's
+  far-band lead); the idea backlog is empty again, now genuinely so
+  rather than un-mined — a future run should re-read all three research
+  notes for the same kind of "claimed done but only half-built" gap
+  before assuming nothing is left.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -4003,6 +4020,42 @@ iPad household needs none of it; logged under Blocked on human.
     re-check here. Task 173 stays open for that real-device half —
     logged as the standing item in STATE's "Needs human playtest",
     unchanged in substance, now narrower in scope.
+    **Piece 2 done (2026-09-13, run 176) — the buildable half of the
+    silent-switch/interruption half, split out from the real-device-only
+    half piece 1 left behind.** Re-reading mobile-friendly.md's finding 2
+    closely found that its own recommendation 5 was never actually built:
+    STATE and this task's piece-1 done-note both filed "silent-switch
+    handling" and "interruption/resume" as purely hardware-blocked, but
+    the research is explicit that only *verifying* them needs a real
+    iPhone — the fix itself is ordinary feature-detected code, the same
+    shape as task 171's `persist()` one-liner or task 174's UA-sniffed
+    tiers, both shipped and merged without a real device in the loop.
+    Two pieces, both in `RoadStage.startAudio()`: (1)
+    `navigator.audioSession.type = 'playback'` (the mute-switch fix WebKit
+    bug 237322 asks for), feature-detected through a new pure module,
+    `src/audio/audioSession.ts` (`applyPlaybackAudioSession`), so the
+    side-effecting one-liner has a unit-testable core the way
+    `fixedStep.ts` gave the frame accumulator one — every other engine,
+    and Safari before it shipped the API, take the no-op path and never
+    throw; (2) `ctx.onstatechange` now nudges `resume()` on any non-
+    running, non-closed state, not only `'suspended'` — the existing
+    per-tap `startAudio()` guard only ever checked `'suspended'`, which
+    does not cover Safari's own non-standard `'interrupted'` state, so a
+    context stuck there after a call could sit silent until the *next*
+    tap happened to also re-create/resume it; now it self-heals as soon
+    as the OS says it may. Verified live in this environment's headless
+    Chromium against the production build: a real pointer tap starts the
+    context, `ctx.state` reads `'running'` immediately after, zero
+    console/page errors, and `'audioSession' in navigator` correctly
+    reads `false` here (Chromium has no such API — confirms the feature
+    detection's no-op path is what actually ran, not an untested branch).
+    `npm test` 1386 green (+3), `npm run build` green (933.30 KB vs
+    933.11 KB), `verify-all quick` (`shader-check`) PASS. No new runtime
+    dependency. **What this still does NOT close**: whether the mute
+    switch or an interruption actually recovers sound on a real iPhone —
+    that verification, and it alone, stays in STATE's "Needs human
+    playtest" real-device list, now with working code behind it to
+    verify rather than a gap to first build.
 174. **Quality tiers that actually detect.** detectQuality() reads
     Chromium-only deviceMemory, so every iPad lands 'medium'; the 'low'
     tier still enables shadow maps. Detect by GPU/UA signals available
