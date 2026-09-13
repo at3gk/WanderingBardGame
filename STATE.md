@@ -1,6 +1,7 @@
 # STATE
 
-Run counter: 174 (next consolidation pass due around run 175; the
+Run counter: 175 (run 175 was the consolidation pass; next due around run
+185; the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
@@ -113,7 +114,8 @@ three of the four failing poses' CARRYING hours, and the fourth
 passing poses, so no sun-height-keyed figure uniform can target it
 without regressing them — see the run-174 HANDOFF and ROADMAP task 179's
 own 2026-09-12 done-note; moved to Blocked on human below rather than
-left looking like unclaimed engineering work
+left looking like unclaimed engineering work; run 175 was the
+consolidation pass (this run) — see its own HANDOFF below.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -214,6 +216,40 @@ and the run-164 daily-seed methodology gap are both harness/process
 lessons, not rendering facts, but they belong in the same running record
 as the earlier ones.
 
+**Run-175 refresh (2026-09-13, consolidation):** no change since the
+run-165 refresh — the v0.9 queue stays complete and the rejected-on-
+principle list re-checked against runs 166-174 (task 189's fifth
+refutation, task 190's scatter-anchor arc, task 191's solfège toggle,
+task 173 piece 1's timing verification, task 179's residual investigation)
+finds nothing to flag: none of the five touches a counter, a timer, a
+grade, or anything exclusive-to-today — solfège in particular is a plain
+either/or preference, not a collection or a gated unlock, so recommendation
+4's "no visible fraction" rule has nothing to check it against.
+`mobile-friendly.md`'s URGENT save-protection item stays shipped and
+unchanged; task 173, its one open v1.2 item, is now HALF closed — piece 1
+(run 173) verified the beat clock survives 30fps rAF with a real
+regression test, so the "Needs human playtest" list below is narrowed to
+the two real-device-only halves (iOS silent switch, call/backgrounding
+interruption) that genuinely need hardware this environment doesn't have.
+`art-quality.md` gained a new findings entry this run (see there) covering
+both process lessons the 166-174 block taught: task 190's world-space
+guarantee not answering `scatter-probe.mjs`'s camera-frame-quadrant
+question even after being wired in and measured, and task 179's residual
+being a quantified, confirmed mechanism with no permissible lever (blocked
+on a creative-direction call, not more engineering) — plus the process
+note that the residual itself went unnoticed by six straight consolidation
+passes before run 174 caught it, a reminder that a drift check only
+catches what it thinks to look for. Code/doc survey of the block's touched
+files (`notation.ts`, `scaffoldStorage.ts`, `App.ts`, `RoadStage.ts`,
+`fixedStep.ts`, `SongNotes.ts`, `WorldStreamer.ts`, `freePlayScreen.ts`,
+`tools/figground.mjs`, `tools/far-band-objects.mjs`) found the two new
+mechanisms (the scatter anchor, the solfège toggle) both genuinely wired
+into real app code, not just tests, but DESIGN.md's "Considered and
+rejected" list still called solfège "worth considering later" a full three
+runs after it shipped — fixed, along with the two in-code comments
+(`notation.ts`, `scaffoldStorage.ts`) that had quoted that stale text as
+their own justification for calling the feature unbuilt.
+
 ## The true goal (standing pointer)
 
 DESIGN.md's "The true goal" section (2026-07-31, human-grilled to shared
@@ -228,6 +264,52 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-13 (run 175) — CONSOLIDATION (drift control, every
+  ~10th run; last was 165).** Drift check over runs 166-174: CLEAN on
+  systems/mechanic drift — every run in the block was one of four named
+  threads (task 189's fifth and final piece before parking, task 190's
+  two-piece scatter-anchor arc, task 191's four-piece solfège arc, task
+  173's first piece), each a readout, a measurement, or a small opt-in
+  addition on the existing world; nothing became a system the player
+  manages, the one-core-mechanic test DESIGN.md's drift-control section
+  asks every consolidation to re-apply. `npm test` 1383 green (unchanged),
+  `npm run build` green (933.11 KB, unchanged — this run's changes are
+  docs and comments only, no game code touched), `verify-all quick`
+  (`shader-check`) PASS. Re-tested wave 20's network block (still 403 on
+  both `ashorthike.com` and `store.steampowered.com`, unchanged).
+  Code/doc survey (an Explore-agent pass over every file the block
+  touched, per the run-157/165/145 pattern) found the two new mechanisms
+  shipped this block (the large-form scatter anchor, the solfège toggle)
+  both genuinely wired into real app code, confirmed one small unused
+  export (`solfegeAt` in `notation.ts`) but kept it rather than deleting
+  it — it's the semitone-keyed oracle `solfegeAtStep`'s own regression
+  test cross-checks against, the same role `noteNameAt` plays for its
+  letter-keyed sibling, not dead weight — and found real doc staleness:
+  DESIGN.md's "Considered and rejected" list still called solfège "worth
+  considering later" three runs after task 191 shipped it, and two in-code
+  comments (`notation.ts`, `scaffoldStorage.ts`) had quoted that stale
+  line as their own reason to call the walk staff's reader unbuilt, when
+  task 191 piece 3 (run 172) built exactly that. All three fixed — see
+  DESIGN.md's own "Considered and rejected" section, now folded into a
+  short shipped-feature note instead. `art-quality.md` gained a new
+  findings entry (see the Direction research refresh below and the file
+  itself) for two lessons the block taught: a world-space per-chunk
+  placement guarantee (task 190) doesn't move a camera-frame-quadrant
+  metric even after being wired in and verified live, and a fully
+  quantified, confirmed mechanism (task 179's residual) can still have no
+  permissible lever once it collides with an authored constraint — that's
+  a creative-direction call, not more engineering. Compressed the three
+  individual HANDOFF blocks for run 166 (task 189 piece 5), run 167 (task
+  190 piece 1) and run 172 (task 191 piece 3) into one run-index paragraph
+  covering runs 166-173, matching the run-165/145 pattern — this file
+  4616 → 4474 lines from that edit alone, before this HANDOFF's own text.
+  Live
+  queue as of run 175: unchanged from run 174 — task 173's remaining
+  real-device half (hardware-blocked), wave 20 (network-blocked), and task
+  189's far-band lead (parked, five pieces without a mechanism) are the
+  open threads; the idea backlog is still empty. Next consolidation due
+  around run 185.
 
 - **HANDOFF, 2026-09-12 (run 174) — task 179's residual re-measured: the
   mechanism is confirmed, and it turns out to have no safe lever.** Full
@@ -344,147 +426,41 @@ mastery display must read that section first.
   Consolidation not yet due (173 is 8 runs past 165, next due around 175 —
   two runs out).
 
-- **HANDOFF, 2026-09-12 (run 172) — task 191 piece 3: the walk-staff atlas
-  learns solfège, closing task 191 end to end.** Full detail in ROADMAP
-  task 191's own piece-3 done-note — short version here. Pieces 2a/2b
-  (runs 170-171) left the walk staff's `SongNotes.ts` letters-only because
-  its 128px-per-cell canvas atlas is fixed-size and fully packed (32/32
-  cells) — a real layout question, not a text swap. Considered doubling
-  the atlas (a second 28-cell solfège set, chosen at spawn time like task
-  178's import formats or task 165's key signature each added a fixed
-  block of cells) and rejected it: `cellFor` only runs when a beat becomes
-  live, so a note already travelling at the moment of a toggle would keep
-  its old label until it cycled out, splitting the ribbon against itself
-  mid-flight — worse than the split piece 2b already accepted between
-  screens. Shipped instead: the SAME 32 cells, repainted in place.
-  `drawNote` takes a `style` and draws `solfegeAtStep` in place of
-  `letterForStep` for the 28 note cells only; `SongNotes.update` compares
-  `currentLabelStyle()` against a new `atlasStyle` field once a frame (one
-  string compare) and calls `repaintNoteGlyphs` on a mismatch — clears and
-  redraws those cells into the *same* canvas region, `atlas.needsUpdate =
-  true`, no new texture, no new uniform. Because a note's `cell` index
-  never changes, every note already on the ribbon relabels the instant the
-  repaint uploads — not just future spawns. `ATLAS_COLS`/`ATLAS_ROWS`/
-  `cellFor` are untouched; the atlas is still the 32 cells it always was.
-  Font size stayed at the existing 36px rather than shrinking for the
-  wider text: measured in this environment's headless Chromium against the
-  exact font string `drawNote` uses, the widest syllable ("sol", 42px)
-  and the widest letter ("G", 28px) both sit well inside the note head's
-  own ~55px rotated footprint, itself well inside the 128px cell — nothing
-  to make room for. Verified live end to end (built + served the
-  production bundle, `window.bard.pose` to frame the ribbon, real
-  `pointerdown` dispatch on free play's actual toggle link — a plain
-  `click` event does nothing, the first attempt at this check found that
-  the hard way): screenshots show "D"/"G" on the staff, then "re"/"sol"
-  after toggling solfège through free play's real UI, then "D"/"G" again
-  after toggling back — legible, centred, no clipping into the ledger/stem
-  art, no bleed into a neighbouring cell, zero console errors. Also
-  confirmed via the atlas canvas's own pixel data: the red (body) channel
-  count is identical before/after (2066 — the note shapes never change)
-  while green (letter) rises 238 → 459 in a toggle and returns to 238 on
-  the way back. `npm test` 1375 green (unchanged — canvas-drawing code has
-  no dedicated test file in this project, same as `buildGlyphAtlas`/
-  `drawNote` always have been: `vitest.config.ts` runs in a Node
-  environment with no `document`, so live verification is the check for
-  this class of code, not a gap), `npm run build` green (933.02 KB vs
-  932.67 KB — the new functions' own weight), `verify-all quick`
-  (`shader-check`) PASS. No new runtime dependency. Task 191 (solfège
-  syllables, promoted off the idea backlog at run 169) is now closed end
-  to end across all four pieces (1, 2a, 2b, 3). Direction research: no
-  recommendation in any of the three notes touches note-label rendering;
-  nothing to re-check here. Next: wave 20 (still network-blocked as of
-  run 167's last retest) and task 189's far-band lead are the two
-  remaining open threads; the idea backlog is empty. Consolidation not yet
-  due (172 is 7 runs past 165, next due around 175 — three runs out).
-
-- **HANDOFF, 2026-09-10 (run 167) — task 190 piece 1: the scatter
-  lower-left question resolved to a design shape, and its guarantee
-  function shipped.** Full detail in ROADMAP task 190's own piece-1
-  done-note — short version here. Re-tested wave 20's network block first
-  (still 403 CONNECT on both `ashorthike.com` and `store.steampowered.com`
-  from this session's proxy policy — unchanged from every prior check), so
-  the run's slot went to the other standing thread: the run-136 backlog
-  item asking whether a `waysideSentinelSites`-style guarantee for
-  large-form scatter (rock/shrub/log) would read as "the world was
-  arranged for the camera." Answer: not if it's shaped like the tree
-  guarantee. `waysideSentinelSites`'s own section comment already states
-  the standing rule this file holds everywhere else — placement is a pure
-  function of road position and seed, never of the camera — and its
-  guarantee explicitly does NOT promise an anchor in every frame, only a
-  per-chunk, per-side cadence. A screen-quadrant-conditioned rule would be
-  a first and a real architecture break; a world-space per-chunk per-side
-  one is exactly precedented. Shipped `largeFormAnchorSites`
-  (`WorldStreamer.ts`, mirroring `waysideSentinelSites` in shape and
-  constants family) plus `largeFormAnchors.test.ts` (8 tests, one-for-one
-  with `waysideSentinels.test.ts`'s own suite). One sizing finding along
-  the way: rock/shrub/log's existing bands run 44-72 m off the centreline
-  (`VERGE.*` + each kind's `spread`) — far wider than the tree band — so a
-  naive "guarantee somewhere in the existing band" would not have touched
-  the near-camera problem at all; the new guarantee gets its own [7, 15] m
-  near band instead, chosen to clear the sentinel band (ends 5.9 m) and to
-  sit inside all three kinds' own legal range at once, so piece 2 can pick
-  any of the three at a guaranteed site without a fallback. Deliberately
-  NOT wired into `buildScatter` this run — piece 2's job, per the same
-  split `waysideSentinelSites` itself went through. `npm test` 1364 green
-  (8 new — `npm install` first, `node_modules` wasn't present at session
-  start), `npm run build` green (930.29 KB, unchanged — the new export is
-  unreferenced so far and tree-shakes out), `verify-all quick`
-  (`shader-check`) PASS (installed `playwright@1.56.1` ad hoc into
-  `/tmp/pw-install` per `tools/README.md`, never a project dependency; this
-  session's pre-installed Chromium at `PLAYWRIGHT_BROWSERS_PATH` resolved
-  automatically via `browser.mjs`'s existing probe). Direction research:
-  this run's scope was rendering/world-generation placement logic with no
-  live wiring yet, so no gameplay, save-path, or shipped-visual change to
-  re-check any of the three research notes' recommendations against; when
-  piece 2 actually changes what a player sees, that's the piece to check
-  `art-quality.md` against, not this one. Next: task 190 piece 2 (wire the
-  guarantee into `buildScatter`'s per-chunk build — choosing which of
-  rock/shrub/log to draw at each site, excluding ground a sentinel/
-  landmark/dressing/river already claims — then re-run `scatter-probe.mjs`
-  to confirm the empty-quadrant rate actually drops); wave 20 remains
-  blocked. Consolidation not yet due (167 is 2 runs past 165, next due
-  around 175).
-
-- **HANDOFF, 2026-09-10 (run 166) — task 189 piece 5: the object-mix
-  ablation, and a sharper daily-seed finding.** Full detail (every
-  category's numbers, per pose) is in ROADMAP task 189's own piece-5
-  done-note — short version here. Piece 4 left "object mix at the far row
-  band" as the one untried lead. `tools/far-band-objects.mjs` (new)
-  extends fog-hue-band.mjs's far-band hueSpread measurement with a
-  same-session `.visible` toggle per whole object category (scatter,
-  trees, landmarks — drawn from `WorldStreamer.ts`'s own name families),
-  the same ablation method piece 3 used on the land key. Result: no
-  category holds up as a general cause. Landmarks collapse
-  `10-tablet-afternoon`'s gap 91% (a real, large effect) but are inert on
-  `03-noon` and both flat controls — a placement coincidence (a camp
-  happens to sit in that pose's far band), not a mechanism. Trees move
-  every pose but in OPPOSITE directions depending which one (collapse
-  toward zero on three poses, more than double it on `03-noon`) — they
-  don't even agree with themselves. Before the object question could even
-  be asked cleanly, this run's *natural* (nothing hidden) readings failed
-  to reproduce the piece 1-4 risen/flat classification at all:
-  `02-morning`, RISEN on every prior day this investigation ran, read
-  flat/negative today (−0.234); `11-morning-vista`, a FLAT control since
-  piece 2, read risen today (+0.127). This is piece 4's `dailySeed()`
-  finding landing again, sharper — it is not just the absolute number
-  that moves day to day, the classification itself (which poses even
-  count as "risen") can flip for coordinates nothing about the session
-  changed. Filed in `art-quality.md`'s findings below, second entry in
-  that pattern. Task 189 is parked, not closed, after five pieces without
-  landing a replacement mechanism — a reasonable stop rather than a sixth
-  toggle. `npm test` 1356 green (unchanged — tools/ only), `npm run
-  build` green (930.29 KB, unchanged), `verify-all quick`
-  (`shader-check`) PASS. No new runtime dependency (Playwright via
-  `PLAYWRIGHT_PATH` against the pre-installed copy, per `tools/README.md`
-  — never a project dependency). Direction research: this run's whole
-  scope was a measurement tool and a written-up refutation, no gameplay,
-  save-path, or rendering change, so none of the three research notes'
-  recommendations need re-checking this run (only their findings section
-  gained an entry, per CLAUDE.md pillar 5's instruction to record what a
-  shipped run teaches even when nothing shipped is gameplay). Next: task
-  189 stays parked — the scatter lower-left design question (run 136,
-  still open) and wave 20 once the network block lifts are the two
-  standing threads; consolidation is not yet due (166 is 1 run past 165).
+- **HANDOFF, 2026-09-10 through 2026-09-12 (runs 166-173, compressed by
+  the run-175 consolidation — see there) — task 189 parks after a fifth
+  refutation, task 190 (the scatter lower-left question) ships and finds
+  its own guarantee narrower than its metric, and task 191 (solfège) ships
+  end to end.** Task 189 piece 5 (166) built `far-band-objects.mjs` and
+  found no object category (scatter/trees/landmarks) holds up as a general
+  cause of the far-band hue-spread rise — the largest single effect
+  (landmarks) doesn't replicate on a second rising pose, and this run's own
+  natural readings broke the risen/flat pose classification every prior
+  piece had carried as settled, a sharper instance of run-165's daily-seed
+  finding. Task 189 stays parked (five pieces, no mechanism), not closed.
+  Task 190 (the run-136 scatter lower-left backlog item) shipped
+  `largeFormAnchorSites` (167) — a world-space, per-chunk placement
+  guarantee for rock/shrub/log mirroring the tree sentinel's own shape,
+  deliberately not camera-aware — then wired it into `buildScatter` (168)
+  and found, by re-running `scatter-probe.mjs`'s own lower-left metric
+  rather than trusting the render check alone, that the guarantee's
+  world-space promise doesn't move a camera-frame-quadrant number; see
+  `art-quality.md`'s new findings entry for the lesson. Task 191 (solfège
+  syllable labels, promoted off the idea backlog) shipped across four
+  pieces: the pure `solfegeAt`/`solfegeAtStep` mapping (169); the label
+  style persisted in `scaffoldStorage.ts`'s existing one-key record (170);
+  a toggle link in free play, the "position → sound → name" screen, wired
+  to it (171, verified live end to end); and the walk staff's own glyph
+  atlas repainting its existing 32 cells in place on a style change so a
+  mid-walk toggle relabels notes already on the ribbon (172, also verified
+  live). Task 173 piece 1 (173) pulled `App.ts`'s fixed-step accumulator
+  into `src/three/fixedStep.ts` and proved, rather than assumed, that the
+  walking tune's beat clock is frame-rate independent — a real regression
+  test plus a live headless-Chromium check at this sandbox's own ~0.8fps.
+  `npm test` 1356 → 1383 across the block, `npm run build` green
+  throughout (930.29 → 933.11 KB), no new runtime dependency, every
+  screen-touching piece verified live before merging. ROADMAP's own
+  numbered done-notes for tasks 189, 190, 191 and 173 carry the full
+  account of each piece.
 
 - **HANDOFF, 2026-09-09 (run 165) — CONSOLIDATION (drift control, every
   ~10th run; last was 157).** Drift check over runs 158-164: CLEAN — the

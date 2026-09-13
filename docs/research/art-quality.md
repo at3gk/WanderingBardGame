@@ -481,6 +481,44 @@ the panels are not asking for fur).
   run-144 finding above; both need the same multi-sample discipline
   before being trusted.
 
+- 2026-09-13 (runs 167-174, folded in by the run-175 consolidation): two
+  more process lessons, neither a rendering fact, both about what a
+  measurement can and cannot promise. (1) **A world-space, per-chunk
+  placement guarantee answers a different question than a camera-frame
+  quadrant check, even after it is wired in, measured, and rendering
+  correctly.** Task 190 built `largeFormAnchorSites` deliberately
+  world-space and per-chunk (piece 1's own architecture argument: a
+  screen-quadrant-conditioned rule would be the first camera-aware
+  placement in the codebase). Piece 2 wired it in, verified live that
+  instances render with zero errors, and re-ran `scatter-probe.mjs`'s
+  exact lower-left-quadrant metric expecting it to move — it came back
+  byte-identical, because a single anchor's fixed world position projects
+  into whichever quadrant a given pose's camera happens to be looking at,
+  not reliably the one the backlog item complained about. The guarantee
+  is real (no stretch of road goes without a large form near it) but
+  `scatter-probe.mjs` was never built to measure that claim, only a
+  narrower camera-specific one — a mismatch between what a tool measures
+  and what a fix promises, caught only because piece 2 re-ran the same
+  metric rather than declaring success from the render check alone. (2)
+  **A quantified, confirmed mechanism can still have no permissible
+  lever.** Task 179's residual (dawn/low-sun figure-ground contrast)
+  sat untouched for 173 runs; run 174 confirmed its own long-standing
+  hypothesis exactly (bright road behind the bard's legs on every passing
+  pose, dim on every failing one, `behindL` 50-61 vs 19-31) and still
+  could not ship a fix — three of four failing poses sit in hours task
+  166's color script marks CARRYING (no ground/sky spend allowed), and the
+  fourth shares its sun height exactly with two passing poses, so no
+  uniform can target it without the regression the task's own brief
+  forbids. Measurement confirming a mechanism is not the same as
+  measurement finding a fix; the task moved to Blocked on human rather
+  than staying open as unclaimed engineering work. A smaller, separate
+  finding from the same investigation belongs in the process record too:
+  the residual was dropped by six consecutive consolidation passes (145
+  through 165) before run 174 re-surfaced it, because nothing in STATE.md's
+  "open threads" list was carrying it forward — a reminder that a
+  consolidation's drift check is only as complete as the list of threads
+  it thinks to check against, not a guarantee against a fully-forgotten one.
+
 ## Source access notes
 
 Reached directly (fetched): adamgryu's effects thread (ThreadReader)

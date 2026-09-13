@@ -71,10 +71,9 @@ export function currentLabelStyle(): 'letter' | 'solfege' {
  * Sets and persists the label style. Called from `freePlayScreen.ts`'s
  * label-style toggle (ROADMAP task 191 piece 2b, run 171) — free play is
  * the "position → sound → name" teaching screen, so that is where a family
- * finds this. `SongNotes.ts`'s walk staff does not read this yet: its
- * fixed single-character glyph cells don't fit multi-letter syllables
- * ("do", "re", "ti") without a layout change piece 2b left for a later
- * piece.
+ * finds this. `SongNotes.ts`'s walk staff reads it too (task 191 piece 3,
+ * run 172): its glyph atlas repaints the same 32 cells in place on a style
+ * change, so a toggle mid-walk relabels every note already on the ribbon.
  */
 export function setLabelStyle(style: 'letter' | 'solfege', state: ScaffoldState): void {
   labelStyle = style;

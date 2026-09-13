@@ -469,8 +469,14 @@ adding the second axis of notation for free.
 - *Rhythm values as held taps*: a hold would change the one input.
   Superseded in v0.3 by writing note values as *spacing* instead — same
   teaching, same single tap (see "Note values" above).
-- *Solfège (do-re-mi) labels*: worth considering later as a locale
-  option; letters first, they're what beginner books here use.
+
+**Solfège (do-re-mi) labels** (task 191, shipped across runs 169-172):
+built as an opt-in toggle, not a locale switch — letters stay the
+default, since beginner books here use them first, but a family can flip
+free play's label toggle to solfège and the walk staff's note ribbon
+relabels too, live, mid-walk. What was once listed above as "worth
+considering later" turned out not to need choosing between the two: both
+coexist, the child's own preference decides.
 
 ## Tone
 
@@ -552,6 +558,48 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   game opens directly into the walk.
 
 ## Changelog
+
+- 2026-09-13 (runs 166-174, consolidated at 175) — **task 190 (the scatter
+  lower-left question) and task 191 (solfège syllables) both ship end to
+  end; task 189 parks after a fifth refutation; task 179's residual is
+  confirmed and moved to a human creative-direction call.** Task 189
+  (piece 5, run 166) tried an object-mix ablation and found no category
+  (scatter/trees/landmarks) holds up as a general cause of the far-band
+  hue-spread rise — parked after five pieces without landing a mechanism,
+  not closed. Task 190 (runs 167-168) shipped a world-space, per-chunk
+  placement guarantee for rock/shrub/log scatter, deliberately not
+  camera-aware on the same architecture grounds as the existing tree
+  sentinel guarantee; wiring it in and re-measuring found the guarantee's
+  own promise (no stretch of road goes without a large form) is real but
+  narrower than the camera-frame-quadrant question the backlog item
+  originally asked — a genuine finding, not a failure, and now in
+  `art-quality.md`. Task 191 (runs 169-172) shipped solfège (do-re-mi)
+  labels as an opt-in toggle living in free play, also relabeling the walk
+  staff's note ribbon live, mid-walk — the "Considered and rejected" note
+  below that once called this a future locale option is corrected further
+  down, since it shipped as a coexisting preference instead of a swap.
+  Task 173 (piece 1, run 173) proved rather than assumed that the walking
+  tune's beat clock survives Low Power Mode's 30fps rAF, with a real
+  regression test; its two real-device-only halves (iOS silent switch,
+  call/backgrounding interruption) stay open, genuinely hardware-blocked.
+  Task 179's residual (run 174) — the dawn/low-sun figure-ground value
+  floor — was re-measured and its mechanism confirmed and quantified
+  (a bright road behind the bard's legs on every passing pose, a dim one
+  on every failing pose), but the fix that data points to is barred by
+  task 166's own color-script rule protecting CARRYING-hour moods from
+  local tweaks; correctly logged as blocked on a human call rather than
+  left looking like unclaimed engineering work. Drift check over the
+  block: CLEAN — every run was one of these four named threads, each a
+  readout, a measurement, or a small opt-in addition, never a new system
+  the player manages. The run-175 consolidation itself found and fixed
+  real but small doc staleness (this file's own solfège note, plus two
+  in-code comments quoting it) and added an `art-quality.md` findings
+  entry for two process lessons: a world-space guarantee and a
+  camera-frame metric can measure genuinely different things even when
+  both are real, and a fully quantified mechanism can still have no
+  permissible lever once it meets an authored constraint. Bundle
+  930.29 → 933.11 KB across the block, still under 20% of the 5 MB
+  budget. NOTHING CUT.
 
 - 2026-09-09 (runs 160-164, consolidated at 165) — **task 186 (stage the
   creatures) closes entirely, and task 189's investigation adds a fourth
