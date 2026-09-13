@@ -267,6 +267,46 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
+- **HANDOFF, 2026-09-13 (run 177) — task 175's residual: palm-rejection
+  pinned with a test, the landscape road re-verified live.** Run 176's own
+  process note said a future run finding the idea backlog empty should
+  re-read all three `docs/research/*.md` notes looking for a
+  recommendation whose done-note only measured or refuted, never built.
+  Did that and found the gap in a ROADMAP task's own text instead of a
+  research note this time: task 175 (touch-target/orientation audit)
+  still carried two residual bullets — "palm-rejection kindness already
+  exists (stray taps are free) — pin it with a test" and "verify the
+  landscape recommendation for the road" — that no later piece of that
+  task had ever picked up. Full detail in ROADMAP task 175's own
+  2026-09-13 done-note. Headline: both closed by pinning/verifying
+  existing behaviour, not by changing any — the same "already built,
+  never marked" shape as tasks 115/119/120, applied to a test gap rather
+  than a feature gap this time. Pulled `RoadStage.onPointerDown`'s inline
+  `isPrimary` guard into `src/three/inputGesture.ts` (`isPrimaryContact`,
+  the same pure-core split `fixedStep.ts`/`audioSession.ts` used) with 3
+  new unit tests, then verified the ACTUAL shipped wiring live in headless
+  Chromium against the production build (not a bypass — task 157/162's
+  own lesson about the difference): monkey-patched the real `stage.tap`,
+  confirmed a synthetic non-primary `pointerdown` mid-busk calls it zero
+  times and a real primary tap right after calls it once. Also re-shot
+  the main walking/busking road (not free play) at 844×390 landscape —
+  `postcard.mjs`'s own `09-phone-landscape` pose — and confirmed by eye
+  it still holds exactly what task 118/94/98 and `hudLayout.test.ts`
+  already established (song title, staff, coin counter, both corner
+  labels all clear of the frame edges and of each other). `npm test`
+  1389 green (+3), `npm run build` green (933.32 KB vs 933.30 KB — the
+  new module's own small weight), `verify-all quick` (`shader-check`)
+  PASS. No new runtime dependency. Direction research: this closes the
+  buildable half of mobile-friendly.md's finding 4 (palm rejection); its
+  landscape-orientation recommendation is now freshly re-confirmed rather
+  than resting on task 118's 2026-08-05 postcard alone. Live queue as of
+  run 177: unchanged from run 176 — task 173's real-device verification,
+  wave 20 (network-blocked), and task 189's far-band lead (parked) are
+  the open threads; the idea backlog is empty, and task 175's remaining
+  bullet (the walk-on door affordance, an input-design question) stays
+  flagged for a human, not a future run. Next consolidation still due
+  around run 185.
+
 - **HANDOFF, 2026-09-13 (run 175) — CONSOLIDATION (drift control, every
   ~10th run; last was 165).** Drift check over runs 166-174: CLEAN on
   systems/mechanic drift — every run in the block was one of four named

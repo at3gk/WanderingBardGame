@@ -4086,6 +4086,65 @@ iPad household needs none of it; logged under Blocked on human.
     item in STATE). Boot-smoked live (high/shadowed on this desktop,
     zero errors). 1156 tests green (+7), build green.
 175. **Touch-target and orientation audit.**
+    **Palm-rejection pinned, and the landscape road re-verified live
+    (2026-09-13, run 177).** Re-read `docs/research/mobile-friendly.md`
+    per run 176's own process note (an idea backlog reading "empty" can
+    still hide a recommendation whose done-note only measured or
+    refuted, never built) and found this task's own text carrying two
+    residual bullets no later piece had touched: "palm-rejection
+    kindness already exists (stray taps are free) — pin it with a
+    test," and "verify the landscape recommendation for the road."
+    Both closed, neither with new behaviour — this is a pin-and-verify
+    piece, not a fix.
+    **Palm rejection**: `RoadStage.onPointerDown`'s `isPrimary === false`
+    guard has always lived inline in a `PointerEvent` listener — DOM-
+    dependent, so, like `App.ts`'s frame loop before task 173's
+    `fixedStep.ts` split and `RoadStage.startAudio()`'s one-liner before
+    task 173 piece 2's `audioSession.ts`, it was never something
+    `vitest` could assert directly. Pulled the predicate out to
+    `src/three/inputGesture.ts` (`isPrimaryContact`, the same
+    behaviour-preserving split those two took — `App.ts`/`RoadStage.ts`
+    import the pure core back, not a redesign), with
+    `inputGesture.test.ts` (3 new tests: accepts a primary contact,
+    rejects a non-primary one, and treats a field left unset as primary
+    rather than as a second contact — the shape a synthetic event with
+    no `isPrimary` set at all takes, which matters because this file's
+    own tests and any future headless check construct events that way).
+    `pickBeat`'s own tests already pinned the *timing* half of "a stray
+    tap costs nothing" (a tap between notes credits nobody); this pins
+    the other half of the same promise, the multi-touch one, which
+    nothing before this run exercised at all.
+    Verified live too, not just at the pure-function level (this file's
+    own history — task 157/162's bypass-vs-real-path lesson — is why):
+    built and served the production bundle, opened a headless Playwright
+    session at 844×390 (phone landscape), monkey-patched the real
+    `stage.tap` (not a bypass — the actual method `onPointerDown` calls),
+    dispatched a synthetic non-primary `pointerdown` on the canvas mid-
+    busk (`tap()` calls: 0, confirming the shipped wiring, not just the
+    extracted predicate, ignores a second contact), then a real primary
+    tap (`tap()` calls: 1, confirming the guard doesn't over-reject).
+    Zero console/page errors throughout.
+    **Landscape road**: `hudLayout.test.ts` already pins the HUD chrome's
+    own layout math at 844×390 in several shapes, and task 118 already
+    closed the busk-caption/staff collision there with a postcard shot —
+    but nothing had re-looked at that pose since. Re-ran the same pose
+    live against today's build (`s: 900, dayFraction: 0.82, phase:
+    'busking'` — `postcard.mjs`'s own `09-phone-landscape`) and
+    screenshotted it fresh: song title clear at the top, the staff's
+    note letters (C/C/D) mid-frame with no collision, the coin counter
+    and both corner labels ("Wayfarer's Lute", "Wandering") sitting
+    clear inside the frame edges on both sides. Holds exactly as task
+    118/94/98 and `hudLayout.test.ts` already established — recorded
+    here as a fresh live confirmation, not a fix, closing this task's own
+    residual bullet rather than leaving it to rot the way task 179's
+    residual did for 173 runs. The other residual bullet, the walk-on
+    door affordance (07), stays exactly where it was: an input-design
+    question flagged for a human, not this run's to answer.
+    `npm test` 1389 green (+3), `npm run build` green (933.32 KB vs
+    933.30 KB — the new module's own small weight), `verify-all quick`
+    (`shader-check`) PASS. No new runtime dependency (Playwright is the
+    existing ad hoc, uncommitted verification tool `tools/README.md`
+    already documents — nothing shipped depends on it).
     **The scrim ruling (2026-08-07, run 127), settling four waves of
     the same mobile verdict.** The no-panel idiom STANDS — no plate,
     no border, no hard edge — and the wash now enforces its own
