@@ -1,5 +1,41 @@
-import { describe, expect, it } from 'vitest';
-import { detectQuality, tierFor, type CapabilityProbe } from './App';
+import { afterEach, describe, expect, it } from 'vitest';
+import {
+  detectQuality,
+  loadQualityOverride,
+  QUALITY_OVERRIDE_KEY,
+  saveQualityOverride,
+  tierFor,
+  type CapabilityProbe,
+} from './App';
+
+// ---------------------------------------------------------------------------
+// Storage stubbing — the same shape as scaffoldStorage.test.ts / keepsake.test.ts
+// ---------------------------------------------------------------------------
+
+function installStorage(impl: Partial<Storage> | null): void {
+  if (impl === null) {
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: undefined });
+    return;
+  }
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: impl });
+}
+
+function memoryStorage(): Storage & { map: Map<string, string> } {
+  const map = new Map<string, string>();
+  return {
+    map,
+    length: 0,
+    clear: () => map.clear(),
+    key: () => null,
+    getItem: (k: string) => map.get(k) ?? null,
+    setItem: (k: string, v: string) => void map.set(k, v),
+    removeItem: (k: string) => void map.delete(k),
+  } as Storage & { map: Map<string, string> };
+}
+
+afterEach(() => {
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: undefined });
+});
 
 /**
  * Task 174: the tier decision, one test per device family. The old rule
@@ -78,5 +114,71 @@ describe('detectQuality', () => {
     expect(
       detectQuality({ ...base, userAgent: UA.desktopChrome, coarse: false, maxTouchPoints: 0, memory: 8, cores: 12 }).shadows,
     ).toBe(true);
+  });
+
+  it('an explicit override beats the probe entirely', () => {
+    // An old iPad would auto-detect to 'low' — a hand override to 'high'
+    // wins anyway, per mobile-friendly.md recommendation 6: the toggle is
+    // for a human who has actually seen the device run, not a corrective
+    // to the probe's own judgment.
+    const q = detectQuality({ ...base, userAgent: UA.oldIpad, cores: 2 }, 'high');
+    expect(q.tier).toBe('high');
+    expect(q.shadows).toBe(true);
+  });
+
+  it('a null override (the default, nothing chosen) falls through to the probe', () => {
+    expect(detectQuality({ ...base, userAgent: UA.oldIpad, cores: 2 }, null).tier).toBe('low');
+  });
+});
+
+describe('quality override storage (ROADMAP task 192 piece 1)', () => {
+  it('defaults to null with no storage at all', () => {
+    installStorage(null);
+    expect(loadQualityOverride()).toBeNull();
+  });
+
+  it('round-trips a chosen tier', () => {
+    installStorage(memoryStorage());
+    saveQualityOverride('low');
+    expect(loadQualityOverride()).toBe('low');
+    saveQualityOverride('high');
+    expect(loadQualityOverride()).toBe('high');
+  });
+
+  it('clearing the override (null) removes the key rather than storing it', () => {
+    const store = memoryStorage();
+    installStorage(store);
+    saveQualityOverride('medium');
+    expect(store.map.has(QUALITY_OVERRIDE_KEY)).toBe(true);
+    saveQualityOverride(null);
+    expect(store.map.has(QUALITY_OVERRIDE_KEY)).toBe(false);
+    expect(loadQualityOverride()).toBeNull();
+  });
+
+  it('rejects garbage and a half-written value rather than trusting it', () => {
+    const store = memoryStorage();
+    installStorage(store);
+    store.map.set(QUALITY_OVERRIDE_KEY, 'ultra');
+    expect(loadQualityOverride()).toBeNull();
+  });
+
+  it('a write that throws (quota, private browsing) is swallowed, not fatal', () => {
+    installStorage({
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('quota');
+      },
+      removeItem: () => {
+        throw new Error('quota');
+      },
+    });
+    expect(() => saveQualityOverride('high')).not.toThrow();
+    expect(() => saveQualityOverride(null)).not.toThrow();
+  });
+
+  it('detectQuality reads the real stored override by default, with no explicit second argument', () => {
+    installStorage(memoryStorage());
+    saveQualityOverride('high');
+    expect(detectQuality({ ...base, userAgent: UA.oldIpad, cores: 2 }).tier).toBe('high');
   });
 });

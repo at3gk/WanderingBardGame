@@ -4232,6 +4232,52 @@ iPad household needs none of it; logged under Blocked on human.
     on a quiet pool against bright sky; 12 reads "this evening" over
     dusk. 1229 tests, build green.
 
+192. **A hand-picked quality tier.** From `docs/research/mobile-friendly.md`
+    recommendation 6: task 174 already made `detectQuality()` fair to Apple
+    hardware and made 'low' genuinely low (no shadow map), but the research
+    also names a second half that never shipped — "add a visible,
+    human-friendly quality toggle at the campfire or title card so the
+    playtest iPad can flip tiers without dev tools," explicitly **not**
+    mid-session auto-degradation, since boot detection can't see thermal
+    throttling and a silent quality drop while the player is looking is
+    worse than an honest slower frame.
+    **Piece 1 done (2026-09-14, run 178) — the storage layer only, no UI
+    yet.** Same shape task 176/177/178/191 all took: a pure, tested data
+    layer before any screen touches it. Re-read all three
+    `docs/research/*.md` notes per run 176's own process note (the idea
+    backlog has read empty for two consolidations running, and that note's
+    whole point was that "empty" can still hide a recommendation whose
+    done-note only measured, never built) and found this one: `App.ts`'s
+    own `quality.tier` bag has never had anything but the automatic probe
+    feeding it. Added `loadQualityOverride`/`saveQualityOverride` next to
+    `detectQuality`/`tierFor`/`readProbe` in `src/three/App.ts` (the same
+    file the tier decision already lives in, rather than a new module —
+    there is no second concern here to split out), storing a plain
+    `QualityTier | null` under its own top-level key, `wb.quality.v1` —
+    deliberately NOT bookmark-keyed like `journey`/`idle`/`learn` are,
+    because two of `profiles.ts`'s bookmarks on one device share one GPU;
+    a hardware fact isn't per-player data. `detectQuality(probe, override)`
+    now takes the override as a second parameter, defaulting to
+    `loadQualityOverride()`, and uses it (`override ?? tierFor(probe)`)
+    ahead of the auto-detected tier — so this piece is genuinely wired into
+    the one call site that matters (`new App(host)` in `main.ts` already
+    calls `detectQuality()` with no arguments) rather than sitting unused
+    the way a from-scratch piece 1 often does; today it is a no-op because
+    nothing can write the key yet. No UI, no campfire/title-card surface —
+    that is piece 2's job, and it is a real design question this piece
+    deliberately didn't answer (does it live at the campfire, the title
+    card, or somewhere else; three-way cycle or an explicit "auto" option;
+    does choosing a tier need a reload to take effect, the same way the
+    keepsake import and the bookmark switch both already do). `npm test`
+    1397 green (+8: an override beating the probe outright, a null
+    override falling through, round-trip/clear/garbage/throw coverage for
+    the storage functions themselves, and `detectQuality` reading a real
+    stored value with no explicit second argument), `npm run build` green
+    (933.57 KB vs 933.32 KB — the new exports' own small weight, not
+    tree-shaken since `detectQuality` already calls `loadQualityOverride`
+    unconditionally), `verify-all quick` (`shader-check`) PASS. No new
+    runtime dependency.
+
 ## The v0.9 queue: "the road home" (human-set, 2026-07-31)
 
 Retention as design work, grounded in docs/research/retention-design.md

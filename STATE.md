@@ -1,9 +1,12 @@
 # STATE
 
-Run counter: 176 (run 175 was the consolidation pass; next due around run
+Run counter: 178 (run 175 was the consolidation pass; next due around run
 185; run 176 shipped task 173 piece 2 (the audio-session/interruption fix
 mobile-friendly.md's finding 5 asked for, split from piece 1's real-device
-half) — see its own HANDOFF below; the
+half); run 177 pinned task 175's palm-rejection residual with a test and
+re-verified the landscape road live; run 178 shipped task 192 piece 1 (a
+hand-picked quality tier's storage layer, mobile-friendly.md
+recommendation 6) — see its own HANDOFF below; the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
@@ -266,6 +269,47 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-14 (run 178) — task 192 piece 1: a hand-picked
+  quality tier's storage layer, no UI yet.** With the idea backlog empty
+  for the third run running and all of run 177's open threads still
+  blocked or parked, re-read all three `docs/research/*.md` notes end to
+  end rather than assume "empty" meant "nothing left" — the exact process
+  run 176's own note asked a future run to follow. Found it in
+  `mobile-friendly.md`'s recommendation 6: task 174 (run in the v1.2
+  arc) shipped the *auto-detection* half — fair tiers for Apple hardware,
+  a genuinely shadowless 'low' — but never the second half the research
+  names explicitly: "add a visible, human-friendly quality toggle at the
+  campfire or title card so the playtest iPad can flip tiers without dev
+  tools," with the research's own caution that this must be a **hand**
+  toggle, never mid-session auto-degradation (boot detection can't see
+  thermal throttling, and a silent quality drop while the player is
+  watching is worse than an honestly slower frame). No toggle, and no
+  storage for one to persist a choice into, existed anywhere in the
+  codebase. Split it the way task 176/177/178/191 all split their own
+  first pieces: pure, tested data layer first, screen later. Full detail
+  in ROADMAP task 192's own piece-1 done-note. Headline: added
+  `loadQualityOverride`/`saveQualityOverride` to `src/three/App.ts`
+  (beside `detectQuality`/`tierFor`/`readProbe`, the tier decision's
+  existing home) under a new top-level key `wb.quality.v1` — deliberately
+  NOT bookmark-keyed the way `journey`/`idle`/`learn` are, since a
+  device's GPU is one fact shared by both of `profiles.ts`'s bookmarks,
+  not per-player progress. `detectQuality()` now takes the override as an
+  optional second parameter (defaulting to `loadQualityOverride()`) and
+  prefers it over the auto-detected tier, so this piece is genuinely
+  wired into the one call site that matters (`new App(host)` in
+  `main.ts`) rather than sitting unreferenced — it is a no-op today only
+  because nothing can write the key yet. Piece 2 (where the toggle lives,
+  campfire vs. title card, three-way cycle vs. an explicit "auto", and
+  whether picking a tier needs a reload the way the keepsake import and
+  bookmark switch both already do) is a real design question, left open
+  on purpose. `npm test` 1397 green (+8), `npm run build` green (933.57 KB
+  vs 933.32 KB — the new exports' own small weight), `verify-all quick`
+  (`shader-check`) PASS. No new runtime dependency. Live queue as of run
+  178: task 192 piece 2 (the toggle itself) is the one new open thread;
+  task 173's real-device verification, wave 20 (network-blocked), and
+  task 189's far-band lead (parked) are unchanged from run 177. Next
+  consolidation still due around run 185.
 
 - **HANDOFF, 2026-09-13 (run 177) — task 175's residual: palm-rejection
   pinned with a test, the landscape road re-verified live.** Run 176's own
