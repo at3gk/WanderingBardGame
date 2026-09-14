@@ -1,13 +1,17 @@
 # STATE
 
-Run counter: 179 (run 175 was the consolidation pass; next due around run
+Run counter: 180 (run 175 was the consolidation pass; next due around run
 185; run 176 shipped task 173 piece 2 (the audio-session/interruption fix
 mobile-friendly.md's finding 5 asked for, split from piece 1's real-device
 half); run 177 pinned task 175's palm-rejection residual with a test and
 re-verified the landscape road live; run 178 shipped task 192 piece 1 (a
 hand-picked quality tier's storage layer, mobile-friendly.md
 recommendation 6); run 179 shipped task 192 piece 2 (the toggle itself, on
-the title card), closing task 192 end to end — see its own HANDOFF below;
+the title card), closing task 192 end to end; run 180 confirmed
+retention-design.md and mobile-friendly.md fully closed against their own
+recommendation lists and shipped task 193 piece 1 (art-quality.md
+recommendation 6's audit + the fog-reach spec in docs/color-script.md) —
+see its own HANDOFF below;
 the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
@@ -271,6 +275,53 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-14 (run 180) — task 193 piece 1: the detail-density
+  audit and the fog reach spec.** With the idea backlog empty and task
+  173's real-device verification, wave 20, and task 189's far-band lead
+  all still blocked or parked (unchanged since run 177), followed run
+  176's own process note and re-read all three `docs/research/*.md`
+  notes end to end rather than assume three runs of "empty" meant
+  nothing was left. This time checked something none of runs 176-179
+  had: whether retention-design.md and art-quality.md's own recommendation
+  lists were as fully mined as mobile-friendly.md's. Confirmed
+  retention-design.md's v0.9 queue (tasks 151-157) is entirely closed and
+  mobile-friendly.md's seven buildout recommendations are now all closed
+  too (task 192, run 179, was the last of them). art-quality.md was the
+  one never checked this way: recommendation 6 ("adopt the detail-density
+  language") had no task number anywhere in ROADMAP.md — a genuine gap,
+  same shape as the mobile-friendly.md ones runs 176/178 found. Full
+  detail in ROADMAP task 193's own piece-1 done-note; headline here.
+  Split the recommendation's two bundled claims: the detail-budget half
+  (bard/instruments/notation/stop-dressing should own the polygon/noise
+  budget while the world simplifies with distance) already holds
+  structurally — task 170's vertex AO is scoped to props/the bard only,
+  the quality tiers reduce world foliage density/view distance without
+  touching the bard/instrument/notation meshes, and `painterly.ts`'s
+  per-material `fogScale` dial exists precisely so the world can be
+  veiled without veiling what the eye should land on — so no code
+  changed there. The fog half is a real, confirmed gap: `uFogNear`/
+  `uFogFar` (`RoadStage.ts`) are set once at scene construction from
+  `TERRAIN_REACH` alone, with no per-hour or per-biome variation and no
+  per-frame hook the way `dusk.ts`'s brightness curve has — "one global
+  near/far" is exactly what ships. Wrote the spec an enacting run needs
+  into `docs/color-script.md`'s new "Fog reach" section (night wants the
+  shortest reach, dawn/golden a longer one, noon the anchor kept close,
+  riverside's water band its own per-biome number) — same split task 166
+  piece 1 used, write the script now, enact it later, since wiring this
+  in is real per-frame-update engineering (most likely riding `dusk.ts`'s
+  hook) and biome-blend transitions need care the reach doesn't pop.
+  `npm test` 1397 green (unchanged — no code touched, docs only),
+  `npm run build` green (unchanged), `verify-all quick` (`shader-check`)
+  PASS. No new runtime dependency. Direction research: this is
+  art-quality.md recommendation 6's first piece; retention-design.md and
+  mobile-friendly.md are both now fully closed against their own
+  recommendation lists (recorded here so a future run doesn't re-check
+  them from scratch). Live queue as of run 180: task 193 piece 2 (wire
+  the per-hour/per-biome fog reach against the new spec) is the one new
+  open thread; task 173's real-device verification, wave 20, and task
+  189's far-band lead are unchanged from run 177-179. Next consolidation
+  still due around run 185.
 
 - **HANDOFF, 2026-09-14 (run 179) — task 192 piece 2: the quality toggle
   itself, closing task 192.** Live queue as of run 178 named this the one
