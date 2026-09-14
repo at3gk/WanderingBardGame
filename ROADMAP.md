@@ -370,6 +370,23 @@ makes it long. You do not need to read it top to bottom.
   rather than un-mined — a future run should re-read all three research
   notes for the same kind of "claimed done but only half-built" gap
   before assuming nothing is left.
+- **Run 180 update**: runs 177-179 closed task 173 piece 2's residual
+  and task 192 end to end, and left the same three open threads (task
+  173's real-device verification, wave 20, task 189's far-band lead)
+  still blocked or parked with the idea backlog empty. Followed run
+  176's own instruction and re-read all three research notes rather
+  than assume "empty" meant "nothing left" a third time: retention-
+  design.md's v0.9 queue (151-157) and mobile-friendly.md's seven
+  buildout recommendations are now BOTH fully closed (checked every
+  recommendation against the code this run), but art-quality.md's own
+  recommendation list had never had the same check — recommendation 6
+  ("adopt the detail-density language") had no task number anywhere in
+  this file. Shipped it as new task 193, piece 1 (the audit + the fog
+  gap's spec — see its own done-note). Live queue as of run 180: task
+  193 piece 2 (wire the per-hour/per-biome fog reach) is the one new
+  open thread; task 173's real-device verification, wave 20, and task
+  189's far-band lead are unchanged. Next consolidation still due
+  around run 185.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -4324,6 +4341,54 @@ iPad household needs none of it; logged under Blocked on human.
     PASS. No new runtime dependency. Closes task 192 end to end: a
     playtest iPad can now flip tiers from the title card with no dev
     tools, which was mobile-friendly.md recommendation 6's whole ask.
+
+193. **Adopt the detail-density language.** From
+    `docs/research/art-quality.md` recommendation 6: "detail signals
+    importance, so the bard, instruments, notation, and stop dressing own
+    the polygon and breakup-noise budget; the world simplifies with
+    distance from the player's attention, and fog tables get per-biome,
+    per-hour authored values as part of the color script rather than one
+    global near/far." Never turned into a task — found by re-reading all
+    three research notes with run 176/178's process note in mind, the way
+    mobile-friendly.md recommendations 5/6 were found; retention-design.md
+    and mobile-friendly.md's own recommendation lists are otherwise fully
+    closed (checked this run), so art-quality.md was the one left
+    unaudited against its own list.
+    **Piece 1 done (2026-09-14, run 180) — the audit, and the fog gap's
+    spec.** Two claims bundled in one recommendation, checked separately.
+    The detail-budget half already holds structurally and needed no new
+    work: task 170's vertex AO is scoped to props/the bard only ("terrain
+    chunks later if it earns it" — its own words), the quality tiers
+    (`detectQuality`) reduce `foliageDensity`/`viewDistance` for the WORLD
+    only and never touch the bard/instrument/notation meshes, and
+    `painterly.ts`'s per-material `fogScale` dial already exists
+    specifically so the world can be veiled without veiling what the eye
+    is meant to land on. The fog half does not hold: `uFogNear`/`uFogFar`
+    (`RoadStage.ts`) are set once at scene construction from
+    `TERRAIN_REACH` alone — no hour, no biome, no per-frame hook (unlike
+    `dusk.ts`'s brightness curve, which already runs every frame) ever
+    touches them, so the "one global near/far" the research names is
+    exactly what ships today. Wrote the spec an enacting run should build
+    against into `docs/color-script.md`'s new "Fog reach" section: per the
+    script's own carries-the-frame table, night wants the shortest reach
+    (its whole structure is "the darkest dark is everything beyond the
+    fire"), dawn/golden want a longer one (value-led hours where light-
+    filled air receding is the point), noon wants the treeline anchor kept
+    close and clear (colour is the hour's one carrying mechanism, and fog
+    desaturates before it helps), and riverside's water band is the one
+    place the reach itself, not just its tint, plausibly needs a per-biome
+    number since fog competing with the mirror would fight the biome's one
+    guaranteed saturated read. Deliberately not wired — `uFogNear`/
+    `uFogFar` being read once at construction rather than per frame makes
+    per-hour authoring a real per-frame-update piece (most likely riding
+    `dusk.ts`'s existing hook), and per-biome needs care that a biome-blend
+    transition cannot pop the reach; both are engineering, not a constant
+    swap, so left for the piece this spec is for. No runtime values
+    changed, no code touched — docs only, matching task 166 piece 1's own
+    split (write the script, enact it later). `npm test` 1397 green
+    (unchanged), `npm run build` green (unchanged), `verify-all quick`
+    (`shader-check`) PASS. No new runtime dependency. Remaining 193: wire
+    the per-hour/per-biome fog reach against this spec.
 
 ## The v0.9 queue: "the road home" (human-set, 2026-07-31)
 

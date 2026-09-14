@@ -195,6 +195,60 @@ structure (darkest dark, lightest light, where the eye lands first)
   in SongNotes guarantees the notation survives this hour; that
   contract predates the script and stands.
 
+## Fog reach (task 193 audit, 2026-09-14)
+
+`art-quality.md` recommendation 6 ("adopt the detail-density language")
+asks for two things: a detail budget that favours the bard/instruments/
+notation/stop-dressing over the world at a distance, and "fog tables
+[that] get per-biome, per-hour authored values as part of the color
+script rather than one global near/far." The first half already holds
+structurally and needed no new work — see the changelog entry for the
+survey. The second half does not: `uFogNear`/`uFogFar`
+(`RoadStage.ts`, near `TERRAIN_REACH * 0.12`/`* 1.47`) are set **once**,
+at scene construction, from `TERRAIN_REACH` alone. No hour, no biome,
+no dusk-cycle brightness (`dusk.ts`, which already runs every frame)
+ever touches them. The reach that "solves for" the treeline keeping
+most of its tone and the ribbon's far edge dissolving to air (the long
+comment at the `RoadStage.ts` call site) is a fact about geometry, not
+about the hour — it is right for every hour at once only by accident.
+
+What the script's own hour table above implies the fog SHOULD do, if it
+carried authored intent instead of one constant:
+
+- **Night** (already "carrying," per its own verdict) wants the
+  shortest reach of the day — the fire is the one light event, and a
+  fog edge that reaches too far dilutes the "everything beyond the
+  fire's reach is the darkest dark" structure the hour is built on.
+  Today's constant fog reach is the same 20m/240m used at noon, which
+  is generous for a frame whose whole point is that little is lit.
+- **Dawn/golden** (both "carrying," value-led hours) want a LONGER
+  reach than noon: these are the hours the raking ladder and the long
+  casts are supposed to recede gradually into light-filled air, not
+  the coloured-shade hours where the treeline anchor needs to stay
+  legible close in.
+- **Noon/noon-village** (the one hour owed work, colour-led) wants the
+  treeline anchor kept CLOSER and clearer — colour is the hour's whole
+  carrying mechanism, and colour reads worst exactly where fog has
+  already desaturated it, so noon can least afford of any hour to let
+  fog eat into the near/mid ground the accent work (166's flower
+  drifts, the village's painted doors) depends on being seen.
+- **Per-biome**, riverside is the one place the reach itself might
+  need to differ rather than just its tint: the water band IS the
+  hour's carrying event (see "The biomes" below), and fog desaturating
+  the mirror before it reaches the camera would compete with the one
+  guaranteed saturated read riverside has.
+
+None of this is wired in this piece — deliberately, matching 166 piece
+1's own split. `uFogNear`/`uFogFar` are read once at construction, not
+per frame, so making them authored-per-hour is a real engineering piece
+(a per-frame update alongside `dusk.ts`'s brightness curve, most likely,
+since that is the existing per-frame hook for "the world darkens
+overnight") and per-biome needs care that a biome-blend transition
+cannot pop the reach — both real work, not a config swap. This section
+is the spec an enacting run should build against, the same role the
+noon colour targets above played for 166's second piece. No runtime
+values changed in this piece.
+
 ## The biomes under the script
 
 The hours modulate three *places* (palette.ts's narrow-family rule —
@@ -227,3 +281,5 @@ one hue family, one dissenter each):
   it. Instrument note: frame-quality's hueSpread cannot see this
   lever (flowers are too few pixels for a percentile spread) — the
   judge is the panel on re-shot noon-village/02/08.
+- 2026-09-14: fog reach audit (193 piece 1, run 180) — see "Fog reach"
+  above. No runtime values changed.
