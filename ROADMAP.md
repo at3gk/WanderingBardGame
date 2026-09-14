@@ -4277,6 +4277,53 @@ iPad household needs none of it; logged under Blocked on human.
     tree-shaken since `detectQuality` already calls `loadQualityOverride`
     unconditionally), `verify-all quick` (`shader-check`) PASS. No new
     runtime dependency.
+    **Piece 2 done (2026-09-14, run 179) — the toggle itself, closing task
+    192.** Answered piece 1's three open questions. **Where**: the title
+    card (`Hud.showTitleCard`), not the campfire. The campfire only exists
+    while resting — a device-level hardware knob has nothing to do with
+    where the bard is standing, and the title card is already the one
+    surface a *returning* player sees on nearly every boot (task 157's
+    "walked" gate), which is exactly when a playtester wants to flip a
+    tier and immediately see the reload. A brand-new player with no
+    journey and no other bookmark never sees the card at all (unchanged),
+    so pillar 1's five-second start is untouched. **Cycle, not a
+    three-way picker**: one tap steps Auto → Low → Medium → High → Auto,
+    reusing the exact "no dismiss, the tap itself reloads" idiom
+    `switchBookmark`'s bookmark door already established two doors up on
+    the same card — one convention for "this tap reloads the page," not
+    two. **Reload, always**: `detectQuality()` is read once at
+    `new App(host)` in `main.ts` and deliberately never re-run
+    mid-session (the research's own no-auto-degradation rule from piece
+    1) — a picked tier has no live-apply path to hook, so the reload
+    piece 1 flagged as an open question is not optional, it is the only
+    way. Added `RoadStage.qualityLabel()`/`cycleQuality()` next to
+    `switchBookmark` (same file, same shape: format the current state,
+    mutate storage, reload) and a fourth optional `qualityDoor` param on
+    `Hud.showTitleCard`, rendered as a fourth, quietest row (13px, below
+    the bookmark door) — unconditional, unlike the bookmark door, since
+    it is not gated on a second bookmark existing. Label reads `Picture
+    quality: Low` when an override is set, or `Picture quality: Auto
+    (Medium)` — naming the tier auto-detection actually landed on — when
+    it is not, so "Auto" is never a mystery word. No `switchBookmark`-style
+    `restoring` guard: that guard exists only because a bookmark switch
+    moves the active pointer before reloading, and cycling quality moves
+    nothing, so the ordinary pagehide save is exactly the right thing to
+    happen on this reload. No vitest coverage — this is DOM event wiring
+    with no pure function to unit-test, the same shape task 176/177/191's
+    screens took — so it was verified live instead, in headless
+    Chromium against the real production build: walked a few seconds to
+    get `totalMetres > 0`, force-saved, reloaded (a real navigation, the
+    way closing and reopening the tab would), then tapped the door four
+    times running and confirmed at every step that `localStorage`,
+    `window.bard.app.quality.tier` (the actual boot, not just the
+    stored intent), and the card's own label all agreed — Auto → Low →
+    Medium → High → Auto — and that the songbook door on the same card
+    still worked afterwards. `npm test` 1397 green (unchanged — no new
+    pure logic), `npm run build` green (934.20 KB vs 933.57 KB — the new
+    DOM/label code's own weight), `verify-all quick` (`shader-check`)
+    PASS. No new runtime dependency. Closes task 192 end to end: a
+    playtest iPad can now flip tiers from the title card with no dev
+    tools, which was mobile-friendly.md recommendation 6's whole ask.
 
 ## The v0.9 queue: "the road home" (human-set, 2026-07-31)
 

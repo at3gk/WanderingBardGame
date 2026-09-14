@@ -1,12 +1,14 @@
 # STATE
 
-Run counter: 178 (run 175 was the consolidation pass; next due around run
+Run counter: 179 (run 175 was the consolidation pass; next due around run
 185; run 176 shipped task 173 piece 2 (the audio-session/interruption fix
 mobile-friendly.md's finding 5 asked for, split from piece 1's real-device
 half); run 177 pinned task 175's palm-rejection residual with a test and
 re-verified the landscape road live; run 178 shipped task 192 piece 1 (a
 hand-picked quality tier's storage layer, mobile-friendly.md
-recommendation 6) — see its own HANDOFF below; the
+recommendation 6); run 179 shipped task 192 piece 2 (the toggle itself, on
+the title card), closing task 192 end to end — see its own HANDOFF below;
+the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
 runs 82+ are the third overnight loop; run 90 was the consolidation pass;
@@ -269,6 +271,39 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-14 (run 179) — task 192 piece 2: the quality toggle
+  itself, closing task 192.** Live queue as of run 178 named this the one
+  open thread, so it's what run 179 picked up. Full detail in ROADMAP
+  task 192's own piece-2 done-note; headline here. It lives on the title
+  card (`Hud.showTitleCard`), not the campfire — a hardware tier has
+  nothing to do with where the bard is standing, and the title card is
+  the one surface a returning player already sees on nearly every boot,
+  which is exactly when a playtester wants to flip a tier. One tap
+  cycles Auto → Low → Medium → High → Auto, reusing the same "the tap
+  itself reloads the page" idiom the bookmark door two rows up already
+  established — `detectQuality()` is read once at boot and deliberately
+  never re-applied mid-session (piece 1's own no-auto-degradation rule),
+  so a reload is the only way a picked tier can actually take hold.
+  Added `RoadStage.qualityLabel()`/`cycleQuality()` beside
+  `switchBookmark` and a fourth `qualityDoor` param on
+  `Hud.showTitleCard`. No vitest coverage — DOM event wiring with no
+  pure function underneath, the same shape task 176/177/191's screens
+  took — verified live instead in headless Chromium against the real
+  production build: walked to get `totalMetres > 0`, force-saved,
+  reloaded like a real tab close/reopen, then tapped the door four times
+  running and confirmed `localStorage`, the actual booted
+  `app.quality.tier`, and the card's own label all agreed at every step
+  (Auto → Low → Medium → High → Auto), and that the songbook door on the
+  same card still worked afterwards. `npm test` 1397 green (unchanged —
+  no new pure logic), `npm run build` green (934.20 KB vs 933.57 KB),
+  `verify-all quick` (`shader-check`) PASS. No new runtime dependency.
+  Direction research: closes mobile-friendly.md recommendation 6 end to
+  end — a playtest iPad can now flip quality tiers with no dev tools.
+  Live queue as of run 179: the idea backlog and the v1.1/v1.3 open
+  threads are unchanged (task 173's real-device verification, wave 20
+  (network-blocked), and task 189's far-band lead (parked) — same three
+  as run 177/178). Next consolidation still due around run 185.
 
 - **HANDOFF, 2026-09-14 (run 178) — task 192 piece 1: a hand-picked
   quality tier's storage layer, no UI yet.** With the idea backlog empty
