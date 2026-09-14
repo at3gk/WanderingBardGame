@@ -97,6 +97,59 @@ function readProbe(): CapabilityProbe {
 }
 
 /**
+ * A hand-picked tier from a future campfire/title-card toggle (ROADMAP task
+ * 192, piece 1 — mobile-friendly.md recommendation 6). `detectQuality()`
+ * silently re-running the probe every boot is the right default, but the
+ * research is explicit that a *hand* toggle is the honest tool for the
+ * devices this game will actually meet — deviceMemory's absence on every
+ * Apple engine already means an old iPad and a new one both read 'medium',
+ * and only a real playtest can tell the two apart. No mid-session
+ * auto-degradation, per the same research: this is read once at boot,
+ * exactly like the probe it can override.
+ *
+ * Deliberately its own top-level key rather than riding a bookmark's — see
+ * `profiles.ts`'s header on why per-player data is bookmark-keyed and a
+ * device's own hardware is not: two bookmarks on one iPad share one GPU.
+ */
+export const QUALITY_OVERRIDE_KEY = 'wb.quality.v1';
+
+/** Matches the storage wrapper idiom in scaffoldStorage.ts / profiles.ts. */
+function storage(): Storage | null {
+  try {
+    const s = globalThis.localStorage;
+    return s ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** The stored override, or null when nothing was ever chosen (or storage is unavailable/unreadable). */
+export function loadQualityOverride(): QualityTier | null {
+  const store = storage();
+  if (!store) return null;
+  try {
+    const raw = store.getItem(QUALITY_OVERRIDE_KEY);
+    return raw === 'low' || raw === 'medium' || raw === 'high' ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Choose a tier by hand, or pass `null` to go back to auto-detection. */
+export function saveQualityOverride(tier: QualityTier | null): void {
+  const store = storage();
+  if (!store) return;
+  try {
+    if (tier === null) store.removeItem(QUALITY_OVERRIDE_KEY);
+    else store.setItem(QUALITY_OVERRIDE_KEY, tier);
+  } catch {
+    // Quota or private browsing: the choice quietly doesn't stick, and the
+    // game boots on whatever the probe decides — the same kind failure
+    // every other storage write in this codebase falls back to.
+  }
+}
+
+/**
  * Which tier a device gets (task 174). The old rule read
  * `deviceMemory ?? 4` — but deviceMemory is Chromium-only, so every
  * Apple device fell through the default and every iPad landed 'medium',
@@ -140,9 +193,12 @@ export function tierFor(probe: CapabilityProbe): QualityTier {
   return 'high';
 }
 
-export function detectQuality(probe: CapabilityProbe = readProbe()): QualitySettings {
+export function detectQuality(
+  probe: CapabilityProbe = readProbe(),
+  override: QualityTier | null = loadQualityOverride(),
+): QualitySettings {
   const dpr = probe.dpr;
-  const tier = tierFor(probe);
+  const tier = override ?? tierFor(probe);
 
   const byTier: Record<QualityTier, QualitySettings> = {
     low: {
