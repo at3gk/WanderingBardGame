@@ -39,7 +39,7 @@
  */
 
 import { Group, Scene, Vector3 } from 'three';
-import type { App, Stage } from './App';
+import { loadQualityOverride, saveQualityOverride, type App, type QualityTier, type Stage } from './App';
 import { CameraRig, type CameraMood } from './CameraRig';
 import { Sky, applyTimeOfDay, skyStateAt } from './sky';
 import { LAND_KEYS } from './landKey';
@@ -675,6 +675,10 @@ export class RoadStage implements Stage {
           open: () => this.switchBookmark(otherBookmark),
         },
         !walked,
+        {
+          label: this.qualityLabel(),
+          cycle: () => this.cycleQuality(),
+        },
       );
     }
   }
@@ -2565,6 +2569,34 @@ export class RoadStage implements Stage {
     this.persist();
     this.restoring = true;
     setActiveBookmark(to);
+    location.reload();
+  }
+
+  /**
+   * The title card's quality door (task 192 piece 2). Names the override
+   * when one is set; otherwise names the auto tier this boot actually
+   * landed on, so "Auto" never reads as a mystery.
+   */
+  private qualityLabel(): string {
+    const names: Record<QualityTier, string> = { low: 'Low', medium: 'Medium', high: 'High' };
+    const override = loadQualityOverride();
+    return override
+      ? `Picture quality: ${names[override]}`
+      : `Picture quality: Auto (${names[this.app.quality.tier]})`;
+  }
+
+  /**
+   * One tap steps Auto → Low → Medium → High → Auto and reloads — the only
+   * way to re-apply a boot-time tier decision, the same reload the
+   * bookmark switch above already relies on. No bookmark pointer moves
+   * here, so `switchBookmark`'s `restoring` guard doesn't apply: the
+   * ordinary pagehide save is exactly what should happen on this reload.
+   */
+  private cycleQuality(): void {
+    const order: (QualityTier | null)[] = [null, 'low', 'medium', 'high'];
+    const current = loadQualityOverride();
+    const next = order[(order.indexOf(current) + 1) % order.length];
+    saveQualityOverride(next);
     location.reload();
   }
 

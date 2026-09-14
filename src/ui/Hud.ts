@@ -964,6 +964,15 @@ export class Hud {
     bookmarkDoor?: { label: string; open: () => void },
     /** True when THIS bookmark has never walked — the card greets a fresh page. */
     fresh = false,
+    /**
+     * The hand-picked quality toggle (task 192 piece 2, mobile-friendly.md
+     * recommendation 6): a device-level door, not a bookmark one, so it
+     * shows every time regardless of `fresh`. One tap cycles Auto → Low →
+     * Medium → High → Auto and reloads — the only way a boot-time tier
+     * decision can actually be re-applied — so a playtest iPad can walk
+     * this door until the picture looks right, with no dev tools.
+     */
+    qualityDoor?: { label: string; cycle: () => void },
   ): void {
     const veil = element('div', {
       position: 'fixed',
@@ -1036,6 +1045,16 @@ export class Hud {
       rows.push(bookmark);
     }
 
+    // Quieter still: a picture-quality toggle is a settings knob, not a
+    // door into the world, and reads that way — smallest text on the card.
+    const quality = qualityDoor
+      ? element('div', { ...doorStyle, fontSize: '13px', color: INK_SOFT, opacity: '0.85' })
+      : null;
+    if (quality && qualityDoor) {
+      quality.textContent = qualityDoor.label;
+      rows.push(quality);
+    }
+
     const dismiss = () => {
       veil.style.opacity = '0';
       veil.style.pointerEvents = 'none';
@@ -1059,6 +1078,15 @@ export class Hud {
         // No dismiss: the switch reloads the page, and a veil that
         // lifted first would flash the wrong bookmark's road.
         bookmarkDoor.open();
+      });
+    }
+    if (quality && qualityDoor) {
+      quality.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        // No dismiss, same reasoning as the bookmark door: the new tier
+        // only takes hold on the reload cycling triggers.
+        qualityDoor.cycle();
       });
     }
 
