@@ -1,7 +1,14 @@
 # STATE
 
-Run counter: 182 (run 175 was the consolidation pass; next due around run
-185; run 176 shipped task 173 piece 2 (the audio-session/interruption fix
+Run counter: 183 (run 175 was the consolidation pass; next due around run
+185; run 183 shipped task 194 piece 1 — `tools/skylight-sat.mjs`, the
+lit-vs-shade terrain saturation instrument task 194 asked for before any
+shader change, run live against the three pinned poses; a real finding
+(saturation rises monotonically with how sun-facing a terrain face is, at
+every hour tried) and a real pitfall (debug shader output must bypass
+`App.renderFrame`'s ACES/LUT finishing pass or it reads back badly
+wrong) are in ROADMAP task 194's own piece-1 done-note and
+`tools/README.md`'s new section; run 176 shipped task 173 piece 2 (the audio-session/interruption fix
 mobile-friendly.md's finding 5 asked for, split from piece 1's real-device
 half); run 177 pinned task 175's palm-rejection residual with a test and
 re-verified the landscape road live; run 178 shipped task 192 piece 1 (a
@@ -282,6 +289,51 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-15 (run 183) — task 194 piece 1: the lit-vs-shade
+  saturation instrument.** Live queue as of run 182 named task 194 (the
+  skylight-ambient-saturation lever, re-filed that same run) the one new
+  unblocked thread, and its own entry already specified the right shape
+  (task 166 piece 1's own precedent): build the measurement before
+  touching the shader. Built `tools/skylight-sat.mjs`. Full technique in
+  the tool's own header comment and `tools/README.md`'s new section;
+  headline here. It freezes the frame (shadowcast.mjs's own technique),
+  swaps every `terrain-<index>` mesh for a tiny debug shader outputting
+  `dot(worldNormal, sunDirection)` as grayscale (terrain only — trees/
+  shrubs/rocks/logs are instanced and this debug material doesn't apply
+  `instanceMatrix`), and compares HSV saturation between painterly.ts's
+  own band1 (shaded, <=0.46)/band3 (lit, >=0.86) luma edges on the
+  pixels a shadow-map diff confirms are genuinely non-cast. Hit and
+  fixed a real pitfall while building it: a debug shader's raw output
+  gets ACES/LUT-graded by `App.renderFrame`'s finishing composite same
+  as real lighting (a constant 0.5 gray came back as 0.80;
+  `material.toneMapped = false` does not stop it), so the two debug
+  passes call `renderer.render()` directly instead — verified live that
+  this round-trips a written constant exactly. Run against shadowcast.
+  mjs's three pinned poses: the strict lit/shade two-bucket compare came
+  back thin or empty at all three (noon especially — the camera mostly
+  frames sun-facing ground, not a face turned away), so a five-bin
+  `litGradient` across the full luma range was added alongside it and
+  that's what actually answers the question. The result is consistent
+  across all three poses: saturation rises monotonically with how
+  sun-facing a terrain face is (dawn 0.227→0.365→0.528; golden
+  0.384→0.67→0.734; noon's two populated bins 0.478→0.555) — the
+  color-script's suspicion holds with real numbers behind it now, at
+  every hour tried, not just noon. Full numbers and the small-sample
+  caveat on noon's own strict `lit` bucket (n=60, noisy) are in ROADMAP
+  task 194's own piece-1 done-note. `npm test` 1407 green (unchanged —
+  `tools/` isn't part of the vitest suite or the build, same as every
+  other tools/*.mjs script), `npm run build` green (934.62 KB,
+  unchanged). No new runtime dependency (Playwright remains installed ad
+  hoc, per tools/README.md). Direction research: none of the three
+  `docs/research/*.md` notes changed — this is art-quality.md's noon
+  shadow-colour thread (task 166/194), already covered there. Live queue
+  as of run 183: task 194 piece 2 (the actual luma-preserving chroma
+  boost on `skyLight`, scaled by `sunAmount` to stay out of the CARRYING
+  hours, verified against this run's baseline numbers) is a new, real,
+  unblocked thread; task 173's real-device verification, wave 20, and
+  task 189's far-band lead are unchanged from run 182. Next consolidation
+  still due around run 185.
 
 - **HANDOFF, 2026-09-15 (run 182) — task 166 piece 6 (audit only): the
   "skylight ambient saturation" remainder, re-measured and re-filed.**
