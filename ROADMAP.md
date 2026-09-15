@@ -4542,6 +4542,40 @@ iPad household needs none of it; logged under Blocked on human.
     stays out of the CARRYING hours (dawn/golden/night) task 166's own
     governance protects. No runtime change this piece — audit and
     re-filing only.
+    **Piece 1 done (2026-09-15, run 183): the instrument itself,
+    `tools/skylight-sat.mjs`.** Built exactly to the shape above — a
+    lit-vs-shade saturation probe on terrain, outside any shadowMask,
+    before touching the shader. Full technique and a real pitfall hit
+    while building it (a debug shader's raw output gets ACES/LUT-graded
+    by the finishing composite same as everything else, so the debug
+    passes must call `renderer.render()` directly rather than
+    `App.renderFrame()`) are in the tool's own header comment and
+    `tools/README.md`'s new section — not repeated here.
+    Run live against shadowcast.mjs's three pinned poses. The strict
+    lit (painterly.ts band3, >=0.86)/shade (band1, <=0.46) two-bucket
+    compare came back thin or empty at all three — noon especially,
+    where the camera mostly frames sun-facing ground, so almost no
+    in-frame terrain sits past *either* edge. Added a `litGradient` (five
+    even luma bins across the full range) alongside the strict buckets
+    so the shape is visible anyway. It is, and it's consistent across
+    all three poses: saturation rises monotonically with how directly a
+    face turns toward the sun — dawn 0.227 (shade, n=20271) → 0.365
+    (n=464844) → 0.528 (n=89930); golden (09-phone-landscape) 0.384
+    (shade, n=743) → 0.67 (n=111073) → 0.734 (n=8960); noon's two
+    populated gradient bins 0.478 (n=70017) → 0.555 (n=726367). The
+    color-script's suspicion holds with real numbers behind it now:
+    `skyLight`'s ambient does read less saturated on a face it alone is
+    lighting, at every hour tried, not just at noon. (Noon's own strict
+    `lit` bucket, n=60, reads lower than its own gradient's top bin,
+    n=726367 — almost certainly edge/highlight noise from a 60-pixel
+    sample, not a real reading; trust the gradient's bins over a
+    thin strict-bucket mean.)
+    **Next**: piece 2 is the luma-preserving chroma boost on `skyLight`
+    itself the original entry describes, scaled by `sunAmount` so it
+    stays out of the CARRYING hours — this instrument is what verifies
+    it moved the right number before/after. Re-run
+    `tools/skylight-sat.mjs` (no arguments) to get fresh before-numbers
+    first; the ones above are the baseline to beat.
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).

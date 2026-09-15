@@ -268,6 +268,52 @@ Approximate on purpose: a mean-of-channel hue over a whole band is a
 diagnostic, not a colorimetric claim — good enough to find a clean gap
 between two clusters, not precise enough to tune a shader constant from.
 
+## `skylight-sat.mjs`
+
+ROADMAP task 194's instrument (built run 183): does a non-cast,
+form-shaded terrain face (a slope turned away from the sun, lit only by
+the sky) actually lose saturation the way `docs/color-script.md`'s noon
+section suspects — the `skyLight` term (`painterly.ts:1604`), not the
+cast-shadow one `shadowcast.mjs` already measures and task 166 already
+fixed. Swaps every `terrain-<index>` mesh (only terrain — trees/shrubs/
+rocks/logs are instanced and this tool's debug material doesn't apply
+`instanceMatrix`) for a tiny debug shader outputting
+`dot(worldNormal, sunDirection)` as grayscale, reads it back, and
+compares HSV saturation between painterly.ts's own band1/band3 luma
+edges (0.46 shaded / 0.86 lit) on the pixels the shadow mask (the same
+sun-off diff `shadowcast.mjs` uses) says are genuinely non-cast.
+
+**The pitfall worth knowing before writing another debug-shader probe**:
+the debug passes must call `renderer.render()` directly, not
+`App.renderFrame()`. A constant 0.5 gray written straight to
+`gl_FragColor` came back as 0.80 through the full pipeline — the
+finishing composite's ACES tonemap + 3D LUT grades the *whole* render
+target, debug shader output included, and `material.toneMapped = false`
+does not stop it (that flag only suppresses a material's own tonemapping
+shader chunk, irrelevant to a post-process that runs after the material
+already wrote its color). Bypassing `finishing` with a direct
+`renderer.render(scene, camera)` call round-trips a written constant
+exactly (0/0.25/0.5/0.75/1.0 → 0/64/128/191/255) — confirmed live while
+building this tool. `base`/`noShadow` (the shadow mask and the actual
+saturation values) still want the full pipeline; only the two debug
+passes bypass it.
+
+Run against the three pinned poses shadowcast.mjs uses: the strict
+lit/shade buckets came back empty or tiny at all three (in-frame terrain
+rarely sits past *either* band edge — noon especially, where the camera
+mostly frames sun-facing ground, not a face turned away). `litGradient`
+(five even luma bins across the full range) reports the shape anyway, and
+it's consistent across all three poses and worth acting on: saturation
+rises monotonically with how directly a face turns toward the sun (dawn
+0.227 → 0.365 → 0.528; golden 0.384 → 0.67 → 0.734; noon's populated bins
+0.478 → 0.555) — the suspicion holds, `skyLight`'s ambient does read
+less saturated on a face it alone is lighting. Treat the strict `lit`
+bucket's own mean with caution when its `n` is small (noon's was 60 out
+of ~800k terrain pixels, likely edge/highlight noise, well below the
+gradient's own top-bin mean from a much larger sample) — the gradient's
+bins are the trustworthy read, the two-bucket numbers are a bonus when
+they happen to have enough pixels behind them.
+
 ## `land-histogram.mjs`'s sentinel bug (found run 142, building `fog-hue-band.mjs`)
 
 `land-histogram.mjs` masks the sky by hiding the sky dome and painting the
