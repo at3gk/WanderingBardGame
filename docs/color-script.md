@@ -152,8 +152,17 @@ structure (darkest dark, lightest light, where the eye lands first)
   levers: lightening shadows (reference shadows are darker than
   ours); darkening the sun angle (measured worse twice); any
   full-frame pass (banned).
-- **Verdict: owed one enacting run (166 second piece), judged on
-  re-shot 03/08/10 + the noon-village pose.**
+- **Verdict: the saturation target is MET (task 166 piece 2, run 69;
+  re-confirmed against `tools/shadowcast.mjs` at 96% kept, 2026-09-15
+  run 182) via the second lever, CAST_SHADOW_HUE's chroma restore —
+  the cheapest lever (skylight ambient saturation) was never tried and
+  is re-filed as its own item, ROADMAP task 194, rather than as an
+  open remainder of this task, since it turned out to feed general
+  shade richness rather than the cast-shadow read this target is
+  stated in. The ≤60° hue figure has no standing instrument that
+  re-tests it the way it was originally specified (shadowcast measures
+  a different, cast-shadow-only quantity) — an instrument gap, logged
+  in task 166 piece 6's own done-note, not a re-opened target.**
 
 ### Afternoon (t 0.7)
 
