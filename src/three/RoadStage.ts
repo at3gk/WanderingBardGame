@@ -43,6 +43,7 @@ import { loadQualityOverride, saveQualityOverride, type App, type QualityTier, t
 import { CameraRig, type CameraMood } from './CameraRig';
 import { Sky, applyTimeOfDay, skyStateAt } from './sky';
 import { LAND_KEYS } from './landKey';
+import { fogReachAt } from './fogReach';
 import { isPrimaryContact } from './inputGesture';
 import { roadSurfaceHeight, TERRAIN_REACH, WorldStreamer } from './world/WorldStreamer';
 import { Bard } from './actors/Bard';
@@ -574,31 +575,12 @@ export class RoadStage implements Stage {
     this.rig.setMood(PHASE_TO_MOOD[this.journey.phase], 0);
 
     // Aerial perspective, stated against the ground's own reach rather than
-    // against the quality tier.
-    //
-    // This has been tuned twice by moving a multiplier on `viewDistance`,
-    // once to 0.55 and once to 1.1, and neither did anything, because the
-    // terrain ribbon only reaches 165 m: at 0.55 the near plane landed on
-    // the last metre of ground and at 1.1 it landed a hundred and sixty-five
-    // metres past it. Both settings meant the same thing — smoothstep's
-    // lower edge at or beyond the furthest fragment, so `distanceFog` was
-    // zero on every surface in the world. The four plain daylight frames
-    // therefore had no distance term of any kind, which is most of why they
-    // measured a total value range of about 1.3:1 from near grass to far
-    // ridge. There is nothing to compose with in 1.3:1.
-    //
-    // The two ends are solved for, not chosen: the sixty-metre treeline is
-    // to keep nearly all of its own tone (about a twelfth veiled) and the
-    // hundred-and-sixty-metre edge of the ribbon is to be mostly air (about
-    // three quarters), and there is exactly one pair of smoothstep edges
-    // that does both. It comes out at twenty metres and two hundred and
-    // forty. That shape — nothing near, a little at the treeline, a great
-    // deal at the limit — is the shape aerial perspective actually has, and
-    // it is the only term in a plain daylight frame that tells the near
-    // ground from the far: both are the same green under the same sun, so
-    // the entire value range between them is made here.
-    app.globals.uFogNear.value = TERRAIN_REACH * 0.12;
-    app.globals.uFogFar.value = TERRAIN_REACH * 1.47;
+    // against the quality tier (the geometry itself, and why it lands at
+    // these particular edges, is `fogReach.ts`'s own doc comment). Left
+    // unset here rather than given a one-time default: `render()` sets it
+    // every frame from the hour and biome before the first paint, same as
+    // every other sky-driven uniform in this file (uSkyColor, uFogColor,
+    // ...), which never get a constructor default either.
 
     this.world.update(this.journey.s);
     this.syncSubject();
@@ -2909,13 +2891,20 @@ export class RoadStage implements Stage {
   render(_alpha: number, frameDt: number): void {
     const state = skyStateAt(this.shownDayFraction);
     applyTimeOfDay(this.app.globals, state, this.app.sun);
+    const biome = biomeAt(this.road, this.journey.s);
     // The land key's colour is the biome's; its strength is the hour's
     // (set inside applyTimeOfDay). Together: daylight binds the green
     // ladder toward the family of wherever the bard stands.
     this.app.globals.uLandKeyColor.value.setHex(
-      LAND_KEYS[biomeAt(this.road, this.journey.s) as keyof typeof LAND_KEYS] ??
-        LAND_KEYS.forest,
+      LAND_KEYS[biome as keyof typeof LAND_KEYS] ?? LAND_KEYS.forest,
     );
+    // Fog reach follows the same hour and biome (task 193 piece 2,
+    // fogReach.ts, wiring the color-script's "Fog reach" spec): night and
+    // noon pull it in, dawn/golden push it out, riverside's water band
+    // gets its own longer reach so fog never desaturates it.
+    const reach = fogReachAt(state.sunDirection.y, biome, TERRAIN_REACH);
+    this.app.globals.uFogNear.value = reach.near;
+    this.app.globals.uFogFar.value = reach.far;
     this.sky.apply(state, this.app.globals.uTime.value);
 
     // Raise or lower tomorrow's road with the phase. A linear ramp rather

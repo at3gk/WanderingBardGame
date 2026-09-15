@@ -387,6 +387,13 @@ makes it long. You do not need to read it top to bottom.
   open thread; task 173's real-device verification, wave 20, and task
   189's far-band lead are unchanged. Next consolidation still due
   around run 185.
+- **Run 181 update**: picked up run 180's one open thread, task 193
+  piece 2 — wired the fog reach spec into `RoadStage.render()` via a new
+  `src/three/fogReach.ts`, closing task 193 end to end. See task 193's
+  own piece-2 done-note for the full account. Live queue as of run 181:
+  task 173's real-device verification, wave 20, and task 189's far-band
+  lead are unchanged and remain the only open threads; the idea backlog
+  is empty again. Next consolidation still due around run 185.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -4389,6 +4396,39 @@ iPad household needs none of it; logged under Blocked on human.
     (unchanged), `npm run build` green (unchanged), `verify-all quick`
     (`shader-check`) PASS. No new runtime dependency. Remaining 193: wire
     the per-hour/per-biome fog reach against this spec.
+    **Piece 2 done (2026-09-15, run 181) — the wiring, closing task 193.**
+    New pure module `src/three/fogReach.ts`: `fogReachMultiplier(sunHeight)`
+    is a single smooth curve (same `smooth01` shape `landKey.ts`/
+    `valueFloor.ts` already use for their own hour bands) rather than eight
+    discrete per-named-hour cases — night ramps up into a dawn/golden
+    plateau spanning sun height 0.06-0.20 (covers golden's 0.12 and dawn's
+    0.16 with no seam), then ramps back down into noon's own low by sun
+    height 0.55. `fogReachAt(sunHeight, biome, terrainReach)` applies that
+    multiplier to both `RoadStage.ts`'s original near/far constants (0.12×/
+    1.47× `TERRAIN_REACH`) equally, so the treeline/ribbon-edge shape those
+    two numbers were originally solved for never distorts — only how far
+    out it sits moves; riverside gets a further ×1.15 on top, independent
+    of the hour, so its water band's guaranteed-saturated read never
+    competes with an encroaching fog edge. Wired into `RoadStage.render()`
+    right where the land key already reads the frame's biome and hour, so
+    `uFogNear`/`uFogFar` are now set every frame like every other sky-driven
+    uniform in the file (`uSkyColor`, `uFogColor`, ...) instead of once at
+    construction — the constructor's old one-time assignment (and the long
+    comment justifying its two constants) is deleted outright rather than
+    left as a stale initial default, since `render()` runs before every
+    paint including the first. 10 new tests in `fogReach.test.ts`, checked
+    against real named-hour sun heights (sky.ts's `SKY_KEYS`) rather than
+    arbitrary points: deep night's own height gives `REACH_NIGHT` exactly,
+    golden's and dawn's both give the same `REACH_HORIZON` plateau, noon's
+    gives `REACH_NOON`, the three are ordered night < noon < horizon per
+    the spec's own three claims, morning/afternoon land strictly between
+    the plateau and noon, the curve never jumps more than a fine step could
+    explain, and the near/far ratio holds at every hour. `npm test` 1407
+    green (+10), `npm run build` green (934.62 KB vs 934.20 KB),
+    `verify-all quick` (`shader-check`) PASS — a real browser now renders
+    the fog edge moving with the hour, not just the sky dome's colour.
+    No new runtime dependency. Closes task 193 end to end (both halves of
+    art-quality.md recommendation 6).
 
 ## The v0.9 queue: "the road home" (human-set, 2026-07-31)
 
