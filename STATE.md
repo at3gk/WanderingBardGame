@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 180 (run 175 was the consolidation pass; next due around run
+Run counter: 181 (run 175 was the consolidation pass; next due around run
 185; run 176 shipped task 173 piece 2 (the audio-session/interruption fix
 mobile-friendly.md's finding 5 asked for, split from piece 1's real-device
 half); run 177 pinned task 175's palm-rejection residual with a test and
@@ -10,8 +10,10 @@ recommendation 6); run 179 shipped task 192 piece 2 (the toggle itself, on
 the title card), closing task 192 end to end; run 180 confirmed
 retention-design.md and mobile-friendly.md fully closed against their own
 recommendation lists and shipped task 193 piece 1 (art-quality.md
-recommendation 6's audit + the fog-reach spec in docs/color-script.md) —
-see its own HANDOFF below;
+recommendation 6's audit + the fog-reach spec in docs/color-script.md); run
+181 shipped task 193 piece 2 (wired the fog-reach spec into
+`RoadStage.render()` via the new `src/three/fogReach.ts`), closing task 193
+end to end — see its own HANDOFF below;
 the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
@@ -275,6 +277,36 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-15 (run 181) — task 193 piece 2: the fog-reach
+  wiring, closing task 193.** Run 180's live queue named this the one new
+  open thread, so it's what run 181 picked up. Full detail in ROADMAP task
+  193's own piece-2 done-note; headline here. New pure module
+  `src/three/fogReach.ts` gives `uFogNear`/`uFogFar` the schedule the
+  color-script spec asked for — a single smooth curve keyed off
+  `sunDirection.y` (the same key `landKey.ts`/`valueFloor.ts` already use
+  for their own hour-band mechanics), rather than eight discrete per-hour
+  cases: night is shortest, a dawn/golden plateau is longest, noon pulls
+  back in for a clear treeline, and riverside gets a further multiplier on
+  top for its water band. Wired into `RoadStage.render()` beside the land
+  key's own biome read, replacing the one-time `TERRAIN_REACH`-derived
+  constant the constructor used to set — deleted outright (with its long
+  justifying comment moved into `fogReach.ts`'s own doc comment) rather
+  than left as a stale default, since `render()` already sets every other
+  sky-driven uniform (`uSkyColor`, `uFogColor`, ...) fresh every frame with
+  no constructor default of its own. 10 new tests, checked against the
+  actual named-hour sun heights from `sky.ts`'s `SKY_KEYS` rather than
+  arbitrary points on the curve. `npm test` 1407 green (+10), `npm run
+  build` green (934.62 KB vs 934.20 KB), `verify-all quick`
+  (`shader-check`) PASS — confirmed live in a real browser that the fog
+  edge itself now moves with the hour, not only the sky dome's colour. No
+  new runtime dependency. Direction research: closes art-quality.md
+  recommendation 6 end to end (both the detail-budget half piece 1 found
+  already held, and the fog half piece 1 found missing). Live queue as of
+  run 181: unchanged from run 180 otherwise — task 173's real-device
+  verification, wave 20 (network-blocked), and task 189's far-band lead
+  (parked) are the three open threads; the idea backlog is empty again.
+  Next consolidation still due around run 185.
 
 - **HANDOFF, 2026-09-14 (run 180) — task 193 piece 1: the detail-density
   audit and the fog reach spec.** With the idea backlog empty and task

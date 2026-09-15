@@ -283,3 +283,9 @@ one hue family, one dissenter each):
   judge is the panel on re-shot noon-village/02/08.
 - 2026-09-14: fog reach audit (193 piece 1, run 180) — see "Fog reach"
   above. No runtime values changed.
+- 2026-09-15: fog reach wired in (193 piece 2, run 181) — `uFogNear`/
+  `uFogFar` now come from `src/three/fogReach.ts` every frame (night
+  shortest, dawn/golden longest, noon short and clear, riverside longer
+  again on top of the hour) instead of the one `TERRAIN_REACH`-derived
+  constant `RoadStage.ts` used to set once at construction. See
+  ROADMAP task 193's own piece-2 done-note for the full account.
