@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 181 (run 175 was the consolidation pass; next due around run
+Run counter: 182 (run 175 was the consolidation pass; next due around run
 185; run 176 shipped task 173 piece 2 (the audio-session/interruption fix
 mobile-friendly.md's finding 5 asked for, split from piece 1's real-device
 half); run 177 pinned task 175's palm-rejection residual with a test and
@@ -13,7 +13,12 @@ recommendation lists and shipped task 193 piece 1 (art-quality.md
 recommendation 6's audit + the fog-reach spec in docs/color-script.md); run
 181 shipped task 193 piece 2 (wired the fog-reach spec into
 `RoadStage.render()` via the new `src/three/fogReach.ts`), closing task 193
-end to end — see its own HANDOFF below;
+end to end; run 182 audited task 166's dangling "skylight ambient
+saturation" remainder (carried unclosed through pieces 3/4/5 and dropped by
+every live-queue list since), confirmed the noon saturation target is MET
+via `tools/shadowcast.mjs` and re-filed the actually-untried lever as its
+own task, 194, so it survives future consolidation passes — see its own
+HANDOFF below;
 the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
@@ -277,6 +282,62 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-15 (run 182) — task 166 piece 6 (audit only): the
+  "skylight ambient saturation" remainder, re-measured and re-filed.**
+  With the idea backlog empty again and task 173's real-device
+  verification, wave 20, and task 189's far-band lead unchanged since
+  run 181, re-read ROADMAP.md's v1.1 queue looking for the same
+  drift-miss shape art-quality.md's findings entry documents for task
+  179 (a thread dropped because nothing in a "live queue" list carried
+  it forward). Found one: task 166's "Remaining 166: skylight ambient
+  saturation" line, named in three straight done-notes (pieces 3/4/5,
+  runs 85/87/112) and closed by none — absent from every run 174-181
+  live-queue list. Full detail in ROADMAP task 166's own piece-6
+  done-note and task 194's new entry; headline here. Re-ran
+  `tools/shadowcast.mjs` (installed Playwright ad hoc per
+  tools/README.md, `PLAYWRIGHT_PATH=/opt/node22/lib/node_modules/playwright`)
+  against its three pinned poses: 01-dawn-road 77% saturation kept,
+  03-noon-forest 96% kept, 09-phone-landscape (golden) 42% kept. The
+  noon target this task states (≥50% of lit saturation kept) is MET
+  with margin — well past piece 2's own 66% figure. The hue-rotation
+  half of the same target could not be honestly re-tested: shadowcast
+  reports a raw circular hue delta over every cast-shadow pixel
+  regardless of caster (52% of noon's shadow pixels are the bard's own
+  contact shadow, not land), a different quantity from whatever
+  one-off, since-deleted script piece 2 used — logged as an instrument
+  gap, not a regression, the same discipline task 189's daily-seed
+  mismatch and task 190's per-quadrant mismatch were both held to.
+  Read `src/three/painterly.ts` closely to resolve the lever itself:
+  piece 2 shipped `CAST_SHADOW_HUE`/`CAST_SHADOW_CHROMA_CAP` (lines
+  1766-1781), a cast-shadow-only rotation-and-chroma-restore — the
+  `skyLight` term the script actually names (line 1604) feeds every
+  non-cast, form-shaded fragment via the `scatter`/`castGain` additive
+  term (line 1749) instead, and its own saturation has never been
+  touched by any piece. It is read by three other calculations
+  (`ambient`'s mix, `castGainCeiling`'s denominator, the `MODEL_SPLIT`
+  cool key), so a saturation change needs a luma-preserving approach
+  the way `CAST_SHADOW_HUE`'s own chroma restore already takes, and no
+  standing instrument measures the general shade-side saturation it
+  would change (`shadowcast.mjs` is cast-shadow-only by construction;
+  `figground.mjs` measures figure-vs-surround). Rather than guess at a
+  shader change with no way to verify it, re-filed the lever as its
+  own task (194, ROADMAP.md) with the instrument-first shape task 166
+  piece 1 itself established, and closed 166's own stated noon target
+  as met so the file stops carrying a remainder that turned out to
+  describe a different mechanism than the one actually shipped.
+  `npm test` 1407 green (unchanged — no code touched), `npm run build`
+  green (934.62 KB, unchanged), `verify-all quick` (`shader-check`,
+  `frame-quality`) PASS. No new runtime dependency (Playwright remains
+  installed ad hoc outside the project, per tools/README.md). Direction
+  research: none of the three `docs/research/*.md` notes changed —
+  this was a ROADMAP/STATE bookkeeping and shader-audit thread, not a
+  new research gap. Live queue as of run 182: task 194 (the
+  skylight-ambient-saturation lever, needs its own lit-vs-shade
+  measurement instrument before any shader change) is a new, real,
+  unblocked thread; task 173's real-device verification, wave 20, and
+  task 189's far-band lead are unchanged. Next consolidation still due
+  around run 185.
 
 - **HANDOFF, 2026-09-15 (run 181) — task 193 piece 2: the fog-reach
   wiring, closing task 193.** Run 180's live queue named this the one new

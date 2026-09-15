@@ -394,6 +394,27 @@ makes it long. You do not need to read it top to bottom.
   task 173's real-device verification, wave 20, and task 189's far-band
   lead are unchanged and remain the only open threads; the idea backlog
   is empty again. Next consolidation still due around run 185.
+- **Run 182 update**: with the idea backlog empty and all three run-181
+  threads still blocked or parked, audited task 166's own dangling
+  "Remaining 166: skylight ambient saturation" line (carried unclosed
+  through pieces 3/4/5, runs 85/87/112, and absent from every "live
+  queue" list since — the same drift-miss shape art-quality.md's
+  findings entry names for task 179). Shipped task 166 piece 6 (audit
+  only): re-measured the noon saturation target against
+  `tools/shadowcast.mjs` (96% kept, comfortably above the ≥50% floor —
+  MET, and has been since piece 2), found the hue-rotation figure isn't
+  a valid re-test with any instrument this repo currently has (logged
+  as an instrument gap, not a miss), and confirmed the skylight-ambient
+  lever itself was never tried — piece 2 shipped `CAST_SHADOW_HUE`
+  instead, a different, cast-shadow-only mechanism. Re-filed the
+  untried lever as its own task, 194, precisely so it survives future
+  consolidation passes instead of quietly dropping a sixth time. No
+  runtime code touched. Live queue as of run 182: task 194 (the
+  skylight-ambient-saturation lever, needs its own measurement
+  instrument before any shader change) is a new, real, unblocked
+  thread; task 173's real-device verification, wave 20, and task 189's
+  far-band lead are unchanged. Next consolidation still due around run
+  185.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -3086,6 +3107,61 @@ interviews) — read it before taking any task; its not-recommended list
     gauges PASS (noon 3.81, village 2.76), 1209 tests. Remaining
     166: per-biome noon accents proper (flowers/terracotta/water at
     full voice) + skylight ambient saturation.
+    **Piece 6 (audit only, 2026-09-15, run 182): re-measured the
+    "skylight ambient saturation" remainder pieces 3/4/5 all carried
+    forward and none closed — the same drift-miss shape
+    art-quality.md's findings entry already names for task 179 (a
+    thread dropped because nothing in STATE.md's "open threads" list
+    was carrying it), just not yet caught by a consolidation pass.
+    Re-ran `tools/shadowcast.mjs` (built later, task 183, the closest
+    standing instrument) against its three pinned poses: 01-dawn-road
+    sLit 0.44/sShadow 0.34 (77% kept), 03-noon-forest sLit 0.51/
+    sShadow 0.49 (96% kept), 09-phone-landscape (golden, t 0.82) sLit
+    0.67/sShadow 0.28 (42% kept). The noon target this section states
+    (shadowed land keeps ≥50% of lit saturation) is MET with margin —
+    96% comfortably clears it, well past piece 2's own 66% figure,
+    most likely inherited from unrelated later work (task 143's road
+    tone-field, task 169's terrain pass) rather than anything piece 2
+    itself under-delivered.
+    **The hue-rotation half is not a valid re-test and should not be
+    read as a miss.** shadowcast reports a raw circular hLit/hShadow
+    delta over every cast-shadow pixel regardless of caster (noon:
+    52% of its shadow pixels are the bard's own contact shadow, not
+    land) — a different quantity from whatever one-off, since-deleted
+    script (`tools/_*.mjs`, per tools/README.md's own convention)
+    piece 2 used to claim its S-kept numbers. No standing instrument
+    in this repo currently measures task 166's original "≤~60° cool
+    rotation" claim the way it was specified. Recorded as an
+    instrument gap, not a regression — the same discipline task 189's
+    daily-seed and task 190's per-quadrant mismatches were held to.
+    **The skylight-ambient-saturation lever itself remains genuinely
+    untried** — piece 2 shipped `CAST_SHADOW_HUE`/
+    `CAST_SHADOW_CHROMA_CAP` instead (`src/three/painterly.ts:1766-1781`),
+    which rotates and chroma-restores a cast shadow's hue specifically
+    and was the whole piece-2 fix. The `skyLight` term the script
+    names (`mix(uGroundBounce, uSkyColor, skyFacing) * AMBIENT_STRENGTH`,
+    `src/three/painterly.ts:1604`) feeds the general shade side —
+    every non-cast, form-shaded fragment via the `scatter`/`castGain`
+    additive term at line 1749, not only cast shadows — and its own
+    saturation has never been touched by any piece. No instrument
+    measures that general shade-side saturation today (shadowcast is
+    cast-shadow-only by construction); `figground.mjs` measures
+    figure-vs-surround, not lit-vs-shade. Building one, then tuning a
+    luma-preserving chroma boost on `skyLight` scaled by `sunAmount`
+    (so it stays out of the CARRYING hours the same way `LOW_SUN_SCATTER`
+    already inverts on `lowSun`) is real, separately-sized shader work
+    on a term four other lighting calculations (`ambient`,
+    `castGainCeiling`'s denominator, the `MODEL_SPLIT` cool key) all
+    read from — not a one-line tweak, and not something to guess at
+    without a way to measure it first.
+    **166's own noon-shadow target is closed** (the saturation floor
+    it actually states is met and has been since piece 2); the
+    skylight-ambient-saturation lever is re-filed as its own open item
+    below rather than as an unclosed remainder of 166, specifically so
+    it survives the next few consolidation passes' "open threads"
+    check instead of quietly dropping a sixth time. `npm test`/
+    `npm run build`/`verify-all quick` unchanged — no runtime code
+    touched, audit and re-measurement only.
 167. **No framing without an anchor.** A composition rule the rig
     enforces: every camera mood guarantees a near-field anchor silhouette
     (telegraph props, landmarks, canopy mass), Monument Valley's
@@ -4429,8 +4505,43 @@ iPad household needs none of it; logged under Blocked on human.
     the fog edge moving with the hour, not just the sky dome's colour.
     No new runtime dependency. Closes task 193 end to end (both halves of
     art-quality.md recommendation 6).
-
-## The v0.9 queue: "the road home" (human-set, 2026-07-31)
+194. **The skylight-ambient-saturation lever.** From
+    `docs/color-script.md`'s noon section: "the skylight ambient's
+    saturation at high sun (the shade-filling light is currently
+    near-achromatic by the time ACES is done with it)" — named as the
+    *cheapest* of task 166's three noon shadow-colour levers, but never
+    the one shipped (piece 2 shipped `CAST_SHADOW_HUE`/
+    `CAST_SHADOW_CHROMA_CAP` instead — a cast-shadow-only mechanism).
+    Re-filed here (2026-09-15, run 182, task 166 piece 6's own audit)
+    specifically so it stops being an unclosed "Remaining 166:" line
+    that consolidation passes keep failing to promote — three in a row
+    (pieces 3/4/5, runs 85/87/112) named it and none closed it, the
+    same drift-miss shape art-quality.md's findings entry already
+    documents for task 179.
+    **What it actually is**: `skyLight` in `src/three/painterly.ts:1604`
+    (`mix(uGroundBounce, uSkyColor, skyFacing) * AMBIENT_STRENGTH`) feeds
+    every non-cast, form-shaded fragment via the `scatter`/`castGain`
+    additive term at line 1749 — general shade richness, not the cast-
+    shadow-specific rotation piece 2 already fixed. Its own saturation
+    has never been touched.
+    **Why it isn't a quick tune**: `skyLight` is read by at least three
+    other calculations (`ambient`'s own mix, `castGainCeiling`'s
+    denominator via `dot(skyLight, LUMA_W)`, and indirectly the
+    `MODEL_SPLIT` cool key drawn from the same `uSkyColor`), so a
+    saturation change needs to preserve luminance the way
+    `CAST_SHADOW_HUE`'s own chroma-restore already does, and no
+    standing instrument measures the thing it would change:
+    `shadowcast.mjs` is cast-shadow-only by construction and
+    `figground.mjs` measures figure-vs-surround, not lit-vs-shade. The
+    right shape (task 166 piece 1's own precedent): build the
+    measurement first — a lit-vs-shade saturation probe on a non-cast
+    shaded face at noon, e.g. sampling a north-facing terrain slope or
+    canopy underside outside any `shadowMask` — THEN try a
+    luma-preserving chroma boost on `skyLight`, scaled by `sunAmount`
+    (inverse of how `LOW_SUN_SCATTER` already scales by `lowSun`) so it
+    stays out of the CARRYING hours (dawn/golden/night) task 166's own
+    governance protects. No runtime change this piece — audit and
+    re-filing only.
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
