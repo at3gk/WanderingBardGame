@@ -44,6 +44,7 @@ import { CameraRig, type CameraMood } from './CameraRig';
 import { Sky, applyTimeOfDay, skyStateAt } from './sky';
 import { LAND_KEYS } from './landKey';
 import { fogReachAt } from './fogReach';
+import { skylightSatGate } from './skylightGate';
 import { isPrimaryContact } from './inputGesture';
 import { roadSurfaceHeight, TERRAIN_REACH, WorldStreamer } from './world/WorldStreamer';
 import { Bard } from './actors/Bard';
@@ -2905,6 +2906,11 @@ export class RoadStage implements Stage {
     const reach = fogReachAt(state.sunDirection.y, biome, TERRAIN_REACH);
     this.app.globals.uFogNear.value = reach.near;
     this.app.globals.uFogFar.value = reach.far;
+    // The skylight-ambient-saturation gate (task 194 piece 3, skylightGate.ts):
+    // keyed on dayFraction directly, not sun geometry, so it ranks the hours
+    // the colour script needs (dawn/golden/dusk/night stay exactly 0) rather
+    // than the sunAmount/sunHeight gates piece 2 measured leaking there.
+    this.app.globals.uSkylightSatGate.value = skylightSatGate(this.shownDayFraction);
     this.sky.apply(state, this.app.globals.uTime.value);
 
     // Raise or lower tomorrow's road with the phase. A linear ramp rather

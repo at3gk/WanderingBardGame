@@ -71,6 +71,13 @@ export interface PainterlyGlobals {
   uLandKeyAmount: IUniform<number>;
   uLandKeyBreadth: IUniform<number>;
   /**
+   * The skylight-ambient-saturation gate (skylightGate.ts, task 194 piece
+   * 3): 0 across dawn/golden/dusk/night, full across morning/noon/
+   * afternoon. Gates SKYLIGHT_SAT_BOOST so the chroma expansion on
+   * `skyLight` never spends at the hours task 166's colour script protects.
+   */
+  uSkylightSatGate: IUniform<number>;
+  /**
    * The low-sun value floor (valueFloor.ts): how much the sky floor is
    * boosted at the horizon hours, where the ambient it is sized from is
    * dim exactly when the display transform crushes the V ~0.2 band's
@@ -205,6 +212,7 @@ export function createPainterlyGlobals(): PainterlyGlobals {
     uLandKeyAmount: { value: 0 },
     uLowSunFloor: { value: 0 },
     uLandKeyBreadth: { value: 0 },
+    uSkylightSatGate: { value: 0 },
     uHearthPosition: { value: new Vector3(0, 0, 0) },
     uHearthColor: { value: new Color(0xff9a4e) },
     uHearthStrength: { value: 0 },
@@ -494,6 +502,21 @@ const FRAGMENT = /* glsl */ `
  * exactly the set of hours the ratio argument above is about.
  */
 #define LOW_SUN_SCATTER 3.0
+/*
+ * Task 194's skylight-ambient-saturation lever: tools/skylight-sat.mjs
+ * measured (piece 1) that skyLight reads less saturated on a face it
+ * alone is lighting than on a sun-facing one, at every hour tried. Piece 2
+ * tried expanding it gated by sunAmount, then sunAmount * sunHeight,
+ * and measured (rather than assumed) a real leak into the CARRYING hours
+ * both times — neither variable ranks the hours the colour script's
+ * dawn/golden/dusk/night-are-carrying rule needs (dawn's own sunHeight is
+ * HIGHER than golden's, per CAST_SHADOW_HUE's own note below). uSkylightSatGate
+ * (skylightGate.ts) is keyed on dayFraction instead, which ranks the hours
+ * correctly by construction, and reads exactly 0 across dawn/golden/dusk/
+ * night — see that module's own comment for the full shape and why piece 2's
+ * gates couldn't reach an honest zero there.
+ */
+#define SKYLIGHT_SAT_BOOST 1.6
 /*
  * How far an upward-facing surface's ambient swings from the zenith toward
  * the horizon as the sun drops.
@@ -1157,6 +1180,7 @@ uniform vec3 uLandKeyColor;
 uniform float uLandKeyAmount;
 uniform float uLowSunFloor;
 uniform float uLandKeyBreadth;
+uniform float uSkylightSatGate;
 uniform vec3 uSkyColor;
 uniform vec3 uHorizonColor;
 uniform vec3 uGroundBounce;
@@ -1602,6 +1626,25 @@ void main() {
   // nothing else: see LOW_SUN_HORIZON for why that term must not be handed
   // the warm end of the sky.
   vec3 skyLight = mix(uGroundBounce, uSkyColor, skyFacing) * AMBIENT_STRENGTH;
+  /*
+   * The skylight-ambient-saturation lever (SKYLIGHT_SAT_BOOST, task 194):
+   * expand skyLight's own chroma, the deviation of its unit-luminance hue
+   * from grey, rather than adding or rotating it, so a face lit by nothing
+   * but the sky reads more like the sky's own colour and less like a
+   * desaturated version of it. Luminance-preserving by construction (divide
+   * out, expand, divide back in), the same idiom CAST_SHADOW_HUE uses below
+   * for its own chroma restore. Gated by uSkylightSatGate, which is 0 across
+   * dawn/golden/dusk/night by construction — see that uniform's own comment
+   * for why sunAmount/sunHeight couldn't do this job.
+   */
+  if (uSkylightSatGate > 0.0) {
+    float skyLum = dot(skyLight, LUMA_W);
+    vec3 skyUnit = skyLight / max(skyLum, 1e-4);
+    float boost = mix(1.0, SKYLIGHT_SAT_BOOST, uSkylightSatGate);
+    vec3 boosted = vec3(1.0) + (skyUnit - vec3(1.0)) * boost;
+    boosted /= max(dot(boosted, LUMA_W), 1e-4);
+    skyLight = skyLum * boosted;
+  }
   // See LOW_SUN_HORIZON: an upward face takes the zenith at noon and the
   // horizon band at golden hour, because that is where the light is.
   // Weighted by how far the surface turns toward the sun's own bearing, and
