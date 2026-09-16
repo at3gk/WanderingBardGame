@@ -1,7 +1,7 @@
 # STATE
 
-Run counter: 185 (run 175 was the consolidation pass; run 185 is the next
-consolidation pass, this one; next due around run 195; run 183 shipped
+Run counter: 186 (run 175 was the consolidation pass; run 185 was the
+consolidation pass; next due around run 195; run 183 shipped
 task 194 piece 1 — `tools/skylight-sat.mjs`, the
 lit-vs-shade terrain saturation instrument task 194 asked for before any
 shader change, run live against the three pinned poses; a real finding
@@ -38,7 +38,12 @@ consolidation pass (this run) — drift over runs 176-184 CLEAN, all nine
 individual HANDOFF blocks compressed into one run-index paragraph, and
 all three `docs/research/*.md` notes now have their full recommendation
 lists closed for the first time (art-quality.md's own last one closed
-by task 193 at run 181) — see its own HANDOFF below;
+by task 193 at run 181) — see its own HANDOFF below; run 186 shipped
+task 194 piece 3 (`src/three/skylightGate.ts`, a `dayFraction`-keyed gate
+uniform gating the same chroma boost piece 2 built), verified it leaks
+nothing into dawn/golden's shade with a fresh `tools/skylight-sat.mjs`
+stashed-vs-built A/B, and closed task 194 end to end — see its own
+HANDOFF below;
 the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
@@ -336,6 +341,51 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-16 (run 186).** Shipped ROADMAP task 194 piece 3 —
+  the hour-aware gate piece 2's own "Next" note asked for, closing task
+  194 end to end. New pure module `src/three/skylightGate.ts`
+  (`skylightSatGate(dayFraction)`), keyed on `dayFraction` rather than
+  `sunAmount`/`sunHeight` (piece 2's own finding: neither ranks the hours
+  correctly, since dawn's in-shader `sunHeight` reads higher than
+  golden's). The gate is a plateau: 0 up to dawn's own `dayFraction`
+  (0.28), full by morning's (0.42), held through noon and afternoon, 0
+  again by golden's (0.82) — both zero edges land exactly on a named
+  CARRYING hour rather than approaching it asymptotically. Wired as a new
+  uniform, `uSkylightSatGate`, set once per frame in `RoadStage.render()`
+  from `this.shownDayFraction` (the same value `skyStateAt` already
+  reads), gating the same luma-preserving chroma boost on `skyLight`
+  piece 2 built (`SKYLIGHT_SAT_BOOST`, reintroduced in `painterly.ts`).
+  Verified two ways before trusting it. First, the boost's own algebra in
+  isolation (a plain Node script mirroring the shader arithmetic): at
+  gate 0 it is an exact no-op (identical output, luminance and
+  saturation both unchanged); at gate 1 it raises HSV saturation on a
+  sample ambient colour (0.444 → 0.617) while holding luminance exactly
+  constant (0.06719 throughout) — confirms the mechanism does what it
+  claims before blaming the pose for a null result. Second, live against
+  `tools/skylight-sat.mjs`'s own three pinned poses, rebuilt to compare
+  the same commit with and without this change via `git stash`: dawn's
+  `shadeNonCast` bucket (the clean signal piece 2's own note trusts)
+  reads exactly 0.186 → 0.186, byte-for-byte unchanged; golden's reads
+  0.288 → 0.285, inside the run-to-run jitter piece 1/2 already
+  documented for that bucket. Both CARRYING hours the gate exists to
+  protect show zero leak. Noon's own populated gradient bins move by
+  noise-level amounts only (0.507 → 0.503, 0.561 → 0.558) — not a
+  positive result, but not a defect either: this pinned pose's noon
+  frame is overwhelmingly sun-facing ground (piece 1's own documented
+  limitation), where the scatter/castGain terms `skyLight` feeds are
+  scaled near zero by design, so this pose was never going to show the
+  boost's intended effect at noon. Confirming the POSITIVE effect needs a
+  pose that actually frames non-cast shaded terrain at noon — flagged as
+  an instrument gap for whoever wants full closure on that side, not
+  fixed here, the same way piece 1 flagged the hue-rotation gap for task
+  166. `npm test` 1415 green (+8 new, `skylightGate.test.ts`), `npm run
+  build` green (936.86 KB vs 934.62 KB), `verify-all quick`
+  (`shader-check`) PASS. No new runtime dependency. Live queue as of run
+  186: task 173's two real-device-only halves, wave 20 (still
+  network-blocked, now `connect_rejected`), and task 189's far-band lead
+  (parked) are the only open threads; the idea backlog is empty. Next
+  consolidation due around run 195 (186 is 1 run past 185).
 
 - **HANDOFF, 2026-09-16 (run 185) — CONSOLIDATION (drift control, every
   ~10th run; last was 175).** Drift check over runs 176-184: CLEAN — every

@@ -444,6 +444,16 @@ makes it long. You do not need to read it top to bottom.
   real open thread; task 173's real-device halves, wave 20, and task
   189's far-band lead are unchanged. Next consolidation due around run
   195.
+- **Run 186 update**: shipped task 194 piece 3, the dayFraction-keyed
+  gate uniform piece 2's own "Next" note asked for — see task 194's own
+  final done-note for the full account, including the isolated-algebra
+  check and the stashed-vs-built A/B against `tools/skylight-sat.mjs`
+  that confirmed zero leak into dawn/golden's shade. **Task 194 is now
+  closed end to end across all three pieces.** Live queue as of run 186:
+  task 173's real-device halves, wave 20 (network-blocked), and task
+  189's far-band lead are unchanged as the only open threads; the idea
+  backlog is empty. Next consolidation still due around run 195 (186 is
+  1 run past 185).
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -4665,6 +4675,57 @@ iPad household needs none of it; logged under Blocked on human.
     `tools/skylight-sat.mjs`'s shade bucket specifically (the clean
     signal, not the noisy noon `lit` one) against dawn and golden before
     trusting any future attempt moved the right thing without leaking.
+    **Piece 3 done, task 194 closed end to end (2026-09-16, run 186):
+    the dayFraction-keyed gate, built exactly to the shape above.** New
+    pure module `src/three/skylightGate.ts` (`skylightSatGate`): a
+    plateau, not a single hump — zero up to dawn's own `dayFraction`
+    (0.28), a smoothstep ramp to full by morning's (0.42), held through
+    noon and afternoon, a smoothstep fall to zero by golden's (0.82).
+    Both zero edges land exactly ON a named CARRYING hour's own value
+    rather than approaching it asymptotically, so there is no hour where
+    this reads as "a little" — task 166's rule is no spend, not reduced
+    spend, at those hours. Wired as a new uniform, `uSkylightSatGate`,
+    set once per frame in `RoadStage.render()` from `this.shownDayFraction`
+    (the same value already fed to `skyStateAt`), gating the identical
+    `SKYLIGHT_SAT_BOOST` chroma-expansion idiom piece 2 built (reintroduced
+    in `painterly.ts`, unchanged from piece 2's own description: normalise
+    to a hue direction at unit luminance, expand its deviation from grey by
+    `mix(1.0, SKYLIGHT_SAT_BOOST, uSkylightSatGate)`, divide back to unit
+    luminance).
+    Verified two ways before trusting it, since piece 2's own lesson was
+    that the algebra alone isn't enough. First, the boost's arithmetic in
+    isolation (a plain Node script mirroring the shader): at gate 0 it is
+    an exact no-op on a sample ambient colour (identical output, luminance
+    0.06719 and HSV saturation 0.444 both unchanged); at gate 1 it raises
+    saturation to 0.617 while holding luminance exactly at 0.06719 —
+    confirms the mechanism itself is sound before blaming a pose for a
+    null reading. Second, live against `tools/skylight-sat.mjs`'s own
+    three pinned poses, rebuilt to compare the identical commit with and
+    without this change via `git stash` (a real A/B, not a single-build
+    before/after): dawn's `shadeNonCast` bucket — the clean, exactly-
+    reproducible signal piece 2's own note established — reads 0.186 in
+    both builds, byte-for-byte; golden's reads 0.288 baseline vs 0.285
+    with the gate, inside the run-to-run jitter piece 1/2 already
+    documented for that bucket. Both CARRYING hours the gate exists to
+    protect show zero leak, the property piece 2 could not achieve with
+    either `sunAmount` or `sunAmount * sunHeight`.
+    Noon's own populated `litGradient` bins moved by noise-level amounts
+    only (0.507 → 0.503 at n≈577k, 0.561 → 0.558 at n≈73k) — not a
+    positive result. Not a defect either: this pinned pose's noon frame
+    is overwhelmingly sun-facing ground (piece 1's own documented
+    limitation — "the strict lit/shade two-bucket compare came back thin
+    or empty at all three, noon especially"), where the `scatter`/
+    `castGain` terms that actually consume `skyLight` are scaled near
+    zero on a well-lit face by design — this pose was never going to show
+    the boost's effect at noon regardless of whether the shader change
+    works. Confirming the POSITIVE effect (not just the CARRYING-hour
+    safety) needs a pose that genuinely frames non-cast shaded terrain at
+    high sun, which none of the three pinned poses do — left as an
+    instrument gap for whoever wants that side closed too, the same way
+    piece 1 left the hue-rotation figure as a gap for task 166. `npm test`
+    1415 green (+8 new, `skylightGate.test.ts`), `npm run build` green
+    (936.86 KB vs 934.62 KB), `verify-all quick` (`shader-check`) PASS.
+    No new runtime dependency.
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
