@@ -1,7 +1,8 @@
 # STATE
 
-Run counter: 184 (run 175 was the consolidation pass; next due around run
-185; run 183 shipped task 194 piece 1 — `tools/skylight-sat.mjs`, the
+Run counter: 185 (run 175 was the consolidation pass; run 185 is the next
+consolidation pass, this one; next due around run 195; run 183 shipped
+task 194 piece 1 — `tools/skylight-sat.mjs`, the
 lit-vs-shade terrain saturation instrument task 194 asked for before any
 shader change, run live against the three pinned poses; a real finding
 (saturation rises monotonically with how sun-facing a terrain face is, at
@@ -32,7 +33,12 @@ dawn and golden hour's shade even after gating by `sunAmount * sunHeight`,
 and reverted the shader change rather than ship a CARRYING-hour violation
 — see its own HANDOFF below and ROADMAP task 194's own piece-2 done-note
 for the numbers and why the obvious `sunHeight` patch and the existing
-`uLandKeyAmount` uniform both fail to close the leak;
+`uLandKeyAmount` uniform both fail to close the leak; run 185 was the
+consolidation pass (this run) — drift over runs 176-184 CLEAN, all nine
+individual HANDOFF blocks compressed into one run-index paragraph, and
+all three `docs/research/*.md` notes now have their full recommendation
+lists closed for the first time (art-quality.md's own last one closed
+by task 193 at run 181) — see its own HANDOFF below;
 the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
@@ -282,6 +288,40 @@ runs after it shipped — fixed, along with the two in-code comments
 (`notation.ts`, `scaffoldStorage.ts`) that had quoted that stale text as
 their own justification for calling the feature unbuilt.
 
+**Run-185 refresh (2026-09-16, consolidation):** the headline this cycle —
+**all three research notes now have their full ranked-recommendation
+lists closed** (SHIPPED or standing design), for the first time since
+this section started tracking them. `retention-design.md`'s seven and
+`mobile-friendly.md`'s buildout list were both already closed as of the
+run-175 refresh; this block closed the third. Re-checked the
+rejected-on-principle list against runs 176-184 (audio-session/
+interruption fix, palm-rejection test, the quality-tier toggle, the
+fog-reach wiring, and task 166/194's saturation audit and measurement
+arc) and found nothing to flag: every one of the five threads is mobile/
+input/rendering fidelity on the existing world, none adds a counter, a
+timer, a grade, or anything exclusive-to-today. `mobile-friendly.md`: its
+URGENT save-protection item stays shipped and unchanged; its buildout
+list closed fully at run 179 (task 192, recommendation 6, the hand-picked
+quality toggle) — recorded here since the run-180 refresh flagged it but
+this is the first consolidation to confirm it stands. Its one open item,
+task 173, is unchanged: piece 2 (run 176) shipped the audio-session/
+interruption *code*, but both real-device halves (iOS silent switch,
+call/backgrounding interruption) stay genuinely hardware-blocked, same as
+the run-175 refresh reported. `art-quality.md`: recommendation 6 ("adopt
+the detail-density language") closed end to end at run 181 (task 193) —
+the last of its six recommendations, so the list that opened this
+research note 2026-07-31 is now fully accounted for. Its "Findings from
+shipped work" section gained a new entry this run (see the file itself)
+recording both the milestone and the technical lesson task 194 piece 2
+taught on the way: the color script's CARRYING/ENACTING hour split is an
+authored category with no single per-frame shader scalar that tracks it,
+so future hour-gated shader terms need a TS-side gate uniform, not a
+sun-angle proxy. Closing all three lists is a milestone, not a stopping
+point — task 194 (the one thread the audit that closed art-quality.md's
+list turned up) is still open, and any future shipped feature can still
+teach these notes something new; the "Findings from shipped work"
+sections stay live regardless of the ranked lists' status.
+
 ## The true goal (standing pointer)
 
 DESIGN.md's "The true goal" section (2026-07-31, human-grilled to shared
@@ -297,340 +337,98 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
-- **HANDOFF, 2026-09-16 (run 184) — task 194 piece 2 tried and reverted:
-  the skyLight chroma boost leaks into the CARRYING hours.** Built exactly
-  what run 183's own "Next" note asked for: a luma-preserving chroma
-  boost on `skyLight` in `painterly.ts`, gated by `mix(1.0,
-  SKYLIGHT_SAT_BOOST, sunAmount)`. Measured it live with fresh
-  `tools/skylight-sat.mjs` runs rather than trusting the algebra, and the
-  measurement caught two real problems. First, a methodology finding worth
-  keeping for whoever measures piece 3: `shadeNonCast`'s sMean is exactly
-  reproducible run-to-run on unmodified code (0.186 dawn, 0.285 golden,
-  byte-identical across two separate baseline runs), so it is a trustworthy
-  signal — but noon's `litGradient` top bin swung 0.558-0.603 across two
-  runs of the SAME boosted build with nothing else changed, so that number
-  cannot be trusted from one run each way. Second, the actual finding: on
-  the clean shade signal, the plain `sunAmount` gate moved dawn 0.186 ->
-  0.190 and golden 0.285 -> 0.305/0.302 (both repeated) — a real,
-  repeatable leak into two of the three CARRYING hours this task exists to
-  protect, because `sunFacing` ramps up well before the `shadeNonCast`
-  bucket's own `lit <= 0.46` edge. Patched with `sunAmount * sunHeight`
-  (the same per-frame scalar other CARRYING-hour terms in this file ride)
-  and it only dampened the leak (dawn 0.186 -> 0.187, golden 0.285 ->
-  0.292) rather than closing it, because in-shader `sunHeight` does not
-  rank the hours the colour script's CARRYING/ENACTING split needs — dawn
-  reads 0.59, HIGHER than golden's 0.44, per painterly.ts's own
-  CAST_SHADOW_HUE comment. Checked whether `uLandKeyAmount` could be
-  reused as a ready-made zero-at-CARRYING-hours signal and found it can't:
-  its own header comment says it is deliberately nonzero at dawn/golden/
-  night (a colour-pull TARGET selector, not a silencer). Reverted rather
-  than shipped — task 166's governance is "no ground/sky spend" at the
-  CARRYING hours, not "spend a little," and nothing tried this run reaches
-  an honest zero there. Full account, including the exact numbers and why
-  each patch was rejected, in ROADMAP task 194's own piece-2 done-note.
-  `npm test` and `npm run build` stayed green throughout (the tree ends
-  exactly at run 183's committed state — no shader change shipped). No
-  runtime dependency. Direction research: none of the three
-  `docs/research/*.md` notes changed. Live queue as of run 184: task 194
-  piece 3 (a TS-side, `dayFraction`-keyed gate uniform, zero across dawn/
-  golden/dusk/night and rising only across morning/noon/afternoon per
-  `docs/color-script.md`'s own pinned `t` values, following
-  `landKeyAmount`'s own smoothstep-ramp shape as precedent) is a new, real,
-  unblocked thread; task 173's real-device verification, wave 20, and task
-  189's far-band lead are unchanged from run 183. Next consolidation still
-  due around run 185.
+- **HANDOFF, 2026-09-16 (run 185) — CONSOLIDATION (drift control, every
+  ~10th run; last was 175).** Drift check over runs 176-184: CLEAN — every
+  run in the block was one of five named threads (task 173 piece 2, task
+  175's residual, task 192's two-piece quality-toggle arc, task 193's
+  two-piece fog-reach arc, and task 166's dangling audit re-filed as task
+  194 plus its own two-piece measurement arc), each a small opt-in
+  addition, a measurement instrument, or per-hour/per-biome rendering
+  fidelity on the existing world; nothing became a system the player
+  manages, the one-core-mechanic test DESIGN.md's drift-control section
+  asks every consolidation to re-apply. `npm test` 1407 green (unchanged),
+  `npm run build` green (934.62 KB, unchanged — this run's own changes are
+  docs only, no game code touched), `verify-all quick` (`shader-check`)
+  PASS (ran against a fresh `npm run preview` with
+  `PLAYWRIGHT_PATH=/opt/node22/lib/node_modules/playwright`, per
+  tools/README.md's setup — the pre-installed 1.56.1 copy the note names).
+  Re-tested wave 20's network block: still blocked, though the failure
+  mode changed — both `ashorthike.com` and `store.steampowered.com` now
+  fail at `connect_rejected` through the agent proxy rather than
+  returning an HTTP 403 the way every earlier run recorded it; same
+  outcome (no access), noted here in case a future run needs to tell
+  "blocked" apart from "gone." A code/doc survey (an Explore-agent pass
+  over every file the block touched — `audioSession.ts`, `inputGesture.ts`,
+  `fogReach.ts`, the quality-tier storage/toggle across `App.ts`/
+  `RoadStage.ts`/`Hud.ts`, and run 184's shader revert — per the
+  run-175/165/145 pattern) found all four shipped mechanisms genuinely
+  wired into real app code with no dead exports, and confirmed run 184's
+  revert left zero trace in `src/`: that commit's own diff touches only
+  ROADMAP.md and STATE.md, and a repo-wide grep for the abandoned
+  `SKYLIGHT_SAT_BOOST` boost finds only the measurement tool's own doc
+  comment and an unrelated historical note. DESIGN.md and every in-code
+  comment describing tasks 173/192/193 were already accurate this time —
+  no staleness found, unlike the solfège gap the run-175 consolidation
+  caught. Compressed the nine individual HANDOFF blocks for runs 176-184
+  into one run-index paragraph below, matching the run-175/165/145
+  pattern — this file 4988 → 4638 lines from that edit alone, before this
+  HANDOFF's own text. **Direction research headline: all three
+  `docs/research/*.md` notes now have their full ranked-recommendation
+  lists closed (SHIPPED or standing design) for the first time** — task
+  193 (run 181) closed art-quality.md's last open recommendation; see the
+  Direction research section below for the full refresh, and
+  `art-quality.md`'s own findings section for the technical lesson task
+  194 piece 2 taught along the way (in-shader `sunHeight` doesn't rank
+  hours the way the color script's CARRYING/ENACTING split needs). Live
+  queue as of run 185: task 194 piece 3 (a TS-side, `dayFraction`-keyed
+  gate uniform, the thread run 184 left open) is the one real, unblocked
+  thread; task 173's two real-device-only halves, wave 20 (network-
+  blocked), and task 189's far-band lead (parked) are unchanged. Next
+  consolidation due around run 195.
 
-- **HANDOFF, 2026-09-15 (run 183) — task 194 piece 1: the lit-vs-shade
-  saturation instrument.** Live queue as of run 182 named task 194 (the
-  skylight-ambient-saturation lever, re-filed that same run) the one new
-  unblocked thread, and its own entry already specified the right shape
-  (task 166 piece 1's own precedent): build the measurement before
-  touching the shader. Built `tools/skylight-sat.mjs`. Full technique in
-  the tool's own header comment and `tools/README.md`'s new section;
-  headline here. It freezes the frame (shadowcast.mjs's own technique),
-  swaps every `terrain-<index>` mesh for a tiny debug shader outputting
-  `dot(worldNormal, sunDirection)` as grayscale (terrain only — trees/
-  shrubs/rocks/logs are instanced and this debug material doesn't apply
-  `instanceMatrix`), and compares HSV saturation between painterly.ts's
-  own band1 (shaded, <=0.46)/band3 (lit, >=0.86) luma edges on the
-  pixels a shadow-map diff confirms are genuinely non-cast. Hit and
-  fixed a real pitfall while building it: a debug shader's raw output
-  gets ACES/LUT-graded by `App.renderFrame`'s finishing composite same
-  as real lighting (a constant 0.5 gray came back as 0.80;
-  `material.toneMapped = false` does not stop it), so the two debug
-  passes call `renderer.render()` directly instead — verified live that
-  this round-trips a written constant exactly. Run against shadowcast.
-  mjs's three pinned poses: the strict lit/shade two-bucket compare came
-  back thin or empty at all three (noon especially — the camera mostly
-  frames sun-facing ground, not a face turned away), so a five-bin
-  `litGradient` across the full luma range was added alongside it and
-  that's what actually answers the question. The result is consistent
-  across all three poses: saturation rises monotonically with how
-  sun-facing a terrain face is (dawn 0.227→0.365→0.528; golden
-  0.384→0.67→0.734; noon's two populated bins 0.478→0.555) — the
-  color-script's suspicion holds with real numbers behind it now, at
-  every hour tried, not just noon. Full numbers and the small-sample
-  caveat on noon's own strict `lit` bucket (n=60, noisy) are in ROADMAP
-  task 194's own piece-1 done-note. `npm test` 1407 green (unchanged —
-  `tools/` isn't part of the vitest suite or the build, same as every
-  other tools/*.mjs script), `npm run build` green (934.62 KB,
-  unchanged). No new runtime dependency (Playwright remains installed ad
-  hoc, per tools/README.md). Direction research: none of the three
-  `docs/research/*.md` notes changed — this is art-quality.md's noon
-  shadow-colour thread (task 166/194), already covered there. Live queue
-  as of run 183: task 194 piece 2 (the actual luma-preserving chroma
-  boost on `skyLight`, scaled by `sunAmount` to stay out of the CARRYING
-  hours, verified against this run's baseline numbers) is a new, real,
-  unblocked thread; task 173's real-device verification, wave 20, and
-  task 189's far-band lead are unchanged from run 182. Next consolidation
-  still due around run 185.
-
-- **HANDOFF, 2026-09-15 (run 182) — task 166 piece 6 (audit only): the
-  "skylight ambient saturation" remainder, re-measured and re-filed.**
-  With the idea backlog empty again and task 173's real-device
-  verification, wave 20, and task 189's far-band lead unchanged since
-  run 181, re-read ROADMAP.md's v1.1 queue looking for the same
-  drift-miss shape art-quality.md's findings entry documents for task
-  179 (a thread dropped because nothing in a "live queue" list carried
-  it forward). Found one: task 166's "Remaining 166: skylight ambient
-  saturation" line, named in three straight done-notes (pieces 3/4/5,
-  runs 85/87/112) and closed by none — absent from every run 174-181
-  live-queue list. Full detail in ROADMAP task 166's own piece-6
-  done-note and task 194's new entry; headline here. Re-ran
-  `tools/shadowcast.mjs` (installed Playwright ad hoc per
-  tools/README.md, `PLAYWRIGHT_PATH=/opt/node22/lib/node_modules/playwright`)
-  against its three pinned poses: 01-dawn-road 77% saturation kept,
-  03-noon-forest 96% kept, 09-phone-landscape (golden) 42% kept. The
-  noon target this task states (≥50% of lit saturation kept) is MET
-  with margin — well past piece 2's own 66% figure. The hue-rotation
-  half of the same target could not be honestly re-tested: shadowcast
-  reports a raw circular hue delta over every cast-shadow pixel
-  regardless of caster (52% of noon's shadow pixels are the bard's own
-  contact shadow, not land), a different quantity from whatever
-  one-off, since-deleted script piece 2 used — logged as an instrument
-  gap, not a regression, the same discipline task 189's daily-seed
-  mismatch and task 190's per-quadrant mismatch were both held to.
-  Read `src/three/painterly.ts` closely to resolve the lever itself:
-  piece 2 shipped `CAST_SHADOW_HUE`/`CAST_SHADOW_CHROMA_CAP` (lines
-  1766-1781), a cast-shadow-only rotation-and-chroma-restore — the
-  `skyLight` term the script actually names (line 1604) feeds every
-  non-cast, form-shaded fragment via the `scatter`/`castGain` additive
-  term (line 1749) instead, and its own saturation has never been
-  touched by any piece. It is read by three other calculations
-  (`ambient`'s mix, `castGainCeiling`'s denominator, the `MODEL_SPLIT`
-  cool key), so a saturation change needs a luma-preserving approach
-  the way `CAST_SHADOW_HUE`'s own chroma restore already takes, and no
-  standing instrument measures the general shade-side saturation it
-  would change (`shadowcast.mjs` is cast-shadow-only by construction;
-  `figground.mjs` measures figure-vs-surround). Rather than guess at a
-  shader change with no way to verify it, re-filed the lever as its
-  own task (194, ROADMAP.md) with the instrument-first shape task 166
-  piece 1 itself established, and closed 166's own stated noon target
-  as met so the file stops carrying a remainder that turned out to
-  describe a different mechanism than the one actually shipped.
-  `npm test` 1407 green (unchanged — no code touched), `npm run build`
-  green (934.62 KB, unchanged), `verify-all quick` (`shader-check`,
-  `frame-quality`) PASS. No new runtime dependency (Playwright remains
-  installed ad hoc outside the project, per tools/README.md). Direction
-  research: none of the three `docs/research/*.md` notes changed —
-  this was a ROADMAP/STATE bookkeeping and shader-audit thread, not a
-  new research gap. Live queue as of run 182: task 194 (the
-  skylight-ambient-saturation lever, needs its own lit-vs-shade
-  measurement instrument before any shader change) is a new, real,
-  unblocked thread; task 173's real-device verification, wave 20, and
-  task 189's far-band lead are unchanged. Next consolidation still due
-  around run 185.
-
-- **HANDOFF, 2026-09-15 (run 181) — task 193 piece 2: the fog-reach
-  wiring, closing task 193.** Run 180's live queue named this the one new
-  open thread, so it's what run 181 picked up. Full detail in ROADMAP task
-  193's own piece-2 done-note; headline here. New pure module
-  `src/three/fogReach.ts` gives `uFogNear`/`uFogFar` the schedule the
-  color-script spec asked for — a single smooth curve keyed off
-  `sunDirection.y` (the same key `landKey.ts`/`valueFloor.ts` already use
-  for their own hour-band mechanics), rather than eight discrete per-hour
-  cases: night is shortest, a dawn/golden plateau is longest, noon pulls
-  back in for a clear treeline, and riverside gets a further multiplier on
-  top for its water band. Wired into `RoadStage.render()` beside the land
-  key's own biome read, replacing the one-time `TERRAIN_REACH`-derived
-  constant the constructor used to set — deleted outright (with its long
-  justifying comment moved into `fogReach.ts`'s own doc comment) rather
-  than left as a stale default, since `render()` already sets every other
-  sky-driven uniform (`uSkyColor`, `uFogColor`, ...) fresh every frame with
-  no constructor default of its own. 10 new tests, checked against the
-  actual named-hour sun heights from `sky.ts`'s `SKY_KEYS` rather than
-  arbitrary points on the curve. `npm test` 1407 green (+10), `npm run
-  build` green (934.62 KB vs 934.20 KB), `verify-all quick`
-  (`shader-check`) PASS — confirmed live in a real browser that the fog
-  edge itself now moves with the hour, not only the sky dome's colour. No
-  new runtime dependency. Direction research: closes art-quality.md
-  recommendation 6 end to end (both the detail-budget half piece 1 found
-  already held, and the fog half piece 1 found missing). Live queue as of
-  run 181: unchanged from run 180 otherwise — task 173's real-device
-  verification, wave 20 (network-blocked), and task 189's far-band lead
-  (parked) are the three open threads; the idea backlog is empty again.
-  Next consolidation still due around run 185.
-
-- **HANDOFF, 2026-09-14 (run 180) — task 193 piece 1: the detail-density
-  audit and the fog reach spec.** With the idea backlog empty and task
-  173's real-device verification, wave 20, and task 189's far-band lead
-  all still blocked or parked (unchanged since run 177), followed run
-  176's own process note and re-read all three `docs/research/*.md`
-  notes end to end rather than assume three runs of "empty" meant
-  nothing was left. This time checked something none of runs 176-179
-  had: whether retention-design.md and art-quality.md's own recommendation
-  lists were as fully mined as mobile-friendly.md's. Confirmed
-  retention-design.md's v0.9 queue (tasks 151-157) is entirely closed and
-  mobile-friendly.md's seven buildout recommendations are now all closed
-  too (task 192, run 179, was the last of them). art-quality.md was the
-  one never checked this way: recommendation 6 ("adopt the detail-density
-  language") had no task number anywhere in ROADMAP.md — a genuine gap,
-  same shape as the mobile-friendly.md ones runs 176/178 found. Full
-  detail in ROADMAP task 193's own piece-1 done-note; headline here.
-  Split the recommendation's two bundled claims: the detail-budget half
-  (bard/instruments/notation/stop-dressing should own the polygon/noise
-  budget while the world simplifies with distance) already holds
-  structurally — task 170's vertex AO is scoped to props/the bard only,
-  the quality tiers reduce world foliage density/view distance without
-  touching the bard/instrument/notation meshes, and `painterly.ts`'s
-  per-material `fogScale` dial exists precisely so the world can be
-  veiled without veiling what the eye should land on — so no code
-  changed there. The fog half is a real, confirmed gap: `uFogNear`/
-  `uFogFar` (`RoadStage.ts`) are set once at scene construction from
-  `TERRAIN_REACH` alone, with no per-hour or per-biome variation and no
-  per-frame hook the way `dusk.ts`'s brightness curve has — "one global
-  near/far" is exactly what ships. Wrote the spec an enacting run needs
-  into `docs/color-script.md`'s new "Fog reach" section (night wants the
-  shortest reach, dawn/golden a longer one, noon the anchor kept close,
-  riverside's water band its own per-biome number) — same split task 166
-  piece 1 used, write the script now, enact it later, since wiring this
-  in is real per-frame-update engineering (most likely riding `dusk.ts`'s
-  hook) and biome-blend transitions need care the reach doesn't pop.
-  `npm test` 1397 green (unchanged — no code touched, docs only),
-  `npm run build` green (unchanged), `verify-all quick` (`shader-check`)
-  PASS. No new runtime dependency. Direction research: this is
-  art-quality.md recommendation 6's first piece; retention-design.md and
-  mobile-friendly.md are both now fully closed against their own
-  recommendation lists (recorded here so a future run doesn't re-check
-  them from scratch). Live queue as of run 180: task 193 piece 2 (wire
-  the per-hour/per-biome fog reach against the new spec) is the one new
-  open thread; task 173's real-device verification, wave 20, and task
-  189's far-band lead are unchanged from run 177-179. Next consolidation
-  still due around run 185.
-
-- **HANDOFF, 2026-09-14 (run 179) — task 192 piece 2: the quality toggle
-  itself, closing task 192.** Live queue as of run 178 named this the one
-  open thread, so it's what run 179 picked up. Full detail in ROADMAP
-  task 192's own piece-2 done-note; headline here. It lives on the title
-  card (`Hud.showTitleCard`), not the campfire — a hardware tier has
-  nothing to do with where the bard is standing, and the title card is
-  the one surface a returning player already sees on nearly every boot,
-  which is exactly when a playtester wants to flip a tier. One tap
-  cycles Auto → Low → Medium → High → Auto, reusing the same "the tap
-  itself reloads the page" idiom the bookmark door two rows up already
-  established — `detectQuality()` is read once at boot and deliberately
-  never re-applied mid-session (piece 1's own no-auto-degradation rule),
-  so a reload is the only way a picked tier can actually take hold.
-  Added `RoadStage.qualityLabel()`/`cycleQuality()` beside
-  `switchBookmark` and a fourth `qualityDoor` param on
-  `Hud.showTitleCard`. No vitest coverage — DOM event wiring with no
-  pure function underneath, the same shape task 176/177/191's screens
-  took — verified live instead in headless Chromium against the real
-  production build: walked to get `totalMetres > 0`, force-saved,
-  reloaded like a real tab close/reopen, then tapped the door four times
-  running and confirmed `localStorage`, the actual booted
-  `app.quality.tier`, and the card's own label all agreed at every step
-  (Auto → Low → Medium → High → Auto), and that the songbook door on the
-  same card still worked afterwards. `npm test` 1397 green (unchanged —
-  no new pure logic), `npm run build` green (934.20 KB vs 933.57 KB),
-  `verify-all quick` (`shader-check`) PASS. No new runtime dependency.
-  Direction research: closes mobile-friendly.md recommendation 6 end to
-  end — a playtest iPad can now flip quality tiers with no dev tools.
-  Live queue as of run 179: the idea backlog and the v1.1/v1.3 open
-  threads are unchanged (task 173's real-device verification, wave 20
-  (network-blocked), and task 189's far-band lead (parked) — same three
-  as run 177/178). Next consolidation still due around run 185.
-
-- **HANDOFF, 2026-09-14 (run 178) — task 192 piece 1: a hand-picked
-  quality tier's storage layer, no UI yet.** With the idea backlog empty
-  for the third run running and all of run 177's open threads still
-  blocked or parked, re-read all three `docs/research/*.md` notes end to
-  end rather than assume "empty" meant "nothing left" — the exact process
-  run 176's own note asked a future run to follow. Found it in
-  `mobile-friendly.md`'s recommendation 6: task 174 (run in the v1.2
-  arc) shipped the *auto-detection* half — fair tiers for Apple hardware,
-  a genuinely shadowless 'low' — but never the second half the research
-  names explicitly: "add a visible, human-friendly quality toggle at the
-  campfire or title card so the playtest iPad can flip tiers without dev
-  tools," with the research's own caution that this must be a **hand**
-  toggle, never mid-session auto-degradation (boot detection can't see
-  thermal throttling, and a silent quality drop while the player is
-  watching is worse than an honestly slower frame). No toggle, and no
-  storage for one to persist a choice into, existed anywhere in the
-  codebase. Split it the way task 176/177/178/191 all split their own
-  first pieces: pure, tested data layer first, screen later. Full detail
-  in ROADMAP task 192's own piece-1 done-note. Headline: added
-  `loadQualityOverride`/`saveQualityOverride` to `src/three/App.ts`
-  (beside `detectQuality`/`tierFor`/`readProbe`, the tier decision's
-  existing home) under a new top-level key `wb.quality.v1` — deliberately
-  NOT bookmark-keyed the way `journey`/`idle`/`learn` are, since a
-  device's GPU is one fact shared by both of `profiles.ts`'s bookmarks,
-  not per-player progress. `detectQuality()` now takes the override as an
-  optional second parameter (defaulting to `loadQualityOverride()`) and
-  prefers it over the auto-detected tier, so this piece is genuinely
-  wired into the one call site that matters (`new App(host)` in
-  `main.ts`) rather than sitting unreferenced — it is a no-op today only
-  because nothing can write the key yet. Piece 2 (where the toggle lives,
-  campfire vs. title card, three-way cycle vs. an explicit "auto", and
-  whether picking a tier needs a reload the way the keepsake import and
-  bookmark switch both already do) is a real design question, left open
-  on purpose. `npm test` 1397 green (+8), `npm run build` green (933.57 KB
-  vs 933.32 KB — the new exports' own small weight), `verify-all quick`
-  (`shader-check`) PASS. No new runtime dependency. Live queue as of run
-  178: task 192 piece 2 (the toggle itself) is the one new open thread;
-  task 173's real-device verification, wave 20 (network-blocked), and
-  task 189's far-band lead (parked) are unchanged from run 177. Next
-  consolidation still due around run 185.
-
-- **HANDOFF, 2026-09-13 (run 177) — task 175's residual: palm-rejection
-  pinned with a test, the landscape road re-verified live.** Run 176's own
-  process note said a future run finding the idea backlog empty should
-  re-read all three `docs/research/*.md` notes looking for a
-  recommendation whose done-note only measured or refuted, never built.
-  Did that and found the gap in a ROADMAP task's own text instead of a
-  research note this time: task 175 (touch-target/orientation audit)
-  still carried two residual bullets — "palm-rejection kindness already
-  exists (stray taps are free) — pin it with a test" and "verify the
-  landscape recommendation for the road" — that no later piece of that
-  task had ever picked up. Full detail in ROADMAP task 175's own
-  2026-09-13 done-note. Headline: both closed by pinning/verifying
-  existing behaviour, not by changing any — the same "already built,
-  never marked" shape as tasks 115/119/120, applied to a test gap rather
-  than a feature gap this time. Pulled `RoadStage.onPointerDown`'s inline
-  `isPrimary` guard into `src/three/inputGesture.ts` (`isPrimaryContact`,
-  the same pure-core split `fixedStep.ts`/`audioSession.ts` used) with 3
-  new unit tests, then verified the ACTUAL shipped wiring live in headless
-  Chromium against the production build (not a bypass — task 157/162's
-  own lesson about the difference): monkey-patched the real `stage.tap`,
-  confirmed a synthetic non-primary `pointerdown` mid-busk calls it zero
-  times and a real primary tap right after calls it once. Also re-shot
-  the main walking/busking road (not free play) at 844×390 landscape —
-  `postcard.mjs`'s own `09-phone-landscape` pose — and confirmed by eye
-  it still holds exactly what task 118/94/98 and `hudLayout.test.ts`
-  already established (song title, staff, coin counter, both corner
-  labels all clear of the frame edges and of each other). `npm test`
-  1389 green (+3), `npm run build` green (933.32 KB vs 933.30 KB — the
-  new module's own small weight), `verify-all quick` (`shader-check`)
-  PASS. No new runtime dependency. Direction research: this closes the
-  buildable half of mobile-friendly.md's finding 4 (palm rejection); its
-  landscape-orientation recommendation is now freshly re-confirmed rather
-  than resting on task 118's 2026-08-05 postcard alone. Live queue as of
-  run 177: unchanged from run 176 — task 173's real-device verification,
-  wave 20 (network-blocked), and task 189's far-band lead (parked) are
-  the open threads; the idea backlog is empty, and task 175's remaining
-  bullet (the walk-on door affordance, an input-design question) stays
-  flagged for a human, not a future run. Next consolidation still due
-  around run 185.
+- **HANDOFF, 2026-09-13 through 2026-09-16 (runs 176-184, compressed by
+  the run-185 consolidation)** — five named threads, all closed or
+  advanced, no new player-facing system. Task 173 piece 2 (run 176)
+  shipped the buildable half of mobile-friendly.md's audio-session/
+  interruption recommendation (`src/audio/audioSession.ts`,
+  `applyPlaybackAudioSession`, plus a widened `onstatechange` resume
+  guard), leaving only its real-hardware verification open. Task 175's
+  residual (run 177) pinned palm-rejection with a real test
+  (`src/three/inputGesture.ts`, `isPrimaryContact`) verified through the
+  actual shipped wiring, not a bypass, and re-shot the landscape road
+  live — closing the buildable half of mobile-friendly.md's palm-
+  rejection finding. Task 192 (runs 178-179) shipped a hand-picked
+  quality tier end to end: storage first (`wb.quality.v1` in `App.ts`,
+  wired into `detectQuality`'s optional override parameter), then the
+  title-card toggle itself (`RoadStage.qualityLabel`/`cycleQuality`,
+  a fourth door on `Hud.showTitleCard`, one tap cycling Auto → Low →
+  Medium → High → Auto) — closing mobile-friendly.md's recommendation 6
+  and, with it, mobile-friendly.md's entire buildout list (run 180
+  confirmed retention-design.md's v0.9 queue was already complete too,
+  the first time either was checked against its own list end to end).
+  Task 193 (runs 180-181) shipped art-quality.md's recommendation 6 end
+  to end: run 180 found the detail-budget half already held structurally
+  (task 170's vertex AO, the quality tiers, `painterly.ts`'s per-material
+  `fogScale`) and wrote the fog-reach spec into `docs/color-script.md`;
+  run 181 wired it (`src/three/fogReach.ts`, replacing the one-time
+  `TERRAIN_REACH` constant with a live per-hour/per-biome curve keyed off
+  `sunDirection.y`) — closing art-quality.md's own recommendation list
+  entirely, the last of the three research notes to close. Task 166's
+  long-dangling "skylight ambient saturation" remainder (run 182, audit
+  only) was re-measured (`tools/shadowcast.mjs`: noon saturation target
+  MET at 96% kept, well past the ≥50% floor) and re-filed as its own
+  task, 194, since the actual untried lever (the `skyLight` term, not the
+  `CAST_SHADOW_HUE` rotation piece 2 actually shipped) had never been
+  touched. Task 194 (runs 183-184) built the measurement instrument first
+  (`tools/skylight-sat.mjs`, confirming saturation rises monotonically
+  with how sun-facing a terrain face is, at every hour tried), then tried
+  a luma-preserving `skyLight` chroma boost and found it leaks into the
+  CARRYING hours under every gate tried (`sunAmount`, then
+  `sunAmount * sunHeight`) — reverted cleanly rather than shipped. All
+  nine runs kept `npm test`/`npm run build`/`verify-all quick` green
+  throughout, added no runtime dependency, and stayed on the existing
+  world's rendering/mobile/input surfaces. Bundle grew 933.11 → 934.62 KB
+  across the block, still under 20% of the 5 MB budget.
 
 - **HANDOFF, 2026-09-13 (run 175) — CONSOLIDATION (drift control, every
   ~10th run; last was 165).** Drift check over runs 166-174: CLEAN on
@@ -678,65 +476,6 @@ mastery display must read that section first.
   open threads; the idea backlog is still empty. Next consolidation due
   around run 185.
 
-- **HANDOFF, 2026-09-13 (run 176) — task 173 piece 2: the audio-session
-  and interruption fix, split from piece 1's real-device-only half.**
-  With the idea backlog empty for the second consolidation in a row (run
-  175) and all three of that run's open threads blocked or parked, this
-  run re-read `docs/research/mobile-friendly.md` end to end rather than
-  force a fresh idea, on the theory that a "done" claim is worth
-  re-checking against the primary research before assuming the queue is
-  truly dry. It found one: recommendation 5 ("audio session +
-  interruption handling" — feature-detect `navigator.audioSession`,
-  `type = "playback"`; on statechange/visibility, `resume()` a non-
-  running context) was filed by task 173's piece-1 done-note and this
-  file's "Needs human playtest" list as entirely hardware-blocked. It
-  isn't — only *confirming the mute switch and an interruption actually
-  recover sound* needs a real iPhone; the fix itself is ordinary
-  feature-detected code, the exact shape of task 171's `persist()`
-  one-liner and task 174's UA-sniffed tiers, both shipped and merged with
-  no device in the loop. Shipped both pieces the research names: (1)
-  `src/audio/audioSession.ts` (`applyPlaybackAudioSession`), a new pure
-  module so the one-line side effect (`navigator.audioSession.type =
-  'playback'`) has a unit-testable core, following the same split
-  `fixedStep.ts` used for the frame accumulator at run 173 — called once
-  from `RoadStage.startAudio()`, feature-detected, a silent no-op on
-  every engine without the API (which is every engine this environment
-  can test against); (2) `ctx.onstatechange` in the same method now
-  calls `resume()` on any state that isn't `'running'` or `'closed'` —
-  wider than the existing per-tap guard, which only ever checked
-  `'suspended'` and so never covered Safari's own non-standard
-  `'interrupted'` state; a context stuck there now self-heals as soon as
-  the OS allows, rather than waiting for the next tap to happen to also
-  re-touch it. Verified live in this environment's headless Chromium
-  against the production build: a real pointer tap (not a synthetic
-  event missing `isPrimary`, the exact bug run 173 caught) starts the
-  context, `ctx.state` reads `'running'` immediately after, zero
-  console/page errors, and `'audioSession' in navigator` correctly reads
-  `false` — confirming the feature-detection's no-op path is what
-  actually ran here, not an untested branch. `npm test` 1386 green (+3),
-  `npm run build` green (933.30 KB vs 933.11 KB — the new module's own
-  small weight), `verify-all quick` (`shader-check`) PASS. No new runtime
-  dependency (justification: none needed — both pieces are plain DOM/Web
-  Audio API calls). Direction research: this closes the buildable half of
-  mobile-friendly.md's recommendation 5; its real-device verification
-  stays exactly where it was in "Needs human playtest," now with working
-  code behind it. Live queue as of run 176: unchanged from run 175 (task
-  173's real-device verification, wave 20, task 189's far-band lead); the
-  idea backlog is empty again, but see the note below on why that's a
-  different empty than run 175 found. Next consolidation still due around
-  185.
-
-  **A process note worth carrying forward**: two consecutive
-  consolidation passes (165, 175 pattern) can report "idea backlog empty"
-  truthfully while a shipped-but-incomplete recommendation sits in a
-  research note the whole time — task 173's piece 1 split real-device
-  verification from buildable code correctly in the moment, but its own
-  done-note's wording ("silent-switch handling... untested as before")
-  read to every later run as "nothing to build here," not "half built."
-  A future run finding the idea backlog empty should re-read all three
-  `docs/research/*.md` notes specifically looking for a recommendation
-  whose done-note only describes measurement or refutation, before
-  concluding there is genuinely nothing left to build.
 
 - **HANDOFF, 2026-09-12 (run 174) — task 179's residual re-measured: the
   mechanism is confirmed, and it turns out to have no safe lever.** Full

@@ -519,6 +519,33 @@ the panels are not asking for fur).
   consolidation's drift check is only as complete as the list of threads
   it thinks to check against, not a guarantee against a fully-forgotten one.
 
+- 2026-09-16 (runs 176-184, folded in by the run-185 consolidation): **all
+  six ranked recommendations in this file are now SHIPPED or closed
+  end-to-end** (task 193, run 181, closed recommendation 6, the last open
+  one — see the run-185 Direction research refresh in STATE.md for the
+  full account), which makes this note's remaining open thread, task 194
+  (the skylight-ambient-saturation lever piece 1 measured and piece 2
+  tried), a genuinely new question rather than a gap in the original six.
+  Piece 2's attempt is also a real technical finding worth keeping: this
+  file's own color script splits hours into CARRYING (no ground/sky spend
+  allowed) and ENACTING categories, but that split does not track any
+  single per-frame lighting scalar already available in the shader. Piece
+  2 tried gating a chroma boost by `sunAmount` (leaked into two of three
+  CARRYING hours), then by `sunAmount * sunHeight` (dampened but did not
+  close the leak, because dawn's `sunHeight` reads 0.59 — HIGHER than
+  golden's 0.44 — so in-shader sun height ranks the hours backwards
+  relative to what the CARRYING/ENACTING split needs), then checked
+  whether `uLandKeyAmount` could substitute (it can't — its own header
+  comment says it is deliberately nonzero at exactly the hours a silencer
+  would need to zero out). The lesson for any future hour-gated shader
+  term: the CARRYING/ENACTING split is an authored category, not a
+  derivable function of sun angle, so it needs its own TS-side,
+  `dayFraction`-keyed gate uniform (piece 3's own proposal, following
+  `landKeyAmount`'s existing smoothstep-ramp precedent) rather than a
+  shader-side proxy — no matter how plausible the proxy looks
+  algebraically, per the run-144/166 lesson above that a plausible
+  mechanism still needs its own direct measurement before it's trusted.
+
 ## Source access notes
 
 Reached directly (fetched): adamgryu's effects thread (ThreadReader)

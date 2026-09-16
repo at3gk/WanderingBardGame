@@ -415,6 +415,35 @@ makes it long. You do not need to read it top to bottom.
   thread; task 173's real-device verification, wave 20, and task 189's
   far-band lead are unchanged. Next consolidation still due around run
   185.
+- **Run 183/184 update**: task 194 piece 1 (run 183) built the
+  measurement instrument (`tools/skylight-sat.mjs`) and confirmed the
+  suspicion with real numbers at every hour tried; piece 2 (run 184)
+  tried the actual `skyLight` chroma boost the measurement pointed at,
+  found it leaks into the CARRYING hours under every gate tried, and
+  reverted rather than shipped a violation of task 166's own governance.
+  See task 194's own piece-1/piece-2 done-notes below for the full
+  account. Live queue as of run 184: task 194 piece 3 (a TS-side,
+  `dayFraction`-keyed gate uniform) unchanged as the one open thread.
+- **Run 185 update**: CONSOLIDATION, per its own due date. Drift check
+  over runs 176-184: CLEAN — five named threads (task 173 piece 2, task
+  175's residual, task 192, task 193, task 166's audit into task 194),
+  each a small opt-in addition, a measurement instrument, or rendering
+  fidelity, nothing a new player-managed system. The milestone this run:
+  task 193 (run 181) turned out to have closed `art-quality.md`'s last
+  open ranked recommendation, so **all three `docs/research/*.md` notes
+  now have fully closed recommendation lists** for the first time — see
+  STATE.md's run-185 Direction research refresh for the full account.
+  Compressed the nine individual runs-176-184 HANDOFF blocks in STATE.md
+  into one run-index paragraph, matching the run-175/165/145 pattern. A
+  code/doc survey (Explore-agent pass over every file the block touched)
+  found everything genuinely wired into real app code and run 184's
+  shader revert genuinely clean (zero `src/` trace) — no staleness found
+  this time. Re-tested wave 20's network block: still blocked, now at
+  `connect_rejected` through the agent proxy rather than an HTTP 403 —
+  same outcome. Live queue as of run 185: task 194 piece 3 is the one
+  real open thread; task 173's real-device halves, wave 20, and task
+  189's far-band lead are unchanged. Next consolidation due around run
+  195.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135

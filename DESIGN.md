@@ -559,6 +559,40 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
 
 ## Changelog
 
+- 2026-09-16 (runs 176-184, consolidated at 185) — **task 192 (the
+  quality toggle) and task 193 (the fog-reach spec) both ship end to
+  end, and all three `docs/research/*.md` notes reach fully closed
+  recommendation lists for the first time.** Task 173 piece 2 (run 176)
+  shipped the buildable half of mobile-friendly.md's audio-session/
+  interruption fix; task 175's residual (run 177) pinned palm-rejection
+  with a real test. Task 192 (runs 178-179) shipped a hand-picked
+  quality tier — storage, then a title-card toggle — closing
+  mobile-friendly.md's whole buildout list. Task 193 (runs 180-181)
+  shipped the fog-reach spec and its wiring, closing art-quality.md's
+  recommendation 6, the last of its six — so `retention-design.md`,
+  `mobile-friendly.md`, and `art-quality.md` are now all fully closed
+  against their own ranked recommendations, a milestone this consolidation
+  is the first to report. Task 166's long-dangling "skylight ambient
+  saturation" remainder (run 182, audit only) was re-measured (noon
+  target MET, unchanged since piece 2) and re-filed as its own task, 194,
+  since the actual untried lever had never been touched; task 194 (runs
+  183-184) built the measurement instrument, confirmed the suspicion with
+  real numbers, then tried the actual shader change and reverted it
+  cleanly rather than ship a leak into the color script's protected
+  CARRYING hours — a real technical lesson (in-shader `sunHeight` doesn't
+  rank hours the way the script's CARRYING/ENACTING split needs) now in
+  `art-quality.md`'s findings section. Drift check over the block: CLEAN
+  — every run was one of these five named threads, each a small opt-in
+  addition, a measurement instrument, or rendering fidelity on the
+  existing world, never a new system the player manages. The run-185
+  consolidation itself found no doc staleness this time (unlike run 175's
+  solfège catch) — a code/doc survey confirmed all four shipped
+  mechanisms genuinely wired into real app code and run 184's shader
+  revert genuinely clean, zero trace in `src/`. Bundle 933.11 → 934.62 KB
+  across the block, still under 20% of the 5 MB budget. STATE trimmed the
+  same way runs 135/145/157/165/175 did it: the nine individual handoffs
+  for runs 176-184 compressed to one run-index paragraph. NOTHING CUT.
+
 - 2026-09-13 (runs 166-174, consolidated at 175) — **task 190 (the scatter
   lower-left question) and task 191 (solfège syllables) both ship end to
   end; task 189 parks after a fifth refutation; task 179's residual is
