@@ -4570,12 +4570,72 @@ iPad household needs none of it; logged under Blocked on human.
     n=726367 — almost certainly edge/highlight noise from a 60-pixel
     sample, not a real reading; trust the gradient's bins over a
     thin strict-bucket mean.)
-    **Next**: piece 2 is the luma-preserving chroma boost on `skyLight`
-    itself the original entry describes, scaled by `sunAmount` so it
-    stays out of the CARRYING hours — this instrument is what verifies
-    it moved the right number before/after. Re-run
-    `tools/skylight-sat.mjs` (no arguments) to get fresh before-numbers
-    first; the ones above are the baseline to beat.
+    **Piece 2 tried and reverted (2026-09-16, run 184): the `sunAmount`
+    gate leaks into the CARRYING hours it was supposed to stay out of,
+    and the obvious patch doesn't close it.** Built exactly what piece 1's
+    own "Next" note asked for — a luma-preserving chroma boost on
+    `skyLight` (normalise to a hue direction at unit luminance, expand its
+    deviation from grey by `mix(1.0, SKYLIGHT_SAT_BOOST, sunAmount)`,
+    divide back to unit luminance) — and measured it with fresh
+    `tools/skylight-sat.mjs` before/after runs rather than trusting the
+    algebra. Two important things the measurement caught that a code
+    review would not have:
+    First, `shadeNonCast`'s sMean is exactly reproducible run-to-run on
+    unmodified code (0.186 dawn, 0.285 golden, byte-identical across two
+    separate baseline runs) — unlike noon's `litGradient` top bin, which
+    swung 0.558-0.603 across two runs of the SAME boosted build with
+    nothing else changed. That distinction matters: it means the shade
+    bucket is a clean signal and any before/after delta there is real, but
+    the noon `lit` numbers are too noisy (small in-frame sample, animation
+    timing) to trust from one run each way — a limitation for whoever
+    measures piece 3, not fixed here.
+    Second, on that clean signal: the plain `sunAmount` gate moved dawn's
+    shade saturation 0.186 -> 0.190 and golden's 0.285 -> 0.305/0.302
+    (both repeated twice) — a real, repeatable leak into two of the three
+    CARRYING hours task 194's own entry named to protect. The cause is
+    geometric, not a typo: `sunFacing` (what `sunAmount` is built from) is
+    a weighted sum of three smoothstep bands, and its ramp starts well
+    below the `shadeNonCast` bucket's own `lit <= 0.46` edge — a fragment
+    can sit inside "shade, non-cast" by this instrument's own definition
+    and still carry `sunFacing`/`sunAmount` up to roughly 0.2-0.4, which is
+    exactly enough for a 1.6x chroma multiplier to move something.
+    Tried the obvious patch — multiplying the gate by the shader's
+    in-scope `sunHeight` (`sunAmount * sunHeight`, the same per-frame
+    scalar `foregroundTier`/`castShade`/`distanceFog` already ride for
+    CARRYING-hour protection) — and it only dampens the leak
+    proportionally, because `sunHeight` does not rank the hours the way
+    the colour script's CARRYING/ENACTING split needs: painterly.ts's own
+    CAST_SHADOW_HUE comment already records dawn's in-shader `sunHeight`
+    as 0.59, HIGHER than golden's 0.44, so a plain `sunHeight` multiplier
+    damps golden hour harder than dawn while still leaving both nonzero
+    (measured: dawn 0.186 -> 0.187, golden 0.285 -> 0.292 — smaller, not
+    gone). Checked whether `uLandKeyAmount` (landKey.ts) could be reused
+    as a ready-made "zero at the CARRYING hours" signal instead, since it
+    already exists as a uniform in scope here: rejected on reading its own
+    header comment — it is deliberately NONZERO at dawn/golden/night (a
+    per-hour colour-pull TARGET selector: biome-green at noon, the
+    horizon's warm wash at low sun, the night sky's violet after dark),
+    not a silencer, so wiring it in would reintroduce exactly the leak
+    just measured, just recoloured.
+    Reverted rather than shipped: task 166's governance is "no ground/sky
+    spend" at the CARRYING hours, not "spend a little", and nothing tried
+    this run reaches an honest zero there. `npm test`/`npm run build`
+    stayed green throughout (the revert leaves the tree exactly at run
+    183's state); no runtime dependency either way.
+    **Next**: piece 3 needs an hour-aware gate this run didn't have time
+    to build cleanly, not another per-fragment multiplier on the same
+    variable. `docs/color-script.md`'s own hour list is keyed on
+    `dayFraction` (`t`), not sun elevation — night 0.0, first light 0.2,
+    dawn 0.28, morning 0.42, noon 0.55 (the designed hour), afternoon 0.7,
+    golden 0.82, dusk 0.9 — so the honest fix is a small TS-side function
+    (landKeyAmount's own shape is the right precedent: a smoothstep ramp
+    between two `t` values, computed once per frame and passed in as a
+    NEW uniform) that is exactly 0 across dawn/golden/dusk/night and rises
+    only across morning/noon/afternoon, then gates `SKYLIGHT_SAT_BOOST`
+    with THAT instead of `sunAmount * sunHeight`. Re-run
+    `tools/skylight-sat.mjs`'s shade bucket specifically (the clean
+    signal, not the noisy noon `lit` one) against dawn and golden before
+    trusting any future attempt moved the right thing without leaking.
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).

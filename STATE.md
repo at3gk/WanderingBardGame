@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 183 (run 175 was the consolidation pass; next due around run
+Run counter: 184 (run 175 was the consolidation pass; next due around run
 185; run 183 shipped task 194 piece 1 — `tools/skylight-sat.mjs`, the
 lit-vs-shade terrain saturation instrument task 194 asked for before any
 shader change, run live against the three pinned poses; a real finding
@@ -25,7 +25,14 @@ saturation" remainder (carried unclosed through pieces 3/4/5 and dropped by
 every live-queue list since), confirmed the noon saturation target is MET
 via `tools/shadowcast.mjs` and re-filed the actually-untried lever as its
 own task, 194, so it survives future consolidation passes — see its own
-HANDOFF below;
+HANDOFF below; run 184 built task 194 piece 2 (the luma-preserving
+`skyLight` chroma boost piece 1's own "Next" asked for), measured it live
+with fresh `tools/skylight-sat.mjs` runs, found it leaks saturation into
+dawn and golden hour's shade even after gating by `sunAmount * sunHeight`,
+and reverted the shader change rather than ship a CARRYING-hour violation
+— see its own HANDOFF below and ROADMAP task 194's own piece-2 done-note
+for the numbers and why the obvious `sunHeight` patch and the existing
+`uLandKeyAmount` uniform both fail to close the leak;
 the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
@@ -289,6 +296,49 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-16 (run 184) — task 194 piece 2 tried and reverted:
+  the skyLight chroma boost leaks into the CARRYING hours.** Built exactly
+  what run 183's own "Next" note asked for: a luma-preserving chroma
+  boost on `skyLight` in `painterly.ts`, gated by `mix(1.0,
+  SKYLIGHT_SAT_BOOST, sunAmount)`. Measured it live with fresh
+  `tools/skylight-sat.mjs` runs rather than trusting the algebra, and the
+  measurement caught two real problems. First, a methodology finding worth
+  keeping for whoever measures piece 3: `shadeNonCast`'s sMean is exactly
+  reproducible run-to-run on unmodified code (0.186 dawn, 0.285 golden,
+  byte-identical across two separate baseline runs), so it is a trustworthy
+  signal — but noon's `litGradient` top bin swung 0.558-0.603 across two
+  runs of the SAME boosted build with nothing else changed, so that number
+  cannot be trusted from one run each way. Second, the actual finding: on
+  the clean shade signal, the plain `sunAmount` gate moved dawn 0.186 ->
+  0.190 and golden 0.285 -> 0.305/0.302 (both repeated) — a real,
+  repeatable leak into two of the three CARRYING hours this task exists to
+  protect, because `sunFacing` ramps up well before the `shadeNonCast`
+  bucket's own `lit <= 0.46` edge. Patched with `sunAmount * sunHeight`
+  (the same per-frame scalar other CARRYING-hour terms in this file ride)
+  and it only dampened the leak (dawn 0.186 -> 0.187, golden 0.285 ->
+  0.292) rather than closing it, because in-shader `sunHeight` does not
+  rank the hours the colour script's CARRYING/ENACTING split needs — dawn
+  reads 0.59, HIGHER than golden's 0.44, per painterly.ts's own
+  CAST_SHADOW_HUE comment. Checked whether `uLandKeyAmount` could be
+  reused as a ready-made zero-at-CARRYING-hours signal and found it can't:
+  its own header comment says it is deliberately nonzero at dawn/golden/
+  night (a colour-pull TARGET selector, not a silencer). Reverted rather
+  than shipped — task 166's governance is "no ground/sky spend" at the
+  CARRYING hours, not "spend a little," and nothing tried this run reaches
+  an honest zero there. Full account, including the exact numbers and why
+  each patch was rejected, in ROADMAP task 194's own piece-2 done-note.
+  `npm test` and `npm run build` stayed green throughout (the tree ends
+  exactly at run 183's committed state — no shader change shipped). No
+  runtime dependency. Direction research: none of the three
+  `docs/research/*.md` notes changed. Live queue as of run 184: task 194
+  piece 3 (a TS-side, `dayFraction`-keyed gate uniform, zero across dawn/
+  golden/dusk/night and rising only across morning/noon/afternoon per
+  `docs/color-script.md`'s own pinned `t` values, following
+  `landKeyAmount`'s own smoothstep-ramp shape as precedent) is a new, real,
+  unblocked thread; task 173's real-device verification, wave 20, and task
+  189's far-band lead are unchanged from run 183. Next consolidation still
+  due around run 185.
 
 - **HANDOFF, 2026-09-15 (run 183) — task 194 piece 1: the lit-vs-shade
   saturation instrument.** Live queue as of run 182 named task 194 (the
