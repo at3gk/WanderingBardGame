@@ -4727,6 +4727,51 @@ iPad household needs none of it; logged under Blocked on human.
     (936.86 KB vs 934.62 KB), `verify-all quick` (`shader-check`) PASS.
     No new runtime dependency.
 
+195. **HUD corners are keyboard/screen-reader reachable.** Every
+    interactive control in the game — the instrument case handle and the
+    songbook handle, the two corners `Hud.ts`'s own header calls "the
+    only thing[s] on the screen that take a tap away from the game" —
+    was a bare `div` with a `pointerdown` listener: no `role`, no
+    `tabIndex`, no `aria-label`, unreachable by Tab and inert on Enter/
+    Space. A screen-reader or keyboard-only player had no way to open
+    the case or the book at all. Not queued anywhere (the idea backlog
+    is empty and the three open threads — task 173's real-device halves,
+    wave 20, task 189's far-band lead — are all externally blocked; run
+    186's HANDOFF confirms nothing else was live), so this run
+    originated its own small, in-scope task rather than force one of
+    those. Piece 1: the two persistent corners only (`instrumentBox`,
+    `songBox`); the rows inside an open case/book, the quality toggle
+    and bookmark switch inside the title-card/settings surfaces, and the
+    page tap-to-dismiss are still pointer-only — flagged as piece 2
+    below, not done here.
+    **Piece 1 done (2026-09-17, run 187).** Both corners get
+    `role="button"`, a descriptive `aria-label` (kept in sync with the
+    readout text — `setInstrument`/`setSongbook` update it alongside
+    `textContent`; the song corner's constructor-time default needed its
+    own explicit label since `setSongbook`'s guard only fires on a
+    *change* of text, and "Wandering" is also the starting text),
+    `aria-expanded` reflecting `caseOpen`/`bookOpen`, and a `keydown`
+    handler answering Enter and Space exactly like the existing
+    `pointerdown` one (with `preventDefault` so Space doesn't also
+    scroll the page). `tabIndex` and `aria-disabled` now track
+    `pickable()`/`bookPickable()` in `applyPickable()` the same way
+    `pointerEvents` already did, so a corner that isn't a handle right
+    now (mid-busk, or nothing else in the case) drops out of tab order
+    instead of sitting focusable and inert. No jsdom in this project's
+    Vitest config (`environment: 'node'`), so this is DOM wiring with no
+    pure-function surface to unit-test — verified live instead, the
+    project's standing practice for this class of change: a throwaway
+    Playwright script tabbed through the loaded page, confirmed both
+    corners are reached with the correct role/label, and confirmed Enter
+    opens (`aria-expanded` false → true) and Space closes it again (true
+    → false) on both corners, zero console/page errors. `npm test` 1415
+    green (unchanged — no logic touched), `npm run build` green (937.96
+    KB vs 936.86 KB). No new runtime dependency. **Next**: piece 2 — the
+    case/book row lists (built fresh each time they open, so the same
+    `role="button"`/`tabIndex`/keydown treatment needs to live in
+    whatever builds a row, not just the two corners) and the
+    title-card's quality/bookmark controls.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
