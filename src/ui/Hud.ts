@@ -412,7 +412,18 @@ export class Hud {
     this.caseCatch = caseMark();
     this.caseCatch.style.display = 'none';
     this.instrumentBox.appendChild(this.caseCatch);
+    this.instrumentBox.setAttribute('role', 'button');
+    this.instrumentBox.setAttribute('aria-expanded', 'false');
+    this.instrumentBox.tabIndex = -1;
     this.instrumentBox.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      this.setCaseOpen(!this.caseOpen);
+    });
+    // Enter and Space are a DOM button's own activation keys; Space also
+    // pages the document by default, so it needs the same preventDefault a
+    // pointerdown gets from the browser for free.
+    this.instrumentBox.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
       event.preventDefault();
       this.setCaseOpen(!this.caseOpen);
     });
@@ -463,10 +474,22 @@ export class Hud {
     });
     this.songName.textContent = WANDERING_LABEL;
     this.songBox.appendChild(this.songName);
+    // Set once here to match the initial textContent above; setSongbook only
+    // updates the label on a *change* of textContent, so without this the
+    // starting "Wandering" state would never get a label at all.
+    this.songBox.setAttribute('aria-label', 'Songbook, wandering');
     this.songCatch = caseMark();
     this.songCatch.style.display = 'none';
     this.songBox.appendChild(this.songCatch);
+    this.songBox.setAttribute('role', 'button');
+    this.songBox.setAttribute('aria-expanded', 'false');
+    this.songBox.tabIndex = -1;
     this.songBox.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      this.setBookOpen(!this.bookOpen);
+    });
+    this.songBox.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
       event.preventDefault();
       this.setBookOpen(!this.bookOpen);
     });
@@ -552,6 +575,7 @@ export class Hud {
     this.instrument = name;
     this.instrumentName.textContent = name;
     this.instrumentAttention = ATTENTION_SEC;
+    this.instrumentBox.setAttribute('aria-label', `Instrument case, holding the ${name}`);
   }
 
   /**
@@ -595,6 +619,10 @@ export class Hud {
     if (label !== this.songName.textContent) {
       this.songName.textContent = label;
       this.songAttention = ATTENTION_SEC;
+      this.songBox.setAttribute(
+        'aria-label',
+        label === WANDERING_LABEL ? 'Songbook, wandering' : `Songbook, playing ${label}`,
+      );
     }
     this.buildBook();
     if (this.bookRows().length === 0) this.setBookOpen(false);
@@ -1384,11 +1412,19 @@ export class Hud {
     this.instrumentBox.style.pointerEvents = handle ? 'auto' : 'none';
     this.instrumentBox.style.cursor = handle ? 'pointer' : 'default';
     this.caseCatch.style.display = handle ? 'block' : 'none';
+    // A control that is not a handle right now (mid-busk, or nothing else in
+    // the case) drops out of tab order entirely rather than sitting focusable
+    // and inert — the same thing `pointerEvents: 'none'` already does for a
+    // pointer.
+    this.instrumentBox.tabIndex = handle ? 0 : -1;
+    this.instrumentBox.setAttribute('aria-disabled', handle ? 'false' : 'true');
 
     const book = this.bookPickable();
     this.songBox.style.pointerEvents = book ? 'auto' : 'none';
     this.songBox.style.cursor = book ? 'pointer' : 'default';
     this.songCatch.style.display = book ? 'block' : 'none';
+    this.songBox.tabIndex = book ? 0 : -1;
+    this.songBox.setAttribute('aria-disabled', book ? 'false' : 'true');
   }
 
   private setCaseOpen(open: boolean): void {
@@ -1401,6 +1437,7 @@ export class Hud {
     this.caseHold = next ? CASE_HOLD_SEC : 0;
     this.caseBox.style.opacity = next ? '1' : '0';
     this.caseBox.style.pointerEvents = next ? 'auto' : 'none';
+    this.instrumentBox.setAttribute('aria-expanded', String(next));
     // Bring the corner up with the case: the label and the rows above it are
     // one object while it is open, and a handle at idle opacity with a lit
     // stack over it reads as two.
@@ -1562,6 +1599,7 @@ export class Hud {
     this.bookHold = next ? CASE_HOLD_SEC : 0;
     this.bookBox.style.opacity = next ? '1' : '0';
     this.bookBox.style.pointerEvents = next ? 'auto' : 'none';
+    this.songBox.setAttribute('aria-expanded', String(next));
     this.songAttention = next ? Math.max(this.songAttention, CASE_HOLD_SEC) : 0;
     this.applyOpacity();
   }
