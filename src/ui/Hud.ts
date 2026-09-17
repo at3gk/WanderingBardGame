@@ -387,7 +387,11 @@ export class Hud {
       opacity: '0',
       transition: 'opacity 320ms ease',
     });
-    this.root.appendChild(this.caseBox);
+    // Appended below, after `instrumentBox` — DOM order is also Tab order,
+    // and the case's own rows need to come right after the corner that
+    // reveals them so opening it with the keyboard and pressing Tab again
+    // actually reaches them, rather than skipping forward past a box that
+    // sits earlier in the document.
 
     this.instrumentBox = element('div', {
       position: 'absolute',
@@ -428,6 +432,7 @@ export class Hud {
       this.setCaseOpen(!this.caseOpen);
     });
     this.root.appendChild(this.instrumentBox);
+    this.root.appendChild(this.caseBox);
 
     // --- the song being learnt, and the rest of the songbook ---------------
     //
@@ -451,7 +456,8 @@ export class Hud {
       opacity: '0',
       transition: 'opacity 320ms ease',
     });
-    this.root.appendChild(this.bookBox);
+    // Same reason as the case above: appended below, after `songBox`, so
+    // Tab order matches the keyboard path (open the book, then Tab into it).
 
     this.songBox = element('div', {
       position: 'absolute',
@@ -494,6 +500,7 @@ export class Hud {
       this.setBookOpen(!this.bookOpen);
     });
     this.root.appendChild(this.songBox);
+    this.root.appendChild(this.bookBox);
 
     // --- the journal ------------------------------------------------------
     this.journalBox = element('div', {
@@ -1326,14 +1333,18 @@ export class Hud {
         textShadow: '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 12px rgba(20, 14, 18, 0.7)',
       });
       row.textContent = entry.name;
+      const activate = () => {
+        this.setCaseOpen(false);
+        this.chosen?.(entry.id);
+      };
       // pointerdown rather than click, to match the game's own input: a tap
       // that has to wait for pointerup before anything moves feels like the
       // interface is thinking about it.
       row.addEventListener('pointerdown', (event) => {
         event.preventDefault();
-        this.setCaseOpen(false);
-        this.chosen?.(entry.id);
+        activate();
       });
+      bindRowActivation(row, this.caseOpen, activate);
       this.caseBox.appendChild(row);
     }
 
@@ -1368,11 +1379,15 @@ export class Hud {
           textShadow: '0 1px 2px rgba(20, 14, 18, 0.85), 0 0 12px rgba(20, 14, 18, 0.7)',
         });
         row.textContent = label;
-        row.addEventListener('pointerdown', (event) => {
-          event.preventDefault();
+        const activate = () => {
           this.setCaseOpen(false);
           this.keepsakeCb?.(action);
+        };
+        row.addEventListener('pointerdown', (event) => {
+          event.preventDefault();
+          activate();
         });
+        bindRowActivation(row, this.caseOpen, activate);
         this.caseBox.appendChild(row);
       }
     }
@@ -1437,6 +1452,13 @@ export class Hud {
     this.caseHold = next ? CASE_HOLD_SEC : 0;
     this.caseBox.style.opacity = next ? '1' : '0';
     this.caseBox.style.pointerEvents = next ? 'auto' : 'none';
+    // The rows themselves were last built with `this.caseOpen`'s old value
+    // baked into their `tabIndex` (`bindRowActivation`, called from
+    // `buildCase`) — a toggle with no rebuild in between needs to update
+    // them here, the same way `pointerEvents` just did above.
+    for (const row of Array.from(this.caseBox.children)) {
+      if ((row as HTMLElement).getAttribute('role') === 'button') (row as HTMLElement).tabIndex = next ? 0 : -1;
+    }
     this.instrumentBox.setAttribute('aria-expanded', String(next));
     // Bring the corner up with the case: the label and the rows above it are
     // one object while it is open, and a handle at idle opacity with a lit
@@ -1543,25 +1565,33 @@ export class Hud {
       } else {
         row.textContent = entry.name;
       }
-      row.addEventListener('pointerdown', (event) => {
-        event.preventDefault();
+      const activate = () => {
         this.setBookOpen(false);
         if (entry.freePlay) this.freePlayCb?.();
         else if (entry.importMidi) this.importMidiCb?.();
         else this.songChosen?.(entry.id);
+      };
+      row.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        activate();
       });
+      bindRowActivation(row, this.bookOpen, activate);
       this.bookBox.appendChild(row);
     }
     if (pages > 1) {
       const turn = makeRow({ color: INK });
       turn.textContent = 'turn the page ⤵';
-      turn.addEventListener('pointerdown', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
+      const activate = () => {
         this.bookPageIndex += 1;
         this.bookHold = CASE_HOLD_SEC;
         this.buildBook();
+      };
+      turn.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        activate();
       });
+      bindRowActivation(turn, this.bookOpen, activate);
       this.bookBox.appendChild(turn);
     }
     this.layoutBook();
@@ -1599,6 +1629,10 @@ export class Hud {
     this.bookHold = next ? CASE_HOLD_SEC : 0;
     this.bookBox.style.opacity = next ? '1' : '0';
     this.bookBox.style.pointerEvents = next ? 'auto' : 'none';
+    // See the matching loop in `setCaseOpen` for why this is needed here too.
+    for (const row of Array.from(this.bookBox.children)) {
+      if ((row as HTMLElement).getAttribute('role') === 'button') (row as HTMLElement).tabIndex = next ? 0 : -1;
+    }
     this.songBox.setAttribute('aria-expanded', String(next));
     this.songAttention = next ? Math.max(this.songAttention, CASE_HOLD_SEC) : 0;
     this.applyOpacity();
@@ -1695,6 +1729,26 @@ function caseMark(): SVGSVGElement {
   stroke.setAttribute('stroke-linejoin', 'round');
   svg.appendChild(stroke);
   return svg;
+}
+
+/**
+ * Wires a case/book row for the same keyboard/screen-reader reach task 195
+ * piece 1 gave the two corners: a role, Enter/Space answering the row's own
+ * pointerdown, and a starting `tabIndex` that matches whether the stack the
+ * row lives in is open right now — `initiallyOpen` rather than a live
+ * getter because these rows are rebuilt from scratch on every `buildCase`/
+ * `buildBook` call, always with the box's current open state already
+ * decided by then. `setCaseOpen`/`setBookOpen` keep it in sync afterwards,
+ * the same way `applyPickable` already does for the corners themselves.
+ */
+function bindRowActivation(row: HTMLElement, initiallyOpen: boolean, activate: () => void): void {
+  row.setAttribute('role', 'button');
+  row.tabIndex = initiallyOpen ? 0 : -1;
+  row.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
+    event.preventDefault();
+    activate();
+  });
 }
 
 function place(node: HTMLElement, box: HudBox): void {

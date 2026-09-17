@@ -1,6 +1,6 @@
 # STATE
 
-Run counter: 187 (run 175 was the consolidation pass; run 185 was the
+Run counter: 188 (run 175 was the consolidation pass; run 185 was the
 consolidation pass; next due around run 195; run 183 shipped
 task 194 piece 1 — `tools/skylight-sat.mjs`, the
 lit-vs-shade terrain saturation instrument task 194 asked for before any
@@ -49,7 +49,12 @@ see the run-187 HANDOFF), originated and shipped task 195 piece 1 (the
 two HUD corners gain keyboard/screen-reader reachability —
 `role="button"`, `aria-label`, `aria-expanded`, `tabIndex` tracking
 pickability, and a `keydown` handler answering the existing
-`pointerdown` one) — see its own HANDOFF below;
+`pointerdown` one) — see its own HANDOFF below; run 188 shipped task
+195 piece 2a (the case/book row lists get the same treatment, via one
+shared `bindRowActivation` helper) and fixed a real DOM-order bug the
+live check for it found — `caseBox`/`bookBox` were appended before
+their own corners, so Tab from a freshly-opened corner could never
+reach its rows at all — see its own HANDOFF below;
 the
 2026-08-05 overnight loop session was runs ~51-65;
 run 61 was the consolidation pass; runs 66+ are the second overnight loop;
@@ -347,6 +352,57 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-17 (run 188).** Live queue as of run 187 was task
+  195 piece 2 (the case/book row lists, plus the title-card's quality/
+  bookmark controls). Split it: piece 2a shipped this run (the row
+  lists only), piece 2b (title-card controls, `showSheet`'s doors, the
+  page's tap-to-dismiss) stays open, the same "too big for one run, take
+  the first piece" split every earlier task-195 piece used.
+  Piece 2a: every real row in `src/ui/Hud.ts`'s case (`buildCase` —
+  instrument entries, the two keepsake rows) and book (`buildBook` —
+  song entries, the "turn the page" row) now gets `role="button"`,
+  Enter/Space activation, and a `tabIndex` that tracks whether its stack
+  is open, via one shared helper (`bindRowActivation`) instead of four
+  near-duplicate wiring blocks. Heading rows (the songbook's shelf
+  labels) are deliberately skipped — `SongEntry.heading`'s own doc
+  comment already says "never tappable," so a button role there would
+  be a lie a screen reader repeats. `setCaseOpen`/`setBookOpen` now also
+  sync every row's `tabIndex` on open/close, mirroring `applyPickable`'s
+  treatment of the corners, because a row's `tabIndex` is fixed at
+  build time and toggling the stack doesn't always rebuild it (paging
+  never does).
+  The live check written to verify this (Tab to a corner, Enter to
+  open, Tab once more, inspect the focused row) caught a **real,
+  independent bug** first: `caseBox`/`bookBox` were appended to
+  `this.root` *before* `instrumentBox`/`songBox` in the constructor, so
+  although both boxes are positioned absolutely (their DOM position
+  doesn't affect where they render), that same DOM position also
+  decides Tab order — which put every row *before* the corner that
+  reveals it. Opening a corner with the keyboard and pressing Tab could
+  therefore never reach that corner's own rows at all; focus skipped
+  past them and landed on `document.body`, with nothing telling a
+  keyboard user why. Fixed by moving two `appendChild` call sites only
+  — `caseBox` now appended right after `instrumentBox`, `bookBox` right
+  after `songBox`, the disclosure-button-then-its-content order ARIA's
+  own patterns use — with no rendering change. Re-verified live after
+  the fix, both corners: Tab reaches the corner, Enter opens its stack,
+  Tab reaches the first real row with `role="button"`/`tabIndex` 0
+  (confirmed it is a genuine row and not the *other* corner, which also
+  carries `role="button"` and could otherwise pass a loose check),
+  Space/Enter activates it and the stack closes (`aria-expanded` back
+  to `false`), zero console/page errors. No jsdom in this project's
+  Vitest config, so this is DOM wiring verified live only, same as
+  piece 1. `npm test` 1415 green (unchanged — no logic touched), `npm
+  run build` green (938.51 KB vs 937.96 KB). No new runtime dependency.
+  See ROADMAP task 195's own piece-2a done-note for the full account.
+  **Next**: piece 2b — the title-card's quality-tier and bookmark-switch
+  controls (`showTitleCard`), its "go"/"book" doors, `showSheet`'s doors,
+  and the page's tap-to-dismiss (`pageBox`) — all still pointer-only.
+  Live queue as of run 188: task 195 piece 2b; task 173's real-device
+  halves, wave 20, and task 189's far-band lead remain externally
+  blocked. Next consolidation still due around run 195 (188 is 3 runs
+  past 185).
 
 - **HANDOFF, 2026-09-17 (run 187).** Live queue as of run 186 was empty:
   the idea backlog is empty, and the three open threads (task 173's two
