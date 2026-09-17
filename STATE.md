@@ -1,6 +1,11 @@
 # STATE
 
-Run counter: 188 (run 175 was the consolidation pass; run 185 was the
+Run counter: 189 (run 189 shipped task 195 piece 2b — the title card's
+four doors (`go`/`book`/`bookmark`/`quality` in `showTitleCard`) get
+keyboard/screen-reader reach via the existing `bindRowActivation` helper,
+split down from piece 2b's original three-surface scope since the title
+card, `showSheet`, and `pageBox` turned out not to be one shape — see its
+own HANDOFF below and ROADMAP task 195's own piece-2b done-note; run 175 was the consolidation pass; run 185 was the
 consolidation pass; next due around run 195; run 183 shipped
 task 194 piece 1 — `tools/skylight-sat.mjs`, the
 lit-vs-shade terrain saturation instrument task 194 asked for before any
@@ -352,6 +357,66 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-17 (run 189).** Live queue as of run 188 was task
+  195 piece 2b: the title-card's quality/bookmark controls, its "go"/
+  "book" doors, `showSheet`'s doors, and the page's tap-to-dismiss —
+  everything piece 2a's own "Next" note had left pointer-only, lumped
+  as one piece. Read the actual code for all three surfaces before
+  committing to that scope, and split it further: the title card's four
+  doors (`go`, `book`, `bookmark`, `quality` in `showTitleCard`) are
+  plain rows that are interactive for as long as the card exists, the
+  exact shape `bindRowActivation` (piece 2a's shared helper) already
+  handles — but `showSheet` can render with **zero doors at all** (the
+  Book Two invitation card passes no `doors` option), which means a
+  keyboard user would have no row to land on and no way to dismiss it at
+  all unless the veil itself gains its own keyboard path — a real design
+  choice (what closes it — `Escape`? a focused veil?) rather than a copy
+  of the row helper. And `pageBox`'s "tap-to-dismiss" is a background
+  handler sitting behind three door rows already living inside it
+  (`walkOn`, the postcard press, the other-bookmark row) that no earlier
+  piece — and no earlier HANDOFF — ever actually named as in scope, so
+  wiring only the background dismiss and leaving those three rows
+  pointer-only would ship a half-fixed page. Three different shapes, one
+  genuinely one-run-sized. Took the title card, the same "too big, take
+  the first piece" call this task has made at every split so far.
+  Shipped: `go`/`book`/`bookmark`/`quality` each get `role="button"`,
+  `tabIndex` 0, and Enter/Space activation via `bindRowActivation` itself
+  — no new helper needed, since passing `true` for "initially open" is
+  exactly correct when the row's own existence (not some separate stack)
+  is what makes it interactive. `go`'s keyboard path calls `dismiss()`
+  directly, matching how it already worked for a pointer (bubbling
+  un-stopped to the veil's own pointerdown handler); `book` dismisses and
+  calls `onSongbook()`; `bookmark`/`quality` call their own callback with
+  no dismiss, matching their existing pointerdown handlers exactly.
+  Broadened `bindRowActivation`'s doc comment to describe both shapes
+  (case/book rows tied to a stack's open state, and veil doors like these
+  that are always `true`) instead of describing only the first.
+  No jsdom in this project's Vitest config, so — same standing practice
+  as every piece of task 195 before this one — verified live instead: a
+  throwaway harness page (not committed) that imports `Hud` directly and
+  calls `showTitleCard` with all four doors supplied, sidestepping the
+  need to fake a returning player's `localStorage` journey record just to
+  reach the real app's own call site in `RoadStage.ts`. Confirmed, via
+  Playwright against a `vite` dev server: Tab reaches the four doors in
+  order (`go` → `book` → `bookmark` → `quality`), each with
+  `role="button"`/`tabIndex` 0; Enter on `book` fires `onSongbook` and
+  removes the veil; Space on `quality` and on `bookmark` fires each door's
+  own callback without dismissing; Enter on `go` fades the veil to
+  opacity 0 and removes it from the DOM after its own 700ms timeout. Zero
+  console/page errors in every case. `npm test` 1415 green (unchanged —
+  no logic touched), `npm run build` green (938.61 KB vs 938.51 KB, well
+  inside the 5 MB budget). No new runtime dependency. See ROADMAP task
+  195's own piece-2b done-note for the full account.
+  **Next**: piece 2c — `showSheet`'s doors (the zero-doors case needs its
+  own keyboard-dismiss answer first, since it can't reuse
+  `bindRowActivation` as-is) and `pageBox`'s tap-to-dismiss together with
+  the three door rows already inside it (`walkOn`, the postcard press,
+  the other-bookmark row), which have never been in any prior piece's
+  scope. Live queue as of run 189: task 195 piece 2c; task 173's
+  real-device halves, wave 20, and task 189's far-band lead remain
+  externally blocked. Next consolidation still due around run 195 (189 is
+  4 runs past 185).
 
 - **HANDOFF, 2026-09-17 (run 188).** Live queue as of run 187 was task
   195 piece 2 (the case/book row lists, plus the title-card's quality/

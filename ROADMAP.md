@@ -4811,6 +4811,54 @@ iPad household needs none of it; logged under Blocked on human.
     piece 2b — the title-card's quality/bookmark controls (and its "go"/
     "book" doors, `showSheet`'s doors, and the page's tap-to-dismiss),
     still pointer-only.
+    **Piece 2b done (2026-09-17, run 189): the title card's four doors,
+    split down further.** Piece 2b's own scope as run 188 named it bundled
+    three different surfaces — the title card, `showSheet`, and `pageBox`
+    — and they turned out not to be one shape: the title card's doors are
+    plain always-interactive rows (exactly `bindRowActivation`'s existing
+    contract), but `showSheet` can render with zero doors at all (the Book
+    Two invitation card), which needs a keyboard path to dismiss with no
+    row to land on — a real design question (focus target? `Escape`?), not
+    a five-minute wiring job — and `pageBox`'s "tap-to-dismiss" is a
+    background handler behind existing pointer-only door rows (`walkOn`,
+    the postcard press, the other-bookmark row) that piece 2b's own wording
+    never actually named, so fixing just the background without those rows
+    would be a half-measure. Rather than force all three into one run, this
+    run took the title card alone — same "too big, take the first piece"
+    call every earlier task-195 split made — and re-files the rest as piece
+    2c below.
+    Shipped: `go`, `book`, and (when present) `bookmark`/`quality` in
+    `showTitleCard` now each get `role="button"`, `tabIndex` 0, and
+    Enter/Space activation via `bindRowActivation` itself — no new helper,
+    since every title-card door is interactive for exactly as long as the
+    card exists at all (no open/closed stack to track), so the call site
+    just passes `true` where a case/book row would pass its live open
+    state. `go`'s keyboard activation calls `dismiss()` directly (mirroring
+    the veil's own "tap anywhere" pointerdown bubble, which is how `go`
+    already worked for a pointer); `book` dismisses and calls `onSongbook`;
+    `bookmark`/`quality` call their own door callback with no dismiss,
+    matching their existing pointerdown handlers exactly. `bindRowActivation`'s
+    doc comment now describes both use shapes instead of only the
+    case/book one.
+    Verified live (no jsdom in this project, same standing practice as
+    every earlier piece): a throwaway harness page importing `Hud` directly
+    and calling `showTitleCard` with all four doors present (avoids needing
+    to fake a returning-player's `localStorage` journey record just to
+    reach the real app's own call site) — confirmed Tab reaches the four
+    doors in order (`go` → `book` → `bookmark` → `quality`), each carries
+    `role="button"`/`tabIndex` 0, Enter on `book` fires `onSongbook` and
+    removes the veil, Space on `quality`/`bookmark` fires their own
+    callback without dismissing, and Enter on `go` fades the veil to
+    opacity 0 and removes it from the DOM after its own 700ms timeout —
+    zero console/page errors throughout. `npm test` 1415 green (unchanged
+    — no logic touched), `npm run build` green (938.61 KB vs 938.51 KB).
+    No new runtime dependency.
+    **Piece 2c, still open**: `showSheet`'s doors (including the
+    zero-doors case, which needs its own keyboard-dismiss answer, not just
+    a copy of `bindRowActivation`) and `pageBox`'s tap-to-dismiss together
+    with the three door rows already living inside it (`walkOn`, the
+    postcard press, the other-bookmark row) that were never covered by any
+    earlier piece.
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
