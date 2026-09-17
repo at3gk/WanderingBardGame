@@ -4771,6 +4771,46 @@ iPad household needs none of it; logged under Blocked on human.
     `role="button"`/`tabIndex`/keydown treatment needs to live in
     whatever builds a row, not just the two corners) and the
     title-card's quality/bookmark controls.
+    **Piece 2a done (2026-09-17, run 188): the case/book row lists.**
+    Every real row (case entries, the two keepsake rows, book songs, the
+    "turn the page" row) now gets `role="button"`, Enter/Space activation,
+    and a `tabIndex` that tracks whether its stack is currently open —
+    `bindRowActivation`, one shared helper called from both `buildCase`
+    and `buildBook` instead of writing the same three lines four times.
+    Heading rows (the songbook's shelf labels) are deliberately skipped —
+    `SongEntry.heading`'s own doc comment already says "never tappable",
+    so giving one a button role would be a lie a screen reader repeats.
+    `setCaseOpen`/`setBookOpen` sync every row's `tabIndex` on open/close,
+    the same way `applyPickable` already did for the corners, because a
+    row's `tabIndex` is baked in at build time and toggling the stack
+    doesn't always rebuild it (paging never does; re-opening after a
+    change sometimes does).
+    The live check this run wrote to verify it (Tab to a corner, Enter to
+    open, Tab once more, check the focused row) caught a **real,
+    independent bug** before it ever reached a player: `caseBox`/`bookBox`
+    were appended to `this.root` *before* `instrumentBox`/`songBox` in the
+    constructor, so their absolute positioning looked right but their
+    place in Tab order — which follows DOM order, not screen position —
+    put every row *before* the corner that reveals it. Tabbing forward
+    from a freshly-opened corner could therefore never reach that corner's
+    own rows; it skipped past them and, having no other stop, landed on
+    `document.body`. Fixed by moving two `appendChild` call sites only
+    (`caseBox` now appended right after `instrumentBox`, `bookBox` right
+    after `songBox` — the disclosure-button-then-its-content order ARIA's
+    own patterns use); nothing about their rendering changed, since both
+    boxes are positioned absolutely regardless of DOM order. Re-verified
+    live after the fix: Tab reaches the instrument corner, Enter opens the
+    case, Tab reaches "Press a keepsake" with `role="button"`/`tabIndex`
+    0, Space activates it and the case closes (`aria-expanded` back to
+    `false`); same round-trip for the songbook corner into its first song
+    row, Enter this time. No jsdom in this project (`environment: 'node'`
+    in the Vitest config), so this is DOM wiring with no pure-function
+    surface — verified live only, per the project's standing practice.
+    `npm test` 1415 green (unchanged — no logic touched), `npm run build`
+    green (938.51 KB vs 937.96 KB). No new runtime dependency. **Next**:
+    piece 2b — the title-card's quality/bookmark controls (and its "go"/
+    "book" doors, `showSheet`'s doors, and the page's tap-to-dismiss),
+    still pointer-only.
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
