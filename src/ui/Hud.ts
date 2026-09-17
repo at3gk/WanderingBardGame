@@ -1125,6 +1125,25 @@ export class Hud {
       });
     }
 
+    // Keyboard/screen-reader reach (task 195 piece 2b): the same
+    // role="button"/tabIndex/keydown treatment piece 1 gave the two
+    // corners and piece 2a gave the case/book rows, reused as-is —
+    // every door here is interactive for as long as the card exists at
+    // all, so `initiallyOpen` (bindRowActivation's own name for "start
+    // tabbable") is always `true`, unlike a case/book row's stack-tied
+    // state.
+    bindRowActivation(go, true, () => dismiss());
+    bindRowActivation(book, true, () => {
+      dismiss();
+      onSongbook();
+    });
+    if (bookmark && bookmarkDoor) {
+      bindRowActivation(bookmark, true, () => bookmarkDoor.open());
+    }
+    if (quality && qualityDoor) {
+      bindRowActivation(quality, true, () => qualityDoor.cycle());
+    }
+
     for (const [i, row] of rows.entries()) {
       row.style.opacity = '0';
       row.style.transition = 'opacity 800ms ease';
@@ -1732,14 +1751,17 @@ function caseMark(): SVGSVGElement {
 }
 
 /**
- * Wires a case/book row for the same keyboard/screen-reader reach task 195
+ * Wires a row or door for the same keyboard/screen-reader reach task 195
  * piece 1 gave the two corners: a role, Enter/Space answering the row's own
- * pointerdown, and a starting `tabIndex` that matches whether the stack the
- * row lives in is open right now — `initiallyOpen` rather than a live
- * getter because these rows are rebuilt from scratch on every `buildCase`/
- * `buildBook` call, always with the box's current open state already
- * decided by then. `setCaseOpen`/`setBookOpen` keep it in sync afterwards,
- * the same way `applyPickable` already does for the corners themselves.
+ * pointerdown, and a starting `tabIndex` that matches whether it's
+ * interactive right now — `initiallyOpen` rather than a live getter because
+ * case/book rows are rebuilt from scratch on every `buildCase`/`buildBook`
+ * call, always with the box's current open state already decided by then
+ * (`setCaseOpen`/`setBookOpen` keep it in sync afterwards, the same way
+ * `applyPickable` already does for the corners themselves). A veil door
+ * (the title card's `go`/`book`/bookmark/quality rows, piece 2b) has no
+ * such stack to track — it exists only while the veil does — so it always
+ * passes `true`.
  */
 function bindRowActivation(row: HTMLElement, initiallyOpen: boolean, activate: () => void): void {
   row.setAttribute('role', 'button');
