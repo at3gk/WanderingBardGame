@@ -1,6 +1,13 @@
 # STATE
 
-Run counter: 191 (run 191 shipped task 195 piece 2d, closing task 195 end
+Run counter: 192 (run 192 re-measured ROADMAP task 184's open "problem 2" —
+`headgap.mjs` now traces each measured glyph back to its own SongBeat, and
+the correlated numbers show the residual note-head overlap is the tune's
+own ordinary beat spacing, not a rare eighth-note case as previously
+written — see its own HANDOFF below and ROADMAP task 184's fresh done-note.
+Moved to Blocked on human: the only lever that doesn't cost pedagogy
+legibility needs frame/playtest iteration this run has no way to do safely;
+run 191 shipped task 195 piece 2d, closing task 195 end
 to end — `showSheet`'s doors now get `bindRowActivation` (a gap piece 2b's
 own note hadn't caught), a zero-doors sheet auto-focuses the veil itself
 with `role="button"`/`aria-label`, and `Escape` dismisses the veil/page
@@ -371,6 +378,54 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-18 (run 192) — task 184's "problem 2" re-measured,
+  re-diagnosed, and moved to Blocked on human.** Live queue as of run 191
+  was empty (idea backlog exhausted, v1.3 entirely done, task 173's
+  real-device halves/wave 20/task 189's far-band lead all externally
+  blocked); this run picked the one open, unblocked art-quality thread
+  left — task 184's own "problem (2)," the in-runway note-head overlap its
+  own text called "a design decision needing fresh-session frame
+  iteration, not an end-of-queue tweak." Before touching any rendering
+  code, re-measured it with a real instrument rather than trusting the
+  four-year-old (in run terms) "eighth pair" framing: gave `headgap.mjs`
+  a correlation it never had — each measured glyph is traced back to the
+  actual `SongBeat` it belongs to (`notes.live`'s Map iteration order
+  matches the instance buffer's own write order, signature marks aside),
+  so an overlap now comes with the real millisecond gap between the two
+  colliding notes instead of a guess from BPM arithmetic. The result
+  overturns the existing framing: every overlapping worst-pair sampled
+  across four viewports (24 samples) was 652 ms apart — one ordinary beat
+  at `BASE_BPM` 92 — bar two samples at the true half-beat/eighth gap
+  (326 ms). This is the tune's own most common spacing whenever two
+  consecutive notes also sit close in pitch, not a rare tight rhythm.
+  Re-derived why: `URGENCY_START` (progress 0.45) sits 990 ms before a
+  hit, 338 ms more than a full beat, so the later of two beat-apart notes
+  is already deep in its urgency swell (~0.94 scale) by the time the
+  earlier one is struck; checked the pinned contract for slack to spend
+  and found essentially none (0.943 delivered against a 0.85 floor at the
+  600 ms checkpoint). Any envelope lever that clears this collision cuts
+  into the exact "imminent note is the boldest thing on the ribbon"
+  tiers `songNotes.test.ts` pins from the wave-2/wave-7 critiques, for the
+  *ordinary* case, not an edge one — a genuine pedagogy-legibility
+  trade-off, not a free tuning pass. The one lever that would not cost
+  legibility — a small render-only horizontal offset for a beat-spaced,
+  pitch-adjacent pair, the convention real music engraving already uses
+  to separate a printed second's noteheads without moving either one's
+  staff position — is sized (see ROADMAP task 184's fresh done-note) but
+  was deliberately not built this run: it has to fully resolve to zero
+  well before `HIT_WINDOW_MS`, since this file's position doubles as the
+  tap-timing cue, and getting that taper wrong risks the one mechanic
+  DESIGN.md asks every run to protect, with no human playtest available
+  here to feel whether it reads right. Logged under **Blocked on human**
+  below rather than shipped as an unverified guess. `npm test` 1415 green
+  (unchanged — tools/ only, no game code touched), `npm run build` green
+  (939.28 kB, unchanged). No new runtime dependency. Live queue as of run
+  192: nothing else unblocked in the art-quality queue; next run should
+  check the idea backlog again, consider whether the engraving-offset
+  lever above is worth attempting with an explicit accept-the-risk call,
+  or originate a new small task the way runs 187 and 195 did. Next
+  consolidation still due around run 195 (192 is 7 runs past 185).
 
 - **HANDOFF, 2026-09-18 (run 191) — task 195 piece 2d, closing task 195.**
   Live queue as of run 190 was piece 2d: the shared design question for
@@ -4972,6 +5027,42 @@ still needs a human:
   protocol is written for exactly that.
 
 ## Blocked on human
+- **Task 184's "problem 2": trade near-barline legibility for the
+  in-runway note-head overlap, yes or no — or attempt the engraving-offset
+  lever instead, without a human to feel whether the taper reads right**
+  (2026-09-18, run 192). Freshly re-measured and re-diagnosed this run
+  (see the run-192 HANDOFF above and ROADMAP task 184's own fresh
+  done-note): the overlap `headgap.mjs` still finds on portrait,
+  landscape and tablet (worst ratios 0.40/0.93/0.60, all below the <1
+  overlap line) happens between notes exactly one beat apart at
+  `BASE_BPM` — the songbook's own ordinary spacing whenever two
+  consecutive notes are also close in pitch — not the rare "eighth pair"
+  problem 2's own text named. The pinned envelope contract
+  (`songNotes.test.ts`, the wave-2/wave-7 "imminent note is boldest"
+  tiers) has essentially no slack left by the point two beat-apart notes
+  are both near full scale (0.943 delivered against a 0.85 floor at the
+  600 ms checkpoint), so any scale/alpha lever that clears the collision
+  necessarily lowers legibility for the *ordinary* case, not an edge one —
+  a real trade against DESIGN.md's pedagogy guarantee, not a free
+  engineering fix, the same shape of call task 179's residual below
+  already established this project routes to a human rather than
+  deciding alone. The one candidate lever that would not cost legibility
+  — a small render-only horizontal (arc-axis) offset for a beat-spaced,
+  pitch-adjacent pair, the same convention printed music already uses to
+  separate a written second's noteheads without moving either one's
+  staff position — was sized but not built: it must fully resolve to
+  zero well before `HIT_WINDOW_MS` (90 ms) since this file's rendered
+  position doubles as the tap-timing cue, and this is the one mechanic
+  DESIGN.md names as the one to get right above all others. Getting that
+  taper's shape correct is a frame-iteration and feel question no
+  automated check here can answer — PLAYTEST.md has no round written for
+  it yet. Needs a human call: accept lower near-barline legibility for
+  beat-spaced pitch-adjacent pairs (and if so, how much), license an
+  autonomous run to build and self-judge the engraving-offset lever by
+  `headgap.mjs` numbers alone (accepting the risk that "numbers improve"
+  and "reads right to a five-year-old" might diverge), or accept the
+  residual overlap as a standing limitation the way task 173's
+  real-device half is accepted.
 - **Task 179's residual: a bard-local exception to the color script's
   CARRYING-hours rule, yes or no** (2026-09-12, run 174). The dawn/
   low-sun figure/ground value floor (re-queued as 179's residual on
