@@ -558,6 +558,16 @@ export class Hud {
       event.preventDefault();
       this.hidePage();
     });
+    // Keyboard/screen-reader reach, task 195 piece 2d: the three door rows
+    // inside the page (piece 2c) are Tab-reachable now, but there was still
+    // no keyboard equivalent of tapping empty page background to fold it
+    // away. Escape does that, whichever row (if any) currently has focus —
+    // it bubbles up from any child to this same listener.
+    this.pageBox.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' && event.key !== 'Esc') return;
+      event.preventDefault();
+      this.hidePage();
+    });
     this.root.appendChild(this.pageBox);
 
     host.appendChild(this.root);
@@ -935,6 +945,32 @@ export class Hud {
       dismiss();
     });
 
+    // Keyboard/screen-reader reach, task 195 piece 2d: a door row (below)
+    // already answers Enter/Space once it exists, but a sheet with NO doors
+    // at all (Book Two's invitation) leaves a keyboard user nothing to land
+    // on. Escape dismisses either way — the keyboard equivalent of the
+    // pointerdown handler above, which already treats any tap on the veil
+    // as "leave" — and when there are no doors the veil itself becomes the
+    // one focusable thing, taking Enter/Space too, so it reads and behaves
+    // like the door a mouse user taps on bare background.
+    const hasDoors = (options.doors?.length ?? 0) > 0;
+    veil.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' || event.key === 'Esc') {
+        event.preventDefault();
+        dismiss();
+        return;
+      }
+      if (!hasDoors && (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar')) {
+        event.preventDefault();
+        dismiss();
+      }
+    });
+    if (!hasDoors) {
+      veil.setAttribute('role', 'button');
+      veil.tabIndex = 0;
+      veil.setAttribute('aria-label', `${options.title}. Press Enter to continue.`);
+    }
+
     const rows: HTMLElement[] = [];
     const title = element('div', { fontSize: '24px', color: INK, textShadow: shadow });
     title.textContent = options.title;
@@ -965,12 +1001,16 @@ export class Hud {
         marginTop: i === 0 ? '18px' : '0',
       });
       row.textContent = door.label;
+      const pick = () => {
+        dismiss();
+        door.onPick?.();
+      };
       row.addEventListener('pointerdown', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        dismiss();
-        door.onPick?.();
+        pick();
       });
+      bindRowActivation(row, true, pick);
       rows.push(row);
     }
 
@@ -985,6 +1025,7 @@ export class Hud {
       requestAnimationFrame(() => {
         veil.style.opacity = '1';
         for (const row of rows) row.style.opacity = '1';
+        if (!hasDoors) veil.focus();
       }),
     );
   }
