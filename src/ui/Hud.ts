@@ -803,12 +803,16 @@ export class Hud {
         cursor: 'pointer',
       });
       door.textContent = page.walkOn;
+      const takeWalkOn = () => {
+        this.hidePage();
+        this.walkOnCb?.();
+      };
       door.addEventListener('pointerdown', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        this.hidePage();
-        this.walkOnCb?.();
+        takeWalkOn();
       });
+      bindRowActivation(door, true, takeWalkOn);
       rows.push(door);
     }
 
@@ -829,11 +833,13 @@ export class Hud {
         cursor: 'pointer',
       });
       press.textContent = POSTCARD_ROW_LABEL;
+      const pressPostcard = () => this.postcardCb?.();
       press.addEventListener('pointerdown', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        this.postcardCb?.();
+        pressPostcard();
       });
+      bindRowActivation(press, true, pressPostcard);
       rows.push(press);
     }
 
@@ -853,11 +859,13 @@ export class Hud {
         cursor: 'pointer',
       });
       other.textContent = "Or turn to the other bookmark's page";
+      const turnToOther = () => this.otherPageCb?.();
       other.addEventListener('pointerdown', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        this.otherPageCb?.();
+        turnToOther();
       });
+      bindRowActivation(other, true, turnToOther);
       rows.push(other);
     }
 
@@ -1165,6 +1173,14 @@ export class Hud {
     this.pageShown = false;
     this.pageBox.style.opacity = '0';
     this.pageBox.style.pointerEvents = 'none';
+    // The door rows (walkOn/postcard/other-bookmark) were built with
+    // `tabIndex` 0 by `bindRowActivation` when the page opened, and nothing
+    // removes them from the DOM until the next `showPage` call — without
+    // this, a folded (invisible, unpickable) page would still catch Tab,
+    // the same trap `setCaseOpen`/`setBookOpen` already guard against.
+    for (const row of Array.from(this.pageBox.children)) {
+      if ((row as HTMLElement).getAttribute('role') === 'button') (row as HTMLElement).tabIndex = -1;
+    }
   }
 
   /**
