@@ -46,11 +46,26 @@ function measure() {
   const uSize = notes.glyphMaterial.uniforms.uSize.value;
   const HEAD_RX_FRAC = 28 / 128; // HEAD_RX in SongNotes; the cell is 128 px.
 
+  // Correlate a glyph instance slot with the SongBeat it belongs to, so an
+  // overlap can be blamed on an actual musical gap rather than guessed from
+  // BPM arithmetic. `writeGlyphs` fills the signature marks first (0 for a
+  // Book One song, the only book the built-in tune rotation plays), then
+  // `live`'s own Map iteration order — insertion order, which is ascending
+  // hitTimeMs since beats are harvested in order and never re-inserted — so
+  // slot (signatureLength + k) is the k-th entry of `live.values()`.
+  const liveBeats = [...notes.live.values()];
+  const signatureLength = notes.signature.length;
+
   const glyphs = [];
   const count = Math.min(scale.length, alpha.length);
   for (let i = 0; i < count; i++) {
     if (alpha[i] < 0.25 || scale[i] <= 0) continue;
-    glyphs.push({ world: { x: pos[i * 3], y: pos[i * 3 + 1], z: pos[i * 3 + 2] }, scale: scale[i] });
+    const beat = liveBeats[i - signatureLength];
+    glyphs.push({
+      world: { x: pos[i * 3], y: pos[i * 3 + 1], z: pos[i * 3 + 2] },
+      scale: scale[i],
+      hitTimeMs: beat?.hitTimeMs ?? null,
+    });
   }
   // three.js Vector3 via the scene's own classes: borrow from the camera.
   const V3 = cam.position.constructor;
@@ -69,7 +84,7 @@ function measure() {
       .project(cam);
     const qx = (q.x * 0.5 + 0.5) * w;
     const qy = (-q.y * 0.5 + 0.5) * h;
-    out.push({ x: sx, y: sy, r: Math.hypot(qx - sx, qy - sy) });
+    out.push({ x: sx, y: sy, r: Math.hypot(qx - sx, qy - sy), hitTimeMs: g.hitTimeMs });
   }
 
   out.sort((a, b) => a.x - b.x);
@@ -81,14 +96,23 @@ function measure() {
     const need = a.r + b.r;
     const ratio = need > 0 ? d / need : Infinity;
     if (!worst || ratio < worst.ratio) {
-      worst = { ratio: Math.round(ratio * 100) / 100, gapPx: Math.round(d), needPx: Math.round(need), rA: Math.round(a.r), rB: Math.round(b.r) };
+      const gapMs =
+        a.hitTimeMs != null && b.hitTimeMs != null ? Math.round(Math.abs(b.hitTimeMs - a.hitTimeMs)) : null;
+      worst = {
+        ratio: Math.round(ratio * 100) / 100,
+        gapPx: Math.round(d),
+        needPx: Math.round(need),
+        rA: Math.round(a.r),
+        rB: Math.round(b.r),
+        gapMs,
+      };
     }
   }
   return { glyphs: out.length, worst };
 }
 
 const browser = await launch();
-console.log('viewport                 sample  glyphs  worstGap/need  ratio   (ratio<1 = OVERLAP)');
+console.log('viewport                 sample  glyphs  worstGap/need  ratio   gapMs  (ratio<1 = OVERLAP)');
 const summary = [];
 for (const vp of VIEWPORTS) {
   const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
@@ -101,7 +125,7 @@ for (const vp of VIEWPORTS) {
     const r = await page.evaluate(measure);
     if (r?.worst) {
       console.log(
-        `${vp.name.padEnd(24)} ${String(s).padEnd(7)} ${String(r.glyphs).padEnd(7)} ${String(r.worst.gapPx + '/' + r.worst.needPx).padEnd(14)} ${r.worst.ratio}`,
+        `${vp.name.padEnd(24)} ${String(s).padEnd(7)} ${String(r.glyphs).padEnd(7)} ${String(r.worst.gapPx + '/' + r.worst.needPx).padEnd(14)} ${String(r.worst.ratio).padEnd(7)} ${r.worst.gapMs ?? 'n/a'}`,
       );
       if (!vpWorst || r.worst.ratio < vpWorst.ratio) vpWorst = r.worst;
     }
@@ -112,6 +136,9 @@ for (const vp of VIEWPORTS) {
 }
 console.log('\nSummary (worst pair seen per viewport):');
 for (const s of summary) {
-  console.log(`  ${s.viewport.padEnd(26)} ratio ${s.worst?.ratio ?? 'n/a'} ${s.worst && s.worst.ratio < 1 ? '<-- OVERLAP' : ''}`);
+  const gapNote = s.worst?.gapMs != null ? `, ${s.worst.gapMs} ms apart` : '';
+  console.log(
+    `  ${s.viewport.padEnd(26)} ratio ${s.worst?.ratio ?? 'n/a'}${gapNote} ${s.worst && s.worst.ratio < 1 ? '<-- OVERLAP' : ''}`,
+  );
 }
 await browser.close();

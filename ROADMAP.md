@@ -5868,6 +5868,54 @@ full verdict map and the measure-first suspicion list):
     mid E behind bold near E), runway not emptied, imminent note
     still boldest; 08/10's in-runway pair still touches, as expected.
     1160 tests green (+3), build green.
+    **Problem (2) re-measured and re-diagnosed (2026-09-18, run 192) —
+    it is not an eighth-pair edge case, it is the tune's own beat.**
+    `headgap.mjs` gained a correlation it never had: each measured glyph
+    is now traced back to the `SongBeat` it belongs to (`notes.live`'s
+    Map iteration order matches the instance buffer's write order
+    exactly, signature marks aside), so a worst-pair reading now comes
+    with the real millisecond gap between the two notes instead of a
+    guess from BPM arithmetic. Run live across all four pinned
+    viewports (6 samples each, 2.5 s apart, same protocol as before):
+    portrait 0.40-1.20, landscape 0.93-1.11, tablet 0.60-1.24, desktop
+    0.87-1.70 — three of four still overlap at their worst. The gap on
+    every single overlapping worst-pair sampled was **652 ms — one full
+    beat at `BASE_BPM` 92** — with only two samples (of 24) landing on
+    326 ms, the actual half-beat/eighth gap. So the pair task 184
+    piece-1 could not clear by envelope tuning alone is not a rare tight
+    rhythm; it is two ordinary, adjacent quarter-note beats, which is
+    the single most common spacing in every tune this songbook plays,
+    whenever they also happen to sit a step or so apart in pitch
+    (stepwise motion, equally common in a nursery tune). Re-ran the
+    envelope arithmetic from piece-1's own numbers to see why 652 ms
+    still collides: `URGENCY_START` sits at progress 0.45, which is
+    990 ms before the hit — 338 ms *more* than a full beat — so by the
+    time the earlier of two beat-apart notes is struck, the later one
+    has already been inside the urgency swell for over a third of a
+    second and is sitting at scale ≈0.94 nominal, not some low
+    "still growing" value. Checked the pinned contract for headroom to
+    spend: at the 600 ms-out checkpoint the floor is 0.85 and
+    `glyphEnvelope` already delivers 0.943 — essentially zero slack.
+    Any lever that shrinks, delays or dims a beat-spaced note's growth
+    enough to clear this collision necessarily cuts into the exact
+    tiers `songNotes.test.ts` pins from the wave-2/wave-7 critiques
+    (the "imminent note is the boldest thing on the ribbon" contract),
+    and does so for the *ordinary* case, not a rare one — this is a
+    pedagogy-legibility trade-off for most of the songbook's own beat
+    pattern, not an end-of-queue tuning pass. The one lever that does
+    NOT cost legibility — a small horizontal (arc-axis) render-only
+    offset for a beat-spaced, pitch-adjacent pair, the same convention
+    real engraving uses to separate a printed second's noteheads
+    without moving either one's staff position — was sized but not
+    built: it would have to fully resolve to zero well before the
+    earlier note's own hit window (`HIT_WINDOW_MS` 90 ms), since this is
+    the one file in the game whose position doubles as the tap timing
+    cue, and getting that taper wrong risks the single mechanic DESIGN.md
+    calls out as the one to get right, with no human playtest available
+    this run to feel whether it reads correctly. Logged under STATE.md's
+    Blocked on human rather than shipped as a guess. `npm test` 1415
+    green (unchanged — tools/ only, no game code touched), `npm run
+    build` green (939.28 kB, unchanged). No new runtime dependency.
 
 185. **The daylight land key (wave-13 arc, piece 1).** Wave 13's
     strongest cross-lens agreement: colour and value independently
