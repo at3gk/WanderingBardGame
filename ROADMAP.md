@@ -4853,12 +4853,65 @@ iPad household needs none of it; logged under Blocked on human.
     zero console/page errors throughout. `npm test` 1415 green (unchanged
     — no logic touched), `npm run build` green (938.61 KB vs 938.51 KB).
     No new runtime dependency.
-    **Piece 2c, still open**: `showSheet`'s doors (including the
-    zero-doors case, which needs its own keyboard-dismiss answer, not just
-    a copy of `bindRowActivation`) and `pageBox`'s tap-to-dismiss together
-    with the three door rows already living inside it (`walkOn`, the
-    postcard press, the other-bookmark row) that were never covered by any
-    earlier piece.
+    **Piece 2c done (2026-09-18, run 190): `pageBox`'s three door rows.**
+    Piece 2c's own scope as run 189 named it still bundled two shapes that
+    don't split the same way: `showSheet`'s doors (where the zero-doors
+    case needs an actual design answer for how a keyboard user dismisses a
+    veil with nothing to land on) and `pageBox`'s two halves — the three
+    existing door rows inside it (`walkOn`, the postcard press, the
+    other-bookmark row), which are plain always-interactive rows exactly
+    like the title card's, and the background tap-to-dismiss itself, which
+    is the same "nothing to land on" design question `showSheet` has. Took
+    the mechanical half only — the three rows — and re-files the shared
+    design question as piece 2d below, same "too big, take the first
+    piece" call every earlier split of this task made.
+    Shipped: `walkOn`, the postcard press, and the other-bookmark row in
+    `showPage` each get `role="button"`, `tabIndex` 0, and Enter/Space
+    activation via `bindRowActivation`, `initiallyOpen` always `true` for
+    the same reason the title card's doors used `true` — each row exists
+    only while the page itself is showing, no separate stack to track.
+    Each row's existing `pointerdown` handler and its new keyboard handler
+    now call one shared closure (`takeWalkOn`/`pressPostcard`/
+    `turnToOther`) instead of duplicating the handler body, so the two
+    input paths can't drift apart. `hidePage()` did NOT already sync these
+    rows' `tabIndex` back to `-1` the way `setCaseOpen`/`setBookOpen` do
+    for case/book rows — unlike those, `pageBox`'s rows are rebuilt fresh
+    on every real `showPage()` call (`replaceChildren` at its top), so the
+    gap only matters between a `hidePage()` and the next `showPage()`,
+    but a folded page can sit that way indefinitely (walk on, never
+    reopen the page before the next fire) — a real, if narrow, Tab trap,
+    so `hidePage()` now walks `pageBox.children` and drops any
+    `role="button"` row's `tabIndex` to `-1`, the same idiom
+    `setCaseOpen`/`setBookOpen` already use for their own rows.
+    No jsdom in this project (`environment: 'node'` in the Vitest config),
+    so this is DOM wiring with no pure-function surface — verified live
+    only, per the project's standing practice for every piece of task 195
+    so far: a throwaway harness page (not committed) importing `Hud`
+    directly and calling `showPage` with a `walkOn` door, a festival line
+    (which gates both the postcard and other-bookmark rows), `onWalkOn`/
+    `onPostcard`/`onOtherPage` all registered. Confirmed, via Playwright
+    against a `vite` dev server: Tab reaches all three rows in document
+    order with `role="button"`/`tabIndex` 0; Enter on `walkOn` fires the
+    handler and folds the page (`isPageOpen` false afterward); Space on
+    the postcard row and Enter on the other-bookmark row each fire their
+    own callback exactly once; after `hidePage()`, every `role="button"`
+    element on the page (the two HUD corners included) reads `tabIndex`
+    `-1`, confirming the fix closes the trap rather than merely not
+    breaking anything. Zero console/page errors (one incidental 404 for
+    the harness page's own missing favicon, reproduced identically with
+    and without any keyboard interaction, so unrelated to this change).
+    `npm test` 1415 green (unchanged — no logic touched), `npm run build`
+    green (938.80 KB vs 938.61 KB). No new runtime dependency.
+    **Piece 2d, still open**: the shared design question — how a
+    keyboard-only player dismisses a veil-like surface that has no row to
+    land on at all. Two real instances now on record: `showSheet` can
+    render with zero doors (the Book Two invitation card), and `pageBox`'s
+    own background tap-to-dismiss has no row equivalent even when doors
+    ARE present (Tab can reach the rows now, but there is still no
+    keyboard path to "just fold the page" the way tapping empty background
+    space does for a pointer). Needs an actual answer — a focused
+    container plus `Escape`? a visually-hidden leading "close" row? — not
+    a copy of `bindRowActivation`, before either surface is wired.
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).

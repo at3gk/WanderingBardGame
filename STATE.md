@@ -1,6 +1,14 @@
 # STATE
 
-Run counter: 189 (run 189 shipped task 195 piece 2b — the title card's
+Run counter: 190 (run 190 shipped task 195 piece 2c — `pageBox`'s three
+door rows (`walkOn`, the postcard press, the other-bookmark row) get
+keyboard/screen-reader reach via `bindRowActivation`, plus a real Tab-trap
+fix in `hidePage()` that dropped their `tabIndex` back to 0 while the page
+sat folded, split down from piece 2c's own two-surface scope since
+`showSheet`'s zero-doors dismiss and `pageBox`'s own background
+tap-to-dismiss are the same open design question, re-filed together as
+piece 2d — see its own HANDOFF below and ROADMAP task 195's own piece-2c
+done-note; run 189 shipped task 195 piece 2b — the title card's
 four doors (`go`/`book`/`bookmark`/`quality` in `showTitleCard`) get
 keyboard/screen-reader reach via the existing `bindRowActivation` helper,
 split down from piece 2b's original three-surface scope since the title
@@ -357,6 +365,57 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-18 (run 190).** Live queue as of run 189 was task
+  195 piece 2c: `showSheet`'s doors (the zero-doors case needing its own
+  keyboard-dismiss answer) and `pageBox`'s tap-to-dismiss together with
+  the three door rows already living inside it (`walkOn`, the postcard
+  press, the other-bookmark row). Reading the actual code confirmed this
+  still bundled two shapes that split along a different seam than "two
+  surfaces": `pageBox`'s three door rows are plain always-interactive
+  rows, exactly `bindRowActivation`'s existing contract (same as the
+  title card's doors), while `showSheet`'s zero-doors case AND `pageBox`'s
+  own background tap-to-dismiss are the *same* open design question — how
+  does a keyboard-only player dismiss a veil-like surface with nothing to
+  land on — just two instances of it. Took the mechanical row-wiring half
+  only, same "too big, take the first piece" call this task has made at
+  every split. Full account in ROADMAP task 195's own piece-2c done-note;
+  headline here:
+  Shipped `role="button"`/`tabIndex` 0/Enter-Space activation on
+  `walkOn`, the postcard press, and the other-bookmark row in `showPage`,
+  via `bindRowActivation` with `initiallyOpen` always `true` (each row
+  exists only while the page itself does, no stack to track). Also found
+  and fixed a real, if narrow, accessibility bug while wiring this:
+  `hidePage()` never dropped these rows' `tabIndex` back to `-1` the way
+  `setCaseOpen`/`setBookOpen` already do for case/book rows — harmless for
+  a mouse (a folded page has `pointerEvents: 'none'`), but a Tab trap for
+  a keyboard user, since `pageBox`'s children are only rebuilt on the next
+  real `showPage()` call, which a player who walks on and never reopens
+  the page before the next fire may not trigger for a long time. Fixed by
+  having `hidePage()` walk `pageBox.children` and zero any `role="button"`
+  row's `tabIndex`, mirroring the existing case/book idiom.
+  No jsdom in this project, so verified live per task 195's standing
+  practice: a throwaway harness (not committed) importing `Hud` directly
+  and calling `showPage` with a `walkOn` door and a festival line (which
+  gates the postcard/other-bookmark rows), all three handlers registered.
+  Confirmed via Playwright against a `vite` dev server: Tab reaches all
+  three rows in order with the right role/tabIndex; Enter on `walkOn`
+  fires its handler and folds the page; Space/Enter on the other two rows
+  each fire their own callback exactly once; after `hidePage()`, every
+  `role="button"` element in the document (HUD corners included) reads
+  `tabIndex -1`. Zero console/page errors (one incidental favicon 404 from
+  the bare harness page itself, reproduced identically whether or not any
+  key was pressed, so unrelated to the change). `npm test` 1415 green
+  (unchanged — no logic touched), `npm run build` green (938.80 KB vs
+  938.61 KB, well inside the 5 MB budget). No new runtime dependency.
+  **Next**: piece 2d — the shared keyboard-dismiss design question for a
+  veil/page with no row to land on (`showSheet`'s zero-doors case,
+  `pageBox`'s own background tap-to-dismiss even when rows ARE present).
+  Needs an actual design answer (a focused container plus `Escape`? a
+  leading "close" row?), not a mechanical copy of `bindRowActivation`.
+  Live queue as of run 190: task 195 piece 2d; task 173's real-device
+  halves, wave 20, and task 189's far-band lead remain externally blocked.
+  Next consolidation still due around run 195 (190 is 5 runs past 185).
 
 - **HANDOFF, 2026-09-17 (run 189).** Live queue as of run 188 was task
   195 piece 2b: the title-card's quality/bookmark controls, its "go"/
