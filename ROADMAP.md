@@ -4902,16 +4902,69 @@ iPad household needs none of it; logged under Blocked on human.
     and without any keyboard interaction, so unrelated to this change).
     `npm test` 1415 green (unchanged — no logic touched), `npm run build`
     green (938.80 KB vs 938.61 KB). No new runtime dependency.
-    **Piece 2d, still open**: the shared design question — how a
-    keyboard-only player dismisses a veil-like surface that has no row to
-    land on at all. Two real instances now on record: `showSheet` can
-    render with zero doors (the Book Two invitation card), and `pageBox`'s
-    own background tap-to-dismiss has no row equivalent even when doors
-    ARE present (Tab can reach the rows now, but there is still no
-    keyboard path to "just fold the page" the way tapping empty background
-    space does for a pointer). Needs an actual answer — a focused
-    container plus `Escape`? a visually-hidden leading "close" row? — not
-    a copy of `bindRowActivation`, before either surface is wired.
+    **Piece 2d done (2026-09-18, run 191): the shared dismiss answer,
+    landed on both instances.** Reading `showSheet` before touching it
+    found a second, previously-unflagged gap alongside the zero-doors
+    question: its door rows (used by the post-festival choice and the
+    Book Two invitation) had never actually been wired with
+    `bindRowActivation` at all — only `pointerdown` — unlike the title
+    card's doors piece 2b already handled. Piece 2d's scope therefore
+    covers three things, not two, but all three share one answer, so
+    they shipped together rather than splitting again: **Escape
+    dismisses**, always, matching what a pointer already does by tapping
+    anywhere on the veil/page background; and when a sheet has zero doors
+    the veil itself becomes the one focusable, announced thing, so a
+    keyboard user isn't left with nothing to land on.
+    Shipped: `showSheet`'s door rows now get `bindRowActivation` (`true`
+    for the same reason the title card's doors do — no stack, interactive
+    for as long as the sheet exists), so Tab/Enter/Space reach them for
+    the first time. A `keydown` listener on the veil answers `Escape` by
+    calling `dismiss()` regardless of which door (if any) has focus, since
+    it bubbles up from any child. When `options.doors` is empty, the veil
+    itself additionally gets `role="button"`, `tabIndex` 0, an
+    `aria-label` built from the sheet's own title ("Book Two awaits. Press
+    Enter to continue."), an Enter/Space handler alongside the Escape one,
+    and is focused programmatically once its fade-in starts — the
+    "focused container plus Escape" option piece 2b's note raised, chosen
+    over a synthetic leading "close" row because the veil already reads
+    as the one thing on screen; a fake row would be announcing a control
+    that doesn't otherwise exist. `pageBox` (the campfire page, piece 2c)
+    gets the same `Escape`-to-`hidePage()` listener, added once in the
+    constructor since the box itself persists across `showPage()` calls;
+    its existing three door rows don't change, and pressing Escape while
+    one of them has focus still folds the page rather than activating it,
+    since the veil-family idiom is "Escape always means leave, whatever
+    has focus."
+    No jsdom in this project, so verified live per task 195's standing
+    practice — a throwaway harness (not committed) importing `Hud`
+    directly, driven with Playwright against a `vite` dev server across
+    five fresh page loads (a real, if Playwright-specific, quirk surfaced
+    mid-verification: removing a *focused* element from the DOM without
+    an intervening click leaves Chromium's synthetic Tab dispatch stalled
+    on `document.body` for the rest of that page session — confirmed by
+    reproducing it in isolation and clearing it with an explicit
+    `document.body.focus()`, so each scenario below used its own fresh
+    page rather than chaining, and no player-facing focus trap is
+    implicated): (1) a zero-doors sheet auto-focuses the veil
+    (`role="button"`, `tabIndex` 0, the built label) and `Escape` removes
+    it; (2) a doors sheet Tabs through both doors in order and `Enter` on
+    the first fires only that door's `onPick`; (3) the same sheet's
+    `Escape` removes it with neither door's `onPick` firing; (4) the
+    page's `walkOn` door is reached by `Tab` and `Escape` folds the page
+    (`isPageOpen` false) without firing `onWalkOn`; (5) `Escape` still
+    folds the page with that same door focused, confirming the bubble
+    path. Zero console/page errors throughout (one incidental favicon 404
+    from the bare harness page, unrelated). `npm test` 1415 green
+    (unchanged — no logic touched, this is DOM wiring), `npm run build`
+    green (939.28 kB vs 938.80 kB, well inside the 5 MB budget). No new
+    runtime dependency.
+    **Task 195 is now closed end to end**: every interactive surface in
+    the HUD (the two corners, case/book rows, the title card's doors,
+    `showSheet`'s doors and its zero-doors dismiss, and the page's rows
+    and background-equivalent dismiss) is keyboard- and
+    screen-reader-reachable. Nothing left queued under this task; the
+    next run should pull from the idea backlog or the v1.3/art-quality
+    threads per the live-queue note below.
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).

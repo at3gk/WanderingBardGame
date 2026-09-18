@@ -1,6 +1,12 @@
 # STATE
 
-Run counter: 190 (run 190 shipped task 195 piece 2c — `pageBox`'s three
+Run counter: 191 (run 191 shipped task 195 piece 2d, closing task 195 end
+to end — `showSheet`'s doors now get `bindRowActivation` (a gap piece 2b's
+own note hadn't caught), a zero-doors sheet auto-focuses the veil itself
+with `role="button"`/`aria-label`, and `Escape` dismisses the veil/page
+from any focused child in both `showSheet` and `pageBox` — see its own
+HANDOFF below and ROADMAP task 195's own piece-2d done-note, which also
+closes the task; run 190 shipped task 195 piece 2c — `pageBox`'s three
 door rows (`walkOn`, the postcard press, the other-bookmark row) get
 keyboard/screen-reader reach via `bindRowActivation`, plus a real Tab-trap
 fix in `hidePage()` that dropped their `tabIndex` back to 0 while the page
@@ -365,6 +371,52 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-18 (run 191) — task 195 piece 2d, closing task 195.**
+  Live queue as of run 190 was piece 2d: the shared design question for
+  how a keyboard-only player dismisses a veil-like surface with no row to
+  land on, with two named instances (`showSheet`'s zero-doors case,
+  `pageBox`'s background tap-to-dismiss). Reading `showSheet` before
+  touching it found a third, unflagged thing in the same surface: its
+  door rows (post-festival choice, Book Two's invitation) had never
+  actually been wired with `bindRowActivation` — only `pointerdown` —
+  unlike the title card's doors from piece 2b. All three share one
+  answer, so they shipped together rather than splitting further:
+  **Escape dismisses**, from any focused child, matching what a pointer
+  already does by tapping empty background; and a zero-doors sheet's
+  veil becomes the one focusable, announced thing (`role="button"`,
+  `tabIndex` 0, an `aria-label` built from the sheet's title, focused
+  programmatically on show) rather than a synthetic "close" row, since
+  the veil already reads as the only thing on screen. `showSheet`'s door
+  rows now get `bindRowActivation` for the first time. `pageBox` gets the
+  same `Escape`-to-`hidePage()` listener, added once in the constructor.
+  No jsdom in this project, so verified live (task 195's standing
+  practice) with a throwaway harness (not committed) driven by Playwright
+  across five fresh page loads — chaining scenarios on one page surfaced
+  a real but Playwright-specific quirk, not a product bug: removing a
+  *focused* element from the DOM without an intervening click leaves
+  Chromium's synthetic Tab dispatch stalled on `document.body` for the
+  rest of that page session (confirmed by reproducing it in isolation and
+  clearing it with an explicit `document.body.focus()`). All five
+  scenarios passed with zero console/page errors: zero-doors auto-focus
+  and Escape-dismiss; a doors sheet's Tab order and Enter-picks-only-that-
+  door; the same sheet's Escape-dismisses-without-picking; the page's
+  `walkOn` door reached by Tab with Escape folding the page without
+  firing it; and Escape still folding the page with that door focused
+  (confirming the bubble path). `npm test` 1415 green (unchanged — no
+  logic touched), `npm run build` green (939.28 kB vs 938.80 kB, well
+  inside the 5 MB budget). No new runtime dependency.
+  **Task 195 is closed end to end** — every interactive HUD surface (the
+  two corners, case/book rows, the title card, `showSheet`, and the page)
+  is keyboard/screen-reader reachable. Live queue as of run 191: nothing
+  queued — the idea backlog is empty and task 173's real-device halves,
+  wave 20, and task 189's far-band lead remain externally blocked, same
+  as every run since 187. Next run should pull from v1.3 (task 176's
+  arc is done; check for a next un-started task) or the art-quality
+  queue, or originate a small task the way run 187 did for task 195
+  itself. Next consolidation still due around run 195 (191 is 6 runs
+  past 185, one short of the ten-run interval — due next run at the
+  latest).
 
 - **HANDOFF, 2026-09-18 (run 190).** Live queue as of run 189 was task
   195 piece 2c: `showSheet`'s doors (the zero-doors case needing its own
