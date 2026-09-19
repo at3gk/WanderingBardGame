@@ -546,6 +546,24 @@ the panels are not asking for fur).
   algebraically, per the run-144/166 lesson above that a plausible
   mechanism still needs its own direct measurement before it's trusted.
 
+- 2026-09-19 (runs 186-194, folded in by the run-195 consolidation):
+  closing the loop on the entry above — run 186 built piece 3 exactly as
+  proposed (a TS-side, `dayFraction`-keyed gate uniform in
+  `src/three/skylightGate.ts`, following `landKeyAmount`'s smoothstep-ramp
+  precedent) and an isolated-algebra check plus a stashed-vs-built A/B
+  against `tools/skylight-sat.mjs` confirmed zero leak into dawn/golden's
+  shade. **Task 194 is now closed end to end**, which keeps all three
+  `docs/research/*.md` files' ranked recommendation lists fully closed
+  (first reached at run 185, still true now). The other finding this block
+  produced isn't about rendering at all: runs 187-194 built a keyboard/
+  screen-reader accessibility pass (tasks 195-197, `bindRowActivation`
+  wired across `Hud.ts` and `freePlayScreen.ts`, plus `prefers-reduced-
+  motion` support) that no ranked recommendation in this file, or in
+  mobile-friendly.md, asked for — see mobile-friendly.md's own findings
+  section for that gap. Nothing here needed changing as a result; this
+  file's own six recommendations and task 194 were unaffected by that
+  work.
+
 ## Source access notes
 
 Reached directly (fetched): adamgryu's effects thread (ThreadReader)

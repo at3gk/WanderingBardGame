@@ -559,6 +559,60 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
 
 ## Changelog
 
+- 2026-09-19 (runs 186-194, consolidated at 195) — **task 194 (the
+  skylight-ambient-saturation gate) closes end to end, and a
+  keyboard/screen-reader accessibility pass (tasks 195-197) ships and
+  closes end to end across six runs, self-originated three separate
+  times because the idea backlog stayed empty.** Task 194 piece 3
+  (run 186) built the TS-side, `dayFraction`-keyed gate uniform piece 2's
+  revert asked for, verified with an isolated-algebra check and a
+  stashed-vs-built A/B against `tools/skylight-sat.mjs` that found zero
+  leak into dawn/golden's shade — closing the last thread run 185's
+  consolidation had left open. With no queued work and every standing
+  thread (task 173's real-device halves, wave 20, task 189's far-band
+  lead) externally blocked, run 187 originated task 195 (the HUD's two
+  persistent corners, `instrumentBox`/`songBox`, were unreachable by
+  keyboard or screen reader) and shipped its first piece; five more runs
+  (188-191) split the surface into case/book rows, the title card's four
+  doors, `showSheet`'s doors, and the page's own doors, adding a shared
+  `bindRowActivation` helper and an Escape-to-dismiss convention along the
+  way, catching and fixing two real bugs live (a Tab-order/DOM-append bug
+  and a Tab-trap on a folded page) before closing task 195 end to end at
+  run 191. Run 193 originated task 196 (`prefers-reduced-motion` support
+  for the HUD's CSS transitions, WCAG 2.3.3) the same way, empty backlog
+  and all; run 194 closed the gap task 195's own survey had missed —
+  `freePlayScreen.ts` lives outside `Hud.ts` and got the identical
+  `bindRowActivation` treatment as task 197. Separately, run 192
+  re-measured task 184's "problem 2" (in-runway note overlap) with a real
+  beat-to-glyph correlation `headgap.mjs` never had before, overturning
+  its own "rare eighth pair" framing (it is the tune's ordinary one-beat
+  spacing) and finding no lever that clears the collision without costing
+  the pinned envelope's imminent-note legibility for the *ordinary* case —
+  moved to Blocked on human rather than shipped as an unverified guess,
+  the same shape of call task 179's residual already established this
+  project routes to a human. Drift check over the block: CLEAN — every
+  run was one of these three named threads (task 194's close, the
+  195/196/197 accessibility arc, task 184's re-measurement); the
+  accessibility work adds no counter, timer, streak, or content gate, so
+  it is reachability fidelity, not a new system the player manages, the
+  same test every consolidation applies. The run-195 consolidation itself
+  found no code/doc staleness (an Explore-agent pass confirmed
+  `bindRowActivation`, `fogReach`, the `prefers-reduced-motion` rule, and
+  the skylight gate all genuinely wired into `src/`), but did find a real
+  gap in `mobile-friendly.md`'s own scope — its touch-target recommendation
+  never anticipated keyboard/AT users at all, so a findings section was
+  added there for the first time; `art-quality.md` gained a
+  closing-the-loop entry for task 194. Re-tested the two network-shaped
+  Blocked-on-human items (the fourth forest song's transcription source,
+  the v0.1 git tag's GitHub MCP write call): both unchanged, though the
+  network block's own error shape has now been seen three ways (403 →
+  connect_rejected → EGRESS_BLOCKED) for the same outcome. Bundle 934.62
+  KB unchanged through run 186's shader work → 939.77 KB by run 194 (DOM/
+  ARIA wiring, no shaders), still under 20% of the 5 MB budget; this
+  run's own changes are docs-only. STATE trimmed the same way runs
+  135/145/157/165/175/185 did it: the nine individual handoffs for runs
+  186-194 compressed to one run-index paragraph. NOTHING CUT.
+
 - 2026-09-16 (runs 176-184, consolidated at 185) — **task 192 (the
   quality toggle) and task 193 (the fog-reach spec) both ship end to
   end, and all three `docs/research/*.md` notes reach fully closed

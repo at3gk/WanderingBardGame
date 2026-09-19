@@ -454,6 +454,53 @@ makes it long. You do not need to read it top to bottom.
   189's far-band lead are unchanged as the only open threads; the idea
   backlog is empty. Next consolidation still due around run 195 (186 is
   1 run past 185).
+- **Runs 187-194 update** (this pointer never got its own entries at the
+  time — added by the run 195 consolidation, which found the gap during
+  its code/doc survey; see STATE.md's compressed run-186-194 HANDOFF for
+  the full account of each). With the idea backlog empty and every
+  standing thread (task 173's real-device halves, wave 20, task 189's
+  far-band lead) externally blocked, run 187 originated and shipped task
+  195 piece 1 (the HUD's two persistent corners gain keyboard/screen-
+  reader reachability); runs 188-191 shipped pieces 2a-2d (case/book
+  rows, the title card's four doors, `showSheet`'s doors, and
+  Escape-to-dismiss for veils/pages with nothing to Tab to), **closing
+  task 195 end to end at run 191** via a shared `bindRowActivation`
+  helper. Run 192 re-measured task 184's "problem 2", overturned its own
+  "rare eighth pair" framing, found no lever clears the collision without
+  a real pedagogy-legibility trade, and moved it to **Blocked on human**.
+  Run 193 originated and shipped task 196 (`prefers-reduced-motion`
+  support for the HUD's CSS transitions). Run 194 originated and shipped
+  task 197 (`freePlayScreen.ts`'s own controls get the same
+  `bindRowActivation` treatment task 195 gave the rest of the Hud, a gap
+  task 195's own survey never reached). Live queue as of run 194: nothing
+  unblocked — the same three externally/creatively-blocked threads plus
+  task 184's problem 2 are the only open items; the idea backlog is
+  empty. Next consolidation due around run 195.
+- **Run 195 update**: CONSOLIDATION, per its own due date and the run-185
+  refresh's own note. Drift check over runs 186-194: CLEAN — three named
+  threads (task 194's close, the task 195/196/197 accessibility arc, task
+  184's re-measurement), each rendering fidelity already in flight, a
+  small self-originated accessibility fix touching no game system, or a
+  pure re-measurement — nothing became a system the player manages. The
+  milestone this run: task 194 (run 185's one open thread) is now closed,
+  which keeps all three `docs/research/*.md` notes' ranked-recommendation
+  lists fully closed — see STATE.md's run-195 Direction research refresh
+  for the full account. Also filled in this "Start here" list's own gap
+  for runs 187-194 (see above) and `mobile-friendly.md`'s scope gap on
+  keyboard/screen-reader users (see its new findings section). Compressed
+  the nine individual runs-186-194 HANDOFF blocks in STATE.md into one
+  run-index paragraph, matching the run-175/165/145/185 pattern. A
+  code/doc survey (Explore-agent pass) found everything genuinely wired
+  into real app code — no staleness found this time. Re-tested the
+  forest-song and v0.1-tag network/tool blockers: both unchanged (see
+  STATE.md's Blocked on human section for the fresh detail); wave 20 was
+  already re-tested this same day at run 193. `npm test` 1415 and
+  `npm run build` 939.77 KB stayed green throughout — docs-only change,
+  no game code touched. No new runtime dependency. Live queue as of run
+  195: task 173's real-device halves, wave 20, task 189's far-band lead,
+  and task 184's problem 2 remain the only open threads, all externally
+  or creatively blocked; the idea backlog is empty. Next consolidation
+  due around run 205.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135

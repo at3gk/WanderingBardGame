@@ -343,6 +343,23 @@ login.
   prerequisite), then let the human decide whether discoverability is
   worth accounts and fees.
 
+## Findings from shipped work (appended by consolidation runs)
+
+- 2026-09-19 (runs 187-194, folded in by the run-195 consolidation): this
+  file's recommendation 7 (the HUD touch-target audit) is about tap-target
+  *size* for touch input — it says nothing about players who need a
+  keyboard or a screen reader, because that audience wasn't in scope when
+  this file was researched. Runs 187-194 built exactly that: `Hud.ts` and
+  `freePlayScreen.ts` both got keyboard/screen-reader reachability
+  (`bindRowActivation`, focus order, `aria-label`s, Escape-to-dismiss) plus
+  `prefers-reduced-motion` support (WCAG 2.3.3), self-originated three
+  separate times (runs 187, 193, 194) because the idea backlog was empty
+  each time rather than because this file asked for it. The gap this
+  leaves: recommendation 7 should be read as "touch ergonomics only" going
+  forward, not "input accessibility" — a future refresh of this file that
+  wants to track keyboard/AT support as its own line should treat the
+  195-197 arc as the buildout's starting point, not a one-off.
+
 ## Blocked on human
 
 - Real-iPad playtest of the three quality tiers (STATE.md already
