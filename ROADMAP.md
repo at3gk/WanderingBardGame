@@ -5011,6 +5011,60 @@ iPad household needs none of it; logged under Blocked on human.
     few hundred bytes, nowhere near the 5 MB budget). No new runtime
     dependency.
 
+197. **Free play screen's own controls are keyboard/screen-reader
+    reachable.** Task 195 wired every interactive control it named — the
+    Hud corners, case/book rows, the title card's doors, `showSheet`, and
+    `pageBox` — but `src/ui/freePlayScreen.ts` (the "position → sound →
+    name" teaching screen task 176 built, not part of task 195's own
+    survey) was never touched: the record button (●/■), the close mark
+    (×), the label-style toggle ("Try solfège…"/"Back to letters…"), the
+    name dialog's Save/Cancel, and the "keep tapping" recovery link are
+    all bare `div`s with only a `pointerdown` listener, same gap task 195
+    piece 1 found and fixed on the two Hud corners. Not queued anywhere —
+    same situation runs 187 and 193 named: the idea backlog is empty and
+    every standing thread (task 189's far-band lead, wave 20, task 173's
+    real-device halves, task 179's residual, task 184's problem 2) is
+    parked or blocked on a human call. The tap-anywhere staff ladder
+    itself is deliberately OUT of scope: arrow-key stepping through its
+    thirteen positions is a real design question (how far a press moves,
+    whether it wraps), not a mechanical role/tabIndex fix, and belongs in
+    its own piece if ever picked up.
+    **Done (2026-09-19, run 194).** Exported `Hud.ts`'s existing
+    `bindRowActivation` helper (task 195's own Enter/Space-plus-role
+    wiring, previously private to that file) and called it on all six
+    controls above, reusing the pattern rather than re-implementing it —
+    `freePlayScreen.ts` already imports `BOOK_FACE` from `./Hud`, so
+    cross-module reuse has precedent here. Added `aria-label`s to the two
+    icon-only, state-dependent controls (`●`/`■` → "Start recording"/"Stop
+    and save recording", updated everywhere `renderRecordUI` sets the
+    glyph; `×` → "Close free play"); the other four already carry
+    self-describing text ("Save", "Cancel", "keep tapping", "Try
+    solfège…"/"Back to letters…") the way `keepTapping`'s own doc comment
+    already called out, so no extra label was added there. All six pass
+    `initiallyOpen: true` to `bindRowActivation`, the same "veil door"
+    case task 195 piece 2b used for the title card's rows: each one exists
+    only while the screen (or, for Save/Cancel, the name dialog) is shown,
+    with no open/closed stack to track — `display: none`/`visibility:
+    hidden` on the dialog and the record button during naming already
+    keep a hidden control out of Tab's own path, confirmed live rather
+    than assumed. No jsdom in this project, so verified live per this
+    task's own standing practice: a throwaway Playwright script (not
+    committed) opened free play, tabbed through the four always-visible
+    controls confirming role/tabIndex/aria-label and that Tab does NOT
+    reach Save/Cancel while the name dialog is closed; pressed Enter on
+    the record button and confirmed both the glyph and its aria-label
+    flip to the recording state; tapped 20 notes (pointer, not
+    keyboard — the ladder itself is this task's named exclusion), re-found
+    the record button by Tab and pressed Space to stop, confirming the
+    name dialog actually opens (by computed `display`, not element
+    existence — the input is always in the DOM); then re-found Cancel by
+    Tab and pressed Enter, confirming the dialog closes again. Zero
+    console/page errors throughout. `npm test` 1415 green (unchanged — DOM
+    wiring only, nothing pure to assert on, same call every task 195 piece
+    made). `npm run build` green (939.77 kB vs 939.28 kB — six small
+    `setAttribute`/`addEventListener` call sites, no new import to weigh
+    it down). No new runtime dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
