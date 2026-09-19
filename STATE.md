@@ -1,6 +1,19 @@
 # STATE
 
-Run counter: 192 (run 192 re-measured ROADMAP task 184's open "problem 2" —
+Run counter: 193 (run 193 found the same situation run 187 did — idea
+backlog empty, every standing thread parked or blocked on human (wave 20's
+network block re-tested and still 403 on both hosts), no consolidation due
+until ~195 — so it originated ROADMAP task 196 and shipped it: `index.html`
+now reads `prefers-reduced-motion` and collapses the Hud's own CSS
+transition/delay durations to near-zero under it, reaching the veil/sheet/
+page fades and the staggered case/book row reveals (WCAG 2.3.3) while
+leaving the walk itself (WebGL-drawn every frame, not a CSS transition)
+completely untouched. Verified live with a throwaway Playwright script
+(0.9s normal vs 0.00001s reduced on the same transition, zero console
+errors either way) — see ROADMAP task 196's own done-note for the full
+account and why `0.01ms` was chosen over `0s`/`none`. `npm test` 1415
+green (unchanged, HTML-only change), `npm run build` green (939.28 kB JS,
+byte-identical). No new runtime dependency; run 192 re-measured ROADMAP task 184's open "problem 2" —
 `headgap.mjs` now traces each measured glyph back to its own SongBeat, and
 the correlated numbers show the residual note-head overlap is the tune's
 own ordinary beat spacing, not a rare eighth-note case as previously
@@ -5099,6 +5112,9 @@ still needs a human:
   this one has. Needs either a run in an environment with those two hosts
   reachable, or a human to hand a run the 12 reference images some other
   way (committing them isn't an option — they're not CC0).
+  **Update (2026-09-19, run 193)**: re-tested first, before picking this
+  run's task — still 403 on CONNECT to both `ashorthike.com` and
+  `store.steampowered.com`. Blocker confirmed, nothing new to route around.
 - **Promoting `headless-checks.yml` from informational to a real merge
   gate** (2026-07-26, Run 36). The check has gone 19/19 green since it
   landed (task 79) — a real pattern now, not a single lucky run. But making

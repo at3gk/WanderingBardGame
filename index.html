@@ -74,6 +74,24 @@
         width: 100%;
         height: 100%;
       }
+      /* The walk itself — scrolling road, WebGL scene, dusk cycle — is
+         canvas-drawn and untouched by this rule; it is the one mechanic
+         DESIGN.md asks to get right, not decoration, and prefers-reduced-
+         motion has no purchase on a <canvas>. What it *can* reach is the
+         Hud overlay's own CSS `transition`s: the veil/sheet/page fades and
+         staggered row reveals (src/ui/Hud.ts), pure decorative chrome, none
+         of them carrying information a snap-to-final-state loses. Collapsing
+         their duration/delay to near-zero (0, not `none`, so a transition
+         still fires its `transitionend`/timeout-driven follow-up code —
+         `Hud.ts`'s veil removal — instead of leaving it stalled forever)
+         answers WCAG 2.3.3 for the one interaction-triggered motion this
+         page has, without touching the gameplay it sits on top of. */
+      @media (prefers-reduced-motion: reduce) {
+        #game * {
+          transition-duration: 0.01ms !important;
+          transition-delay: 0ms !important;
+        }
+      }
     </style>
   </head>
   <body>
