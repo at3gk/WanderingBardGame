@@ -1,6 +1,12 @@
 # STATE
 
-Run counter: 194 (run 194 found the same situation runs 187 and 193 did —
+Run counter: 195 (run 195 was the consolidation pass, per the run-185
+refresh's own due date — see the run-195 HANDOFF and Direction research
+refresh below for the full account: task 194 closed at run 186, the
+task 195/196/197 accessibility arc closed across runs 187-194, task
+184's "problem 2" moved to Blocked on human, and all three
+`docs/research/*.md` notes stay fully closed against their own ranked
+recommendations); run 194 found the same situation runs 187 and 193 did —
 idea backlog empty, every standing thread parked or blocked on human, no
 consolidation due until ~195 — so it originated ROADMAP task 197 and shipped
 it: `src/ui/freePlayScreen.ts`'s own controls (record, close, the label
@@ -392,6 +398,30 @@ list turned up) is still open, and any future shipped feature can still
 teach these notes something new; the "Findings from shipped work"
 sections stay live regardless of the ranked lists' status.
 
+**Run-195 refresh (2026-09-19, consolidation):** no regression since the
+run-185 refresh — all three lists stay fully closed. Task 194 (the one
+open thread run 185 flagged) shipped and closed end to end at run 186;
+`art-quality.md`'s "Findings from shipped work" gained a closing-the-loop
+entry for it this run. Re-checked the rejected-on-principle list against
+runs 186-194 (task 194 piece 3, and the tasks 195-197 keyboard/screen-
+reader accessibility arc across six runs) and found nothing to flag: the
+accessibility work adds no counter, timer, grade, streak, or
+exclusive-to-today content — it is reachability for players who tab or
+use assistive tech, not a retention mechanic. `mobile-friendly.md`: its
+URGENT save-protection item and its one open item (task 173's two
+real-device halves) are unchanged. But the 195-197 arc did teach this file
+something its own scope never anticipated — recommendation 7 ("HUD
+touch-target audit") is about tap-target *size*, not keyboard/screen-
+reader reach, so an entire input-accessibility axis existed with no line
+in this note at all until it shipped anyway (self-originated three
+separate times, runs 187/193/194, because the idea backlog was empty each
+time, not because any research doc asked for it). Added a "Findings from
+shipped work" section to `mobile-friendly.md` (it had none before this
+run) recording that gap — see the file itself. `art-quality.md` is
+otherwise unchanged; the accessibility arc touched no rendering code.
+Compressed the nine individual run-186-194 HANDOFF blocks below into one
+run-index paragraph, matching the run-175/165/145/185 pattern.
+
 ## The true goal (standing pointer)
 
 DESIGN.md's "The true goal" section (2026-07-31, human-grilled to shared
@@ -407,398 +437,85 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
-- **HANDOFF, 2026-09-19 (run 194) — task 197, closing the gap task 195's
-  own survey missed.** Live queue as of run 193 was empty again (idea
-  backlog exhausted, every standing thread — task 173's real-device
-  halves, wave 20, task 189's far-band lead, task 179's residual, task
-  184's problem 2 — parked or blocked on a human call), so this run
-  audited the one screen task 195's own "every interactive control in the
-  game" survey never actually reached: `src/ui/freePlayScreen.ts`, built
-  by task 176 and living outside `Hud.ts` entirely. Found the identical
-  gap task 195 piece 1 fixed on the two Hud corners, six times over: the
-  record button, the close mark, the label-style toggle, the name
-  dialog's Save/Cancel, and the "keep tapping" recovery link were all bare
-  `div`s with only a `pointerdown` listener — unreachable by Tab, inert on
-  Enter/Space. Exported `Hud.ts`'s `bindRowActivation` helper (previously
-  private) and reused it on all six rather than re-implementing the same
-  role/tabIndex/Enter-Space wiring a second time; added `aria-label`s to
-  the two icon-only, state-dependent controls (record, close) since the
-  other four already carry self-describing text. The tap-anywhere staff
-  ladder itself is deliberately excluded — arrow-key stepping through its
-  thirteen positions is a real design question, not a mechanical fix, and
-  is its own future piece if ever picked up. Verified live (no jsdom in
-  this project): a throwaway Playwright script confirmed the Tab order
-  and ARIA on all four always-visible controls, that Save/Cancel are
-  correctly unreachable while the name dialog is closed, that the record
-  button's glyph and aria-label flip together, and that the dialog opens
-  and closes correctly via keyboard — zero console/page errors. See
-  ROADMAP task 197's own done-note for the full account. `npm test` 1415
-  green (unchanged), `npm run build` green (939.77 kB vs 939.28 kB). No
-  new runtime dependency. Live queue as of run 194: nothing else unblocked
-  — the idea backlog is empty again and the same five threads listed above
-  remain the only open work, all externally or creatively blocked. Next
-  run should re-check those threads first, then originate another small
-  task the way runs 187/193/194 did if nothing has moved. Next
-  consolidation still due around run 195 (194 is one run away).
+- **HANDOFF, 2026-09-19 (run 195) — CONSOLIDATION (drift control, every
+  ~10th run; last was 185).** Drift check over runs 186-194: CLEAN — every
+  run was one of three named threads (task 194's close via piece 3, the
+  task 195/196/197 keyboard/screen-reader accessibility arc across six
+  runs, and task 184's "problem 2" re-measurement), each a rendering fix
+  already in flight, a small self-originated accessibility fix touching
+  no game system, or a pure re-measurement; nothing became a system the
+  player manages, the one-core-mechanic test DESIGN.md's drift-control
+  section asks every consolidation to re-apply. `npm test` 1415 green
+  (unchanged), `npm run build` green (939.77 KB, unchanged — this run's
+  own changes are docs only, no game code touched). Re-tested the two
+  network-shaped Blocked-on-human items: the fourth forest song's
+  transcription source (`WebFetch` against a plain Wikipedia page now
+  returns `EGRESS_BLOCKED`, a third distinct failure shape after this
+  note's own 403 and run-185's `connect_rejected`, same outcome — access
+  blocked) and the v0.1 git tag's write path (the full GitHub MCP tool
+  list re-checked again, still no tag or release write call, only the
+  same read-only quartet). Wave 20's network block was already re-tested
+  this same day at run 193 (still blocked); not re-run a second time.
+  A code/doc survey (an Explore-agent pass over the files the block
+  touched — `Hud.ts`, `freePlayScreen.ts`, `skylightGate.ts`, `index.html`'s
+  reduced-motion rule) found every shipped mechanism
+  (`bindRowActivation`, `fogReach`, the `prefers-reduced-motion` rule, the
+  skylight gate, the quality-tier storage) genuinely wired into real app
+  code — no staleness found this time. **Direction research headline:
+  task 194 (the one open thread run 185's consolidation flagged) is now
+  closed, keeping all three `docs/research/*.md` notes' ranked-
+  recommendation lists fully closed** — see the Direction research
+  section below for the full refresh. That refresh also caught a real
+  scope gap: `mobile-friendly.md`'s touch-target recommendation never
+  anticipated keyboard/screen-reader users at all, so it gained a
+  "Findings from shipped work" section for the first time, recording the
+  195-197 arc as that axis's starting point rather than something the
+  file itself predicted; `art-quality.md` gained a closing-the-loop entry
+  for task 194. Compressed the nine individual HANDOFF blocks for runs
+  186-194 into one run-index paragraph below, matching the
+  run-175/165/145/185 pattern — this file 5268 → 4955 lines from
+  that edit alone, before this HANDOFF's own text. Live queue as of run
+  195: nothing unblocked — task 173's two real-device-only halves, wave 20
+  (network-blocked), task 189's far-band lead (parked), and task 184's
+  "problem 2" (blocked on human, new this window) are the only open
+  threads; the idea backlog is empty. Next run should re-check those
+  first, then originate a new small task the way runs 187/193/194 did if
+  nothing has moved. Next consolidation due around run 205.
 
-- **HANDOFF, 2026-09-18 (run 192) — task 184's "problem 2" re-measured,
-  re-diagnosed, and moved to Blocked on human.** Live queue as of run 191
-  was empty (idea backlog exhausted, v1.3 entirely done, task 173's
-  real-device halves/wave 20/task 189's far-band lead all externally
-  blocked); this run picked the one open, unblocked art-quality thread
-  left — task 184's own "problem (2)," the in-runway note-head overlap its
-  own text called "a design decision needing fresh-session frame
-  iteration, not an end-of-queue tweak." Before touching any rendering
-  code, re-measured it with a real instrument rather than trusting the
-  four-year-old (in run terms) "eighth pair" framing: gave `headgap.mjs`
-  a correlation it never had — each measured glyph is traced back to the
-  actual `SongBeat` it belongs to (`notes.live`'s Map iteration order
-  matches the instance buffer's own write order, signature marks aside),
-  so an overlap now comes with the real millisecond gap between the two
-  colliding notes instead of a guess from BPM arithmetic. The result
-  overturns the existing framing: every overlapping worst-pair sampled
-  across four viewports (24 samples) was 652 ms apart — one ordinary beat
-  at `BASE_BPM` 92 — bar two samples at the true half-beat/eighth gap
-  (326 ms). This is the tune's own most common spacing whenever two
-  consecutive notes also sit close in pitch, not a rare tight rhythm.
-  Re-derived why: `URGENCY_START` (progress 0.45) sits 990 ms before a
-  hit, 338 ms more than a full beat, so the later of two beat-apart notes
-  is already deep in its urgency swell (~0.94 scale) by the time the
-  earlier one is struck; checked the pinned contract for slack to spend
-  and found essentially none (0.943 delivered against a 0.85 floor at the
-  600 ms checkpoint). Any envelope lever that clears this collision cuts
-  into the exact "imminent note is the boldest thing on the ribbon"
-  tiers `songNotes.test.ts` pins from the wave-2/wave-7 critiques, for the
-  *ordinary* case, not an edge one — a genuine pedagogy-legibility
-  trade-off, not a free tuning pass. The one lever that would not cost
-  legibility — a small render-only horizontal offset for a beat-spaced,
-  pitch-adjacent pair, the convention real music engraving already uses
-  to separate a printed second's noteheads without moving either one's
-  staff position — is sized (see ROADMAP task 184's fresh done-note) but
-  was deliberately not built this run: it has to fully resolve to zero
-  well before `HIT_WINDOW_MS`, since this file's position doubles as the
-  tap-timing cue, and getting that taper wrong risks the one mechanic
-  DESIGN.md asks every run to protect, with no human playtest available
-  here to feel whether it reads right. Logged under **Blocked on human**
-  below rather than shipped as an unverified guess. `npm test` 1415 green
-  (unchanged — tools/ only, no game code touched), `npm run build` green
-  (939.28 kB, unchanged). No new runtime dependency. Live queue as of run
-  192: nothing else unblocked in the art-quality queue; next run should
-  check the idea backlog again, consider whether the engraving-offset
-  lever above is worth attempting with an explicit accept-the-risk call,
-  or originate a new small task the way runs 187 and 195 did. Next
-  consolidation still due around run 195 (192 is 7 runs past 185).
-
-- **HANDOFF, 2026-09-18 (run 191) — task 195 piece 2d, closing task 195.**
-  Live queue as of run 190 was piece 2d: the shared design question for
-  how a keyboard-only player dismisses a veil-like surface with no row to
-  land on, with two named instances (`showSheet`'s zero-doors case,
-  `pageBox`'s background tap-to-dismiss). Reading `showSheet` before
-  touching it found a third, unflagged thing in the same surface: its
-  door rows (post-festival choice, Book Two's invitation) had never
-  actually been wired with `bindRowActivation` — only `pointerdown` —
-  unlike the title card's doors from piece 2b. All three share one
-  answer, so they shipped together rather than splitting further:
-  **Escape dismisses**, from any focused child, matching what a pointer
-  already does by tapping empty background; and a zero-doors sheet's
-  veil becomes the one focusable, announced thing (`role="button"`,
-  `tabIndex` 0, an `aria-label` built from the sheet's title, focused
-  programmatically on show) rather than a synthetic "close" row, since
-  the veil already reads as the only thing on screen. `showSheet`'s door
-  rows now get `bindRowActivation` for the first time. `pageBox` gets the
-  same `Escape`-to-`hidePage()` listener, added once in the constructor.
-  No jsdom in this project, so verified live (task 195's standing
-  practice) with a throwaway harness (not committed) driven by Playwright
-  across five fresh page loads — chaining scenarios on one page surfaced
-  a real but Playwright-specific quirk, not a product bug: removing a
-  *focused* element from the DOM without an intervening click leaves
-  Chromium's synthetic Tab dispatch stalled on `document.body` for the
-  rest of that page session (confirmed by reproducing it in isolation and
-  clearing it with an explicit `document.body.focus()`). All five
-  scenarios passed with zero console/page errors: zero-doors auto-focus
-  and Escape-dismiss; a doors sheet's Tab order and Enter-picks-only-that-
-  door; the same sheet's Escape-dismisses-without-picking; the page's
-  `walkOn` door reached by Tab with Escape folding the page without
-  firing it; and Escape still folding the page with that door focused
-  (confirming the bubble path). `npm test` 1415 green (unchanged — no
-  logic touched), `npm run build` green (939.28 kB vs 938.80 kB, well
-  inside the 5 MB budget). No new runtime dependency.
-  **Task 195 is closed end to end** — every interactive HUD surface (the
-  two corners, case/book rows, the title card, `showSheet`, and the page)
-  is keyboard/screen-reader reachable. Live queue as of run 191: nothing
-  queued — the idea backlog is empty and task 173's real-device halves,
-  wave 20, and task 189's far-band lead remain externally blocked, same
-  as every run since 187. Next run should pull from v1.3 (task 176's
-  arc is done; check for a next un-started task) or the art-quality
-  queue, or originate a small task the way run 187 did for task 195
-  itself. Next consolidation still due around run 195 (191 is 6 runs
-  past 185, one short of the ten-run interval — due next run at the
-  latest).
-
-- **HANDOFF, 2026-09-18 (run 190).** Live queue as of run 189 was task
-  195 piece 2c: `showSheet`'s doors (the zero-doors case needing its own
-  keyboard-dismiss answer) and `pageBox`'s tap-to-dismiss together with
-  the three door rows already living inside it (`walkOn`, the postcard
-  press, the other-bookmark row). Reading the actual code confirmed this
-  still bundled two shapes that split along a different seam than "two
-  surfaces": `pageBox`'s three door rows are plain always-interactive
-  rows, exactly `bindRowActivation`'s existing contract (same as the
-  title card's doors), while `showSheet`'s zero-doors case AND `pageBox`'s
-  own background tap-to-dismiss are the *same* open design question — how
-  does a keyboard-only player dismiss a veil-like surface with nothing to
-  land on — just two instances of it. Took the mechanical row-wiring half
-  only, same "too big, take the first piece" call this task has made at
-  every split. Full account in ROADMAP task 195's own piece-2c done-note;
-  headline here:
-  Shipped `role="button"`/`tabIndex` 0/Enter-Space activation on
-  `walkOn`, the postcard press, and the other-bookmark row in `showPage`,
-  via `bindRowActivation` with `initiallyOpen` always `true` (each row
-  exists only while the page itself does, no stack to track). Also found
-  and fixed a real, if narrow, accessibility bug while wiring this:
-  `hidePage()` never dropped these rows' `tabIndex` back to `-1` the way
-  `setCaseOpen`/`setBookOpen` already do for case/book rows — harmless for
-  a mouse (a folded page has `pointerEvents: 'none'`), but a Tab trap for
-  a keyboard user, since `pageBox`'s children are only rebuilt on the next
-  real `showPage()` call, which a player who walks on and never reopens
-  the page before the next fire may not trigger for a long time. Fixed by
-  having `hidePage()` walk `pageBox.children` and zero any `role="button"`
-  row's `tabIndex`, mirroring the existing case/book idiom.
-  No jsdom in this project, so verified live per task 195's standing
-  practice: a throwaway harness (not committed) importing `Hud` directly
-  and calling `showPage` with a `walkOn` door and a festival line (which
-  gates the postcard/other-bookmark rows), all three handlers registered.
-  Confirmed via Playwright against a `vite` dev server: Tab reaches all
-  three rows in order with the right role/tabIndex; Enter on `walkOn`
-  fires its handler and folds the page; Space/Enter on the other two rows
-  each fire their own callback exactly once; after `hidePage()`, every
-  `role="button"` element in the document (HUD corners included) reads
-  `tabIndex -1`. Zero console/page errors (one incidental favicon 404 from
-  the bare harness page itself, reproduced identically whether or not any
-  key was pressed, so unrelated to the change). `npm test` 1415 green
-  (unchanged — no logic touched), `npm run build` green (938.80 KB vs
-  938.61 KB, well inside the 5 MB budget). No new runtime dependency.
-  **Next**: piece 2d — the shared keyboard-dismiss design question for a
-  veil/page with no row to land on (`showSheet`'s zero-doors case,
-  `pageBox`'s own background tap-to-dismiss even when rows ARE present).
-  Needs an actual design answer (a focused container plus `Escape`? a
-  leading "close" row?), not a mechanical copy of `bindRowActivation`.
-  Live queue as of run 190: task 195 piece 2d; task 173's real-device
-  halves, wave 20, and task 189's far-band lead remain externally blocked.
-  Next consolidation still due around run 195 (190 is 5 runs past 185).
-
-- **HANDOFF, 2026-09-17 (run 189).** Live queue as of run 188 was task
-  195 piece 2b: the title-card's quality/bookmark controls, its "go"/
-  "book" doors, `showSheet`'s doors, and the page's tap-to-dismiss —
-  everything piece 2a's own "Next" note had left pointer-only, lumped
-  as one piece. Read the actual code for all three surfaces before
-  committing to that scope, and split it further: the title card's four
-  doors (`go`, `book`, `bookmark`, `quality` in `showTitleCard`) are
-  plain rows that are interactive for as long as the card exists, the
-  exact shape `bindRowActivation` (piece 2a's shared helper) already
-  handles — but `showSheet` can render with **zero doors at all** (the
-  Book Two invitation card passes no `doors` option), which means a
-  keyboard user would have no row to land on and no way to dismiss it at
-  all unless the veil itself gains its own keyboard path — a real design
-  choice (what closes it — `Escape`? a focused veil?) rather than a copy
-  of the row helper. And `pageBox`'s "tap-to-dismiss" is a background
-  handler sitting behind three door rows already living inside it
-  (`walkOn`, the postcard press, the other-bookmark row) that no earlier
-  piece — and no earlier HANDOFF — ever actually named as in scope, so
-  wiring only the background dismiss and leaving those three rows
-  pointer-only would ship a half-fixed page. Three different shapes, one
-  genuinely one-run-sized. Took the title card, the same "too big, take
-  the first piece" call this task has made at every split so far.
-  Shipped: `go`/`book`/`bookmark`/`quality` each get `role="button"`,
-  `tabIndex` 0, and Enter/Space activation via `bindRowActivation` itself
-  — no new helper needed, since passing `true` for "initially open" is
-  exactly correct when the row's own existence (not some separate stack)
-  is what makes it interactive. `go`'s keyboard path calls `dismiss()`
-  directly, matching how it already worked for a pointer (bubbling
-  un-stopped to the veil's own pointerdown handler); `book` dismisses and
-  calls `onSongbook()`; `bookmark`/`quality` call their own callback with
-  no dismiss, matching their existing pointerdown handlers exactly.
-  Broadened `bindRowActivation`'s doc comment to describe both shapes
-  (case/book rows tied to a stack's open state, and veil doors like these
-  that are always `true`) instead of describing only the first.
-  No jsdom in this project's Vitest config, so — same standing practice
-  as every piece of task 195 before this one — verified live instead: a
-  throwaway harness page (not committed) that imports `Hud` directly and
-  calls `showTitleCard` with all four doors supplied, sidestepping the
-  need to fake a returning player's `localStorage` journey record just to
-  reach the real app's own call site in `RoadStage.ts`. Confirmed, via
-  Playwright against a `vite` dev server: Tab reaches the four doors in
-  order (`go` → `book` → `bookmark` → `quality`), each with
-  `role="button"`/`tabIndex` 0; Enter on `book` fires `onSongbook` and
-  removes the veil; Space on `quality` and on `bookmark` fires each door's
-  own callback without dismissing; Enter on `go` fades the veil to
-  opacity 0 and removes it from the DOM after its own 700ms timeout. Zero
-  console/page errors in every case. `npm test` 1415 green (unchanged —
-  no logic touched), `npm run build` green (938.61 KB vs 938.51 KB, well
-  inside the 5 MB budget). No new runtime dependency. See ROADMAP task
-  195's own piece-2b done-note for the full account.
-  **Next**: piece 2c — `showSheet`'s doors (the zero-doors case needs its
-  own keyboard-dismiss answer first, since it can't reuse
-  `bindRowActivation` as-is) and `pageBox`'s tap-to-dismiss together with
-  the three door rows already inside it (`walkOn`, the postcard press,
-  the other-bookmark row), which have never been in any prior piece's
-  scope. Live queue as of run 189: task 195 piece 2c; task 173's
-  real-device halves, wave 20, and task 189's far-band lead remain
-  externally blocked. Next consolidation still due around run 195 (189 is
-  4 runs past 185).
-
-- **HANDOFF, 2026-09-17 (run 188).** Live queue as of run 187 was task
-  195 piece 2 (the case/book row lists, plus the title-card's quality/
-  bookmark controls). Split it: piece 2a shipped this run (the row
-  lists only), piece 2b (title-card controls, `showSheet`'s doors, the
-  page's tap-to-dismiss) stays open, the same "too big for one run, take
-  the first piece" split every earlier task-195 piece used.
-  Piece 2a: every real row in `src/ui/Hud.ts`'s case (`buildCase` —
-  instrument entries, the two keepsake rows) and book (`buildBook` —
-  song entries, the "turn the page" row) now gets `role="button"`,
-  Enter/Space activation, and a `tabIndex` that tracks whether its stack
-  is open, via one shared helper (`bindRowActivation`) instead of four
-  near-duplicate wiring blocks. Heading rows (the songbook's shelf
-  labels) are deliberately skipped — `SongEntry.heading`'s own doc
-  comment already says "never tappable," so a button role there would
-  be a lie a screen reader repeats. `setCaseOpen`/`setBookOpen` now also
-  sync every row's `tabIndex` on open/close, mirroring `applyPickable`'s
-  treatment of the corners, because a row's `tabIndex` is fixed at
-  build time and toggling the stack doesn't always rebuild it (paging
-  never does).
-  The live check written to verify this (Tab to a corner, Enter to
-  open, Tab once more, inspect the focused row) caught a **real,
-  independent bug** first: `caseBox`/`bookBox` were appended to
-  `this.root` *before* `instrumentBox`/`songBox` in the constructor, so
-  although both boxes are positioned absolutely (their DOM position
-  doesn't affect where they render), that same DOM position also
-  decides Tab order — which put every row *before* the corner that
-  reveals it. Opening a corner with the keyboard and pressing Tab could
-  therefore never reach that corner's own rows at all; focus skipped
-  past them and landed on `document.body`, with nothing telling a
-  keyboard user why. Fixed by moving two `appendChild` call sites only
-  — `caseBox` now appended right after `instrumentBox`, `bookBox` right
-  after `songBox`, the disclosure-button-then-its-content order ARIA's
-  own patterns use — with no rendering change. Re-verified live after
-  the fix, both corners: Tab reaches the corner, Enter opens its stack,
-  Tab reaches the first real row with `role="button"`/`tabIndex` 0
-  (confirmed it is a genuine row and not the *other* corner, which also
-  carries `role="button"` and could otherwise pass a loose check),
-  Space/Enter activates it and the stack closes (`aria-expanded` back
-  to `false`), zero console/page errors. No jsdom in this project's
-  Vitest config, so this is DOM wiring verified live only, same as
-  piece 1. `npm test` 1415 green (unchanged — no logic touched), `npm
-  run build` green (938.51 KB vs 937.96 KB). No new runtime dependency.
-  See ROADMAP task 195's own piece-2a done-note for the full account.
-  **Next**: piece 2b — the title-card's quality-tier and bookmark-switch
-  controls (`showTitleCard`), its "go"/"book" doors, `showSheet`'s doors,
-  and the page's tap-to-dismiss (`pageBox`) — all still pointer-only.
-  Live queue as of run 188: task 195 piece 2b; task 173's real-device
-  halves, wave 20, and task 189's far-band lead remain externally
-  blocked. Next consolidation still due around run 195 (188 is 3 runs
-  past 185).
-
-- **HANDOFF, 2026-09-17 (run 187).** Live queue as of run 186 was empty:
-  the idea backlog is empty, and the three open threads (task 173's two
-  real-device-only halves, wave 20's network block, task 189's parked
-  far-band lead) are all externally blocked, not runnable from here.
-  Re-confirmed the network block is still live before trusting that
-  (`WebFetch` on a plain Wikipedia page still returns `EGRESS_BLOCKED`),
-  then originated a new, small, in-scope task rather than force one of
-  the blocked three or sit idle — CLAUDE.md's "you own the roadmap" and
-  the seed's "full creative direction" cover exactly this case, and the
-  project has precedent for it (run 37 proposed a fresh small item the
-  same way when task 38 was blocked). Picked ROADMAP task 195: the two
-  persistent HUD corners (`instrumentBox`/`songBox` in `src/ui/Hud.ts`
-  — the module's own header calls them "the only thing[s] on the screen
-  that take a tap away from the game") were bare `div`s with only a
-  `pointerdown` listener — no `role`, no `tabIndex`, no `aria-label`,
-  unreachable by Tab, inert on Enter/Space. A screen-reader or
-  keyboard-only player had no way to open the instrument case or the
-  songbook at all. Chose this over inventing new game content
-  specifically because it touches no rendering (the fragile
-  color-script/CARRYING-hour territory that consumed most recent runs
-  stays untouched), adds no new system for a player to manage (drift
-  control), and is objectively verifiable rather than a design taste
-  call.
-  Shipped piece 1: both corners now get `role="button"`, a descriptive
-  `aria-label` kept in sync with the readout text, `aria-expanded`
-  reflecting open state, and a `keydown` handler answering Enter/Space
-  exactly like the existing `pointerdown` handler (with
-  `preventDefault` so Space doesn't also scroll the page); `tabIndex`
-  and `aria-disabled` now track `pickable()`/`bookPickable()` in
-  `applyPickable()` the same way `pointerEvents` already did, so a
-  corner that isn't a handle right now (mid-busk, or an empty case)
-  drops out of tab order instead of sitting focusable and inert. Caught
-  one real bug while verifying live: the song corner's aria-label was
-  never set at all on load, because `setSongbook` only updates the
-  label on a *change* of `textContent`, and the constructor already
-  sets the starting text to "Wandering" — fixed by setting the label
-  once at the same place the constructor sets that starting text. This
-  project's Vitest config has no jsdom (`environment: 'node'`), so
-  DOM wiring like this has no pure-function surface to unit-test —
-  verified live instead, the standing practice for this class of
-  change: a throwaway Playwright script (not committed — a one-off
-  check, not a recurring tool) tabbed through the built, served page,
-  confirmed both corners are reached in tab order with the correct
-  role/label, and confirmed Enter opens (`aria-expanded` false → true)
-  and Space closes it again (true → false) on both corners, zero
-  console/page errors. `npm test` 1415 green (unchanged — no logic
-  touched), `npm run build` green (937.96 KB vs 936.86 KB,
-  well inside the 5 MB budget). No new runtime dependency. See ROADMAP
-  task 195's own piece-1 done-note for the full account. **Next**:
-  piece 2 — the same treatment for the case/book row lists (built fresh
-  each time they open, so the role/tabIndex/keydown wiring needs to
-  live in whatever builds a row) and the title-card's quality-tier and
-  bookmark-switch controls, neither of which piece 1 touched. Live
-  queue as of run 187: task 195 piece 2 (this run's own follow-on);
-  task 173's real-device halves, wave 20, and task 189's far-band lead
-  remain externally blocked. Next consolidation still due around run
-  195 (187 is 2 runs past 185).
-
-- **HANDOFF, 2026-09-16 (run 186).** Shipped ROADMAP task 194 piece 3 —
-  the hour-aware gate piece 2's own "Next" note asked for, closing task
-  194 end to end. New pure module `src/three/skylightGate.ts`
-  (`skylightSatGate(dayFraction)`), keyed on `dayFraction` rather than
-  `sunAmount`/`sunHeight` (piece 2's own finding: neither ranks the hours
-  correctly, since dawn's in-shader `sunHeight` reads higher than
-  golden's). The gate is a plateau: 0 up to dawn's own `dayFraction`
-  (0.28), full by morning's (0.42), held through noon and afternoon, 0
-  again by golden's (0.82) — both zero edges land exactly on a named
-  CARRYING hour rather than approaching it asymptotically. Wired as a new
-  uniform, `uSkylightSatGate`, set once per frame in `RoadStage.render()`
-  from `this.shownDayFraction` (the same value `skyStateAt` already
-  reads), gating the same luma-preserving chroma boost on `skyLight`
-  piece 2 built (`SKYLIGHT_SAT_BOOST`, reintroduced in `painterly.ts`).
-  Verified two ways before trusting it. First, the boost's own algebra in
-  isolation (a plain Node script mirroring the shader arithmetic): at
-  gate 0 it is an exact no-op (identical output, luminance and
-  saturation both unchanged); at gate 1 it raises HSV saturation on a
-  sample ambient colour (0.444 → 0.617) while holding luminance exactly
-  constant (0.06719 throughout) — confirms the mechanism does what it
-  claims before blaming the pose for a null result. Second, live against
-  `tools/skylight-sat.mjs`'s own three pinned poses, rebuilt to compare
-  the same commit with and without this change via `git stash`: dawn's
-  `shadeNonCast` bucket (the clean signal piece 2's own note trusts)
-  reads exactly 0.186 → 0.186, byte-for-byte unchanged; golden's reads
-  0.288 → 0.285, inside the run-to-run jitter piece 1/2 already
-  documented for that bucket. Both CARRYING hours the gate exists to
-  protect show zero leak. Noon's own populated gradient bins move by
-  noise-level amounts only (0.507 → 0.503, 0.561 → 0.558) — not a
-  positive result, but not a defect either: this pinned pose's noon
-  frame is overwhelmingly sun-facing ground (piece 1's own documented
-  limitation), where the scatter/castGain terms `skyLight` feeds are
-  scaled near zero by design, so this pose was never going to show the
-  boost's intended effect at noon. Confirming the POSITIVE effect needs a
-  pose that actually frames non-cast shaded terrain at noon — flagged as
-  an instrument gap for whoever wants full closure on that side, not
-  fixed here, the same way piece 1 flagged the hue-rotation gap for task
-  166. `npm test` 1415 green (+8 new, `skylightGate.test.ts`), `npm run
-  build` green (936.86 KB vs 934.62 KB), `verify-all quick`
-  (`shader-check`) PASS. No new runtime dependency. Live queue as of run
-  186: task 173's two real-device-only halves, wave 20 (still
-  network-blocked, now `connect_rejected`), and task 189's far-band lead
-  (parked) are the only open threads; the idea backlog is empty. Next
-  consolidation due around run 195 (186 is 1 run past 185).
+- **HANDOFF, 2026-09-16 through 2026-09-19 (runs 186-194, compressed by
+  the run-195 consolidation)** — three named threads: task 194's close,
+  the task 195/196/197 accessibility arc, and task 184's re-measurement.
+  Task 194 piece 3 (run 186) built `src/three/skylightGate.ts`, a TS-side
+  `dayFraction`-keyed gate uniform for the `skyLight` chroma boost piece 2
+  had reverted, verified with an isolated-algebra check and a
+  stashed-vs-built A/B against `tools/skylight-sat.mjs` showing zero leak
+  into dawn/golden's shade — closing task 194 end to end. With the idea
+  backlog empty and every standing thread externally blocked, run 187
+  originated task 195 (the HUD's two persistent corners were unreachable
+  by keyboard or screen reader) and shipped piece 1; runs 188-191 split
+  the remaining surface into case/book rows (188, catching a real
+  Tab-order/DOM-append bug live), the title card's four doors (189),
+  `showSheet`'s doors (190, plus a Tab-trap fix in `hidePage()`), and
+  Escape-to-dismiss for veils/pages with nothing to Tab to (191) —
+  closing task 195 end to end via a shared `bindRowActivation` helper
+  reused across every surface. Run 192 re-measured task 184's "problem 2"
+  with a real beat-to-glyph correlation `headgap.mjs` never had before,
+  overturning its own "rare eighth pair" framing (it is the tune's
+  ordinary one-beat spacing) and finding no lever clears the collision
+  without costing the pinned envelope's legibility for the ordinary
+  case — moved to Blocked on human rather than shipped as an unverified
+  guess. Run 193 originated task 196 (`prefers-reduced-motion` support
+  for the HUD's CSS transitions, WCAG 2.3.3) the same empty-backlog way
+  as run 187, verified live (0.9s versus 0.00001s on the same
+  transition, zero console errors either way). Run 194 closed the gap
+  task 195's own survey had missed: `freePlayScreen.ts` lives outside
+  `Hud.ts` and got the identical `bindRowActivation` treatment, closing
+  task 197. All nine runs kept `npm test`/`npm run build` green
+  throughout (1407 → 1415 tests, +8 from `skylightGate.test.ts`), added
+  no runtime dependency, and stayed on the existing world's rendering/
+  accessibility surfaces — nothing became a system the player manages.
+  Bundle grew 934.62 → 939.77 KB across the block, still under 20% of
+  the 5 MB budget.
 
 - **HANDOFF, 2026-09-16 (run 185) — CONSOLIDATION (drift control, every
   ~10th run; last was 175).** Drift check over runs 176-184: CLEAN — every
@@ -5202,6 +4919,15 @@ still needs a human:
   HTTP 403 on every host tried, including a plain Wikipedia page (not just
   music-transcription sites), so this isn't a site-specific block. Blocker
   confirmed, nothing new to route around.
+  **Update (2026-09-19, Run 195)**: re-checked — `WebFetch` against a plain
+  Wikipedia page now returns a distinct `EGRESS_BLOCKED` error from the
+  network egress proxy, rather than the HTTP 403 this note originally
+  logged or the `connect_rejected` wave 20 saw at run 185. Three different
+  error shapes across three checks (403 → connect_rejected →
+  EGRESS_BLOCKED) for what is functionally the same outcome — outbound
+  fetches to arbitrary hosts are blocked, the specific mechanism has just
+  been renamed/moved at the infrastructure layer more than once. Blocker
+  confirmed, nothing new to route around.
 - **v0.1 git tag** (Run 12): ROADMAP task 12 says "Tag this as v0.1."
   DoD verification and the ship-check PR (#13) are done and merged
   (squash commit `021410f` on `main`), but the tag itself can't be pushed
@@ -5227,3 +4953,9 @@ still needs a human:
   **Update (2026-07-26, Run 34)**: re-checked the GitHub MCP tool list again
   — still `get_tag`/`list_tags`/`get_release_by_tag`/`get_latest_release`
   only, no ref-write or release-creation call. Blocker unchanged.
+  **Update (2026-09-19, Run 195)**: re-checked the full GitHub MCP tool
+  list once more (a wider set now, including PR-review and Actions calls
+  that didn't exist at run 34) — still no tag or release *write* call
+  anywhere in it, same read-only `get_tag`/`list_tags`/`get_release_by_tag`/
+  `get_latest_release` quartet. Blocker unchanged; the command above
+  remains the only route.
