@@ -4966,6 +4966,51 @@ iPad household needs none of it; logged under Blocked on human.
     next run should pull from the idea backlog or the v1.3/art-quality
     threads per the live-queue note below.
 
+196. **Respect `prefers-reduced-motion` for the Hud's decorative chrome.**
+    Not queued anywhere — same situation run 187 named for task 195: the
+    idea backlog is empty and every standing thread (task 189's far-band
+    lead, wave 20, task 173's real-device halves, task 179's residual,
+    task 184's problem 2) is parked or blocked on a human call, re-checked
+    live this run (wave 20's network block: still 403 on both hosts,
+    unchanged — see STATE.md's Blocked on human). A genuine, freshly-found
+    gap instead: `matchMedia`/`prefers-reduced-motion` was never read
+    anywhere in this codebase, so the veil/sheet/page fades and the
+    staggered case/book row reveals in `src/ui/Hud.ts` (a dozen-odd CSS
+    `transition: opacity … ease` declarations, 320ms-900ms) run at full
+    speed for a player whose OS says to minimize interaction-triggered
+    motion — WCAG 2.3.3. The walk itself (the scrolling road, the WebGL
+    scene, the dusk cycle) is untouched by construction: none of it is a
+    CSS `transition`, it is drawn every frame by `App.ts`'s Three.js loop
+    regardless of this media query, so the one mechanic DESIGN.md asks to
+    get right is never at stake here — this task can only reach decorative
+    chrome, not gameplay.
+    **Done (2026-09-19, run 193).** One rule, `index.html`'s existing
+    `<style>` block: `@media (prefers-reduced-motion: reduce) { #game *
+    { transition-duration: 0.01ms !important; transition-delay: 0ms
+    !important; } }`. `0.01ms`, not `0s`/`none`: several call sites key a
+    `window.setTimeout` off the same duration their CSS transition uses
+    (the veil's 700ms fade-then-`remove()`, for one) — a `transitionend`
+    listener or a zero-duration transition can fail to fire in some
+    browsers, and this project has no reason to bet an existing DOM-removal
+    path on that edge case when a fixed timeout is already doing the real
+    work regardless of how fast the CSS gets there. Scoped to `#game *`
+    (the Hud's root and every row it builds live under `#game`, alongside
+    the canvas) rather than a bare `*`, so a future non-Hud page element
+    wouldn't be silently swept in by a rule written for this one tree. No
+    `src/` change, no new logic, so `npm test` stays at 1415 green
+    (unchanged) and no unit test was added — same call task 195's every
+    piece made for DOM-only work with nothing pure to assert on. Verified
+    live instead, the standing practice: a throwaway Playwright script
+    (not committed) loaded the production preview twice, once with
+    `page.emulateMedia({ reducedMotion: 'no-preference' })` and once with
+    `'reduce'`, tapped past the title veil in each, and read
+    `getComputedStyle(...).transitionDuration` off the first Hud element
+    carrying one — `0.9s` normal, `0.00001s` reduced, zero console/page
+    errors in either run. `npm run build` green (939.28 kB JS, byte-
+    identical — the change is HTML-only; `dist/index.html` itself grew a
+    few hundred bytes, nowhere near the 5 MB budget). No new runtime
+    dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
