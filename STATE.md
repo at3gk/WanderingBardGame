@@ -1,6 +1,21 @@
 # STATE
 
-Run counter: 193 (run 193 found the same situation run 187 did — idea
+Run counter: 194 (run 194 found the same situation runs 187 and 193 did —
+idea backlog empty, every standing thread parked or blocked on human, no
+consolidation due until ~195 — so it originated ROADMAP task 197 and shipped
+it: `src/ui/freePlayScreen.ts`'s own controls (record, close, the label
+toggle, the name dialog's Save/Cancel, "keep tapping") get the same
+`bindRowActivation` keyboard/screen-reader wiring task 195 gave the rest of
+the Hud, a gap task 195's own survey never reached since this screen sits
+outside `Hud.ts`. See ROADMAP task 197's own done-note for the full account,
+including why the tap-anywhere staff ladder itself stays out of scope (an
+arrow-key design question, not a mechanical fix) and the live Playwright
+verification (role/tabIndex/aria-label on all four always-visible controls,
+Tab correctly skipping Save/Cancel while the name dialog is closed, the
+record button's aria-label flipping with its glyph, and the dialog actually
+opening/closing by computed style, zero console/page errors). `npm test`
+1415 green (unchanged — DOM wiring only), `npm run build` green (939.77 kB
+vs 939.28 kB). No new runtime dependency; run 193 found the same situation run 187 did — idea
 backlog empty, every standing thread parked or blocked on human (wave 20's
 network block re-tested and still 403 on both hosts), no consolidation due
 until ~195 — so it originated ROADMAP task 196 and shipped it: `index.html`
@@ -391,6 +406,40 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-19 (run 194) — task 197, closing the gap task 195's
+  own survey missed.** Live queue as of run 193 was empty again (idea
+  backlog exhausted, every standing thread — task 173's real-device
+  halves, wave 20, task 189's far-band lead, task 179's residual, task
+  184's problem 2 — parked or blocked on a human call), so this run
+  audited the one screen task 195's own "every interactive control in the
+  game" survey never actually reached: `src/ui/freePlayScreen.ts`, built
+  by task 176 and living outside `Hud.ts` entirely. Found the identical
+  gap task 195 piece 1 fixed on the two Hud corners, six times over: the
+  record button, the close mark, the label-style toggle, the name
+  dialog's Save/Cancel, and the "keep tapping" recovery link were all bare
+  `div`s with only a `pointerdown` listener — unreachable by Tab, inert on
+  Enter/Space. Exported `Hud.ts`'s `bindRowActivation` helper (previously
+  private) and reused it on all six rather than re-implementing the same
+  role/tabIndex/Enter-Space wiring a second time; added `aria-label`s to
+  the two icon-only, state-dependent controls (record, close) since the
+  other four already carry self-describing text. The tap-anywhere staff
+  ladder itself is deliberately excluded — arrow-key stepping through its
+  thirteen positions is a real design question, not a mechanical fix, and
+  is its own future piece if ever picked up. Verified live (no jsdom in
+  this project): a throwaway Playwright script confirmed the Tab order
+  and ARIA on all four always-visible controls, that Save/Cancel are
+  correctly unreachable while the name dialog is closed, that the record
+  button's glyph and aria-label flip together, and that the dialog opens
+  and closes correctly via keyboard — zero console/page errors. See
+  ROADMAP task 197's own done-note for the full account. `npm test` 1415
+  green (unchanged), `npm run build` green (939.77 kB vs 939.28 kB). No
+  new runtime dependency. Live queue as of run 194: nothing else unblocked
+  — the idea backlog is empty again and the same five threads listed above
+  remain the only open work, all externally or creatively blocked. Next
+  run should re-check those threads first, then originate another small
+  task the way runs 187/193/194 did if nothing has moved. Next
+  consolidation still due around run 195 (194 is one run away).
 
 - **HANDOFF, 2026-09-18 (run 192) — task 184's "problem 2" re-measured,
   re-diagnosed, and moved to Blocked on human.** Live queue as of run 191

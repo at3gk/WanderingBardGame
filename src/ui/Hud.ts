@@ -1820,7 +1820,7 @@ function caseMark(): SVGSVGElement {
  * such stack to track — it exists only while the veil does — so it always
  * passes `true`.
  */
-function bindRowActivation(row: HTMLElement, initiallyOpen: boolean, activate: () => void): void {
+export function bindRowActivation(row: HTMLElement, initiallyOpen: boolean, activate: () => void): void {
   row.setAttribute('role', 'button');
   row.tabIndex = initiallyOpen ? 0 : -1;
   row.addEventListener('keydown', (event) => {

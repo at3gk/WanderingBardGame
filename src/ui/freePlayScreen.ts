@@ -58,7 +58,7 @@ import { semitoneToFrequency } from '../audio/baseLoop';
 import { playVoiceNote } from '../audio/instrumentVoice';
 import type { InstrumentVoice } from '../core/instruments';
 import { AUDIO_MANIFEST } from '../audio/manifest';
-import { BOOK_FACE } from './Hud';
+import { BOOK_FACE, bindRowActivation } from './Hud';
 import {
   RecordingSession,
   EMPTY_RECORDING,
@@ -177,6 +177,7 @@ export class FreePlayScreen {
       event.stopPropagation();
       this.onRecordButton();
     });
+    bindRowActivation(this.recordButton, true, () => this.onRecordButton());
     this.root.appendChild(this.recordButton);
 
     const close = element('div', {
@@ -193,11 +194,13 @@ export class FreePlayScreen {
       cursor: 'pointer',
     });
     close.textContent = '×';
+    close.setAttribute('aria-label', 'Close free play');
     close.addEventListener('pointerdown', (event) => {
       event.preventDefault();
       event.stopPropagation();
       this.opts.onClose();
     });
+    bindRowActivation(close, true, () => this.opts.onClose());
     this.root.appendChild(close);
 
     this.staffLayer = element('div', { position: 'absolute', inset: '0', pointerEvents: 'none' });
@@ -238,6 +241,7 @@ export class FreePlayScreen {
       event.stopPropagation();
       this.onToggleLabelStyle();
     });
+    bindRowActivation(this.labelToggle, true, () => this.onToggleLabelStyle());
     this.root.appendChild(this.labelToggle);
 
     // The name dialog: a scrim (blocks staff taps underneath, per its own
@@ -317,11 +321,13 @@ export class FreePlayScreen {
       event.stopPropagation();
       this.onSaveName();
     });
+    bindRowActivation(saveButton, true, () => this.onSaveName());
     cancelButton.addEventListener('pointerdown', (event) => {
       event.preventDefault();
       event.stopPropagation();
       this.onCancelName();
     });
+    bindRowActivation(cancelButton, true, () => this.onCancelName());
 
     this.nameScrim.appendChild(panel);
     this.root.appendChild(this.nameScrim);
@@ -498,18 +504,21 @@ export class FreePlayScreen {
 
     if (this.naming) {
       this.recordButton.textContent = '■';
+      this.recordButton.setAttribute('aria-label', 'Stop and save recording');
       this.hint.textContent = 'Name your song to save it';
       return;
     }
 
     if (this.session.recording) {
       this.recordButton.textContent = '■';
+      this.recordButton.setAttribute('aria-label', 'Stop and save recording');
       const n = this.session.steps.length;
       this.hint.textContent = recordingProblem(this.session.steps) ?? `${n} notes — tap ■ to stop and save`;
       return;
     }
 
     this.recordButton.textContent = '●';
+    this.recordButton.setAttribute('aria-label', 'Start recording');
 
     if (this.session.steps.length === 0) {
       this.hint.textContent = DEFAULT_HINT;
@@ -534,6 +543,7 @@ export class FreePlayScreen {
       event.stopPropagation();
       this.onKeepTapping();
     });
+    bindRowActivation(keepTapping, true, () => this.onKeepTapping());
     this.controlsRow.appendChild(keepTapping);
   }
 }
