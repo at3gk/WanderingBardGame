@@ -5158,6 +5158,65 @@ iPad household needs none of it; logged under Blocked on human.
     (`Hud.ts`, `freePlayScreen.ts`, `importSongDialog.ts`) now shares the
     same keyboard/screen-reader reach convention.
 
+199. **`tools/README.md` had drifted from `tools/` itself.** Not queued
+    anywhere — same situation runs 187/193/194/196 named: the idea backlog
+    is empty and every standing thread (task 189's far-band lead, wave 20,
+    task 173's real-device halves, task 184's problem 2) is parked or
+    blocked on a human call; re-checked live this run before picking a
+    task — `WebFetch` against `ashorthike.com`, `store.steampowered.com`,
+    and a plain Wikipedia page all still return `EGRESS_BLOCKED`, no
+    change from run 196. With the accessibility arc (tasks 195-198) run
+    dry — every DOM-built dialog class in `src/ui/` already covered — this
+    run looked at doc/tooling accuracy instead: a plain diff of every
+    filename in `tools/` against `tools/README.md`'s own `## ` section
+    headers found three real, substantial scripts with no section at
+    all — `shadowcast.mjs` (task 183, the frozen-frame sun-off/caster-
+    ablation instrument that `skylight-sat.mjs`'s own section already
+    leans on by name without ever describing it), `headgap.mjs` (task
+    184, the notehead-overlap-by-pixel instrument STATE.md's run-192
+    handoff cites by name), and `make-icons.mjs` (task 171, the pure-Node
+    PNG-icon generator the PWA install bundle depends on) — genuinely
+    undocumented, not merely under-cross-referenced; grep for each name
+    inside `tools/README.md` before this run found either zero hits
+    (`make-icons`) or only passing mentions from *other* sections
+    (`shadowcast`, `headgap`), never a section of their own.
+    **Done (2026-09-20, run 197).** Read all three scripts in full (not
+    just their header comments) and wrote a `## ` section for each,
+    matching the existing sections' density, cross-referencing style and
+    honesty about scope and limitations — e.g. `shadowcast.mjs`'s section
+    names the exact three questions it answers (who casts a streak, what
+    it looks like photometrically, how soft the penumbra is) and notes
+    that `skylight-sat.mjs` reuses its sun-off diff as a shadow mask
+    rather than re-deriving one; `make-icons.mjs`'s section opens by
+    flagging that it is the one script in the directory with no
+    Playwright/browser dependency at all, so a reader following the
+    Setup instructions above it doesn't go looking for a preview server
+    it never touches. Placement: `shadowcast.mjs` went immediately before
+    `skylight-sat.mjs` (task order 183 before 194, and the direct
+    by-name reference already ran the other way); `headgap.mjs` and
+    `make-icons.mjs` went at the end, after `shot.mjs`, since neither has
+    a natural neighbor among the lighting/hue instruments the middle of
+    the file is organized around. Pure documentation — no application
+    code, test, or build config touched, so neither this project's
+    Playwright-verification practice (DOM changes) nor new Vitest
+    coverage (logic changes) applies; verified instead by re-diffing
+    every filename in `tools/` against the README's section headers
+    after the edit (18 scripts, 18 sections, exact 1:1 match, confirmed
+    with `grep -n "^## \`" tools/README.md`) and by re-reading
+    `verify-all.mjs` itself against its own README section to confirm
+    the "two checks" description is still accurate (it is — `shader-
+    check` and `frame-quality` remain the only two). `npm test` 1415
+    green (unchanged — no test-relevant file touched). `npm run build`
+    green (939.94 kB, byte-identical to run 196's number — a Markdown
+    file isn't part of the Vite bundle or the `make-icons.mjs` prebuild
+    step). No new runtime dependency. One acknowledged limitation: this
+    pass only checked *presence* of a section per script, not whether
+    every existing section is still accurate against its script's
+    current behavior end to end — that broader audit is a bigger task
+    than this run's one-mechanical-gap budget, and is worth flagging as
+    a future candidate if `tools/` keeps growing without README upkeep
+    alongside it.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with

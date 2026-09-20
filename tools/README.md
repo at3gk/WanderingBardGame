@@ -268,6 +268,40 @@ Approximate on purpose: a mean-of-channel hue over a whole band is a
 diagnostic, not a colorimetric claim — good enough to find a clean gap
 between two clusters, not precise enough to tune a shader constant from.
 
+## `shadowcast.mjs [outDir]`
+
+ROADMAP task 183's instrument (built run ~150): three wave-7 lenses named
+long dark streaks crossing road and grass "with no visible caster" on
+frames 01/03/09, reading them as render banding. Suspicion-list discipline
+says the symptom is real and the attribution probably isn't — this answers
+three questions with numbers before anyone touches a lever, on three
+pinned poses (`01-dawn-road`, `03-noon-forest`, `09-phone-landscape`):
+
+- **who casts each streak** — freeze the frame (`app.stop()`), re-render
+  with the sun's shadows off entirely, then again with each caster family
+  (trees / shrubs / logs / rocks / the bard / everything else, bucketed by
+  object name/ancestry) individually silenced, and diff pixels against the
+  base capture. A pixel that only lightens when one family stops casting
+  belongs to that family.
+- **what it looks like** — value drop, saturation and hue shift between
+  the shadowed and sun-off renders, computed only on the pixels the
+  sun-off diff itself flagged as shadow.
+- **how soft it is** — the share of shadowed pixels sitting in the
+  25-75%-of-full-depth penumbra band vs. the deep (>75%) core; a
+  hard-edged cast is bimodal, a soft one carries a wide penumbra.
+
+Every capture re-renders the same frozen state through `app.renderFrame()`
+(task 168's finishing/LUT composite — see the `land-histogram.mjs`
+discrepancy note below for why a bare `renderer.render()` would silently
+read the wrong buffer), so the diffs contain rendering changes only, never
+wind/particle/camera drift between captures. Pass an `outDir` to also save
+a frozen screenshot of each pose's sun-off state. Prints one JSON block per
+pose (caster families found, shadow-pixel share of the frame, per-family
+ownership counts, the photometrics and softness numbers above); always
+exits 0 — this is a measurement tool, not a pass/fail gate. `skylight-sat.mjs`
+below reuses its sun-off diff as the shadow mask for a related question
+(non-cast, sky-lit saturation) rather than re-deriving one.
+
 ## `skylight-sat.mjs`
 
 ROADMAP task 194's instrument (built run 183): does a non-cast,
@@ -514,3 +548,50 @@ Plain screenshot of the running game after a delay. For far-off states
 (later biomes, deep night, a loop wrapping) use the throwaway-build trick
 documented in STATE.md's process notes: temporarily shrink the relevant
 constants, build, shoot, then restore and confirm with `git diff --stat`.
+
+## `headgap.mjs`
+
+ROADMAP task 184's instrument: wave 7 named "fused brown blobs" where
+notes sit close in musical time, on five frames, while frames with wide
+musical spacing were called excellent — the third appearance of the
+twice-refuted "noteheads ignore pitch" family, so before anything is fixed
+the claim gets a number. Runs the live walking tune at four viewports
+(desktop, phone portrait/landscape, tablet) and, at several sampled
+moments per viewport, projects every travelling glyph through the live
+camera using the same instanced `aPos`/`aScale`/`aAlpha` buffers the GPU
+draws (not positions re-derived from beat-timing theory), then measures
+each on-screen neighbouring pair's centre distance against the pair's
+summed head radii. A pair counts as overlapping only when both glyphs are
+lit above alpha 0.25, so a dissolved gone-by note under a fresh one isn't
+a false blob.
+
+Each measured glyph is correlated back to its own `SongBeat` (via
+`SongNotes`'s live-beats insertion order, which is ascending `hitTimeMs`),
+so a reported overlap can be blamed on that pair's real musical gap in ms
+rather than guessed from BPM arithmetic — the correlation run 192 added
+after finding the residual overlap `headgap.mjs` still reports is the
+tune's own ordinary beat spacing, not a rare eighth-note case as
+previously assumed (see ROADMAP task 184's own done-notes). Prints a
+per-sample table plus a worst-pair-per-viewport summary; a ratio under 1
+means the pair overlaps. Always exits 0 — a measurement tool, not a gate.
+
+## `make-icons.mjs`
+
+Not a browser check — a pure-Node build utility, ROADMAP task 171's
+instrument, with no Playwright and no `browser.mjs` dependency at all.
+Renders the favicon mark (a rounded rect and two concentric circles) to
+the three PNG icons (`icon-512.png`, `icon-192.png`,
+`apple-touch-icon.png`, all under `public/icons/`) the web app manifest
+needs so the game is installable as a home-screen app on iOS/Android —
+which matters here because an installed PWA is exempt from Safari's 7-day
+storage eviction, so these icons are part of the save-persistence chore,
+not branding. Hand-rolls its own PNG encoder over `node:zlib`'s
+`deflateSync` (no image library, no native build step) and rasterises each
+icon with 8x8 supersampling for clean anti-aliased circle edges. Output is
+byte-for-byte deterministic (no PNG timestamp chunk is written), and the
+script self-checks by reading each file back and verifying its PNG
+signature and dimensions before exiting; exits non-zero if any icon fails
+that check. Run with `node tools/make-icons.mjs` whenever the mark itself
+changes in `index.html`'s inline SVG (the two files are meant to stay in
+sync by hand — see the script's own header comment for the shared
+coordinate constants).

@@ -1,6 +1,24 @@
 # STATE
 
-Run counter: 196 (run 196 re-checked all four live-queue threads — still
+Run counter: 197 (run 197 re-checked all four live-queue threads — still
+parked/blocked, nothing moved, wave 20's two reference hosts and a plain
+Wikipedia fetch all still `EGRESS_BLOCKED` — then originated and shipped
+ROADMAP task 199: `tools/README.md` had drifted from `tools/` itself —
+`shadowcast.mjs` (task 183), `headgap.mjs` (task 184) and `make-icons.mjs`
+(task 171) all existed as real, substantial scripts with no `## ` section
+describing them, found by diffing every filename in `tools/` against the
+README's own section headers. Added the three missing sections (read each
+script in full first rather than guessing from its name), matching the
+existing sections' density and cross-references — `shadowcast.mjs` now
+sits right before `skylight-sat.mjs`, which already leaned on its sun-off
+diff by name. Docs-only change, so no DOM/logic to verify live; checked
+correctness by re-diffing filenames against headers after the edit (now
+1:1, all 18 scripts) and by reading `verify-all.mjs` itself to confirm its
+"two checks" description still matches reality. `npm test` 1415 green
+(unchanged), `npm run build` green (939.94 kB, byte-identical to run
+196's number — nothing executable touched). No new runtime dependency.
+See the run-197 HANDOFF below and ROADMAP task 199's own done-note for the
+full account; run 196 re-checked all four live-queue threads — still
 parked/blocked, nothing moved — then originated and shipped ROADMAP task
 198: `src/ui/importSongDialog.ts`'s OK/Save/Cancel rows and scrim get the
 same `bindRowActivation`/Escape-to-dismiss wiring tasks 195 and 197 gave
@@ -443,6 +461,49 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-20 (run 197).** Re-checked all four live-queue threads
+  before picking a task, as run 196's own handoff asked: task 173's two
+  real-device halves (still need real hardware, nothing to re-test), wave
+  20 and the fourth-forest-song transcription (`WebFetch` against
+  `ashorthike.com`/`store.steampowered.com`/a plain Wikipedia page — this
+  run used `en.wikipedia.org/wiki/A_Short_Hike` specifically — all still
+  return `EGRESS_BLOCKED`, no change from run 196), the v0.1 git tag
+  (unchanged since the orchestrating session already confirmed the GitHub
+  MCP tool list carries no tag/release write call, only the read-only
+  quartet — not re-checked a further time), and task 189's far-band lead
+  and task 184's "problem 2" (both still explicitly parked on a human
+  design call, per STATE.md's own Blocked-on-human section — not
+  re-litigated). Nothing moved on any of them, and the idea backlog is
+  empty, so this run self-originated ROADMAP task 199 the same way runs
+  187/193/194/196 did, but from a doc/tooling-accuracy angle rather than
+  another accessibility pass: a filename-vs-README-header diff of
+  `tools/` found three real scripts — `shadowcast.mjs` (task 183),
+  `headgap.mjs` (task 184), `make-icons.mjs` (task 171) — that had never
+  gotten a `## ` section in `tools/README.md`, despite being referenced
+  in passing by other sections and by STATE.md/ROADMAP.md done-notes.
+  Read all three scripts in full and wrote a section for each, matching
+  the existing sections' density, cross-references and honesty about
+  scope (e.g. `make-icons.mjs`'s section notes up front that it is a
+  pure-Node build utility with no Playwright dependency, unlike every
+  other script in the directory). Placed `shadowcast.mjs`'s new section
+  immediately before `skylight-sat.mjs`'s, which already leaned on its
+  sun-off diff by name; `headgap.mjs` and `make-icons.mjs` went at the
+  end, after `shot.mjs`. Docs-only change — no DOM or pure-logic code
+  touched, so neither this arc's standing Playwright practice nor new
+  Vitest coverage applied; verified instead by re-diffing every filename
+  in `tools/` against the README's own section headers after the edit
+  (18 scripts, 18 headers, 1:1) and by re-reading `verify-all.mjs` itself
+  to confirm its own "two checks" description is still accurate. `npm
+  test` 1415 green (unchanged — no test-relevant file touched), `npm run
+  build` green (939.94 kB, byte-identical to run 196's own number, since
+  `tools/README.md` isn't part of the bundle). No new runtime dependency.
+  See ROADMAP task 199 for the full done-note. Live queue as of run 197:
+  unchanged from run 196 (task 173, wave 20, task 189's far-band lead,
+  task 184's problem 2, all still parked/blocked); the idea backlog is
+  empty again. Next run should re-check those four threads first, then
+  originate another small task if nothing has moved. Next consolidation
+  due around run 205 (unchanged — run 197 was not a consolidation run).
 
 - **HANDOFF, 2026-09-20 (run 196).** Re-checked all four live-queue threads
   before picking a task, as run 195's own handoff asked: task 173's two
