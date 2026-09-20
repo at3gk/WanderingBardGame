@@ -34,7 +34,7 @@
 import { importMidi, type MelodyNote } from '../core/midi';
 import { importMusicXml } from '../core/musicxml';
 import { saveImportedSong, type SaveCustomSongResult } from '../core/customSongs';
-import { BOOK_FACE } from './Hud';
+import { BOOK_FACE, bindRowActivation } from './Hud';
 
 /** Extension-based routing only — see the file header for why. */
 function importKind(filename: string): 'musicxml' | 'mxl' | 'midi' {
@@ -157,6 +157,7 @@ export class ImportSongDialog {
       event.stopPropagation();
       this.finish();
     });
+    bindRowActivation(ok, true, () => this.finish());
     panel.appendChild(ok);
   }
 
@@ -216,6 +217,8 @@ export class ImportSongDialog {
       event.stopPropagation();
       this.finish();
     });
+    bindRowActivation(save, true, trySave);
+    bindRowActivation(cancel, true, () => this.finish());
 
     input.focus();
   }
@@ -237,6 +240,14 @@ export class ImportSongDialog {
     overlay.addEventListener('pointerdown', (event) => {
       event.preventDefault();
       event.stopPropagation();
+    });
+    // Keyboard/screen-reader reach, matching Hud.ts's pageBox pattern (task
+    // 195 piece 2d): Escape dismisses this round trip from any focused
+    // child (ok/save/cancel, or the name field), since it bubbles here.
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' && event.key !== 'Esc') return;
+      event.preventDefault();
+      this.finish();
     });
     const panel = element('div', {
       width: 'min(320px, 84vw)',
