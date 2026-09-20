@@ -1,6 +1,13 @@
 # STATE
 
-Run counter: 195 (run 195 was the consolidation pass, per the run-185
+Run counter: 196 (run 196 re-checked all four live-queue threads — still
+parked/blocked, nothing moved — then originated and shipped ROADMAP task
+198: `src/ui/importSongDialog.ts`'s OK/Save/Cancel rows and scrim get the
+same `bindRowActivation`/Escape-to-dismiss wiring tasks 195 and 197 gave
+`Hud.ts` and `freePlayScreen.ts`, closing out the third and last DOM-built
+dialog class in `src/ui/`. See the run-196 HANDOFF below and ROADMAP task
+198's own done-note for the full account; run 195 was the consolidation
+pass, per the run-185
 refresh's own due date — see the run-195 HANDOFF and Direction research
 refresh below for the full account: task 194 closed at run 186, the
 task 195/196/197 accessibility arc closed across runs 187-194, task
@@ -436,6 +443,45 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-20 (run 196).** Re-checked all four live-queue threads
+  before picking a task, as run 195's own handoff asked: task 173's two
+  real-device halves (still need real hardware, nothing to re-test), wave
+  20 and the fourth-forest-song transcription (`WebFetch` against
+  `ashorthike.com`/`store.steampowered.com`/a plain Wikipedia page all
+  still return `EGRESS_BLOCKED`), the v0.1 git tag (GitHub MCP tool list
+  re-checked once more, still no tag/release write call), and task 189's
+  far-band lead (still parked — five investigation pieces without a
+  replacement mechanism, still waiting on the same network-blocked panel
+  validation). Nothing moved on any of them, and the idea backlog is
+  empty, so this run self-originated ROADMAP task 198 the same way runs
+  187/193/194 did: `src/ui/importSongDialog.ts` (the songbook's "Import a
+  song" door) was a third DOM-built dialog class task 195/197's own
+  keyboard/screen-reader surveys never reached (`Hud.ts` and
+  `freePlayScreen.ts` only) — its OK/Save/Cancel rows were bare
+  `pointerdown`-only `div`s and its scrim had no Escape-to-dismiss, same
+  gap for a third time. Fixed with the same `bindRowActivation` helper the
+  other two files already share, plus an overlay-level Escape handler
+  matching `Hud.ts`'s `pageBox` exactly. Verified live (not just
+  type-checked, per this arc's own standing practice) with a throwaway
+  Playwright script: opened the songbook, discovered live that the import
+  row lives on the book's *second* page once eight songs fill the first
+  (a real fact about `buildBook`'s paging this run hadn't known going in),
+  fed the file input garbage to reach the declined-kindly panel, confirmed
+  `role="button"`/`tabIndex=0` on OK, Tab-then-Enter closing it, and
+  Tab-then-Escape closing a second instance of it — zero console/page
+  errors either way. `npm test` 1415 green (unchanged), `npm run build`
+  green (939.94 KB, +0.17 KB from the three `bindRowActivation` calls and
+  one `keydown` listener), no new runtime dependency. See ROADMAP task 198
+  for the full done-note. With this, every DOM-built overlay/dialog class
+  in `src/ui/` now shares one keyboard/screen-reader convention — a small,
+  natural stopping point for this self-originated accessibility thread
+  rather than a reason to keep hunting for a fourth file. Live queue as of
+  run 196: unchanged from run 195 (task 173, wave 20, task 189's far-band
+  lead, task 184's problem 2, all still parked/blocked); the idea backlog
+  is empty again. Next run should re-check those first, then originate
+  another small task if nothing has moved. Next consolidation due around
+  run 205 (unchanged — run 196 was not a consolidation run).
 
 - **HANDOFF, 2026-09-19 (run 195) — CONSOLIDATION (drift control, every
   ~10th run; last was 185).** Drift check over runs 186-194: CLEAN — every

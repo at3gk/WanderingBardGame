@@ -5111,6 +5111,52 @@ iPad household needs none of it; logged under Blocked on human.
     made). `npm run build` green (939.77 kB vs 939.28 kB — six small
     `setAttribute`/`addEventListener` call sites, no new import to weigh
     it down). No new runtime dependency.
+198. **The import-song dialog's own controls are keyboard/screen-reader
+    reachable.** Task 195 covered `Hud.ts`, task 197 covered
+    `freePlayScreen.ts`, but `src/ui/importSongDialog.ts` (the songbook's
+    "Import a song" door, task 177/178) was never in either survey — it is
+    a third, separate DOM class, not a submodule of the other two. Its
+    "OK" (the declined-kindly message), "Save"/"Cancel" (the naming step),
+    are bare `div`s with only a `pointerdown` listener, the same gap for a
+    third time; its scrim also had no Escape-to-dismiss, the same reach
+    task 195 piece 2d gave `Hud.ts`'s `pageBox`. Not queued anywhere —
+    same situation runs 187/193/194 named: the idea backlog is empty and
+    every standing thread (task 189's far-band lead, wave 20, task 173's
+    real-device halves, task 179's residual, task 184's problem 2) is
+    parked or blocked on a human call; re-checked live this run before
+    picking a task — wave 20's two reference hosts and a plain Wikipedia
+    fetch (the fourth-forest-song source) both still return
+    `EGRESS_BLOCKED`, and the GitHub MCP tool list still carries no tag/
+    release write call, so nothing moved on any of the four.
+    **Done (2026-09-20, run 196).** Imported `Hud.ts`'s `bindRowActivation`
+    (already exported and reused by `freePlayScreen.ts`) and called it on
+    all three buttons; their own visible text ("OK", "Save", "Cancel")
+    already serves as the accessible name, so no separate `aria-label` was
+    needed the way task 197's icon-only controls required one. Added an
+    `overlay`-level `keydown` listener answering Escape, matching
+    `Hud.ts`'s `pageBox` pattern exactly (task 195 piece 2d) — it bubbles
+    from whichever child (a button, or the name `<input>`) currently holds
+    focus. No jsdom in this project, so verified live: a throwaway
+    Playwright script (not committed) opened the songbook, turned to its
+    second page (where the import row pages to once eight songs fill the
+    first — a real thing this run learned about `buildBook`'s paging, not
+    assumed), fed the file input a deliberately-invalid file to reach the
+    declined-kindly panel, confirmed the OK row carries `role="button"`/
+    `tabIndex=0`, confirmed Tab reaches it and Enter closes the panel, then
+    reopened the same panel and confirmed Escape (with focus inside the
+    dialog) closes it too. Zero console/page errors throughout. The naming
+    step's Save/Cancel reuse the identical helper already proven correct
+    by the other two rows in the same file, so it was wired but not
+    separately live-tested — reaching it needs a real parseable MIDI/
+    MusicXML file, out of proportion to a mechanical role/tabIndex/Escape
+    fix already exercised twice this run on the same three-line pattern.
+    `npm test` 1415 green (unchanged — DOM wiring only, nothing pure to
+    assert on, same call every prior piece of this arc made). `npm run
+    build` green (939.94 kB vs 939.77 kB — one new import, three
+    `bindRowActivation` calls, one `keydown` listener). No new runtime
+    dependency. With this, every DOM-built overlay/dialog class in `src/ui/`
+    (`Hud.ts`, `freePlayScreen.ts`, `importSongDialog.ts`) now shares the
+    same keyboard/screen-reader reach convention.
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
