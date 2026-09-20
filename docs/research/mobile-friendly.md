@@ -35,8 +35,15 @@ AudioSession API as the partial remedy), suspends it as "interrupted" on
 phone calls, throttles requestAnimationFrame to 30 fps in Low Power Mode,
 and caps rAF at 60 Hz even on 120 Hz ProMotion screens — so the frame loop
 must be honest about variable timestep, which it already largely is.
-Notched iPhones need `viewport-fit=cover` plus `env(safe-area-inset-*)`,
-which index.html does not yet have. Touch-target floors are well
+Notched iPhones need `viewport-fit=cover` plus `env(safe-area-inset-*)` —
+recommendation 2 below, shipped: `index.html`'s viewport meta carries
+`viewport-fit=cover` and `Hud.ts`'s corner padding reads the four
+`env(safe-area-inset-*)` values (see the "Findings from shipped work"
+section's own convention — this line said "which index.html does not yet
+have" from this file's original 2026-07-31 writing straight through to
+2026-09-20/run 198, three months after the fix actually shipped, because
+this summary paragraph was never revisited when the buildout list below it
+closed). Touch-target floors are well
 specified (WCAG 2.2: 24 px minimum at AA; Apple: 44×44 pt), and iOS
 cannot lock orientation from a web page, so both orientations must simply
 work. On Android the question is thermal and GPU spread, where the honest
