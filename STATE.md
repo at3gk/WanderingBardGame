@@ -1,6 +1,21 @@
 # STATE
 
-Run counter: 197 (run 197 re-checked all four live-queue threads — still
+Run counter: 198 (run 198 re-checked all four live-queue threads — still
+parked/blocked, nothing moved, `WebFetch` against `en.wikipedia.org` still
+`EGRESS_BLOCKED` and the GitHub MCP tool list still has no tag/release
+write call — then originated and shipped ROADMAP task 200:
+`docs/research/mobile-friendly.md`'s "Honest summary" paragraph still
+claimed `index.html` lacked `viewport-fit=cover`/safe-area handling, a
+claim false since 2026-09-04 (`index.html`'s viewport meta and `Hud.ts`'s
+`env(safe-area-inset-*)` reads both confirmed live). Rewrote the one
+stale sentence in place; left the neighboring "untested quality tiers"
+sentence alone (still accurate) and the file's own "Findings from shipped
+work" section alone (reserved for consolidation-run appends). Docs-only
+change, verified by re-reading `index.html`/`Hud.ts` directly. `npm test`
+1415 green (unchanged), `npm run build` green (939.94 kB, byte-identical
+to run 197's number). No new runtime dependency. See the run-198 HANDOFF
+below and ROADMAP task 200's own done-note for the full account; run 197
+re-checked all four live-queue threads — still
 parked/blocked, nothing moved, wave 20's two reference hosts and a plain
 Wikipedia fetch all still `EGRESS_BLOCKED` — then originated and shipped
 ROADMAP task 199: `tools/README.md` had drifted from `tools/` itself —
@@ -461,6 +476,57 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-20 (run 198).** Re-checked all four live-queue
+  threads before picking a task, as run 197's own handoff asked: task
+  173's two real-device halves (still need real hardware, nothing to
+  re-test), wave 20 and the fourth-forest-song transcription (`WebFetch`
+  against `en.wikipedia.org` this run — still returns `EGRESS_BLOCKED`,
+  no change), the v0.1 git tag (GitHub MCP tool list re-checked once
+  more: `create_pull_request`, `create_branch`, `create_or_update_file`,
+  `create_repository` and friends all present, still no tag/release write
+  call, only the read-only `get_tag`/`get_release_by_tag`/
+  `get_latest_release` trio), and task 189's far-band lead and task 184's
+  "problem 2" (both still explicitly parked on a human design call — not
+  re-litigated). Nothing moved on any of them, and the idea backlog is
+  empty, so this run self-originated ROADMAP task 200 the same way runs
+  187/193/194/196/197 did, picking up task 199's own closing note ("worth
+  flagging" an accuracy audit, not just a presence check, as a future
+  candidate) and applying it to a different doc: `docs/research/
+  mobile-friendly.md`'s "Honest summary" paragraph — the file's opening
+  section, written 2026-07-31 before any of its buildout recommendations
+  shipped — still said "Notched iPhones need `viewport-fit=cover` plus
+  `env(safe-area-inset-*)`, which index.html does not yet have." That has
+  been false since 2026-09-04: `index.html`'s viewport meta carries
+  `viewport-fit=cover` (confirmed by reading the file directly, not
+  inferring from git blame, since `git log -S` on this repo's history
+  attributes the line to a commit whose own message is about an unrelated
+  free-play piece — squash/rebase churn, not a reliable dating source) and
+  `Hud.ts` reads all four `env(safe-area-inset-*)` values into its corner
+  padding. The claim survived three months, including the run-180 handoff
+  that recorded this same file's entire buildout list as closed, because
+  it sits in a prose summary above the file's own "Findings from shipped
+  work" section rather than inside it — nothing routinely re-reads that
+  opening paragraph once the recommendations below it are done. Rewrote
+  the one sentence in place (see ROADMAP task 200's own done-note for the
+  exact wording and what was deliberately left alone: the neighboring
+  "untested quality tiers" sentence, still accurate since task 173's
+  real-device half is still parked, and the "Findings from shipped work"
+  section itself, reserved for consolidation-run appends per its own
+  heading). Docs-only change, so verified by re-reading `index.html` and
+  `src/ui/Hud.ts` directly rather than a Playwright run or new tests.
+  `npm test` 1415 green (unchanged), `npm run build` green (939.94 kB,
+  byte-identical to run 197's number). No new runtime dependency. Live
+  queue as of run 198: unchanged from run 197 (task 173, wave 20, task
+  189's far-band lead, task 184's problem 2, all still parked/blocked);
+  the idea backlog is empty again. Next run should re-check those four
+  threads first, then originate another small task if nothing has moved —
+  a broader "read every research doc's own summary/intro prose against
+  current code, not just its ranked recommendation list" pass is a
+  reasonable candidate if this exact shape of drift (a doc's own framing
+  text going stale after its recommendations ship) recurs in
+  `art-quality.md` or `retention-design.md`. Next consolidation still due
+  around run 205 (unchanged — run 198 was not a consolidation run).
 
 - **HANDOFF, 2026-09-20 (run 197).** Re-checked all four live-queue threads
   before picking a task, as run 196's own handoff asked: task 173's two

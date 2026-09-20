@@ -5217,6 +5217,56 @@ iPad household needs none of it; logged under Blocked on human.
     a future candidate if `tools/` keeps growing without README upkeep
     alongside it.
 
+200. **`docs/research/mobile-friendly.md`'s "Honest summary" still said
+    `index.html` lacked `viewport-fit=cover`/safe-area handling.** Not
+    queued anywhere — same situation runs 187/193/194/196/197 named: the
+    idea backlog is empty and every standing thread (task 189's far-band
+    lead, wave 20, task 173's real-device halves, task 179's residual,
+    task 184's problem 2) is parked or blocked on a human call; re-checked
+    live this run before picking a task — `WebFetch` against
+    `en.wikipedia.org` still returns `EGRESS_BLOCKED` and the GitHub MCP
+    tool list still carries no tag/release write call, so nothing moved on
+    any of the four. Task 199's own closing note flagged a broader
+    "accuracy of existing sections, not just presence" audit as a future
+    candidate; this run picked exactly that shape of gap in a different
+    doc. Reading `docs/research/mobile-friendly.md`'s own "Honest summary"
+    paragraph (the file's first section, written 2026-07-31, before any of
+    its buildout recommendations shipped) against the current codebase
+    found one sentence flatly false: "Notched iPhones need
+    `viewport-fit=cover` plus `env(safe-area-inset-*)`, which index.html
+    does not yet have." `index.html`'s viewport meta has carried
+    `viewport-fit=cover` since recommendation 1/2's buildout run, and
+    `Hud.ts` reads all four `env(safe-area-inset-*)` values into its
+    corner padding — both confirmed by reading the live files, not
+    assumed from the recommendation list's own closed status. The
+    paragraph was never revisited when that work shipped, even though
+    STATE.md's run-180 handoff already recorded the file's whole buildout
+    list as closed.
+    **Done (2026-09-20, run 198).** Rewrote the one stale sentence in
+    place: it now states plainly that safe-area handling shipped
+    (`index.html`'s `viewport-fit=cover`, `Hud.ts`'s four `env()` reads)
+    and names the gap honestly — the claim was wrong for roughly three
+    months (2026-09-04 through today) because this summary paragraph sits
+    above, not inside, the file's own "Findings from shipped work" section
+    that consolidation runs keep current. Did not touch the "untested
+    quality tiers ... no phone has ever validated" sentence two lines
+    later — that one is still true, since task 173's real-device half
+    remains parked on hardware this environment doesn't have. Left the
+    "Findings from shipped work" section itself untouched, since its own
+    heading reserves it for consolidation-run appends (next due ~205) and
+    this is a plain prose correction, not a new finding about a shipped
+    mechanism. Docs-only change — no application code, test, or build
+    config touched, so neither this arc's Playwright-verification practice
+    nor new Vitest coverage applies; verified by re-reading `index.html`
+    and `src/ui/Hud.ts` directly to confirm the corrected claim, and by
+    grepping the rest of the file's "Honest summary" section for other
+    present-tense claims that might have gone stale the same way (the
+    Android/quality-tier sentence checked and left alone as still
+    accurate). `npm test` 1415 green (unchanged — no test-relevant file
+    touched). `npm run build` green (939.94 kB, byte-identical to run
+    197's number — a Markdown file isn't part of the Vite bundle). No new
+    runtime dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
