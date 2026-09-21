@@ -83,18 +83,21 @@ ones marked slow.
 Boots the render foundation in a real browser and fails on any shader that
 does not compile or any frame that does not draw — the one class of bug
 unit tests structurally cannot catch, since a GLSL typo type-checks
-perfectly and only shows up as a black screen. Also renders the smoke stage
-at four times of day and reports the average pixel colour of each, a cheap
-objective check that the time-of-day palette actually moves the world's
-light rather than just the sky dome.
+perfectly and only shows up as a black screen. Also renders whatever
+`window.bard.stage` currently is (`RoadStage` — the game has no `SmokeStage`
+any more, see this script's own header comment) at four times of day and
+reports the average pixel colour of each, a cheap objective check that the
+time-of-day palette actually moves the world's light rather than just the
+sky dome.
 
 Prints `PASS` / `FAIL` and exits non-zero on failure.
 
 ## `frame-quality.mjs [only]`
 
 Turns the three complaints every art critique of this game has returned into
-numbers, sampled from the real renderer at six fixed poses (four times of day
-plus both phone aspect ratios):
+numbers, sampled from the real renderer at seven fixed poses (morning, noon,
+a village-biome noon, golden hour, and night, plus both phone aspect
+ratios):
 
 - **valueStops** — the frame's usable value range, as log2 of the ratio
   between the 90th and 10th percentile of *linear* luminance. Under about a

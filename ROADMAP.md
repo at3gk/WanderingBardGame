@@ -5319,6 +5319,53 @@ iPad household needs none of it; logged under Blocked on human.
     a workflow YAML file isn't part of the Vite bundle). No new runtime
     dependency.
 
+202. **`tools/README.md` had drifted from the scripts it describes, not
+    just by omission (task 199) but by accuracy.** Not queued anywhere —
+    same situation runs 187/193/194/196/197/198/199 named: the idea backlog
+    is empty and every standing thread (task 173's two real-device halves,
+    wave 20/the fourth-forest-song transcription, the v0.1 git tag, task
+    189's far-band lead and task 184's problem 2) is parked or blocked on a
+    human or on infrastructure this environment doesn't have; re-checked
+    live this run before picking a task — `WebFetch` against
+    `en.wikipedia.org` still returns `EGRESS_BLOCKED` and the GitHub MCP
+    tool list still carries no tag/release write call (only the read-only
+    `get_tag`/`get_release_by_tag`/`get_latest_release`/`list_tags`
+    quartet), so nothing moved on either. Run 199's own handoff dispatched
+    an Explore agent to audit whether every `tools/README.md` section still
+    matches its script's current behaviour end to end, and two of its
+    findings were already spot-checked as real before this run started:
+    the `## frame-quality.mjs [only]` section said the check samples "six
+    fixed poses (four times of day plus both phone aspect ratios)", but
+    `frame-quality.mjs`'s own `POSES` array (lines 111-135) has seven
+    entries — `morning`, `noon`, `noon-village` (task 182's village-noon
+    control pose, added without the section's opening count ever being
+    revisited), `golden`, `night`, `phone-portrait`, `phone-landscape`; and
+    the `## shader-check.mjs` section said the check "renders the smoke
+    stage at four times of day", but `SmokeStage` does not exist anywhere
+    in `src/` (`grep -rn "SmokeStage" src/` — zero hits) — it is the
+    removed class `shader-check.mjs`'s own header comment already documents
+    as replaced by `RoadStage`, which `window.bard.stage` actually is. Both
+    are the same "presence yes, accuracy no" gap task 199's closing note
+    flagged as a future candidate, confirmed by reading the source files
+    directly rather than trusting either the README or the agent report.
+    **Done (2026-09-21, run 200).** Rewrote both passages in place:
+    `frame-quality.mjs`'s section now says "seven fixed poses (morning,
+    noon, a village-biome noon, golden hour, and night, plus both phone
+    aspect ratios)"; `shader-check.mjs`'s section now says the check
+    "renders whatever `window.bard.stage` currently is (`RoadStage` — the
+    game has no `SmokeStage` any more, see this script's own header
+    comment) at four times of day". Left the Explore agent's third,
+    lower-confidence item (`make-icons.mjs`'s section implying the PNGs
+    carry a rounded rect the code deliberately omits) for a future run to
+    judge, since it needs reading `make-icons.mjs` fresh rather than
+    reusing a spot-check already done. Docs-only change — no application
+    code, test, or build config touched, so verified by re-reading
+    `tools/frame-quality.mjs` and `tools/shader-check.mjs` directly rather
+    than by running either script. `npm test` 1415 green (unchanged — no
+    test-relevant file touched). `npm run build` green (939.94 kB,
+    byte-identical to run 199's number — a Markdown file isn't part of the
+    Vite bundle). No new runtime dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
