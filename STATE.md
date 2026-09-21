@@ -519,16 +519,40 @@ mastery display must read that section first.
   to run 198's number). No new runtime dependency. Live queue as of run
   199: unchanged from run 198 (task 173, wave 20, task 189's far-band lead,
   task 184's problem 2, all still parked/blocked); the idea backlog is
-  empty again. Next run should re-check those threads first, then originate
-  another small task if nothing has moved — the research-doc framing-prose
-  audit run 198 suggested is still a reasonable candidate, and a
-  general-purpose agent dispatched this run to audit whether every
-  `tools/README.md` section still matches its script's *current* behavior
-  end to end (not just presence, which task 199 already confirmed) may
-  return findings after this run's own commit lands; if so they're a
-  ready-made candidate for run 200 rather than something to chase down
-  mid-run and risk a two-task run. Next consolidation still due around run
-  205 (unchanged — run 199 was not a consolidation run).
+  empty again. This run also dispatched an Explore agent to audit whether
+  every `tools/README.md` section still matches its script's *current*
+  behavior end to end (not just presence, which task 199 already confirmed)
+  — its report landed after task 201's commit above, so it wasn't folded
+  into this run's own one-task budget, but two of its findings were spot-
+  checked against the source directly and are confirmed real, giving run
+  200 a ready-made task instead of a re-audit:
+  - **`tools/README.md`'s `frame-quality.mjs` section says "six fixed
+    poses (four times of day plus both phone aspect ratios)"**
+    (tools/README.md:95-96); `tools/frame-quality.mjs`'s own `POSES` array
+    (lines 111-135) has seven entries — `morning`, `noon`, `noon-village`,
+    `golden`, `night`, `phone-portrait`, `phone-landscape`. `noon-village`
+    is task 182's village-biome control pose (its own inline comment at
+    line 114 explains why it needs a separate floor), added without the
+    section's opening pose count ever being revisited.
+  - **The same section's next sentence, under `## shader-check.mjs`, says
+    "Also renders the smoke stage at four times of day"**
+    (tools/README.md:86); `SmokeStage` does not exist anywhere in `src/`
+    (confirmed via `grep -rn "SmokeStage" src/` — zero hits) and
+    `shader-check.mjs`'s own header comment (line 20) already documents it
+    as a removed class the current `RoadStage` replaced. The check renders
+    whatever `window.bard.stage` currently is, not a named "smoke stage."
+  Both are the same "presence yes, accuracy no" gap task 199's own closing
+  note flagged as a future candidate and task 201 above found once already
+  in a different file — a real, mechanical two-line fix, not a design call.
+  The agent's third, lower-confidence item (`make-icons.mjs`'s section
+  implying the PNGs carry a rounded rect the code deliberately omits) is
+  left for whoever picks this up to judge; its other "noted but unconfirmed"
+  items (shadowcast.mjs's saved-frame claim, skylight-sat.mjs's dot-product
+  remap) were correctly not raised as findings. Next run should re-check the
+  two live-checkable threads (WebFetch/GitHub MCP) first, then take the
+  `tools/README.md` fix above rather than searching from scratch. Next
+  consolidation still due around run 205 (unchanged — run 199 was not a
+  consolidation run).
 
 - **HANDOFF, 2026-09-20 (run 198).** Re-checked all four live-queue
   threads before picking a task, as run 197's own handoff asked: task
