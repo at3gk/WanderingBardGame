@@ -582,8 +582,13 @@ means the pair overlaps. Always exits 0 — a measurement tool, not a gate.
 
 Not a browser check — a pure-Node build utility, ROADMAP task 171's
 instrument, with no Playwright and no `browser.mjs` dependency at all.
-Renders the favicon mark (a rounded rect and two concentric circles) to
-the three PNG icons (`icon-512.png`, `icon-192.png`,
+Renders the favicon mark — a full-bleed square background and two
+concentric circles, deliberately *without* the rounded corners the SVG
+favicon draws (`index.html`'s inline SVG has `rect rx='6'`; the script's
+own header comment explains why the PNGs drop it: iOS composites its own
+rounded mask over `apple-touch-icon`, and the manifest's `purpose: "any
+maskable"` needs an edge-to-edge background so a masking shape can crop
+it safely) — to the three PNG icons (`icon-512.png`, `icon-192.png`,
 `apple-touch-icon.png`, all under `public/icons/`) the web app manifest
 needs so the game is installable as a home-screen app on iOS/Android —
 which matters here because an installed PWA is exempt from Safari's 7-day

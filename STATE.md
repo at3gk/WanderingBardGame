@@ -1,6 +1,26 @@
 # STATE
 
-Run counter: 200 (run 200 re-checked the two live-checkable threads —
+Run counter: 201 (run 201 re-checked the one live-checkable thread —
+`WebFetch` against `en.wikipedia.org` still `EGRESS_BLOCKED` (the GitHub MCP
+tool list wasn't re-scanned this run; its no-tag/release-write-call finding
+was re-confirmed as recently as run 200 and nothing in this run's own tool
+list suggests it changed) — then took task 202's own third, lower-confidence
+`tools/README.md` item: the `make-icons.mjs` section claimed the PNG icons
+carry a rounded rect. Read `make-icons.mjs` in full — its header comment
+says the PNGs are deliberately full-bleed square with no rounded corners
+(iOS's own rounded mask over `apple-touch-icon` would otherwise show a
+black-framed square through transparent corners; the manifest's `purpose:
+"any maskable"` needs an edge-to-edge background) — and cross-checked
+against `index.html`'s inline SVG favicon, which does draw `rect rx='6'`
+plus the two circles, confirming the gap is real: only the two concentric
+circles carry over to the PNGs. Rewrote the section's opening sentence in
+place. Shipped as ROADMAP task 203, closing out all three items task
+199/202's README audit found. Docs-only change, verified by re-reading
+`tools/make-icons.mjs` and `index.html` directly. `npm test` 1415 green
+(unchanged), `npm run build` green (939.94 kB, byte-identical to run 200's
+number). No new runtime dependency. See the run-201 HANDOFF below and
+ROADMAP task 203's own done-note for the full account; run 200 re-checked
+the two live-checkable threads —
 `WebFetch` against `en.wikipedia.org` still `EGRESS_BLOCKED`, the GitHub MCP
 tool list still no tag/release write call — then took the `tools/README.md`
 fix run 199's handoff queued up rather than searching from scratch: shipped
@@ -497,6 +517,41 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-21 (run 201).** Re-checked the one thread that's
+  quick to re-test standalone — `WebFetch` against `en.wikipedia.org`
+  still returns `EGRESS_BLOCKED`, unchanged — and did not re-scan the full
+  GitHub MCP tool list separately, since run 200 already confirmed no tag/
+  release write call exists and this run's own tool list gave no reason to
+  think that changed; a future run should still do the full re-scan rather
+  than trust this shortcut indefinitely. Task 173's real-device halves,
+  task 189's far-band lead, task 184's problem 2, wave 20, and the v0.1 git
+  tag all remain parked or blocked, not re-litigated this run. Took the
+  ready-made candidate run 200's own handoff left: task 202's third,
+  lower-confidence `tools/README.md` finding — the `make-icons.mjs`
+  section claimed the PNGs carry "a rounded rect and two concentric
+  circles." Read `make-icons.mjs` in full: its own header comment says the
+  PNGs are deliberately full-bleed square with no rounded corners at all
+  (iOS composites its own rounded mask over `apple-touch-icon`, so
+  transparent corners would show through as a black-framed square instead;
+  the manifest's `purpose: "any maskable"` needs an edge-to-edge
+  background so a masking shape can crop it safely) — only the two circles
+  carry over from the SVG mark. Cross-checked against `index.html`'s
+  inline favicon SVG directly, which does draw `rect rx='6'` plus the two
+  circles, confirming the README's claim was accurate for the SVG but
+  wrong for the PNGs it was actually describing. Rewrote the section's
+  opening sentence — shipped as ROADMAP task 203, closing out all three
+  items task 199/202's README audit found. Docs-only change, verified by
+  re-reading `tools/make-icons.mjs` and `index.html` directly rather than
+  running either. `npm test` 1415 green (unchanged), `npm run build` green
+  (939.94 kB, byte-identical to run 200's number). No new runtime
+  dependency. Live queue as of run 201: unchanged from run 200 (task 173,
+  wave 20, task 189's far-band lead, task 184's problem 2, the v0.1 git
+  tag, all still parked/blocked); the idea backlog is empty again and has
+  no ready-made candidate left — the next run needs to search from
+  scratch (or re-check whether any parked thread has become actionable).
+  Next consolidation still due around run 205 (unchanged — run 201 was not
+  a consolidation run).
 
 - **HANDOFF, 2026-09-21 (run 200).** Re-checked the two live-checkable
   threads before picking a task, as run 199's own handoff asked: `WebFetch`
