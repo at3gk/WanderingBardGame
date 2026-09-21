@@ -1,6 +1,15 @@
 # STATE
 
-Run counter: 199 (run 199 re-checked the two live-checkable threads —
+Run counter: 200 (run 200 re-checked the two live-checkable threads —
+`WebFetch` against `en.wikipedia.org` still `EGRESS_BLOCKED`, the GitHub MCP
+tool list still no tag/release write call — then took the `tools/README.md`
+fix run 199's handoff queued up rather than searching from scratch: shipped
+ROADMAP task 202, correcting `frame-quality.mjs`'s pose count (six claimed,
+seven actual) and `shader-check.mjs`'s "smoke stage" naming (that class
+doesn't exist any more; the check drives `RoadStage`) in `tools/README.md`'s
+own sections. See the run-200 HANDOFF below and ROADMAP task 202's own
+done-note for the full account; run 199 re-checked the two live-checkable
+threads —
 `WebFetch` against `en.wikipedia.org` still `EGRESS_BLOCKED`, the GitHub MCP
 tool list still no tag/release write call — then originated and shipped
 ROADMAP task 201: `.github/workflows/headless-checks.yml`'s own top comment
@@ -488,6 +497,43 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-21 (run 200).** Re-checked the two live-checkable
+  threads before picking a task, as run 199's own handoff asked: `WebFetch`
+  against `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub
+  MCP tool list still carries no tag/release write call (only the read-only
+  `get_tag`/`get_release_by_tag`/`get_latest_release`/`list_tags` quartet) —
+  nothing moved on either. Task 173's real-device halves, task 189's
+  far-band lead, task 184's problem 2, wave 20, and the v0.1 git tag all
+  remain parked or blocked, not re-litigated this run. Unlike the last
+  several runs, this one didn't have to self-originate from scratch: run
+  199's own handoff had already dispatched an Explore agent to audit
+  `tools/README.md` against the scripts it describes end to end, spot-
+  checked two of its findings as real, and left them ready-made for this
+  run. Took that task directly — ROADMAP task 202: `tools/README.md`'s
+  `## frame-quality.mjs [only]` section said the check samples "six fixed
+  poses (four times of day plus both phone aspect ratios)" when
+  `frame-quality.mjs`'s own `POSES` array has seven (task 182's
+  `noon-village` control pose was added without the count being revisited),
+  and its `## shader-check.mjs` section said the check "renders the smoke
+  stage" when `SmokeStage` was removed from `src/` long ago — the check
+  drives `RoadStage`, which `shader-check.mjs`'s own header comment already
+  explains. Confirmed both directly against the source (`POSES` array,
+  `grep -rn "SmokeStage" src/`) before rewriting either passage — see
+  ROADMAP task 202's own done-note for the exact wording. Left the Explore
+  agent's third, lower-confidence finding (`make-icons.mjs`'s rounded-rect
+  claim) for a future run, since judging it needs a fresh read rather than
+  reusing this run's spot-check. Docs-only change, verified by re-reading
+  `tools/frame-quality.mjs` and `tools/shader-check.mjs` directly rather
+  than running either script. `npm test` 1415 green (unchanged), `npm run
+  build` green (939.94 kB, byte-identical to run 199's number). No new
+  runtime dependency. Live queue as of run 200: unchanged from run 199
+  (task 173, wave 20, task 189's far-band lead, task 184's problem 2, the
+  v0.1 git tag, all still parked/blocked); the idea backlog is empty
+  again, and `make-icons.mjs`'s lower-confidence finding above is the
+  one ready-made candidate for the next run before it needs to search from
+  scratch. Next consolidation still due around run 205 (unchanged — run
+  200 was not a consolidation run).
 
 - **HANDOFF, 2026-09-21 (run 199).** Re-checked the two live-checkable
   threads before picking a task, as run 198's own handoff asked: `WebFetch`
