@@ -9,9 +9,12 @@ name: Headless checks
 # a red run here from ever affecting anything else.
 #
 # v0.6 rebuilt the game's presentation in Three.js and deleted the 24
-# Phaser-era checks along with it (STATE.md); the suite is down to one
-# (`shader-check`) until more get written against the new game, so there is
-# currently no separate "quick" subset.
+# Phaser-era checks along with it (STATE.md); `shader-check` was the one
+# survivor, and `frame-quality` joined it in Run 45 (see verify-all.mjs's
+# own header comment) — the suite is two checks now, not one. verify-all.mjs
+# does take a `quick` argument that skips `frame-quality` there (it's marked
+# `slow`), but this workflow never passes it, so every run here is the full
+# two-check set.
 on:
   push:
     branches: [main]
