@@ -5366,6 +5366,41 @@ iPad household needs none of it; logged under Blocked on human.
     byte-identical to run 199's number — a Markdown file isn't part of the
     Vite bundle). No new runtime dependency.
 
+203. **`tools/README.md`'s `make-icons.mjs` section claimed the PNG icons
+    carry a rounded rect they deliberately don't.** Task 202's own
+    done-note left this as its third, lower-confidence item — the section
+    said the script "renders the favicon mark (a rounded rect and two
+    concentric circles)" to the three PNG icons, needing a fresh read of
+    `make-icons.mjs` to judge rather than reusing an old spot-check.
+    **Done (2026-09-21, run 201).** Read `tools/make-icons.mjs` in full:
+    its own header comment says the PNGs are full-bleed square with no
+    rounded corners at all — deliberately, for two platform reasons
+    (iOS composites its own rounded mask over `apple-touch-icon`, so a
+    transparent-cornered icon shows a black-framed square instead; the
+    manifest's `purpose: "any maskable"` needs an edge-to-edge background
+    so a masking shape can crop it safely) — and only the two concentric
+    circles carry over from the SVG mark. Cross-checked against
+    `index.html`'s inline favicon SVG directly: it does draw
+    `<rect ... rx='6' .../>` plus the two circles, confirming the rounded
+    rect is real in the SVG and genuinely absent from the PNGs, not a
+    docs typo in the other direction. Rewrote the section's opening
+    sentence to say what the PNGs actually render (full-bleed square
+    background, two circles, no rounded corners) and why, citing both
+    `index.html`'s SVG and the script's own header comment so a future
+    reader can re-verify without re-reading the whole file. Docs-only
+    change — no application code, test, or build config touched, so
+    verified by re-reading `tools/make-icons.mjs` and `index.html`'s
+    favicon `<link>` directly rather than running either. `npm test`
+    1415 green (unchanged — no test-relevant file touched). `npm run
+    build` green (939.94 kB, byte-identical to run 200's number — a
+    Markdown file isn't part of the Vite bundle or the `make-icons.mjs`
+    prebuild step, and the icons themselves are still byte-identical
+    since the script itself wasn't touched). No new runtime dependency.
+    This closes out all three items task 199/202's README audit found;
+    a future run should re-diff `tools/` against the README fresh rather
+    than assuming this pass caught everything, since new scripts keep
+    landing.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
