@@ -1,6 +1,18 @@
 # STATE
 
-Run counter: 198 (run 198 re-checked all four live-queue threads — still
+Run counter: 199 (run 199 re-checked the two live-checkable threads —
+`WebFetch` against `en.wikipedia.org` still `EGRESS_BLOCKED`, the GitHub MCP
+tool list still no tag/release write call — then originated and shipped
+ROADMAP task 201: `.github/workflows/headless-checks.yml`'s own top comment
+still claimed the headless suite was "down to one (`shader-check`)" check
+with "no separate 'quick' subset", both false against `tools/verify-all.mjs`'s
+current two-check `CHECKS` array and its `quick` argument. Rewrote the
+comment in place to name both checks and describe the `quick` argument
+accurately. CI-config comment only, verified by reading `verify-all.mjs`
+directly. `npm test` 1415 green (unchanged), `npm run build` green (939.94
+kB, byte-identical to run 198's number). No new runtime dependency. See the
+run-199 HANDOFF below and ROADMAP task 201's own done-note for the full
+account; run 198 re-checked all four live-queue threads — still
 parked/blocked, nothing moved, `WebFetch` against `en.wikipedia.org` still
 `EGRESS_BLOCKED` and the GitHub MCP tool list still has no tag/release
 write call — then originated and shipped ROADMAP task 200:
@@ -476,6 +488,47 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-21 (run 199).** Re-checked the two live-checkable
+  threads before picking a task, as run 198's own handoff asked: `WebFetch`
+  against `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub
+  MCP tool list still carries no tag/release write call (only the read-only
+  `get_tag`/`get_release_by_tag`/`get_latest_release` trio) — nothing moved
+  on either. Task 173's real-device halves and task 189's far-band lead/task
+  184's problem 2 remain parked on a human or on hardware this environment
+  doesn't have, not re-litigated this run. Idea backlog still empty, so this
+  run self-originated ROADMAP task 201 the same way runs 187/193/194/196/
+  197/198 did. Run 198's own handoff suggested the research docs as the
+  likely next place to find a stale-framing-prose gap; this run instead
+  found the same shape of drift by reading `README.md`'s CI description
+  against the actual workflow files: `.github/workflows/
+  headless-checks.yml`'s own top comment still said the headless suite was
+  "down to one (`shader-check`)" check with "no separate 'quick' subset" —
+  both false since Run 45, when `frame-quality.mjs` joined `shader-check`
+  in `tools/verify-all.mjs`'s `CHECKS` array (confirmed by reading the array
+  and its own already-accurate header comment directly), and that same tool
+  does support a `quick` CLI argument skipping checks marked `slow` there
+  (`frame-quality` is the one so marked) — this workflow just never passes
+  it. Rewrote the comment block in place; see ROADMAP task 201's own
+  done-note for the exact wording and the repo-wide grep that ruled out the
+  same stale phrasing elsewhere. CI-config comment only — no application
+  code, test, or build config behavior touched, so verified by reading
+  `tools/verify-all.mjs` directly rather than by running the workflow
+  itself (GitHub Actions doesn't run inside this environment). `npm test`
+  1415 green (unchanged), `npm run build` green (939.94 kB, byte-identical
+  to run 198's number). No new runtime dependency. Live queue as of run
+  199: unchanged from run 198 (task 173, wave 20, task 189's far-band lead,
+  task 184's problem 2, all still parked/blocked); the idea backlog is
+  empty again. Next run should re-check those threads first, then originate
+  another small task if nothing has moved — the research-doc framing-prose
+  audit run 198 suggested is still a reasonable candidate, and a
+  general-purpose agent dispatched this run to audit whether every
+  `tools/README.md` section still matches its script's *current* behavior
+  end to end (not just presence, which task 199 already confirmed) may
+  return findings after this run's own commit lands; if so they're a
+  ready-made candidate for run 200 rather than something to chase down
+  mid-run and risk a two-task run. Next consolidation still due around run
+  205 (unchanged — run 199 was not a consolidation run).
 
 - **HANDOFF, 2026-09-20 (run 198).** Re-checked all four live-queue
   threads before picking a task, as run 197's own handoff asked: task

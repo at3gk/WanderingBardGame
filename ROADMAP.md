@@ -5267,6 +5267,58 @@ iPad household needs none of it; logged under Blocked on human.
     197's number — a Markdown file isn't part of the Vite bundle). No new
     runtime dependency.
 
+201. **`.github/workflows/headless-checks.yml`'s own top comment still said
+    the headless suite was down to one check, no `quick` subset.** Not
+    queued anywhere — same situation runs 187/193/194/196/197/198 named:
+    the idea backlog is empty and every standing thread (task 173's two
+    real-device halves, wave 20/the fourth-forest-song transcription, the
+    v0.1 git tag, task 189's far-band lead and task 184's problem 2) is
+    parked or blocked on a human or on infrastructure this environment
+    doesn't have; re-checked live this run before picking a task —
+    `WebFetch` against `en.wikipedia.org` still returns `EGRESS_BLOCKED`
+    and the GitHub MCP tool list still carries no tag/release write call
+    (only the read-only `get_tag`/`get_release_by_tag`/`get_latest_release`
+    trio), so nothing moved on either. Run 198's own handoff flagged a
+    candidate shape of drift to watch for ("a doc's own framing/intro prose
+    going stale after the thing it describes changed elsewhere") and named
+    the research docs as the likely next place to find it; reading
+    `README.md`'s own CI description against the actual workflow files
+    turned up the same shape of drift in a different file instead.
+    `.github/workflows/headless-checks.yml`'s top comment block said "the
+    suite is down to one (`shader-check`) until more get written against
+    the new game, so there is currently no separate 'quick' subset" — wrong
+    on both counts against `tools/verify-all.mjs`'s current `CHECKS` array
+    and its own header comment: `frame-quality.mjs` joined `shader-check`
+    in Run 45 (two checks, not one, confirmed by reading the array
+    directly), and `verify-all.mjs` does take a `quick` CLI argument that
+    skips whichever checks are marked `slow` there — `frame-quality` is the
+    one so marked — this workflow simply never passes it, so its `quick`
+    job name runs the full two-check set every time. The comment predates
+    Run 45 and was never revisited when `frame-quality.mjs` shipped, the
+    same failure-to-revisit-prose shape task 200 found in
+    `mobile-friendly.md`.
+    **Done (2026-09-21, run 199).** Rewrote the comment block in place to
+    state both checks by name, cite `verify-all.mjs`'s own header comment
+    as the source of truth for the Run 45 join date, and explain the
+    `quick`-argument mechanism accurately (it exists in the tool, this
+    workflow just doesn't use it) rather than denying it exists. Grepped
+    the rest of the repo for the same phrasing ("down to one", "only
+    survivor", "the one survivor") to check for the same stale claim
+    elsewhere — the only other hits were unrelated numbered-backlog prose
+    in ROADMAP.md/STATE.md about idea-backlog counts, not this tooling
+    claim, so no second file needed the same fix. CI-config comment only —
+    no application code, test, or build config behavior touched (the
+    workflow's actual steps, triggers, and job name are unchanged; only the
+    prose above them was corrected), so neither this project's Playwright-
+    verification practice nor new Vitest coverage applies; verified by
+    reading `tools/verify-all.mjs` directly (its `CHECKS` array and its own
+    already-accurate header comment) rather than by running the workflow
+    itself, since GitHub Actions doesn't run inside this environment.
+    `npm test` 1415 green (unchanged — no test-relevant file touched).
+    `npm run build` green (939.94 kB, byte-identical to run 198's number —
+    a workflow YAML file isn't part of the Vite bundle). No new runtime
+    dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
