@@ -1,8 +1,32 @@
 # STATE
 
-Run counter: 202 (idea backlog was empty entering this run, per run 201's
-own handoff, so run 202 dispatched a fresh Explore-agent audit rather than
-re-checking the standing blocked threads again — task 173's real-device
+Run counter: 203 (idea backlog was empty entering this run, per run 202's
+own handoff, so run 203 spent real effort before falling back to another
+doc-nit hunt: re-tested `WebFetch` against `en.wikipedia.org` (still
+`EGRESS_BLOCKED`) and re-scanned the full GitHub MCP tool list (still no
+tag/release-write call), then checked all three `docs/research/*.md`
+notes against DESIGN.md's "road home" section and this file's own
+Direction research section — all three ranked-recommendation lists stay
+fully closed, including `mobile-friendly.md`'s recommendation 7 (the HUD
+touch-target audit), traced to `HUD_TOUCH_TARGET = 44` in `src/core/hud.ts`
+and confirmed already enforced by `hudLayout.test.ts` across every named
+viewport — nothing open there either. Fell back to a fresh drift audit,
+deliberately away from the `tools/README.md`/workflow-YAML ground runs
+198-202 already swept five times: read DESIGN.md's Pedagogy section end
+to end and found `src/core/songs.ts`'s own header comment and DESIGN.md's
+"the curriculum is the songbook" section both still described the
+songbook as three tunes, one per biome — task 45's original shape,
+undisturbed since, even though `SONGS_BY_BIOME` has carried four songs
+per biome (twelve total) since task 60 shipped Mulberry Bush 2026-08-05.
+Confirmed directly against the array before touching either doc. Rewrote
+both passages to describe the current four-per-biome songbook. Shipped
+as ROADMAP task 205. `npm test` 1415 green (unchanged), `npm run build`
+green (939.94 kB, byte-identical to run 202's number). No new runtime
+dependency. See the run-203 HANDOFF below and ROADMAP task 205's own
+done-note for the full account; run 202's idea backlog was empty entering
+that run too, per run 201's own handoff, so run 202 dispatched a fresh
+Explore-agent audit rather than re-checking the standing blocked threads
+again — task 173's real-device
 halves, task 189's far-band lead, task 184's problem 2, wave 20, and the
 v0.1 git tag were left as run 201 last confirmed them. The audit found a
 twin of the exact stale claim tasks 199-203 just fixed: `tools/README.md`'s
@@ -533,6 +557,62 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-22 (run 203).** Idea backlog was empty entering this
+  run (run 202's own handoff said so). Before defaulting to a sixth
+  straight `tools/README.md`/workflow-YAML doc-nit hunt (the shape runs
+  198-202 all took), spent real effort checking for anything better,
+  per this run's own instructions. Re-checked the two cheap, live-testable
+  blockers first: `WebFetch` against `en.wikipedia.org` still returns
+  `EGRESS_BLOCKED`, and a fresh scan of the GitHub MCP tool list still
+  carries no tag/release-write call (only the read-only `get_tag`/
+  `get_release_by_tag`/`get_latest_release`/`list_tags` quartet) — neither
+  the v0.1 git tag nor wave 20's reference-image fetches unblocked. Then
+  checked all three `docs/research/*.md` notes against DESIGN.md's "The
+  road home" section and this file's own Direction research section:
+  all three ranked-recommendation lists have read fully closed since run
+  185 and stayed that way, and a specific check of `mobile-friendly.md`'s
+  recommendation 7 (the HUD touch-target audit, the one recommendation
+  that had never gotten its own numbered task) found it was never
+  actually open — `src/core/hud.ts`'s `HUD_TOUCH_TARGET = 44` constant
+  already floors every tappable HUD box, and `hudLayout.test.ts` already
+  pins that floor across every named viewport. With no research-doc gap
+  and no unblocked thread, fell back to a fresh drift audit — deliberately
+  aimed away from `tools/README.md`/workflow YAML comments (runs 198-202's
+  own ground, swept five times running) toward DESIGN.md itself, per this
+  run's own instructions. Read DESIGN.md's Pedagogy section end to end
+  and found a second, unfixed stale count sitting right next to the one
+  run 165 already caught: the "curriculum is the songbook" subsection
+  still described the songbook as three tunes, one per biome — task 45's
+  original shape — while `src/core/songs.ts`'s `SONGS_BY_BIOME` has
+  carried four songs per biome (twelve total) since task 60 shipped
+  Mulberry Bush on 2026-08-05. `songs.ts`'s own top-of-file comment
+  carried the identical stale "three, one per biome" framing — the same
+  twin-copy-of-the-same-sentence shape tasks 199-204 kept finding in
+  `tools/`, just in application code this time. Confirmed directly
+  against the array before touching either doc: village
+  `[MARY_HAD_A_LITTLE_LAMB, HOT_CROSS_BUNS, ROW_YOUR_BOAT, THIS_OLD_MAN]`,
+  forest `[TWINKLE_TWINKLE, LONDON_BRIDGE, ARE_YOU_SLEEPING,
+  MULBERRY_BUSH]`, riverside `[ODE_TO_JOY, JINGLE_BELLS, OLD_MACDONALD,
+  ITSY_BITSY_SPIDER]`. Also confirmed DESIGN.md's neighboring "thirteen
+  tunes" line (the one run 165 fixed) is still accurate today — twelve
+  plus Book Two's `My Bonnie` — so only this second passage had drifted;
+  run 165's fix never touched it. Rewrote both passages (`songs.ts`'s
+  header, DESIGN.md's "curriculum is the songbook" section) to describe
+  the current four-per-biome songbook, its titles and register, and the
+  rotation itself, and left a short note in DESIGN.md flagging that the
+  passage had described the original three-tune shape until this run.
+  Shipped as ROADMAP task 205. Docs/comments only — no logic, no test,
+  no song data touched. `npm test` 1415 green (unchanged — no
+  test-relevant file touched), `npm run build` green (939.94 kB,
+  byte-identical to run 202's number). No new runtime dependency. Live
+  queue as of run 203: unchanged from run 202 (task 173's real-device
+  halves, wave 20, task 189's far-band lead, task 184's problem 2, the
+  v0.1 git tag, all still parked/blocked); the idea backlog is empty
+  again with no ready-made candidate left. Next run should re-check the
+  two cheap blockers first, then look for undrifted ground the way this
+  run did before falling back to another `tools/README.md` pass. Next
+  consolidation still due around run 205 (two runs off now).
 
 - **HANDOFF, 2026-09-22 (run 202).** Idea backlog was empty entering this
   run (run 201's own handoff said so, with no ready-made candidate left) —

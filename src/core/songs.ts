@@ -1,20 +1,26 @@
 import { Song } from './song';
 
 /**
- * The songbook (ROADMAP task 45). Three public-domain melodies every child
- * meets early, one per biome, chosen so the walk is both a tour of real
- * tunes *and* an ascending tour of the treble staff — DESIGN.md's biome
- * curriculum, now made of actual music:
+ * The songbook (ROADMAP task 45, grown from one tune per biome to four —
+ * task 60's Mulberry Bush was the last piece). Twelve public-domain
+ * melodies, four per biome, each biome's set staying in one region of the
+ * treble staff so the walk is both a tour of real tunes *and* an ascending
+ * tour of the staff — DESIGN.md's biome curriculum, now made of actual
+ * music:
  *
- *   village   — Mary Had a Little Lamb, C major (C4–G4). Five notes, the
- *               simplest tune there is, and it lives around middle C so
- *               the ledger line is met from the first bar.
- *   forest    — Twinkle Twinkle Little Star, G major (G4–E5). Longer,
- *               wider, sits in the middle of the staff. (Twinkle in G
- *               happens to need no F#, so it stays naturals-only.)
- *   riverside — Ode to Joy, C major up an octave (C5–G5). Stepwise motion
- *               across the staff's upper half, and the only tune here with
- *               a dotted rhythm — the advanced vignette.
+ *   village   — Mary Had a Little Lamb, Hot Cross Buns, Row, Row, Row Your
+ *               Boat, This Old Man. Low register, around middle C, so the
+ *               ledger line is met in the first bar.
+ *   forest    — Twinkle Twinkle Little Star, London Bridge, Are You
+ *               Sleeping?, Here We Go Round the Mulberry Bush. Mid-staff;
+ *               stems begin to flip.
+ *   riverside — Ode to Joy, Jingle Bells, Old MacDonald Had a Farm, The
+ *               Itsy Bitsy Spider. Upper staff, an octave up from village.
+ *
+ * Each biome plays its four in rotation (`SONGS_BY_BIOME` below), not one
+ * tune on repeat, so a full walk is well past its first repeat before
+ * anything is heard twice. A separate Book Two set (below, task 165) adds
+ * the game's first accidental for a family that has finished all twelve.
  *
  * Semitones are measured from middle C. Naturals only, enforced by test.
  */
