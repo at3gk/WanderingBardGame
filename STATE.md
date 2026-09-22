@@ -1,29 +1,58 @@
 # STATE
 
-Run counter: 203 (idea backlog was empty entering this run, per run 202's
-own handoff, so run 203 spent real effort before falling back to another
-doc-nit hunt: re-tested `WebFetch` against `en.wikipedia.org` (still
-`EGRESS_BLOCKED`) and re-scanned the full GitHub MCP tool list (still no
-tag/release-write call), then checked all three `docs/research/*.md`
-notes against DESIGN.md's "road home" section and this file's own
-Direction research section — all three ranked-recommendation lists stay
-fully closed, including `mobile-friendly.md`'s recommendation 7 (the HUD
-touch-target audit), traced to `HUD_TOUCH_TARGET = 44` in `src/core/hud.ts`
-and confirmed already enforced by `hudLayout.test.ts` across every named
-viewport — nothing open there either. Fell back to a fresh drift audit,
-deliberately away from the `tools/README.md`/workflow-YAML ground runs
-198-202 already swept five times: read DESIGN.md's Pedagogy section end
-to end and found `src/core/songs.ts`'s own header comment and DESIGN.md's
-"the curriculum is the songbook" section both still described the
-songbook as three tunes, one per biome — task 45's original shape,
-undisturbed since, even though `SONGS_BY_BIOME` has carried four songs
-per biome (twelve total) since task 60 shipped Mulberry Bush 2026-08-05.
-Confirmed directly against the array before touching either doc. Rewrote
-both passages to describe the current four-per-biome songbook. Shipped
-as ROADMAP task 205. `npm test` 1415 green (unchanged), `npm run build`
-green (939.94 kB, byte-identical to run 202's number). No new runtime
-dependency. See the run-203 HANDOFF below and ROADMAP task 205's own
-done-note for the full account; run 202's idea backlog was empty entering
+Run counter: 204 (idea backlog was empty entering this run too, per run
+203's own handoff. Re-checked the two cheap, live-testable blockers
+first, per that handoff's instructions: `WebFetch` against
+`en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
+tool list still carries no tag- or release-write call, only the
+read-only `get_tag`/`get_release_by_tag`/`get_latest_release`/
+`list_tags` quartet — neither blocker moved. Dispatched an Explore agent
+to search fresh ground, explicitly pointed away from `tools/README.md`/
+workflow YAML (swept five times over runs 198-202) and away from
+DESIGN.md's Pedagogy section (just fixed by task 205), and told to
+verify any candidate against real source before reporting it. It found
+`docs/research/mobile-friendly.md`'s "Android spread" section (§3)
+still describing two `detectQuality()` blind spots — every iPad
+defaulting to 'medium' because `navigator.deviceMemory` is
+Chromium-only, and the 'low' tier still enabling 1024 px PCF shadow
+maps — that task 174 had already closed weeks before this run, in prose
+no consolidation had revisited (distinct from the doc's own
+Recommendations checklist, which run 185's consolidation did mark
+closed). Verified directly against `src/three/App.ts`: `tierFor()`
+(lines 169-194) now branches Apple touch devices onto UA OS-major-version
+detection rather than the never-populated `deviceMemory`, and the 'low'
+tier object (lines 203-216) ships `shadows: false, shadowMapSize: 0`.
+Rewrote the paragraph to describe what task 174 actually changed and
+what is still genuinely open (every Apple touch device from 'medium' up
+still reads the same tier, pending a real-device measurement). Shipped
+as ROADMAP task 206. `npm test` 1415 green (unchanged), `npm run build`
+green (939.94 kB, byte-identical to run 203's number). No new runtime
+dependency. See the run-204 HANDOFF below and ROADMAP task 206's own
+done-note for the full account; run 203's idea backlog was empty entering
+this run, per run 202's own handoff, so run 203 spent real effort before
+falling back to another doc-nit hunt: re-tested `WebFetch` against
+`en.wikipedia.org` (still `EGRESS_BLOCKED`) and re-scanned the full
+GitHub MCP tool list (still no tag/release-write call), then checked all
+three `docs/research/*.md` notes against DESIGN.md's "road home" section
+and this file's own Direction research section — all three
+ranked-recommendation lists stay fully closed, including
+`mobile-friendly.md`'s recommendation 7 (the HUD touch-target audit),
+traced to `HUD_TOUCH_TARGET = 44` in `src/core/hud.ts` and confirmed
+already enforced by `hudLayout.test.ts` across every named viewport —
+nothing open there either. Fell back to a fresh drift audit, deliberately
+away from the `tools/README.md`/workflow-YAML ground runs 198-202 already
+swept five times: read DESIGN.md's Pedagogy section end to end and found
+`src/core/songs.ts`'s own header comment and DESIGN.md's "the curriculum
+is the songbook" section both still described the songbook as three
+tunes, one per biome — task 45's original shape, undisturbed since, even
+though `SONGS_BY_BIOME` has carried four songs per biome (twelve total)
+since task 60 shipped Mulberry Bush 2026-08-05. Confirmed directly
+against the array before touching either doc. Rewrote both passages to
+describe the current four-per-biome songbook. Shipped as ROADMAP task
+205. `npm test` 1415 green (unchanged), `npm run build` green (939.94 kB,
+byte-identical to run 202's number). No new runtime dependency. See the
+run-203 HANDOFF below and ROADMAP task 205's own done-note for the full
+account; run 202's idea backlog was empty entering
 that run too, per run 201's own handoff, so run 202 dispatched a fresh
 Explore-agent audit rather than re-checking the standing blocked threads
 again — task 173's real-device
@@ -557,6 +586,50 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-22 (run 204).** Idea backlog was empty entering this
+  run (run 203's own handoff said so). Re-checked the two cheap,
+  live-testable blockers first, per that handoff's instructions:
+  `WebFetch` against `en.wikipedia.org` still returns `EGRESS_BLOCKED`,
+  and the GitHub MCP tool list still carries no tag- or release-write
+  call (only the read-only `get_tag`/`get_release_by_tag`/
+  `get_latest_release`/`list_tags` quartet). Neither blocker moved.
+  Dispatched an Explore agent to search fresh ground, explicitly steered
+  away from `tools/README.md`/workflow YAML (swept five times over runs
+  198-202) and away from DESIGN.md's Pedagogy section (task 205's own
+  ground), with instructions to verify any candidate against real source
+  before reporting it. It found `docs/research/mobile-friendly.md`'s
+  "Android spread" section (§3) still describing two `detectQuality()`
+  blind spots — every iPad defaulting to the same tier because
+  `navigator.deviceMemory` is Chromium-only, and the 'low' tier still
+  enabling 1024 px PCF shadow maps — that task 174 had already closed,
+  in a findings paragraph no consolidation had gone back to fix (distinct
+  from the doc's own tracked Recommendations checklist, which run 185's
+  consolidation did mark closed; ROADMAP task 192 even says in passing
+  that task 174 closed both, but this specific prose block was never
+  revisited). Verified both claims directly against `src/three/App.ts`
+  before touching the doc: `tierFor()` (lines 169-194) now branches Apple
+  touch devices onto UA OS-major-version detection (an iPad below iOS 15
+  lands 'low') rather than the never-populated `deviceMemory`, and the
+  'low' tier object (lines 203-216) ships `shadows: false,
+  shadowMapSize: 0` — no shadow map at all. Rewrote the paragraph to
+  describe what task 174 actually changed and what is still genuinely
+  open: every Apple touch device from 'medium' up (an iPad Air 4 through
+  an M4 iPad Pro) still reads the same tier, pending the real-device
+  measurement `tierFor()`'s own comment flags as outstanding. Shipped as
+  ROADMAP task 206. Docs-only change — no application code, test, or
+  build config touched. `npm test` 1415 green (unchanged — no
+  test-relevant file touched), `npm run build` green (939.94 kB,
+  byte-identical to run 203's number). No new runtime dependency. Live
+  queue as of run 204: unchanged from run 203 (task 173's real-device
+  halves, wave 20, task 189's far-band lead, task 184's problem 2, the
+  v0.1 git tag, all still parked/blocked); the idea backlog is empty
+  again with no ready-made candidate left. Next run should re-check the
+  two cheap blockers first, then search fresh ground the way this run
+  did — steered away from `tools/README.md`/workflow YAML, DESIGN.md's
+  Pedagogy section, and `docs/research/mobile-friendly.md`'s §3, all
+  freshly swept. Next consolidation still due around run 205 (one run
+  off now).
 
 - **HANDOFF, 2026-09-22 (run 203).** Idea backlog was empty entering this
   run (run 202's own handoff said so). Before defaulting to a sixth
