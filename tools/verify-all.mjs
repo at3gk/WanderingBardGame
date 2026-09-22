@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
  * game belong in this list as they're written.
  *
  * `frame-quality.mjs` joined it in Run 45: it measures the value range, hue
- * spread and largest flat area of six posed frames, which are the three
+ * spread and largest flat area of seven posed frames, which are the three
  * things successive art critiques kept reporting as adjectives.
  */
 
