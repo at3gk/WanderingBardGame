@@ -5401,6 +5401,39 @@ iPad household needs none of it; logged under Blocked on human.
     than assuming this pass caught everything, since new scripts keep
     landing.
 
+204. **`tools/verify-all.mjs`'s own header comment carried the identical
+    stale "six posed frames" claim tasks 199-203's README audit already
+    fixed in `tools/README.md`, in a second copy of the same sentence the
+    audit never looked at.** `tools/frame-quality.mjs`'s `POSES` array
+    (line 111 onward) has seven entries — morning, noon, noon-village,
+    golden, night, phone-portrait, phone-landscape — since task 182 added
+    `noon-village` as its own gated pose; `verify-all.mjs`'s header
+    comment (line 26) still said "six posed frames," present in that
+    wording since the file's first commit (`git log -p -L 20,27` on the
+    line) and never touched when `tools/README.md`'s twin sentence was
+    corrected. **Done (2026-09-22, run 202).** Confirmed the count by
+    reading `frame-quality.mjs`'s `POSES` array directly (seven named
+    entries) and confirmed `tools/README.md`'s own already-fixed text
+    ("seven fixed poses," `README.md:98`) to rule out the README itself
+    having drifted back. Changed the one word, "six" → "seven," in
+    `verify-all.mjs`'s comment; no logic touched. Docs-only, verified by
+    re-reading both files directly rather than running either. `npm test`
+    1415 green (unchanged), `npm run build` green (939.94 kB, byte-
+    identical — a comment isn't part of the bundle or the `make-icons.mjs`
+    prebuild step). No new runtime dependency. Idea backlog was empty
+    entering this run (run 201's own handoff said so); found by dispatching
+    a fresh Explore-agent audit rather than reusing an old one, since the
+    199-203 README pass never actually looked at `verify-all.mjs`'s
+    comment — the two files describe the same check and had drifted
+    together, but only one got fixed. Checked whether any other file
+    states this pose count in prose (`grep -rn "six pose"` across the
+    repo): two hits remain, both in `src/three/world/palette.ts` and
+    `CameraRig.ts`, and both are dated measurement-provenance comments
+    ("noon measures 2.59 stops... with all six poses passing," from
+    before `noon-village` existed) rather than a live claim about the
+    current pose count — left alone as historical record, the same as
+    every other dated measurement comment in this codebase.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with

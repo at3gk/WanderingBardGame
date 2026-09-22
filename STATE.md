@@ -1,6 +1,22 @@
 # STATE
 
-Run counter: 201 (run 201 re-checked the one live-checkable thread —
+Run counter: 202 (idea backlog was empty entering this run, per run 201's
+own handoff, so run 202 dispatched a fresh Explore-agent audit rather than
+re-checking the standing blocked threads again — task 173's real-device
+halves, task 189's far-band lead, task 184's problem 2, wave 20, and the
+v0.1 git tag were left as run 201 last confirmed them. The audit found a
+twin of the exact stale claim tasks 199-203 just fixed: `tools/README.md`'s
+"six posed frames" wording was corrected to "seven" across those runs, but
+`tools/verify-all.mjs`'s own header comment carries the identical sentence
+and was never touched — same drift, same root cause (`frame-quality.mjs`'s
+`POSES` array grew to seven with task 182's `noon-village` pose, and only
+one of the two files describing it got updated). Confirmed directly against
+`frame-quality.mjs`'s `POSES` array (seven named entries) before changing
+the one word. Shipped as ROADMAP task 204. `npm test` 1415 green
+(unchanged), `npm run build` green (939.94 kB, byte-identical to run 201's
+number). No new runtime dependency. See the run-202 HANDOFF below and
+ROADMAP task 204's own done-note for the full account; run 201 re-checked
+the one live-checkable thread —
 `WebFetch` against `en.wikipedia.org` still `EGRESS_BLOCKED` (the GitHub MCP
 tool list wasn't re-scanned this run; its no-tag/release-write-call finding
 was re-confirmed as recently as run 200 and nothing in this run's own tool
@@ -517,6 +533,43 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-22 (run 202).** Idea backlog was empty entering this
+  run (run 201's own handoff said so, with no ready-made candidate left) —
+  did not re-litigate task 173's real-device halves, task 189's far-band
+  lead, task 184's problem 2, wave 20, or the v0.1 git tag, all re-checked
+  as recently as runs 193-201 and unchanged. Dispatched an Explore agent to
+  search the codebase fresh rather than guess from memory, with explicit
+  instructions to verify any candidate against real source rather than a
+  doc claim, and to rule out anything already on the blocked list. It found
+  a real twin gap the run 199-203 `tools/README.md` audit had missed:
+  `tools/verify-all.mjs`'s own header comment (line 26) still said
+  `frame-quality.mjs` measures "six posed frames," the exact stale wording
+  `tools/README.md`'s twin sentence carried until task 203 corrected it —
+  `frame-quality.mjs`'s `POSES` array has had seven entries since task 182
+  added `noon-village`, and the two files describing the same check had
+  drifted together but only one got fixed. Confirmed the count directly
+  against `POSES` (seven named entries: morning, noon, noon-village,
+  golden, night, phone-portrait, phone-landscape) and against
+  `tools/README.md`'s current text (already correct) before touching
+  anything, then re-grepped the whole repo for the same stale wording:
+  two more hits remain, in `src/three/world/palette.ts` and
+  `CameraRig.ts`, both dated measurement-provenance comments describing a
+  specific historical pass (before `noon-village` existed) rather than a
+  live claim about the current pose count — correctly left alone, per this
+  project's standing practice of not rewriting dated measurement records.
+  Rewrote the one word in `verify-all.mjs` — shipped as ROADMAP task 204.
+  Docs-only change (a code comment, no logic touched), verified by
+  re-reading `frame-quality.mjs` and `tools/README.md` directly rather than
+  running either. `npm test` 1415 green (unchanged), `npm run build` green
+  (939.94 kB, byte-identical to run 201's number). No new runtime
+  dependency. Live queue as of run 202: unchanged from run 201 (task 173,
+  wave 20, task 189's far-band lead, task 184's problem 2, the v0.1 git
+  tag, all still parked/blocked); the idea backlog is empty again with no
+  ready-made candidate left — the next run needs to search from scratch
+  again, the same way this one did. Next consolidation still due around
+  run 205 (unchanged — run 202 was not a consolidation run, only three
+  runs off from it now).
 
 - **HANDOFF, 2026-09-21 (run 201).** Re-checked the one thread that's
   quick to re-test standalone — `WebFetch` against `en.wikipedia.org`
