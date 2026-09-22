@@ -188,14 +188,17 @@ login.
   density to 0.45 and view distance to 180 m on 'low'. **No tier has
   ever run on a phone** (STATE.md already tracks this as
   blocked-on-human), and this research cannot substitute for that test.
-- Two blind spots found in `detectQuality()` by reading it against the
-  platform facts: (a) `navigator.deviceMemory` is a Chromium-only API,
-  so every iPad reports undefined → defaults to 4 → every iPad lands on
-  'medium' regardless of age — an iPad Air 2 and an M4 iPad Pro get the
-  same tier; (b) the 'low' tier still enables shadow maps (1024 px PCF
-  soft), and shadow maps are the classic first thing practitioner
-  guidance disables on weak mobile GPUs. Neither is a bug today; both
-  are levers the real-device test will probably want.
+- Two blind spots this doc originally found in `detectQuality()` were
+  closed by task 174: old iPads are now detected via the UA's OS major
+  version (`tierFor()`, `src/three/App.ts`) rather than the
+  Chromium-only `deviceMemory`, so an iPad stuck below iOS 15 lands
+  'low' instead of the old blanket 'medium'; and the 'low' tier now
+  ships `shadows: false, shadowMapSize: 0` — no shadow map at all,
+  rather than the 1024 px PCF soft map this paragraph originally
+  described. What's still true: every Apple touch device from 'medium'
+  up (an iPad Air 4 through an M4 iPad Pro) still reads the same tier,
+  pending the real-device measurement `tierFor()`'s own comment flags as
+  outstanding.
 - Sustained-load framing for a walk that lasts 10-20 minutes: the
   thermal ceiling matters more than the first-minute fps. A
   double-resolution option — a "cool" mode the *human playtest* can flip

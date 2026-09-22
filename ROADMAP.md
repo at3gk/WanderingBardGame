@@ -5498,6 +5498,47 @@ iPad household needs none of it; logged under Blocked on human.
     byte-identical to run 202's number — comments aren't part of the
     bundle). No new runtime dependency.
 
+206. **`docs/research/mobile-friendly.md`'s "Android spread" findings
+    paragraph still described two `detectQuality()` blind spots — the
+    Chromium-only `deviceMemory` check and shadow maps on the 'low'
+    tier — that task 174 closed weeks before this run, in prose no
+    consolidation had gone back to fix (distinct from the doc's tracked
+    Recommendations checklist, which run 185's consolidation did mark
+    closed).** Not found via the standing blocked threads — task 173's
+    real-device halves, task 189's far-band lead, task 184's problem 2
+    and wave 20 were left exactly as run 203 left them, and the v0.1 git
+    tag stays write-blocked (see below). Re-checked the two cheap,
+    live-testable blockers first, per run 203's own handoff: `WebFetch`
+    against `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the
+    GitHub MCP tool list still carries no tag- or release-write call
+    (only the read-only `get_tag`/`get_release_by_tag`/`get_latest_release`/
+    `list_tags` quartet). Dispatched an Explore agent to search fresh
+    ground away from `tools/README.md`/workflow YAML (swept five times
+    over runs 198-202) and away from DESIGN.md's Pedagogy section (just
+    fixed by task 205), with explicit instructions to verify any
+    candidate against real source before reporting it. It found this
+    doc's "Android spread" section (§3) still claiming (a) every iPad
+    lands 'medium' regardless of age because `deviceMemory` is
+    Chromium-only, and (b) the 'low' tier still enables 1024 px PCF
+    shadow maps. Both are false against current `src/three/App.ts`:
+    `tierFor()` (lines 169-194) now branches on Apple touch devices
+    separately, parsing the UA's OS major version and returning 'low'
+    for anything below iOS 15 rather than defaulting every iPad to
+    'medium'; and the 'low' tier object (lines 203-216) ships `shadows:
+    false, shadowMapSize: 0`. Both fixes shipped as task 174, and
+    ROADMAP task 192's own text already says as much in passing — this
+    paragraph in the research doc was simply never revisited. **Done
+    (2026-09-22, run 204).** Verified both claims directly against
+    `tierFor()` and the 'low' tier object in `src/three/App.ts` before
+    touching the doc, then rewrote the paragraph to describe what task
+    174 actually changed and what is still genuinely open (every Apple
+    touch device from 'medium' up still reads the same tier pending a
+    real-device measurement, per `tierFor()`'s own comment). Docs-only
+    change — no application code, test, or build config touched. `npm
+    test` 1415 green (unchanged), `npm run build` green (939.94 kB,
+    byte-identical to run 203's number — a research doc isn't part of
+    the bundle). No new runtime dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
