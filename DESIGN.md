@@ -420,23 +420,30 @@ to look like real sheet music.
 
 **The curriculum is the songbook.** (v0.3, 2026-07-25 — this replaced
 generated note patterns, which taught positions but were nothing anyone
-could hum.) Each vignette plays a real, public-domain tune a child is
-likely to already know, and the three are ordered so the walk is at once a
-tour of real music and an ascending tour of the staff:
+could hum. Grown from one tune per biome to four across tasks 48-60; this
+section described the original three until run 203 caught the drift.)
+Each biome plays a set of real, public-domain tunes a child is likely to
+already know, and the sets are ordered so the walk is at once a tour of
+real music and an ascending tour of the staff:
 
-- **Village Dusk** — *Mary Had a Little Lamb*, C major (C4–G4). Five
-  notes, the simplest tune there is, sitting around middle C so the
-  ledger line is met in the first bar.
-- **Forest Dusk** — *Twinkle Twinkle Little Star*, G major (G4–E5).
-  Longer, wider, mid-staff; stems begin to flip.
-- **Riverside Camp** — *Ode to Joy*, C major up an octave (C5–G5).
-  Stepwise motion across the upper staff, and the only tune with a dotted
-  rhythm — the advanced vignette.
+- **Village Dusk** — *Mary Had a Little Lamb*, *Hot Cross Buns*, *Row,
+  Row, Row Your Boat*, *This Old Man*. C major, low register. The
+  founding tune, *Mary*, sits around middle C so the ledger line is met
+  in the first bar.
+- **Forest Dusk** — *Twinkle Twinkle Little Star*, *London Bridge*, *Are
+  You Sleeping?*, *Here We Go Round the Mulberry Bush*. G major,
+  mid-staff; stems begin to flip.
+- **Riverside Camp** — *Ode to Joy*, *Jingle Bells*, *Old MacDonald Had a
+  Farm*, *The Itsy Bitsy Spider*. C major up an octave, upper staff.
+  *Ode to Joy* keeps the only dotted rhythm of the founding three — the
+  advanced vignette the set grew up around.
 
-Recognition is the point: a child who already knows how *Twinkle* goes has
-something to attach the symbols to, which a generated phrase can never
-offer. The road loops (task 35), so the songs return in order, forever —
-spaced repetition with zero menus.
+Each biome rotates its own four in order rather than repeating one song,
+so a full walk is well past its first lap before anything sounds twice.
+Recognition is still the point: a child who already knows how *Twinkle*
+goes has something to attach the symbols to, which a generated phrase can
+never offer. The road loops (task 35), so every biome's set returns in
+order, forever — spaced repetition with zero menus.
 
 **Note values, without changing the input.** Real songs need quarter, half
 and whole notes, and drawing them correctly is half of learning to read. A

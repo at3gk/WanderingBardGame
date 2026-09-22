@@ -5434,6 +5434,70 @@ iPad household needs none of it; logged under Blocked on human.
     current pose count — left alone as historical record, the same as
     every other dated measurement comment in this codebase.
 
+205. **`src/core/songs.ts`'s own header comment and DESIGN.md's "The
+    curriculum is the songbook" section both still described the
+    songbook as three tunes, one per biome — task 45's original shape,
+    never revisited across the run of tasks (48, 51, 54, 56, 60) that
+    added, swapped and grew each biome's set to four.** Not found via
+    the standing blocked threads —
+    all four (task 173's real-device halves, wave 20, task 189's
+    far-band lead, task 184's problem 2) were re-checked this run and
+    stayed exactly as run 202 left them, and the v0.1 git tag is still
+    write-blocked (see below). Re-checked the two cheap, live-testable
+    blockers first, per this run's own instructions: `WebFetch` against
+    `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and a fresh scan of
+    the GitHub MCP tool list (`create_branch`, `create_or_update_file`,
+    `create_pull_request`, `create_repository`, `push_files`,
+    `issue_write`, the `actions_*` quartet, `add_issue_comment`, plus the
+    read-only `get_tag`/`get_release_by_tag`/`get_latest_release`/
+    `list_tags`) still carries no tag- or release-write call — neither
+    has moved. Then checked all three `docs/research/*.md` notes against
+    DESIGN.md's "The road home" section and STATE.md's "Direction
+    research" section (per this run's own instructions): all three
+    ranked-recommendation lists have read fully closed since run 185 and
+    stayed that way through run 202's refresh, including
+    `mobile-friendly.md`'s recommendation 7 (the HUD touch-target audit)
+    — traced to `src/core/hud.ts`'s `HUD_TOUCH_TARGET = 44` constant,
+    which `hudLayout.ts` already floors every tappable box to and
+    `hudLayout.test.ts` already pins across every named viewport, so
+    nothing there was ever actually open. With no research-doc gap
+    either, fell back to a fresh drift audit — deliberately not another
+    `tools/README.md`/workflow-YAML pass, since runs 198-202 swept those
+    five times running (this run's own instructions named the area to
+    avoid and to look elsewhere instead: DESIGN.md itself, `docs/
+    research/*.md`, or `src/` header comments). Read DESIGN.md's
+    Pedagogy section in full end to end (the same section the "letter is
+    a scaffold" rule and the "thirteen tunes" line both live in, so a
+    plausible place for a second, unfixed stale count nearby) and found
+    the "curriculum is the songbook" subsection still listing exactly
+    three tunes — Mary Had a Little Lamb, Twinkle Twinkle Little Star,
+    Ode to Joy, "one per biome" — against `src/core/songs.ts`'s actual
+    `SONGS_BY_BIOME`, which has carried four songs per biome (twelve
+    total) since task 60 shipped Mulberry Bush 2026-08-05. Confirmed
+    directly against the array rather than trusting either doc: village
+    `[MARY_HAD_A_LITTLE_LAMB, HOT_CROSS_BUNS, ROW_YOUR_BOAT,
+    THIS_OLD_MAN]`, forest `[TWINKLE_TWINKLE, LONDON_BRIDGE,
+    ARE_YOU_SLEEPING, MULBERRY_BUSH]`, riverside `[ODE_TO_JOY,
+    JINGLE_BELLS, OLD_MACDONALD, ITSY_BITSY_SPIDER]`. `songs.ts`'s own
+    top-of-file comment carried the identical "three, one per biome"
+    framing — the same twin-copy shape tasks 199-204 kept finding in
+    `tools/`, just in application code this time rather than a script.
+    Also confirmed the *fix* task 165 already made (DESIGN.md's neighbor
+    line, "the songbook is thirteen tunes," is genuinely still accurate
+    — twelve plus Book Two's `My Bonnie` — so only this second, separate
+    passage had drifted; the run-165 consolidation's own fix never
+    touched it). **Done (2026-09-22, run 203).** Rewrote both passages in
+    place to describe the current four-per-biome songbook (titles,
+    register, and the rotation itself) rather than the original three,
+    and added a short note to DESIGN.md's own passage flagging that it
+    had described the original shape until this run. Left `songs.ts`'s
+    per-song header comments (Mulberry Bush's own, task 60's) and every
+    other file untouched — docs/comments only, no logic, no test, no
+    song data touched. `npm test` 1415 green (unchanged — no
+    test-relevant file touched), `npm run build` green (939.94 kB,
+    byte-identical to run 202's number — comments aren't part of the
+    bundle). No new runtime dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
