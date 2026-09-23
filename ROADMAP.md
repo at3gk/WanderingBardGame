@@ -5594,6 +5594,37 @@ iPad household needs none of it; logged under Blocked on human.
     stayed open with the take intact, exactly the Cancel button's own
     behaviour. Zero console/page errors (aside from an unrelated
     favicon 404 from the throwaway harness page itself).
+208. **`tools/README.md` documented the `only` pose-filter argument for
+    some scripts that support it but not others.** Five scripts in
+    `tools/` accept an optional `process.argv[2]` substring filter to run
+    against a single pinned pose instead of the whole set
+    (`frame-quality.mjs`, `postcard.mjs`, `far-band-objects.mjs`,
+    `figground.mjs`, `fog-hue-band.mjs`), and the README already surfaced
+    this in three of five section headings (`frame-quality.mjs [only]`,
+    `postcard.mjs [outDir] [only]`, `far-band-objects.mjs [only]`) — but
+    `figground.mjs`, `fog-hue-band.mjs`, and `land-histogram.mjs` (which
+    has no section heading of its own at all, only a mention inside its
+    sentinel-bug write-up) never surfaced it anywhere, in heading or
+    prose. A careful reader wanting to re-run one pose after touching
+    `figground.mjs`, or narrow `fog-hue-band.mjs` to one pose while
+    iterating on the fog investigation its own section documents at
+    length, had no way to know the shortcut existed without opening the
+    source. Found by an Explore agent tasked with surveying `tools/`,
+    `src/ui/*.ts`, and doc-vs-source consistency for a fresh gap (the
+    accessibility arc is now thorough across every overlay), then
+    verified directly against each script's own `process.argv[2]` line
+    before touching the doc. **Done (2026-09-23, run 207).** Added
+    `[only]` to `figground.mjs`'s and `fog-hue-band.mjs`'s headings
+    (leaving `figground-partition.mjs` bare — it genuinely has no
+    `process.argv` handling at all), a one-line prose note in
+    `figground.mjs`'s own section spelling out that split, a prose note
+    in `fog-hue-band.mjs`'s section, and a prose note in
+    `land-histogram.mjs`'s sentinel-bug section (its only doc location)
+    naming all five scripts that share the convention. Docs-only change
+    — no application code, test, or build config touched. `npm test`
+    1415 green (unchanged), `npm run build` green (940.09 kB,
+    byte-identical to run 206's number — a tools README isn't part of
+    the bundle). No new runtime dependency.
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).

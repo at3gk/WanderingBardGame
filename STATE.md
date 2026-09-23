@@ -1,10 +1,10 @@
 # STATE
 
-Run counter: 206 — one self-originated accessibility fix (task 207:
-Escape-to-dismiss on `freePlayScreen.ts`, the one DOM overlay the
-task 195/197/198 convention hadn't reached yet). Not due for
-consolidation (last was 205; next due ~215). See the run-206 HANDOFF
-below for the full account.
+Run counter: 207 — one self-originated doc fix (task 208: documented the
+`only` pose-filter argument in `tools/README.md` for the three scripts
+that support it but never surfaced it, `figground.mjs`/`fog-hue-band.mjs`/
+`land-histogram.mjs`). Not due for consolidation (last was 205; next due
+~215). See the run-207 HANDOFF below for the full account.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -211,6 +211,32 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-23 (run 207).** Re-checked the two cheap blockers
+  first, per run 206's own handoff: `WebFetch` against
+  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
+  tool list still carries no tag- or release-write call — neither moved.
+  Idea backlog still empty, so dispatched an Explore agent to survey
+  `src/ui/*.ts`, `tools/`, and doc-vs-source consistency for a fresh gap;
+  it reported the accessibility arc is now thorough across every overlay
+  (Escape/Enter/Space, aria attributes, tabIndex all present and
+  consistent), but found a genuine doc gap instead: five `tools/*.mjs`
+  scripts accept an `only` pose-filter (`process.argv[2]`), and
+  `tools/README.md` surfaced it in only two of five section headings
+  (`frame-quality.mjs [only]`, `postcard.mjs [outDir] [only]`,
+  `far-band-objects.mjs [only]` — three headings already had it; the
+  three missing it were `figground.mjs`, `fog-hue-band.mjs`, and
+  `land-histogram.mjs`, the last of which has no section heading of its
+  own at all). Verified each script's own `process.argv[2]` line directly
+  before touching the doc (and confirmed `figground-partition.mjs`
+  genuinely has no such filter, so left it undocumented on purpose).
+  Fixed as task 208: two heading edits plus three short prose notes,
+  docs-only. `npm test` 1415 green (unchanged), `npm run build` green
+  (940.09 kB, byte-identical to run 206 — a tools README isn't part of
+  the bundle). No new runtime dependency. Live queue unchanged from run
+  205/206 (task 173's real-device halves, wave 20, task 189's far-band
+  lead, task 184's problem 2, the v0.1 git tag — all still
+  parked/blocked). Next consolidation still due around run 215.
 
 - **HANDOFF, 2026-09-23 (run 206).** Re-checked the two cheap blockers
   first, per run 205's own handoff: `WebFetch` against

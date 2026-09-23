@@ -239,7 +239,7 @@ for the full account and the caveat about small far-band bucket counts.
 Each pose gets its own fresh page (a resting pose's camp state was found to
 leak into a later pose sharing one page — see the file's own comment).
 
-## `figground.mjs` / `figground-partition.mjs`
+## `figground.mjs [only]` / `figground-partition.mjs`
 
 ROADMAP task 179's instrument (built 2026-08-01): silhouette-diff the bard
 by rendering with and without his group visible (`stage.bard.group.visible`
@@ -251,6 +251,9 @@ hours. `figground-partition.mjs` extends this with an albedo-flood step
 pixels from his cast shadow — needed once the panel's "figure vanishes"
 complaint turned out to be shadow-vs-road contrast in some frames, not
 figure-vs-road at all (see ROADMAP task 179's measurement-phase done-note).
+Pass a pose name as `only` to run `figground.mjs` against a single pinned
+pose instead of all seven; `figground-partition.mjs` has no such filter
+and always runs the full set.
 
 **Run 174 addition**: mean hue/saturation (ordinary HSL over the same
 figure/surround pixel sets `dL` already uses) alongside the existing L*
@@ -375,9 +378,12 @@ extra render pays for the whole measurement. Re-measured land-only stats
 changed materially (e.g. `03-noon`'s land p50 158→174, landShare 100%→78%),
 so anything anyone concluded from this tool's land-only numbers between task
 168 (run 95) and this fix should be treated as measuring the whole frame, sky
-included, not the land alone.
+included, not the land alone. Pass a pose name as `only` (`process.argv[2]`)
+to run against a single pinned pose instead of the whole set, the same
+convention as `frame-quality.mjs`/`postcard.mjs`/`far-band-objects.mjs`/
+`figground.mjs`/`fog-hue-band.mjs`.
 
-## `fog-hue-band.mjs`
+## `fog-hue-band.mjs [only]`
 
 Built to size ROADMAP/STATE's long-standing "hue-free distance wall"
 pointer (STATE.md's run-131 handoff: wave 19's colour lens named "distance
@@ -401,7 +407,9 @@ mean saturation, against five poses (`02-morning`, `03-noon`,
 `04-golden-vista`, `11-morning-vista`, `10-tablet-afternoon` — the last two
 added run 143, see below) and reports each pose's `sunHeight` and
 `landKeyAmount` (`landKey.ts`'s own pull-amount formula, duplicated into the
-page-evaluated function since it can't import the module).
+page-evaluated function since it can't import the module). Pass a pose name
+as `only` to run against a single one of these five poses instead of the
+whole set.
 
 **First real reading (run 142, post-fix), and it does NOT cleanly confirm
 the "everything converges on the fog's hue" hypothesis**: `04-golden-vista`
