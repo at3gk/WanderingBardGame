@@ -501,6 +501,32 @@ makes it long. You do not need to read it top to bottom.
   and task 184's problem 2 remain the only open threads, all externally
   or creatively blocked; the idea backlog is empty. Next consolidation
   due around run 205.
+- **Runs 196-204**: nine runs of doc/comment-nit fixes plus one
+  self-originated accessibility fix (task 198, run 196, closing out
+  keyboard/screen-reader wiring for every DOM dialog in `src/ui/`) — see
+  STATE.md's compressed runs-196-204 HANDOFF block for the full
+  per-run account.
+- **Run 205 update**: CONSOLIDATION, per its own due date. Drift check over
+  runs 196-204: CLEAN — no run became a system the player manages. Both
+  network/tool blockers (WebFetch egress, GitHub MCP tag/release write)
+  re-tested unchanged. An Explore-agent audit found no new stale
+  research-doc claims and confirmed both `docs/research/*.md`-adjacent
+  arcs this file still headed as open are actually done: "the road loops
+  home" (task 35, line ~833) shipped the same day it was written and just
+  had a stale section title (now fixed), and the v1.3 "family songbook"
+  queue (tasks 176-178) is complete end to end — no unstarted arc remains
+  anywhere in this file, and the idea backlog is genuinely empty. Also
+  trimmed two bloat sources in STATE.md this run's own drift check found:
+  an uncompressed ~380-line "Run counter" paragraph chaining every run's
+  summary back to run 175 (cut to describing only the current run), and
+  the nine individual run-196-204 HANDOFF blocks (compressed into one
+  paragraph) — STATE.md 5518 → 4850 lines from those two edits. `npm test`
+  1415 and `npm run build` 939.94 kB stayed green throughout — docs-only
+  change, no game code touched. No new runtime dependency. Live queue as
+  of run 205: unchanged from run 196 (task 173's real-device halves, wave
+  20, task 189's far-band lead, task 184's problem 2, the v0.1 git tag);
+  the idea backlog is empty with no unstarted arc left to pull from. Next
+  consolidation due around run 215.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
@@ -830,7 +856,7 @@ are tracing a specific decision.
     (road 1x, scenery 0.45x, stars 0.08x) give the world real depth.
     Screenshot-verified.
 
-## The next arc: "the road loops home" (queued for future runs)
+## "The road loops home" (shipped 2026-07-25, same day as written)
 
 35. ~~**The road loops home.**~~ Done (2026-07-25, overnight session):
     `biomeBlendAt` now wraps — when the transition list is as long as the

@@ -58,8 +58,8 @@ paid services. Audio is procedural Web Audio, defined in
 
 Pushing to `main` runs tests and the build, then deploys to GitHub Pages.
 A red build does not deploy — the last good version stays live. Day-to-day
-development happens on short-lived `claude/dev` branches merged to `main`
-via PR once CI is green.
+development happens on short-lived `claude/*` branches (one per run) merged
+to `main` via PR once CI is green.
 
 After each merge, the [`tools/`](./tools) headless checks also run in CI
 (`.github/workflows/headless-checks.yml`). This is informational only — it
