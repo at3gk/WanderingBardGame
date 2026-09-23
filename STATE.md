@@ -1,385 +1,39 @@
 # STATE
 
-Run counter: 204 (idea backlog was empty entering this run too, per run
-203's own handoff. Re-checked the two cheap, live-testable blockers
-first, per that handoff's instructions: `WebFetch` against
-`en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
-tool list still carries no tag- or release-write call, only the
-read-only `get_tag`/`get_release_by_tag`/`get_latest_release`/
-`list_tags` quartet — neither blocker moved. Dispatched an Explore agent
-to search fresh ground, explicitly pointed away from `tools/README.md`/
-workflow YAML (swept five times over runs 198-202) and away from
-DESIGN.md's Pedagogy section (just fixed by task 205), and told to
-verify any candidate against real source before reporting it. It found
-`docs/research/mobile-friendly.md`'s "Android spread" section (§3)
-still describing two `detectQuality()` blind spots — every iPad
-defaulting to 'medium' because `navigator.deviceMemory` is
-Chromium-only, and the 'low' tier still enabling 1024 px PCF shadow
-maps — that task 174 had already closed weeks before this run, in prose
-no consolidation had revisited (distinct from the doc's own
-Recommendations checklist, which run 185's consolidation did mark
-closed). Verified directly against `src/three/App.ts`: `tierFor()`
-(lines 169-194) now branches Apple touch devices onto UA OS-major-version
-detection rather than the never-populated `deviceMemory`, and the 'low'
-tier object (lines 203-216) ships `shadows: false, shadowMapSize: 0`.
-Rewrote the paragraph to describe what task 174 actually changed and
-what is still genuinely open (every Apple touch device from 'medium' up
-still reads the same tier, pending a real-device measurement). Shipped
-as ROADMAP task 206. `npm test` 1415 green (unchanged), `npm run build`
-green (939.94 kB, byte-identical to run 203's number). No new runtime
-dependency. See the run-204 HANDOFF below and ROADMAP task 206's own
-done-note for the full account; run 203's idea backlog was empty entering
-this run, per run 202's own handoff, so run 203 spent real effort before
-falling back to another doc-nit hunt: re-tested `WebFetch` against
-`en.wikipedia.org` (still `EGRESS_BLOCKED`) and re-scanned the full
-GitHub MCP tool list (still no tag/release-write call), then checked all
-three `docs/research/*.md` notes against DESIGN.md's "road home" section
-and this file's own Direction research section — all three
-ranked-recommendation lists stay fully closed, including
-`mobile-friendly.md`'s recommendation 7 (the HUD touch-target audit),
-traced to `HUD_TOUCH_TARGET = 44` in `src/core/hud.ts` and confirmed
-already enforced by `hudLayout.test.ts` across every named viewport —
-nothing open there either. Fell back to a fresh drift audit, deliberately
-away from the `tools/README.md`/workflow-YAML ground runs 198-202 already
-swept five times: read DESIGN.md's Pedagogy section end to end and found
-`src/core/songs.ts`'s own header comment and DESIGN.md's "the curriculum
-is the songbook" section both still described the songbook as three
-tunes, one per biome — task 45's original shape, undisturbed since, even
-though `SONGS_BY_BIOME` has carried four songs per biome (twelve total)
-since task 60 shipped Mulberry Bush 2026-08-05. Confirmed directly
-against the array before touching either doc. Rewrote both passages to
-describe the current four-per-biome songbook. Shipped as ROADMAP task
-205. `npm test` 1415 green (unchanged), `npm run build` green (939.94 kB,
-byte-identical to run 202's number). No new runtime dependency. See the
-run-203 HANDOFF below and ROADMAP task 205's own done-note for the full
-account; run 202's idea backlog was empty entering
-that run too, per run 201's own handoff, so run 202 dispatched a fresh
-Explore-agent audit rather than re-checking the standing blocked threads
-again — task 173's real-device
-halves, task 189's far-band lead, task 184's problem 2, wave 20, and the
-v0.1 git tag were left as run 201 last confirmed them. The audit found a
-twin of the exact stale claim tasks 199-203 just fixed: `tools/README.md`'s
-"six posed frames" wording was corrected to "seven" across those runs, but
-`tools/verify-all.mjs`'s own header comment carries the identical sentence
-and was never touched — same drift, same root cause (`frame-quality.mjs`'s
-`POSES` array grew to seven with task 182's `noon-village` pose, and only
-one of the two files describing it got updated). Confirmed directly against
-`frame-quality.mjs`'s `POSES` array (seven named entries) before changing
-the one word. Shipped as ROADMAP task 204. `npm test` 1415 green
-(unchanged), `npm run build` green (939.94 kB, byte-identical to run 201's
-number). No new runtime dependency. See the run-202 HANDOFF below and
-ROADMAP task 204's own done-note for the full account; run 201 re-checked
-the one live-checkable thread —
-`WebFetch` against `en.wikipedia.org` still `EGRESS_BLOCKED` (the GitHub MCP
-tool list wasn't re-scanned this run; its no-tag/release-write-call finding
-was re-confirmed as recently as run 200 and nothing in this run's own tool
-list suggests it changed) — then took task 202's own third, lower-confidence
-`tools/README.md` item: the `make-icons.mjs` section claimed the PNG icons
-carry a rounded rect. Read `make-icons.mjs` in full — its header comment
-says the PNGs are deliberately full-bleed square with no rounded corners
-(iOS's own rounded mask over `apple-touch-icon` would otherwise show a
-black-framed square through transparent corners; the manifest's `purpose:
-"any maskable"` needs an edge-to-edge background) — and cross-checked
-against `index.html`'s inline SVG favicon, which does draw `rect rx='6'`
-plus the two circles, confirming the gap is real: only the two concentric
-circles carry over to the PNGs. Rewrote the section's opening sentence in
-place. Shipped as ROADMAP task 203, closing out all three items task
-199/202's README audit found. Docs-only change, verified by re-reading
-`tools/make-icons.mjs` and `index.html` directly. `npm test` 1415 green
-(unchanged), `npm run build` green (939.94 kB, byte-identical to run 200's
-number). No new runtime dependency. See the run-201 HANDOFF below and
-ROADMAP task 203's own done-note for the full account; run 200 re-checked
-the two live-checkable threads —
-`WebFetch` against `en.wikipedia.org` still `EGRESS_BLOCKED`, the GitHub MCP
-tool list still no tag/release write call — then took the `tools/README.md`
-fix run 199's handoff queued up rather than searching from scratch: shipped
-ROADMAP task 202, correcting `frame-quality.mjs`'s pose count (six claimed,
-seven actual) and `shader-check.mjs`'s "smoke stage" naming (that class
-doesn't exist any more; the check drives `RoadStage`) in `tools/README.md`'s
-own sections. See the run-200 HANDOFF below and ROADMAP task 202's own
-done-note for the full account; run 199 re-checked the two live-checkable
-threads —
-`WebFetch` against `en.wikipedia.org` still `EGRESS_BLOCKED`, the GitHub MCP
-tool list still no tag/release write call — then originated and shipped
-ROADMAP task 201: `.github/workflows/headless-checks.yml`'s own top comment
-still claimed the headless suite was "down to one (`shader-check`)" check
-with "no separate 'quick' subset", both false against `tools/verify-all.mjs`'s
-current two-check `CHECKS` array and its `quick` argument. Rewrote the
-comment in place to name both checks and describe the `quick` argument
-accurately. CI-config comment only, verified by reading `verify-all.mjs`
-directly. `npm test` 1415 green (unchanged), `npm run build` green (939.94
-kB, byte-identical to run 198's number). No new runtime dependency. See the
-run-199 HANDOFF below and ROADMAP task 201's own done-note for the full
-account; run 198 re-checked all four live-queue threads — still
-parked/blocked, nothing moved, `WebFetch` against `en.wikipedia.org` still
-`EGRESS_BLOCKED` and the GitHub MCP tool list still has no tag/release
-write call — then originated and shipped ROADMAP task 200:
-`docs/research/mobile-friendly.md`'s "Honest summary" paragraph still
-claimed `index.html` lacked `viewport-fit=cover`/safe-area handling, a
-claim false since 2026-09-04 (`index.html`'s viewport meta and `Hud.ts`'s
-`env(safe-area-inset-*)` reads both confirmed live). Rewrote the one
-stale sentence in place; left the neighboring "untested quality tiers"
-sentence alone (still accurate) and the file's own "Findings from shipped
-work" section alone (reserved for consolidation-run appends). Docs-only
-change, verified by re-reading `index.html`/`Hud.ts` directly. `npm test`
-1415 green (unchanged), `npm run build` green (939.94 kB, byte-identical
-to run 197's number). No new runtime dependency. See the run-198 HANDOFF
-below and ROADMAP task 200's own done-note for the full account; run 197
-re-checked all four live-queue threads — still
-parked/blocked, nothing moved, wave 20's two reference hosts and a plain
-Wikipedia fetch all still `EGRESS_BLOCKED` — then originated and shipped
-ROADMAP task 199: `tools/README.md` had drifted from `tools/` itself —
-`shadowcast.mjs` (task 183), `headgap.mjs` (task 184) and `make-icons.mjs`
-(task 171) all existed as real, substantial scripts with no `## ` section
-describing them, found by diffing every filename in `tools/` against the
-README's own section headers. Added the three missing sections (read each
-script in full first rather than guessing from its name), matching the
-existing sections' density and cross-references — `shadowcast.mjs` now
-sits right before `skylight-sat.mjs`, which already leaned on its sun-off
-diff by name. Docs-only change, so no DOM/logic to verify live; checked
-correctness by re-diffing filenames against headers after the edit (now
-1:1, all 18 scripts) and by reading `verify-all.mjs` itself to confirm its
-"two checks" description still matches reality. `npm test` 1415 green
-(unchanged), `npm run build` green (939.94 kB, byte-identical to run
-196's number — nothing executable touched). No new runtime dependency.
-See the run-197 HANDOFF below and ROADMAP task 199's own done-note for the
-full account; run 196 re-checked all four live-queue threads — still
-parked/blocked, nothing moved — then originated and shipped ROADMAP task
-198: `src/ui/importSongDialog.ts`'s OK/Save/Cancel rows and scrim get the
-same `bindRowActivation`/Escape-to-dismiss wiring tasks 195 and 197 gave
-`Hud.ts` and `freePlayScreen.ts`, closing out the third and last DOM-built
-dialog class in `src/ui/`. See the run-196 HANDOFF below and ROADMAP task
-198's own done-note for the full account; run 195 was the consolidation
-pass, per the run-185
-refresh's own due date — see the run-195 HANDOFF and Direction research
-refresh below for the full account: task 194 closed at run 186, the
-task 195/196/197 accessibility arc closed across runs 187-194, task
-184's "problem 2" moved to Blocked on human, and all three
-`docs/research/*.md` notes stay fully closed against their own ranked
-recommendations); run 194 found the same situation runs 187 and 193 did —
-idea backlog empty, every standing thread parked or blocked on human, no
-consolidation due until ~195 — so it originated ROADMAP task 197 and shipped
-it: `src/ui/freePlayScreen.ts`'s own controls (record, close, the label
-toggle, the name dialog's Save/Cancel, "keep tapping") get the same
-`bindRowActivation` keyboard/screen-reader wiring task 195 gave the rest of
-the Hud, a gap task 195's own survey never reached since this screen sits
-outside `Hud.ts`. See ROADMAP task 197's own done-note for the full account,
-including why the tap-anywhere staff ladder itself stays out of scope (an
-arrow-key design question, not a mechanical fix) and the live Playwright
-verification (role/tabIndex/aria-label on all four always-visible controls,
-Tab correctly skipping Save/Cancel while the name dialog is closed, the
-record button's aria-label flipping with its glyph, and the dialog actually
-opening/closing by computed style, zero console/page errors). `npm test`
-1415 green (unchanged — DOM wiring only), `npm run build` green (939.77 kB
-vs 939.28 kB). No new runtime dependency; run 193 found the same situation run 187 did — idea
-backlog empty, every standing thread parked or blocked on human (wave 20's
-network block re-tested and still 403 on both hosts), no consolidation due
-until ~195 — so it originated ROADMAP task 196 and shipped it: `index.html`
-now reads `prefers-reduced-motion` and collapses the Hud's own CSS
-transition/delay durations to near-zero under it, reaching the veil/sheet/
-page fades and the staggered case/book row reveals (WCAG 2.3.3) while
-leaving the walk itself (WebGL-drawn every frame, not a CSS transition)
-completely untouched. Verified live with a throwaway Playwright script
-(0.9s normal vs 0.00001s reduced on the same transition, zero console
-errors either way) — see ROADMAP task 196's own done-note for the full
-account and why `0.01ms` was chosen over `0s`/`none`. `npm test` 1415
-green (unchanged, HTML-only change), `npm run build` green (939.28 kB JS,
-byte-identical). No new runtime dependency; run 192 re-measured ROADMAP task 184's open "problem 2" —
-`headgap.mjs` now traces each measured glyph back to its own SongBeat, and
-the correlated numbers show the residual note-head overlap is the tune's
-own ordinary beat spacing, not a rare eighth-note case as previously
-written — see its own HANDOFF below and ROADMAP task 184's fresh done-note.
-Moved to Blocked on human: the only lever that doesn't cost pedagogy
-legibility needs frame/playtest iteration this run has no way to do safely;
-run 191 shipped task 195 piece 2d, closing task 195 end
-to end — `showSheet`'s doors now get `bindRowActivation` (a gap piece 2b's
-own note hadn't caught), a zero-doors sheet auto-focuses the veil itself
-with `role="button"`/`aria-label`, and `Escape` dismisses the veil/page
-from any focused child in both `showSheet` and `pageBox` — see its own
-HANDOFF below and ROADMAP task 195's own piece-2d done-note, which also
-closes the task; run 190 shipped task 195 piece 2c — `pageBox`'s three
-door rows (`walkOn`, the postcard press, the other-bookmark row) get
-keyboard/screen-reader reach via `bindRowActivation`, plus a real Tab-trap
-fix in `hidePage()` that dropped their `tabIndex` back to 0 while the page
-sat folded, split down from piece 2c's own two-surface scope since
-`showSheet`'s zero-doors dismiss and `pageBox`'s own background
-tap-to-dismiss are the same open design question, re-filed together as
-piece 2d — see its own HANDOFF below and ROADMAP task 195's own piece-2c
-done-note; run 189 shipped task 195 piece 2b — the title card's
-four doors (`go`/`book`/`bookmark`/`quality` in `showTitleCard`) get
-keyboard/screen-reader reach via the existing `bindRowActivation` helper,
-split down from piece 2b's original three-surface scope since the title
-card, `showSheet`, and `pageBox` turned out not to be one shape — see its
-own HANDOFF below and ROADMAP task 195's own piece-2b done-note; run 175 was the consolidation pass; run 185 was the
-consolidation pass; next due around run 195; run 183 shipped
-task 194 piece 1 — `tools/skylight-sat.mjs`, the
-lit-vs-shade terrain saturation instrument task 194 asked for before any
-shader change, run live against the three pinned poses; a real finding
-(saturation rises monotonically with how sun-facing a terrain face is, at
-every hour tried) and a real pitfall (debug shader output must bypass
-`App.renderFrame`'s ACES/LUT finishing pass or it reads back badly
-wrong) are in ROADMAP task 194's own piece-1 done-note and
-`tools/README.md`'s new section; run 176 shipped task 173 piece 2 (the audio-session/interruption fix
-mobile-friendly.md's finding 5 asked for, split from piece 1's real-device
-half); run 177 pinned task 175's palm-rejection residual with a test and
-re-verified the landscape road live; run 178 shipped task 192 piece 1 (a
-hand-picked quality tier's storage layer, mobile-friendly.md
-recommendation 6); run 179 shipped task 192 piece 2 (the toggle itself, on
-the title card), closing task 192 end to end; run 180 confirmed
-retention-design.md and mobile-friendly.md fully closed against their own
-recommendation lists and shipped task 193 piece 1 (art-quality.md
-recommendation 6's audit + the fog-reach spec in docs/color-script.md); run
-181 shipped task 193 piece 2 (wired the fog-reach spec into
-`RoadStage.render()` via the new `src/three/fogReach.ts`), closing task 193
-end to end; run 182 audited task 166's dangling "skylight ambient
-saturation" remainder (carried unclosed through pieces 3/4/5 and dropped by
-every live-queue list since), confirmed the noon saturation target is MET
-via `tools/shadowcast.mjs` and re-filed the actually-untried lever as its
-own task, 194, so it survives future consolidation passes — see its own
-HANDOFF below; run 184 built task 194 piece 2 (the luma-preserving
-`skyLight` chroma boost piece 1's own "Next" asked for), measured it live
-with fresh `tools/skylight-sat.mjs` runs, found it leaks saturation into
-dawn and golden hour's shade even after gating by `sunAmount * sunHeight`,
-and reverted the shader change rather than ship a CARRYING-hour violation
-— see its own HANDOFF below and ROADMAP task 194's own piece-2 done-note
-for the numbers and why the obvious `sunHeight` patch and the existing
-`uLandKeyAmount` uniform both fail to close the leak; run 185 was the
-consolidation pass (this run) — drift over runs 176-184 CLEAN, all nine
-individual HANDOFF blocks compressed into one run-index paragraph, and
-all three `docs/research/*.md` notes now have their full recommendation
-lists closed for the first time (art-quality.md's own last one closed
-by task 193 at run 181) — see its own HANDOFF below; run 186 shipped
-task 194 piece 3 (`src/three/skylightGate.ts`, a `dayFraction`-keyed gate
-uniform gating the same chroma boost piece 2 built), verified it leaks
-nothing into dawn/golden's shade with a fresh `tools/skylight-sat.mjs`
-stashed-vs-built A/B, and closed task 194 end to end — see its own
-HANDOFF below; run 187 found nothing queued (idea backlog empty, the
-three open threads all externally blocked — re-confirmed live this run,
-see the run-187 HANDOFF), originated and shipped task 195 piece 1 (the
-two HUD corners gain keyboard/screen-reader reachability —
-`role="button"`, `aria-label`, `aria-expanded`, `tabIndex` tracking
-pickability, and a `keydown` handler answering the existing
-`pointerdown` one) — see its own HANDOFF below; run 188 shipped task
-195 piece 2a (the case/book row lists get the same treatment, via one
-shared `bindRowActivation` helper) and fixed a real DOM-order bug the
-live check for it found — `caseBox`/`bookBox` were appended before
-their own corners, so Tab from a freshly-opened corner could never
-reach its rows at all — see its own HANDOFF below;
-the
-2026-08-05 overnight loop session was runs ~51-65;
-run 61 was the consolidation pass; runs 66+ are the second overnight loop;
-runs 82+ are the third overnight loop; run 90 was the consolidation pass;
-runs 95+ are the 2026-08-06 day loop; run 104 was the consolidation pass; run 120 was the consolidation pass;
-runs 111-133 are the 2026-08-07 overnight loop; run 134 resumed 2026-08-30;
-run 135 was the consolidation pass; runs 136-143 are task 189's hue-band
-investigation and task 143's shoulder-blend fix (compressed into a run
-index in "At a glance" by the run-145 consolidation — see there); run 144
-toggled landKeyAmount to 0 and found the opposite of piece 2's prediction,
-refuting its mechanism (task 189 piece 3); run 145 was the consolidation
-pass; run 146 shipped task 176 piece 1 (the song maker's data layer); run
-147 shipped task 176 piece 2 (the recording door's state machine) and
-found free play had no live screen to attach it to; run 148 shipped task
-176 piece 3 (the screen itself — staff render + tap-to-hear), verified
-live for the first time with this environment's headless browser, still
-not wired into any real entry point; run 149 shipped task 176 piece 4's
-first slice — the songbook's "Make a song" row, the free-play screen's
-first real entry point, reachability only — recording and the name
-prompt still don't exist; run 150 shipped task 176 piece 4's next slice —
-the record toggle and name-prompt dialog, wiring run 147's
-`RecordingSession` machinery into the screen for the first time — the
-"my songs" shelf in the songbook picker is piece 4's one remaining slice;
-run 151 shipped that shelf, closing task 176 and the whole v1.3 arc — a
-family can now record a tune, name it, and walk the road with it; run 152
-picked task 177 (MIDI import), split the same way, and shipped piece 1 —
-the dependency-free byte parser; run 153 shipped task 177 piece 2 — the
-top-note-skyline melody extractor; run 154 shipped task 177 piece 3 — the
-duration quantizer and the octave-shift range transposer, both pure
-functions with no screen; run 155 shipped task 177 piece 4's first
-slice — `validateImportedMelody`/`importMidi`, composing the whole
-pipeline and holding it to `engravingProblem`, still no screen; run 156
-shipped piece 4's last slice — the file-upload control itself
-(`ImportSongDialog`, the songbook's "Import a song" row, and
-`saveImportedSong`) — closing task 177 end to end; run 157 was the
-consolidation pass; run 158 picked task 178 (MusicXML import) and shipped
-piece 1 — the dependency-free XML parser straight to a melody, no
-separate extraction step since MusicXML already states pitch/duration/
-rest per note; run 159 shipped task 178 piece 2 — `importMusicXml` (the
-quantize/transpose/validate pipeline, reusing `midi.ts`'s
-`validateImportedMelody` unchanged) and `ImportSongDialog`'s extension to
-route `.musicxml`/`.xml` files to it by extension, `.mid`/`.midi` and
-anything unrecognised still to the MIDI byte parser, and `.mxl`
-(compressed/zip MusicXML) declined by name — closing task 178 and the
-MusicXML import arc end to end); run 160 picked task 186 piece 3 (the
-escort-dog's walk-along behaviour, from the v1.1 queue's open
-alternatives) and shipped it — see ROADMAP.md task 186's own done-note;
-run 161 picked task 186 piece 4 (the owl, first of the three remaining
-birds) and shipped it, catching and fixing a real staging bug (the life
-signature was clobbering the ground-height field) via live verification
-before merging — see ROADMAP.md task 186's own done-note; run 162 picked
-task 186 piece 5 (the nightingale) and, while verifying it live, found and
-fixed a much bigger cross-cutting bug that had been silently dead since the
-deer's own piece 1 — see the run-162 HANDOFF and ROADMAP task 186's own
-piece-5 done-note for the full account); run 163 picked task 186 piece 6
-(the kingfisher) and shipped it, closing task 186 entirely — see the
-run-163 HANDOFF and ROADMAP task 186's own final done-note); run 164 picked task 189 piece 4 (the
-camera-mood lead) and refuted it too, plus found that the road's
-daily-calendar-date seed makes cross-run-date pose comparisons unsound —
-see the run-164 HANDOFF and ROADMAP task 189's own piece-4 done-note); run
-165 was the consolidation pass; run 166 picked task 189 piece 5 (the
-object-mix ablation) and found no single category holds up as a cause,
-plus a second, sharper instance of the daily-seed reclassification problem
-— see the run-166 HANDOFF and ROADMAP task 189's own piece-5 done-note; run
-167 promoted the scatter lower-left design question to task 190 and shipped
-its piece 1, `largeFormAnchorSites` — a wayside-sentinel-shaped (not
-camera-aware) placement guarantee for rock/shrub/log — see the run-167
-HANDOFF and ROADMAP task 190's own piece-1 done-note; run 168 shipped task
-190 piece 2 (wired the guarantee into `buildScatter`), closing task 190 —
-see the run-168 HANDOFF and ROADMAP task 190's own piece-2 done-note; run
-169 pulled the idea backlog's one remaining live entry (solfège
-syllables) as task 191 and shipped its piece 1 — the pure
-`solfegeAt`/`solfegeAtStep` mapping, no UI reader wired yet, since no
-settings/preference system exists anywhere in this codebase to hang a
-locale toggle on — see ROADMAP task 191's own piece-1 done-note; run 170
-shipped task 191 piece 2a — the label style now persists as a third
-optional field in `scaffoldStorage.ts`'s existing one-key record, not a
-new settings key, still with no UI toggle or render-site reader — see
-ROADMAP task 191's own piece-2a done-note; run 171 shipped task 191 piece
-2b — free play (the "position → sound → name" screen, not a new settings
-surface) got a small self-describing toggle link that calls
-`setLabelStyle` and reads back through `currentLabelStyle()`/
-`solfegeAtStep` in its own DOM note label, verified live end to end with
-a headless Playwright session (tap → "B", toggle → "Back to letters",
-tap → "ti", survives a reload); `SongNotes.ts`'s walk-staff atlas is
-deliberately still letters-only (its fixed single-character glyph cells
-need a real layout change, not a text swap) — see ROADMAP task 191's own
-piece-2b done-note and its "Next" line; run 172 shipped task 191 piece 3
-— the walk-staff atlas now repaints its existing 32 cells in place
-(letters or solfège) rather than growing a second cell set, so a toggle
-mid-session relabels every note already on the ribbon instantly rather
-than only future spawns — closing task 191 end to end across all four
-pieces (1, 2a, 2b, 3); see ROADMAP task 191's own piece-3 done-note for
-the full account, including why doubling the atlas was considered and
-rejected; run 173 shipped task 173 piece 1 — verified (rather than
-assumed) that the walking tune's beat/note timing is already frame-rate
-independent, gave it a real regression test (`src/three/fixedStep.ts` +
-`fixedStep.test.ts`), and confirmed live in headless Chromium that the
-shipped `dt` never leaks the real frame rate even at this sandbox's own
-~0.8fps — see the run-173 HANDOFF and ROADMAP task 173's own piece-1
-done-note; the two real-device halves (iOS silent switch, call/
-backgrounding interruption) stay open, unchanged, real-hardware-only;
-run 174 re-measured task 179's residual (the dawn/low-sun figure-side
-value floor, untouched since 2026-08-01) with `figground.mjs` extended to
-report hue/saturation, confirmed the "lit road behind the figure"
-mechanism 03/08/10 already use is real and quantified (`behindL` high
-40s-60s on passing poses, high teens-low 30s on failing ones), and found
-it has no safe lever left: the color script bans touching ground/sky at
-three of the four failing poses' CARRYING hours, and the fourth
-(02-morning, an ENACTING hour) shares `sunHeight` 1.0 exactly with two
-passing poses, so no sun-height-keyed figure uniform can target it
-without regressing them — see the run-174 HANDOFF and ROADMAP task 179's
-own 2026-09-12 done-note; moved to Blocked on human below rather than
-left looking like unclaimed engineering work; run 175 was the
-consolidation pass (this run) — see its own HANDOFF below.
+Run counter: 205 — consolidation pass (drift control, every ~10th run;
+last was 195, due per run 204's own handoff). Drift check over runs
+196-204: CLEAN — every one of those nine runs was either a docs-only
+stale-claim fix (tasks 199-206) or one small self-originated
+accessibility fix reusing an existing helper (task 198, run 196);
+nothing became a system the player manages, the one-core-mechanic test
+this section re-applies every consolidation. Re-tested the two
+live-checkable blockers: `WebFetch` against `en.wikipedia.org` still
+returns `EGRESS_BLOCKED`, and the full GitHub MCP tool list still
+carries no tag- or release-write call (only the read-only
+`get_tag`/`get_release_by_tag`/`get_latest_release`/`list_tags`
+quartet). Neither moved. Dispatched an Explore agent to re-audit all
+three `docs/research/*.md` notes against current source and to check
+ROADMAP.md's two oldest open-looking arc headers ("the road loops
+home", the v1.3 "family songbook" queue): no new stale research-doc
+claims found beyond what runs 198-204 already fixed, and both arcs
+turned out fully complete — "the road loops home" (task 35) shipped
+the same day it was written (2026-07-25), but its section header still
+read "(queued for future runs)"; v1.3's tasks 176-178 (the song maker,
+MIDI import, MusicXML import) are all done end to end. Retitled the
+stale header in ROADMAP.md; confirmed no unstarted arc remains
+anywhere in the file — the idea backlog is genuinely empty, not just
+temporarily so. Also fixed two bloat sources this run's own drift
+check turned up, neither previously flagged by any consolidation: this
+opening Run-counter paragraph had grown, uncompressed, into a single
+~380-line block chaining every run's summary back to run 175,
+duplicating detail already preserved in the HANDOFF blocks below and
+each task's own ROADMAP done-note — cut back to describing only the
+current run. And the nine individual run-196-204 HANDOFF blocks below
+are compressed into one paragraph, matching the run-175/165/145/185/195
+pattern. `npm test` 1415 green (unchanged — no test-relevant file
+touched), `npm run build` green (939.94 kB, byte-identical to run
+204's number). No new runtime dependency. See the run-205 HANDOFF below
+for the full account.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -587,412 +241,91 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
-- **HANDOFF, 2026-09-22 (run 204).** Idea backlog was empty entering this
-  run (run 203's own handoff said so). Re-checked the two cheap,
-  live-testable blockers first, per that handoff's instructions:
-  `WebFetch` against `en.wikipedia.org` still returns `EGRESS_BLOCKED`,
-  and the GitHub MCP tool list still carries no tag- or release-write
-  call (only the read-only `get_tag`/`get_release_by_tag`/
-  `get_latest_release`/`list_tags` quartet). Neither blocker moved.
-  Dispatched an Explore agent to search fresh ground, explicitly steered
-  away from `tools/README.md`/workflow YAML (swept five times over runs
-  198-202) and away from DESIGN.md's Pedagogy section (task 205's own
-  ground), with instructions to verify any candidate against real source
-  before reporting it. It found `docs/research/mobile-friendly.md`'s
-  "Android spread" section (§3) still describing two `detectQuality()`
-  blind spots — every iPad defaulting to the same tier because
-  `navigator.deviceMemory` is Chromium-only, and the 'low' tier still
-  enabling 1024 px PCF shadow maps — that task 174 had already closed,
-  in a findings paragraph no consolidation had gone back to fix (distinct
-  from the doc's own tracked Recommendations checklist, which run 185's
-  consolidation did mark closed; ROADMAP task 192 even says in passing
-  that task 174 closed both, but this specific prose block was never
-  revisited). Verified both claims directly against `src/three/App.ts`
-  before touching the doc: `tierFor()` (lines 169-194) now branches Apple
-  touch devices onto UA OS-major-version detection (an iPad below iOS 15
-  lands 'low') rather than the never-populated `deviceMemory`, and the
-  'low' tier object (lines 203-216) ships `shadows: false,
-  shadowMapSize: 0` — no shadow map at all. Rewrote the paragraph to
-  describe what task 174 actually changed and what is still genuinely
-  open: every Apple touch device from 'medium' up (an iPad Air 4 through
-  an M4 iPad Pro) still reads the same tier, pending the real-device
-  measurement `tierFor()`'s own comment flags as outstanding. Shipped as
-  ROADMAP task 206. Docs-only change — no application code, test, or
-  build config touched. `npm test` 1415 green (unchanged — no
+- **HANDOFF, 2026-09-23 (run 205) — CONSOLIDATION (drift control, every
+  ~10th run; last was 195).** Drift check over runs 196-204: CLEAN — nine
+  runs, each a docs-only stale-claim fix (tasks 199-206) or one small
+  self-originated accessibility fix reusing an existing helper (task
+  198, run 196); nothing became a system the player manages, the
+  one-core-mechanic test this section re-applies every consolidation.
+  Re-checked the two live-testable blockers: `WebFetch` against
+  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
+  tool list still carries no tag- or release-write call (only the
+  read-only `get_tag`/`get_release_by_tag`/`get_latest_release`/
+  `list_tags` quartet) — neither moved. Dispatched an Explore agent to
+  re-audit all three `docs/research/*.md` notes against current source,
+  and to check ROADMAP.md's two oldest open-looking arc headers ("the
+  road loops home", the v1.3 "family songbook" queue): no new stale
+  research-doc claims found beyond what runs 198-204 already fixed, and
+  both arcs turned out fully complete — "the road loops home" (task 35)
+  shipped the same day it was written (2026-07-25), but its section
+  header still read "(queued for future runs)"; v1.3's tasks 176-178
+  (the song maker, MIDI import, MusicXML import) are all done end to
+  end. Retitled the stale header (ROADMAP.md, was line 833); confirmed
+  no unstarted arc remains anywhere in ROADMAP.md — the idea backlog is
+  genuinely empty, not just temporarily so. Also fixed two bloat
+  sources this run's own drift check turned up, neither previously
+  flagged by any consolidation: this file's opening Run-counter
+  paragraph had grown, uncompressed, into a single ~380-line block
+  chaining every run's summary back to run 175, duplicating detail
+  already preserved in the HANDOFF blocks below and each task's own
+  ROADMAP done-note — cut back to describing only the current run. And
+  the nine individual run-196-204 HANDOFF blocks below are compressed
+  into the one paragraph that follows this one, matching the
+  run-175/165/145/185/195 pattern — this file 5518 → 4850 lines total
+  from both edits (the Run-counter trim: 380 → 34 lines; this HANDOFF
+  compression: 406 → 84 lines), before this HANDOFF's own text. `npm
+  test` 1415 green (unchanged — no
   test-relevant file touched), `npm run build` green (939.94 kB,
-  byte-identical to run 203's number). No new runtime dependency. Live
-  queue as of run 204: unchanged from run 203 (task 173's real-device
+  byte-identical to run 204's number). No new runtime dependency. Live
+  queue as of run 205: unchanged from run 196 (task 173's real-device
   halves, wave 20, task 189's far-band lead, task 184's problem 2, the
-  v0.1 git tag, all still parked/blocked); the idea backlog is empty
-  again with no ready-made candidate left. Next run should re-check the
-  two cheap blockers first, then search fresh ground the way this run
-  did — steered away from `tools/README.md`/workflow YAML, DESIGN.md's
-  Pedagogy section, and `docs/research/mobile-friendly.md`'s §3, all
-  freshly swept. Next consolidation still due around run 205 (one run
-  off now).
+  v0.1 git tag — all still parked/blocked); the idea backlog is empty
+  with no unstarted ROADMAP arc left to pull from. Next run should
+  re-check the two cheap blockers first, then originate a new small
+  self-contained task the way runs 187/193/194/196 did if nothing has
+  moved. Next consolidation due around run 215.
 
-- **HANDOFF, 2026-09-22 (run 203).** Idea backlog was empty entering this
-  run (run 202's own handoff said so). Before defaulting to a sixth
-  straight `tools/README.md`/workflow-YAML doc-nit hunt (the shape runs
-  198-202 all took), spent real effort checking for anything better,
-  per this run's own instructions. Re-checked the two cheap, live-testable
-  blockers first: `WebFetch` against `en.wikipedia.org` still returns
-  `EGRESS_BLOCKED`, and a fresh scan of the GitHub MCP tool list still
-  carries no tag/release-write call (only the read-only `get_tag`/
-  `get_release_by_tag`/`get_latest_release`/`list_tags` quartet) — neither
-  the v0.1 git tag nor wave 20's reference-image fetches unblocked. Then
-  checked all three `docs/research/*.md` notes against DESIGN.md's "The
-  road home" section and this file's own Direction research section:
-  all three ranked-recommendation lists have read fully closed since run
-  185 and stayed that way, and a specific check of `mobile-friendly.md`'s
-  recommendation 7 (the HUD touch-target audit, the one recommendation
-  that had never gotten its own numbered task) found it was never
-  actually open — `src/core/hud.ts`'s `HUD_TOUCH_TARGET = 44` constant
-  already floors every tappable HUD box, and `hudLayout.test.ts` already
-  pins that floor across every named viewport. With no research-doc gap
-  and no unblocked thread, fell back to a fresh drift audit — deliberately
-  aimed away from `tools/README.md`/workflow YAML comments (runs 198-202's
-  own ground, swept five times running) toward DESIGN.md itself, per this
-  run's own instructions. Read DESIGN.md's Pedagogy section end to end
-  and found a second, unfixed stale count sitting right next to the one
-  run 165 already caught: the "curriculum is the songbook" subsection
-  still described the songbook as three tunes, one per biome — task 45's
-  original shape — while `src/core/songs.ts`'s `SONGS_BY_BIOME` has
-  carried four songs per biome (twelve total) since task 60 shipped
-  Mulberry Bush on 2026-08-05. `songs.ts`'s own top-of-file comment
-  carried the identical stale "three, one per biome" framing — the same
-  twin-copy-of-the-same-sentence shape tasks 199-204 kept finding in
-  `tools/`, just in application code this time. Confirmed directly
-  against the array before touching either doc: village
-  `[MARY_HAD_A_LITTLE_LAMB, HOT_CROSS_BUNS, ROW_YOUR_BOAT, THIS_OLD_MAN]`,
-  forest `[TWINKLE_TWINKLE, LONDON_BRIDGE, ARE_YOU_SLEEPING,
-  MULBERRY_BUSH]`, riverside `[ODE_TO_JOY, JINGLE_BELLS, OLD_MACDONALD,
-  ITSY_BITSY_SPIDER]`. Also confirmed DESIGN.md's neighboring "thirteen
-  tunes" line (the one run 165 fixed) is still accurate today — twelve
-  plus Book Two's `My Bonnie` — so only this second passage had drifted;
-  run 165's fix never touched it. Rewrote both passages (`songs.ts`'s
-  header, DESIGN.md's "curriculum is the songbook" section) to describe
-  the current four-per-biome songbook, its titles and register, and the
-  rotation itself, and left a short note in DESIGN.md flagging that the
-  passage had described the original three-tune shape until this run.
-  Shipped as ROADMAP task 205. Docs/comments only — no logic, no test,
-  no song data touched. `npm test` 1415 green (unchanged — no
-  test-relevant file touched), `npm run build` green (939.94 kB,
-  byte-identical to run 202's number). No new runtime dependency. Live
-  queue as of run 203: unchanged from run 202 (task 173's real-device
-  halves, wave 20, task 189's far-band lead, task 184's problem 2, the
-  v0.1 git tag, all still parked/blocked); the idea backlog is empty
-  again with no ready-made candidate left. Next run should re-check the
-  two cheap blockers first, then look for undrifted ground the way this
-  run did before falling back to another `tools/README.md` pass. Next
-  consolidation still due around run 205 (two runs off now).
-
-- **HANDOFF, 2026-09-22 (run 202).** Idea backlog was empty entering this
-  run (run 201's own handoff said so, with no ready-made candidate left) —
-  did not re-litigate task 173's real-device halves, task 189's far-band
-  lead, task 184's problem 2, wave 20, or the v0.1 git tag, all re-checked
-  as recently as runs 193-201 and unchanged. Dispatched an Explore agent to
-  search the codebase fresh rather than guess from memory, with explicit
-  instructions to verify any candidate against real source rather than a
-  doc claim, and to rule out anything already on the blocked list. It found
-  a real twin gap the run 199-203 `tools/README.md` audit had missed:
-  `tools/verify-all.mjs`'s own header comment (line 26) still said
-  `frame-quality.mjs` measures "six posed frames," the exact stale wording
-  `tools/README.md`'s twin sentence carried until task 203 corrected it —
-  `frame-quality.mjs`'s `POSES` array has had seven entries since task 182
-  added `noon-village`, and the two files describing the same check had
-  drifted together but only one got fixed. Confirmed the count directly
-  against `POSES` (seven named entries: morning, noon, noon-village,
-  golden, night, phone-portrait, phone-landscape) and against
-  `tools/README.md`'s current text (already correct) before touching
-  anything, then re-grepped the whole repo for the same stale wording:
-  two more hits remain, in `src/three/world/palette.ts` and
-  `CameraRig.ts`, both dated measurement-provenance comments describing a
-  specific historical pass (before `noon-village` existed) rather than a
-  live claim about the current pose count — correctly left alone, per this
-  project's standing practice of not rewriting dated measurement records.
-  Rewrote the one word in `verify-all.mjs` — shipped as ROADMAP task 204.
-  Docs-only change (a code comment, no logic touched), verified by
-  re-reading `frame-quality.mjs` and `tools/README.md` directly rather than
-  running either. `npm test` 1415 green (unchanged), `npm run build` green
-  (939.94 kB, byte-identical to run 201's number). No new runtime
-  dependency. Live queue as of run 202: unchanged from run 201 (task 173,
-  wave 20, task 189's far-band lead, task 184's problem 2, the v0.1 git
-  tag, all still parked/blocked); the idea backlog is empty again with no
-  ready-made candidate left — the next run needs to search from scratch
-  again, the same way this one did. Next consolidation still due around
-  run 205 (unchanged — run 202 was not a consolidation run, only three
-  runs off from it now).
-
-- **HANDOFF, 2026-09-21 (run 201).** Re-checked the one thread that's
-  quick to re-test standalone — `WebFetch` against `en.wikipedia.org`
-  still returns `EGRESS_BLOCKED`, unchanged — and did not re-scan the full
-  GitHub MCP tool list separately, since run 200 already confirmed no tag/
-  release write call exists and this run's own tool list gave no reason to
-  think that changed; a future run should still do the full re-scan rather
-  than trust this shortcut indefinitely. Task 173's real-device halves,
-  task 189's far-band lead, task 184's problem 2, wave 20, and the v0.1 git
-  tag all remain parked or blocked, not re-litigated this run. Took the
-  ready-made candidate run 200's own handoff left: task 202's third,
-  lower-confidence `tools/README.md` finding — the `make-icons.mjs`
-  section claimed the PNGs carry "a rounded rect and two concentric
-  circles." Read `make-icons.mjs` in full: its own header comment says the
-  PNGs are deliberately full-bleed square with no rounded corners at all
-  (iOS composites its own rounded mask over `apple-touch-icon`, so
-  transparent corners would show through as a black-framed square instead;
-  the manifest's `purpose: "any maskable"` needs an edge-to-edge
-  background so a masking shape can crop it safely) — only the two circles
-  carry over from the SVG mark. Cross-checked against `index.html`'s
-  inline favicon SVG directly, which does draw `rect rx='6'` plus the two
-  circles, confirming the README's claim was accurate for the SVG but
-  wrong for the PNGs it was actually describing. Rewrote the section's
-  opening sentence — shipped as ROADMAP task 203, closing out all three
-  items task 199/202's README audit found. Docs-only change, verified by
-  re-reading `tools/make-icons.mjs` and `index.html` directly rather than
-  running either. `npm test` 1415 green (unchanged), `npm run build` green
-  (939.94 kB, byte-identical to run 200's number). No new runtime
-  dependency. Live queue as of run 201: unchanged from run 200 (task 173,
-  wave 20, task 189's far-band lead, task 184's problem 2, the v0.1 git
-  tag, all still parked/blocked); the idea backlog is empty again and has
-  no ready-made candidate left — the next run needs to search from
-  scratch (or re-check whether any parked thread has become actionable).
-  Next consolidation still due around run 205 (unchanged — run 201 was not
-  a consolidation run).
-
-- **HANDOFF, 2026-09-21 (run 200).** Re-checked the two live-checkable
-  threads before picking a task, as run 199's own handoff asked: `WebFetch`
-  against `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub
-  MCP tool list still carries no tag/release write call (only the read-only
-  `get_tag`/`get_release_by_tag`/`get_latest_release`/`list_tags` quartet) —
-  nothing moved on either. Task 173's real-device halves, task 189's
-  far-band lead, task 184's problem 2, wave 20, and the v0.1 git tag all
-  remain parked or blocked, not re-litigated this run. Unlike the last
-  several runs, this one didn't have to self-originate from scratch: run
-  199's own handoff had already dispatched an Explore agent to audit
-  `tools/README.md` against the scripts it describes end to end, spot-
-  checked two of its findings as real, and left them ready-made for this
-  run. Took that task directly — ROADMAP task 202: `tools/README.md`'s
-  `## frame-quality.mjs [only]` section said the check samples "six fixed
-  poses (four times of day plus both phone aspect ratios)" when
-  `frame-quality.mjs`'s own `POSES` array has seven (task 182's
-  `noon-village` control pose was added without the count being revisited),
-  and its `## shader-check.mjs` section said the check "renders the smoke
-  stage" when `SmokeStage` was removed from `src/` long ago — the check
-  drives `RoadStage`, which `shader-check.mjs`'s own header comment already
-  explains. Confirmed both directly against the source (`POSES` array,
-  `grep -rn "SmokeStage" src/`) before rewriting either passage — see
-  ROADMAP task 202's own done-note for the exact wording. Left the Explore
-  agent's third, lower-confidence finding (`make-icons.mjs`'s rounded-rect
-  claim) for a future run, since judging it needs a fresh read rather than
-  reusing this run's spot-check. Docs-only change, verified by re-reading
-  `tools/frame-quality.mjs` and `tools/shader-check.mjs` directly rather
-  than running either script. `npm test` 1415 green (unchanged), `npm run
-  build` green (939.94 kB, byte-identical to run 199's number). No new
-  runtime dependency. Live queue as of run 200: unchanged from run 199
-  (task 173, wave 20, task 189's far-band lead, task 184's problem 2, the
-  v0.1 git tag, all still parked/blocked); the idea backlog is empty
-  again, and `make-icons.mjs`'s lower-confidence finding above is the
-  one ready-made candidate for the next run before it needs to search from
-  scratch. Next consolidation still due around run 205 (unchanged — run
-  200 was not a consolidation run).
-
-- **HANDOFF, 2026-09-21 (run 199).** Re-checked the two live-checkable
-  threads before picking a task, as run 198's own handoff asked: `WebFetch`
-  against `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub
-  MCP tool list still carries no tag/release write call (only the read-only
-  `get_tag`/`get_release_by_tag`/`get_latest_release` trio) — nothing moved
-  on either. Task 173's real-device halves and task 189's far-band lead/task
-  184's problem 2 remain parked on a human or on hardware this environment
-  doesn't have, not re-litigated this run. Idea backlog still empty, so this
-  run self-originated ROADMAP task 201 the same way runs 187/193/194/196/
-  197/198 did. Run 198's own handoff suggested the research docs as the
-  likely next place to find a stale-framing-prose gap; this run instead
-  found the same shape of drift by reading `README.md`'s CI description
-  against the actual workflow files: `.github/workflows/
-  headless-checks.yml`'s own top comment still said the headless suite was
-  "down to one (`shader-check`)" check with "no separate 'quick' subset" —
-  both false since Run 45, when `frame-quality.mjs` joined `shader-check`
-  in `tools/verify-all.mjs`'s `CHECKS` array (confirmed by reading the array
-  and its own already-accurate header comment directly), and that same tool
-  does support a `quick` CLI argument skipping checks marked `slow` there
-  (`frame-quality` is the one so marked) — this workflow just never passes
-  it. Rewrote the comment block in place; see ROADMAP task 201's own
-  done-note for the exact wording and the repo-wide grep that ruled out the
-  same stale phrasing elsewhere. CI-config comment only — no application
-  code, test, or build config behavior touched, so verified by reading
-  `tools/verify-all.mjs` directly rather than by running the workflow
-  itself (GitHub Actions doesn't run inside this environment). `npm test`
-  1415 green (unchanged), `npm run build` green (939.94 kB, byte-identical
-  to run 198's number). No new runtime dependency. Live queue as of run
-  199: unchanged from run 198 (task 173, wave 20, task 189's far-band lead,
-  task 184's problem 2, all still parked/blocked); the idea backlog is
-  empty again. This run also dispatched an Explore agent to audit whether
-  every `tools/README.md` section still matches its script's *current*
-  behavior end to end (not just presence, which task 199 already confirmed)
-  — its report landed after task 201's commit above, so it wasn't folded
-  into this run's own one-task budget, but two of its findings were spot-
-  checked against the source directly and are confirmed real, giving run
-  200 a ready-made task instead of a re-audit:
-  - **`tools/README.md`'s `frame-quality.mjs` section says "six fixed
-    poses (four times of day plus both phone aspect ratios)"**
-    (tools/README.md:95-96); `tools/frame-quality.mjs`'s own `POSES` array
-    (lines 111-135) has seven entries — `morning`, `noon`, `noon-village`,
-    `golden`, `night`, `phone-portrait`, `phone-landscape`. `noon-village`
-    is task 182's village-biome control pose (its own inline comment at
-    line 114 explains why it needs a separate floor), added without the
-    section's opening pose count ever being revisited.
-  - **The same section's next sentence, under `## shader-check.mjs`, says
-    "Also renders the smoke stage at four times of day"**
-    (tools/README.md:86); `SmokeStage` does not exist anywhere in `src/`
-    (confirmed via `grep -rn "SmokeStage" src/` — zero hits) and
-    `shader-check.mjs`'s own header comment (line 20) already documents it
-    as a removed class the current `RoadStage` replaced. The check renders
-    whatever `window.bard.stage` currently is, not a named "smoke stage."
-  Both are the same "presence yes, accuracy no" gap task 199's own closing
-  note flagged as a future candidate and task 201 above found once already
-  in a different file — a real, mechanical two-line fix, not a design call.
-  The agent's third, lower-confidence item (`make-icons.mjs`'s section
-  implying the PNGs carry a rounded rect the code deliberately omits) is
-  left for whoever picks this up to judge; its other "noted but unconfirmed"
-  items (shadowcast.mjs's saved-frame claim, skylight-sat.mjs's dot-product
-  remap) were correctly not raised as findings. Next run should re-check the
-  two live-checkable threads (WebFetch/GitHub MCP) first, then take the
-  `tools/README.md` fix above rather than searching from scratch. Next
-  consolidation still due around run 205 (unchanged — run 199 was not a
-  consolidation run).
-
-- **HANDOFF, 2026-09-20 (run 198).** Re-checked all four live-queue
-  threads before picking a task, as run 197's own handoff asked: task
-  173's two real-device halves (still need real hardware, nothing to
-  re-test), wave 20 and the fourth-forest-song transcription (`WebFetch`
-  against `en.wikipedia.org` this run — still returns `EGRESS_BLOCKED`,
-  no change), the v0.1 git tag (GitHub MCP tool list re-checked once
-  more: `create_pull_request`, `create_branch`, `create_or_update_file`,
-  `create_repository` and friends all present, still no tag/release write
-  call, only the read-only `get_tag`/`get_release_by_tag`/
-  `get_latest_release` trio), and task 189's far-band lead and task 184's
-  "problem 2" (both still explicitly parked on a human design call — not
-  re-litigated). Nothing moved on any of them, and the idea backlog is
-  empty, so this run self-originated ROADMAP task 200 the same way runs
-  187/193/194/196/197 did, picking up task 199's own closing note ("worth
-  flagging" an accuracy audit, not just a presence check, as a future
-  candidate) and applying it to a different doc: `docs/research/
-  mobile-friendly.md`'s "Honest summary" paragraph — the file's opening
-  section, written 2026-07-31 before any of its buildout recommendations
-  shipped — still said "Notched iPhones need `viewport-fit=cover` plus
-  `env(safe-area-inset-*)`, which index.html does not yet have." That has
-  been false since 2026-09-04: `index.html`'s viewport meta carries
-  `viewport-fit=cover` (confirmed by reading the file directly, not
-  inferring from git blame, since `git log -S` on this repo's history
-  attributes the line to a commit whose own message is about an unrelated
-  free-play piece — squash/rebase churn, not a reliable dating source) and
-  `Hud.ts` reads all four `env(safe-area-inset-*)` values into its corner
-  padding. The claim survived three months, including the run-180 handoff
-  that recorded this same file's entire buildout list as closed, because
-  it sits in a prose summary above the file's own "Findings from shipped
-  work" section rather than inside it — nothing routinely re-reads that
-  opening paragraph once the recommendations below it are done. Rewrote
-  the one sentence in place (see ROADMAP task 200's own done-note for the
-  exact wording and what was deliberately left alone: the neighboring
-  "untested quality tiers" sentence, still accurate since task 173's
-  real-device half is still parked, and the "Findings from shipped work"
-  section itself, reserved for consolidation-run appends per its own
-  heading). Docs-only change, so verified by re-reading `index.html` and
-  `src/ui/Hud.ts` directly rather than a Playwright run or new tests.
-  `npm test` 1415 green (unchanged), `npm run build` green (939.94 kB,
-  byte-identical to run 197's number). No new runtime dependency. Live
-  queue as of run 198: unchanged from run 197 (task 173, wave 20, task
-  189's far-band lead, task 184's problem 2, all still parked/blocked);
-  the idea backlog is empty again. Next run should re-check those four
-  threads first, then originate another small task if nothing has moved —
-  a broader "read every research doc's own summary/intro prose against
-  current code, not just its ranked recommendation list" pass is a
-  reasonable candidate if this exact shape of drift (a doc's own framing
-  text going stale after its recommendations ship) recurs in
-  `art-quality.md` or `retention-design.md`. Next consolidation still due
-  around run 205 (unchanged — run 198 was not a consolidation run).
-
-- **HANDOFF, 2026-09-20 (run 197).** Re-checked all four live-queue threads
-  before picking a task, as run 196's own handoff asked: task 173's two
-  real-device halves (still need real hardware, nothing to re-test), wave
-  20 and the fourth-forest-song transcription (`WebFetch` against
-  `ashorthike.com`/`store.steampowered.com`/a plain Wikipedia page — this
-  run used `en.wikipedia.org/wiki/A_Short_Hike` specifically — all still
-  return `EGRESS_BLOCKED`, no change from run 196), the v0.1 git tag
-  (unchanged since the orchestrating session already confirmed the GitHub
-  MCP tool list carries no tag/release write call, only the read-only
-  quartet — not re-checked a further time), and task 189's far-band lead
-  and task 184's "problem 2" (both still explicitly parked on a human
-  design call, per STATE.md's own Blocked-on-human section — not
-  re-litigated). Nothing moved on any of them, and the idea backlog is
-  empty, so this run self-originated ROADMAP task 199 the same way runs
-  187/193/194/196 did, but from a doc/tooling-accuracy angle rather than
-  another accessibility pass: a filename-vs-README-header diff of
-  `tools/` found three real scripts — `shadowcast.mjs` (task 183),
-  `headgap.mjs` (task 184), `make-icons.mjs` (task 171) — that had never
-  gotten a `## ` section in `tools/README.md`, despite being referenced
-  in passing by other sections and by STATE.md/ROADMAP.md done-notes.
-  Read all three scripts in full and wrote a section for each, matching
-  the existing sections' density, cross-references and honesty about
-  scope (e.g. `make-icons.mjs`'s section notes up front that it is a
-  pure-Node build utility with no Playwright dependency, unlike every
-  other script in the directory). Placed `shadowcast.mjs`'s new section
-  immediately before `skylight-sat.mjs`'s, which already leaned on its
-  sun-off diff by name; `headgap.mjs` and `make-icons.mjs` went at the
-  end, after `shot.mjs`. Docs-only change — no DOM or pure-logic code
-  touched, so neither this arc's standing Playwright practice nor new
-  Vitest coverage applied; verified instead by re-diffing every filename
-  in `tools/` against the README's own section headers after the edit
-  (18 scripts, 18 headers, 1:1) and by re-reading `verify-all.mjs` itself
-  to confirm its own "two checks" description is still accurate. `npm
-  test` 1415 green (unchanged — no test-relevant file touched), `npm run
-  build` green (939.94 kB, byte-identical to run 196's own number, since
-  `tools/README.md` isn't part of the bundle). No new runtime dependency.
-  See ROADMAP task 199 for the full done-note. Live queue as of run 197:
-  unchanged from run 196 (task 173, wave 20, task 189's far-band lead,
-  task 184's problem 2, all still parked/blocked); the idea backlog is
-  empty again. Next run should re-check those four threads first, then
-  originate another small task if nothing has moved. Next consolidation
-  due around run 205 (unchanged — run 197 was not a consolidation run).
-
-- **HANDOFF, 2026-09-20 (run 196).** Re-checked all four live-queue threads
-  before picking a task, as run 195's own handoff asked: task 173's two
-  real-device halves (still need real hardware, nothing to re-test), wave
-  20 and the fourth-forest-song transcription (`WebFetch` against
-  `ashorthike.com`/`store.steampowered.com`/a plain Wikipedia page all
-  still return `EGRESS_BLOCKED`), the v0.1 git tag (GitHub MCP tool list
-  re-checked once more, still no tag/release write call), and task 189's
-  far-band lead (still parked — five investigation pieces without a
-  replacement mechanism, still waiting on the same network-blocked panel
-  validation). Nothing moved on any of them, and the idea backlog is
-  empty, so this run self-originated ROADMAP task 198 the same way runs
-  187/193/194 did: `src/ui/importSongDialog.ts` (the songbook's "Import a
-  song" door) was a third DOM-built dialog class task 195/197's own
-  keyboard/screen-reader surveys never reached (`Hud.ts` and
-  `freePlayScreen.ts` only) — its OK/Save/Cancel rows were bare
-  `pointerdown`-only `div`s and its scrim had no Escape-to-dismiss, same
-  gap for a third time. Fixed with the same `bindRowActivation` helper the
-  other two files already share, plus an overlay-level Escape handler
-  matching `Hud.ts`'s `pageBox` exactly. Verified live (not just
-  type-checked, per this arc's own standing practice) with a throwaway
-  Playwright script: opened the songbook, discovered live that the import
-  row lives on the book's *second* page once eight songs fill the first
-  (a real fact about `buildBook`'s paging this run hadn't known going in),
-  fed the file input garbage to reach the declined-kindly panel, confirmed
-  `role="button"`/`tabIndex=0` on OK, Tab-then-Enter closing it, and
-  Tab-then-Escape closing a second instance of it — zero console/page
-  errors either way. `npm test` 1415 green (unchanged), `npm run build`
-  green (939.94 KB, +0.17 KB from the three `bindRowActivation` calls and
-  one `keydown` listener), no new runtime dependency. See ROADMAP task 198
-  for the full done-note. With this, every DOM-built overlay/dialog class
-  in `src/ui/` now shares one keyboard/screen-reader convention — a small,
-  natural stopping point for this self-originated accessibility thread
-  rather than a reason to keep hunting for a fourth file. Live queue as of
-  run 196: unchanged from run 195 (task 173, wave 20, task 189's far-band
-  lead, task 184's problem 2, all still parked/blocked); the idea backlog
-  is empty again. Next run should re-check those first, then originate
-  another small task if nothing has moved. Next consolidation due around
-  run 205 (unchanged — run 196 was not a consolidation run).
+- **HANDOFF, 2026-09-20 through 2026-09-22 (runs 196-204, compressed by
+  the run-205 consolidation)** — nine runs, each re-checking the same
+  live-queue threads (task 173's real-device halves, wave 20, task
+  189's far-band lead, task 184's problem 2 — all unchanged throughout)
+  before falling back to a docs-only fix, since the idea backlog was
+  empty entering every one of them. Run 196 self-originated task 198:
+  `src/ui/importSongDialog.ts` was the third DOM-built dialog class
+  missing the `bindRowActivation`/Escape-to-dismiss wiring tasks
+  195/197 gave `Hud.ts` and `freePlayScreen.ts`, closing out every DOM
+  overlay in `src/ui/` on one shared convention — live-verified with a
+  throwaway Playwright script. Runs 197-204 were pure doc/comment-nit
+  fixes, each found by re-reading real source against a doc claim: run
+  197 added three missing `tools/README.md` sections for real scripts
+  (`shadowcast.mjs`, `headgap.mjs`, `make-icons.mjs`) that had never
+  gotten one (task 199); run 198 fixed `docs/research/mobile-
+  friendly.md`'s "Honest summary" paragraph, still claiming
+  `index.html` lacked `viewport-fit=cover`/safe-area handling, false
+  since 2026-09-04 (task 200); run 199 fixed `.github/workflows/
+  headless-checks.yml`'s top comment, still claiming the suite was
+  "down to one check" with "no quick subset" when `verify-all.mjs` has
+  carried two checks and a `quick` argument since run 45 (task 201);
+  run 200 fixed `tools/README.md`'s `frame-quality.mjs` pose count
+  (six claimed, seven actual since task 182's `noon-village` pose) and
+  its `shader-check.mjs` "smoke stage" naming (that class was removed;
+  the check drives `RoadStage`) (task 202); run 201 fixed the same
+  file's `make-icons.mjs` section, which claimed the PNG icons carry a
+  rounded rect — they're deliberately full-bleed square, only the two
+  concentric circles carry over from the SVG mark (task 203); run 202
+  fixed `tools/verify-all.mjs`'s own header comment, which repeated the
+  same stale six-pose claim task 200 had already fixed in
+  `tools/README.md` (task 204); run 203 fixed `src/core/songs.ts`'s
+  header comment and DESIGN.md's "curriculum is the songbook" section,
+  both still describing the songbook as three tunes per biome when
+  `SONGS_BY_BIOME` has carried four per biome (twelve total) since task
+  60 shipped Mulberry Bush (task 205); run 204 fixed `docs/research/
+  mobile-friendly.md`'s §3 "Android spread" paragraph, still describing
+  two `detectQuality()` blind spots task 174 had already closed weeks
+  earlier (task 206). All nine runs kept `npm test` at 1415 green
+  throughout and `npm run build` at 939.94 kB byte-identical except
+  run 196's own +0.17 kB DOM-wiring delta, and added no runtime
+  dependency.
 
 - **HANDOFF, 2026-09-19 (run 195) — CONSOLIDATION (drift control, every
   ~10th run; last was 185).** Drift check over runs 186-194: CLEAN — every
