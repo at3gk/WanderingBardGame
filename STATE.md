@@ -1,39 +1,10 @@
 # STATE
 
-Run counter: 205 — consolidation pass (drift control, every ~10th run;
-last was 195, due per run 204's own handoff). Drift check over runs
-196-204: CLEAN — every one of those nine runs was either a docs-only
-stale-claim fix (tasks 199-206) or one small self-originated
-accessibility fix reusing an existing helper (task 198, run 196);
-nothing became a system the player manages, the one-core-mechanic test
-this section re-applies every consolidation. Re-tested the two
-live-checkable blockers: `WebFetch` against `en.wikipedia.org` still
-returns `EGRESS_BLOCKED`, and the full GitHub MCP tool list still
-carries no tag- or release-write call (only the read-only
-`get_tag`/`get_release_by_tag`/`get_latest_release`/`list_tags`
-quartet). Neither moved. Dispatched an Explore agent to re-audit all
-three `docs/research/*.md` notes against current source and to check
-ROADMAP.md's two oldest open-looking arc headers ("the road loops
-home", the v1.3 "family songbook" queue): no new stale research-doc
-claims found beyond what runs 198-204 already fixed, and both arcs
-turned out fully complete — "the road loops home" (task 35) shipped
-the same day it was written (2026-07-25), but its section header still
-read "(queued for future runs)"; v1.3's tasks 176-178 (the song maker,
-MIDI import, MusicXML import) are all done end to end. Retitled the
-stale header in ROADMAP.md; confirmed no unstarted arc remains
-anywhere in the file — the idea backlog is genuinely empty, not just
-temporarily so. Also fixed two bloat sources this run's own drift
-check turned up, neither previously flagged by any consolidation: this
-opening Run-counter paragraph had grown, uncompressed, into a single
-~380-line block chaining every run's summary back to run 175,
-duplicating detail already preserved in the HANDOFF blocks below and
-each task's own ROADMAP done-note — cut back to describing only the
-current run. And the nine individual run-196-204 HANDOFF blocks below
-are compressed into one paragraph, matching the run-175/165/145/185/195
-pattern. `npm test` 1415 green (unchanged — no test-relevant file
-touched), `npm run build` green (939.94 kB, byte-identical to run
-204's number). No new runtime dependency. See the run-205 HANDOFF below
-for the full account.
+Run counter: 206 — one self-originated accessibility fix (task 207:
+Escape-to-dismiss on `freePlayScreen.ts`, the one DOM overlay the
+task 195/197/198 convention hadn't reached yet). Not due for
+consolidation (last was 205; next due ~215). See the run-206 HANDOFF
+below for the full account.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -240,6 +211,31 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-23 (run 206).** Re-checked the two cheap blockers
+  first, per run 205's own handoff: `WebFetch` against
+  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
+  tool list still carries no tag- or release-write call (only the
+  read-only `get_tag`/`get_release_by_tag`/`get_latest_release`/
+  `list_tags` quartet) — neither moved. Idea backlog still empty per
+  run 205, so dispatched an Explore agent to survey `src/ui/*.ts`,
+  `tools/`, and doc-vs-source consistency for a fresh gap; it found one:
+  `freePlayScreen.ts` was the one full-screen DOM overlay task 195/197/198's
+  Escape-to-dismiss convention never reached — every control inside it had
+  Enter/Space activation (task 197) but no `keydown` handler anywhere
+  except `nameInput`'s `Enter`. Fixed as task 207: one `keydown` listener
+  on `this.root`, matching `Hud.ts`'s veil shape, routed on `this.naming`
+  (cancels naming and resumes the take, matching the Cancel button, or
+  closes the screen entirely). `npm test` 1415 green, `npm run build`
+  green (940.09 kB vs 939.94 kB). No new runtime dependency.
+  Live-verified with a throwaway Playwright harness (not committed)
+  against the Vite dev server, mounting `FreePlayScreen` directly: Escape
+  idle closes the screen; Escape while naming cancels the dialog only,
+  take intact, screen stays open. See ROADMAP task 207 for the full
+  verification steps. Live queue unchanged from run 205 (task 173's
+  real-device halves, wave 20, task 189's far-band lead, task 184's
+  problem 2, the v0.1 git tag — all still parked/blocked). Next
+  consolidation still due around run 215.
 
 - **HANDOFF, 2026-09-23 (run 205) — CONSOLIDATION (drift control, every
   ~10th run; last was 195).** Drift check over runs 196-204: CLEAN — nine

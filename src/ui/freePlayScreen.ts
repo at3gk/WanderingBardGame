@@ -338,6 +338,19 @@ export class FreePlayScreen {
     // not thirteen per-row hit targets, is the correct shape here.
     this.root.addEventListener('pointerdown', (event) => this.tap(event));
 
+    // Keyboard/screen-reader reach, matching Hud.ts's veil pattern (task
+    // 195 piece 2d) and importSongDialog.ts's overlay (task 198): Escape
+    // dismisses this screen from any focused child, since it bubbles here.
+    // While the name dialog is open, Escape cancels naming (resuming the
+    // take, same as the Cancel button) rather than leaving free play
+    // outright — the take shouldn't vanish on one stray keypress.
+    this.root.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' && event.key !== 'Esc') return;
+      event.preventDefault();
+      if (this.naming) this.onCancelName();
+      else this.opts.onClose();
+    });
+
     window.addEventListener('resize', this.onResize);
 
     this.staff = freePlayStaff(host.clientHeight, TOP_MARGIN, BOTTOM_MARGIN);

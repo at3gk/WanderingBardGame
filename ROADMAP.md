@@ -5564,6 +5564,36 @@ iPad household needs none of it; logged under Blocked on human.
     test` 1415 green (unchanged), `npm run build` green (939.94 kB,
     byte-identical to run 203's number — a research doc isn't part of
     the bundle). No new runtime dependency.
+207. **`src/ui/freePlayScreen.ts` was the one full-screen DOM overlay with
+    no Escape-to-dismiss keyboard path.** Task 195 piece 2d gave
+    `Hud.ts`'s veil and pageBox Escape-dismiss; task 198 gave
+    `importSongDialog.ts`'s overlay the same. Task 197 gave every control
+    inside `freePlayScreen.ts` (`bindRowActivation`'s Enter/Space plus
+    role/tabIndex/aria-label) — but never touched Escape, and a grep of
+    the whole file confirmed the only `keydown` listener anywhere was on
+    `nameInput`, handling `Enter` only. A keyboard user tabbing through
+    the record button, close mark, label toggle, or the naming panel's
+    Save/Cancel had no way to leave the screen except tabbing all the way
+    to the visible × mark. Found by an Explore agent tasked with
+    surveying `src/ui/*.ts` for a gap in this exact convention, then
+    verified directly by reading the full 557-line file before touching
+    it. **Done (2026-09-23, run 206).** One `keydown` listener added on
+    `this.root` (bubbles up from any focused descendant, same shape as
+    `Hud.ts`'s veil), routed on `this.naming`: while the name dialog is
+    open, Escape calls the existing `onCancelName()` (resumes the take,
+    same as the Cancel button — a stray Escape shouldn't lose a
+    recording); otherwise it calls `opts.onClose()`, leaving the screen
+    entirely. `npm test` 1415 green (unchanged — DOM wiring only, same
+    call every task 195/197/198 piece made). `npm run build` green
+    (940.09 kB vs 939.94 kB, one small listener). No new runtime
+    dependency. Live-verified with a throwaway Playwright harness (not
+    committed) that mounted `FreePlayScreen` directly against the Vite
+    dev server: pressed Escape idle → `onClose` fired, screen dismissed;
+    recorded 16 taps, stopped (opened the name dialog), pressed Escape →
+    dialog closed, `naming` false, `onClose` did NOT fire — the screen
+    stayed open with the take intact, exactly the Cancel button's own
+    behaviour. Zero console/page errors (aside from an unrelated
+    favicon 404 from the throwaway harness page itself).
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
