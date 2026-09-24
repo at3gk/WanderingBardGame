@@ -14,7 +14,7 @@ import { letterForStep } from './notation';
  * 900ms late buys 900ms of genuine attempted recall.
  *
  * The governing safety rule is **fade the prompt, never the answer**: every
- * note shows its letter when it is struck *or* missed (see `RoadScene`), so
+ * note shows its letter when it is struck *or* missed (see `core/reveal.ts`), so
  * a hidden letter is always answered and a miss never costs information.
  *
  * Honest about what it can measure: a tap proves timing, not reading — it's

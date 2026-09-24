@@ -98,7 +98,7 @@ the walk reads as one motion.
 
 - [ ] **Hit window at 90ms** — did tightening overshoot? On-beat taps
   should still land; clearly-off taps should miss.
-  (`HIT_WINDOW_MS` — `src/scenes/RoadScene.ts`)
+  (`HIT_WINDOW_MS` — `src/core/beats.ts`)
 - [ ] **Meter refill at hitGain 12** — recovery now feels responsive, not
   trivial? (`src/core/songMeter.ts`)
 - ~~**Recomposed melodies**~~ — **obsolete.** This asked about the 8-beat
@@ -107,7 +107,7 @@ the walk reads as one motion.
   refers to anything that exists. What's worth judging instead is whether
   the *songs* are recognisable and cozy at this tempo and voicing.
 - [ ] **Beat-synced walk** — do legs, ground scroll, and music finally
-  read as one motion? Footfalls land on the beat? (`src/scenes/RoadScene.ts`)
+  read as one motion? Footfalls land on the beat? (`src/three/RoadStage.ts`)
 - [ ] **Stronger palettes** — do the plum → green → blue shifts now
   register as three distinct moods? (`src/core/biome.ts`)
 
@@ -130,7 +130,7 @@ the walk reads as one motion.
   (`pluck` gain = 1.6x base in `AudioEngine.ts`)? Does a good run feel
   like *performing* rather than just timing?
 - [ ] **Night sky** — moon/stars read without stealing attention? Star
-  drift too slow/fast? (`STAR_PARALLAX` — `src/scenes/RoadScene.ts`)
+  drift too slow/fast? (the `starness`-gated star field, `src/three/sky.ts`)
 - [ ] **The road loops home** — walk past Riverside Camp (~156 steps,
   about 1.6 min in): does returning to the village feel like coming home,
   or like a repeat?
@@ -142,11 +142,16 @@ the walk reads as one motion.
   is not darkened with the world. This is purely about whether it *feels*
   like nightfall.
 - [ ] **Strum on hit** — does the lute's kick-and-spring on every hit
-  read as a strum, or too subtle/too sharp? (`BARD_STRUM_KICK_DEG`,
-  `BARD_STRUM_MS` — `src/scenes/RoadScene.ts`)
-- [ ] **Meter as staff** — do the five faint lines on the song-meter bar
-  read as sheet music, or just clutter? Legible at phone size while
-  walking? (`METER_STAFF_LINE_COLOR`/`_ALPHA` — `src/scenes/RoadScene.ts`)
+  read as a strum, or too subtle/too sharp? (`Bard.pluck()`/`this.strum` —
+  `src/three/actors/Bard.ts`)
+- ~~**Meter as staff**~~ — **obsolete.** This asked about the five faint
+  staff lines drawn on the Phaser-era song-meter bar. That bar no longer
+  exists: the v0.6 Three.js rewrite carried the song meter itself forward
+  as pure gameplay state (`performance.meter` in `src/three/RoadStage.ts`,
+  gating stride and note dimming) but drew no visible meter widget for
+  it — `src/ui/Hud.ts`'s own header comment states the design directly:
+  "no meter, no combo counter, no score, no streak, and nothing at all in
+  the middle of the screen." There are no staff lines left to judge.
 
 ## Round 5 — the two new ways in (v0.5, 2026-07-26)
 
@@ -252,8 +257,7 @@ don't coach.
   might this one be called?" *Any* reasonable attempt at a letter is a
   pass — this is exposure, not examination.
 - [ ] **Letter legibility** — readable at their arm's length? (13px
-  baked into `qnote-*` textures — `NOTE_LETTER_STYLE`,
-  `src/scenes/RoadScene.ts`)
+  baked into the glyph atlas at construction, `src/three/fx/SongNotes.ts`)
 - [ ] **The pause reads as rest** — when the meter empties and the bard
   stops to busk, is it neutral/cozy for them, or do they read it as
   losing? (DESIGN.md's no-fail tone is the promise to check.)
