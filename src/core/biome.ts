@@ -13,7 +13,7 @@ export interface Biome {
   roadDashColor: number;
   /** Silhouette color for the background scenery band (darker than the sky so features read as shapes against it). */
   sceneryColor: number;
-  /** Small warm/lit accent used inside the scenery (village windows, riverside water glints) — see RoadScene's per-biome tile drawers. */
+  /** Small warm/lit accent used inside the scenery (village windows, riverside water glints). */
   sceneryAccent: number;
 }
 

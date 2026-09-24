@@ -1,12 +1,13 @@
 # STATE
 
-Run counter: 209 — one self-originated doc fix (task 210: fixed CLAUDE.md's
-own "Stack (fixed)" section, still claiming "Phaser 3 + TypeScript + Vite"
-five runs after run 44 migrated the game to Three.js and fixed every other
-doc making the same claim — CLAUDE.md itself was the one file that search
-never reached).
+Run counter: 210 — one self-originated doc fix (task 211: PLAYTEST.md's six
+still-open checklist items pointed at `src/scenes/RoadScene.ts`, deleted at
+the v0.6 Three.js migration; fixed each pointer on its own evidence, struck
+one item as genuinely obsolete since the feature it asks about no longer
+exists, and fixed two more instances of the same dead reference found in
+source comments along the way).
 Not due for consolidation (last was 205; next due ~215). See the
-run-209 HANDOFF below for the full account.
+run-210 HANDOFF below for the full account.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -214,33 +215,43 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
-- **HANDOFF, 2026-09-24 (run 209).** Re-checked the two cheap blockers
-  first, per run 208's own handoff: `WebFetch` against
+- **HANDOFF, 2026-09-24 (run 210).** Re-checked the two cheap blockers
+  first, per run 209's own handoff: `WebFetch` against
   `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
-  tool list still carries no tag- or release-write call (re-searched the
-  full tool list directly — only the read-only `get_tag`/`list_tags`/
-  `get_release_by_tag`/`get_latest_release` quartet) — neither moved.
-  Idea backlog still empty, so dispatched an Explore agent to survey for
-  a fresh doc/code gap outside the territory runs 200-208 already mined
-  (tools/README.md pose-filter docs, mobile-friendly.md safe-area claims,
-  verify-all.mjs's pose-count comment, songs.ts/DESIGN.md's songbook
-  claim, freePlayScreen.ts's Escape-to-dismiss gap); it found one genuine
-  miss: `CLAUDE.md:44`'s "Stack (fixed)" section still read "Phaser 3 +
-  TypeScript + Vite," five runs after run 44 (2026-07-29) migrated the
-  game to Three.js and fixed the same claim in `README.md`,
-  `tools/README.md`, and `.github/workflows/headless-checks.yml` — that
-  cleanup's search never reached CLAUDE.md itself. Verified directly
-  before touching the doc: `package.json` carries no `phaser` dependency
-  (only `three`/`@types/three`), no file under `src/` imports from
-  `'phaser'`, every `src/three/**` actor imports `from 'three'`, and
-  `README.md:53` already correctly reads "Three.js + TypeScript + Vite."
-  Fixed as task 210: one word, `CLAUDE.md:44`, "Phaser 3" → "Three.js."
+  tool list still carries no tag- or release-write call — neither moved.
+  Idea backlog still empty (confirmed — every entry in ROADMAP.md's
+  backlog section is struck), and every numbered task through 194 is
+  closed, so dispatched an Explore agent to survey for a fresh doc/code
+  gap outside the territory runs 195-209 already mined. It found
+  `PLAYTEST.md` pointing six still-open (unchecked) checklist items —
+  spread across Round 2, Round 3, and Round 5 — at `src/scenes/
+  RoadScene.ts`, a file that does not exist anywhere in the tree (deleted
+  at the v0.6 Three.js migration, 2026-07-28). Verified directly: one
+  named constant (`HIT_WINDOW_MS`) is real but lives in
+  `src/core/beats.ts`; the other five (`STAR_PARALLAX`,
+  `BARD_STRUM_KICK_DEG`, `BARD_STRUM_MS`, `METER_STAFF_LINE_COLOR`/
+  `_ALPHA`, `NOTE_LETTER_STYLE`) do not exist anywhere in `src/` under
+  those names post-rewrite. Fixed as task 211 — full account in
+  ROADMAP.md's own task 211 entry, not repeated here. Worth flagging
+  here specifically since it's a genuine open thread, not just doc
+  cleanup: while grepping the tree clean of `RoadScene` this run, found
+  `src/core/biome.ts`'s `Biome` interface (`sceneryColor`,
+  `sceneryAccent`, `skyColor`, `roadBandColor`) has no consumer anywhere
+  in `src/` outside the module itself — only three `src/audio/*.test.ts`
+  files import it at all. Plausibly Phaser-era dead weight superseded by
+  `src/three/world/palette.ts`'s per-biome colors in the Three.js world,
+  but not confirmed and not touched beyond the one stale comment
+  crediting it to `RoadScene` — a future run should check whether the
+  audio tests actually need live gameplay data from it or are exercising
+  dead data before deciding whether to delete anything.
   `npm test` 1415 green (unchanged), `npm run build` green (940.09 kB,
-  byte-identical to run 208's number — CLAUDE.md isn't part of the
-  bundle). No new runtime dependency. Live queue unchanged from run
-  205-208 (task 173's real-device halves, wave 20, task 189's far-band
-  lead, task 184's problem 2, the v0.1 git tag — all still
-  parked/blocked). Next consolidation still due around run 215.
+  byte-identical to run 209's number — none of this run's changes are
+  application code). No new runtime dependency. Live queue unchanged
+  from run 205-209 (task 173's real-device halves, wave 20, task 189's
+  far-band lead, task 184's problem 2, the v0.1 git tag — all still
+  parked/blocked), plus the new `Biome` dead-weight question above as a
+  cheap thing a future run could check first. Next consolidation still
+  due around run 215.
 
 - **HANDOFF, 2026-09-24 (run 208).** Re-checked the two cheap blockers
   first, per run 207's own handoff: `WebFetch` against

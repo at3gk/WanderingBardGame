@@ -5671,6 +5671,61 @@ iPad household needs none of it; logged under Blocked on human.
     (940.09 kB, byte-identical to run 208's number — CLAUDE.md isn't
     part of the bundle). No new runtime dependency.
 
+211. **PLAYTEST.md pointed at `src/scenes/RoadScene.ts` — a file deleted at
+    the v0.6 Three.js migration — from six still-open (unchecked)
+    checklist items, plus two more of the same dead-reference shape found
+    in source comments while fixing it.** Confirmed `src/scenes/
+    RoadScene.ts` does not exist anywhere in the tree; `HIT_WINDOW_MS` is
+    real but lives in `src/core/beats.ts`, and the other five named
+    constants (`STAR_PARALLAX`, `BARD_STRUM_KICK_DEG`, `BARD_STRUM_MS`,
+    `METER_STAFF_LINE_COLOR`/`_ALPHA`, `NOTE_LETTER_STYLE`) do not exist
+    anywhere in `src/` under those names post-rewrite. Found by an Explore
+    agent tasked with surveying for a fresh doc/code gap outside the
+    territory runs 195-209 already mined. **Done (2026-09-24, run 210).**
+    Fixed each pointer on its own evidence rather than guessing one
+    replacement file for all six: `HIT_WINDOW_MS` to `src/core/beats.ts`
+    (verified); beat-synced walk to `src/three/RoadStage.ts` (owns
+    `performance.meter`-gated stride, confirmed by reading it); star
+    drift to `src/three/sky.ts`'s `starness`-gated field (confirmed — no
+    literal parallax mechanism exists, so named it for what it actually
+    is); strum on hit to `Bard.pluck()`/`this.strum` in
+    `src/three/actors/Bard.ts` (confirmed — the kick is an inline decay
+    or rotation offset, not named constants). "Meter as staff" is struck
+    as obsolete rather than repointed: `src/ui/Hud.ts`'s own header
+    comment states the design directly ("no meter, no combo counter, no
+    score, no streak, and nothing at all in the middle of the screen") —
+    the v0.6 rewrite carried the song meter forward as pure gameplay
+    state (`performance.meter`) but never rebuilt its Phaser-era visible
+    bar or the five staff lines drawn on it, so there is nothing left to
+    judge. "Letter legibility" repointed to `src/three/fx/SongNotes.ts`
+    (the glyph atlas, confirmed — `qnote-*` was the Phaser texture-key
+    naming, gone with it).
+    Same dead-reference shape, found while grepping the tree for every
+    remaining `RoadScene` hit before calling this done, in two source
+    comments (not just docs): `src/core/scaffold.ts:17` said "see
+    `RoadScene`" for the struck-or-miss letter reveal rule — repointed to
+    `src/core/reveal.ts`, confirmed as the actual current home by
+    `SongNotes.ts`'s own comments citing it. `src/core/biome.ts:16`
+    credited "RoadScene's per-biome tile drawers" for the `sceneryAccent`
+    field — investigated rather than repointed: `sceneryAccent` and its
+    sibling `sceneryColor`/`skyColor`/`roadBandColor` have no consumer
+    anywhere in `src/` outside `biome.ts` itself (only three audio test
+    files import the module at all), so any specific replacement file
+    named would just be a new stale claim. Left the field and its data
+    alone — deleting a public interface field is a different, riskier
+    task than a doc fix — and trimmed the comment to state what the field
+    means without naming a consumer that doesn't exist. Worth a future
+    task: confirm `Biome.sceneryColor`/`sceneryAccent`/`skyColor`/
+    `roadBandColor` are genuinely dead weight (superseded by
+    `world/palette.ts`'s per-biome colors in the Three.js world) before
+    ever deleting them — not done here, this run only fixed the comment.
+    The remaining `RoadScene` hits after this fix are in STATE.md and
+    ROADMAP.md's own append-only history, which correctly describe a file
+    that existed at the time they were written — left untouched.
+    Docs/comments-only change — no application code behavior touched.
+    `npm test` 1415 green (unchanged), `npm run build` green (940.09 kB,
+    byte-identical to run 209's number). No new runtime dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
