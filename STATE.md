@@ -1,10 +1,11 @@
 # STATE
 
-Run counter: 207 — one self-originated doc fix (task 208: documented the
-`only` pose-filter argument in `tools/README.md` for the three scripts
-that support it but never surfaced it, `figground.mjs`/`fog-hue-band.mjs`/
-`land-histogram.mjs`). Not due for consolidation (last was 205; next due
-~215). See the run-207 HANDOFF below for the full account.
+Run counter: 208 — one self-originated doc fix (task 209: fixed a second,
+near-identical copy of the "index.html has no safe-area support" stale
+claim in `docs/research/mobile-friendly.md`'s findings bullet list — run
+198 only fixed the first copy, in the file's Honest Summary paragraph).
+Not due for consolidation (last was 205; next due ~215). See the
+run-208 HANDOFF below for the full account.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -211,6 +212,33 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-24 (run 208).** Re-checked the two cheap blockers
+  first, per run 207's own handoff: `WebFetch` against
+  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
+  tool list still carries no tag- or release-write call — neither moved.
+  Idea backlog still empty, so dispatched an Explore agent to survey
+  `docs/research/*.md` against current source and `tools/*.mjs` against
+  `tools/README.md` for a fresh gap; every item recent runs (197-208)
+  already checked came back clean, but it found one genuine miss:
+  `docs/research/mobile-friendly.md`'s "Notch / safe areas" findings
+  bullet (section 2) still read "index.html currently has neither"
+  `viewport-fit=cover` nor `env(safe-area-inset-*)` support — the same
+  stale claim run 198 (task 200) already fixed once, but only in this
+  file's opening Honest Summary paragraph; a second, near-identical copy
+  lower down in the Findings section's own bullet list was missed.
+  Verified directly against `index.html:10` (`viewport-fit=cover` is
+  present, with an explanatory comment at lines 5-9) and
+  `src/ui/Hud.ts:312-325` (the zero-sized probe element reading all four
+  `env(safe-area-inset-*)` values) before touching the doc. Fixed as
+  task 209: one bullet rewritten to state the feature is shipped,
+  matching the Honest Summary's tone/citations. `npm test` 1415 green
+  (unchanged), `npm run build` green (940.09 kB, byte-identical to run
+  207's number — a research doc isn't part of the bundle). No new
+  runtime dependency. Live queue unchanged from run 205/206/207 (task
+  173's real-device halves, wave 20, task 189's far-band lead, task
+  184's problem 2, the v0.1 git tag — all still parked/blocked). Next
+  consolidation still due around run 215.
 
 - **HANDOFF, 2026-09-23 (run 207).** Re-checked the two cheap blockers
   first, per run 206's own handoff: `WebFetch` against
