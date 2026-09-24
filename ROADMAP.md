@@ -5649,6 +5649,27 @@ iPad household needs none of it; logged under Blocked on human.
     green (unchanged), `npm run build` green (940.09 kB, byte-identical
     to run 207's number — a research doc isn't part of the bundle). No
     new runtime dependency.
+210. **CLAUDE.md's "Stack (fixed)" section still said "Phaser 3 +
+    TypeScript + Vite."** The game migrated off Phaser to Three.js at
+    v0.6 (2026-07-28); run 44 fixed every other doc that made the same
+    claim (`README.md`, `tools/README.md`, `.github/workflows/
+    headless-checks.yml`) but never touched CLAUDE.md itself, since it
+    wasn't in that run's search scope. Confirmed stale directly:
+    `package.json` carries no `phaser` dependency (only `three` and
+    `@types/three`), no file under `src/` imports from `'phaser'`, every
+    `src/three/**` actor imports `from 'three'`, and `README.md`'s own
+    "Stack" section (line 53) already correctly reads "Three.js +
+    TypeScript + Vite." Found by an Explore agent tasked with surveying
+    for a fresh doc/code gap outside the territory recent runs already
+    mined (tools/README.md pose-filter docs, mobile-friendly.md
+    safe-area claims, verify-all.mjs's pose-count comment, songs.ts/
+    DESIGN.md's songbook-tune-count claim, freePlayScreen.ts's
+    Escape-to-dismiss gap — all already fixed). **Done (2026-09-24, run
+    209).** One-word fix, `CLAUDE.md:44`: "Phaser 3" → "Three.js."
+    Docs-only change — no application code, test, or build config
+    touched. `npm test` 1415 green (unchanged), `npm run build` green
+    (940.09 kB, byte-identical to run 208's number — CLAUDE.md isn't
+    part of the bundle). No new runtime dependency.
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).

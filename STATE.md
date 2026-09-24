@@ -1,11 +1,12 @@
 # STATE
 
-Run counter: 208 — one self-originated doc fix (task 209: fixed a second,
-near-identical copy of the "index.html has no safe-area support" stale
-claim in `docs/research/mobile-friendly.md`'s findings bullet list — run
-198 only fixed the first copy, in the file's Honest Summary paragraph).
+Run counter: 209 — one self-originated doc fix (task 210: fixed CLAUDE.md's
+own "Stack (fixed)" section, still claiming "Phaser 3 + TypeScript + Vite"
+five runs after run 44 migrated the game to Three.js and fixed every other
+doc making the same claim — CLAUDE.md itself was the one file that search
+never reached).
 Not due for consolidation (last was 205; next due ~215). See the
-run-208 HANDOFF below for the full account.
+run-209 HANDOFF below for the full account.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -212,6 +213,34 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-24 (run 209).** Re-checked the two cheap blockers
+  first, per run 208's own handoff: `WebFetch` against
+  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
+  tool list still carries no tag- or release-write call (re-searched the
+  full tool list directly — only the read-only `get_tag`/`list_tags`/
+  `get_release_by_tag`/`get_latest_release` quartet) — neither moved.
+  Idea backlog still empty, so dispatched an Explore agent to survey for
+  a fresh doc/code gap outside the territory runs 200-208 already mined
+  (tools/README.md pose-filter docs, mobile-friendly.md safe-area claims,
+  verify-all.mjs's pose-count comment, songs.ts/DESIGN.md's songbook
+  claim, freePlayScreen.ts's Escape-to-dismiss gap); it found one genuine
+  miss: `CLAUDE.md:44`'s "Stack (fixed)" section still read "Phaser 3 +
+  TypeScript + Vite," five runs after run 44 (2026-07-29) migrated the
+  game to Three.js and fixed the same claim in `README.md`,
+  `tools/README.md`, and `.github/workflows/headless-checks.yml` — that
+  cleanup's search never reached CLAUDE.md itself. Verified directly
+  before touching the doc: `package.json` carries no `phaser` dependency
+  (only `three`/`@types/three`), no file under `src/` imports from
+  `'phaser'`, every `src/three/**` actor imports `from 'three'`, and
+  `README.md:53` already correctly reads "Three.js + TypeScript + Vite."
+  Fixed as task 210: one word, `CLAUDE.md:44`, "Phaser 3" → "Three.js."
+  `npm test` 1415 green (unchanged), `npm run build` green (940.09 kB,
+  byte-identical to run 208's number — CLAUDE.md isn't part of the
+  bundle). No new runtime dependency. Live queue unchanged from run
+  205-208 (task 173's real-device halves, wave 20, task 189's far-band
+  lead, task 184's problem 2, the v0.1 git tag — all still
+  parked/blocked). Next consolidation still due around run 215.
 
 - **HANDOFF, 2026-09-24 (run 208).** Re-checked the two cheap blockers
   first, per run 207's own handoff: `WebFetch` against

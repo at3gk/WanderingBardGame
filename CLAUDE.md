@@ -41,7 +41,7 @@ executes YOUR vision — write it like you mean it.
 
 ## Stack (fixed)
 
-- Phaser 3 + TypeScript + Vite (vite `base` = `/<repo-name>/` for Pages)
+- Three.js + TypeScript + Vite (vite `base` = `/<repo-name>/` for Pages)
 - Vitest for all headless logic
 - Push to main triggers test → build → deploy to GitHub Pages. A red push
   does not deploy; the last good version stays live.
