@@ -5625,6 +5625,30 @@ iPad household needs none of it; logged under Blocked on human.
     1415 green (unchanged), `npm run build` green (940.09 kB,
     byte-identical to run 206's number — a tools README isn't part of
     the bundle). No new runtime dependency.
+209. **`docs/research/mobile-friendly.md`'s "Notch / safe areas" finding
+    bullet still said `index.html` "currently has neither"
+    `viewport-fit=cover` nor `env(safe-area-inset-*)`.** Run 198 (task
+    200) already fixed the same stale claim once, in this file's opening
+    "Honest Summary" paragraph — but missed a second, near-identical
+    copy of it lower down, in the "Findings" section's own bullet list
+    (section "2. iOS Safari runtime behavior: audio, frame rate,
+    notch"). Both are shipped: `index.html`'s viewport meta carries
+    `viewport-fit=cover` (with a comment at lines 5-9 explaining why),
+    and `Hud.ts`'s zero-sized probe element (lines ~312-325) reads all
+    four `env(safe-area-inset-*)` values and applies them as HUD
+    padding. Found by an Explore agent tasked with surveying
+    `docs/research/*.md` against current source and `tools/*.mjs`
+    against `tools/README.md` for a fresh gap (the pose-filter docs and
+    every other item recent runs already checked came back clean this
+    time), then verified directly against `index.html:10` and
+    `src/ui/Hud.ts:312-325` before touching the doc. **Done (2026-09-24,
+    run 208).** Rewrote the bullet to state the feature is shipped,
+    matching the Honest Summary paragraph's tone/citations rather than
+    repeating the stale "currently has neither" line. Docs-only change —
+    no application code, test, or build config touched. `npm test` 1415
+    green (unchanged), `npm run build` green (940.09 kB, byte-identical
+    to run 207's number — a research doc isn't part of the bundle). No
+    new runtime dependency.
 
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).

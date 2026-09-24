@@ -164,10 +164,11 @@ login.
   `max()`) keeps controls out of the sensor housing and home-indicator
   strip. WebKit first-party:
   https://webkit.org/blog/7929/designing-websites-for-iphone-x/
-  (fetched). index.html currently has neither; in Safari's normal view
-  this mostly costs letterboxing colour, but in an installed standalone
-  app (the recommended state, per finding 1) the HUD would sit under the
-  notch on iPhones. iPads have no notch but do have the home indicator.
+  (fetched). **Shipped**: `index.html`'s viewport meta carries
+  `viewport-fit=cover`, and `Hud.ts`'s zero-sized probe element reads all
+  four `env(safe-area-inset-*)` values and applies them as HUD padding —
+  see the Honest Summary above. iPads have no notch but do have the home
+  indicator; the same probe covers that case too.
 
 ### 3. Android spread, and what ~730k triangles means on a mid-range GPU
 
