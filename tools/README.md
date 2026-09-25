@@ -78,7 +78,7 @@ for why this list is short. New automated checks against the Three.js game
 belong here as they're written. `node tools/verify-all.mjs quick` skips the
 ones marked slow.
 
-## `shader-check.mjs`
+## `shader-check.mjs [outPrefix]`
 
 Boots the render foundation in a real browser and fails on any shader that
 does not compile or any frame that does not draw — the one class of bug
@@ -89,6 +89,9 @@ any more, see this script's own header comment) at four times of day and
 reports the average pixel colour of each, a cheap objective check that the
 time-of-day palette actually moves the world's light rather than just the
 sky dome.
+
+Pass an `outPrefix` to rename the four per-sample screenshots it always
+writes (default `shader-check`, giving `shader-check-<label>.png`).
 
 Prints `PASS` / `FAIL` and exits non-zero on failure.
 

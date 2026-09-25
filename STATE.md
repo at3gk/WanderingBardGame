@@ -1,11 +1,14 @@
 # STATE
 
-Run counter: 212 — task 213: `tools/README.md`'s `skylight-sat.mjs`
-section was missing its `outDir` argument (the script has one, mirroring
-`shadowcast.mjs`'s, but neither the heading nor the prose mentioned it).
-Fixed the heading and added one sentence; docs-only.
+Run counter: 213 — task 214: `tools/README.md`'s `shader-check.mjs`
+section was missing its `outPrefix` argument (the script reads
+`process.argv[2]` as a filename prefix for its four per-sample
+screenshots, defaulting to `shader-check`, but neither the heading nor
+the prose mentioned it — the exact same gap class runs 207/212 fixed on
+other scripts, just not this one). Fixed the heading and added one
+sentence; docs-only.
 Not due for consolidation (last was 205; next due ~215). See the
-run-212 HANDOFF below for the full account.
+run-213 HANDOFF below for the full account.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -212,6 +215,33 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-25 (run 213).** Re-checked the two cheap blockers
+  first, same pattern as runs 211-212: `WebFetch` against
+  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
+  tool list still carries no tag- or release-write call — neither moved.
+  Idea backlog still empty and every numbered task through 213 closed, so
+  dispatched an Explore agent to survey for a fresh doc/code gap outside
+  the territory runs 195-212 already mined (it was handed the full list
+  of what those runs fixed, to avoid duplicating). It found
+  `tools/shader-check.mjs` reads an `outPrefix` CLI argument
+  (`process.argv[2] ?? 'shader-check'`, `tools/shader-check.mjs:35`) used
+  to name its four per-sample screenshots (`${outPrefix}-${label}.png` at
+  line 70), but `tools/README.md`'s `shader-check.mjs` section — heading
+  and prose both — never mentioned it, unlike the sibling sections for
+  `postcard.mjs [outDir] [only]`, `shadowcast.mjs [outDir]` and
+  `skylight-sat.mjs [outDir]` a little further down the same file. Verified
+  directly against the script's source before touching the doc. Fixed as
+  task 214: heading now reads `` `shader-check.mjs [outPrefix]` ``, plus
+  one sentence describing the default and what it renames. Docs-only
+  change, no application or tool code touched. This session's `npm test`
+  ran cold (fresh clone, `npm ci` first) and came back 1398 green, matching
+  run 212's count; `npm run build` green (939.72 kB, byte-identical to run
+  212's number, as expected for a docs-only change). No new runtime
+  dependency. Live queue unchanged from run 205-212 (task 173's
+  real-device halves, wave 20, task 189's far-band lead, task 184's
+  problem 2, the v0.1 git tag — all still parked/blocked). Idea backlog
+  still empty. Next consolidation still due around run 215.
 
 - **HANDOFF, 2026-09-25 (run 212).** Re-checked the two cheap blockers
   first, per run 211's own pattern: `WebFetch` against `en.wikipedia.org`
