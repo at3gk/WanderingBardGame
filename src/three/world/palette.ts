@@ -1,11 +1,13 @@
 /**
  * What each biome looks like in three dimensions.
  *
- * The 2D game's biome palettes (src/core/biome.ts) are dark-dusk colours
- * chosen so that cream notation would read on top of them. They are still
- * correct for what they do and they are not touched here — but they are
- * unusable as *world* colours in a game that now has a sun in it, so the
- * 3D world keeps its own palette keyed by the same biome ids.
+ * The pre-migration 2D game had its own dark-dusk biome palettes, chosen so
+ * that cream notation would read on top of them (removed from
+ * src/core/biome.ts as dead weight once nothing outside its own tests still
+ * referenced them — see STATE.md's run-211 handoff). Those colours would be
+ * unusable as *world* colours in a game that now has a sun in it anyway, so
+ * the 3D world keeps its own palette keyed by the same biome ids
+ * (src/core/biome.ts still owns that id list).
  *
  * The palettes are built around one idea: each biome is a **narrow hue
  * family with one dissenting accent**. Village is a spread of warm yellow-
