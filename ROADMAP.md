@@ -5780,6 +5780,30 @@ iPad household needs none of it; logged under Blocked on human.
     (939.72 kB, byte-identical to run 211's number). No new runtime
     dependency.
 
+214. **`tools/README.md`'s `shader-check.mjs` section is missing its
+    `outPrefix` argument.** **Done (2026-09-25, run 213).**
+    `tools/shader-check.mjs:35` reads `outPrefix` from `process.argv[2]`
+    (default `'shader-check'`) and uses it at line 70 to name the four
+    per-sample screenshots it always writes (`${outPrefix}-${label}.png`)
+    — the same shape of gap task 213 fixed on `skylight-sat.mjs`, just on
+    a different script: `shader-check.mjs`'s own heading was bare
+    (`## \`shader-check.mjs\``) and its prose never mentioned the
+    argument, unlike the sibling `postcard.mjs [outDir] [only]`,
+    `shadowcast.mjs [outDir]` and `skylight-sat.mjs [outDir]` sections a
+    little further down the same file. Found by an Explore agent tasked
+    with surveying for a fresh doc/code gap (idea backlog empty, every
+    task through 213 closed), handed the full list of what runs 195-212
+    already fixed so it wouldn't duplicate any of them. Verified directly
+    against the script's source before touching the doc. Fixed: renamed
+    the heading to `## \`shader-check.mjs [outPrefix]\`` and added one
+    sentence naming the default and what it renames. Docs-only change —
+    no application or tool code touched. This run's environment started
+    without `node_modules` installed (a fresh clone), so `npm ci` ran
+    first; `npm test` then came back 1398 green (unchanged) and
+    `npm run build` green (939.72 kB, byte-identical to run 212's
+    number, as expected for a docs-only change). No new runtime
+    dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
