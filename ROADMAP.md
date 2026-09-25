@@ -5726,6 +5726,40 @@ iPad household needs none of it; logged under Blocked on human.
     `npm test` 1415 green (unchanged), `npm run build` green (940.09 kB,
     byte-identical to run 209's number). No new runtime dependency.
 
+212. **Task 211's own follow-up: confirm `Biome.sceneryColor`/`sceneryAccent`/
+    `skyColor`/`roadBandColor` are genuinely dead weight before ever deleting
+    them.** **Done (2026-09-25, run 211)** — with a correction along the way
+    worth recording. A first pass grepped only for `core/biome` and
+    `core\.biome`, found nothing outside `biome.ts` and the three audio
+    tests, and deleted the whole module on that basis — wrong: `npm test`
+    immediately failed, because `src/core/road.ts:43` imports `BIOMES` via
+    the bare `from './biome'`, which that grep pattern can't match from
+    inside the same directory. Restored the file and re-checked
+    field-by-field instead of module-by-module. Confirmed: `road.ts` (band
+    generation), `road.test.ts`, `encounters.test.ts`, and the three audio
+    tests all genuinely read `Biome.id`/`BIOMES.length` — load-bearing,
+    left alone. But `Biome.name` and the four colour fields task 211 named
+    have zero consumers anywhere in `src/` outside `biome.ts` itself
+    (checked each field name individually), and so does the entire
+    crossfade system built on top of them — `BiomeTransition`,
+    `BIOME_TRANSITIONS`, `BiomeBlend`, `biomeBlendAt`, and
+    `signpostDistanceAt` (checked each export name individually) — a
+    Phaser-era mechanism `world/palette.ts`'s own header comment already
+    said was superseded, just not fully acted on. Trimmed `Biome` to
+    `{ id: string }`, trimmed `BIOMES`'s three entries to match, deleted
+    the transition/blend/signpost code, and deleted `src/core/biome.test.ts`
+    (all 17 tests exercised only the removed functions). Repointed the two
+    docs this left stale: `world/palette.ts`'s header comment (past tense
+    now) and `PLAYTEST.md`'s "Stronger palettes" citation (→
+    `src/three/world/palette.ts`, where biome colour now actually lives).
+    `ambience.ts:44`'s "mirrors `core/biome.ts`'s ids" comment needed no
+    change — the id list itself didn't move. `npm test` 1398 green (1415
+    minus the 17 deleted tests), `npm run build` green (939.72 kB vs run
+    210's 940.09 kB). No new runtime dependency. The lesson for next time:
+    a same-directory `from './biome'` import won't show up in a grep
+    scoped to `core/biome` — checking whether a module is dead means
+    grepping its export names, not its import path.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with

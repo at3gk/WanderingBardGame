@@ -1,13 +1,12 @@
 # STATE
 
-Run counter: 210 — one self-originated doc fix (task 211: PLAYTEST.md's six
-still-open checklist items pointed at `src/scenes/RoadScene.ts`, deleted at
-the v0.6 Three.js migration; fixed each pointer on its own evidence, struck
-one item as genuinely obsolete since the feature it asks about no longer
-exists, and fixed two more instances of the same dead reference found in
-source comments along the way).
+Run counter: 211 — closed the follow-up run 210 itself flagged (task 212:
+confirmed which parts of `src/core/biome.ts` were genuinely dead — the
+color fields and the whole crossfade system, not the `id` list `road.ts`
+still depends on — and deleted exactly those, plus their now-pointless
+dedicated test file).
 Not due for consolidation (last was 205; next due ~215). See the
-run-210 HANDOFF below for the full account.
+run-211 HANDOFF below for the full account.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -214,6 +213,54 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-25 (run 211).** Picked up the one open thread run
+  210's own handoff flagged rather than dispatching a fresh Explore
+  survey: whether `src/core/biome.ts`'s `Biome` interface is genuinely
+  dead weight, since only three `src/audio/*.test.ts` files import the
+  module at all. Checked properly this time — an initial pass (grepping
+  only for `core/biome`/`core\.biome`) wrongly concluded the *whole*
+  module was unreferenced and got as far as deleting it before `npm test`
+  caught the mistake: `src/core/road.ts:43` imports `BIOMES` via the
+  bare relative `from './biome'`, which that grep pattern doesn't match,
+  and `road.ts` is very much live (it's what picks how many biome bands a
+  run gets and which id each one carries). Restored the file and
+  re-investigated field-by-field instead of module-by-module. The real
+  finding, once separated: `road.ts`, `road.test.ts`, `encounters.test.ts`
+  and the three audio tests all genuinely use `Biome.id` and `BIOMES`'s
+  length — that part is load-bearing. But `Biome.name` and its four
+  colour fields (`skyColor`, `roadBandColor`, `roadDashColor`,
+  `sceneryColor`, `sceneryAccent`) have zero consumers anywhere outside
+  `biome.ts` itself (grepped each field name individually across `src/`),
+  and so do `BiomeTransition`, `BIOME_TRANSITIONS`, `BiomeBlend`, and
+  `biomeBlendAt`/`signpostDistanceAt` — a whole Phaser-era crossfade
+  system nothing calls, confirmed by grepping each export name on its
+  own. `src/three/world/palette.ts`'s own header comment already said as
+  much for the colour fields specifically ("they are still correct for
+  what they do... but unusable as world colours") — the crossfade
+  functions were the same shape of leftover, just not the part task 211
+  happened to be looking at. Fixed as task 212: trimmed `Biome` to
+  `{ id: string }`, trimmed each `BIOMES` entry to match, deleted the
+  transition/blend/signpost machinery entirely, and deleted
+  `src/core/biome.test.ts` (all 17 of its tests exercised exactly the
+  functions just removed — nothing salvageable). Updated the two stale
+  pointers this left behind: `palette.ts`'s header comment (past tense,
+  credits the run-211 handoff) and `PLAYTEST.md`'s "Stronger palettes"
+  citation (now `src/three/world/palette.ts`, where biome colour actually
+  lives). Left `ambience.ts:44`'s "mirrors `core/biome.ts`'s ids" comment
+  alone — still true, the id list didn't move. `npm test` 1398 green
+  (1415 minus the 17 deleted tests, nothing else moved), `npm run build`
+  green (939.72 kB vs run 210's 940.09 kB — the deleted dead code's own
+  small weight). No new runtime dependency. Worth naming for whichever
+  run reads this next: the failure mode here was trusting a grep pattern
+  scoped to how a file is imported *from other directories* when the
+  actual risk was a same-directory `from './biome'` import — a future
+  "is X dead" check should grep the export names themselves, not just
+  the module path, exactly as this run ended up doing. Live queue
+  unchanged from run 205-210 (task 173's real-device halves, wave 20,
+  task 189's far-band lead, task 184's problem 2, the v0.1 git tag — all
+  still parked/blocked). Idea backlog still empty. Next consolidation
+  still due around run 215.
 
 - **HANDOFF, 2026-09-24 (run 210).** Re-checked the two cheap blockers
   first, per run 209's own handoff: `WebFetch` against

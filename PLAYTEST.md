@@ -109,7 +109,7 @@ the walk reads as one motion.
 - [ ] **Beat-synced walk** — do legs, ground scroll, and music finally
   read as one motion? Footfalls land on the beat? (`src/three/RoadStage.ts`)
 - [ ] **Stronger palettes** — do the plum → green → blue shifts now
-  register as three distinct moods? (`src/core/biome.ts`)
+  register as three distinct moods? (`src/three/world/palette.ts`)
 
 ### New since round 1 (overnight session, tasks 30–34)
 
