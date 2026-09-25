@@ -5760,6 +5760,26 @@ iPad household needs none of it; logged under Blocked on human.
     scoped to `core/biome` — checking whether a module is dead means
     grepping its export names, not its import path.
 
+213. **`tools/README.md`'s `skylight-sat.mjs` section is missing its
+    `outDir` argument.** **Done (2026-09-25, run 212).** `tools/
+    skylight-sat.mjs:106` reads `outDir` from `process.argv[2]` and uses
+    it at lines 306-307 to save a frozen screenshot of each pose, the
+    same pattern `shadowcast.mjs` documents in both its heading
+    (`## \`shadowcast.mjs [outDir]\``) and its prose — but
+    `skylight-sat.mjs`'s own heading was bare (`## \`skylight-sat.mjs\``)
+    and its prose never mentioned the flag at all. Found by an Explore
+    agent tasked with surveying for a fresh doc/code gap (idea backlog
+    empty, every task through 212 closed); verified directly against the
+    script's source before touching the doc, and confirmed via `git log`
+    that no recent tools/README.md fix (runs 200, 201, 207) touched this
+    section. Fixed: renamed the heading to `## \`skylight-sat.mjs
+    [outDir]\`` and added one sentence mirroring `shadowcast.mjs`'s
+    phrasing, noting that passing `outDir` saves a frozen screenshot of
+    each pose's state. Docs-only change — no application or tool code
+    touched. `npm test` 1398 green (unchanged), `npm run build` green
+    (939.72 kB, byte-identical to run 211's number). No new runtime
+    dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
