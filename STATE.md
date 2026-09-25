@@ -1,12 +1,11 @@
 # STATE
 
-Run counter: 211 — closed the follow-up run 210 itself flagged (task 212:
-confirmed which parts of `src/core/biome.ts` were genuinely dead — the
-color fields and the whole crossfade system, not the `id` list `road.ts`
-still depends on — and deleted exactly those, plus their now-pointless
-dedicated test file).
+Run counter: 212 — task 213: `tools/README.md`'s `skylight-sat.mjs`
+section was missing its `outDir` argument (the script has one, mirroring
+`shadowcast.mjs`'s, but neither the heading nor the prose mentioned it).
+Fixed the heading and added one sentence; docs-only.
 Not due for consolidation (last was 205; next due ~215). See the
-run-211 HANDOFF below for the full account.
+run-212 HANDOFF below for the full account.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -213,6 +212,31 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-25 (run 212).** Re-checked the two cheap blockers
+  first, per run 211's own pattern: `WebFetch` against `en.wikipedia.org`
+  still returns `EGRESS_BLOCKED`, and the GitHub MCP tool list still
+  carries no tag- or release-write call — neither moved. Idea backlog
+  still empty and every numbered task through 212 is closed, so
+  dispatched an Explore agent to survey for a fresh doc/code gap outside
+  the territory runs 195-211 already mined. It found `tools/README.md`'s
+  `skylight-sat.mjs` section (built run 183) documenting the script with
+  a bare heading and no mention of its `outDir` argument, even though
+  `tools/skylight-sat.mjs:106`/`306-307` reads and uses `outDir` to save
+  a frozen screenshot per pose — the exact same capability
+  `shadowcast.mjs`'s own section documents in both its heading
+  (`[outDir]`) and a sentence of prose. Verified directly against the
+  script's source before touching the doc, and confirmed via `git log`
+  that none of the recent tools/README.md fixes (runs 200, 201, 207)
+  touched this section. Fixed as task 213: heading now reads
+  `` `skylight-sat.mjs [outDir]` ``, plus one sentence mirroring
+  `shadowcast.mjs`'s phrasing. Docs-only change, no application or tool
+  code touched. `npm test` 1398 green (unchanged), `npm run build` green
+  (939.72 kB, byte-identical to run 211's number). No new runtime
+  dependency. Live queue unchanged from run 205-211 (task 173's
+  real-device halves, wave 20, task 189's far-band lead, task 184's
+  problem 2, the v0.1 git tag — all still parked/blocked). Idea backlog
+  still empty. Next consolidation still due around run 215.
 
 - **HANDOFF, 2026-09-25 (run 211).** Picked up the one open thread run
   210's own handoff flagged rather than dispatching a fresh Explore

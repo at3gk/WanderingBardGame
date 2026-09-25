@@ -308,7 +308,7 @@ exits 0 — this is a measurement tool, not a pass/fail gate. `skylight-sat.mjs`
 below reuses its sun-off diff as the shadow mask for a related question
 (non-cast, sky-lit saturation) rather than re-deriving one.
 
-## `skylight-sat.mjs`
+## `skylight-sat.mjs [outDir]`
 
 ROADMAP task 194's instrument (built run 183): does a non-cast,
 form-shaded terrain face (a slope turned away from the sun, lit only by
@@ -321,7 +321,8 @@ rocks/logs are instanced and this tool's debug material doesn't apply
 `dot(worldNormal, sunDirection)` as grayscale, reads it back, and
 compares HSV saturation between painterly.ts's own band1/band3 luma
 edges (0.46 shaded / 0.86 lit) on the pixels the shadow mask (the same
-sun-off diff `shadowcast.mjs` uses) says are genuinely non-cast.
+sun-off diff `shadowcast.mjs` uses) says are genuinely non-cast. Pass an
+`outDir` to also save a frozen screenshot of each pose's state.
 
 **The pitfall worth knowing before writing another debug-shader probe**:
 the debug passes must call `renderer.render()` directly, not
