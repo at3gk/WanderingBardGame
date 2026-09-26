@@ -1,14 +1,15 @@
 # STATE
 
-Run counter: 213 — task 214: `tools/README.md`'s `shader-check.mjs`
-section was missing its `outPrefix` argument (the script reads
-`process.argv[2]` as a filename prefix for its four per-sample
-screenshots, defaulting to `shader-check`, but neither the heading nor
-the prose mentioned it — the exact same gap class runs 207/212 fixed on
-other scripts, just not this one). Fixed the heading and added one
-sentence; docs-only.
+Run counter: 214 — task 125: `tools/frame-quality.mjs` measured only
+whole-frame p90, so a wave that darkened the near ground while
+brightening nothing else could still pass the stops floor as long as
+SOMETHING in the frame moved. Wired a land-masked p90 floor into the
+gate, reusing `land-histogram.mjs`'s (task 122) already-proven
+sky-masking technique, on the five plain-daylight poses (golden/night
+excluded on purpose — their land is dim by authored design, not by the
+fault this gate catches).
 Not due for consolidation (last was 205; next due ~215). See the
-run-213 HANDOFF below for the full account.
+run-214 HANDOFF below for the full account.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -215,6 +216,63 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-26 (run 214).** Re-checked the two cheap blockers
+  first, same pattern as runs 211-213: `WebFetch` against
+  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
+  tool list still carries no tag- or release-write call — neither moved.
+  Idea backlog still empty and every task through 214 closed, so surveyed
+  ROADMAP.md's older, still-open task numbers directly (the ones runs
+  115-214 have been quietly reclaiming one at a time — see e.g. runs 45/
+  47/48/50 closing tasks 115-121) rather than dispatching another Explore
+  agent, since a candidate was already visible: **task 125**, "the gate
+  rewards darkening and should not." `tools/frame-quality.mjs` floors
+  whole-frame `valueStops` (p90/p10 over sky+land together), so a change
+  that widens that ratio by darkening the near ground — while doing
+  nothing for the land itself — still passes, exactly the failure mode
+  task 121's own note flagged when it raised ground albedo by hand. Task
+  122 had already built and proved the fix's core technique in
+  `land-histogram.mjs` (hide the sky dome named `'sky'`, paint the clear
+  colour a sentinel, calibrate it LIVE rather than assuming pure magenta —
+  its own file documents catching that exact assumption silently
+  measuring land+sky together for two tasks' worth of runs after task 168's
+  ACES/LUT finishing pass moved the literal readback colour) and left task
+  125 as "a separate decision once the numbers are trustworthy." Confirmed
+  no run had touched it since (`grep -i "task 125"` across STATE.md/
+  ROADMAP.md: nothing) and `frame-quality.mjs` still had no land-only
+  logic before this run.
+  Fixed: `analyse()` now does a second render+readback per pose using
+  task 122's exact masking technique, returning `landP90` (linear
+  luminance, land pixels only) alongside the existing whole-frame stats.
+  Added `minLandP90` floors to the five plain-daylight poses (morning
+  0.22, noon 0.19, noon-village 0.45, phone-portrait 0.42,
+  phone-landscape 0.13 — about a third under what the pinned gauge day
+  currently measures for each, same headroom discipline as the existing
+  `minStops`/`minHue` floors). Golden and night deliberately carry no
+  floor: their land is dim by the authored low-sun wash and the
+  campfire's small lit pool, the same reasoning `hueSpread`'s existing
+  golden/night exclusion uses in reverse. Updated `tools/README.md`'s
+  `frame-quality.mjs` section (new `landP90` bullet, a third "learned the
+  hard way" note) and `land-histogram.mjs`'s own header comment, which
+  had pointed at task 125 as the pending decision.
+  This session's environment started without `node_modules` (fresh
+  clone) and without a locally resolvable `playwright` (present only as
+  a global install at a different path — needed `PLAYWRIGHT_PATH` set
+  for `tools/browser.mjs` to find it; `npm test`/`npm run build` don't
+  need it). Ran `frame-quality.mjs` directly against a local `vite
+  preview` before and after wiring the floors: land p90 reads sensibly
+  below whole-frame p90 at every pose (confirms the mask is doing real
+  work, not returning the same number), and PASSes with the new floors
+  in place, small run-to-run jitter well inside the headroom (e.g.
+  morning's landP90 read 0.3323 then 0.3329 across two runs). `npm test`
+  1398 green (unchanged — no unit coverage of `tools/`, the established
+  precedent for this whole directory), `npm run build` green (939.72 kB,
+  byte-identical — this run touched no application code). No new runtime
+  dependency.
+  Live queue unchanged from run 205-213 (task 173's real-device halves,
+  wave 20, task 189's far-band lead, task 184's problem 2, the v0.1 git
+  tag — all still parked/blocked). Idea backlog still empty. Next
+  consolidation still due around run 215.
 
 - **HANDOFF, 2026-09-25 (run 213).** Re-checked the two cheap blockers
   first, same pattern as runs 211-212: `WebFetch` against

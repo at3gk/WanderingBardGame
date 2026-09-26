@@ -18,8 +18,10 @@
 // this tool calls LAND, without needing to know anything about the scene's
 // contents beyond "the sky dome is the thing named 'sky'".
 //
-// This is an instrument, not a gate — it always exits 0. The gate change
-// (task 125) is a separate decision once the numbers below are trustworthy.
+// This is an instrument, not a gate — it always exits 0. `frame-quality.mjs`
+// is the actual gate: task 125 wired a land-masked p90 floor into it
+// (`landP90`/`minLandP90`), using this same sentinel technique, once the
+// numbers here proved trustworthy.
 import { BASE_URL, launch } from './browser.mjs';
 
 const POSES = [

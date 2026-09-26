@@ -7297,12 +7297,36 @@ Read STATE.md's HANDOFF block before picking any of these up.
     busk at a low back-sun is a rim-light shot and light it as one. The
     instrument albedo lives in `core/instruments`.
 
-125. **The gate rewards darkening and should not.** `tools/frame-quality.mjs`
-    measures whole-frame stops, so a wave that darkens the near ground passes
-    it while making nothing lighter — which is exactly what happened in wave
-    11 and was only caught by a critic building a control tree. Add a
-    land-masked p90 floor alongside the existing stops floor, so the gate can
-    tell "more range" from "darker darks".
+125. ~~**The gate rewards darkening and should not.**~~ Done (Run 214,
+    scheduled). `tools/frame-quality.mjs` measured whole-frame stops, so a
+    wave that darkens the near ground passes it while making nothing
+    lighter — which is exactly what happened in wave 11 and was only caught
+    by a critic building a control tree. Added a land-masked `p90` floor
+    alongside the existing stops floor, reusing task 122's already-proven
+    technique (`land-histogram.mjs`: hide the sky dome named `'sky'`, paint
+    the clear colour a sentinel, calibrate it LIVE against the finishing
+    pass's own tonemap+LUT rather than assuming pure magenta reads back
+    unchanged — that assumption cost task 122 two tasks' worth of silently
+    wrong measurements the first time). `analyse()` now returns `landP90`
+    (land-only linear luminance p90) alongside the existing whole-frame
+    stats, gated via a new per-pose `minLandP90` on the five plain-daylight
+    poses: morning 0.22, noon 0.19, noon-village 0.45, phone-portrait 0.42,
+    phone-landscape 0.13 — about a third under what the pinned gauge day
+    currently measures for each, same headroom discipline as the existing
+    `minStops`/`minHue` floors. Golden and night deliberately carry no
+    floor: their land is dim by the authored low-sun wash and the
+    campfire's small lit pool, not by the "flat midday" fault this gate
+    exists to catch — the same reasoning `hueSpread`'s golden/night
+    exclusion already uses, in reverse. `tools/README.md`'s
+    `frame-quality.mjs` section and `land-histogram.mjs`'s own header
+    comment (which had named task 125 as the pending decision) both
+    updated. Verified live against a local `vite preview`: land p90 reads
+    sensibly below whole-frame p90 at every pose (the mask is doing real
+    work), PASSes with the floors in place, run-to-run jitter well inside
+    the headroom. `npm test` 1398 green (unchanged — no unit coverage of
+    `tools/`, the established precedent for this directory), `npm run
+    build` green (939.72 kB, byte-identical — no application code
+    touched). No new runtime dependency.
 
 126. **Play it.** Nobody ever has. The busking mechanic is the core of the
     design and has never been judged for feel: whether the timing window is

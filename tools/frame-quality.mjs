@@ -108,9 +108,24 @@ const only = process.argv[2] ?? null;
 // either number again.
 // `gaugeDay` overrides GAUGE_DAY for one pose. Only noon-village carries
 // one: it exists precisely to measure the OTHER road family.
+//
+// `minLandP90` (task 125) is the land-masked counterpart to `minStops`: a
+// floor under the land's own upper-percentile linear luminance, so a wave
+// that widens whole-frame range by darkening the sky or the near ground
+// without the land itself getting any lighter still fails. Same reasoning
+// as `minHue`'s exclusion of golden/night applies here in reverse: golden
+// and night are excluded on purpose, not measured and forgotten. Their land
+// brightness is dominated by the authored low-sun wash and the campfire's
+// small lit pool respectively — genuinely dim by design, not by the "flat
+// midday needs value structure" fault this gate exists to catch (the one
+// task 121 fixed and task 125 was written to make sure a regression of it
+// gets caught). Floors set ~a third below what the game measures on the
+// pinned gauge day (morning 0.33, noon 0.29, noon-village 0.65,
+// phone-portrait 0.63, phone-landscape 0.20), the same headroom discipline
+// as the valueStops floor.
 const POSES = [
-  { name: 'morning', s: 265, day: 0.42, viewport: [1600, 900], minHue: 0.1 },
-  { name: 'noon', s: 620, day: 0.55, viewport: [1600, 900], minHue: 0.15 },
+  { name: 'morning', s: 265, day: 0.42, viewport: [1600, 900], minHue: 0.1, minLandP90: 0.22 },
+  { name: 'noon', s: 620, day: 0.55, viewport: [1600, 900], minHue: 0.15, minLandP90: 0.19 },
   // The true finding under task 182's false alarm: a village noon really is
   // the flattest frame family the game draws — bright walls over bright
   // ground with no dark anchor in frame (p10 ~0.17 linear where forest sits
@@ -127,12 +142,21 @@ const POSES = [
     viewport: [1600, 900],
     minHue: 0.15,
     minStops: 1.6,
+    minLandP90: 0.45,
     gaugeDay: '2026-08-01',
   },
   { name: 'golden', s: 900, day: 0.8, viewport: [1600, 900] },
   { name: 'night', s: 1400, day: 0.95, viewport: [1600, 900] },
-  { name: 'phone-portrait', s: 420, day: 0.5, viewport: [390, 844], minHue: 0.1, minStops: 1.6 },
-  { name: 'phone-landscape', s: 900, day: 0.82, viewport: [844, 390] },
+  {
+    name: 'phone-portrait',
+    s: 420,
+    day: 0.5,
+    viewport: [390, 844],
+    minHue: 0.1,
+    minStops: 1.6,
+    minLandP90: 0.42,
+  },
+  { name: 'phone-landscape', s: 900, day: 0.82, viewport: [844, 390], minLandP90: 0.13 },
 ];
 
 /**
@@ -160,7 +184,10 @@ const browser = await launch();
 const problems = [];
 const rows = [];
 
-/** Runs in the page: render, read the framebuffer back, reduce to three numbers. */
+/**
+ * Runs in the page: render, read the framebuffer back, reduce to four
+ * numbers (plus a fifth, land-masked one — see below).
+ */
 function analyse() {
   const handle = window.bard;
   const app = handle?.app;
@@ -240,12 +267,88 @@ function analyse() {
   let modal = 0;
   for (const count of buckets.values()) modal = Math.max(modal, count);
 
+  // Land-masked p90 (task 125). The whole-frame p90 above is dominated by
+  // sky (40-90% of every pose here — see the header), so a wave that
+  // darkens the near ground while doing nothing for the land passes the
+  // stops floor as long as SOMETHING moved. This asks the more honest
+  // question directly: is the land itself still bright enough up top.
+  //
+  // Same technique `land-histogram.mjs` (task 122) built and proved: hide
+  // the sky dome (named 'sky' — src/three/sky.ts), paint the clear colour
+  // a sentinel nothing painted would produce, then classify every
+  // non-sentinel pixel as land. The sentinel is calibrated LIVE rather than
+  // assumed as pure magenta — `tools/README.md`'s land-histogram.mjs
+  // sentinel-bug note is the reason why: task 168's finishing pass (ACES
+  // tonemap + 3D LUT) moves pure magenta clear to roughly (253, 40, 240),
+  // and a hardcoded target silently measured land+sky together for two
+  // tasks' worth of runs before that was caught.
+  let landP90 = null;
+  const sky = [];
+  stage.scene.traverse((obj) => {
+    if (obj.name === 'sky') sky.push(obj);
+  });
+  if (sky.length > 0) {
+    const skyWasVisible = sky.map((obj) => obj.visible);
+    for (const obj of sky) obj.visible = false;
+
+    const priorClear = { hex: 0x000000 };
+    app.renderer.getClearColor({
+      copy(realColor) {
+        priorClear.hex = realColor.getHex();
+        return this;
+      },
+    });
+    const priorAlpha = app.renderer.getClearAlpha();
+    app.renderer.setClearColor(0xff00ff, 1);
+
+    const sceneWasVisible = stage.scene.visible;
+    stage.scene.visible = false;
+    app.renderFrame(stage.scene, stage.camera);
+    const calib = new Uint8Array(4);
+    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, calib);
+    stage.scene.visible = sceneWasVisible;
+    const sentinelR = calib[0];
+    const sentinelG = calib[1];
+    const sentinelB = calib[2];
+    const TOLERANCE = 24;
+    const isSentinel = (r, g, b) =>
+      Math.abs(r - sentinelR) <= TOLERANCE &&
+      Math.abs(g - sentinelG) <= TOLERANCE &&
+      Math.abs(b - sentinelB) <= TOLERANCE;
+
+    try {
+      app.renderFrame(stage.scene, stage.camera);
+      const lpx = new Uint8Array(w * h * 4);
+      gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, lpx);
+
+      const landLums = [];
+      for (let i = 0; i < lpx.length; i += step) {
+        const r = lpx[i];
+        const g = lpx[i + 1];
+        const b = lpx[i + 2];
+        if (isSentinel(r, g, b)) continue;
+        landLums.push(0.2126 * toLinear(r / 255) + 0.7152 * toLinear(g / 255) + 0.0722 * toLinear(b / 255));
+      }
+      if (landLums.length > 0) {
+        landLums.sort((a, b2) => a - b2);
+        landP90 = landLums[Math.min(landLums.length - 1, Math.max(0, Math.floor(landLums.length * 0.9)))];
+      }
+    } finally {
+      // Runs whether the measurement above succeeded or threw — must not
+      // leave the game looking broken for whatever this page does next.
+      app.renderer.setClearColor(priorClear.hex, priorAlpha);
+      for (let i = 0; i < sky.length; i++) sky[i].visible = skyWasVisible[i];
+      app.renderFrame(stage.scene, stage.camera);
+    }
+  }
+
   return {
     valueStops: Math.round(valueStops * 100) / 100,
     hueSpread: Math.round(hueSpread * 1000) / 1000,
     modalShare: Math.round((modal / counted) * 1000) / 1000,
     p10: Math.round(p10 * 10000) / 10000,
     p90: Math.round(p90 * 10000) / 10000,
+    landP90: landP90 === null ? null : Math.round(landP90 * 10000) / 10000,
   };
 }
 
@@ -320,15 +423,24 @@ for (const pose of POSES) {
         `(ceiling ${Math.round(MODAL_SHARE_CEILING * 100)}%)`,
     );
   }
+  if (pose.minLandP90 !== undefined) {
+    if (stats.landP90 === null) {
+      problems.push(`${pose.name}: land-masked p90 unavailable — no 'sky' object found to mask`);
+    } else if (stats.landP90 < pose.minLandP90) {
+      problems.push(
+        `${pose.name}: land dark — land-masked p90 ${stats.landP90} (floor ${pose.minLandP90})`,
+      );
+    }
+  }
 }
 
 const pad = (s, n) => String(s).padEnd(n);
 console.log(
-  `${pad('pose', 17)}${pad('stops', 8)}${pad('hueSpread', 11)}${pad('modalShare', 12)}${pad('p10', 9)}p90`,
+  `${pad('pose', 17)}${pad('stops', 8)}${pad('hueSpread', 11)}${pad('modalShare', 12)}${pad('p10', 9)}${pad('p90', 9)}landP90`,
 );
 for (const r of rows) {
   console.log(
-    `${pad(r.name, 17)}${pad(r.valueStops, 8)}${pad(r.hueSpread, 11)}${pad(r.modalShare, 12)}${pad(r.p10, 9)}${r.p90}`,
+    `${pad(r.name, 17)}${pad(r.valueStops, 8)}${pad(r.hueSpread, 11)}${pad(r.modalShare, 12)}${pad(r.p10, 9)}${pad(r.p90, 9)}${r.landP90 ?? 'n/a'}`,
   );
 }
 
