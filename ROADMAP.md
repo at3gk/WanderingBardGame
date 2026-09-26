@@ -1143,7 +1143,7 @@ know."* DESIGN.md's rewritten Pedagogy section is the contract.
     frame gap out of the learning model. Insurance for stalling devices, not
     a fix for an observed bug — rotation peaks at a 50ms gap against a
     180ms window.
-60. **Fourth forest song — blocked on network, not on design.** The forest
+60. ~~**Fourth forest song — blocked on network, not on design.**~~ The forest
     set has three songs where village and riverside have four. The
     candidate is researched and ready: **Here We Go Round the Mulberry
     Bush** — traditional (1700s, clearly public domain), degrees 1/2/3/5/6/7
@@ -2128,7 +2128,7 @@ arc gives the game its destination; the v0.9 retention queue and wave-5
 visual queue below interleave with it (151 and 159 are the same campfire
 scene — build once).
 
-158. **The journey ledger.** Journey state gains the pilgrimage: legs
+158. ~~**The journey ledger.**~~ Journey state gains the pilgrimage: legs
     walked (campfires) toward the festival at 12-15; hybrid pacing — the
     calendar day's first leg is the shared daily road, further legs are
     moonlit roads (seeded day+leg, deterministic). Pure core logic +
@@ -2154,7 +2154,7 @@ scene — build once).
     road.ts:76 trap). 1033 tests green (+16). Next up: the campfire
     scene (159/162) is where `startNextLeg` and the moonlit road build
     (`generateRoad(legSeed(k,n), legRoadKey(k,n))`) get wired.
-159. **The first-campfire promise.** The journal opens, the festival is
+159. ~~**The first-campfire promise.**~~ The journal opens, the festival is
     named, tomorrow's road silhouette glows (merge with task 151),
     rehearsal is introduced. The single most important scene in the game;
     success metric in DESIGN. (Campfire.ts, journal, Hud.)
@@ -2225,7 +2225,7 @@ scene — build once).
     clear of fire and bard). Harness lesson: Playwright's isVisible
     counts an opacity-0 fade-out as visible — assert computed opacity.
     1094 tests green (+7), build 863.74 kB.
-160. **By-heart on the road.** A well-carried song's note heads fade to
+160. ~~**By-heart on the road.**~~ A well-carried song's note heads fade to
     ghosts then to a clean staff; a recall stumble gently returns them.
     Extends the scaffold's fade machinery one level up (letters, then
     heads); same safety rule — fade the prompt, never the answer, and
@@ -2298,7 +2298,7 @@ scene — build once).
     question a 5-9-year-old's fingers should settle, not a scheduled
     run). Arc-sized and design-sensitive; split before attempting, and
     consider asking the human about the input model first.
-162. **Campfire rehearsal.** Each campfire offers one attempt at the
+162. ~~**Campfire rehearsal.**~~ Each campfire offers one attempt at the
     carried song without notes — no-fail, notes return on a stumble, the
     journal writes it warmly either way. (Campfire/RoadStage + core.)
     **Done (2026-08-01, overnight session).** The fire's asking rides
@@ -2325,7 +2325,7 @@ scene — build once).
     camera: the ribbon lies over the road behind this framing —
     fine while the staff is clean, worth a look when ink returns
     (human playtest note in STATE).
-163. **The festival.** Arrival scene at journey's end: the bard performs
+163. ~~**The festival.**~~ Arrival scene at journey's end: the bard performs
     the by-heart book to the festival crowd; warm payoff; then the
     choice — Book Two's invitation (showing a real sharp sign and what
     it would teach), free revisiting, or walking on. (New scene + core.)
@@ -2383,7 +2383,7 @@ scene — build once).
     worker caches index.html on the preview server — unregister
     between rebuilds in verification sessions or a stale bundle
     white-screens.
-164. **The title card.** One warm card for returning players: "Continue
+164. ~~**The title card.**~~ One warm card for returning players: "Continue
     the journey" (default, one tap) / "The songbook". New players skip
     straight to the road. Playable-in-5s holds. (main/App/Hud.)
     **Done (2026-08-01, overnight session).** `Hud.showTitleCard`: a
@@ -2400,7 +2400,7 @@ scene — build once).
     tap-anywhere dismisses, songbook door opens the book; frame read
     by eye. 1077 tests green (unchanged — DOM layer, no unit precedent),
     build 838.95 kB.
-165. **Book Two: true keys.** The accidentals volume — real key
+165. ~~**Book Two: true keys.**~~ The accidentals volume — real key
     signatures, sharps/flats correctly engraved and exactly sounded.
     Engine is chromatically exact already; notation needs accidental
     glyphs; songbook needs volume structure. Arc. (notation, songs,

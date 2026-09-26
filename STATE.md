@@ -1,15 +1,17 @@
 # STATE
 
-Run counter: 214 — task 125: `tools/frame-quality.mjs` measured only
-whole-frame p90, so a wave that darkened the near ground while
-brightening nothing else could still pass the stops floor as long as
-SOMETHING in the frame moved. Wired a land-masked p90 floor into the
-gate, reusing `land-histogram.mjs`'s (task 122) already-proven
-sky-masking technique, on the five plain-daylight poses (golden/night
-excluded on purpose — their land is dim by authored design, not by the
-fault this gate catches).
-Not due for consolidation (last was 205; next due ~215). See the
-run-214 HANDOFF below for the full account.
+Run counter: 215 — CONSOLIDATION. Drift check clean over runs 206-214.
+Fixed a real bug in the roadmap's own "done" signal: task 60 and the
+whole v1.0 festival arc except 161 (tasks 158/159/160/162/163/164/165)
+had each reached their own completion sentence but were never struck
+through, so "unstruck = open" was lying about ~8 tasks; task 161 (a
+genuine open premise-gap) is now correctly logged under Blocked on
+human instead. Reframed `docs/research/art-quality.md`'s stale opening
+score as explicitly stale rather than current. Compressed the
+run-206-214 HANDOFF blocks. Both standing blockers (WebFetch egress,
+GitHub MCP tag/release write) re-tested, unchanged.
+Next consolidation due ~225. See the run-215 HANDOFF below for the
+full account.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -217,278 +219,89 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
-- **HANDOFF, 2026-09-26 (run 214).** Re-checked the two cheap blockers
-  first, same pattern as runs 211-213: `WebFetch` against
-  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
-  tool list still carries no tag- or release-write call — neither moved.
-  Idea backlog still empty and every task through 214 closed, so surveyed
-  ROADMAP.md's older, still-open task numbers directly (the ones runs
-  115-214 have been quietly reclaiming one at a time — see e.g. runs 45/
-  47/48/50 closing tasks 115-121) rather than dispatching another Explore
-  agent, since a candidate was already visible: **task 125**, "the gate
-  rewards darkening and should not." `tools/frame-quality.mjs` floors
-  whole-frame `valueStops` (p90/p10 over sky+land together), so a change
-  that widens that ratio by darkening the near ground — while doing
-  nothing for the land itself — still passes, exactly the failure mode
-  task 121's own note flagged when it raised ground albedo by hand. Task
-  122 had already built and proved the fix's core technique in
-  `land-histogram.mjs` (hide the sky dome named `'sky'`, paint the clear
-  colour a sentinel, calibrate it LIVE rather than assuming pure magenta —
-  its own file documents catching that exact assumption silently
-  measuring land+sky together for two tasks' worth of runs after task 168's
-  ACES/LUT finishing pass moved the literal readback colour) and left task
-  125 as "a separate decision once the numbers are trustworthy." Confirmed
-  no run had touched it since (`grep -i "task 125"` across STATE.md/
-  ROADMAP.md: nothing) and `frame-quality.mjs` still had no land-only
-  logic before this run.
-  Fixed: `analyse()` now does a second render+readback per pose using
-  task 122's exact masking technique, returning `landP90` (linear
-  luminance, land pixels only) alongside the existing whole-frame stats.
-  Added `minLandP90` floors to the five plain-daylight poses (morning
-  0.22, noon 0.19, noon-village 0.45, phone-portrait 0.42,
-  phone-landscape 0.13 — about a third under what the pinned gauge day
-  currently measures for each, same headroom discipline as the existing
-  `minStops`/`minHue` floors). Golden and night deliberately carry no
-  floor: their land is dim by the authored low-sun wash and the
-  campfire's small lit pool, the same reasoning `hueSpread`'s existing
-  golden/night exclusion uses in reverse. Updated `tools/README.md`'s
-  `frame-quality.mjs` section (new `landP90` bullet, a third "learned the
-  hard way" note) and `land-histogram.mjs`'s own header comment, which
-  had pointed at task 125 as the pending decision.
-  This session's environment started without `node_modules` (fresh
-  clone) and without a locally resolvable `playwright` (present only as
-  a global install at a different path — needed `PLAYWRIGHT_PATH` set
-  for `tools/browser.mjs` to find it; `npm test`/`npm run build` don't
-  need it). Ran `frame-quality.mjs` directly against a local `vite
-  preview` before and after wiring the floors: land p90 reads sensibly
-  below whole-frame p90 at every pose (confirms the mask is doing real
-  work, not returning the same number), and PASSes with the new floors
-  in place, small run-to-run jitter well inside the headroom (e.g.
-  morning's landP90 read 0.3323 then 0.3329 across two runs). `npm test`
-  1398 green (unchanged — no unit coverage of `tools/`, the established
-  precedent for this whole directory), `npm run build` green (939.72 kB,
-  byte-identical — this run touched no application code). No new runtime
-  dependency.
-  Live queue unchanged from run 205-213 (task 173's real-device halves,
-  wave 20, task 189's far-band lead, task 184's problem 2, the v0.1 git
-  tag — all still parked/blocked). Idea backlog still empty. Next
-  consolidation still due around run 215.
+- **HANDOFF, 2026-09-26 (run 215) — CONSOLIDATION (drift control, every
+  ~10th run; last was 205).** Drift check over runs 206-214: CLEAN — nine
+  runs, each a docs-only stale-claim fix, one dead-code deletion, or one
+  small self-originated accessibility fix; nothing became a system the
+  player manages. Re-checked the two live-testable blockers: `WebFetch`
+  against `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the
+  GitHub MCP tool list still carries no tag- or release-write call —
+  neither moved. Dispatched an Explore agent to survey ROADMAP.md's
+  numbered tasks for genuinely open work versus already-shipped tasks
+  whose title was never struck through (the `~~...~~` convention), and to
+  re-check the three `docs/research/*.md` notes against current source.
+  It found the real bug: past task ~150, "unstruck = open" stopped being
+  reliable — many tasks end in their own "TASK N COMPLETE" or "Done"
+  sentence but were never wrapped in `~~`. Verified and fixed the
+  confirmed cases this run: task 60 (fourth forest song) and the entire
+  v1.0 festival arc except 161 — tasks 158/159/160/162/163/164/165 each
+  end in their own completion sentence (165's: "the v1.0 arc stands
+  finished except 161"), now struck. Task 161 (practice mode's unguided
+  pitch-recall tier) is genuinely still open — a premise gap needing a
+  human call on the tap-input model — and is newly logged under "Blocked
+  on human" below, since it wasn't there before despite being exactly that
+  shape of blocker. Left the broader sweep (the agent flagged ~30 more
+  candidates across tasks 166-214, unverified individually) for a future
+  consolidation rather than risk mis-striking something still genuinely
+  blocked (179/184/189 are open-looking but confirmed blocked, not done) —
+  wrongly marking open work "done" is worse than leaving it unmarked.
+  Also fixed `docs/research/art-quality.md`'s opening "Honest summary"
+  paragraph, still quoting a 2026-07-31 "~5.5/10, four named gaps" score
+  as if current; it predates ~120 runs of measured work the file's own
+  "Findings from shipped work" section (and ROADMAP task 128, which wants
+  to re-derive the score against real reference frames but is blocked on
+  the same network-egress limitation) already track. Reframed as
+  explicitly stale rather than deleting it — the number is still useful
+  context for how far the pipeline has come. `mobile-friendly.md` and
+  `retention-design.md` came back clean; recent runs 198-210 already fixed
+  everything the agent could find in them. Also compressed the nine
+  individual run-206-214 HANDOFF blocks below into one paragraph, matching
+  the run-175/165/145/185/195/205 pattern — this file's own drift-control
+  debt (STATE.md line 9 said "next due ~215") for exactly this run. `npm
+  ci` (fresh clone, no `node_modules`) then `npm test`: 1398 green
+  (unchanged — nothing here touched app or test code). `npm run build`:
+  green, 939.72 kB (byte-identical to run 214's number — docs-only
+  change). No new runtime dependency. Live queue unchanged from run 214
+  (task 173's real-device halves, wave 20, task 189's far-band lead, task
+  184's problem 2, the v0.1 git tag, plus the newly-logged task 161 — all
+  parked/blocked). Idea backlog still empty; the broader ROADMAP
+  strikethrough sweep is the one concrete lead for whichever run picks up
+  next if nothing else is queued. Next consolidation due around run 225.
 
-- **HANDOFF, 2026-09-25 (run 213).** Re-checked the two cheap blockers
-  first, same pattern as runs 211-212: `WebFetch` against
-  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
-  tool list still carries no tag- or release-write call — neither moved.
-  Idea backlog still empty and every numbered task through 213 closed, so
-  dispatched an Explore agent to survey for a fresh doc/code gap outside
-  the territory runs 195-212 already mined (it was handed the full list
-  of what those runs fixed, to avoid duplicating). It found
-  `tools/shader-check.mjs` reads an `outPrefix` CLI argument
-  (`process.argv[2] ?? 'shader-check'`, `tools/shader-check.mjs:35`) used
-  to name its four per-sample screenshots (`${outPrefix}-${label}.png` at
-  line 70), but `tools/README.md`'s `shader-check.mjs` section — heading
-  and prose both — never mentioned it, unlike the sibling sections for
-  `postcard.mjs [outDir] [only]`, `shadowcast.mjs [outDir]` and
-  `skylight-sat.mjs [outDir]` a little further down the same file. Verified
-  directly against the script's source before touching the doc. Fixed as
-  task 214: heading now reads `` `shader-check.mjs [outPrefix]` ``, plus
-  one sentence describing the default and what it renames. Docs-only
-  change, no application or tool code touched. This session's `npm test`
-  ran cold (fresh clone, `npm ci` first) and came back 1398 green, matching
-  run 212's count; `npm run build` green (939.72 kB, byte-identical to run
-  212's number, as expected for a docs-only change). No new runtime
-  dependency. Live queue unchanged from run 205-212 (task 173's
-  real-device halves, wave 20, task 189's far-band lead, task 184's
-  problem 2, the v0.1 git tag — all still parked/blocked). Idea backlog
-  still empty. Next consolidation still due around run 215.
-
-- **HANDOFF, 2026-09-25 (run 212).** Re-checked the two cheap blockers
-  first, per run 211's own pattern: `WebFetch` against `en.wikipedia.org`
-  still returns `EGRESS_BLOCKED`, and the GitHub MCP tool list still
-  carries no tag- or release-write call — neither moved. Idea backlog
-  still empty and every numbered task through 212 is closed, so
-  dispatched an Explore agent to survey for a fresh doc/code gap outside
-  the territory runs 195-211 already mined. It found `tools/README.md`'s
-  `skylight-sat.mjs` section (built run 183) documenting the script with
-  a bare heading and no mention of its `outDir` argument, even though
-  `tools/skylight-sat.mjs:106`/`306-307` reads and uses `outDir` to save
-  a frozen screenshot per pose — the exact same capability
-  `shadowcast.mjs`'s own section documents in both its heading
-  (`[outDir]`) and a sentence of prose. Verified directly against the
-  script's source before touching the doc, and confirmed via `git log`
-  that none of the recent tools/README.md fixes (runs 200, 201, 207)
-  touched this section. Fixed as task 213: heading now reads
-  `` `skylight-sat.mjs [outDir]` ``, plus one sentence mirroring
-  `shadowcast.mjs`'s phrasing. Docs-only change, no application or tool
-  code touched. `npm test` 1398 green (unchanged), `npm run build` green
-  (939.72 kB, byte-identical to run 211's number). No new runtime
-  dependency. Live queue unchanged from run 205-211 (task 173's
-  real-device halves, wave 20, task 189's far-band lead, task 184's
-  problem 2, the v0.1 git tag — all still parked/blocked). Idea backlog
-  still empty. Next consolidation still due around run 215.
-
-- **HANDOFF, 2026-09-25 (run 211).** Picked up the one open thread run
-  210's own handoff flagged rather than dispatching a fresh Explore
-  survey: whether `src/core/biome.ts`'s `Biome` interface is genuinely
-  dead weight, since only three `src/audio/*.test.ts` files import the
-  module at all. Checked properly this time — an initial pass (grepping
-  only for `core/biome`/`core\.biome`) wrongly concluded the *whole*
-  module was unreferenced and got as far as deleting it before `npm test`
-  caught the mistake: `src/core/road.ts:43` imports `BIOMES` via the
-  bare relative `from './biome'`, which that grep pattern doesn't match,
-  and `road.ts` is very much live (it's what picks how many biome bands a
-  run gets and which id each one carries). Restored the file and
-  re-investigated field-by-field instead of module-by-module. The real
-  finding, once separated: `road.ts`, `road.test.ts`, `encounters.test.ts`
-  and the three audio tests all genuinely use `Biome.id` and `BIOMES`'s
-  length — that part is load-bearing. But `Biome.name` and its four
-  colour fields (`skyColor`, `roadBandColor`, `roadDashColor`,
-  `sceneryColor`, `sceneryAccent`) have zero consumers anywhere outside
-  `biome.ts` itself (grepped each field name individually across `src/`),
-  and so do `BiomeTransition`, `BIOME_TRANSITIONS`, `BiomeBlend`, and
-  `biomeBlendAt`/`signpostDistanceAt` — a whole Phaser-era crossfade
-  system nothing calls, confirmed by grepping each export name on its
-  own. `src/three/world/palette.ts`'s own header comment already said as
-  much for the colour fields specifically ("they are still correct for
-  what they do... but unusable as world colours") — the crossfade
-  functions were the same shape of leftover, just not the part task 211
-  happened to be looking at. Fixed as task 212: trimmed `Biome` to
-  `{ id: string }`, trimmed each `BIOMES` entry to match, deleted the
-  transition/blend/signpost machinery entirely, and deleted
-  `src/core/biome.test.ts` (all 17 of its tests exercised exactly the
-  functions just removed — nothing salvageable). Updated the two stale
-  pointers this left behind: `palette.ts`'s header comment (past tense,
-  credits the run-211 handoff) and `PLAYTEST.md`'s "Stronger palettes"
-  citation (now `src/three/world/palette.ts`, where biome colour actually
-  lives). Left `ambience.ts:44`'s "mirrors `core/biome.ts`'s ids" comment
-  alone — still true, the id list didn't move. `npm test` 1398 green
-  (1415 minus the 17 deleted tests, nothing else moved), `npm run build`
-  green (939.72 kB vs run 210's 940.09 kB — the deleted dead code's own
-  small weight). No new runtime dependency. Worth naming for whichever
-  run reads this next: the failure mode here was trusting a grep pattern
-  scoped to how a file is imported *from other directories* when the
-  actual risk was a same-directory `from './biome'` import — a future
-  "is X dead" check should grep the export names themselves, not just
-  the module path, exactly as this run ended up doing. Live queue
-  unchanged from run 205-210 (task 173's real-device halves, wave 20,
-  task 189's far-band lead, task 184's problem 2, the v0.1 git tag — all
-  still parked/blocked). Idea backlog still empty. Next consolidation
-  still due around run 215.
-
-- **HANDOFF, 2026-09-24 (run 210).** Re-checked the two cheap blockers
-  first, per run 209's own handoff: `WebFetch` against
-  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
-  tool list still carries no tag- or release-write call — neither moved.
-  Idea backlog still empty (confirmed — every entry in ROADMAP.md's
-  backlog section is struck), and every numbered task through 194 is
-  closed, so dispatched an Explore agent to survey for a fresh doc/code
-  gap outside the territory runs 195-209 already mined. It found
-  `PLAYTEST.md` pointing six still-open (unchecked) checklist items —
-  spread across Round 2, Round 3, and Round 5 — at `src/scenes/
-  RoadScene.ts`, a file that does not exist anywhere in the tree (deleted
-  at the v0.6 Three.js migration, 2026-07-28). Verified directly: one
-  named constant (`HIT_WINDOW_MS`) is real but lives in
-  `src/core/beats.ts`; the other five (`STAR_PARALLAX`,
-  `BARD_STRUM_KICK_DEG`, `BARD_STRUM_MS`, `METER_STAFF_LINE_COLOR`/
-  `_ALPHA`, `NOTE_LETTER_STYLE`) do not exist anywhere in `src/` under
-  those names post-rewrite. Fixed as task 211 — full account in
-  ROADMAP.md's own task 211 entry, not repeated here. Worth flagging
-  here specifically since it's a genuine open thread, not just doc
-  cleanup: while grepping the tree clean of `RoadScene` this run, found
-  `src/core/biome.ts`'s `Biome` interface (`sceneryColor`,
-  `sceneryAccent`, `skyColor`, `roadBandColor`) has no consumer anywhere
-  in `src/` outside the module itself — only three `src/audio/*.test.ts`
-  files import it at all. Plausibly Phaser-era dead weight superseded by
-  `src/three/world/palette.ts`'s per-biome colors in the Three.js world,
-  but not confirmed and not touched beyond the one stale comment
-  crediting it to `RoadScene` — a future run should check whether the
-  audio tests actually need live gameplay data from it or are exercising
-  dead data before deciding whether to delete anything.
-  `npm test` 1415 green (unchanged), `npm run build` green (940.09 kB,
-  byte-identical to run 209's number — none of this run's changes are
-  application code). No new runtime dependency. Live queue unchanged
-  from run 205-209 (task 173's real-device halves, wave 20, task 189's
-  far-band lead, task 184's problem 2, the v0.1 git tag — all still
-  parked/blocked), plus the new `Biome` dead-weight question above as a
-  cheap thing a future run could check first. Next consolidation still
-  due around run 215.
-
-- **HANDOFF, 2026-09-24 (run 208).** Re-checked the two cheap blockers
-  first, per run 207's own handoff: `WebFetch` against
-  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
-  tool list still carries no tag- or release-write call — neither moved.
-  Idea backlog still empty, so dispatched an Explore agent to survey
-  `docs/research/*.md` against current source and `tools/*.mjs` against
-  `tools/README.md` for a fresh gap; every item recent runs (197-208)
-  already checked came back clean, but it found one genuine miss:
-  `docs/research/mobile-friendly.md`'s "Notch / safe areas" findings
-  bullet (section 2) still read "index.html currently has neither"
-  `viewport-fit=cover` nor `env(safe-area-inset-*)` support — the same
-  stale claim run 198 (task 200) already fixed once, but only in this
-  file's opening Honest Summary paragraph; a second, near-identical copy
-  lower down in the Findings section's own bullet list was missed.
-  Verified directly against `index.html:10` (`viewport-fit=cover` is
-  present, with an explanatory comment at lines 5-9) and
-  `src/ui/Hud.ts:312-325` (the zero-sized probe element reading all four
-  `env(safe-area-inset-*)` values) before touching the doc. Fixed as
-  task 209: one bullet rewritten to state the feature is shipped,
-  matching the Honest Summary's tone/citations. `npm test` 1415 green
-  (unchanged), `npm run build` green (940.09 kB, byte-identical to run
-  207's number — a research doc isn't part of the bundle). No new
-  runtime dependency. Live queue unchanged from run 205/206/207 (task
-  173's real-device halves, wave 20, task 189's far-band lead, task
-  184's problem 2, the v0.1 git tag — all still parked/blocked). Next
-  consolidation still due around run 215.
-
-- **HANDOFF, 2026-09-23 (run 207).** Re-checked the two cheap blockers
-  first, per run 206's own handoff: `WebFetch` against
-  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
-  tool list still carries no tag- or release-write call — neither moved.
-  Idea backlog still empty, so dispatched an Explore agent to survey
-  `src/ui/*.ts`, `tools/`, and doc-vs-source consistency for a fresh gap;
-  it reported the accessibility arc is now thorough across every overlay
-  (Escape/Enter/Space, aria attributes, tabIndex all present and
-  consistent), but found a genuine doc gap instead: five `tools/*.mjs`
-  scripts accept an `only` pose-filter (`process.argv[2]`), and
-  `tools/README.md` surfaced it in only two of five section headings
-  (`frame-quality.mjs [only]`, `postcard.mjs [outDir] [only]`,
-  `far-band-objects.mjs [only]` — three headings already had it; the
-  three missing it were `figground.mjs`, `fog-hue-band.mjs`, and
-  `land-histogram.mjs`, the last of which has no section heading of its
-  own at all). Verified each script's own `process.argv[2]` line directly
-  before touching the doc (and confirmed `figground-partition.mjs`
-  genuinely has no such filter, so left it undocumented on purpose).
-  Fixed as task 208: two heading edits plus three short prose notes,
-  docs-only. `npm test` 1415 green (unchanged), `npm run build` green
-  (940.09 kB, byte-identical to run 206 — a tools README isn't part of
-  the bundle). No new runtime dependency. Live queue unchanged from run
-  205/206 (task 173's real-device halves, wave 20, task 189's far-band
-  lead, task 184's problem 2, the v0.1 git tag — all still
-  parked/blocked). Next consolidation still due around run 215.
-
-- **HANDOFF, 2026-09-23 (run 206).** Re-checked the two cheap blockers
-  first, per run 205's own handoff: `WebFetch` against
-  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
-  tool list still carries no tag- or release-write call (only the
-  read-only `get_tag`/`get_release_by_tag`/`get_latest_release`/
-  `list_tags` quartet) — neither moved. Idea backlog still empty per
-  run 205, so dispatched an Explore agent to survey `src/ui/*.ts`,
-  `tools/`, and doc-vs-source consistency for a fresh gap; it found one:
-  `freePlayScreen.ts` was the one full-screen DOM overlay task 195/197/198's
-  Escape-to-dismiss convention never reached — every control inside it had
-  Enter/Space activation (task 197) but no `keydown` handler anywhere
-  except `nameInput`'s `Enter`. Fixed as task 207: one `keydown` listener
-  on `this.root`, matching `Hud.ts`'s veil shape, routed on `this.naming`
-  (cancels naming and resumes the take, matching the Cancel button, or
-  closes the screen entirely). `npm test` 1415 green, `npm run build`
-  green (940.09 kB vs 939.94 kB). No new runtime dependency.
-  Live-verified with a throwaway Playwright harness (not committed)
-  against the Vite dev server, mounting `FreePlayScreen` directly: Escape
-  idle closes the screen; Escape while naming cancels the dialog only,
-  take intact, screen stays open. See ROADMAP task 207 for the full
-  verification steps. Live queue unchanged from run 205 (task 173's
-  real-device halves, wave 20, task 189's far-band lead, task 184's
-  problem 2, the v0.1 git tag — all still parked/blocked). Next
-  consolidation still due around run 215.
+- **HANDOFF, 2026-09-23 through 2026-09-26 (runs 206-214, compressed by
+  the run-215 consolidation)** — nine runs, each re-checking the same
+  live-queue threads (task 173's real-device halves, wave 20, task 189's
+  far-band lead, task 184's problem 2, the v0.1 git tag — all unchanged
+  throughout) before falling back to a docs-only fix or one small
+  self-contained task, since the idea backlog was empty entering every one
+  of them. Run 206 self-originated task 207: `freePlayScreen.ts` was the
+  one full-screen DOM overlay missing the Escape-to-dismiss convention
+  tasks 195/197/198 gave the others — live-verified with a throwaway
+  Playwright harness. Run 207 documented the `only` pose-filter argument
+  missing from three of five `tools/*.mjs` README sections (task 208); run
+  208 fixed `mobile-friendly.md`'s duplicated stale safe-area claim, the
+  same one run 198 had already fixed once in a different paragraph of the
+  same file (task 209); run 209 fixed CLAUDE.md's stale "Phaser 3" stack
+  claim, five runs after run 44's Three.js migration, missed when run 44
+  fixed the same claim everywhere else (task 210); run 210 fixed
+  `PLAYTEST.md`'s six checklist items pointing at `src/scenes/
+  RoadScene.ts`, deleted since the v0.6 rewrite, and flagged
+  `src/core/biome.ts`'s `Biome` interface as possibly dead weight without
+  confirming it (task 211); run 211 confirmed and deleted the genuinely
+  dead half of `biome.ts` (the colour fields and the whole Phaser-era
+  crossfade system), after an initial over-broad grep wrongly deleted the
+  whole module first and `npm test` caught it — restored, then
+  re-investigated field-by-field (task 212); run 212 documented
+  `skylight-sat.mjs`'s missing `outDir` argument in `tools/README.md`
+  (task 213); run 213 documented `shader-check.mjs`'s missing `outPrefix`
+  argument the same way (task 214); run 214 wired a land-masked p90 floor
+  into `frame-quality.mjs` so a wave darkening only the near ground can no
+  longer pass the whole-frame stops gate, reusing task 122's sky-masking
+  technique (task 125, the oldest still-open numbered task closed this
+  span). All nine runs kept `npm test` green throughout (1415 → 1398 after
+  run 211's dead-code deletion) and `npm run build` green (939.94-940.09
+  kB, byte-identical except run 206's own +0.15 kB DOM-wiring delta and
+  run 211's -0.37 kB deletion), and added no runtime dependency.
 
 - **HANDOFF, 2026-09-23 (run 205) — CONSOLIDATION (drift control, every
   ~10th run; last was 195).** Drift check over runs 196-204: CLEAN — nine
@@ -4945,6 +4758,19 @@ still needs a human:
   protocol is written for exactly that.
 
 ## Blocked on human
+- **Task 161's premise gap: practice mode's unguided pitch-recall tier
+  needs a tap-input model a scheduled run shouldn't pick alone** (found
+  2026-08-01, confirmed still open at run 215). `core/freePlay.ts`'s
+  scaffold logic exists and is tested, but has zero live consumers — the
+  practice UI died in run 44's 2D→3D rewrite and was never rebuilt. What's
+  missing isn't code, it's a design call: the unguided tier needs a
+  position-CHOOSING input (tap-on-staff-line regions? something else?)
+  that the walk's tap-anywhere-in-time model doesn't need, and that's an
+  input-design question a 5-9-year-old's fingers should settle, not a
+  scheduled run guessing. This is the v1.0 arc's one open piece — 158/159/
+  160/162/163/164/165 are all otherwise shipped and now marked done in
+  ROADMAP.md (they were, but the strikethrough was missing — fixed by this
+  run's consolidation pass, no behaviour changed).
 - **Task 184's "problem 2": trade near-barline legibility for the
   in-runway note-head overlap, yes or no — or attempt the engraving-offset
   lever instead, without a human to feel whether the taper reads right**
