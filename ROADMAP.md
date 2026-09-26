@@ -2520,7 +2520,7 @@ knows the tune) is BEST satisfied by a song the family chose themselves.
 All content stays local (localStorage; the CC0 rule governs what the game
 ships, not what a player brings). Sequenced after the v1.0 festival arc.
 
-176. **The song maker.** Practice mode already lets a child point at
+176. ~~**The song maker.**~~ Practice mode already lets a child point at
     staff positions and hear them; let them SAVE what they tap as a
     named song and walk the road with it. Zero parsing, existing
     surface, and composing is itself pedagogy. (freePlay + songChoice +
@@ -2747,7 +2747,7 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     `npm test` 1283 green (+3), `npm run build` green (913 KB,
     unchanged — the two touched files were already in the bundle). No
     new runtime dependency.
-177. **MIDI import.** Dependency-free parser (the format is simple);
+177. ~~**MIDI import.**~~ Dependency-free parser (the format is simple);
     melody extraction (single track direct, polyphonic via top-note
     skyline); quantize to the songbook's note values; auto-transpose
     into staff range; validate through the SAME engraving tests the
@@ -3009,7 +3009,7 @@ ships, not what a player brings). Sequenced after the v1.0 festival arc.
     Task 177 is now fully done: parse, extract, quantize, transpose,
     validate, and — as of this piece — actually reachable by a family
     from the songbook itself.
-178. **MusicXML import.** Second format, richer (it is already
+178. ~~**MusicXML import.**~~ Second format, richer (it is already
     notation); reuses 177's validation path.
     **Piece 1 done (2026-09-07, run 158): the parser, straight to a
     melody.** `src/core/musicxml.ts` — a dependency-free XML tree reader
@@ -3304,7 +3304,7 @@ interviews) — read it before taking any task; its not-recommended list
     scenes untouched, road clear. frame-quality all poses PASS (noon
     3.86 stops). 1209 tests (+9). Remaining 167: a projection-level
     per-mood anchor audit only if wave 10 asks for it.
-168. **The finishing pass.** Render to target at ~0.8 scale + a
+168. ~~**The finishing pass.**~~ Render to target at ~0.8 scale + a
     CODE-GENERATED 3D-LUT grade (Data3DTexture built at boot — no image
     asset, no constraint exception). A Short Hike's unifier translated
     to painterly: forgives close-range crudeness, can be net-cheaper on
@@ -3340,7 +3340,7 @@ interviews) — read it before taking any task; its not-recommended list
     forcing completion via readPixels showed the direct path costing
     3.5 s/frame, so no SwiftShader ratio of RT-vs-canvas cost is ever
     actionable. 1221 tests (+12), build green.
-169. **Terrain as the hero surface.** Journey's lesson restated for this
+169. ~~**Terrain as the hero surface.**~~ Journey's lesson restated for this
     game: broad PLANNED shadow masses (task 144's remake), winner-take-
     all ground-material edges (adamgryu's splat trick — kills the soft
     road edge, task 143), clustered ground-cover patches inheriting
@@ -3358,7 +3358,7 @@ interviews) — read it before taking any task; its not-recommended list
     view, its colour shows no real spatial banding beyond ordinary
     variance). Nothing left blocking this task's closure; docs-only, no
     code changed here.
-170. **Bake vertex AO at generation time** on props and the bard — the
+170. ~~**Bake vertex AO at generation time**~~ on props and the bard — the
     strongest "crafted" signal at close range; precomputed into vertex
     colours, no UVs, feeds the existing lighting model. (geometry.ts
     builders + actors.)
@@ -3755,7 +3755,7 @@ interviews) — read it before taking any task; its not-recommended list
     standing threads; consolidation (165 was the last one) is not yet due
     (166 is 1 run past 165, next due around 175).
 
-190. **The scatter lower-left design question** (idea backlog, run 136's
+190. ~~**The scatter lower-left design question**~~ (idea backlog, run 136's
     `tools/scatter-probe.mjs` finding — a vista frame can show a screen
     quadrant with only thin ground cover, no rock/shrub/log to anchor it,
     because those three kinds have no cross-side placement guarantee at all,
@@ -3865,7 +3865,7 @@ interviews) — read it before taking any task; its not-recommended list
     still network-blocked (not re-tested this run — nothing about the
     block has changed since run 167's retest).
 
-191. **Solfège (do-re-mi) syllable option** (idea backlog; DESIGN.md's
+191. ~~**Solfège (do-re-mi) syllable option**~~ (idea backlog; DESIGN.md's
     "Considered and rejected" note: "worth considering later as a locale
     option; letters first, they're what beginner books here use"). Promoted
     off the backlog — it was the one remaining live entry there, and both
@@ -4105,7 +4105,7 @@ save system's protection on iPad. Store distribution (Play TWA $25,
 Apple $99/yr + Mac + review risk) is a SEPARATE human-gated track — the
 iPad household needs none of it; logged under Blocked on human.
 
-171. **PWA save-protection bundle (urgent).** Web manifest + generated
+171. ~~**PWA save-protection bundle (urgent).**~~ Web manifest + generated
     PNG icons + standalone display + `viewport-fit=cover` and safe-area
     CSS + `navigator.storage.persist()` + a diegetic save keepsake
     (export/import the journey as a small file/code — the journal page
@@ -4137,7 +4137,7 @@ iPad household needs none of it; logged under Blocked on human.
     downloaded file → storage wiped → import via the real file chooser
     → reload → journey metres restored byte-true. 1017 tests green
     (+17 keepsake), build 817.70 kB.
-172. **Precache service worker.** Offline-capable shell (the bundle is
+172. ~~**Precache service worker.**~~ Offline-capable shell (the bundle is
     one JS file + HTML); cold-load speed on flaky school wifi.
     **Done (2026-08-01, overnight session).** No plugin dependency — a
     workbox pipeline for one JS file is a lorry for a letter. A ~40-line
@@ -4444,7 +4444,7 @@ iPad household needs none of it; logged under Blocked on human.
     on a quiet pool against bright sky; 12 reads "this evening" over
     dusk. 1229 tests, build green.
 
-192. **A hand-picked quality tier.** From `docs/research/mobile-friendly.md`
+192. ~~**A hand-picked quality tier.**~~ From `docs/research/mobile-friendly.md`
     recommendation 6: task 174 already made `detectQuality()` fair to Apple
     hardware and made 'low' genuinely low (no shadow map), but the research
     also names a second half that never shipped — "add a visible,
@@ -4537,7 +4537,7 @@ iPad household needs none of it; logged under Blocked on human.
     playtest iPad can now flip tiers from the title card with no dev
     tools, which was mobile-friendly.md recommendation 6's whole ask.
 
-193. **Adopt the detail-density language.** From
+193. ~~**Adopt the detail-density language.**~~ From
     `docs/research/art-quality.md` recommendation 6: "detail signals
     importance, so the bard, instruments, notation, and stop dressing own
     the polygon and breakup-noise budget; the world simplifies with
@@ -4617,7 +4617,7 @@ iPad household needs none of it; logged under Blocked on human.
     the fog edge moving with the hour, not just the sky dome's colour.
     No new runtime dependency. Closes task 193 end to end (both halves of
     art-quality.md recommendation 6).
-194. **The skylight-ambient-saturation lever.** From
+194. ~~**The skylight-ambient-saturation lever.**~~ From
     `docs/color-script.md`'s noon section: "the skylight ambient's
     saturation at high sun (the shade-filling light is currently
     near-achromatic by the time ACES is done with it)" — named as the
@@ -5039,7 +5039,7 @@ iPad household needs none of it; logged under Blocked on human.
     next run should pull from the idea backlog or the v1.3/art-quality
     threads per the live-queue note below.
 
-196. **Respect `prefers-reduced-motion` for the Hud's decorative chrome.**
+196. ~~**Respect `prefers-reduced-motion` for the Hud's decorative chrome.**~~
     Not queued anywhere — same situation run 187 named for task 195: the
     idea backlog is empty and every standing thread (task 189's far-band
     lead, wave 20, task 173's real-device halves, task 179's residual,
@@ -5084,8 +5084,8 @@ iPad household needs none of it; logged under Blocked on human.
     few hundred bytes, nowhere near the 5 MB budget). No new runtime
     dependency.
 
-197. **Free play screen's own controls are keyboard/screen-reader
-    reachable.** Task 195 wired every interactive control it named — the
+197. ~~**Free play screen's own controls are keyboard/screen-reader
+    reachable.**~~ Task 195 wired every interactive control it named — the
     Hud corners, case/book rows, the title card's doors, `showSheet`, and
     `pageBox` — but `src/ui/freePlayScreen.ts` (the "position → sound →
     name" teaching screen task 176 built, not part of task 195's own
@@ -5137,8 +5137,8 @@ iPad household needs none of it; logged under Blocked on human.
     made). `npm run build` green (939.77 kB vs 939.28 kB — six small
     `setAttribute`/`addEventListener` call sites, no new import to weigh
     it down). No new runtime dependency.
-198. **The import-song dialog's own controls are keyboard/screen-reader
-    reachable.** Task 195 covered `Hud.ts`, task 197 covered
+198. ~~**The import-song dialog's own controls are keyboard/screen-reader
+    reachable.**~~ Task 195 covered `Hud.ts`, task 197 covered
     `freePlayScreen.ts`, but `src/ui/importSongDialog.ts` (the songbook's
     "Import a song" door, task 177/178) was never in either survey — it is
     a third, separate DOM class, not a submodule of the other two. Its
@@ -5184,7 +5184,7 @@ iPad household needs none of it; logged under Blocked on human.
     (`Hud.ts`, `freePlayScreen.ts`, `importSongDialog.ts`) now shares the
     same keyboard/screen-reader reach convention.
 
-199. **`tools/README.md` had drifted from `tools/` itself.** Not queued
+199. ~~**`tools/README.md` had drifted from `tools/` itself.**~~ Not queued
     anywhere — same situation runs 187/193/194/196 named: the idea backlog
     is empty and every standing thread (task 189's far-band lead, wave 20,
     task 173's real-device halves, task 184's problem 2) is parked or
@@ -5243,8 +5243,8 @@ iPad household needs none of it; logged under Blocked on human.
     a future candidate if `tools/` keeps growing without README upkeep
     alongside it.
 
-200. **`docs/research/mobile-friendly.md`'s "Honest summary" still said
-    `index.html` lacked `viewport-fit=cover`/safe-area handling.** Not
+200. ~~**`docs/research/mobile-friendly.md`'s "Honest summary" still said
+    `index.html` lacked `viewport-fit=cover`/safe-area handling.**~~ Not
     queued anywhere — same situation runs 187/193/194/196/197 named: the
     idea backlog is empty and every standing thread (task 189's far-band
     lead, wave 20, task 173's real-device halves, task 179's residual,
@@ -5293,8 +5293,8 @@ iPad household needs none of it; logged under Blocked on human.
     197's number — a Markdown file isn't part of the Vite bundle). No new
     runtime dependency.
 
-201. **`.github/workflows/headless-checks.yml`'s own top comment still said
-    the headless suite was down to one check, no `quick` subset.** Not
+201. ~~**`.github/workflows/headless-checks.yml`'s own top comment still said
+    the headless suite was down to one check, no `quick` subset.**~~ Not
     queued anywhere — same situation runs 187/193/194/196/197/198 named:
     the idea backlog is empty and every standing thread (task 173's two
     real-device halves, wave 20/the fourth-forest-song transcription, the
@@ -5345,8 +5345,8 @@ iPad household needs none of it; logged under Blocked on human.
     a workflow YAML file isn't part of the Vite bundle). No new runtime
     dependency.
 
-202. **`tools/README.md` had drifted from the scripts it describes, not
-    just by omission (task 199) but by accuracy.** Not queued anywhere —
+202. ~~**`tools/README.md` had drifted from the scripts it describes, not
+    just by omission (task 199) but by accuracy.**~~ Not queued anywhere —
     same situation runs 187/193/194/196/197/198/199 named: the idea backlog
     is empty and every standing thread (task 173's two real-device halves,
     wave 20/the fourth-forest-song transcription, the v0.1 git tag, task
@@ -5392,8 +5392,8 @@ iPad household needs none of it; logged under Blocked on human.
     byte-identical to run 199's number — a Markdown file isn't part of the
     Vite bundle). No new runtime dependency.
 
-203. **`tools/README.md`'s `make-icons.mjs` section claimed the PNG icons
-    carry a rounded rect they deliberately don't.** Task 202's own
+203. ~~**`tools/README.md`'s `make-icons.mjs` section claimed the PNG icons
+    carry a rounded rect they deliberately don't.**~~ Task 202's own
     done-note left this as its third, lower-confidence item — the section
     said the script "renders the favicon mark (a rounded rect and two
     concentric circles)" to the three PNG icons, needing a fresh read of
@@ -5427,10 +5427,10 @@ iPad household needs none of it; logged under Blocked on human.
     than assuming this pass caught everything, since new scripts keep
     landing.
 
-204. **`tools/verify-all.mjs`'s own header comment carried the identical
+204. ~~**`tools/verify-all.mjs`'s own header comment carried the identical
     stale "six posed frames" claim tasks 199-203's README audit already
     fixed in `tools/README.md`, in a second copy of the same sentence the
-    audit never looked at.** `tools/frame-quality.mjs`'s `POSES` array
+    audit never looked at.**~~ `tools/frame-quality.mjs`'s `POSES` array
     (line 111 onward) has seven entries — morning, noon, noon-village,
     golden, night, phone-portrait, phone-landscape — since task 182 added
     `noon-village` as its own gated pose; `verify-all.mjs`'s header
@@ -5460,11 +5460,11 @@ iPad household needs none of it; logged under Blocked on human.
     current pose count — left alone as historical record, the same as
     every other dated measurement comment in this codebase.
 
-205. **`src/core/songs.ts`'s own header comment and DESIGN.md's "The
+205. ~~**`src/core/songs.ts`'s own header comment and DESIGN.md's "The
     curriculum is the songbook" section both still described the
     songbook as three tunes, one per biome — task 45's original shape,
     never revisited across the run of tasks (48, 51, 54, 56, 60) that
-    added, swapped and grew each biome's set to four.** Not found via
+    added, swapped and grew each biome's set to four.**~~ Not found via
     the standing blocked threads —
     all four (task 173's real-device halves, wave 20, task 189's
     far-band lead, task 184's problem 2) were re-checked this run and
@@ -5524,13 +5524,13 @@ iPad household needs none of it; logged under Blocked on human.
     byte-identical to run 202's number — comments aren't part of the
     bundle). No new runtime dependency.
 
-206. **`docs/research/mobile-friendly.md`'s "Android spread" findings
+206. ~~**`docs/research/mobile-friendly.md`'s "Android spread" findings
     paragraph still described two `detectQuality()` blind spots — the
     Chromium-only `deviceMemory` check and shadow maps on the 'low'
     tier — that task 174 closed weeks before this run, in prose no
     consolidation had gone back to fix (distinct from the doc's tracked
     Recommendations checklist, which run 185's consolidation did mark
-    closed).** Not found via the standing blocked threads — task 173's
+    closed).**~~ Not found via the standing blocked threads — task 173's
     real-device halves, task 189's far-band lead, task 184's problem 2
     and wave 20 were left exactly as run 203 left them, and the v0.1 git
     tag stays write-blocked (see below). Re-checked the two cheap,
@@ -5564,8 +5564,8 @@ iPad household needs none of it; logged under Blocked on human.
     test` 1415 green (unchanged), `npm run build` green (939.94 kB,
     byte-identical to run 203's number — a research doc isn't part of
     the bundle). No new runtime dependency.
-207. **`src/ui/freePlayScreen.ts` was the one full-screen DOM overlay with
-    no Escape-to-dismiss keyboard path.** Task 195 piece 2d gave
+207. ~~**`src/ui/freePlayScreen.ts` was the one full-screen DOM overlay with
+    no Escape-to-dismiss keyboard path.**~~ Task 195 piece 2d gave
     `Hud.ts`'s veil and pageBox Escape-dismiss; task 198 gave
     `importSongDialog.ts`'s overlay the same. Task 197 gave every control
     inside `freePlayScreen.ts` (`bindRowActivation`'s Enter/Space plus
@@ -5594,8 +5594,8 @@ iPad household needs none of it; logged under Blocked on human.
     stayed open with the take intact, exactly the Cancel button's own
     behaviour. Zero console/page errors (aside from an unrelated
     favicon 404 from the throwaway harness page itself).
-208. **`tools/README.md` documented the `only` pose-filter argument for
-    some scripts that support it but not others.** Five scripts in
+208. ~~**`tools/README.md` documented the `only` pose-filter argument for
+    some scripts that support it but not others.**~~ Five scripts in
     `tools/` accept an optional `process.argv[2]` substring filter to run
     against a single pinned pose instead of the whole set
     (`frame-quality.mjs`, `postcard.mjs`, `far-band-objects.mjs`,
@@ -5625,9 +5625,9 @@ iPad household needs none of it; logged under Blocked on human.
     1415 green (unchanged), `npm run build` green (940.09 kB,
     byte-identical to run 206's number — a tools README isn't part of
     the bundle). No new runtime dependency.
-209. **`docs/research/mobile-friendly.md`'s "Notch / safe areas" finding
+209. ~~**`docs/research/mobile-friendly.md`'s "Notch / safe areas" finding
     bullet still said `index.html` "currently has neither"
-    `viewport-fit=cover` nor `env(safe-area-inset-*)`.** Run 198 (task
+    `viewport-fit=cover` nor `env(safe-area-inset-*)`.**~~ Run 198 (task
     200) already fixed the same stale claim once, in this file's opening
     "Honest Summary" paragraph — but missed a second, near-identical
     copy of it lower down, in the "Findings" section's own bullet list
@@ -5649,8 +5649,8 @@ iPad household needs none of it; logged under Blocked on human.
     green (unchanged), `npm run build` green (940.09 kB, byte-identical
     to run 207's number — a research doc isn't part of the bundle). No
     new runtime dependency.
-210. **CLAUDE.md's "Stack (fixed)" section still said "Phaser 3 +
-    TypeScript + Vite."** The game migrated off Phaser to Three.js at
+210. ~~**CLAUDE.md's "Stack (fixed)" section still said "Phaser 3 +
+    TypeScript + Vite."**~~ The game migrated off Phaser to Three.js at
     v0.6 (2026-07-28); run 44 fixed every other doc that made the same
     claim (`README.md`, `tools/README.md`, `.github/workflows/
     headless-checks.yml`) but never touched CLAUDE.md itself, since it
@@ -5671,10 +5671,10 @@ iPad household needs none of it; logged under Blocked on human.
     (940.09 kB, byte-identical to run 208's number — CLAUDE.md isn't
     part of the bundle). No new runtime dependency.
 
-211. **PLAYTEST.md pointed at `src/scenes/RoadScene.ts` — a file deleted at
+211. ~~**PLAYTEST.md pointed at `src/scenes/RoadScene.ts` — a file deleted at
     the v0.6 Three.js migration — from six still-open (unchecked)
     checklist items, plus two more of the same dead-reference shape found
-    in source comments while fixing it.** Confirmed `src/scenes/
+    in source comments while fixing it.**~~ Confirmed `src/scenes/
     RoadScene.ts` does not exist anywhere in the tree; `HIT_WINDOW_MS` is
     real but lives in `src/core/beats.ts`, and the other five named
     constants (`STAR_PARALLAX`, `BARD_STRUM_KICK_DEG`, `BARD_STRUM_MS`,
@@ -5726,9 +5726,9 @@ iPad household needs none of it; logged under Blocked on human.
     `npm test` 1415 green (unchanged), `npm run build` green (940.09 kB,
     byte-identical to run 209's number). No new runtime dependency.
 
-212. **Task 211's own follow-up: confirm `Biome.sceneryColor`/`sceneryAccent`/
+212. ~~**Task 211's own follow-up: confirm `Biome.sceneryColor`/`sceneryAccent`/
     `skyColor`/`roadBandColor` are genuinely dead weight before ever deleting
-    them.** **Done (2026-09-25, run 211)** — with a correction along the way
+    them.**~~ **Done (2026-09-25, run 211)** — with a correction along the way
     worth recording. A first pass grepped only for `core/biome` and
     `core\.biome`, found nothing outside `biome.ts` and the three audio
     tests, and deleted the whole module on that basis — wrong: `npm test`
@@ -5760,8 +5760,8 @@ iPad household needs none of it; logged under Blocked on human.
     scoped to `core/biome` — checking whether a module is dead means
     grepping its export names, not its import path.
 
-213. **`tools/README.md`'s `skylight-sat.mjs` section is missing its
-    `outDir` argument.** **Done (2026-09-25, run 212).** `tools/
+213. ~~**`tools/README.md`'s `skylight-sat.mjs` section is missing its
+    `outDir` argument.**~~ **Done (2026-09-25, run 212).** `tools/
     skylight-sat.mjs:106` reads `outDir` from `process.argv[2]` and uses
     it at lines 306-307 to save a frozen screenshot of each pose, the
     same pattern `shadowcast.mjs` documents in both its heading
@@ -5780,8 +5780,8 @@ iPad household needs none of it; logged under Blocked on human.
     (939.72 kB, byte-identical to run 211's number). No new runtime
     dependency.
 
-214. **`tools/README.md`'s `shader-check.mjs` section is missing its
-    `outPrefix` argument.** **Done (2026-09-25, run 213).**
+214. ~~**`tools/README.md`'s `shader-check.mjs` section is missing its
+    `outPrefix` argument.**~~ **Done (2026-09-25, run 213).**
     `tools/shader-check.mjs:35` reads `outPrefix` from `process.argv[2]`
     (default `'shader-check'`) and uses it at line 70 to name the four
     per-sample screenshots it always writes (`${outPrefix}-${label}.png`)
@@ -6114,7 +6114,7 @@ The wave-5 additions, from the wave-5 blind panel (2026-08-01; anchor
 "ships beside ASH without apology", mean 4.42 — see STATE.md for the
 full verdict map and the measure-first suspicion list):
 
-186. **Stage the creatures (emotion arc, wave 17).** The emotion lens's
+186. ~~**Stage the creatures (emotion arc, wave 17).**~~ The emotion lens's
     sharpest finding: "the caption carries the feeling; the picture
     doesn't stage it — 06 says a deer held still through the whole
     verse; there is no deer in the frame." Worse than unstaged: every
@@ -6477,7 +6477,7 @@ full verdict map and the measure-first suspicion list):
     (933.11 kB, unchanged), `verify-all quick` PASS. See
     `tools/README.md`'s `figground.mjs` section for the new hue/sat
     columns.
-180. **Close the frame: foreground occluders.** All ten postcards open
+180. ~~**Close the frame: foreground occluders.**~~ All ten postcards open
     on a clean ground plane; every ASH reference crops canopy, cliff or
     rock masses through its edges. Give the postcard framings (and the
     live camera's near field) occluding foreground masses cut by the
@@ -6499,7 +6499,7 @@ full verdict map and the measure-first suspicion list):
     3.16 stops. frame-quality all PASS. The road ahead stays clear
     (the VERGE fern lesson honoured). 1161 tests green, build green.
     Watch for wave 9: sentinel hit-rate on the busk/vista framings.
-182. **The noon gate is red on main — bisect it.** `frame-quality.mjs`
+182. ~~**The noon gate is red on main — bisect it.**~~ `frame-quality.mjs`
     reports noon at 1.91-1.93 stops vs the 2.5 floor on pristine main;
     CI never runs this gate, so some merge regressed it unnoticed.
     Gauge facts already established (2026-08-01): stops =
@@ -6973,7 +6973,7 @@ full verdict map and the measure-first suspicion list):
     (golden/night gauges byte-identical again). All poses PASS.
     1229 tests, build green.
 
-181. **Smoke as soft forms.** The campfire smoke still reads as a stack
+181. ~~**Smoke as soft forms.**~~ The campfire smoke still reads as a stack
     of hard-edged translucent polygons ("a hovering boulder", "a render
     bug" — wave 2 called it stacked glass octagons; three waves on it
     is unchanged). The vertical mass in that quadrant is compositionally
