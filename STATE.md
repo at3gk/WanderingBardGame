@@ -1,17 +1,22 @@
 # STATE
 
-Run counter: 215 — CONSOLIDATION. Drift check clean over runs 206-214.
-Fixed a real bug in the roadmap's own "done" signal: task 60 and the
-whole v1.0 festival arc except 161 (tasks 158/159/160/162/163/164/165)
-had each reached their own completion sentence but were never struck
-through, so "unstruck = open" was lying about ~8 tasks; task 161 (a
-genuine open premise-gap) is now correctly logged under Blocked on
-human instead. Reframed `docs/research/art-quality.md`'s stale opening
-score as explicitly stale rather than current. Compressed the
-run-206-214 HANDOFF blocks. Both standing blockers (WebFetch egress,
-GitHub MCP tag/release write) re-tested, unchanged.
-Next consolidation due ~225. See the run-215 HANDOFF below for the
-full account.
+Run counter: 216. Finished the ROADMAP strikethrough sweep run 215's
+consolidation started but deliberately left unverified: dispatched a
+fresh Explore agent over every numbered task 166-214, checked each of
+its 36 "clean" candidates individually against the actual done-note
+text before touching anything, and struck through all 36 confirmed
+genuinely-complete tasks (168-172, 176-178, 180-182, 186, 190-194,
+196-214). Four tasks the agent flagged as ambiguous (166, 167, 174,
+175) were read closely and correctly left unstruck — 166 and 175 in
+particular use heavy "done" language for one piece while explicitly
+naming remaining work, the exact false-positive shape run 215 was
+worried about. Task 181's flagged caveat ("telegraph legibility at
+400m ... eyeball in the next critique wave") was read in full and is
+a forward-looking watch-item for a later wave, not an open blocker on
+181's own scope (soft-edged smoke) — struck through along with the
+other 35. Docs-only change, no code touched. Next consolidation still
+due ~225 (unchanged from run 215; this run wasn't one).
+See the run-216 HANDOFF below for the full account.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -218,6 +223,46 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-26 (run 216) — the ROADMAP strikethrough sweep run
+  215's consolidation deliberately deferred.** Run 215 found the real bug
+  (past task ~150, "unstruck = open" stopped being reliable) and fixed the
+  handful of cases it verified itself, but explicitly left "the agent
+  flagged ~30 more candidates across tasks 166-214, unverified
+  individually" as "the one concrete lead for whichever run picks up next
+  if nothing else is queued" — every other standing thread (task 173's
+  real-device halves, wave 20, task 189's far-band lead, task 184's
+  problem 2, task 161, the v0.1 git tag) was re-checked first and remains
+  parked/blocked, unchanged since run 215. Re-dispatched a fresh Explore
+  agent (not reusing run 215's own unsaved findings) with explicit
+  instructions to report line numbers and quote the exact completion
+  sentence for every candidate, and separately flag anything that reads
+  like a partial/qualified "done" the way tasks 173/179/184/189 already
+  are. It returned 36 confirmed-clean candidates and 4 genuinely ambiguous
+  ones (166, 167, 174, 175). Rather than trust the report blind, spot-read
+  the full body text of every multi-piece or oddly-titled candidate
+  (168-172, 176-178, 180-182, 186, 190-194) and the exact heading-to-close
+  span of every multi-line title (196-214) directly in ROADMAP.md before
+  editing — two (190, 191) had titles that looked unrelated to their
+  reported completion quote at first glance and needed a full read to
+  confirm they were the same task. Struck through all 36
+  (`sed`-verified afterward: exactly one `~~**...**~~`-wrapped heading per
+  task number, zero double-wraps, `~~` count even). Left the 4 ambiguous
+  ones and the already-known-blocked 173/179/184/189 untouched — 166 and
+  175 in particular use heavy "done" language for one piece while their
+  own text names concrete remaining work, exactly the false-positive shape
+  this whole sweep exists to catch, so striking them would have
+  reintroduced the same bug this run is fixing. Docs-only change (ROADMAP.md
+  and this file) — no `src/` file touched, so `npm test` 1398 green
+  (unchanged) and `npm run build` green (939.72 kB, byte-identical to run
+  215's number) were run only as a sanity check, not because the change
+  could plausibly have affected either. No new runtime dependency. The
+  broader audit is now genuinely closed: every numbered task from 1
+  through 214 has been individually checked at least once (run 215's own
+  pass plus this run's), so a future run should treat "unstruck = open"
+  as reliable again rather than re-running this same sweep — new drift
+  from here on would be a *new* task ending in an unstruck "done"
+  sentence, not a backlog of old ones.
 
 - **HANDOFF, 2026-09-26 (run 215) — CONSOLIDATION (drift control, every
   ~10th run; last was 205).** Drift check over runs 206-214: CLEAN — nine
