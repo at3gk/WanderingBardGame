@@ -110,13 +110,21 @@ ratios):
   means every pixel that carries colour carries the *same* colour.
 - **modalShare** — the largest fraction of the frame inside one coarse colour
   bucket, i.e. how much of it is a single uninterrupted area.
+- **landP90** (task 125) — the 90th percentile of *linear* luminance among
+  land pixels only, sky excluded (same masking technique as
+  `land-histogram.mjs`, calibrated live — see that section below). Floored
+  on the plain daylight poses (morning, noon, noon-village, both phone
+  aspect ratios); golden and night are deliberately excluded, same reasoning
+  as `hueSpread`'s exclusion in reverse — their land is dim by authored
+  design (low sun, campfire pool), not by the "flat midday" fault this metric
+  exists to catch.
 
 Prints a table and `PASS`/`FAIL`. The thresholds are **floors set well under
 what the game currently measures**, so this reports a regression rather than
 litigating taste — `postcard.mjs` is still the tool for judging whether a
 frame is any good.
 
-Two things this check learned the hard way, both worth knowing before you
+Three things this check learned the hard way, both worth knowing before you
 trust a number out of it:
 
 **`hueSpread` is not "higher is better".** A global floor failed exactly two
@@ -125,11 +133,18 @@ every critique has named as the best in the set. A low sun washing a whole
 landscape in one warm hue is not a fault; it is what golden hour is. The
 floor is therefore per-pose and only the plain daylight frames carry one.
 
-**It is a whole-frame measure.** A blue sky over a green field over a brown
-road scores as varied even when the land, which is most of what the player
-looks at, is one hue. Noon measures 0.28 while still reading green-on-green
-underfoot. It catches a palette collapsing; it does not certify that a
-frame's colour is working.
+**`valueStops`/`p10`/`p90` are a whole-frame measure.** A blue sky over a
+green field over a brown road scores as varied even when the land, which is
+most of what the player looks at, is one hue or one narrow value band. Noon
+measures 0.28 hueSpread while still reading green-on-green underfoot, and a
+wave that darkens the near ground while brightening nothing else can still
+pass the stops floor as long as the whole-frame range widened at all — the
+gap `landP90` closes.
+
+**Masking the sky costs two extra renders + readbacks per pose** (one to
+calibrate the sentinel, one to measure land-only), on top of the original
+whole-frame pass — already marked `slow: true` in `verify-all.mjs` (see
+below), now a bit more so.
 
 ## `postcard.mjs [outDir] [only]`
 
