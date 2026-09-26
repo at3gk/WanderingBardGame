@@ -5,12 +5,22 @@ stylized low-poly 3D from the press-frame quality of A Short Hike or
 Spiritfarer, and which of those levers survive this game's constraints:
 one painterly ShaderMaterial for every surface, the sky dome as the only
 light authority, procedural-only assets (no image files), <5 MB bundle,
-mid-range phones. The blind panels currently score ~5.5/10 against those
-reference frames, with four named gaps: terrain-shadow presentation,
-anchorless noon frames, ground cover reading as debris, and close-range
-character craft. Every claim below carries its source and what kind of
-source it is; where a primary source was unreachable, that is said
-instead of papered over.
+mid-range phones. The blind panels scored ~5.5/10 against those reference
+frames when this note was written (2026-07-31), with four named gaps:
+terrain-shadow presentation, anchorless noon frames, ground cover reading
+as debris, and close-range character craft.
+**Stale as of run 215 (2026-09-26): that score and gap list predate
+roughly 120 runs of measured work (ROADMAP tasks 144-150, waves 13-20) and
+should not be quoted as current.** Some of the four gaps moved (144's
+figure-cast-shadow half shipped; the low-sun value floor shipped), one is
+explicitly EXHAUSTED/parked pending new evidence (144's terrain
+self-shadow bands), and the rest are still open work (145/149/150). See
+"Findings from shipped work" below for what's actually verified, and
+ROADMAP task 128 — re-baselining the score itself against real reference
+frames, not just a written rubric — which is queued but blocked on the
+same network-egress limitation this file's own sourcing notes describe.
+Every claim below carries its source and what kind of source it is; where
+a primary source was unreachable, that is said instead of papered over.
 
 ## Honest summary of what the evidence supports
 
