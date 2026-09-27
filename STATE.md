@@ -1,21 +1,24 @@
 # STATE
 
-Run counter: 218. Fixed run 217's lead (2): two stale comments in
-`src/audio/adaptive.ts` and `src/audio/instrumentVoice.ts` narrating
-behaviour "as `AudioEngine.schedule` does" when no `AudioEngine` class
-exists in current `src/`. Tracing the real mechanism (RoadStage's
-`tuneAnchorSec`) to reword them accurately turned up a third stale
-`AudioEngine` comment run 217 hadn't flagged, in `src/audio/layering.ts`
-— and checking its caller found the whole file dead (zero importers
-outside its own test), so it was deleted rather than reworded. Also
-found, but deliberately left for a future run as too big for this task:
-`AUDIO_MANIFEST.baseLoop`/`.layers` in `src/audio/manifest.ts` have zero
-production consumers either (see ROADMAP task 216's done-note). `npm
-test` 1383 green (1387 minus the 4 deleted `layering.test.ts` tests),
-`npm run build` green (939.72 kB, byte-identical to run 217's number).
-No new runtime dependency. Next consolidation still due ~225 (unchanged
-from run 215).
-See the run-218 HANDOFF below for the full account, and the run-217 one
+Run counter: 219. Took lead (3) from run 217's Explore survey, still open
+after runs 217 and 218 each took a different lead off the same list:
+`geometry.ts`'s `GEOMETRY_BUILDERS`/`clearGeometryCache` were dead code
+(zero importers anywhere, not even a test), and PLAYTEST.md named four
+Phaser-era tools (`scenery-sheet.mjs`, `proofsheet.mjs`, `ui-sheet.mjs`,
+`pillar-check.mjs`) that don't exist in `tools/` any more — the v0.6
+rewrite replaced the whole Phaser presentation layer they checked.
+Deleted both dead exports; deleting `GEOMETRY_BUILDERS` orphaned a local
+helper (`toNonIndexed`) `tsc --noEmit` caught as unused, deleted too.
+Reworded `outwardFraction`'s doc comment, which cited the same dead tool
+as its reason for staying exported (the real reason is `geometry.test.ts`
+importing it directly). PLAYTEST.md: named the four tools as gone rather
+than silently dropping the claim, pointed at today's closest equivalents,
+and fixed the two checklist items still citing them as live checks. `npm
+test` 1383 green (unchanged — none of the deleted code had a test), `npm
+run build` green (939.72 kB, byte-identical to run 218's number). No new
+runtime dependency. Next consolidation still due ~225 (unchanged from
+run 215).
+See the run-219 HANDOFF below for the full account, and the run-218 one
 just under it.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -223,6 +226,42 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-27 (run 219) — took run 217's remaining lead (3),
+  self-originated.** Run 217's Explore-agent survey left three leads;
+  runs 217 and 218 each took one, leaving (3) — dead exports in
+  `src/three/world/geometry.ts` (`GEOMETRY_BUILDERS`, `clearGeometryCache`)
+  plus four Phaser-era tool names PLAYTEST.md still cited
+  (`scenery-sheet.mjs`, `proofsheet.mjs`, `ui-sheet.mjs`,
+  `pillar-check.mjs`) — unclaimed. Verified both halves before touching
+  anything: a repo-wide grep for the two export names across `src/` and
+  `tools/` found zero importers, including in tests; a grep of the four
+  tool names against the real `tools/` directory confirmed none exist.
+  `tools/verify-all.mjs`'s own header comment explains why — those were
+  checks that drove the old Phaser scene through
+  `window.game.scene.scenes[0]`, and the v0.6 rewrite to Three.js took
+  that global, and every check built on it except `shader-check.mjs`,
+  with it. Deleted `GEOMETRY_BUILDERS` and `clearGeometryCache`. That
+  orphaned `toNonIndexed`, a local helper only `GEOMETRY_BUILDERS` had
+  called (confirmed with its own grep) — `tsc --noEmit` failed on the
+  unused local immediately, exactly the guardrail doing its job; deleted
+  it too. While there, noticed `outwardFraction`'s doc comment gave the
+  same dead tool as the reason it stays exported; reworded it to name the
+  real reason, `geometry.test.ts` importing and asserting on it directly.
+  PLAYTEST.md: rewrote the Round 2 note to say the four tools are
+  Phaser-era and gone (not silently drop the claim), name today's closest
+  equivalents (`postcard.mjs` for human/agent screenshot review,
+  `shader-check.mjs`/`frame-quality.mjs` for automated pass/fail on posed
+  frames), and flag that no automated per-viewport layout check exists
+  today; fixed the two checklist items ("Scenery bands", "Notation UI")
+  that still cited the dead tools as live checks. Read this the same way
+  run 217's agent and run 217 itself did: pure doc/dead-code cleanup, not
+  a mandate to rebuild four Phaser-era tools for the Three.js game. `npm
+  test` 1383 green (unchanged — none of the deleted code had a test),
+  `npm run build` green (939.72 kB, byte-identical to run 218's number —
+  all three deletions were already tree-shaken out). No new runtime
+  dependency. See ROADMAP task 217's done-note for the same account with
+  exact line references.
 
 - **HANDOFF, 2026-09-27 (run 218) — finished run 217's lead (2), found a
   bigger one along the way, self-originated.** Run 217 left two leads

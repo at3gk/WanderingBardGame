@@ -5884,6 +5884,45 @@ iPad household needs none of it; logged under Blocked on human.
     trim the type or repoint the header comment at what's actually true
     today, not a same-run add-on to this one.
 
+217. ~~**`geometry.ts`'s `GEOMETRY_BUILDERS`/`clearGeometryCache` are dead,
+    plus PLAYTEST.md names four tools that don't exist.**~~ **Done
+    (2026-09-27, run 219).** Run 217's Explore agent flagged this as lead
+    (3), left unclaimed by runs 217 and 218 (both took a different lead
+    off the same list). Verified both halves before touching anything: a
+    repo-wide grep for `GEOMETRY_BUILDERS` and `clearGeometryCache` across
+    `src/` and `tools/` found zero importers anywhere, not even a test —
+    `cachedGeometry` (the function actually used, 17 call sites in
+    `WorldStreamer.ts`) was never at risk. A grep of PLAYTEST.md for the
+    four tool names (`scenery-sheet.mjs`, `proofsheet.mjs`, `ui-sheet.mjs`,
+    `pillar-check.mjs`) against the real `tools/` directory confirmed none
+    of the four exist; `tools/verify-all.mjs`'s own header comment explains
+    why — they were Phaser-era checks driving the old scene through
+    `window.game.scene.scenes[0]`, and the v0.6 rewrite replaced that whole
+    presentation layer with Three.js, taking that global (and every check
+    built on it except `shader-check.mjs`) with it. Deleted
+    `GEOMETRY_BUILDERS` and `clearGeometryCache` from `geometry.ts`.
+    Removing `GEOMETRY_BUILDERS` also orphaned `toNonIndexed`, a local
+    helper it was the only caller of (confirmed with its own grep before
+    deleting) — `tsc --noEmit` caught this immediately as an unused-local
+    error, which is exactly the intended guardrail working, not a mistake
+    to work around. Also reworded `outwardFraction`'s doc comment, which
+    justified the export by pointing at the same dead proof-sheet tool
+    (`geometry.test.ts` imports and asserts on it directly — that's the
+    real reason it stays exported, not the tool). PLAYTEST.md: rewrote the
+    Round 2 note (lines 86-95) to name that those four tools are Phaser-era
+    and gone rather than silently drop the claim, pointed at today's
+    closest equivalents (`postcard.mjs` for human/agent screenshot review,
+    `shader-check.mjs`/`frame-quality.mjs` for automated pass/fail), and
+    flagged that no automated per-viewport layout check exists today — then
+    fixed the two checklist items ("Scenery bands", "Notation UI") that
+    still cited `scenery-sheet`/`pillar-check`/`proofsheet` as live checks,
+    same read as the Explore agent's and run 217's: this is pure doc/
+    dead-code cleanup, not a mandate to rebuild four Phaser-era tools for
+    the Three.js game. `npm test` 1383 green (unchanged — none of the
+    deleted code had a test), `npm run build` green (939.72 kB,
+    byte-identical to run 218's number — all three deletions were already
+    tree-shaken out). No new runtime dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
