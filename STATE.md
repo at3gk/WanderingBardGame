@@ -1,22 +1,21 @@
 # STATE
 
-Run counter: 216. Finished the ROADMAP strikethrough sweep run 215's
-consolidation started but deliberately left unverified: dispatched a
-fresh Explore agent over every numbered task 166-214, checked each of
-its 36 "clean" candidates individually against the actual done-note
-text before touching anything, and struck through all 36 confirmed
-genuinely-complete tasks (168-172, 176-178, 180-182, 186, 190-194,
-196-214). Four tasks the agent flagged as ambiguous (166, 167, 174,
-175) were read closely and correctly left unstruck — 166 and 175 in
-particular use heavy "done" language for one piece while explicitly
-naming remaining work, the exact false-positive shape run 215 was
-worried about. Task 181's flagged caveat ("telegraph legibility at
-400m ... eyeball in the next critique wave") was read in full and is
-a forward-looking watch-item for a later wave, not an open blocker on
-181's own scope (soft-edged smoke) — struck through along with the
-other 35. Docs-only change, no code touched. Next consolidation still
-due ~225 (unchanged from run 215; this run wasn't one).
-See the run-216 HANDOFF below for the full account.
+Run counter: 217. Deleted the dead 2D-era HUD dashboard layout code in
+`src/core/hud.ts` (everything except `HUD_TOUCH_TARGET`, which
+`ui/hudLayout.ts` still imports) and its now-pointless test file, which
+tested that dead code against itself. Self-originated — the numbered
+ROADMAP queue and the idea backlog are both fully closed/struck, and
+every standing thread is parked on a human decision or blocked network
+access (see "Blocked on human" below), so nothing there was actionable.
+An Explore agent surveyed for a fresh, unblocked lead and flagged three;
+this run took the highest-confidence one and verified every claim
+directly against source before touching anything (see ROADMAP task 215's
+done-note). `npm test` 1387 green (1398 minus the 11 deleted tests),
+`npm run build` green (939.72 kB, byte-identical to run 216's number).
+No new runtime dependency. Next consolidation still due ~225 (unchanged
+from run 215).
+See the run-217 HANDOFF below for the full account, and the run-216 one
+just under it.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
 
@@ -223,6 +222,48 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-27 (run 217) — dead-code cleanup, self-originated.**
+  Run 216 closed the ROADMAP strikethrough sweep with nothing new queued:
+  every numbered task is done or blocked (task 161/179/184/189, wave 20,
+  the v0.1 git tag — all unchanged since run 216; not re-tested this
+  run, which spent its budget on the dead-code survey below instead),
+  and the idea backlog is empty. Same shape as runs 187/193/194: dispatched an Explore
+  agent to survey for a fresh, unblocked lead rather than guess. It
+  returned three candidates, ranked by confidence:
+  (1) `src/core/hud.ts` — almost entirely dead 2D-era dashboard-layout
+  code, superseded by `ui/hudLayout.ts` at the v0.6 rewrite (that file's
+  own header names the predecessor); only `HUD_TOUCH_TARGET` still has a
+  real importer.
+  (2) Two comments in `src/audio/adaptive.ts:291` and
+  `src/audio/instrumentVoice.ts:37` narrate behaviour "as `AudioEngine.
+  schedule` does" — no `AudioEngine` class exists anywhere in current
+  `src/`, same stale-pointer family as tasks 209/211.
+  (3) `GEOMETRY_BUILDERS`/`clearGeometryCache` in
+  `src/three/world/geometry.ts` are dead ("exposed for the proof-sheet
+  tool", which doesn't exist in current `tools/`), and PLAYTEST.md lines
+  91/125 still name four tools (`proofsheet.mjs`, `scenery-sheet.mjs`,
+  `ui-sheet.mjs`, `pillar-check.mjs`) that don't exist in `tools/` today.
+  Took (1) this run, verified myself before touching anything (grepped
+  every deleted export name individually across the whole repo, per the
+  lesson task 212 recorded about missed same-directory imports; confirmed
+  `Hud.ts`'s own "no meter, no combo counter, no score, no streak"
+  comment). See ROADMAP task 215's done-note for the full account. `npm
+  test` 1387 green (1398 minus the 11 tests in the deleted
+  `hud.test.ts`), `npm run build` green (939.72 kB, byte-identical to run
+  216's number — zero production code referenced any deleted export, so
+  the bundle couldn't move). No new runtime dependency. (2) and (3) are
+  left as leads for a future run with nothing queued — both read as
+  small, unblocked, mechanical fixes (comment updates / more dead-export
+  deletion + a doc correction), same size class as this run's task, but
+  taking more than one in a single run would drift past "one task per
+  run." (3)'s doc half needs one judgment call of its own if picked up:
+  whether to just delete the dead exports and correct PLAYTEST.md to
+  name reality, or treat the four missing tools as work that was
+  promised and never built — the Explore agent's read (and mine) is that
+  it's pure doc/dead-code cleanup, not a mandate to build four new tools,
+  but whoever picks it up should re-confirm that reading rather than
+  assume it.
 
 - **HANDOFF, 2026-09-26 (run 216) — the ROADMAP strikethrough sweep run
   215's consolidation deliberately deferred.** Run 215 found the real bug
