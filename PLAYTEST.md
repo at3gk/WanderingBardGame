@@ -86,13 +86,20 @@ Neither has ever been in front of a person.
 ## Round 2 — open
 
 Note (2026-07-26): several of these have since been answered *mechanically*
-rather than by eye, and can be skipped unless something looks wrong —
-scenery, notation legibility and the night sky are all baked into
-deterministic sheets now (`tools/scenery-sheet.mjs`, `proofsheet.mjs`,
-`ui-sheet.mjs`), and layout is checked across nine viewports down to 320px
-(`pillar-check.mjs`). What remains genuinely subjective here is *feel*:
-the hit window, the meter refill, whether the music is cozy, and whether
-the walk reads as one motion.
+rather than by eye, and can be skipped unless something looks wrong. At the
+time this note was written, scenery, notation legibility and the night sky
+were checked by deterministic sheet/viewport tools (`scenery-sheet.mjs`,
+`proofsheet.mjs`, `ui-sheet.mjs`, `pillar-check.mjs`) — those were Phaser-era
+tools, driving the old scene through `window.game.scene.scenes[0]`, and none
+of them exist any more: the v0.6 rewrite replaced that whole presentation
+layer with Three.js and that global (see `tools/verify-all.mjs`'s header
+comment). Today's closest equivalents are `postcard.mjs` (poses the bard and
+writes screenshots for a human/agent to review) and `shader-check.mjs` /
+`frame-quality.mjs` (automated pass/fail on posed frames) — none of them is
+an automated per-viewport layout check, so that specific claim below no
+longer holds and those items go back to needing a human eye. What remains
+genuinely subjective here is *feel*: the hit window, the meter refill,
+whether the music is cozy, and whether the walk reads as one motion.
 
 ### Re-judge the retuned values
 
@@ -116,15 +123,17 @@ the walk reads as one motion.
 - [ ] **Bard sprite & animation** — does the new bard (tunic, cap,
   feather, lute) read at phone size? Walk cycle natural, idle alive?
 - [ ] **Scenery bands** — do village houses / forest trees / riverside
-  camp read as *places*? Parallax depth visible while walking? (That they
-  draw correctly is covered by `scenery-sheet`; this is about whether they
-  evoke anywhere.)
+  camp read as *places*? Parallax depth visible while walking? (`scenery-sheet`,
+  the tool this parenthetical used to point to for "draws correctly", no
+  longer exists — see the Round 2 note above — so that half is a human-eye
+  question too now, not just "evoke anywhere.")
 - ~~**Notation UI (eighth-note markers)**~~ — **partly obsolete.** The
   markers are no longer generic eighth-note glyphs; they are real notes at
-  real staff positions with real note values, and their legibility down to
-  a 320px phone is checked by `pillar-check` and `proofsheet`. Still worth
-  a human eye: is the hit pulse satisfying, and is the miss dim gentle
-  enough?
+  real staff positions with real note values. `pillar-check` and
+  `proofsheet`, the tools this once named for 320px legibility, no longer
+  exist (see the Round 2 note above), so that's a human-eye question again
+  too. Still worth a human eye either way: is the hit pulse satisfying, and
+  is the miss dim gentle enough?
 - [ ] **The player's note** — on each hit you now play the melody note
   yourself (+1 octave). Volume sit right on top of the loop
   (`pluck` gain = 1.6x base in `AudioEngine.ts`)? Does a good run feel

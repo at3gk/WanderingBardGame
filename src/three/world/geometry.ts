@@ -90,11 +90,6 @@ function mergeGeometries(parts: BufferGeometry[]): BufferGeometry {
   return out;
 }
 
-/** Everything here is non-indexed so merging is a straight concatenation. */
-function toNonIndexed(geometry: BufferGeometry): BufferGeometry {
-  return geometry.index ? geometry.toNonIndexed() : geometry;
-}
-
 function fromPositions(verts: number[]): BufferGeometry {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
@@ -103,10 +98,9 @@ function fromPositions(verts: number[]): BufferGeometry {
 
 /**
  * Fraction of a closed hull's faces whose normal points away from the
- * centroid. Exported for the proof-sheet tool, which is where a regression
- * in winding should be caught — reading it off a screenshot means noticing
- * that something is *slightly* too dark, which is exactly the observation
- * that went unmade for months.
+ * centroid. Exported for `geometry.test.ts`'s direct winding assertions —
+ * a regression here otherwise reads as something *slightly* too dark on
+ * screen, which is exactly the observation that went unmade for months.
  */
 export function outwardFraction(geometry: BufferGeometry): number {
   const position = geometry.attributes.position as BufferAttribute;
@@ -2713,30 +2707,3 @@ export function cachedGeometry(key: string, build: () => BufferGeometry): Buffer
   return geometry;
 }
 
-export function clearGeometryCache(): void {
-  for (const geometry of cache.values()) geometry.dispose();
-  cache.clear();
-}
-
-/** Exposed for the proof-sheet tool, which bakes every shape in one grid. */
-export const GEOMETRY_BUILDERS = {
-  grassTuftGeometry,
-  fernGeometry,
-  flowerGeometry,
-  reedClumpGeometry,
-  rockGeometry,
-  pebbleGeometry,
-  shrubGeometry,
-  fallenLogGeometry,
-  standingStoneGeometry,
-  trilithonGeometry,
-  chapelGeometry,
-  buskPitchGeometry,
-  waysideCairnGeometry,
-  smokeColumnGeometry,
-  coniferGeometry,
-  broadleafGeometry,
-  willowGeometry,
-  toNonIndexed,
-  outwardFraction,
-};
