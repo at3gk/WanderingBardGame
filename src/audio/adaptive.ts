@@ -288,9 +288,9 @@ export function initialAdaptiveState(nowSec = 0): AdaptiveState {
  * The first bar line at or after `nowSec`.
  *
  * Bars are derived from an anchor and a length rather than counted, so a
- * caller that re-anchors its schedule (as `AudioEngine.schedule` does every
- * song, to keep the two clocks from drifting) does not have to tell this file
- * about it — the next call simply lands on the new grid.
+ * caller that re-anchors its schedule (as `RoadStage` resets `tuneAnchorSec`
+ * every song, to keep the two clocks from drifting) does not have to tell
+ * this file about it — the next call simply lands on the new grid.
  */
 export function nextBarAt(nowSec: number, barAnchorSec: number, barSec: number): number {
   if (!(barSec > 0) || !Number.isFinite(barAnchorSec) || !Number.isFinite(nowSec)) return nowSec;

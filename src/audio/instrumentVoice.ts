@@ -33,8 +33,9 @@
  * 3. **All times are relative to the caller's `whenSec`,** which is an
  *    `AudioContext.currentTime`. Nothing here reads `Date.now()` or
  *    `performance.now()`. The two clocks are driven by different hardware and
- *    drift apart by a measurable amount over a session (see the note in
- *    `AudioEngine.schedule`), and a rhythm game is where that is audible.
+ *    drift apart by a measurable amount over a session (see the note on
+ *    `nextBarAt` in `audio/adaptive.ts`), and a rhythm game is where that is
+ *    audible.
  *
  * ## Why an additive stack sounds like a synthesiser, and what fixes it
  *

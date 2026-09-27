@@ -1,20 +1,21 @@
 # STATE
 
-Run counter: 217. Deleted the dead 2D-era HUD dashboard layout code in
-`src/core/hud.ts` (everything except `HUD_TOUCH_TARGET`, which
-`ui/hudLayout.ts` still imports) and its now-pointless test file, which
-tested that dead code against itself. Self-originated — the numbered
-ROADMAP queue and the idea backlog are both fully closed/struck, and
-every standing thread is parked on a human decision or blocked network
-access (see "Blocked on human" below), so nothing there was actionable.
-An Explore agent surveyed for a fresh, unblocked lead and flagged three;
-this run took the highest-confidence one and verified every claim
-directly against source before touching anything (see ROADMAP task 215's
-done-note). `npm test` 1387 green (1398 minus the 11 deleted tests),
-`npm run build` green (939.72 kB, byte-identical to run 216's number).
+Run counter: 218. Fixed run 217's lead (2): two stale comments in
+`src/audio/adaptive.ts` and `src/audio/instrumentVoice.ts` narrating
+behaviour "as `AudioEngine.schedule` does" when no `AudioEngine` class
+exists in current `src/`. Tracing the real mechanism (RoadStage's
+`tuneAnchorSec`) to reword them accurately turned up a third stale
+`AudioEngine` comment run 217 hadn't flagged, in `src/audio/layering.ts`
+— and checking its caller found the whole file dead (zero importers
+outside its own test), so it was deleted rather than reworded. Also
+found, but deliberately left for a future run as too big for this task:
+`AUDIO_MANIFEST.baseLoop`/`.layers` in `src/audio/manifest.ts` have zero
+production consumers either (see ROADMAP task 216's done-note). `npm
+test` 1383 green (1387 minus the 4 deleted `layering.test.ts` tests),
+`npm run build` green (939.72 kB, byte-identical to run 217's number).
 No new runtime dependency. Next consolidation still due ~225 (unchanged
 from run 215).
-See the run-217 HANDOFF below for the full account, and the run-216 one
+See the run-218 HANDOFF below for the full account, and the run-217 one
 just under it.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -222,6 +223,45 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-27 (run 218) — finished run 217's lead (2), found a
+  bigger one along the way, self-originated.** Run 217 left two leads
+  unclaimed: (2) two stale `AudioEngine.schedule` comments (`adaptive.ts`,
+  `instrumentVoice.ts`) narrating a class that no longer exists, and (3)
+  dead exports in `geometry.ts` plus stale tool names in PLAYTEST.md. Took
+  (2). Before rewording the comments, traced what actually re-anchors the
+  tune clock today so the replacement text would be true, not just
+  reworded around the gap: `RoadStage.tuneAnchorSec`, reset at every tune
+  start (`RoadStage.ts` lines 1130/1340/1505/2712/3002), is the real
+  mechanism — `nextBarAt` in `adaptive.ts` is the file that actually
+  documents the drift concern. Fixed both comments to point there instead.
+  A repo-wide grep for `AudioEngine` (done to confirm nothing else was
+  missed) turned up a third hit run 217's agent hadn't flagged:
+  `src/audio/layering.ts:7`. Checking its caller before touching the
+  comment found the whole file dead — `isLayerActive` has zero importers
+  anywhere outside its own test file; the real per-layer presence/gain
+  logic lives in `adaptive.ts`'s `ADAPTIVE_LAYERS`/`updateAdaptiveState`
+  now, not this meterThreshold-comparison helper. Deleted `layering.ts`
+  and `layering.test.ts` outright rather than reword a comment on dead
+  code (same call run 215 made on `hud.ts`). That same check surfaced a
+  bigger, deliberately unchased lead: `AUDIO_MANIFEST.baseLoop`/`.layers`
+  in `src/audio/manifest.ts` (the `gain`/`noteDurationMs`/
+  `semitoneOffset`/`meterThreshold` fields on every configured layer) also
+  have zero production consumers — only `.rootFrequencyHz` is read outside
+  `manifest.test.ts`; `RoadStage.ts` defines its own inline waveform map
+  instead of reading `AUDIO_MANIFEST.layers`. Left for a future run: this
+  is the file CLAUDE.md names by name ("Keep audio behind one manifest
+  file") and `manifest.test.ts` has real assertions over the fields in
+  question, so confirming and fixing it is a full task of its own, not a
+  same-run add-on. See ROADMAP task 216's done-note for the complete
+  account, including exact line numbers. `npm test` 1383 green (1387
+  minus the 4 deleted `layering.test.ts` tests), `npm run build` green
+  (939.72 kB, byte-identical to run 217's number — the dead function was
+  already tree-shaken out). No new runtime dependency. Lead (3) from run
+  217 (geometry.ts dead exports, PLAYTEST.md's four stale tool names) is
+  still open and unblocked for a future run. Blockers not re-tested this
+  run (task 161/179/184/189, wave 20, the v0.1 git tag) — unchanged since
+  their last check in run 216 or earlier.
 
 - **HANDOFF, 2026-09-27 (run 217) — dead-code cleanup, self-originated.**
   Run 216 closed the ROADMAP strikethrough sweep with nothing new queued:

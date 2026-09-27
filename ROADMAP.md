@@ -5833,6 +5833,57 @@ iPad household needs none of it; logged under Blocked on human.
     referenced any of the deleted exports, so removing them couldn't
     change the bundle). No new runtime dependency.
 
+216. ~~**Two stale `AudioEngine.schedule` comments, plus `src/audio/layering.ts`
+    is entirely dead.**~~ **Done (2026-09-27, run 218).** Run 217's Explore
+    agent flagged two comments (`src/audio/adaptive.ts:291`,
+    `src/audio/instrumentVoice.ts:37`) narrating behaviour "as
+    `AudioEngine.schedule` does" when no `AudioEngine` class exists
+    anywhere in current `src/` — same stale-pointer family as tasks
+    209/211. Confirmed with a repo-wide grep for `AudioEngine` (three
+    hits, all comments, zero class). While tracing what actually
+    re-anchors the tune clock today (to write an accurate replacement
+    rather than just delete the reference), found `RoadStage.tuneAnchorSec`
+    is the real mechanism (reset at each tune start, e.g. `RoadStage.ts`
+    lines 1130/1340/1505/2712/3002) and reworded both comments to point
+    there and at `nextBarAt` itself instead of the nonexistent class. A
+    third `AudioEngine` comment turned up in the same grep
+    (`src/audio/layering.ts:7`, "`AudioEngine` calls this to decide when
+    to ramp a layer's gain") that run 217's agent hadn't flagged — checking
+    its actual caller (`isLayerActive`) instead found the whole function
+    dead: zero importers anywhere outside its own `layering.test.ts`, the
+    real per-layer presence/gain logic having moved to `adaptive.ts`'s
+    `ADAPTIVE_LAYERS`/`updateAdaptiveState` system. Deleted `layering.ts`
+    and `layering.test.ts` outright (11 lines + a 29-line test file) rather
+    than reword a comment on dead code. Verified with a plain grep for
+    `isLayerActive` and for any import of `./layering` before deleting —
+    both came back empty outside the pair just removed. `npm test` 1383
+    green (1387 minus the 4 deleted `layering.test.ts` tests), `npm run
+    build` green (939.72 kB, byte-identical to run 217's number — the
+    dead function was already tree-shaken out, so deleting it couldn't
+    move the bundle). No new runtime dependency.
+
+    **Left for a future run, not chased here (too big for this task's
+    budget):** the same investigation found `AUDIO_MANIFEST.baseLoop` and
+    `AUDIO_MANIFEST.layers` (`src/audio/manifest.ts`) — the `gain`,
+    `noteDurationMs`, `semitoneOffset` and `meterThreshold` fields on
+    every layer, not just `meterThreshold` alone — have **zero production
+    consumers** either; only `AUDIO_MANIFEST.rootFrequencyHz` is read
+    outside `manifest.test.ts` (`RoadStage.ts`, `freePlayScreen.ts`).
+    `RoadStage.ts` defines its own inline waveform map (e.g. `harmony:
+    'sine'` at line 247) rather than reading `AUDIO_MANIFEST.layers`, so
+    the whole "additional instrument voices that fade in/out as the song
+    meter crosses each one's `meterThreshold`" story in `manifest.ts`'s
+    own header comment (lines 1-5) appears to describe a mechanism
+    `adaptive.ts`'s `ADAPTIVE_LAYERS` superseded, not the live one. This
+    is bigger than a doc fix or a dead-export deletion: `manifest.ts` is
+    the file CLAUDE.md names by name ("Keep audio behind one manifest
+    file"), and `manifest.test.ts` has real assertions over `baseLoop`/
+    `layers` (gain ordering, the threshold ordering) that would need
+    rewriting, not just deleting, if the fields really are vestigial —
+    worth a dedicated run to confirm end-to-end and decide whether to
+    trim the type or repoint the header comment at what's actually true
+    today, not a same-run add-on to this one.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
