@@ -5804,6 +5804,35 @@ iPad household needs none of it; logged under Blocked on human.
     number, as expected for a docs-only change). No new runtime
     dependency.
 
+215. ~~**`src/core/hud.ts` is almost entirely dead 2D-era dashboard-layout
+    code.**~~ **Done (2026-09-27, run 217).** `src/ui/hudLayout.ts`'s own
+    header comment names its predecessor: "the 2D game had `core/hud.ts`
+    for the same job", superseded when v0.6 rewrote the HUD for a walk
+    rather than a dashboard. Confirmed by grepping every export name in
+    `core/hud.ts` individually (the exact lesson task 212 recorded about
+    same-directory imports, applied here across the whole repo instead):
+    `HUD_MARGIN_X`, `HUD_ICON_RADIUS`, `HUD_ICON_ROW_Y`, `HUD_METER_ROW_Y`,
+    `HUD_TITLE_Y`, `HUD_METER_HEIGHT`, `HUD_METER_MAX_WIDTH`, the
+    `HudLayout` interface and the `hudLayout()` function had zero
+    consumers anywhere outside `hud.test.ts`, which existed only to test
+    `hudLayout()` against itself — the "song meter" it laid out doesn't
+    even exist in the live `Hud.ts` (whose own comment says "no meter, no
+    combo counter, no score, no streak"). Only `HUD_TOUCH_TARGET` has a
+    real importer (`ui/hudLayout.ts`, which re-exports it). Deleted
+    everything else, rewrote the file's header comment to describe what
+    actually remains (one constant, its lineage) instead of the dashboard
+    problem it no longer solves, and deleted `hud.test.ts` outright — no
+    function was left for it to test. Found by an Explore agent surveying
+    for a fresh, unblocked lead (idea backlog empty, every other open
+    thread — task 161/179/184/189, wave 20, the v0.1 git tag — parked on a
+    human call or blocked network access); verified every claim (the
+    import grep, the `Hud.ts` "no meter" comment, the zero-importer check)
+    directly against source before touching anything. `npm test` 1387
+    green (1398 minus the 11 deleted tests), `npm run build` green
+    (939.72 kB, byte-identical to run 216's number — zero production code
+    referenced any of the deleted exports, so removing them couldn't
+    change the bundle). No new runtime dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
