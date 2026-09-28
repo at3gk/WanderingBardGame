@@ -1,22 +1,23 @@
 # STATE
 
-Run counter: 220. Closed run 218's left-for-later lead: `manifest.ts`'s
-`AUDIO_MANIFEST.baseLoop`/`.layers` (waveform, gain, note length, a
-meter-threshold crossfade) had zero production readers — only
-`.rootFrequencyHz` is read outside tests (`RoadStage.ts`,
-`freePlayScreen.ts`); the real backing mechanism moved to `adaptive.ts`'s
-`ADAPTIVE_LAYERS` plus `RoadStage.ts`'s own `LAYER_WAVEFORMS` map some
-runs ago and `manifest.ts`'s header comment never caught up. Trimmed the
-manifest to the one live field, deleted the dead interface fields and
-object literals, rewrote the header to name the real mechanism's new
-home, and deleted the three `manifest.test.ts` tests that asserted over
-the removed fields (kept the one on `rootFrequencyHz`). `npm test` 1380
-green (1383 minus the 3 deleted tests), `npm run build` green (939.42 kB,
-300 bytes under run 219's number — the dead object literals were
-constructed at load even though unread, so this is the first of this
-lead's cleanups to actually move the bundle). No new runtime dependency.
-Next consolidation still due ~225 (unchanged from run 215).
-See the run-220 HANDOFF below for the full account, and the run-219 one
+Run counter: 221. Closed a fresh Explore-agent-found lead, self-originated
+(idea backlog still empty as of run 205; every open thread — task
+161/179/184/189, wave 20, the v0.1 git tag — remains parked on a human
+call or blocked network access, re-confirmed this run before picking a
+task). `tools/README.md` gave every tool in `tools/` its own usage
+section except `land-histogram.mjs`, whose only heading documented a
+historical sentinel bug rather than how to run it — and `frame-quality.mjs`'s
+own `landP90` section already pointed readers at a "below" section that
+didn't exist. Added the missing `## \`land-histogram.mjs [only]\`` section
+(three pinned poses, the sentinel-masking technique, the `only` filter,
+its downstream reuse by `frame-quality.mjs`'s `landP90` gate and
+`fog-hue-band.mjs`/`ground-cover-probe.mjs`), verified directly against
+the script's own source first. Docs-only change — no application or tool
+code touched. `npm test` 1380 green (unchanged), `npm run build` green
+(939.42 kB, byte-identical to run 220's number, as expected for a
+docs-only change). No new runtime dependency. Next consolidation still
+due ~225 (unchanged from run 215).
+See the run-221 HANDOFF below for the full account, and the run-220 one
 just under it.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -224,6 +225,33 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-28 (run 221) — new Explore-agent-found lead,
+  self-originated.** The idea backlog has been empty since run 205 (every
+  arc shipped or human/network-blocked), so this run re-ran the same
+  survey-for-a-lead move runs 206-220 used: spawned an Explore agent,
+  handed it the full list of what those fifteen runs already fixed so it
+  wouldn't repeat one, and told it to skip anything in STATE.md's
+  "Blocked on human" list. It found `tools/README.md` missing an entire
+  usage section for `land-histogram.mjs` — every other script in
+  `tools/` has its own `## \`name.mjs [args]\`` heading, but
+  land-histogram's only heading (added when task 168's finishing pass
+  broke its original sentinel assumption) documents that historical bug,
+  not how to run the tool or its `only` pose-filter arg. A second defect
+  came with it: `frame-quality.mjs`'s own `landP90` section already said
+  "see that section below" for land-histogram — a cross-reference to a
+  section that didn't exist until this run added one. Verified everything
+  against the agent's report and the script's own source
+  (`tools/land-histogram.mjs:1-31`) before writing: three pinned poses
+  (`02-morning`, `03-noon`, `04-golden-vista`), the sentinel-masking
+  technique, always exits 0. Added `## \`land-histogram.mjs [only]\``
+  directly after `frame-quality.mjs`'s section, summarizing the mechanism,
+  the poses, the `only` arg, and that `frame-quality.mjs`'s `landP90` gate
+  (task 125) and `fog-hue-band.mjs`/`ground-cover-probe.mjs` later reused
+  this tool's technique. Docs-only change — no application or tool code
+  touched. `npm test` 1380 green (unchanged), `npm run build` green
+  (939.42 kB, byte-identical to run 220's number). No new runtime
+  dependency. See ROADMAP task 219's done-note for the same account.
 
 - **HANDOFF, 2026-09-28 (run 220) — closed run 218's left-for-later lead,
   self-originated.** Run 218's investigation into stale `AudioEngine`

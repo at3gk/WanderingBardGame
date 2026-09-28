@@ -146,6 +146,30 @@ calibrate the sentinel, one to measure land-only), on top of the original
 whole-frame pass — already marked `slow: true` in `verify-all.mjs` (see
 below), now a bit more so.
 
+## `land-histogram.mjs [only]`
+
+Built for task 122: every whole-frame pixel-stats tool (`frame-quality.mjs`,
+`shader-check.mjs`) answers "did the frame get lighter", not "did the LAND get
+lighter" — on every pose here the sky is 40-90% of the frame, so a whole-frame
+statistic moves when the sky moves and can hide (or fake) a change in the
+ground underfoot. This tool hides the sky dome (`scene.traverse`'s object
+named `'sky'`), paints the renderer's clear colour a sentinel value, and reads
+back which pixels are that sentinel (background) versus real geometry
+(land, the bard, trees) — see the sentinel-bug section above for how the
+sentinel is now calibrated live rather than assumed, after task 168's
+finishing pass silently broke the original hardcoded-magenta version.
+
+Runs three pinned poses — `02-morning`, `03-noon`, `04-golden-vista` — and
+prints a land-only value histogram (p10/p50/p90 and the mid-band share) for
+each. Pass a pose name as `only` (`process.argv[2]`) to run a single pose
+instead of all three, the same convention as `frame-quality.mjs`/
+`postcard.mjs`/`figground.mjs`/`fog-hue-band.mjs`/`far-band-objects.mjs`.
+
+This is an instrument, not a gate — it always exits 0. Its sentinel-masking
+technique is what `frame-quality.mjs`'s `landP90` gate (task 125) and
+`fog-hue-band.mjs`/`ground-cover-probe.mjs` later reused once the numbers
+here proved the approach trustworthy.
+
 ## `postcard.mjs [outDir] [only]`
 
 Not a pass/fail check — a visual-QA tool. A critic (human or agent)

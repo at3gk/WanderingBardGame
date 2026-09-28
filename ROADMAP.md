@@ -5950,6 +5950,35 @@ iPad household needs none of it; logged under Blocked on human.
     though unread, so this is the first of this lead's changes to actually
     move the bundle). No new runtime dependency.
 
+219. ~~**`tools/README.md` has no usage section for `land-histogram.mjs`
+    itself.**~~ **Done (2026-09-28, run 221).** Found by an Explore agent
+    surveying for a fresh lead (idea backlog empty, every open thread —
+    task 161/179/184/189, wave 20, the v0.1 git tag — parked on a human
+    call or blocked network access; handed the full list of what runs
+    206-220 already fixed so it wouldn't repeat one). `tools/README.md`
+    gives every other script in `tools/` its own `## \`name.mjs [args]\``
+    heading with a usage description — confirmed by grepping every
+    `## \`` heading in the file — except `land-histogram.mjs`: its only
+    heading (`## \`land-histogram.mjs\`'s sentinel bug`, added task 168's
+    fix) documents a historical bug in the tool, not how to run it or its
+    `only` pose filter (`tools/land-histogram.mjs:169`,
+    `process.argv[2]`). Worse, `frame-quality.mjs`'s own `landP90` section
+    (line 115) already pointed readers at "that section below" for
+    land-histogram, a cross-reference to a section that didn't exist.
+    Verified the script's own behaviour directly (`land-histogram.mjs:1-31`)
+    before writing the doc: three pinned poses (`02-morning`, `03-noon`,
+    `04-golden-vista`), the sentinel-masking technique, always exits 0
+    (instrument, not a gate). Added a proper `## \`land-histogram.mjs
+    [only]\`` section directly after `frame-quality.mjs`'s (making the
+    "below" cross-reference true), summarizing the mechanism, the three
+    poses, the `only` arg, and that this tool's technique is what
+    `frame-quality.mjs`'s `landP90` gate (task 125) and
+    `fog-hue-band.mjs`/`ground-cover-probe.mjs` later reused. Docs-only
+    change — no application or tool code touched. `npm test` 1380 green
+    (unchanged), `npm run build` green (939.42 kB, byte-identical to run
+    220's number, as expected for a docs-only change). No new runtime
+    dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
