@@ -5923,6 +5923,33 @@ iPad household needs none of it; logged under Blocked on human.
     byte-identical to run 218's number — all three deletions were already
     tree-shaken out). No new runtime dependency.
 
+218. ~~**`AUDIO_MANIFEST.baseLoop`/`.layers` are dead — trim `manifest.ts`
+    to what's actually true.**~~ **Done (2026-09-28, run 220).** Run 218's
+    left-for-later lead: confirmed end-to-end before touching anything. A
+    repo-wide grep for `AUDIO_MANIFEST`, `rootFrequencyHz`, `baseLoop` and
+    `LoopLayer` across `src/` found exactly two production readers of the
+    manifest (`RoadStage.ts`, `freePlayScreen.ts`) and both touch only
+    `.rootFrequencyHz` — the note-pitch root every voice transposes from.
+    Neither reads `.baseLoop` or `.layers`; `RoadStage.ts` sounds its
+    layers from its own `LAYER_WAVEFORMS` map (waveform) and
+    `adaptive.ts`'s `ADAPTIVE_LAYERS` (gain, threshold, semitone offset) —
+    the real backing mechanism `manifest.ts`'s own header comment was
+    still describing the *pre-adaptive.ts* version of. Trimmed
+    `AudioManifest` to the one live field, deleted the `LoopLayer`
+    interface and the `baseLoop`/`layers` object literals, and rewrote the
+    header comment to name what the file actually is now (the shared root
+    pitch) and where the real per-layer mechanism moved to, rather than
+    silently dropping the "single source of truth" claim. `manifest.test.ts`
+    had three tests written over the deleted fields (octave-transposition,
+    melody-loudest, threshold-ordering) — deleted rather than reworded,
+    since there is nothing left of that mechanism in this file to assert
+    over; the one test on the surviving field (roots at middle C) is
+    unchanged. `npm test` 1380 green (1383 minus the 3 deleted tests),
+    `npm run build` green (939.42 kB, 300 bytes under run 219's number —
+    the deleted object literals were constructed at module load even
+    though unread, so this is the first of this lead's changes to actually
+    move the bundle). No new runtime dependency.
+
 Retention as design work, grounded in docs/research/retention-design.md
 (read it first — its rejected-on-principle list binds every task here).
 DESIGN.md's "The road home" section is the contract. These interleave with
