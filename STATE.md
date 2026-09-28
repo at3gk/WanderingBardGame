@@ -1,24 +1,22 @@
 # STATE
 
-Run counter: 219. Took lead (3) from run 217's Explore survey, still open
-after runs 217 and 218 each took a different lead off the same list:
-`geometry.ts`'s `GEOMETRY_BUILDERS`/`clearGeometryCache` were dead code
-(zero importers anywhere, not even a test), and PLAYTEST.md named four
-Phaser-era tools (`scenery-sheet.mjs`, `proofsheet.mjs`, `ui-sheet.mjs`,
-`pillar-check.mjs`) that don't exist in `tools/` any more — the v0.6
-rewrite replaced the whole Phaser presentation layer they checked.
-Deleted both dead exports; deleting `GEOMETRY_BUILDERS` orphaned a local
-helper (`toNonIndexed`) `tsc --noEmit` caught as unused, deleted too.
-Reworded `outwardFraction`'s doc comment, which cited the same dead tool
-as its reason for staying exported (the real reason is `geometry.test.ts`
-importing it directly). PLAYTEST.md: named the four tools as gone rather
-than silently dropping the claim, pointed at today's closest equivalents,
-and fixed the two checklist items still citing them as live checks. `npm
-test` 1383 green (unchanged — none of the deleted code had a test), `npm
-run build` green (939.72 kB, byte-identical to run 218's number). No new
-runtime dependency. Next consolidation still due ~225 (unchanged from
-run 215).
-See the run-219 HANDOFF below for the full account, and the run-218 one
+Run counter: 220. Closed run 218's left-for-later lead: `manifest.ts`'s
+`AUDIO_MANIFEST.baseLoop`/`.layers` (waveform, gain, note length, a
+meter-threshold crossfade) had zero production readers — only
+`.rootFrequencyHz` is read outside tests (`RoadStage.ts`,
+`freePlayScreen.ts`); the real backing mechanism moved to `adaptive.ts`'s
+`ADAPTIVE_LAYERS` plus `RoadStage.ts`'s own `LAYER_WAVEFORMS` map some
+runs ago and `manifest.ts`'s header comment never caught up. Trimmed the
+manifest to the one live field, deleted the dead interface fields and
+object literals, rewrote the header to name the real mechanism's new
+home, and deleted the three `manifest.test.ts` tests that asserted over
+the removed fields (kept the one on `rootFrequencyHz`). `npm test` 1380
+green (1383 minus the 3 deleted tests), `npm run build` green (939.42 kB,
+300 bytes under run 219's number — the dead object literals were
+constructed at load even though unread, so this is the first of this
+lead's cleanups to actually move the bundle). No new runtime dependency.
+Next consolidation still due ~225 (unchanged from run 215).
+See the run-220 HANDOFF below for the full account, and the run-219 one
 just under it.
 
 ## Direction research (standing — CLAUDE.md pillar 5)
@@ -226,6 +224,46 @@ mastery display must read that section first.
 ## Current status
 
 **At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-28 (run 220) — closed run 218's left-for-later lead,
+  self-originated.** Run 218's investigation into stale `AudioEngine`
+  comments found (and deliberately did not chase, flagging it as its own
+  task) that `src/audio/manifest.ts`'s `AUDIO_MANIFEST.baseLoop` and
+  `.layers` — every field on them (`gain`, `noteDurationMs`,
+  `semitoneOffset`, `meterThreshold`), not just `meterThreshold` alone —
+  have zero production consumers. Verified before touching anything: a
+  repo-wide grep for `AUDIO_MANIFEST`, `rootFrequencyHz`, `baseLoop` and
+  `LoopLayer` across `src/` turned up exactly two production importers
+  (`RoadStage.ts`, `freePlayScreen.ts`), both reading only
+  `.rootFrequencyHz` for pitch conversion (`semitoneToFrequency`). Traced
+  where the real per-layer mechanism lives today: `RoadStage.ts`'s own
+  `LAYER_WAVEFORMS` const (line 242) supplies each layer's waveform, and
+  `adaptive.ts`'s `ADAPTIVE_LAYERS` (gain, enter/leave thresholds,
+  semitone offset, fade times) drives everything else — `manifest.ts`'s
+  header comment was still narrating the pre-`adaptive.ts` mechanism
+  (task 8's original meter-threshold crossfade), which is exactly what
+  run 218 suspected but didn't have budget to confirm. This is the file
+  CLAUDE.md names by name ("Keep audio behind one manifest file"), so the
+  header needed to say something true, not just lose a claim: rewrote it
+  to describe the one field that's actually shared (the root pitch) and
+  point at `adaptive.ts`/`RoadStage.ts` for where the real per-voice
+  config now lives, rather than silently dropping the old story. Trimmed
+  `AudioManifest` to `rootFrequencyHz`, deleted the `LoopLayer` interface
+  and the `baseLoop`/`layers` object literals. `manifest.test.ts` had
+  three tests written over the deleted fields (octave-transposition
+  invariant across all layers, melody-loudest-voice ordering, rising
+  meter-threshold ordering) — deleted rather than reworded, since there
+  is no mechanism left in this file for them to assert over; the fourth
+  test (roots at middle C, the field that survives) is unchanged. A
+  follow-up grep for any remaining `LoopLayer`/`.baseLoop`/`.layers`
+  reference across `src/` came back empty after the edit. `npm test` 1380
+  green (1383 minus the 3 deleted tests), `npm run build` green
+  (939.42 kB, 300 bytes under run 219's number — the deleted object
+  literals were constructed at module load even though nothing read
+  them, so this is the first of this lead's changes to actually move the
+  bundle rather than being tree-shaken out already). No new runtime
+  dependency. See ROADMAP task 218's done-note for the same account with
+  exact line references.
 
 - **HANDOFF, 2026-09-27 (run 219) — took run 217's remaining lead (3),
   self-originated.** Run 217's Explore-agent survey left three leads;
