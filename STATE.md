@@ -1,6 +1,8 @@
 # STATE
 
-Run counter: 226. Run 226 (2026-10-01) was a verification-only run: main at d718501 re-checked green (`npm test` 1380, `npm run build` OK); no new lead, no code changed. Next consolidation ~235.
+Run counter: 227. Run 227 (2026-10-02) was a verification-only run: main at 01dcc00 re-checked green (`npm test` 1380, `npm run build` OK); no new lead, no code changed. Next consolidation ~235.
+
+Prior (run 226): Run 226 (2026-10-01) was a verification-only run: main at d718501 re-checked green (`npm test` 1380, `npm run build` OK); no new lead, no code changed. Next consolidation ~235.
 
 Prior (run 225): Run counter 225. Run 225 (2026-10-01) was the consolidation run. main at f6f797b re-verified green (`npm test` 1380, `npm run build` OK). Runs 216-224 were all dead-code/docs hygiene (hud.ts, geometry.ts, manifest.ts, layering.ts deletions, tools/README, PLAYTEST.md); no gameplay or rendering code changed, so DESIGN.md's core mechanic and v0.1 definition still describe the game. Research refresh against `docs/research/`: retention-design.md's seven recommendations unchanged (1-6 shipped, 7 standing design); rejected-on-principle list re-checked against runs 196-224 and nothing shipped touches streaks, loss-framing, FOMO, near-miss staging, learning fractions, accuracy sharing or decay. art-quality.md and mobile-friendly.md unchanged (task 173's real-device halves and the v0.1 git tag remain human-gated). Idea backlog still empty; next run (~226) may resume tasks from ROADMAP or stay verification-only. Next consolidation ~235.
 
