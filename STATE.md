@@ -1,6 +1,5171 @@
 # STATE
 
-Run counter: 226. Run 226 (2026-10-01) was a verification-only run: main at d718501 re-checked green (`npm test` 1380, `npm run build` OK); no new lead, no code changed. Next consolidation ~235.
+Run counter: 227. Run 227 (2026-10-02) was a verification-only run: main at 01dcc00 re-checked green (`npm test` 1380, `npm run build` OK); no new lead, no code changed. Next consolidation ~235.
+
+Prior (run 226): Run 226 (2026-10-01) was a verification-only run: main at d718501 re-checked green (`npm test` 1380, `npm run build` OK); no new lead, no code changed. Next consolidation ~235.
+
+Prior (run 225): Run counter 225. Run 225 (2026-10-01) was the consolidation run. main at f6f797b re-verified green (`npm test` 1380, `npm run build` OK). Runs 216-224 were all dead-code/docs hygiene (hud.ts, geometry.ts, manifest.ts, layering.ts deletions, tools/README, PLAYTEST.md); no gameplay or rendering code changed, so DESIGN.md's core mechanic and v0.1 definition still describe the game. Research refresh against `docs/research/`: retention-design.md's seven recommendations unchanged (1-6 shipped, 7 standing design); rejected-on-principle list re-checked against runs 196-224 and nothing shipped touches streaks, loss-framing, FOMO, near-miss staging, learning fractions, accuracy sharing or decay. art-quality.md and mobile-friendly.md unchanged (task 173's real-device halves and the v0.1 git tag remain human-gated). Idea backlog still empty; next run (~226) may resume tasks from ROADMAP or stay verification-only. Next consolidation ~235.
+
+Prior (run 224): Run 224 (2026-10-01) was another verification-only run: main at 67e203c re-checked green (`npm test` 1380, `npm run build` OK); no new lead, no code changed. Consolidation due next run (~225).
+
+Prior: Run counter 223. Run 223 (2026-09-29) was a verification-only run: main at d36a715 re-checked green (`npm test` 1380, `npm run build` OK); no new lead worth a task, no code changed. Run 222's identical note sat unmerged on another branch. Consolidation still due ~225.
+
+Prior (run 221): Closed a fresh Explore-agent-found lead, self-originated
+(idea backlog still empty as of run 205; every open thread — task
+161/179/184/189, wave 20, the v0.1 git tag — remains parked on a human
+call or blocked network access, re-confirmed this run before picking a
+task). `tools/README.md` gave every tool in `tools/` its own usage
+section except `land-histogram.mjs`, whose only heading documented a
+historical sentinel bug rather than how to run it — and `frame-quality.mjs`'s
+own `landP90` section already pointed readers at a "below" section that
+didn't exist. Added the missing `## \`land-histogram.mjs [only]\`` section
+(three pinned poses, the sentinel-masking technique, the `only` filter,
+its downstream reuse by `frame-quality.mjs`'s `landP90` gate and
+`fog-hue-band.mjs`/`ground-cover-probe.mjs`), verified directly against
+the script's own source first. Docs-only change — no application or tool
+code touched. `npm test` 1380 green (unchanged), `npm run build` green
+(939.42 kB, byte-identical to run 220's number, as expected for a
+docs-only change). No new runtime dependency. Next consolidation still
+due ~225 (unchanged from run 215).
+See the run-221 HANDOFF below for the full account, and the run-220 one
+just under it.
+
+## Direction research (standing — CLAUDE.md pillar 5)
+
+Three primary-sourced notes live in `docs/research/` and bind the queues
+built from them: `retention-design.md` (→ v0.9 queue), `art-quality.md`
+(→ v1.1 queue; its not-recommended list binds), and `mobile-friendly.md`
+(→ v1.2 queue; its URGENT fact: Safari ITP deletes the child's whole
+localStorage save after 7 days of absence — home-screen install is the
+first-party-documented exemption, so ROADMAP task 171 is data-loss
+protection, not polish. Store distribution is human-gated: logged under
+Blocked on human).
+
+`docs/research/retention-design.md` (2026-07-31, primary-sourced) is the
+living note on why players return to cozy games and what this game may
+and may not do about it. Its seven ranked recommendations became ROADMAP's
+v0.9 queue (tasks 151-157); its rejected-on-principle list (no streaks,
+no login rewards, no FOMO content, no near-miss staging, no visible
+learning fractions, no accuracy sharing, no decay) BINDS all retention
+work. Consolidation runs: reread it, note here what the game now does
+about each top recommendation, extend it when a shipped feature teaches
+something it didn't predict.
+
+**Run-120 refresh (2026-08-07), against the seven ranked
+recommendations:** 1 (campfire bookend) SHIPPED — tonight's page +
+tomorrow's skyline (151/159). 2 (shared road felt) SHIPPED — road
+names + hour-honest greeting (152) and the campfire postcard (153).
+3 (pages wear in) SHIPPED first slice (154), keyed to diary facts
+only, as the ethics rule demands. 4 (mementos) SHIPPED (155) — pressed
+into the page, no counts. 5 (welcome-back, never weeds) SHIPPED (156)
+— the fire greets the idle return, no day counter anywhere. 6 (family
+on one bench) OPEN — task 157, the queue's one remaining arc. 7
+(instruments finite/distinct) standing design, no new task. The
+rejected-on-principle list was re-checked against runs 105-119:
+nothing shipped touches streaks, loss-framing, FOMO, near-miss
+staging, learning fractions, accuracy sharing, or decay. One shipped
+lesson worth adding to the note eventually: the deer staging (186)
+suggests recommendation 4's mementos gain more from being SEEN at the
+encounter than from the journal line alone — the picture agreeing
+with the prose is itself a return-warmth feature.
+
+**Run-135 refresh (2026-08-30):** recommendation 6 is now SHIPPED —
+task 157 (two bookmarks, zero-migration storage + the switch UI)
+completed across runs 121-123, closing the v0.9 queue's one remaining
+arc. All seven ranked recommendations are now SHIPPED or standing
+design; the v0.9 queue itself is complete. Rejected-on-principle list
+re-checked against runs 120-134 (the wave 18/19 art-quality loop and
+the 186 creature family): nothing shipped there touches player
+retention mechanics at all — it is entirely rendering/staging fidelity
+on the existing world, so the list has nothing new to check against
+this cycle.
+
+**Run-145 refresh (2026-09-03, consolidation):** no change since the
+run-135 refresh — retention's v0.9 queue stays complete (all seven
+recommendations SHIPPED or standing design) and the rejected-on-principle
+list re-checked against runs 135-144 finds nothing to flag: every one of
+those runs was task 189's hue-band investigation (measurement and tooling
+fixes, zero shader/gameplay changes shipped) or task 143's shoulder-blend
+fix, neither touching returning-player behaviour at all. `mobile-friendly.md`'s
+URGENT save-protection item (task 171) remains shipped and unchanged;
+its queue (v1.2) still carries one genuinely open, real-device-only item
+(task 173, iOS audio-session behaviour) already tracked under Needs
+human playtest, not new this refresh. Two new
+findings went into `docs/research/art-quality.md`'s "Findings from shipped
+work" section this run (the stale-measurement-tool pattern and the
+correlation-is-not-a-mechanism lesson from task 189) — see there for the
+detail.
+
+**Run-157 refresh (2026-09-07, consolidation):** no change since the
+run-145 refresh — the v0.9 queue stays complete and the rejected-on-
+principle list re-checked against runs 146-156 (v1.3's task 176, free
+play/recording, and task 177, MIDI import) finds nothing to flag: neither
+arc adds a counter, timer, grade, or anything exclusive-to-today, and the
+"Your songs"/imported-song shelf is a plain uncapped-looking list (capped
+at 8 for storage only, the cap never shown) rather than an "X of Y"
+checklist. `mobile-friendly.md`'s URGENT item and its one open real-device
+task (173) are unchanged; the block touched no mobile/save-path code.
+`art-quality.md` is likewise unchanged — the block was UI/data work, not
+rendering, so nothing to re-check there. One thing worth a future refresh
+rather than action now: a family's recorded/imported songs are a third
+kind of collection alongside instruments (rec 7) and journal mementos
+(rec 4), and unlike either they're a visible shelf rather than something
+gated by earning — nothing shipped violates rule 4 today, but any later
+work on that shelf (badges, counts, sorting by "most played") should be
+checked against it as carefully as the journal already is.
+
+**Run-165 refresh (2026-09-09, consolidation):** no change since the
+run-157 refresh — the v0.9 queue stays complete and the rejected-on-
+principle list re-checked against runs 158-164 (task 178's MusicXML
+import, task 186's last four creature pieces, and task 189's piece-4
+investigation) finds nothing to flag: the import arc adds a second way to
+bring a song in, not a counter or a checklist; the birds are staging and
+animation work with no player-facing collection mechanic at all; the
+investigation shipped no gameplay change. `mobile-friendly.md`'s URGENT
+item and its one open real-device task (173) are unchanged; the block
+touched no mobile/save-path code. `art-quality.md` gained a new "Findings
+from shipped work" entry this run (see there) — the run-162 dead-code find
+and the run-164 daily-seed methodology gap are both harness/process
+lessons, not rendering facts, but they belong in the same running record
+as the earlier ones.
+
+**Run-175 refresh (2026-09-13, consolidation):** no change since the
+run-165 refresh — the v0.9 queue stays complete and the rejected-on-
+principle list re-checked against runs 166-174 (task 189's fifth
+refutation, task 190's scatter-anchor arc, task 191's solfège toggle,
+task 173 piece 1's timing verification, task 179's residual investigation)
+finds nothing to flag: none of the five touches a counter, a timer, a
+grade, or anything exclusive-to-today — solfège in particular is a plain
+either/or preference, not a collection or a gated unlock, so recommendation
+4's "no visible fraction" rule has nothing to check it against.
+`mobile-friendly.md`'s URGENT save-protection item stays shipped and
+unchanged; task 173, its one open v1.2 item, is now HALF closed — piece 1
+(run 173) verified the beat clock survives 30fps rAF with a real
+regression test, so the "Needs human playtest" list below is narrowed to
+the two real-device-only halves (iOS silent switch, call/backgrounding
+interruption) that genuinely need hardware this environment doesn't have.
+`art-quality.md` gained a new findings entry this run (see there) covering
+both process lessons the 166-174 block taught: task 190's world-space
+guarantee not answering `scatter-probe.mjs`'s camera-frame-quadrant
+question even after being wired in and measured, and task 179's residual
+being a quantified, confirmed mechanism with no permissible lever (blocked
+on a creative-direction call, not more engineering) — plus the process
+note that the residual itself went unnoticed by six straight consolidation
+passes before run 174 caught it, a reminder that a drift check only
+catches what it thinks to look for. Code/doc survey of the block's touched
+files (`notation.ts`, `scaffoldStorage.ts`, `App.ts`, `RoadStage.ts`,
+`fixedStep.ts`, `SongNotes.ts`, `WorldStreamer.ts`, `freePlayScreen.ts`,
+`tools/figground.mjs`, `tools/far-band-objects.mjs`) found the two new
+mechanisms (the scatter anchor, the solfège toggle) both genuinely wired
+into real app code, not just tests, but DESIGN.md's "Considered and
+rejected" list still called solfège "worth considering later" a full three
+runs after it shipped — fixed, along with the two in-code comments
+(`notation.ts`, `scaffoldStorage.ts`) that had quoted that stale text as
+their own justification for calling the feature unbuilt.
+
+**Run-185 refresh (2026-09-16, consolidation):** the headline this cycle —
+**all three research notes now have their full ranked-recommendation
+lists closed** (SHIPPED or standing design), for the first time since
+this section started tracking them. `retention-design.md`'s seven and
+`mobile-friendly.md`'s buildout list were both already closed as of the
+run-175 refresh; this block closed the third. Re-checked the
+rejected-on-principle list against runs 176-184 (audio-session/
+interruption fix, palm-rejection test, the quality-tier toggle, the
+fog-reach wiring, and task 166/194's saturation audit and measurement
+arc) and found nothing to flag: every one of the five threads is mobile/
+input/rendering fidelity on the existing world, none adds a counter, a
+timer, a grade, or anything exclusive-to-today. `mobile-friendly.md`: its
+URGENT save-protection item stays shipped and unchanged; its buildout
+list closed fully at run 179 (task 192, recommendation 6, the hand-picked
+quality toggle) — recorded here since the run-180 refresh flagged it but
+this is the first consolidation to confirm it stands. Its one open item,
+task 173, is unchanged: piece 2 (run 176) shipped the audio-session/
+interruption *code*, but both real-device halves (iOS silent switch,
+call/backgrounding interruption) stay genuinely hardware-blocked, same as
+the run-175 refresh reported. `art-quality.md`: recommendation 6 ("adopt
+the detail-density language") closed end to end at run 181 (task 193) —
+the last of its six recommendations, so the list that opened this
+research note 2026-07-31 is now fully accounted for. Its "Findings from
+shipped work" section gained a new entry this run (see the file itself)
+recording both the milestone and the technical lesson task 194 piece 2
+taught on the way: the color script's CARRYING/ENACTING hour split is an
+authored category with no single per-frame shader scalar that tracks it,
+so future hour-gated shader terms need a TS-side gate uniform, not a
+sun-angle proxy. Closing all three lists is a milestone, not a stopping
+point — task 194 (the one thread the audit that closed art-quality.md's
+list turned up) is still open, and any future shipped feature can still
+teach these notes something new; the "Findings from shipped work"
+sections stay live regardless of the ranked lists' status.
+
+**Run-195 refresh (2026-09-19, consolidation):** no regression since the
+run-185 refresh — all three lists stay fully closed. Task 194 (the one
+open thread run 185 flagged) shipped and closed end to end at run 186;
+`art-quality.md`'s "Findings from shipped work" gained a closing-the-loop
+entry for it this run. Re-checked the rejected-on-principle list against
+runs 186-194 (task 194 piece 3, and the tasks 195-197 keyboard/screen-
+reader accessibility arc across six runs) and found nothing to flag: the
+accessibility work adds no counter, timer, grade, streak, or
+exclusive-to-today content — it is reachability for players who tab or
+use assistive tech, not a retention mechanic. `mobile-friendly.md`: its
+URGENT save-protection item and its one open item (task 173's two
+real-device halves) are unchanged. But the 195-197 arc did teach this file
+something its own scope never anticipated — recommendation 7 ("HUD
+touch-target audit") is about tap-target *size*, not keyboard/screen-
+reader reach, so an entire input-accessibility axis existed with no line
+in this note at all until it shipped anyway (self-originated three
+separate times, runs 187/193/194, because the idea backlog was empty each
+time, not because any research doc asked for it). Added a "Findings from
+shipped work" section to `mobile-friendly.md` (it had none before this
+run) recording that gap — see the file itself. `art-quality.md` is
+otherwise unchanged; the accessibility arc touched no rendering code.
+Compressed the nine individual run-186-194 HANDOFF blocks below into one
+run-index paragraph, matching the run-175/165/145/185 pattern.
+
+## The true goal (standing pointer)
+
+DESIGN.md's "The true goal" section (2026-07-31, human-grilled to shared
+understanding) now defines the game's destination: household audience
+with the child as tie-break, the Festival of the Long Road at 12-15
+walked legs, the by-heart mastery ladder ending in playing without
+notes, Book Two (accidentals) as the post-festival choice, the
+first-campfire promise, and a one-tap title card. The v1.0 arc is
+ROADMAP tasks 158-165. Any run touching goals, pacing, menus, or
+mastery display must read that section first.
+
+## Current status
+
+**At a glance** — read this, then only the sections you need.
+
+- **HANDOFF, 2026-09-28 (run 221) — new Explore-agent-found lead,
+  self-originated.** The idea backlog has been empty since run 205 (every
+  arc shipped or human/network-blocked), so this run re-ran the same
+  survey-for-a-lead move runs 206-220 used: spawned an Explore agent,
+  handed it the full list of what those fifteen runs already fixed so it
+  wouldn't repeat one, and told it to skip anything in STATE.md's
+  "Blocked on human" list. It found `tools/README.md` missing an entire
+  usage section for `land-histogram.mjs` — every other script in
+  `tools/` has its own `## \`name.mjs [args]\`` heading, but
+  land-histogram's only heading (added when task 168's finishing pass
+  broke its original sentinel assumption) documents that historical bug,
+  not how to run the tool or its `only` pose-filter arg. A second defect
+  came with it: `frame-quality.mjs`'s own `landP90` section already said
+  "see that section below" for land-histogram — a cross-reference to a
+  section that didn't exist until this run added one. Verified everything
+  against the agent's report and the script's own source
+  (`tools/land-histogram.mjs:1-31`) before writing: three pinned poses
+  (`02-morning`, `03-noon`, `04-golden-vista`), the sentinel-masking
+  technique, always exits 0. Added `## \`land-histogram.mjs [only]\``
+  directly after `frame-quality.mjs`'s section, summarizing the mechanism,
+  the poses, the `only` arg, and that `frame-quality.mjs`'s `landP90` gate
+  (task 125) and `fog-hue-band.mjs`/`ground-cover-probe.mjs` later reused
+  this tool's technique. Docs-only change — no application or tool code
+  touched. `npm test` 1380 green (unchanged), `npm run build` green
+  (939.42 kB, byte-identical to run 220's number). No new runtime
+  dependency. See ROADMAP task 219's done-note for the same account.
+
+- **HANDOFF, 2026-09-28 (run 220) — closed run 218's left-for-later lead,
+  self-originated.** Run 218's investigation into stale `AudioEngine`
+  comments found (and deliberately did not chase, flagging it as its own
+  task) that `src/audio/manifest.ts`'s `AUDIO_MANIFEST.baseLoop` and
+  `.layers` — every field on them (`gain`, `noteDurationMs`,
+  `semitoneOffset`, `meterThreshold`), not just `meterThreshold` alone —
+  have zero production consumers. Verified before touching anything: a
+  repo-wide grep for `AUDIO_MANIFEST`, `rootFrequencyHz`, `baseLoop` and
+  `LoopLayer` across `src/` turned up exactly two production importers
+  (`RoadStage.ts`, `freePlayScreen.ts`), both reading only
+  `.rootFrequencyHz` for pitch conversion (`semitoneToFrequency`). Traced
+  where the real per-layer mechanism lives today: `RoadStage.ts`'s own
+  `LAYER_WAVEFORMS` const (line 242) supplies each layer's waveform, and
+  `adaptive.ts`'s `ADAPTIVE_LAYERS` (gain, enter/leave thresholds,
+  semitone offset, fade times) drives everything else — `manifest.ts`'s
+  header comment was still narrating the pre-`adaptive.ts` mechanism
+  (task 8's original meter-threshold crossfade), which is exactly what
+  run 218 suspected but didn't have budget to confirm. This is the file
+  CLAUDE.md names by name ("Keep audio behind one manifest file"), so the
+  header needed to say something true, not just lose a claim: rewrote it
+  to describe the one field that's actually shared (the root pitch) and
+  point at `adaptive.ts`/`RoadStage.ts` for where the real per-voice
+  config now lives, rather than silently dropping the old story. Trimmed
+  `AudioManifest` to `rootFrequencyHz`, deleted the `LoopLayer` interface
+  and the `baseLoop`/`layers` object literals. `manifest.test.ts` had
+  three tests written over the deleted fields (octave-transposition
+  invariant across all layers, melody-loudest-voice ordering, rising
+  meter-threshold ordering) — deleted rather than reworded, since there
+  is no mechanism left in this file for them to assert over; the fourth
+  test (roots at middle C, the field that survives) is unchanged. A
+  follow-up grep for any remaining `LoopLayer`/`.baseLoop`/`.layers`
+  reference across `src/` came back empty after the edit. `npm test` 1380
+  green (1383 minus the 3 deleted tests), `npm run build` green
+  (939.42 kB, 300 bytes under run 219's number — the deleted object
+  literals were constructed at module load even though nothing read
+  them, so this is the first of this lead's changes to actually move the
+  bundle rather than being tree-shaken out already). No new runtime
+  dependency. See ROADMAP task 218's done-note for the same account with
+  exact line references.
+
+- **HANDOFF, 2026-09-27 (run 219) — took run 217's remaining lead (3),
+  self-originated.** Run 217's Explore-agent survey left three leads;
+  runs 217 and 218 each took one, leaving (3) — dead exports in
+  `src/three/world/geometry.ts` (`GEOMETRY_BUILDERS`, `clearGeometryCache`)
+  plus four Phaser-era tool names PLAYTEST.md still cited
+  (`scenery-sheet.mjs`, `proofsheet.mjs`, `ui-sheet.mjs`,
+  `pillar-check.mjs`) — unclaimed. Verified both halves before touching
+  anything: a repo-wide grep for the two export names across `src/` and
+  `tools/` found zero importers, including in tests; a grep of the four
+  tool names against the real `tools/` directory confirmed none exist.
+  `tools/verify-all.mjs`'s own header comment explains why — those were
+  checks that drove the old Phaser scene through
+  `window.game.scene.scenes[0]`, and the v0.6 rewrite to Three.js took
+  that global, and every check built on it except `shader-check.mjs`,
+  with it. Deleted `GEOMETRY_BUILDERS` and `clearGeometryCache`. That
+  orphaned `toNonIndexed`, a local helper only `GEOMETRY_BUILDERS` had
+  called (confirmed with its own grep) — `tsc --noEmit` failed on the
+  unused local immediately, exactly the guardrail doing its job; deleted
+  it too. While there, noticed `outwardFraction`'s doc comment gave the
+  same dead tool as the reason it stays exported; reworded it to name the
+  real reason, `geometry.test.ts` importing and asserting on it directly.
+  PLAYTEST.md: rewrote the Round 2 note to say the four tools are
+  Phaser-era and gone (not silently drop the claim), name today's closest
+  equivalents (`postcard.mjs` for human/agent screenshot review,
+  `shader-check.mjs`/`frame-quality.mjs` for automated pass/fail on posed
+  frames), and flag that no automated per-viewport layout check exists
+  today; fixed the two checklist items ("Scenery bands", "Notation UI")
+  that still cited the dead tools as live checks. Read this the same way
+  run 217's agent and run 217 itself did: pure doc/dead-code cleanup, not
+  a mandate to rebuild four Phaser-era tools for the Three.js game. `npm
+  test` 1383 green (unchanged — none of the deleted code had a test),
+  `npm run build` green (939.72 kB, byte-identical to run 218's number —
+  all three deletions were already tree-shaken out). No new runtime
+  dependency. See ROADMAP task 217's done-note for the same account with
+  exact line references.
+
+- **HANDOFF, 2026-09-27 (run 218) — finished run 217's lead (2), found a
+  bigger one along the way, self-originated.** Run 217 left two leads
+  unclaimed: (2) two stale `AudioEngine.schedule` comments (`adaptive.ts`,
+  `instrumentVoice.ts`) narrating a class that no longer exists, and (3)
+  dead exports in `geometry.ts` plus stale tool names in PLAYTEST.md. Took
+  (2). Before rewording the comments, traced what actually re-anchors the
+  tune clock today so the replacement text would be true, not just
+  reworded around the gap: `RoadStage.tuneAnchorSec`, reset at every tune
+  start (`RoadStage.ts` lines 1130/1340/1505/2712/3002), is the real
+  mechanism — `nextBarAt` in `adaptive.ts` is the file that actually
+  documents the drift concern. Fixed both comments to point there instead.
+  A repo-wide grep for `AudioEngine` (done to confirm nothing else was
+  missed) turned up a third hit run 217's agent hadn't flagged:
+  `src/audio/layering.ts:7`. Checking its caller before touching the
+  comment found the whole file dead — `isLayerActive` has zero importers
+  anywhere outside its own test file; the real per-layer presence/gain
+  logic lives in `adaptive.ts`'s `ADAPTIVE_LAYERS`/`updateAdaptiveState`
+  now, not this meterThreshold-comparison helper. Deleted `layering.ts`
+  and `layering.test.ts` outright rather than reword a comment on dead
+  code (same call run 215 made on `hud.ts`). That same check surfaced a
+  bigger, deliberately unchased lead: `AUDIO_MANIFEST.baseLoop`/`.layers`
+  in `src/audio/manifest.ts` (the `gain`/`noteDurationMs`/
+  `semitoneOffset`/`meterThreshold` fields on every configured layer) also
+  have zero production consumers — only `.rootFrequencyHz` is read outside
+  `manifest.test.ts`; `RoadStage.ts` defines its own inline waveform map
+  instead of reading `AUDIO_MANIFEST.layers`. Left for a future run: this
+  is the file CLAUDE.md names by name ("Keep audio behind one manifest
+  file") and `manifest.test.ts` has real assertions over the fields in
+  question, so confirming and fixing it is a full task of its own, not a
+  same-run add-on. See ROADMAP task 216's done-note for the complete
+  account, including exact line numbers. `npm test` 1383 green (1387
+  minus the 4 deleted `layering.test.ts` tests), `npm run build` green
+  (939.72 kB, byte-identical to run 217's number — the dead function was
+  already tree-shaken out). No new runtime dependency. Lead (3) from run
+  217 (geometry.ts dead exports, PLAYTEST.md's four stale tool names) is
+  still open and unblocked for a future run. Blockers not re-tested this
+  run (task 161/179/184/189, wave 20, the v0.1 git tag) — unchanged since
+  their last check in run 216 or earlier.
+
+- **HANDOFF, 2026-09-27 (run 217) — dead-code cleanup, self-originated.**
+  Run 216 closed the ROADMAP strikethrough sweep with nothing new queued:
+  every numbered task is done or blocked (task 161/179/184/189, wave 20,
+  the v0.1 git tag — all unchanged since run 216; not re-tested this
+  run, which spent its budget on the dead-code survey below instead),
+  and the idea backlog is empty. Same shape as runs 187/193/194: dispatched an Explore
+  agent to survey for a fresh, unblocked lead rather than guess. It
+  returned three candidates, ranked by confidence:
+  (1) `src/core/hud.ts` — almost entirely dead 2D-era dashboard-layout
+  code, superseded by `ui/hudLayout.ts` at the v0.6 rewrite (that file's
+  own header names the predecessor); only `HUD_TOUCH_TARGET` still has a
+  real importer.
+  (2) Two comments in `src/audio/adaptive.ts:291` and
+  `src/audio/instrumentVoice.ts:37` narrate behaviour "as `AudioEngine.
+  schedule` does" — no `AudioEngine` class exists anywhere in current
+  `src/`, same stale-pointer family as tasks 209/211.
+  (3) `GEOMETRY_BUILDERS`/`clearGeometryCache` in
+  `src/three/world/geometry.ts` are dead ("exposed for the proof-sheet
+  tool", which doesn't exist in current `tools/`), and PLAYTEST.md lines
+  91/125 still name four tools (`proofsheet.mjs`, `scenery-sheet.mjs`,
+  `ui-sheet.mjs`, `pillar-check.mjs`) that don't exist in `tools/` today.
+  Took (1) this run, verified myself before touching anything (grepped
+  every deleted export name individually across the whole repo, per the
+  lesson task 212 recorded about missed same-directory imports; confirmed
+  `Hud.ts`'s own "no meter, no combo counter, no score, no streak"
+  comment). See ROADMAP task 215's done-note for the full account. `npm
+  test` 1387 green (1398 minus the 11 tests in the deleted
+  `hud.test.ts`), `npm run build` green (939.72 kB, byte-identical to run
+  216's number — zero production code referenced any deleted export, so
+  the bundle couldn't move). No new runtime dependency. (2) and (3) are
+  left as leads for a future run with nothing queued — both read as
+  small, unblocked, mechanical fixes (comment updates / more dead-export
+  deletion + a doc correction), same size class as this run's task, but
+  taking more than one in a single run would drift past "one task per
+  run." (3)'s doc half needs one judgment call of its own if picked up:
+  whether to just delete the dead exports and correct PLAYTEST.md to
+  name reality, or treat the four missing tools as work that was
+  promised and never built — the Explore agent's read (and mine) is that
+  it's pure doc/dead-code cleanup, not a mandate to build four new tools,
+  but whoever picks it up should re-confirm that reading rather than
+  assume it.
+
+- **HANDOFF, 2026-09-26 (run 216) — the ROADMAP strikethrough sweep run
+  215's consolidation deliberately deferred.** Run 215 found the real bug
+  (past task ~150, "unstruck = open" stopped being reliable) and fixed the
+  handful of cases it verified itself, but explicitly left "the agent
+  flagged ~30 more candidates across tasks 166-214, unverified
+  individually" as "the one concrete lead for whichever run picks up next
+  if nothing else is queued" — every other standing thread (task 173's
+  real-device halves, wave 20, task 189's far-band lead, task 184's
+  problem 2, task 161, the v0.1 git tag) was re-checked first and remains
+  parked/blocked, unchanged since run 215. Re-dispatched a fresh Explore
+  agent (not reusing run 215's own unsaved findings) with explicit
+  instructions to report line numbers and quote the exact completion
+  sentence for every candidate, and separately flag anything that reads
+  like a partial/qualified "done" the way tasks 173/179/184/189 already
+  are. It returned 36 confirmed-clean candidates and 4 genuinely ambiguous
+  ones (166, 167, 174, 175). Rather than trust the report blind, spot-read
+  the full body text of every multi-piece or oddly-titled candidate
+  (168-172, 176-178, 180-182, 186, 190-194) and the exact heading-to-close
+  span of every multi-line title (196-214) directly in ROADMAP.md before
+  editing — two (190, 191) had titles that looked unrelated to their
+  reported completion quote at first glance and needed a full read to
+  confirm they were the same task. Struck through all 36
+  (`sed`-verified afterward: exactly one `~~**...**~~`-wrapped heading per
+  task number, zero double-wraps, `~~` count even). Left the 4 ambiguous
+  ones and the already-known-blocked 173/179/184/189 untouched — 166 and
+  175 in particular use heavy "done" language for one piece while their
+  own text names concrete remaining work, exactly the false-positive shape
+  this whole sweep exists to catch, so striking them would have
+  reintroduced the same bug this run is fixing. Docs-only change (ROADMAP.md
+  and this file) — no `src/` file touched, so `npm test` 1398 green
+  (unchanged) and `npm run build` green (939.72 kB, byte-identical to run
+  215's number) were run only as a sanity check, not because the change
+  could plausibly have affected either. No new runtime dependency. The
+  broader audit is now genuinely closed: every numbered task from 1
+  through 214 has been individually checked at least once (run 215's own
+  pass plus this run's), so a future run should treat "unstruck = open"
+  as reliable again rather than re-running this same sweep — new drift
+  from here on would be a *new* task ending in an unstruck "done"
+  sentence, not a backlog of old ones.
+
+- **HANDOFF, 2026-09-26 (run 215) — CONSOLIDATION (drift control, every
+  ~10th run; last was 205).** Drift check over runs 206-214: CLEAN — nine
+  runs, each a docs-only stale-claim fix, one dead-code deletion, or one
+  small self-originated accessibility fix; nothing became a system the
+  player manages. Re-checked the two live-testable blockers: `WebFetch`
+  against `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the
+  GitHub MCP tool list still carries no tag- or release-write call —
+  neither moved. Dispatched an Explore agent to survey ROADMAP.md's
+  numbered tasks for genuinely open work versus already-shipped tasks
+  whose title was never struck through (the `~~...~~` convention), and to
+  re-check the three `docs/research/*.md` notes against current source.
+  It found the real bug: past task ~150, "unstruck = open" stopped being
+  reliable — many tasks end in their own "TASK N COMPLETE" or "Done"
+  sentence but were never wrapped in `~~`. Verified and fixed the
+  confirmed cases this run: task 60 (fourth forest song) and the entire
+  v1.0 festival arc except 161 — tasks 158/159/160/162/163/164/165 each
+  end in their own completion sentence (165's: "the v1.0 arc stands
+  finished except 161"), now struck. Task 161 (practice mode's unguided
+  pitch-recall tier) is genuinely still open — a premise gap needing a
+  human call on the tap-input model — and is newly logged under "Blocked
+  on human" below, since it wasn't there before despite being exactly that
+  shape of blocker. Left the broader sweep (the agent flagged ~30 more
+  candidates across tasks 166-214, unverified individually) for a future
+  consolidation rather than risk mis-striking something still genuinely
+  blocked (179/184/189 are open-looking but confirmed blocked, not done) —
+  wrongly marking open work "done" is worse than leaving it unmarked.
+  Also fixed `docs/research/art-quality.md`'s opening "Honest summary"
+  paragraph, still quoting a 2026-07-31 "~5.5/10, four named gaps" score
+  as if current; it predates ~120 runs of measured work the file's own
+  "Findings from shipped work" section (and ROADMAP task 128, which wants
+  to re-derive the score against real reference frames but is blocked on
+  the same network-egress limitation) already track. Reframed as
+  explicitly stale rather than deleting it — the number is still useful
+  context for how far the pipeline has come. `mobile-friendly.md` and
+  `retention-design.md` came back clean; recent runs 198-210 already fixed
+  everything the agent could find in them. Also compressed the nine
+  individual run-206-214 HANDOFF blocks below into one paragraph, matching
+  the run-175/165/145/185/195/205 pattern — this file's own drift-control
+  debt (STATE.md line 9 said "next due ~215") for exactly this run. `npm
+  ci` (fresh clone, no `node_modules`) then `npm test`: 1398 green
+  (unchanged — nothing here touched app or test code). `npm run build`:
+  green, 939.72 kB (byte-identical to run 214's number — docs-only
+  change). No new runtime dependency. Live queue unchanged from run 214
+  (task 173's real-device halves, wave 20, task 189's far-band lead, task
+  184's problem 2, the v0.1 git tag, plus the newly-logged task 161 — all
+  parked/blocked). Idea backlog still empty; the broader ROADMAP
+  strikethrough sweep is the one concrete lead for whichever run picks up
+  next if nothing else is queued. Next consolidation due around run 225.
+
+- **HANDOFF, 2026-09-23 through 2026-09-26 (runs 206-214, compressed by
+  the run-215 consolidation)** — nine runs, each re-checking the same
+  live-queue threads (task 173's real-device halves, wave 20, task 189's
+  far-band lead, task 184's problem 2, the v0.1 git tag — all unchanged
+  throughout) before falling back to a docs-only fix or one small
+  self-contained task, since the idea backlog was empty entering every one
+  of them. Run 206 self-originated task 207: `freePlayScreen.ts` was the
+  one full-screen DOM overlay missing the Escape-to-dismiss convention
+  tasks 195/197/198 gave the others — live-verified with a throwaway
+  Playwright harness. Run 207 documented the `only` pose-filter argument
+  missing from three of five `tools/*.mjs` README sections (task 208); run
+  208 fixed `mobile-friendly.md`'s duplicated stale safe-area claim, the
+  same one run 198 had already fixed once in a different paragraph of the
+  same file (task 209); run 209 fixed CLAUDE.md's stale "Phaser 3" stack
+  claim, five runs after run 44's Three.js migration, missed when run 44
+  fixed the same claim everywhere else (task 210); run 210 fixed
+  `PLAYTEST.md`'s six checklist items pointing at `src/scenes/
+  RoadScene.ts`, deleted since the v0.6 rewrite, and flagged
+  `src/core/biome.ts`'s `Biome` interface as possibly dead weight without
+  confirming it (task 211); run 211 confirmed and deleted the genuinely
+  dead half of `biome.ts` (the colour fields and the whole Phaser-era
+  crossfade system), after an initial over-broad grep wrongly deleted the
+  whole module first and `npm test` caught it — restored, then
+  re-investigated field-by-field (task 212); run 212 documented
+  `skylight-sat.mjs`'s missing `outDir` argument in `tools/README.md`
+  (task 213); run 213 documented `shader-check.mjs`'s missing `outPrefix`
+  argument the same way (task 214); run 214 wired a land-masked p90 floor
+  into `frame-quality.mjs` so a wave darkening only the near ground can no
+  longer pass the whole-frame stops gate, reusing task 122's sky-masking
+  technique (task 125, the oldest still-open numbered task closed this
+  span). All nine runs kept `npm test` green throughout (1415 → 1398 after
+  run 211's dead-code deletion) and `npm run build` green (939.94-940.09
+  kB, byte-identical except run 206's own +0.15 kB DOM-wiring delta and
+  run 211's -0.37 kB deletion), and added no runtime dependency.
+
+- **HANDOFF, 2026-09-23 (run 205) — CONSOLIDATION (drift control, every
+  ~10th run; last was 195).** Drift check over runs 196-204: CLEAN — nine
+  runs, each a docs-only stale-claim fix (tasks 199-206) or one small
+  self-originated accessibility fix reusing an existing helper (task
+  198, run 196); nothing became a system the player manages, the
+  one-core-mechanic test this section re-applies every consolidation.
+  Re-checked the two live-testable blockers: `WebFetch` against
+  `en.wikipedia.org` still returns `EGRESS_BLOCKED`, and the GitHub MCP
+  tool list still carries no tag- or release-write call (only the
+  read-only `get_tag`/`get_release_by_tag`/`get_latest_release`/
+  `list_tags` quartet) — neither moved. Dispatched an Explore agent to
+  re-audit all three `docs/research/*.md` notes against current source,
+  and to check ROADMAP.md's two oldest open-looking arc headers ("the
+  road loops home", the v1.3 "family songbook" queue): no new stale
+  research-doc claims found beyond what runs 198-204 already fixed, and
+  both arcs turned out fully complete — "the road loops home" (task 35)
+  shipped the same day it was written (2026-07-25), but its section
+  header still read "(queued for future runs)"; v1.3's tasks 176-178
+  (the song maker, MIDI import, MusicXML import) are all done end to
+  end. Retitled the stale header (ROADMAP.md, was line 833); confirmed
+  no unstarted arc remains anywhere in ROADMAP.md — the idea backlog is
+  genuinely empty, not just temporarily so. Also fixed two bloat
+  sources this run's own drift check turned up, neither previously
+  flagged by any consolidation: this file's opening Run-counter
+  paragraph had grown, uncompressed, into a single ~380-line block
+  chaining every run's summary back to run 175, duplicating detail
+  already preserved in the HANDOFF blocks below and each task's own
+  ROADMAP done-note — cut back to describing only the current run. And
+  the nine individual run-196-204 HANDOFF blocks below are compressed
+  into the one paragraph that follows this one, matching the
+  run-175/165/145/185/195 pattern — this file 5518 → 4850 lines total
+  from both edits (the Run-counter trim: 380 → 34 lines; this HANDOFF
+  compression: 406 → 84 lines), before this HANDOFF's own text. `npm
+  test` 1415 green (unchanged — no
+  test-relevant file touched), `npm run build` green (939.94 kB,
+  byte-identical to run 204's number). No new runtime dependency. Live
+  queue as of run 205: unchanged from run 196 (task 173's real-device
+  halves, wave 20, task 189's far-band lead, task 184's problem 2, the
+  v0.1 git tag — all still parked/blocked); the idea backlog is empty
+  with no unstarted ROADMAP arc left to pull from. Next run should
+  re-check the two cheap blockers first, then originate a new small
+  self-contained task the way runs 187/193/194/196 did if nothing has
+  moved. Next consolidation due around run 215.
+
+- **HANDOFF, 2026-09-20 through 2026-09-22 (runs 196-204, compressed by
+  the run-205 consolidation)** — nine runs, each re-checking the same
+  live-queue threads (task 173's real-device halves, wave 20, task
+  189's far-band lead, task 184's problem 2 — all unchanged throughout)
+  before falling back to a docs-only fix, since the idea backlog was
+  empty entering every one of them. Run 196 self-originated task 198:
+  `src/ui/importSongDialog.ts` was the third DOM-built dialog class
+  missing the `bindRowActivation`/Escape-to-dismiss wiring tasks
+  195/197 gave `Hud.ts` and `freePlayScreen.ts`, closing out every DOM
+  overlay in `src/ui/` on one shared convention — live-verified with a
+  throwaway Playwright script. Runs 197-204 were pure doc/comment-nit
+  fixes, each found by re-reading real source against a doc claim: run
+  197 added three missing `tools/README.md` sections for real scripts
+  (`shadowcast.mjs`, `headgap.mjs`, `make-icons.mjs`) that had never
+  gotten one (task 199); run 198 fixed `docs/research/mobile-
+  friendly.md`'s "Honest summary" paragraph, still claiming
+  `index.html` lacked `viewport-fit=cover`/safe-area handling, false
+  since 2026-09-04 (task 200); run 199 fixed `.github/workflows/
+  headless-checks.yml`'s top comment, still claiming the suite was
+  "down to one check" with "no quick subset" when `verify-all.mjs` has
+  carried two checks and a `quick` argument since run 45 (task 201);
+  run 200 fixed `tools/README.md`'s `frame-quality.mjs` pose count
+  (six claimed, seven actual since task 182's `noon-village` pose) and
+  its `shader-check.mjs` "smoke stage" naming (that class was removed;
+  the check drives `RoadStage`) (task 202); run 201 fixed the same
+  file's `make-icons.mjs` section, which claimed the PNG icons carry a
+  rounded rect — they're deliberately full-bleed square, only the two
+  concentric circles carry over from the SVG mark (task 203); run 202
+  fixed `tools/verify-all.mjs`'s own header comment, which repeated the
+  same stale six-pose claim task 200 had already fixed in
+  `tools/README.md` (task 204); run 203 fixed `src/core/songs.ts`'s
+  header comment and DESIGN.md's "curriculum is the songbook" section,
+  both still describing the songbook as three tunes per biome when
+  `SONGS_BY_BIOME` has carried four per biome (twelve total) since task
+  60 shipped Mulberry Bush (task 205); run 204 fixed `docs/research/
+  mobile-friendly.md`'s §3 "Android spread" paragraph, still describing
+  two `detectQuality()` blind spots task 174 had already closed weeks
+  earlier (task 206). All nine runs kept `npm test` at 1415 green
+  throughout and `npm run build` at 939.94 kB byte-identical except
+  run 196's own +0.17 kB DOM-wiring delta, and added no runtime
+  dependency.
+
+- **HANDOFF, 2026-09-19 (run 195) — CONSOLIDATION (drift control, every
+  ~10th run; last was 185).** Drift check over runs 186-194: CLEAN — every
+  run was one of three named threads (task 194's close via piece 3, the
+  task 195/196/197 keyboard/screen-reader accessibility arc across six
+  runs, and task 184's "problem 2" re-measurement), each a rendering fix
+  already in flight, a small self-originated accessibility fix touching
+  no game system, or a pure re-measurement; nothing became a system the
+  player manages, the one-core-mechanic test DESIGN.md's drift-control
+  section asks every consolidation to re-apply. `npm test` 1415 green
+  (unchanged), `npm run build` green (939.77 KB, unchanged — this run's
+  own changes are docs only, no game code touched). Re-tested the two
+  network-shaped Blocked-on-human items: the fourth forest song's
+  transcription source (`WebFetch` against a plain Wikipedia page now
+  returns `EGRESS_BLOCKED`, a third distinct failure shape after this
+  note's own 403 and run-185's `connect_rejected`, same outcome — access
+  blocked) and the v0.1 git tag's write path (the full GitHub MCP tool
+  list re-checked again, still no tag or release write call, only the
+  same read-only quartet). Wave 20's network block was already re-tested
+  this same day at run 193 (still blocked); not re-run a second time.
+  A code/doc survey (an Explore-agent pass over the files the block
+  touched — `Hud.ts`, `freePlayScreen.ts`, `skylightGate.ts`, `index.html`'s
+  reduced-motion rule) found every shipped mechanism
+  (`bindRowActivation`, `fogReach`, the `prefers-reduced-motion` rule, the
+  skylight gate, the quality-tier storage) genuinely wired into real app
+  code — no staleness found this time. **Direction research headline:
+  task 194 (the one open thread run 185's consolidation flagged) is now
+  closed, keeping all three `docs/research/*.md` notes' ranked-
+  recommendation lists fully closed** — see the Direction research
+  section below for the full refresh. That refresh also caught a real
+  scope gap: `mobile-friendly.md`'s touch-target recommendation never
+  anticipated keyboard/screen-reader users at all, so it gained a
+  "Findings from shipped work" section for the first time, recording the
+  195-197 arc as that axis's starting point rather than something the
+  file itself predicted; `art-quality.md` gained a closing-the-loop entry
+  for task 194. Compressed the nine individual HANDOFF blocks for runs
+  186-194 into one run-index paragraph below, matching the
+  run-175/165/145/185 pattern — this file 5268 → 4955 lines from
+  that edit alone, before this HANDOFF's own text. Live queue as of run
+  195: nothing unblocked — task 173's two real-device-only halves, wave 20
+  (network-blocked), task 189's far-band lead (parked), and task 184's
+  "problem 2" (blocked on human, new this window) are the only open
+  threads; the idea backlog is empty. Next run should re-check those
+  first, then originate a new small task the way runs 187/193/194 did if
+  nothing has moved. Next consolidation due around run 205.
+
+- **HANDOFF, 2026-09-16 through 2026-09-19 (runs 186-194, compressed by
+  the run-195 consolidation)** — three named threads: task 194's close,
+  the task 195/196/197 accessibility arc, and task 184's re-measurement.
+  Task 194 piece 3 (run 186) built `src/three/skylightGate.ts`, a TS-side
+  `dayFraction`-keyed gate uniform for the `skyLight` chroma boost piece 2
+  had reverted, verified with an isolated-algebra check and a
+  stashed-vs-built A/B against `tools/skylight-sat.mjs` showing zero leak
+  into dawn/golden's shade — closing task 194 end to end. With the idea
+  backlog empty and every standing thread externally blocked, run 187
+  originated task 195 (the HUD's two persistent corners were unreachable
+  by keyboard or screen reader) and shipped piece 1; runs 188-191 split
+  the remaining surface into case/book rows (188, catching a real
+  Tab-order/DOM-append bug live), the title card's four doors (189),
+  `showSheet`'s doors (190, plus a Tab-trap fix in `hidePage()`), and
+  Escape-to-dismiss for veils/pages with nothing to Tab to (191) —
+  closing task 195 end to end via a shared `bindRowActivation` helper
+  reused across every surface. Run 192 re-measured task 184's "problem 2"
+  with a real beat-to-glyph correlation `headgap.mjs` never had before,
+  overturning its own "rare eighth pair" framing (it is the tune's
+  ordinary one-beat spacing) and finding no lever clears the collision
+  without costing the pinned envelope's legibility for the ordinary
+  case — moved to Blocked on human rather than shipped as an unverified
+  guess. Run 193 originated task 196 (`prefers-reduced-motion` support
+  for the HUD's CSS transitions, WCAG 2.3.3) the same empty-backlog way
+  as run 187, verified live (0.9s versus 0.00001s on the same
+  transition, zero console errors either way). Run 194 closed the gap
+  task 195's own survey had missed: `freePlayScreen.ts` lives outside
+  `Hud.ts` and got the identical `bindRowActivation` treatment, closing
+  task 197. All nine runs kept `npm test`/`npm run build` green
+  throughout (1407 → 1415 tests, +8 from `skylightGate.test.ts`), added
+  no runtime dependency, and stayed on the existing world's rendering/
+  accessibility surfaces — nothing became a system the player manages.
+  Bundle grew 934.62 → 939.77 KB across the block, still under 20% of
+  the 5 MB budget.
+
+- **HANDOFF, 2026-09-16 (run 185) — CONSOLIDATION (drift control, every
+  ~10th run; last was 175).** Drift check over runs 176-184: CLEAN — every
+  run in the block was one of five named threads (task 173 piece 2, task
+  175's residual, task 192's two-piece quality-toggle arc, task 193's
+  two-piece fog-reach arc, and task 166's dangling audit re-filed as task
+  194 plus its own two-piece measurement arc), each a small opt-in
+  addition, a measurement instrument, or per-hour/per-biome rendering
+  fidelity on the existing world; nothing became a system the player
+  manages, the one-core-mechanic test DESIGN.md's drift-control section
+  asks every consolidation to re-apply. `npm test` 1407 green (unchanged),
+  `npm run build` green (934.62 KB, unchanged — this run's own changes are
+  docs only, no game code touched), `verify-all quick` (`shader-check`)
+  PASS (ran against a fresh `npm run preview` with
+  `PLAYWRIGHT_PATH=/opt/node22/lib/node_modules/playwright`, per
+  tools/README.md's setup — the pre-installed 1.56.1 copy the note names).
+  Re-tested wave 20's network block: still blocked, though the failure
+  mode changed — both `ashorthike.com` and `store.steampowered.com` now
+  fail at `connect_rejected` through the agent proxy rather than
+  returning an HTTP 403 the way every earlier run recorded it; same
+  outcome (no access), noted here in case a future run needs to tell
+  "blocked" apart from "gone." A code/doc survey (an Explore-agent pass
+  over every file the block touched — `audioSession.ts`, `inputGesture.ts`,
+  `fogReach.ts`, the quality-tier storage/toggle across `App.ts`/
+  `RoadStage.ts`/`Hud.ts`, and run 184's shader revert — per the
+  run-175/165/145 pattern) found all four shipped mechanisms genuinely
+  wired into real app code with no dead exports, and confirmed run 184's
+  revert left zero trace in `src/`: that commit's own diff touches only
+  ROADMAP.md and STATE.md, and a repo-wide grep for the abandoned
+  `SKYLIGHT_SAT_BOOST` boost finds only the measurement tool's own doc
+  comment and an unrelated historical note. DESIGN.md and every in-code
+  comment describing tasks 173/192/193 were already accurate this time —
+  no staleness found, unlike the solfège gap the run-175 consolidation
+  caught. Compressed the nine individual HANDOFF blocks for runs 176-184
+  into one run-index paragraph below, matching the run-175/165/145
+  pattern — this file 4988 → 4638 lines from that edit alone, before this
+  HANDOFF's own text. **Direction research headline: all three
+  `docs/research/*.md` notes now have their full ranked-recommendation
+  lists closed (SHIPPED or standing design) for the first time** — task
+  193 (run 181) closed art-quality.md's last open recommendation; see the
+  Direction research section below for the full refresh, and
+  `art-quality.md`'s own findings section for the technical lesson task
+  194 piece 2 taught along the way (in-shader `sunHeight` doesn't rank
+  hours the way the color script's CARRYING/ENACTING split needs). Live
+  queue as of run 185: task 194 piece 3 (a TS-side, `dayFraction`-keyed
+  gate uniform, the thread run 184 left open) is the one real, unblocked
+  thread; task 173's two real-device-only halves, wave 20 (network-
+  blocked), and task 189's far-band lead (parked) are unchanged. Next
+  consolidation due around run 195.
+
+- **HANDOFF, 2026-09-13 through 2026-09-16 (runs 176-184, compressed by
+  the run-185 consolidation)** — five named threads, all closed or
+  advanced, no new player-facing system. Task 173 piece 2 (run 176)
+  shipped the buildable half of mobile-friendly.md's audio-session/
+  interruption recommendation (`src/audio/audioSession.ts`,
+  `applyPlaybackAudioSession`, plus a widened `onstatechange` resume
+  guard), leaving only its real-hardware verification open. Task 175's
+  residual (run 177) pinned palm-rejection with a real test
+  (`src/three/inputGesture.ts`, `isPrimaryContact`) verified through the
+  actual shipped wiring, not a bypass, and re-shot the landscape road
+  live — closing the buildable half of mobile-friendly.md's palm-
+  rejection finding. Task 192 (runs 178-179) shipped a hand-picked
+  quality tier end to end: storage first (`wb.quality.v1` in `App.ts`,
+  wired into `detectQuality`'s optional override parameter), then the
+  title-card toggle itself (`RoadStage.qualityLabel`/`cycleQuality`,
+  a fourth door on `Hud.showTitleCard`, one tap cycling Auto → Low →
+  Medium → High → Auto) — closing mobile-friendly.md's recommendation 6
+  and, with it, mobile-friendly.md's entire buildout list (run 180
+  confirmed retention-design.md's v0.9 queue was already complete too,
+  the first time either was checked against its own list end to end).
+  Task 193 (runs 180-181) shipped art-quality.md's recommendation 6 end
+  to end: run 180 found the detail-budget half already held structurally
+  (task 170's vertex AO, the quality tiers, `painterly.ts`'s per-material
+  `fogScale`) and wrote the fog-reach spec into `docs/color-script.md`;
+  run 181 wired it (`src/three/fogReach.ts`, replacing the one-time
+  `TERRAIN_REACH` constant with a live per-hour/per-biome curve keyed off
+  `sunDirection.y`) — closing art-quality.md's own recommendation list
+  entirely, the last of the three research notes to close. Task 166's
+  long-dangling "skylight ambient saturation" remainder (run 182, audit
+  only) was re-measured (`tools/shadowcast.mjs`: noon saturation target
+  MET at 96% kept, well past the ≥50% floor) and re-filed as its own
+  task, 194, since the actual untried lever (the `skyLight` term, not the
+  `CAST_SHADOW_HUE` rotation piece 2 actually shipped) had never been
+  touched. Task 194 (runs 183-184) built the measurement instrument first
+  (`tools/skylight-sat.mjs`, confirming saturation rises monotonically
+  with how sun-facing a terrain face is, at every hour tried), then tried
+  a luma-preserving `skyLight` chroma boost and found it leaks into the
+  CARRYING hours under every gate tried (`sunAmount`, then
+  `sunAmount * sunHeight`) — reverted cleanly rather than shipped. All
+  nine runs kept `npm test`/`npm run build`/`verify-all quick` green
+  throughout, added no runtime dependency, and stayed on the existing
+  world's rendering/mobile/input surfaces. Bundle grew 933.11 → 934.62 KB
+  across the block, still under 20% of the 5 MB budget.
+
+- **HANDOFF, 2026-09-13 (run 175) — CONSOLIDATION (drift control, every
+  ~10th run; last was 165).** Drift check over runs 166-174: CLEAN on
+  systems/mechanic drift — every run in the block was one of four named
+  threads (task 189's fifth and final piece before parking, task 190's
+  two-piece scatter-anchor arc, task 191's four-piece solfège arc, task
+  173's first piece), each a readout, a measurement, or a small opt-in
+  addition on the existing world; nothing became a system the player
+  manages, the one-core-mechanic test DESIGN.md's drift-control section
+  asks every consolidation to re-apply. `npm test` 1383 green (unchanged),
+  `npm run build` green (933.11 KB, unchanged — this run's changes are
+  docs and comments only, no game code touched), `verify-all quick`
+  (`shader-check`) PASS. Re-tested wave 20's network block (still 403 on
+  both `ashorthike.com` and `store.steampowered.com`, unchanged).
+  Code/doc survey (an Explore-agent pass over every file the block
+  touched, per the run-157/165/145 pattern) found the two new mechanisms
+  shipped this block (the large-form scatter anchor, the solfège toggle)
+  both genuinely wired into real app code, confirmed one small unused
+  export (`solfegeAt` in `notation.ts`) but kept it rather than deleting
+  it — it's the semitone-keyed oracle `solfegeAtStep`'s own regression
+  test cross-checks against, the same role `noteNameAt` plays for its
+  letter-keyed sibling, not dead weight — and found real doc staleness:
+  DESIGN.md's "Considered and rejected" list still called solfège "worth
+  considering later" three runs after task 191 shipped it, and two in-code
+  comments (`notation.ts`, `scaffoldStorage.ts`) had quoted that stale
+  line as their own reason to call the walk staff's reader unbuilt, when
+  task 191 piece 3 (run 172) built exactly that. All three fixed — see
+  DESIGN.md's own "Considered and rejected" section, now folded into a
+  short shipped-feature note instead. `art-quality.md` gained a new
+  findings entry (see the Direction research refresh below and the file
+  itself) for two lessons the block taught: a world-space per-chunk
+  placement guarantee (task 190) doesn't move a camera-frame-quadrant
+  metric even after being wired in and verified live, and a fully
+  quantified, confirmed mechanism (task 179's residual) can still have no
+  permissible lever once it collides with an authored constraint — that's
+  a creative-direction call, not more engineering. Compressed the three
+  individual HANDOFF blocks for run 166 (task 189 piece 5), run 167 (task
+  190 piece 1) and run 172 (task 191 piece 3) into one run-index paragraph
+  covering runs 166-173, matching the run-165/145 pattern — this file
+  4616 → 4474 lines from that edit alone, before this HANDOFF's own text.
+  Live
+  queue as of run 175: unchanged from run 174 — task 173's remaining
+  real-device half (hardware-blocked), wave 20 (network-blocked), and task
+  189's far-band lead (parked, five pieces without a mechanism) are the
+  open threads; the idea backlog is still empty. Next consolidation due
+  around run 185.
+
+
+- **HANDOFF, 2026-09-12 (run 174) — task 179's residual re-measured: the
+  mechanism is confirmed, and it turns out to have no safe lever.** Full
+  detail in ROADMAP task 179's own 2026-09-12 done-note — short version
+  here. Task 179's original 2026-08-01 work shipped a grounded contact
+  shadow and re-queued one residual: "the dawn/low-sun figure-side value
+  (dynamic, day-aware — no static albedo works)." That residual then sat
+  untouched for 173 runs and six consolidation passes — a real drift
+  miss, not a deliberate deprioritization; nothing in "Start here" or any
+  recent HANDOFF's "open threads" list had carried it forward. This run
+  re-ran `figground.mjs` (unchanged tool, current build) and found the
+  floor still fails at three of seven poses, with `04-golden-vista` worse
+  than 2026-08-01 (dL 4.0 → 1.4) after intervening lighting changes (task
+  121's albedo raise, task 185's land key) nobody had checked against it.
+  Extended the tool (tools-only, no game code) to report hue/saturation
+  alongside its existing L* columns, to test the task's own original hint
+  — "measure what 03/10 already do right, likely the lit road behind the
+  figure" — quantitatively. It holds: every passing pose has a bright
+  road directly behind the bard's legs (`behindL` 50-61), every failing
+  one a dim one (19-31), a clean gap. That confirms the mechanism but
+  hands this task no lever: three of the four failing poses sit in the
+  color script's CARRYING hours (dawn/golden/dusk), where task 166 binds
+  "spend no runs" on ground/sky brightness, and the fourth
+  (`02-morning-open`, an ENACTING hour) shares `sunHeight` 1.0 exactly
+  with two of the three passing poses — measured live via
+  `uSunDirection.value.y` — so a day-aware figure-uniform keyed to sun
+  height would have to push `02` and `03`/`10` by the same amount, and
+  this task's own brief explicitly forbids regressing 03/08/10. No
+  screen-space feedback exists in this pipeline for a figure-only shader
+  to sense what's actually behind it, and building one would be exactly
+  the bundle weight CLAUDE.md's mobile pillar rules out for a single
+  value-floor fix. Moved to Blocked on human below: the one lever left is
+  a creative-direction call (a bard-local exception to the CARRYING-hours
+  rule), not an engineering task. `npm test` 1383 green (unchanged,
+  tools-only), `npm run build` green (933.11 kB, unchanged), `verify-all
+  quick` PASS. Direction research: no recommendation in any of the three
+  `docs/research/` notes concerns figure/ground contrast; nothing to
+  re-check there. Next: with task 179 now correctly parked rather than
+  silently dropped, the idea backlog is still empty and the standing open
+  threads are unchanged — task 173's real-device half (hardware-blocked),
+  wave 20 (network-blocked), and task 189's far-band lead (parked, five
+  pieces without a mechanism). A future run without a fresh idea should
+  treat consolidation (due around 175, one run out) as the reasonable
+  default rather than forcing a new arc.
+
+- **HANDOFF, 2026-09-12 (run 173) — task 173 piece 1: the 30fps beat-clock
+  claim verified, not assumed, with a real regression test.** Full detail
+  in ROADMAP task 173's own piece-1 done-note — short version here. Task
+  173 ("Audio that survives the pocket") has sat untouched in the v1.2
+  queue since 2026-08-01, flagged real-device-only in STATE's "Needs human
+  playtest" for iOS silent-switch behaviour, call/backgrounding
+  interruption, AND "Low Power Mode's 30fps rAF — the beat clock must stay
+  honest." That last clause is not actually real-device-only, and this run
+  checked it rather than continuing to defer it. Two mechanisms already
+  make it true, neither ever tested: (1) `App.ts`'s frame loop has always
+  called `Stage.update()` with a *constant* `FIXED_STEP_MS/1000` (~16.7ms),
+  looping it as many times as needed to catch real elapsed time up (capped
+  at `MAX_CATCHUP_MS` = 250ms) — never the raw, frame-rate-dependent rAF
+  delta — but that loop lives inside `frame()`, which touches a live
+  `WebGLRenderer` and so cannot run under this project's Node-environment
+  `vitest` (no `App.test.ts` has ever existed, same reason `SongNotes`'s
+  canvas code has none). Pulled the accumulator's arithmetic out into
+  `src/three/fixedStep.ts` (`computeFixedSteps`, behaviour-preserving —
+  `App.ts` imports it back) so `fixedStep.test.ts` (8 new tests) can assert
+  it directly: 1 step/callback at 60fps, ~2 steps/callback at 30fps,
+  simulated time within one step of real elapsed time across ten steady
+  frame rates and an irregular/stalling sequence, the catch-up cap holding
+  a stall to ~15 steps instead of replaying it whole. Two of these tripped
+  a genuine floating-point boundary on the first pass (`250 /
+  FIXED_STEP_MS` rounds down to 14 by division despite the accumulator's
+  own repeated subtraction landing on 15) — fixed by testing with a
+  rounding tolerance / a clear-margin example instead of a razor's-edge
+  equality, not by changing the accumulator. (2) The walking tune's own
+  clock is separate and stronger: `RoadStage.tuneNowMs()` is `(ctx
+  .currentTime - tuneAnchorSec) * 1000` whenever a real `AudioContext`
+  exists — no `dt` term at all, so it is frame-rate-coupled to nothing by
+  construction; the fixed-step-accumulated `tuneSimMs` is only a fallback
+  for when there is no audio context (this repo's own headless checks).
+  Verified BOTH live in headless Chromium against the production build,
+  because neither claim follows from the pure unit test alone: monkey-
+  patched the live `stage.update` to record every real `dt` it was called
+  with over a multi-second window plus a genuine ~600ms main-thread stall
+  (a busy-loop that blocks rAF itself, unlike `waitForTimeout`). This
+  sandbox's headless Chromium (SwiftShader, no GPU, contended CPU — see
+  "Process notes" below, which already logs an 11fps ceiling under
+  contention) ran the scene at an even harsher ~0.8fps here — a stronger
+  test than any real device's 30fps, not a weaker one: across 75 real
+  `update()` calls, every single `dt` was bit-exact `FIXED_STEP_MS/1000`
+  (max deviation 0.000000ms), with one callback alone running 18-19 fixed
+  steps to catch back up. Also confirmed `ctx` was a real, running
+  `AudioContext` with `tuneAnchorSec` finite once a real gesture started
+  audio (`RoadStage.onPointerDown` drops any event whose `isPrimary` isn't
+  `true`, and a `PointerEvent`'s own default for an unset `isPrimary` is
+  `false` — the first draft of this check dispatched a plain synthetic
+  `pointerdown` and silently never started audio at all) — confirming
+  production really runs on the dt-free clock, not the fallback.
+  Screenshotted the live pose afterward as a sanity check only (note
+  ribbon and staff render correctly, zero console errors). `npm test` 1383
+  green (+8 — `npm install` first, `node_modules` wasn't present at
+  session start), `npm run build` green (933.11 KB vs 933.02 KB — the new
+  module's own small weight), `verify-all quick` (`shader-check`) PASS. No
+  new runtime dependency. **What this does NOT close**: the silent-switch
+  behaviour (WebKit bug 237322) and interruption/resume across a real
+  phone call or app-backgrounding are exactly as untested as before —
+  nothing here touches `AudioContext` suspend/resume handling, and nothing
+  in this environment can trigger either condition; "Needs human
+  playtest" below is updated to say so precisely rather than leaving task
+  173 as one undifferentiated real-device item. Direction research: no
+  recommendation in any of the three notes concerns frame-rate/timing
+  robustness; nothing to re-check here. Next: task 173's remaining
+  real-device half (blocked on hardware — see "Needs human playtest"),
+  wave 20 (still network-blocked as of run 167's last retest) and task
+  189's far-band lead are the open threads; the idea backlog is empty.
+  Consolidation not yet due (173 is 8 runs past 165, next due around 175 —
+  two runs out).
+
+- **HANDOFF, 2026-09-10 through 2026-09-12 (runs 166-173, compressed by
+  the run-175 consolidation — see there) — task 189 parks after a fifth
+  refutation, task 190 (the scatter lower-left question) ships and finds
+  its own guarantee narrower than its metric, and task 191 (solfège) ships
+  end to end.** Task 189 piece 5 (166) built `far-band-objects.mjs` and
+  found no object category (scatter/trees/landmarks) holds up as a general
+  cause of the far-band hue-spread rise — the largest single effect
+  (landmarks) doesn't replicate on a second rising pose, and this run's own
+  natural readings broke the risen/flat pose classification every prior
+  piece had carried as settled, a sharper instance of run-165's daily-seed
+  finding. Task 189 stays parked (five pieces, no mechanism), not closed.
+  Task 190 (the run-136 scatter lower-left backlog item) shipped
+  `largeFormAnchorSites` (167) — a world-space, per-chunk placement
+  guarantee for rock/shrub/log mirroring the tree sentinel's own shape,
+  deliberately not camera-aware — then wired it into `buildScatter` (168)
+  and found, by re-running `scatter-probe.mjs`'s own lower-left metric
+  rather than trusting the render check alone, that the guarantee's
+  world-space promise doesn't move a camera-frame-quadrant number; see
+  `art-quality.md`'s new findings entry for the lesson. Task 191 (solfège
+  syllable labels, promoted off the idea backlog) shipped across four
+  pieces: the pure `solfegeAt`/`solfegeAtStep` mapping (169); the label
+  style persisted in `scaffoldStorage.ts`'s existing one-key record (170);
+  a toggle link in free play, the "position → sound → name" screen, wired
+  to it (171, verified live end to end); and the walk staff's own glyph
+  atlas repainting its existing 32 cells in place on a style change so a
+  mid-walk toggle relabels notes already on the ribbon (172, also verified
+  live). Task 173 piece 1 (173) pulled `App.ts`'s fixed-step accumulator
+  into `src/three/fixedStep.ts` and proved, rather than assumed, that the
+  walking tune's beat clock is frame-rate independent — a real regression
+  test plus a live headless-Chromium check at this sandbox's own ~0.8fps.
+  `npm test` 1356 → 1383 across the block, `npm run build` green
+  throughout (930.29 → 933.11 KB), no new runtime dependency, every
+  screen-touching piece verified live before merging. ROADMAP's own
+  numbered done-notes for tasks 189, 190, 191 and 173 carry the full
+  account of each piece.
+
+- **HANDOFF, 2026-09-09 (run 165) — CONSOLIDATION (drift control, every
+  ~10th run; last was 157).** Drift check over runs 158-164: CLEAN — the
+  block was task 178 (MusicXML import, closing the whole family-songbook
+  import arc), task 186's last four pieces (closing it entirely — all
+  seven creatures now stage, animate, and depart correctly), and task
+  189's piece-4 investigation (a fourth mechanism refuted, no shader
+  change). Every screen-touching piece was verified live before merging;
+  no new system landed beyond what each task's own description already
+  promised; bundle 920.92 → 930.29 KB across the block, still under 20% of
+  the 5 MB budget. Compressed the five individual HANDOFF blocks for runs
+  158-163 into one run-index paragraph below (ROADMAP's own numbered
+  done-notes for tasks 178 and 186 carry the full accounts), keeping run
+  164 in full as the most recent — this file 4321 → 4116 lines from that
+  edit alone.
+  Code cleanup: a targeted Explore-agent survey of every file the block
+  touched (`musicxml.ts`, `midi.ts`, `importSongDialog.ts`,
+  `Birds.ts`, `RoadStage.ts`, and the four new `tools/` scripts) found
+  nothing to remove this time — no dead code, no unused exports, no
+  leftover debug scripts (the `tools/_*.mjs` throwaway pattern stayed
+  respected). Documentation staleness found instead: README.md and
+  DESIGN.md's pedagogy section both still said the songbook was
+  "eleven"/"nine" tunes, stale since Mulberry Bush and My Bonnie shipped
+  (thirteen now) — both corrected. README also never mentioned the
+  family-songbook feature (record in free play, import MIDI/MusicXML)
+  that shipped across tasks 176-178; added one sentence. STATE.md's own
+  historical "eleven tunes" mentions (2026-07-26 and earlier, dated
+  entries) are left as-is — this file is an append-only record and those
+  were true when written.
+  Direction research refreshed per CLAUDE.md pillar 5 (see the run-165
+  refresh paragraph above, in "Direction research"): retention and
+  mobile-friendly unchanged from the run-157 refresh; art-quality.md gained
+  a new findings entry (below) recording two harness/process lessons from
+  this block — a staging bypass call verifies a different code path than
+  the real state transition (the run-162 dead-`updateCreature` bug lived
+  behind exactly that gap for six runs), and the road's real-calendar-date
+  seed means the same pose coordinates are a different generated world on
+  a different real day, so no measurement piece may compare an absolute
+  number across a real-day boundary. DESIGN.md's changelog gains the runs
+  158-164 entry. `npm test` 1356 green (unchanged — doc/tooling only this
+  run), `npm run build` green, 930.29 KB (unchanged). No new runtime
+  dependency. Next: task 189's "object mix at the far row band" lead if
+  that investigation continues, the scatter lower-left design question
+  (run 136, still open), or wave 20 once network-unblocked remain the open
+  threads; no arc is currently in flight; next consolidation due around
+  run 175.
+
+- **HANDOFF, 2026-09-09 (run 164) — task 189 piece 4: the camera-mood lead
+  refuted, and a real methodology gap found.** Full detail (the exact
+  numbers, the screenshot check) is in ROADMAP task 189's own piece-4
+  done-note — short version here. Piece 3 left "camera distance to the
+  horizon" as the open lead after ruling out the land key; looking at the
+  pose table with fresh eyes found that every pose piece 1-3 called
+  "risen" was shot in the `walking` camera mood and both "flat" poses were
+  `vista` — a confound nobody had controlled for. `tools/fog-hue-band.mjs`
+  now uses `RoadStage.pose`'s `mood` option (independent of `phase`) to
+  re-render each pose through the OTHER camera mood, same `s`/
+  `dayFraction`/world otherwise, and prints a same-scene gap-by-mood
+  table. Mood moves the gap (two poses flip sign) but does not drive it:
+  the two zero-pull control poses keep their own sign in both moods
+  (golden stays deeply negative, morning-vista stays strongly positive) —
+  forcing a "flat" pose into a "risen" mood doesn't make it rise. Three
+  single-variable mechanisms are now ruled out (landKeyAmount, camera
+  mood, and sun height/hour was never more than a 2-point pattern);
+  "object mix at the far row band" is the one untried lead from piece 3's
+  own list.
+  The bigger find: `road.ts` builds the whole road from `dailySeed()`
+  (`src/core/rng.ts`), a real-calendar-date seed, so the *same*
+  `s`/`dayFraction` pose is a *different generated world* on a different
+  real day. `11-morning-vista` read −0.060 on 2026-09-02 (piece 2) and
+  +0.675 today — not a contradiction in the game, a different road under
+  the same pose coordinates, confirmed by an ad-hoc screenshot (deleted
+  after) showing a heavily hazed background treeline that plausibly
+  supplies exactly this much hue variance on its own. Every comparison
+  this piece drew was same-session (same real day), so its own
+  conclusions hold, but no future piece of this investigation may compare
+  an absolute gap value against a number recorded in an earlier piece's
+  *run* unless both ran the same real day — only same-session deltas are
+  safe, which is the shape every piece so far actually used anyway.
+  `npm test` 1356 green (unchanged — tools/ only), `npm run build` green
+  (930.29 KB, unchanged), `verify-all quick` (`shader-check`) PASS. No new
+  runtime dependency (Playwright run via `PLAYWRIGHT_PATH` against the
+  pre-installed copy per `tools/README.md`, never a project dependency).
+  Next: "object mix at the far row band" if task 189 continues (probably
+  needs per-object masking, a bigger build than a toggle); the scatter
+  lower-left design question (run 136, still open) or wave 20 once
+  network-unblocked remain the other threads; consolidation is not yet
+  due (164 is 7 runs past 157, next due around 167).
+
+- **HANDOFF, 2026-09-07 through 2026-09-09 (runs 158-163, compressed by
+  the run-165 consolidation — see there) — task 178 closes the
+  family-songbook import arc, and task 186 closes entirely.** Task 178
+  (MusicXML import) shipped in two pieces: a dependency-free XML parser
+  straight to a melody (158 — MusicXML already states pitch/duration/rest
+  per note, so it does in one step what MIDI needed two pieces for), then
+  wiring into `ImportSongDialog` alongside the existing MIDI path, routed
+  by file extension and reusing `midi.ts`'s quantize/transpose/validate
+  pipeline unchanged (159) — closing the whole "family songbook" import
+  arc (176 record, 177 MIDI, 178 MusicXML) started 2026-09-03. Task 186
+  (stage the creatures) closed its last four pieces: the escort dog's
+  walk-along behaviour (160); the owl, the first bird, whose live check
+  caught a bobbing-field bug shared with no other creature (161); the
+  nightingale (162), whose build surfaced a real cross-cutting bug —
+  `updateCreature`, which drives every staged creature's animation and
+  departure, was called only from inside `updateBusk`, so since the deer's
+  own piece 1 (run 119) a met creature never actually animated or left in
+  real play, just froze until silently snapped to a new spot; fixed by
+  moving the call into the main `update(dt)`, unconditional, and verified
+  via a real `setPhase` round trip rather than the usual staging bypass
+  (see ROADMAP task 186's piece-5 done-note for the full account — the
+  gap between a bypass check and the real transition path is worth
+  remembering, and is now in `art-quality.md`'s findings, below); and the
+  kingfisher (163), closing task 186 entirely — all seven creatures (deer,
+  fox, cat, dog, owl, nightingale, kingfisher) now stage, animate, and
+  depart correctly. Every piece verified live with this environment's
+  Playwright/Chromium before merging, `npm test` green throughout (1349 →
+  1356), `npm run build` green, bundle 920.92 → 930.29 KB, no new runtime
+  dependency. ROADMAP's own numbered done-notes for tasks 178 and 186
+  carry the full account of each piece.
+
+- **HANDOFF, 2026-09-07 (run 157) — CONSOLIDATION (drift control, every
+  ~10th run; last was 145).** Drift check over runs 146-156: CLEAN — the
+  whole block was v1.3's two remaining arcs (task 176, the family
+  songbook's free-play/recording UI; task 177, MIDI import), each split
+  into small pieces the same way task 189's investigation was, every
+  screen-touching piece verified live before merging. No new system
+  beyond what each task's own one-line description already promised;
+  bundle grew 902 → 921 KB across the block (free play and MIDI import
+  no longer tree-shaken once something reachable called them), still
+  under 2% of the 5 MB budget. Compressed the ten individual HANDOFF
+  blocks for runs 146-155 into one run-index paragraph below (ROADMAP's
+  numbered done-entries carry the full accounts), keeping run 156 in
+  full as the most recent — this file 4334 → 3961 lines from that
+  edit alone (see it just below). Code cleanup, found by a targeted
+  Explore-agent survey rather than blind grepping: `src/three/smoke.ts`
+  (176 lines, the pre-Three.js-integration `SmokeStage` render-smoke-test
+  class `tools/shader-check.mjs` used before it started booting the real
+  game — confirmed dead by grep, no import anywhere) deleted outright;
+  `scaffoldStorage.ts`'s `getSongChoice`/`setSongChoice` (unused exports —
+  the module's own internal `songChoice` variable is still read/written
+  by `loadScaffold`/`saveScaffold` for backward-compatible round-tripping
+  of old saves, just never through a public setter any live caller uses)
+  removed, the internal variable and its load/save handling left alone
+  since it still protects old save data. Direction research refreshed per
+  CLAUDE.md pillar 5 (see the run-157 refresh paragraph above, in
+  "Direction research"): nothing in runs 146-156 touches returning-player
+  mechanics, mobile/save behaviour, or rendering, so all three research
+  notes' recommendations and rejected-on-principle lists stay as the
+  run-145 refresh left them; one forward-looking note added to the
+  retention refresh about the new songbook shelves being a collection
+  surface worth checking against the mementos-not-checklists rule if a
+  later run touches them. DESIGN.md's changelog gains the runs 146-156
+  entry. `npm test` 1329 green (unchanged — the deleted code had no tests
+  of its own), `npm run build` green, 920.92 KB (unchanged — both removals
+  were already tree-shaken out, so the bundle doesn't move; `tsc --noEmit`
+  is what actually confirms nothing else referenced them). Next: task 178
+  (MusicXML import, reuses 177's validation path) is the natural
+  continuation of the songbook arc; task 189's far-band lead and the rest
+  of the v1.1 "crafted frame" queue remain open alternatives.
+
+- **HANDOFF, 2026-09-06 (run 156) — task 177 piece 4's last slice: the
+  file-upload control, and MIDI import is DONE end to end.** Full detail
+  (the new `ImportSongDialog`, `saveImportedSong`, the storage-format
+  extension for rests, and the live-verification steps) is in ROADMAP
+  task 177's own final done-note — short version here. The songbook's
+  "Import a song ♪" row (next to "Make a song ♪", same no-handler-no-row
+  pattern) opens a hidden `<input type="file">` on the row's own
+  pointerdown, reads the chosen file as bytes, runs it through
+  `core/midi.ts`'s `importMidi`, and on success opens a name prompt (same
+  DOM/CSS shapes `freePlayScreen.ts`'s own naming dialog already uses)
+  that saves via a new `customSongs.ts` function, `saveImportedSong`. That
+  function had to exist because the old `saveCustomSong(title, steps:
+  number[])` can only express one tapped position = one quarter note —
+  it cannot carry a MIDI file's real durations or interior rests — so this
+  piece also extended `StoredSong`'s on-disk shape to allow a rest (no
+  version bump; old two-element records still read back unchanged) and
+  refactored `saveCustomSong`/`saveImportedSong` to share one
+  validate-then-store body. Verified live with an ad-hoc Playwright
+  install (1.56.1, `tools/browser.mjs`) against `npm run preview`: a
+  hand-built 16-note test MIDI round-tripped into a named custom song
+  that shows up on the "Your songs" shelf, and a plain text file declined
+  with a dismissible message and left no dialog state behind — zero
+  console/page errors either way. `npm test` 1329 green (+3), `npm run
+  build` green, bundle 913→921 KB (`midi.ts`/`importSongDialog.ts` are no
+  longer tree-shaken now that something reaches them). No new runtime
+  dependency. Task 177 is closed. Next: task 178 (MusicXML import, reuses
+  177's validation path) is the natural continuation of this arc; task
+  189's far-band lead and the v1.1 "crafted frame" queue remain open
+  alternatives, and this run's own count (156, eleven since the run-145
+  consolidation) makes the next run a reasonable candidate for the next
+  consolidation pass instead of another feature.
+
+- **HANDOFF, 2026-09-03 through 2026-09-06 (runs 146-155, compressed by
+  the run-157 consolidation — see there) — v1.3's two remaining arcs,
+  both closed.** Task 176 (the family songbook) shipped in five pieces:
+  the data layer (146), the recording state machine (147), the free-play
+  screen's render (148, first verified live with this environment's
+  Playwright/Chromium), its reachability via the songbook's "Make a
+  song ♪" row (149), the record toggle and name-prompt dialog (150), and
+  the "Your songs" shelf (151) — closing the arc: a family can record a
+  tune, name it, and walk the road with it. Task 177 (MIDI import) then
+  shipped in its own five pieces, same treatment: the dependency-free
+  byte parser (152), the top-note-skyline melody extractor (153), the
+  duration quantizer and octave-shift range transposer (154), the
+  validate/`importMidi` pipeline (155), and the file-upload control
+  itself — `ImportSongDialog`, the "Import a song ♪" row, `saveImportedSong`
+  (156) — closing that arc too: MIDI import is done end to end. Every
+  screen-touching piece was verified live before merging, not just typed.
+  Bundle grew 902 → 913 KB once free play became reachable (run 149) and
+  → 921 KB once `midi.ts`/`importSongDialog.ts` stopped tree-shaking
+  (run 156) — still under 2% of the 5 MB budget. No new runtime
+  dependency across the whole block.
+
+- **HANDOFF, 2026-09-03 (run 145) — CONSOLIDATION (drift control, every
+  ~10th run; last was 135).** Drift check over runs 136-144: CLEAN — every
+  run was task 189's hue-band investigation (two real tooling bugs found
+  and fixed — a sky-mask sentinel silently broken since run 95, and a
+  finishing-pass-skipping render call in seven tools — plus a correlation
+  proposed at piece 2 and refuted by piece 1's own toggle test at piece 3,
+  never landing a shader change) or task 143's shoulder-blend fix (a real,
+  small, verified-live terrain fix). No new system, no scope growth beyond
+  the standing v1.1 "crafted frame" art-quality queue; bundle unchanged at
+  902 KB of the 5 MB budget throughout. STATE trimmed the way run 135 did
+  it: the individual HANDOFF blocks for runs 134 and 136-143 (nine blocks,
+  434 lines) compressed into one run-index paragraph immediately below
+  run 144's (kept in full as the most recent) — this file's "At a glance"
+  section 4227 → 3858 lines from that edit alone. `docs/research/art-
+  quality.md` gained a new "Findings from shipped work" entry (runs
+  138-144): the stale-measurement-tool pattern (a tool that renders
+  outside the game's own `App.renderFrame` call goes silently wrong the
+  moment a post-process pass ships, and nothing forces it to notice) and
+  the correlation-is-not-a-mechanism lesson task 189's own piece 2/3 arc
+  just lived through. Direction research refreshed per CLAUDE.md pillar 5
+  (see above): retention's v0.9 queue and mobile-friendly's urgent item
+  both unchanged and complete; nothing in runs 135-144 touches either
+  research note's recommendations or its rejected-on-principle list.
+  DESIGN.md's changelog gains the runs 136-144 entry. No game `src/` file
+  touched; `npm test` and `npm run build` unchanged and green. Next: with
+  the land-key mechanism ruled out, look at what the far row band's
+  rendering actually shares across the risen poses (camera distance to
+  the horizon, the object mix sampled there, or the fog uniforms) before
+  proposing a replacement mechanism for task 189; the scatter lower-left
+  design question (run 136, still open); wave 20 once the network block
+  lifts (see Blocked on human, unchanged); or v1.3 (the family songbook
+  queue, entirely untouched since it was written 2026-08-01 — worth a
+  look once the current art-quality loop reaches a natural pause).
+
+- **HANDOFF, 2026-09-02 (run 144) — task 189 piece 3: the toggle test
+  refutes piece 2's land-key mechanism.** `fog-hue-band.mjs` now forces
+  `app.globals.uLandKeyAmount.value` to 0 for one render (in-page
+  override, no shader edit — every material shares that uniform object)
+  on the three poses that naturally pull, right after their normal
+  reading, on the same page. Piece 2 proposed that `landKey.ts`'s
+  90°-cone rotation turns one loose far-band hue cluster into two
+  tighter ones that the circular hueSpread formula scores as MORE spread
+  — predicting the far/near gap should collapse toward the zero-pull
+  controls' negative gaps (−0.066/−0.067) once the key is forced off.
+  Measured the opposite on all three: `02-morning` gap 0.243 → 0.301,
+  `03-noon` 0.294 → 0.298 (flat), `10-tablet-afternoon` 0.194 → 0.464
+  (more than doubles). The near band barely moves with the key toggled
+  either way; the far band jumps up substantially every time the key is
+  turned OFF (afternoon's far hueSpread 0.215 → 0.489, far meanSat 0.278
+  → 0.192) — if anything the key mildly damps far-band spread, less
+  effectively than it damps the near band, the reverse of "the key
+  manufactures the far-band spread". Piece 2's correlation
+  (landKeyAmount tracking the gap) was real but not causal; what
+  actually drives the far-band spread rise on enacting hours is open
+  again. Not chased further this run: three toggles kills a specific
+  causal claim, not enough evidence to build a replacement one, and the
+  panel/wave-20 validation this task has needed throughout is still
+  network-blocked (see Blocked on human, below — unchanged). `npm test`
+  1249 green (unchanged), `npm run build` green (902 KB, unchanged),
+  `verify-all quick` (`shader-check`) PASS. Docs/tool-only: no game
+  `src/` file touched. See `tools/README.md`'s `fog-hue-band.mjs` section
+  and ROADMAP task 189 for the full table. Next: with the land-key
+  mechanism ruled out, look at what the far row band's rendering shares
+  across the risen poses versus the flat ones (camera distance to the
+  horizon, the object mix sampled there, or the fog uniforms) before
+  proposing a replacement mechanism; the scatter lower-left design
+  question (run 136, still open); or wave 20 once the network block
+  lifts.
+
+- **Runs 134, 136-143 (2026-08-30 – 2026-09-02), compressed by the run-145
+  consolidation — full accounts live in ROADMAP's numbered done-entries and
+  `tools/README.md`; run 144 above stays uncompressed as the most recent.**
+  134: the scatter lower-left question first measured (`scatter-probe.mjs`
+  built) — the pinned `04-golden-vista` frame's near-empty lower-left is
+  per-seed placement luck (healthy scatter at every other sampled
+  position), not a camera or sentinel fault; left as a design question
+  rather than tuned blind. 136: the same question answered with a full run
+  across eight frames — confirms per-seed luck; the real narrower fact is
+  that *large-form* scatter (rock/shrub/log/fern) is sparse enough per
+  quadrant that a quadrant drawing zero of it is ordinary; a
+  guaranteed-anchor-per-quadrant fix was sized but deliberately left as an
+  open design call, not built. 137: task 143 shipped — the road's shoulder
+  blend now commits to meadow in its final 0.4 m (`smoothstep`) instead of
+  dissolving gradually across the whole band; task 144's "no self-shadow"
+  note corrected (the figure-shadow half already shipped, task 179). 138:
+  the 149/169 "night spikes" lead measured and REFUTED — a speculative
+  grass-tuft contrast fix was built, found not to move the flagged pixel at
+  all, and traced instead to a firefly/ember particle plus a first-pass
+  measurement that (like 141 later confirmed project-wide) skipped the
+  finishing pass; fix reverted, instrument sized instead. 139:
+  `ground-cover-probe.mjs` built; TASK 149 CLOSED (folding in 169) — the
+  pinned `07-night-campfire` postcard poses at a stale `s` that streams in
+  zero grass/fern (a harness bug, not a game fault — real play can't
+  reproduce it), and at a corrected pose the dark-meadow banding share
+  (7-13%) sits at or below the noon baseline (16%/2%) — REFUTED with a
+  positive, traced cause rather than a shrug. 140: task 187 — fixed
+  `postcard.mjs`'s stale `s: 1400` for the `07` shot itself, so future
+  postcards show the resting camp's real ground cover instead of bare
+  terrain. 141: task 188 — the `app.renderer.render()` vs
+  `app.renderFrame()` finishing-pass discrepancy runs 138/139 flagged is
+  now fixed in every remaining tool (`postcard`, `frame-quality`,
+  `land-histogram`, `figground`, `figground-partition`, `shader-check`,
+  `shadowcast`); also fixed two tools' hardcoded Windows import paths that
+  had been crashing them outright on any other machine. 142: task 189
+  piece 1 — building a new fog-hue-band probe surfaced that
+  `land-histogram.mjs`'s sky mask has been silently broken since run 95 (a
+  magenta-sentinel check invalidated by the ACES/LUT grade, so it measured
+  land+sky together while its own `landShare` column read ~100%); fixed,
+  and the first corrected hue-band reading is inconclusive — a milkier
+  distance on enacting hours, not a literal one-hue wall. 143: task 189
+  piece 2 — widened the probe's pose set to 5 and found a sharper,
+  falsifiable hypothesis: far-band hue-spread rise tracks `landKey.ts`'s
+  pull amount, not the hour (later refuted by run 144's toggle test,
+  above). Every one of these runs was measurement, tooling, or a small
+  traced fix on the existing world — no new system, no code outside
+  `tools/` and one terrain-blend function, bundle unchanged at 902 KB
+  throughout.
+
+- **HANDOFF, 2026-08-30 (run 135) — CONSOLIDATION (drift control, every
+  ~10th run; last was 120).** Drift check over runs 121-134: CLEAN — every
+  run was retention-arc feature work that closed a named queue (121-123,
+  task 157), a character/creature build (124, 129), a blind panel or a
+  measurement it licensed (125-128, 130-134), or a pure geometry
+  refinement of an existing object class (128, 133); no new systems, no
+  new runtime dependencies, bundle 902 KB of the 5 MB budget (up from
+  697 KB at run 120 — the creature family and shape-vocabulary geometry,
+  not bloat). The retention research (pillar 5) reread: recommendation 6
+  (family bookmarks) is now SHIPPED (task 157, runs 121-123), closing the
+  v0.9 queue entirely — all seven ranked recommendations are SHIPPED or
+  standing design, and the rejected-on-principle list stayed clean against
+  a run block that never touched retention mechanics at all. Added a
+  finding to `docs/research/art-quality.md`'s shipped-work section: the
+  wave 14-19 block's dominant lesson was that a plausible-sounding visual
+  complaint is not evidence of its own cause — three separate "obvious"
+  levers (tree-clone placement, NPC albedo, the empty-quadrant frame) were
+  each measured and REFUTED before being tuned, and the real fix in each
+  case was narrower or lived somewhere else entirely (grep `art-quality.md`
+  for "Findings from shipped work" for the full entry). Also fixed a stale
+  pointer in ROADMAP.md's "Start here": it named the v0.7 queue (tasks
+  122-128) as "what to do next," but that queue predates and is superseded
+  by the wave/blind-panel system — its own premise ("no agent here can
+  judge art quality") turned out to be wrong once art-quality.md's
+  research made agent judgment possible, so those six tasks are on hold,
+  not next. STATE trimmed: handoffs 121-133 compressed to a run index
+  below (ROADMAP's done-entries, named there, carry the full accounts) —
+  this file 3887 → 3741 lines. DESIGN.md's changelog gains the runs
+  121-134 entry. No code touched; `npm test` 1249 green (unchanged),
+  `npm run build` green (unchanged). Next: the hue-free distance wall, the
+  scatter-balance measurement (run 134's), wave 20, or v1.3 (the family
+  songbook queue, entirely untouched since it was written 2026-08-01 —
+  worth a look once the current art-quality loop reaches a natural pause).
+
+- **Runs 121-133 (2026-08-07), compressed by the run-135 consolidation —
+  full accounts live in the ROADMAP done-entries named here.** 121: 157
+  piece 1, the bookmark storage layer (zero-migration — bookmark 0 IS the
+  legacy keys). 122: 157 piece 2, the bookmark door (family feature goes
+  live). 123: TASK 157 COMPLETE — the v0.9 queue closes, all bookmarks
+  wired end to end. 124: 186 piece 2, the fox and the cat. 125: WAVE-18
+  BLIND PANEL (mean 4.21 — emotion/silhouette/mobile stuck as the
+  design-level lenses, engine lenses at 5+). 126: the tree-clone lever
+  wave 18 blamed for clone-stamped foliage REFUTED at the placement level
+  (every instance already gets random rotation/scale/variant) — residual
+  pushed to geometry. 127: the scrim ruling — HUD wash alpha now scales
+  with the sky's own luma, settling four waves of "unplated text fails on
+  bright sky." 128: the canopies grow toward their light — seeded lateral
+  lean + per-lobe mass bias fixes the true clone-stamp cause run 126
+  found. 129: 186 piece 3, the escort dog. 130: WAVE-19 BLIND PANEL (mean
+  4.40, seven-wave block flat 4.21-4.45 — the deer beat named "the
+  strongest read in the set," mannequin audience and faceless bard the
+  top faults). 131: the mannequin-audience claim measured again — staging
+  is innocent a second time, the real fault is that listener FACING does
+  not render on a box figure (sub-pixel head-tilt, no silhouette change).
+  132: the listening posture enacted (head-tilt 3.4° → 12.6°, a lean-in,
+  more rock) so attention finally reads at silhouette level. 133: shape
+  vocabulary first piece — rocks gain a three-archetype shape table
+  (slab/wedge/boulder) so "one lozenge does every job" stops being true
+  for stones.
+
+- **HANDOFF, 2026-08-07 (run 120) — CONSOLIDATION (drift control,
+  every ~10th run; last was 104).** Drift check over runs 105-119:
+  CLEAN — every run was measurement (105-107, 115), presentation on
+  the one mechanic's readouts (108, 110-112, 114, 116-117, 119), or
+  a panel (109, 113, 118); no new systems, no new runtime
+  dependencies (the deer is three + painterly), bundle 905 KB of the
+  5 MB budget. The retention research reread per pillar 5 —
+  recommendations 1-5 SHIPPED, 6 (family bookmarks, task 157) is the
+  v0.9 queue's one remaining arc, 7 standing; rejected-on-principle
+  list re-checked clean; refresh note added to the Direction research
+  section above. STATE trimmed: handoffs 95-112 compressed to a run
+  index (ROADMAP carries the full accounts), 3897 → ~3600 lines.
+  DESIGN.md changelog gains the runs 105-120 entry (the hour-key/
+  value-floor arc, the panels, the deer). Session state: five-wave
+  panel block flat at 4.3-4.45 with engine lenses at 5+ and
+  design-level lenses (emotion/silhouette/mobile) the deficit — the
+  next arcs are characters (186 creatures, 150 pose variety),
+  silhouette vocabulary, the scrim decision, daylight dark accents,
+  and task 157. Docs-only run; 1240 tests and build untouched-green.
+
+- **HANDOFF, 2026-08-07 (run 119) — 186 piece 1: the deer is real,
+  and the staging follows the writing.** Wave 17's sharpest emotion
+  finding enacted: `actors/Deer.ts` (alert neck + splayed ears — the
+  silhouette marks nothing else has; breath + ear-flick only, because
+  the line is stillness), stood at 6.5-9 m through the real staging
+  path, leaving without hurrying when the walk resumes. THE DEEPER
+  FIX: placeMeeting stood a random HUMAN for every encounter — on a
+  deer day the frame contradicted its caption. `meetingFigureFor`
+  (pure, table-swept test): traveller → person, creature → own
+  figure where one exists, otherwise NOTHING; weather stands nothing.
+  Frame verified live: dusk, deer off-road, caption agreeing. 1240
+  tests (+1). Visual count since wave 17: ONE. Next candidates: more
+  creatures (cat/dog/fox per 186), silhouette vocabulary, the scrim
+  decision, or daylight dark accents (wave 17's value ask).
+
+- **HANDOFF, 2026-08-07 (run 118) — WAVE-17 BLIND PANEL: mean 4.31,
+  the five-wave same-rubric block reads 4.38/4.33/4.40/4.45/4.31 —
+  flat at the ±0.3 noise floor, and the STRATEGIC READ is now
+  unmistakable: the colour/value engine arc has moved its lenses to
+  5+ (value 5.23, its fault INVERTED — "no true black in daylight,
+  the ladder has no bottom" REPLACING "midtones scooped": the run-116
+  value floor registered and overshot nothing, but daylight dark
+  accents are now the value ask; colour 5.12, the fog-to-white and
+  shadow-hue families persisting), while the STUCK LENSES ARE
+  DESIGN-LEVEL: emotion 3.77 ("the protagonist has no face — and
+  gets less human the closer you look"; "NPCs are mannequins, so the
+  busk has no audience"; "an unpeopled world"), silhouette 3.62
+  ("one convex-lump vocabulary serves every object class",
+  clone-stamping, "scarecrow mannequins"), mobile 3.69 (the
+  scrim/no-panel collision, FOUR waves running — the idiom itself is
+  now the disputed design decision, not the tuning). Composition
+  4.46 ("no foreground plane — the near band is always empty
+  ground"; "leading line terminates in a void"). Frame moves:
+  07-night 4.92 → 5.25 (the floor + fire), 03 +0.34, 11/13 up;
+  09 3.83 → 3.42; 10-TABLET COLLAPSED 4.08 → 3.08 ("the dominant
+  note is GREY... even the cloak has gone muddy maroon") — 10 sits
+  at sunH 0.333, OUTSIDE both hour gates; measure what greyed it
+  before touching anything (suspect: it was always grey and the
+  panel's calibration wandered, ±0.3-0.6 per-lens noise binds
+  per-frame too). NEXT ARCS, sized honestly: (1) the character
+  pass — face-at-distance is a DESIGN decision (150's standing
+  note: try behind a comparison shoot), NPC identity/grouping at
+  the busk; (2) silhouette vocabulary variety (concave/spire/split
+  forms beyond the convex lump); (3) the mobile scrim decision —
+  either commit to a real plate idiom or accept the trade in
+  writing; (4) daylight dark accents (the value ladder's bottom).
+  Full verdicts: scratchpad wave17-verdicts.json, 6 opus judges,
+  ~615k tokens, dayKey 2026-08-07. Ledger updated.
+
+- **HANDOFF, 2026-08-07 (run 117) — 175 corner presence: the purse
+  wash hugs its numbers, the corners hold their stroke.** Wave 16's
+  mobile-lens "grey elliptical smudge" identified as run 100's own
+  trailing wash spanning a box its content right-justifies inside;
+  the purse now has a tight wash (radiusX 34 at 78%) + weight 600,
+  and the corner labels take the caption's weight 500. Two judge
+  claims deliberately NOT obeyed, logged in ROADMAP 175: the
+  "sub-threshold counter" arithmetic double-shrinks (desktop shots
+  judged at phone width — the real phone frames render 17-18 CSS
+  px), and chevron affordances need a design pass, not a knob.
+  1239 tests, build green. Visual count since wave 16: THREE (114
+  trough, 116 value floor, 117 this; 115 was measurement) — **WAVE
+  17 IS DUE NEXT ITERATION**, judging: the value floor on 05/09/12/
+  13 (does "midtones scooped"/"navy voids" move?), the trough on
+  01/02, and the corner chrome on 04/08/09.
+
+- **HANDOFF, 2026-08-07 (run 116) — the low-sun value floor ships;
+  the 144/169 crush family finally has its lever in the build.**
+  `valueFloor.ts`: the painterly sky floor (hue-carrying, dark-gated)
+  is boosted ×2.6 at sun heights −0.16..0.15 — full at golden/dawn/
+  dusk, zero at night and high day by schedule. Measured: 05 pedlar
+  V 0.205 → 0.292 with S held (the NPC prescription exactly);
+  12-dusk midtones open (64% of pixels); night byte-close, gauge
+  6.47 identical. Honest trade: golden 4.29 → 3.59 stops (still >>
+  floor) for hueSpread 0.083 → 0.105. ALL POSES PASS, 1239 tests.
+  Visual count since wave 16: TWO (114 trough, 116 this; 115 was
+  measurement) — wave 17 after ~one more visual task, and it judges
+  the floor on 05/09/12/13 plus the trough on 01/02. Next
+  candidates: emotion's faceless-protagonist family (150, bottom
+  lens two waves), mobile's unbacked HUD text (175), 166 skylight
+  ambient, or silhouette's broadleaf lump-on-a-stick.
+
+- **HANDOFF, 2026-08-07 (run 115) — NPC voids measured: albedo
+  refuted, family re-attributed to 144/169.** The waves-15/16 "unlit
+  navy voids at the focal point" family taken to pixels: NPC bodies
+  in 05 sit at the bard's own value (V 0.20-0.24, warm hues — the
+  light lands) but half his saturation. Chroma-scaling their
+  cloth/under/crown ×1.7 (values pinned) was built, shot and
+  REVERTED — 0.63% of pixels moved, samples ±0.03 S — because
+  V ~0.21 is the ACES/finishing chroma-crush regime run 107 already
+  partitioned. The 144/169 shade-side VALUE floor at low sun now has
+  THREE independent sites (12/13 dusk stripes, wave-16's "midtones
+  scooped" value verdict, NPC voids) and is the highest-leverage
+  visual task remaining — TAKE IT NEXT: start from run 107's numbers
+  (S 0.13 band = lit dark albedo at V 0.21), find the finishing
+  S-curve's quarter-tone dip + the low-sun ambient floor, lift the
+  V ~0.2 band's display value only as far as chroma survival
+  requires, judge on re-shot 12/13/05 + NPC samples + all gauges
+  (night 6.47 must hold). Docs-only run (measurement + revert).
+
+- **HANDOFF, 2026-08-07 (run 114) — 185 piece 8: first light reaches
+  the ground.** Wave 16's licensed lever enacted: NIGHT_KEY_OUT
+  0.08 → 0.0 and LOW_SUN_IN 0.08-0.13 → 0.0-0.06, so pose 01's sun
+  (0.060, run-111's probe) gets the horizon key at full strength
+  instead of a fading violet at ~0.02. 01 re-shot: 39% of pixels
+  move +5.9° warm, the meadow takes the salmon wash; 06-dusk
+  byte-identical (handover continuity by construction); ALL GAUGES
+  PASS unchanged; 1236 tests. Visual count since wave 16: ONE.
+  Next candidates: the emotion queue's 150 family (faceless
+  protagonist / navy NPC voids at focal point — emotion is the
+  BOTTOM-TWO lens two waves running with silhouette), mobile's
+  unbacked-HUD-text (175 family), or 166's skylight ambient
+  saturation. 12/13 dusk stays parked (144/169).
+
+- **HANDOFF, 2026-08-07 (run 113) — WAVE-16 BLIND PANEL: mean 4.45,
+  the same-rubric block reads 4.38 / 4.33 / 4.40 / 4.45 — still flat
+  at the noise floor (±0.3 binds), but the LENS STRUCTURE moved:
+  COLOUR IS NOW THE TOP LENS (5.46, from bottom-two territory in
+  waves 13-14) and the run 110-112 fixes registered BY NAME — the
+  road called "the one element correctly at its hour" (01), "rust
+  road threading between them" (04, scored 7), the flower drifts
+  "the only warm accent below the horizon" (12), golden 04/05 at 7
+  with the sky ramp "reference-grade" (05).** Lens means: colour
+  5.46, value 4.92, composition 4.65, emotion 3.92, mobile 4.15,
+  silhouette 3.58. Top frames 08 (5.25), 04 (5.00), 07 (4.92);
+  worst 02 (3.67), 09 (3.83), 03/10 (4.08). THE DOMINANT COLOUR
+  FAULT NARROWED to exactly the hours the key schedule leaves
+  uncovered — "the hour lives in the sky and never reaches the
+  ground" (01/02/12/13): run-111's own probe already measured pose
+  01 at sunHeight 0.060, INSIDE the night→low-sun handover trough
+  (amount ≈ 0.02 — the low-sun band starts at 0.08), and 12/13 are
+  night-mode where warm-olive is anti-family (the parked 144/169
+  value family, runs 105-107). CONCRETE NEXT LEVER, licensed by
+  this wave + run-111's arithmetic: reshape the handover so dawn's
+  actual sun height gets the horizon key (extend LOW_SUN_IN below
+  0.08 / overlap the fade), judged on re-shot 01/02. OTHER LENS
+  FAMILIES (symptoms credible, causes suspect — ablate first):
+  emotion's top fault "the protagonist has no face and never turns
+  around" + 05/09 NPCs "unlit navy voids at the focal point" (150
+  family, NPC chroma identity repeat); silhouette's "broadleaf
+  trees silhouette as boulders / lump-on-a-stick"; mobile's
+  "zero-chrome text: unbacked cream HUD on arbitrary sky" (175
+  family); value's "bimodal frame, midtones scooped out" (the
+  144/169 dusk-midground value floor, third independent
+  confirmation); composition's "corridor lock — one camera, one
+  eye path" (rig family). Full verdicts:
+  scratchpad wave16-verdicts.json (session-local), 6 opus judges,
+  ~620k tokens, dayKey 2026-08-07. Rubric ledger updated (waves
+  15/16 rows added).
+
+- **Runs 95-112 (2026-08-06/07), compressed by the run-120 consolidation
+  — full accounts live in the ROADMAP done-entries named here.** 95:
+  finishing pass ships (168 DONE). 96: 150 audited, elder's light note.
+  97: WAVE 13 (4.38, rubric committed to docs/critique-rubric.md). 98:
+  daylight land key (185 p1). 99: fog chroma (185 p2). 100: caption
+  backing (175). 101: WAVE 14 (4.33). 102: night ground key (185 p3).
+  103: low-sun warm band (185 p4). 104: CONSOLIDATION (rubric
+  preserved). 105-107: the 12/13 dusk seam measured, scatter levers
+  refuted twice, shadowcast partition — the grey band is LIT ground
+  crushed at V~0.2, the 144/169 attribution that run 116 finally
+  enacted. 108: deep water follows the hour (185 p5). 109: WAVE 15
+  (4.40; judge-noise floor ±0.3 established). 110: road chroma (185
+  p6). 111: hour-key true rotation + low-sun grip 0.45 (185 p7). 112:
+  flower drifts (166 p5; hueSpread gauge blind to the lever).
+
+
+- **HANDOFF, 2026-08-06 (run 94) — the postcard sheet grows three
+  poses (harness-only; no game code).** Three waves called the
+  sheet "one camera repeated as if it were ten compositions" —
+  partly the harness's own artifact. Added 11-morning-vista (a
+  second landscape hour), 12-dusk-walk and 13-dusk-walk-phone (the
+  walk past day 0.7, never before judged — fireflies, raked dusk
+  light). 01-10 PINNED untouched for cross-wave comparability.
+  TWO FINDS while doing it: (1) a walking pose's day is DERIVED
+  from s by the journey model — a mismatched pose is walked back
+  during settle (measured: night at s300 shot as morning); the
+  moonlit leg cannot be posed at all without new plumbing —
+  recorded in postcard.mjs. (2) the road-name aside says "this
+  morning" whatever the hour (12-dusk shows it at dusk) — small
+  diegetic wording bug for a future retention-queue touch-up.
+  Wave 13 judges 13 frames; per-frame history holds for 01-10.
+
+- **HANDOFF, 2026-08-06 (run 93) — WAVE-12 BLIND PANEL: 4.65,
+  FLAT vs wave 11's 4.73 (waves 10-12: 4.61/4.73/4.65 — a plateau
+  at ~4.66; the quick-knob frontier is EXHAUSTED).** Lens means
+  (w11): colour 5.10 (5.23), value 4.82 (5.07), emotion 4.76
+  (4.74), silhouette 4.31 (4.54), composition 4.88 (4.81), mobile
+  4.04 (3.99). Frames stable: 07/04/06 top, 03 worst 3.77. WHAT
+  CLOSED: the clone-stamp fault is GONE from the lists (variants
+  worked); the ghost band shrank to a side mention. WHAT THE
+  PLATEAU IS MADE OF — every remaining family needs a BIG pass, a
+  decision, or the harness: (1) "light lives only in the sky; the
+  ground never changes hue with the hour" + "vegetation crushes to
+  hueless black at warm hours" — the hour-relighting of the LAND,
+  i.e. the colour script's enacting work at last (166/168 family,
+  multi-run); (2) low-sun shadow bands STILL top of silhouette —
+  run 84 closed the shader knobs; the presentation decision (sun
+  floor vs acceptance) now blocks this family; (3) one-shape
+  vocabulary (shrub≈rock≈boulder convex lumps — geometry
+  vocabulary, 169); (4) NPC mannequins (150); (5) one-camera +
+  unattended ground plane (rig/harness); (6) mobile chrome
+  (staff anchoring, text plates, tap affordance — HUMAN-flagged
+  design decisions, three waves running). RECOMMENDATION for the
+  next runs: stop knob-hunting; take 168 (finishing pass: 0.8
+  render scale + code-generated 3D-LUT — the references' unifier,
+  touches families 1 and 4 at once) as the next arc, then 150.
+  Full verdicts in the run-93 workflow output.
+
+- **HANDOFF, 2026-08-06 (run 92) — 149 second piece: the
+  cross-blade kills the chevron.** The wedge fan was the cause
+  (all five blades one heading family → whole tuft goes edge-on
+  together); the last blade now stands across the prevailing
+  direction, so every bearing sees a face. Same count, same stream
+  order, zero cost; the wedge test re-derived (4 blades < 2.6 rad,
+  whole tuft < 3.0 — a rosette still fails it). Gauges PASS, 1209
+  tests. 149 remaining: 07 night spikes only. Visual count since
+  wave 11: FOUR (89 paper, 91 scatter, 92 this) — WAVE 12 IS DUE
+  NEXT ITERATION. After it: 166 noon accents, 150 faces, 168/169
+  big passes; human-gated items unchanged.
+
+- **HANDOFF, 2026-08-06 (run 91) — 149 first piece: clones break,
+  litter thins.** Shrubs 1 → 4 silhouette seeds, rocks 1 → 3
+  (density/albedo/scale untouched — the shrub dark mass is noon-
+  gate load-bearing; all poses PASS), roadstone 0.5 → 0.34/m².
+  Frames: 10-tablet's shrub field finally varies; the near road
+  is texture, not speckle. 1209 tests. Remaining 149: grass-card
+  edge-on chevrons (geometry run — blades crossing at the root),
+  07 night spikes. Visual count since wave 11: THREE (89 paper,
+  91 this, plus 90 was consolidation) — wave 12 due after the
+  next visual task or two. Big rocks left on the art queue: 150
+  faces (emotion's structural ask), 168 finishing pass, 169
+  terrain hero pass; human-gated: 157, 161, mobile chrome
+  decisions, 127 real-hardware tiers.
+
+- **HANDOFF, 2026-08-06 (run 90) — CONSOLIDATION (drift control,
+  ~10th run; last was 61).** DESIGN.md reread against the code:
+  the core mechanic (tap the travelling staff, no-fail, notation
+  never wrong) is what ships; no drift found; changelog honest.
+  PILLAR-5 RESEARCH REFRESH — what the game now does about each
+  ranked recommendation: (1) campfire bookend SHIPPED via 159
+  (tonight's page + tomorrow's skyline); (2) shared road SHIPPED
+  (152 name + traveller lines, 153 postcard); (3) songbook wear-in
+  first slice SHIPPED (154, diary facts only); (4) mementos first
+  slice SHIPPED (155, ✽ lines, no counts); (5) welcome-back
+  SHIPPED (156, existence-only, bans swept); (6) family bench OPEN
+  (157 — the one remaining, arc-sized, wants human profile-UX
+  view); (7) instruments-as-finite-arc standing. New finding
+  appended to the research: the kind-ritual principles held under
+  iteration ONLY as test-enforced vocabulary bans, and the
+  postcard doubles as the project's art instrument (share quality
+  = press quality, one budget). Repo sweep: no conflict markers,
+  ROADMAP done-entries current, tests 1209 green, build green.
+  The visual trajectory is finally up (wave 11 4.73); the queue
+  ahead: 149 scatter, 166 noon accents, 150 faces, 157 (human),
+  the mobile-chrome decisions (human), 168/169 (the two big v1.1
+  passes), v1.3 (176-178).
+
+- **HANDOFF, 2026-08-06 (run 89) — ghost band round 2: the paper
+  honours its own header at last.** PAPER_ALPHA 0.62 → 0.50 (the
+  file's founding language was "a veil at forty per cent"; the
+  near lane subtends half a frame BY CONSTRUCTION — it is the
+  reading surface — so what extent cannot give, opacity must).
+  Geometry, margins, fades, ink alphas all untouched; the
+  sixth-line counterfeit pin gets safer as the paper's gradient
+  shallows. Frames: 02/08 read as world-through-gauze with rules
+  and discs fully legible. Gates PASS, 1209 tests. Visual count
+  since wave 11: ONE. Menu next: 149 scatter patches (wave 11
+  named the grass card chevrons again), 166 noon accents proper,
+  the harness pose-variety question (one-camera artifact), 150
+  faces (emotion's structural ask). NOTE: near-tail/margin trims
+  were CONSIDERED and rejected — TAIL_M 0.46 is pitch-pinned
+  (gone-by notes must rest on paper) and the fade margins are the
+  sixth-line settlement; the alpha lever is the only free one and
+  it is now at its design floor. If wave 12 still reads a band,
+  the remaining ideas are structural (hour-lit paper tint, or
+  attention-state opacity), each needing its own frame iteration.
+
+- **HANDOFF, 2026-08-06 (run 88) — WAVE-11 BLIND PANEL: mean 4.73,
+  UP from wave 10's 4.61 with the SAME rubric text — the first
+  upward move in four waves, and it rose exactly where runs 85-87
+  aimed.** Lens means (w10 in parens): colour 5.23 (5.20), value
+  5.07 (4.70, +0.37 — the ridge + road work), composition 4.81
+  (4.58), emotion 4.74 (4.51), silhouette 4.54 (4.46), mobile 3.99
+  (4.21, DOWN). Frames: 07 best 5.48, 04 5.33, 06 5.12 (+0.37);
+  03 still worst but 4.05 (+0.52 — its road drift was explicitly
+  read as "the one colour idea"). FAMILY LEDGER: (1) ghost band
+  NOT closed — silhouette still names "a broad milky translucent
+  band top-to-bottom" in 01/02/03/08; fainter but the EXTENT (full
+  frame height at near distance) is the remaining offender — next
+  lever is the paper's near-tail reach/margins, not more alpha
+  alone. (2) Dissolved horizon REDUCED (value +0.37) but 10's far
+  trees still read near sky value — remaining piece is the fogged
+  GEOMETRY band between real trees and dome ridges. (3) Khaki road
+  PARTIALLY answered (03 colour 3.5→4.6, drift registered; noon
+  amplitude could rise). (4) Mobile's drop is the SAME three
+  wave-10 families sharpened (staff crops/collisions = 146/184-2;
+  unplated labels = 175's undecided idle-opacity item; 07's "tap
+  here" affordance — HUMAN-flagged), not new damage from the paper
+  change: judges fault crops and affordances, never rule
+  readability. (5) Emotion's asks are structural: faceless figures
+  (150), empty-world props, one-road postcard monotony (partly the
+  HARNESS's one-camera artifact — consider varying postcard poses
+  before spending art runs on it), and "note discs read as debug
+  gizmos, unshaded and unintegrated with the 3D lighting" — a
+  concrete art note for the notation family. Full verdicts in the
+  run-88 workflow output (six opus judges, 574k tokens).
+
+- **HANDOFF, 2026-08-06 (run 87) — 166 piece 4: the road changes
+  colour along its length.** The khaki-road fault (wave 10's
+  biggest-area colour verdict) fixed with meadowAt's own mechanism
+  applied to the track: two slow sines of s drift the road base
+  between palette silt (rust) and sun-baked pale, shoulder
+  inherits, ruts on top, value break against the meadow held.
+  Frames: 03/08 roads read as travelled earth in stretches. All
+  gauges PASS, 1209 tests. THREE VISUAL TASKS SINCE WAVE 10 (85
+  ridge bands, 86 staff paper, 87 this) — WAVE 11 IS DUE NEXT
+  ITERATION: re-download refs, same six lenses, same blind
+  protocol; compare against wave 10's structure (mean 4.61, 07
+  best 5.77, 03 worst 3.53; the three shipped fixes answer its
+  ghost-panel family, dissolved-horizon read, and unmodulated-road
+  fault — judge whether the families actually close). After the
+  panel: 166 noon accents proper, 184 problem 2 (design decision,
+  arguably human), 149 scatter patches. 161 and 127 remain human-
+  blocked; 157 remains arc-sized.
+
+- **HANDOFF, 2026-08-06 (run 86) — the staff ghost-panel was the
+  paper's own opacity, and it is fixed.** Wave 10's new cross-lens
+  family ("broad translucent white-grey slab behind the staff, no
+  edge, no caster" — silhouette/composition/mobile) measured to a
+  one-line cause: SongNotes' PAPER_ALPHA was 0.78 and its comment
+  claimed the INVERSE ("how much of the world reads through") — the
+  'veil' was three-quarters opaque, two staff-heights tall with its
+  designed margins, and the doc lie is why the fault survived three
+  waves. PAPER_ALPHA 0.78 → 0.62; INK_ALPHA, rule ink, note heads,
+  and every fade geometry untouched — the surfaces a child reads
+  did not move, pinned by the existing songNotes tests (1209 green).
+  Frames read: 01-dawn's slab is now breath-on-glass; 08-phone and
+  05-busk rules/discs fully legible; the veil finally is what its
+  design always claimed. Visual-task count since wave 10: TWO (85
+  ridge bands, 86 this) — WAVE 11 after one more visual task. Next
+  menu, evidence order: 166 noon accents (khaki road), 184's
+  re-aimed envelope lever (headgap), 149 scatter patches.
+
+- **HANDOFF, 2026-08-06 (run 85) — 166 piece 3: the horizon stops
+  dissolving.** The three-wave "milky distance" family was ablated
+  to its true owner: not tree haze (fogScale 0.85 → 0.3 levels),
+  not the fog keys (−5% value → 1 level), but the SKY DOME's own
+  painted ridge bands. ridgeTint values 0.79/0.64 → 0.62/0.48 put
+  the painted range 12.5 levels under the air on the same-day
+  frame; horizon/fog keys untouched, band order by construction,
+  all gauges PASS, 1209 tests. 10-tablet's horizon now reads land-
+  meets-air; dawn stays gentle. HARNESS LESSON: the UTC day rolled
+  mid-run and silently changed the road under the postcards —
+  A/B measurement pairs must be SAME-DAY; re-baseline after any
+  midnight-UTC crossing. Remaining 166: noon accents + skylight
+  saturation (the khaki-road half of wave 10's noon verdict).
+  THREE visual tasks since wave 10 will be reached after two more —
+  the running count is one (this run; run 84 shipped no pixels).
+
+- **HANDOFF, 2026-08-05 (run 84) — dawn-smear ablation: ALL THREE
+  shader levers measured and refuted; no code shipped.** The full
+  matrix and numbers live in ROADMAP task 144's new ablation entry.
+  Short form: 4096 shadow map moved nothing (the low-sun penumbra
+  is canopy-geometry ×8 projection, not texels), SHADOW_GAIN_CAP
+  0.40 moved nothing (dawn valueDrop stays 0.10), coarse fray 0.55
+  is leopard spots. The dawn bands are 94.3% tree-cast with casters
+  off-frame; edges are already ragged — the SCALE and interior film
+  are what read. The shader-knob family is EXHAUSTED after six
+  measured rounds; remaining 144 levers are presentation decisions
+  (sun-elevation floor vs accepting the hour — both argue with the
+  color script's "dawn is CARRYING"). NEXT, in wave-10 evidence
+  order: 166 noon accents (03 worst frame, licensed), staff
+  ghost-panel measurement, 149 scatter patches. Tests 1209, build
+  green, nothing changed in src.
+
+- **HANDOFF, 2026-08-05 (run 83) — WAVE-10 BLIND PANEL: mean 4.61
+  vs wave 9's 5.02, but the rubric text was RECONSTRUCTED (the
+  original wording is lost with the old session), and this wave's
+  told judges "do not grade on a curve" — treat the cross-wave mean
+  as weak evidence and the within-wave structure as the signal.**
+  Lens means: colour 5.20, value 4.70, composition 4.58, emotion
+  4.51, silhouette 4.46, mobile 4.21. Frame ranking STABLE: 07 best
+  5.77, 04 next 5.60, 03 worst again 3.53. Six opus judges, 574k
+  tokens, refs re-downloaded (7 ASH + 5 curated SF). THE READS:
+  (1) LOW-SUN SMEAR CONFIRMED SURVIVING run 75's SHADOW_EDGE fix —
+  silhouette's top fault is still "enormous soft-edged diagonal
+  bands attributable to nothing" in 01/06/09 (noon 03's shadow now
+  reads hard). Run 75's own prediction holds: the licensed lever is
+  FRAY AMPLITUDE or SHADOW-MAP RESOLUTION, not riser narrowing.
+  (2) NEW cross-lens family: the staff ribbon's soft white backing
+  wash reads as a "ghost haze panel / translucent slab with no
+  drawn edge" (silhouette, composition, mobile — 01/02/10). It is
+  the notation-slab family (184-2/146) grown louder; any fix must
+  be measured against note legibility, which is what the wash buys.
+  (3) NOON is still the worst frame and the colour judge's words
+  are 166's remaining piece verbatim ("brightness raised, tint
+  removed"; khaki road one unmodulated hue) — the skylight
+  saturation lever and per-biome noon accents were deliberately
+  left for "if a wave asks"; wave 10 asks. (4) Sentinel guarantee
+  REGISTERED (04 praised for canopy repoussoir + tent anchor;
+  10/08 carry cropped canopy) but composition still calls the
+  BOTTOM third dead in 6 frames — references crop treetops through
+  the bottom edge, which our flat-ahead camera cannot do; that is
+  a different (bigger) lever than more verge trees. (5) Emotion's
+  three faults are one design read: back-view protagonist,
+  prop-less procedural verges, one-road postcard monotony (partly
+  the harness's one-camera artifact, noted since wave 9). (6)
+  Mobile repeats wave 9 unresolved: staff crops at x=0 in 08 with
+  D/E discs colliding (146's measurement stands), text floats
+  plateless (the 175 washes idle at 36% opacity in postcards —
+  the honest-decision item is still open), 07's "tap here" door
+  affordance still flagged for human. Verdicts JSON in the run-83
+  workflow output; full evidence text there. NEXT VISUAL MENU, in
+  evidence order: dawn-smear (fray/map-res ablation), 166 noon
+  accents, staff ghost-panel measurement, 149 scatter patches
+  ("confetti shards" named again by silhouette).
+
+- **HANDOFF, 2026-08-05 (run 82) — 167 first piece: no framing
+  without an anchor.** The wayside-sentinel cadence (task 180) is
+  now a RULE, not a probability: pure exported
+  `waysideSentinelSites` guarantees ≥1 sentinel per 60 m chunk in
+  its central band (no two consecutive further than 96 m apart on
+  any road — pinned across 24 seeds), static exclusions redraw the
+  site instead of silently deleting it (12 tries, late tries
+  alternate verges), each slot on its own subseeded stream; the
+  dynamic camp clearing still drops at build so a dusk rebuild
+  never moves a tree. This answers wave 9 item 3 ("sentinels
+  under-hit, cadence or pose luck") the world-honest way rather
+  than pinning trees to postcard s-positions. Frames: 10-tablet
+  (the last anchorless frame) gains a corner-cropped canopy + near
+  broadleaf, 08-phone a top-edge-cropped sentinel; busk untouched,
+  road clear; frame-quality ALL POSES PASS (noon 3.86). 1209 tests
+  (+9), build green. Sentinel postcard-cadence LEAVES the visual
+  menu. TWO visual tasks since wave 9 (run 75 shadow form, this) —
+  WAVE 10 IS DUE after at most one more visual task. If wave 10
+  still reads empty edges the dial is SENTINEL_BAND, not more
+  trees; if it still reads dawn smear the lever is fray amplitude
+  or shadow-map resolution, NOT riser narrowing (run 75's note).
+
+- **HANDOFF, 2026-08-05 (run 81) — 151 closed as absorbed by 159
+  (audit, no code).** Both halves (tonight's page; tomorrow's
+  skyline) shipped in 159's first two pieces, which each named the
+  merge. THE v0.9 RETENTION QUEUE NOW STANDS COMPLETE except 157
+  (two bookmarks — arc-sized, scaffold-separation care; wants a
+  fresh session, arguably with the human's view on profile UX).
+  Remaining menus: visual (sentinel postcard-cadence, HUD
+  idle-opacity decision, 149 scatter patches, 184 problem 2, dawn
+  smear via fray/map-res), v1.3 (176-178, open since the festival
+  shipped), 161 (blocked on human). Tests 1200, build green.
+
+- **HANDOFF, 2026-08-05 (run 80) — 152 traveller lines: the road is
+  spoken.** 22% of traveller meetings speak today's road name
+  communally, on a new subSeed stream (draw order untouched); the
+  aside reaches the journal and tonight's page. Anti-pressure +
+  all-digits ban swept. ALSO: run 79's merge left conflict markers
+  in RoadStage.ts/campfirePage.test.ts (the reconcile script only
+  processed STATE/ROADMAP) — caught and repaired this run; future
+  reconciles must sweep ALL conflicted files. 1200 tests (+7).
+  Retention remaining: 151 pieces, 157 (arc). 3D signage still
+  deferred.
+
+- **HANDOFF, 2026-08-05 (run 79) — 156 done: the fire welcomes the
+  return.** Tonight's page opens with the welcome line when the day
+  carries the idle-return entry (whole-journal search; existence
+  only — day-count and debt-register bans swept against adversarial
+  fixtures). 1193 tests (+7). Retention remaining: 151 pieces, 152
+  signage, 157 (arc — needs care). Visual menu unchanged.
+
+- **HANDOFF, 2026-08-05 (run 78) — 155 first slice: mementos press
+  into the page.** leavesMemento(roll) = gift OR rare/wondrous (the
+  module's own vocabulary); such meetings journal as kind 'memento'
+  and tonight's page leads them with a quiet ✽. Share ~11%, pinned
+  in (0.02,0.3). Ask-resolution deliberately unmarked (performance-
+  reward smell). 1185 tests (+7). Retention remaining: 151 pieces,
+  152 signage, 156, 157.
+
+- **HANDOFF, 2026-08-05 (run 77) — 154 first slice: songbook pages
+  wear in.** wearTier(walks) at 1/6/14 (thresholds imported from
+  mastery.ts — one aging clock), diary facts only. Rows warm their
+  ink, then a middot, then the fleuron ❧ — no numbers, badges, or
+  tooltips, both volumes. Needs human playtest: tier 1 near-invisible
+  on dim phones (deliberate quiet). 1178 tests (+6). Retention queue
+  remaining: 151 (bookend pieces), 152's deferred signage, 155-157.
+
+- **HANDOFF, 2026-08-05 (run 76) — 153 done: the campfire postcard.**
+  Delegated to an opus agent, verified live: tonight's page offers
+  "press a postcard of today's road", which captures the live frame
+  (explicit render + readPixels), mats it in parchment with the road's
+  name and presence-only prose (vocab-banned by test — Wordle's rule),
+  and downloads a PNG. No network, no deps. The pressed postcard was
+  read by eye: lovely. Needs human playtest: long road names on
+  phones. 1172 tests (+11). Retention queue now: 154-157; visual
+  menu: sentinel cadence, HUD idle-opacity decision, 149, 184(2).
+
+- **HANDOFF, 2026-08-05 (run 75) — shadow FORM run: SHADOW_EDGE
+  0.13 → 0.08.** Two same-rubric panels licensed it. Noon penumbra
+  share 0.50 → 0.13 (hard-edged); dawn/golden remain soft — the
+  low-sun ×8 projection stretch dominates there, so if wave 10 still
+  reads smear at dawn the lever is fray amplitude or shadow-map
+  resolution, NOT further riser narrowing. Frames: dawn stripes now
+  ragged brush lobes. All gauges PASS, 1161 tests. Next menu:
+  153-157 retention (change of muscle after five visual runs), 149
+  scatter patches, sentinel postcard-cadence, HUD idle-opacity
+  decision (wave 9 item 2), 184 problem (2).
+
+- **HANDOFF, 2026-08-05 (run 74) — WAVE-9 BLIND PANEL: mean 5.02,
+  FLAT against wave 8's 5.10 — same rubric, same judge model, honest
+  comparison at last, and the three fixes did not move the mean.**
+  Lens means: colour 5.53, value 5.41 (up), emotion 5.27, silhouette
+  4.88, composition 4.84, mobile 4.20 (down). Frames: 07 best 6.18,
+  04 up to 5.93, 03 worst again 4.12. THE READ: (1) SHADOW FORM is
+  now the binding constraint — "phantom dark bands" (emotion, 9
+  frames), "smeared shadow" (composition, 7), "giant unattributed
+  soft-edged masses" (silhouette), "soft blurred dark wedge" (value).
+  With colour (run 69) and depth (run 72) fixed, the evidence FLIPS
+  183's "softness is not the fault" — narrowing the penumbra
+  (SHADOW_EDGE/FRAY family, painterly.ts's own measured history) is
+  now the licensed lever. (2) The 175 corner washes DID NOT REGISTER
+  (mobile lens still says "no backing plate", 5 frames): the HUD
+  idles at 36% opacity in every postcard — either the wash must
+  survive idle, or the postcard should catch the attention state;
+  decide which is honest before re-touching. (3) Sentinels
+  under-hit: "four unused edges" still on 8 frames — cadence or
+  postcard-pose luck; consider one guaranteed sentinel within ±20 m
+  of each postcard s (it is world-honest — the road just has trees).
+  (4) Stable families: notation slab/collisions (184 problem 2 +
+  the ribbon's paper), NPC brown boxes (figure craft), milky
+  distance (colour-script piece for the fog hues), one-camera-ten-
+  frames (postcard harness). Full verdicts in the wave-9 task
+  output (six opus judges, 479k tokens).
+
+- **HANDOFF, 2026-08-05 (run 73) — 180 done: the wayside sentinels
+  close the frame.** One large verge tree per ~60 m chunk on its own
+  seeded stream (existing placement byte-stable), inside the ordinary
+  tree verge, alternating sides — frames now crop canopy through
+  their edges the way every reference does. Noon-portrait gauge
+  jumped 1.99 → 3.16 stops (the sentinel's shadow is the pose's dark
+  anchor); all poses PASS. Road ahead stays clear. THREE visual tasks
+  since wave 8 (175 chrome, 183 depth, this) — WAVE 9 IS DUE next
+  iteration. 1161 tests, build green.
+
+- **HANDOFF, 2026-08-05 (run 72) — 183 depth run: shadows bite like
+  the reference's.** Terrain shadowDepth 0.42 → 0.14; shadow value
+  bite 18-29% → 30-33% of lit (ASH 40%; remainder is the ambient
+  floor, correct to keep). Saturation retention in shadow 72-82% —
+  the colour fix landing first is why depth arrives as colour.
+  frame-quality IMPROVED (golden 4.18, landscape 4.39, all PASS) —
+  deep coloured shadows ARE the "companion darks" wave 8's value
+  lens measured missing. Fray/edge untouched (one variable); if
+  wave 9 still reads smear, softness is its own run. WATCH: dappled
+  shrub-shadow density at golden hour. Visual changes since wave 8:
+  175 chrome + this — one more visual task, then wave 9. Next menu:
+  180 occluders, 153-157 retention, 149 scatter, 184 problem (2).
+
+- **HANDOFF, 2026-08-05 (run 71) — 175 chrome piece: the corner
+  labels stand on washes now.** Wave 8's loudest family (six lenses)
+  answered inside the no-panels idiom: corner labels get the
+  journal's tone-following radial wash biased toward their content,
+  INK_SOFT 0.72 → 0.84 with the two-layer shadow, and hudLayout's new
+  BOTTOM_KINDNESS 12 keeps compact-screen corners clear of the
+  gesture strip when no real inset exists (real insets replace the
+  kindness, never stack — pinned). Frames read: 08's corners clear
+  and legible; desktop washes read as quiet pools. 1161 tests (+1),
+  build green. Remaining on 175: walk-on door affordance (human
+  question), orientation audit. NOTE: a prolonged permission-
+  classifier outage stalled this run mid-task (~an hour of retries;
+  read-only work continued); nothing was lost. Next menu: shadow
+  DEPTH fix run (183's lever, wave-8 value lens agrees: "one step
+  dark"), 180 occluders ("frame edges left untouched", 7 frames),
+  153-157 retention, 149 scatter confetti.
+
+- **HANDOFF, 2026-08-05 (run 70) — WAVE-8 BLIND PANEL: mean 5.10,
+  with a hard caveat — NOT same-rubric comparable to wave 7's 5.56.**
+  This wave used a fresh opus judge cohort and a rewritten prompt
+  (previous waves' exact rubric text wasn't preserved), so the mean
+  moved for reasons that include the instrument; treat the FAULT
+  FAMILIES as the signal, not the delta. Same 2026-08-05 road as
+  wave 7; Spiritfarer gameplay frames unreachable this session (only
+  key art — logged; ASH remains the anchor). Lens means: colour 5.63
+  (top), value 5.36, emotion 5.03, silhouette 5.00, composition
+  4.98, mobile 4.61. Frames: 07 campfire best again (6.37), 03
+  noon-forest worst again (4.23), 08/10 next-worst (4.52/4.30).
+  **Registered:** the 166 shadow-colour work shows as a colour KEEP
+  ("violet-blue cast shadow bands — genuinely hued"); the 184
+  envelope watch item resolved (no lens read the far lane as empty;
+  remaining note complaints are the known in-runway pairs).
+  **New dominant cross-lens family — SHADOW FORM:** "full-frame
+  smeared shadow bands" (emotion, 9 frames), "blurred diagonal wash"
+  (composition), "cast-shadow bands sever the legs" (silhouette),
+  "blurred and only one step dark" (value). Depth agrees with 183's
+  measurement (ASH V-drop 0.31 vs ours 0.09-0.12) — the next shadow
+  lever is DEPTH (and possibly less fray), not colour, and 183's
+  "softness is not the fault" claim should be re-measured against
+  what these judges saw before believing either. **Second family,
+  now six lenses loud: HUD/notation chrome** — "unbacked text
+  floating on world geometry" (all 10), "staff reads as unstyled
+  debug overlay", thumb-strip HUD, orphan coin numeral — task 175's
+  audit with overwhelming evidence; next actionable task.
+  **Persisting:** noon khaki drain + neutral-grey distance
+  (02/03/08/10 — 166's remaining ambient/accent levers + 144/169
+  tone field); NPC/bard warm-hue collision at golden (05/06/09);
+  ground-scatter confetti (149). **Set-level artifacts, not game
+  faults:** "one camera ten times" and "identical back-turned pose"
+  describe the postcard harness's uniform framing — consider pose/
+  framing variety in postcard.mjs before wave 9, or keep and note.
+  **Keeps:** 07's whole architecture, 04's silhouette masses and
+  edge-breaking tent, golden violet shadows, the hat-brim silhouette,
+  sky gradients every hour, caption prose voice. Full verdicts in
+  the wave-8 task output (six opus judges, 498k tokens).
+
+- **HANDOFF, 2026-08-05 (run 69) — 166 piece 2: shadows carry their
+  colour now.** The CAST_SHADOW_HUE rotation's "chroma all the way
+  along" claim measured false (equal-luminance mixes toward a near-
+  complement cross grey — the drain 183 quantified). The rotation now
+  chroma-restores (cap 2.2, luminance re-normalised — value gate
+  intact by construction). S-kept: dawn 50%, noon 66% (script target
+  MET), golden 40%. Frames: dawn stripes plum/deep-green, noon bard-
+  shadow saturated blue, golden grass teal kept; golden's road
+  stripes now warm violet — WATCH for wave 8 (with run 66's other
+  watch item: does the dimmer far lane read calm or empty?).
+  frame-quality all PASS (noon 3.45, noon-village 1.93). NEXT: wave-8
+  six-lens blind panel (two visual changes landed since wave 7: 184
+  envelope + this), then 180 occluders or 153-157 retention. 161
+  still awaits the human; 184 problem (2) still deliberately open.
+
+- **HANDOFF, 2026-08-05 (run 68) — 166 piece 1: the colour script is
+  written (`docs/color-script.md`).** Eight hours with intended mood,
+  value structure, measured state and owed work; the structural
+  claim: low sun = value carries the frame, high sun = COLOUR must
+  carry it. Night/golden/dawn are CARRYING hours — no runs to be
+  spent there. Noon is the designed hour with measurable targets for
+  the enacting run (166 piece 2, queued): shadowed land keeps ≥ 50%
+  of lit saturation rotating ≤ ~60° cool of lit hue (ASH reference
+  63% / +31°; ours today ~35% / 180° flip — 183's numbers). Village
+  noon's case is named: no treeline anchor, colour must come from
+  accents and coloured shade. Non-levers recorded: lightening
+  shadows, lowering the noon sun, full-frame passes. No runtime
+  change in this piece; gauges unchanged and green.
+
+- **HANDOFF, 2026-08-05 (run 67) — 183 measured: the "phantom
+  shadows" are TWO different systems, and each side vindicates a
+  different judge.** New instrument `tools/shadowcast.mjs` (frozen-
+  frame ablation: sun shadows off, then each caster family silenced,
+  pixel diffs). Dawn 01: real casts, 96.5% offscreen trees, 31.8% of
+  the frame. Golden busk 09: trees 34% + the encounter's travellers
+  49%. Noon 03: only 2% of the frame is cast — the big diagonal
+  bands are NOT shadows; they persist with the shadow map off and
+  don't move when the sun rotates 90°. They are the terrain's baked
+  tone field (meadowAt landform shade + aTone noise drift) — the
+  panel's "render banding" read was RIGHT at noon; that half belongs
+  to the 144/166 value-ladder family. Colour claim confirmed with
+  numbers: our shadows flip hue family (H 39°→222°) keeping 34-43%
+  saturation (grey-blue drain); ASH's shadowed ground goes same-
+  family deeper green (H 44°→75°) keeping 63% at V drop 0.31 —
+  DARKER than ours but hue-carrying. Softness is NOT the fault
+  (our penumbra 0.73-0.8 is reference-soft). Next lever when a fix
+  run picks this up: saturated same-family-cooler shadow colour
+  (skylight/CAST_SHADOW_HUE pass), judged on 01/09 separately from
+  03. Measurement-only; no game code touched.
+
+- **HANDOFF, 2026-08-05 (run 66) — 184 problem (1) fixed: the
+  envelope grows for the whole flight.** The deepened diagnosis's
+  first half is shipped: `glyphEnvelope` no longer saturates scale at
+  a sixth of the flight — scale climbs continuously (0.5 → full at
+  0.95 of flight), ink arrives over the first 0.35 and cruises at
+  0.55, urgency ramp untouched so the barline note stays boldest.
+  The old test pin ("full nominal presence for the last 1500 ms")
+  was re-derived into eye-tiers — it was a nominal-space blanket,
+  the same wrong-space failure as the laneSpan claim it fell with.
+  Headgap: mid-lane fusion GONE on all four viewports (worst
+  mid-lane pair now 0.88; was 0.34-0.79); every remaining sub-0.9
+  pair is the IN-RUNWAY eighth pair — problem (2), the per-viewport
+  design decision, still deliberately open. Frames 01/03 show clean
+  depth-ordering; 08/10's near-barline pair still touches as
+  expected. 1160 tests (+3), build green. Watch item for the next
+  critique wave: does the dimmer far lane read as "calm" or as
+  "empty"? (The far third now carries ink under 0.45.)
+
+- **HANDOFF, 2026-08-05 (run 65, session close) — 184's fix
+  deliberately NOT attempted; diagnosis deepened instead.** The
+  overlap is two problems in one symptom: pre-runway envelope
+  saturation (fixable inside the pinned contracts — curve levers
+  named in ROADMAP 184) and IN-RUNWAY portrait overlap where head
+  size is pinned by letter legibility and lane length by the
+  viewport — eighth-pairs are nominally narrower than two heads
+  there, which no envelope can fix. That second half is a design
+  decision (per-viewport levers, each trading against a standing
+  contract) for a fresh session with frame-iteration energy. Session
+  totals (runs 51-65): tasks 159/165/60/170/174/181/182 done + 184's
+  measurement, consolidation run 61, wave-7 panel (5.33 → 5.56
+  same-anchor, smoke retired), fifteen PRs #175-#189, tests
+  1017 → 1157. Next session's menu: 184 fix (start from the
+  deepened diagnosis), 183 shadow measurement, 166 colour script
+  (noon is wave-7's worst frame), 180 occluders (thesis confirmed by
+  the panel), 153-157 retention, v1.3; 161 still awaits the human.
+
+- **HANDOFF, 2026-08-05 (run 64) — task 184 measurement: THE PANEL
+  WAS RIGHT ON THE THIRD LOOK.** New instrument tools/headgap.mjs
+  (projects the live glyph buffers through the live camera; lit
+  pairs only). Note heads OVERLAP on every viewport — worst 0.23 on
+  phone portrait (77% fused), 0.56 desktop. The twice-refuted
+  "noteheads" symptom was real all along: the laneSpan test pins
+  NOMINAL arc spacing while the eye sees PROJECTED spacing, and
+  perspective compresses the lane faster than the spawn envelope
+  shrinks heads — the refutations were measuring the wrong space.
+  A caution for the standing law: "panels misattribute causes" cuts
+  both ways — twice-refuted symptoms deserve a NEW instrument, not
+  a third application of the old one. Fix re-aimed in ROADMAP 184
+  (far-lane projection honesty; tune against headgap ratio >= ~0.9
+  on all postcard viewports AND the frames). Measurement-only run;
+  no game code touched; 1157 green.
+
+- **HANDOFF, 2026-08-05 (run 63) — WAVE-7 BLIND PANEL: mean 5.56, up
+  from wave 6's 5.33 UNDER THE SAME ANCHOR ("ships beside ASH
+  without apology") — the second consecutive same-rubric gain.**
+  Shot on the 2026-08-05 road (village-noon family, like wave 6's —
+  note the dayKey caveat when comparing). Lens means: colour 6.05,
+  value 5.95, composition 5.60, silhouette 5.30, emotion 5.25,
+  mobile 5.20. Frames: 07 campfire best again (6.75, up from 6.25),
+  04 vista 6.42; 03 noon-forest worst (4.58 — the 182/166 village-
+  noon family, "milky monochrome", exactly what the colour script
+  exists to fix). **RETIRED: the smoke.** No lens named it — the
+  three-wave "stacked glass plates" fault is gone (181 confirmed
+  blind). **THE new dominant fault family, named independently by
+  three lenses: PHANTOM SHADOWS** — long dark streaks crossing road
+  and grass "with no visible caster", read as render banding, cutting
+  the bard's own silhouette (01/03/09). Suspicion-list discipline:
+  these are almost certainly REAL shadow-map casts from offscreen
+  trees — the symptom is true, the "banding" attribution is not;
+  measure which casters own them and whether softness/value (not
+  existence) is the lever before touching anything. **Second family,
+  now FIVE frames and worth finally measuring: note-head overlap**
+  ("fused brown blobs" 01/02/03/08/10) — this is the twice-refuted
+  "noteheads ignore pitch" suspicion, but the mobile lens adds that
+  05/09 with real spacing are excellent, making it a collision claim
+  about close MUSICAL spacing at certain aspects; measure the
+  governor's actual worst-pair gap per viewport before re-fixing.
+  Also recurring: corner HUD labels thin/plateless/in thumb zones
+  (task 175's audit, now with four frames of evidence); staff ribbon
+  "terminates mid-air" (composition — consider an anchor at the far
+  end); golden-hour maroon value-merge of cast+props (05/06 — the
+  145/179 family, unchanged); bard's black-box head at close range
+  (150). One design tension for the HUMAN: the walk-on door on 07
+  reads "styled identically to non-interactive prose" — the panel
+  wants a clearer affordance; the no-menus idiom resists; child-wins
+  says a door should look tappable. **Keeps (new/confirmed):** 07's
+  whole ladder ("reference-grade"), every hour's sky ("would not
+  embarrass itself beside ASH"), the hero silhouette at all
+  distances, 04's tent-through-corner and 07's pine-through-edge
+  (the two frames that crop through edges score highest — task 180's
+  thesis confirmed from the other direction), depth layering, the
+  temperature story per hour. Full per-frame verdicts in the wave-7
+  task output (six judges, 470k tokens, all StructuredOutput).
+
+- **HANDOFF, 2026-08-05 (run 62) — task 181 done: the smoke is
+  finally smoke.** painterly gained its one per-vertex-alpha door
+  (opt-in fadeAttribute, squared in the fragment); puff planes became
+  centre-fans (fade 1 centre, 0 rims); opacity 0.36 → 0.52 to keep
+  the 400 m telegraph. The three-wave "stacked glass plates" read is
+  gone in the re-shot 07 — soft warm haze, vertical mass intact.
+  Check at next wave: telegraph legibility at range. **CRITIQUE WAVE
+  NOW DUE: three visual tasks since wave 6 (signature engraving,
+  vertex AO, soft smoke).** 1157 green, build green.
+
+- **HANDOFF, 2026-08-05 (run 61) — CONSOLIDATION PASS.** Drift check
+  clean across the session's six tasks: the walk-on is a road choice,
+  Book Two is pedagogy presentation, the rest is data/rendering/perf —
+  all on the one tap mechanic; zero new runtime dependencies all
+  night; bundle 873 kB of 5 MB. One rough edge found and fixed
+  (RoadStage's "one verb" header claimed two tap meanings; the fire's
+  page-reopen made it three). **Retention research recap (pillar 5,
+  what the game NOW does per ranked recommendation):** 1 campfire
+  bookend — DONE WHOLE (159: page, skyline, festival named, rehearsal
+  offered, walk-on door); 2 shared road — half done (152 road names;
+  153 postcard still queued); 3 songbook wear-in — queued (154; NOTE
+  for its run: it now rides a PAGED book with volumes); 4 mementos —
+  queued (155); 5 welcome-back — half exists (idle yield line +
+  journal entry at boot; the celebratory fire beat of 156 still
+  queued); 6 two bookmarks — queued arc (157); 7 instruments —
+  standing design, no new task. New research finding recorded in
+  retention-design.md: the moonlit walk-on is the eager-day outlet
+  with zero appointment mechanics — "more" as the same walk under a
+  different sky. Session totals: 159/165/60/170/174/182 done, ten
+  PRs, tests 1017 → 1156.
+
+- **HANDOFF, 2026-08-05 (overnight loop session) — task 174 done:
+  quality tiers that actually detect.** tierFor(probe) is a pure
+  tested decision now; WebKit detection via UA OS major (old iPad →
+  low, incl. iPadOS-as-Mac caught by Version/N + maxTouchPoints),
+  Chromium heuristics preserved exactly. 'low' is genuinely low:
+  NO shadow map (contact shadow still grounds the bard — it is a
+  disc, not a map). The task's "detect by GPU signals" was refuted
+  by the code's own record (Apple GPU string is uniform). WebGPU
+  iPads stay 'medium' pending the real-device re-measure (standing
+  iPad playtest item). 1156 green (+7). Run counter: this session
+  is runs ~51-60; a consolidation run is due soon.
+
+- **HANDOFF, 2026-08-05 (overnight loop session) — task 170 done:
+  baked vertex AO (v1.1 queue opens).** bakeVertexAO in geometry.ts
+  (seeded hemisphere rays, own-triangle Möller-Trumbore, AO_FLOOR
+  0.55, 6k-vertex budget, deterministic by construction) wired into
+  all 11 prop builders behind cachedGeometry (~15 ms once) + the
+  bard's hat/cloak/instrument-body only (his other parts are convex
+  hulls — AO 1.0 by construction). Canopy undersides now ~13-15%
+  darker on average — the one thing to eyeball in future critiques;
+  the dial is broadleaf/willow maxDist. Knife-edge crevices bake to
+  zero by geometry (t=0 plane fact, recorded in the test). Frames
+  read: soft mass, not dirt. 1149 green (+5), build 873 kB.
+  Delegated to an opus agent, verified in-loop. Visual tasks since
+  wave 6: signature engraving + AO — a critique wave is due after
+  one more visual task.
+
+- **HANDOFF, 2026-08-05 (overnight loop session) — TASK 165 COMPLETE
+  IN FIVE PIECES; THE v1.0 ARC IS DONE except 161 (blocked on
+  human).** Book Two exists end-to-end: notation core (keys ±4,
+  spellInKey, carried-vs-shown accidentals), song data model
+  (Song.key + pickupBeats anacrusis), the signature engraved on the
+  paper's extended tail with spelt head steps, My Bonnie Lies Over
+  the Ocean (two-source-verified transcription), and the songbook's
+  Book Two shelf unlocked at festivals >= 1. The shelf work fixed a
+  pre-existing fold fault: the book silently cut rows past what fit
+  (everything past FOUR on 844x390) — it now PAGES (pure bookPage/
+  bookCapacity, "turn the page ⤵" row), so the whole book is
+  reachable on every viewport. Wandering never deals a keyed song;
+  a pinned Book Two song walks a wandering road (no home biome).
+  Verified live: post-festival save → shelf → pin → the ♯ on the
+  paper with B3's ledger in flight; phone book pages through; zero
+  console errors. 1133 tests green, build 869 kB. **Needs human
+  playtest:** the single-letter F head under a G-major signature
+  (does a child connect them?), and "turn the page ⤵" wording with
+  a pre-reader. Next: v1.3 (176-178) is open; 161 awaits the human.
+  **Task 60 also DONE this session** (blocked since v0.4): Mulberry
+  Bush transcribed from Wikipedia's engraved score + Kodály-source
+  corroboration (6/8, ABAC, so-la-ti-do-re-mi-so — the entry's July
+  prediction held exactly); forest rotates four songs now; first
+  6/8 tune in the book. 1144 green (+11).
+
+- **HANDOFF, 2026-08-05 (overnight loop session) — task 165 first
+  piece: Book Two's notation core.** notation.ts gains the key layer
+  (majors, ±4 accidentals; minors deferred with the songs that need
+  the raised seventh): majorKey / alteredLetters / signature glyph
+  steps / spellInKey, which separates carried vs SHOWN accidentals —
+  the signature says F♯, the note shows nothing; F natural shows the
+  cancelling sign. Policy pinned by test: chromatics spell in the
+  key's direction one letter away (B♯/E♯/C♭/F♭ impossible), and the
+  inviolable round-trip is swept every-key × four octaves. Book One's
+  naturals-only functions pinned untouched; zero live-build change.
+  1106 tests green (+12). **Second piece same night: the song data
+  model.** Song gains optional `key` + songKey() (absent IS C major);
+  nothing per-note — spelling derives at engraving time. Book Two's
+  engraving rules bind now on fixtures (keyedSongFaults in
+  songs.test.ts: diatonic-only, round-trip exact, drawable staff),
+  and a test pins that no shipped song carries a key until the
+  volume structure exists. 1111 green (+5). **Third piece same
+  night: the signature on the paper.** Atlas spare cells 29-31 are
+  now the ♯/♭/♮ marks; SongNotes.setKey raises the signature on an
+  extended paper tail past the barline (the eye's end of this
+  ribbon), staggered at the standard treble steps (signatureGlyphs,
+  test-pinned); with a key set every head's step is spelt through
+  spellInKey — a G-major F♯ sits on F4's space with its plain F
+  letter, the signature carrying the alteration (single-letter heads
+  stay phone-legible; **needs human playtest**: does a child connect
+  the signature to the F?). Book One byte-identical (no key = the
+  old refusal path; all RoadStage tune sites pass songKey = C).
+  Verified live incl. teardown, zero console errors. 1116 green
+  (+5). **Fourth piece same night: the first Book Two song.** My
+  Bonnie Lies Over the Ocean, in G with its leading-tone F♯ —
+  task 60's sourcing bar met at last (this machine HAS network):
+  two independent thesession.org settings agree note-for-note.
+  Ties → note+rest (duration is arrival spacing); pickup → new
+  `Song.pickupBeats` anacrusis support (bar grid offsets; beware
+  Math.floor(-0) vs toBe(0)). In BOOK_TWO_SONGS, not yet reachable;
+  engraving suite runs over both books. 1125 green (+9). Remaining
+  on 165: the volume structure (Book Two shelf in the songbook,
+  unlocked by festivals >= 1) — then TASK 165 AND THE v1.0 ARC are
+  done bar 161 (blocked on human). NOTE for that piece: network
+  also unblocks task 60 (Mulberry Bush, forest set) — same session
+  kind of work if a run wants it.
+
+- **HANDOFF, 2026-08-05 (overnight loop session) — TASK 182 RESOLVED:
+  the noon gate was never red; the gauge was rolling dice.** One
+  build, twelve pinned dates: noon spans 1.81-3.44 stops purely by
+  which biome the DAILY road lays at s 620 (forest 2.7-3.4, village
+  1.8-2.2, riverside between; p90 constant — the variance is entirely
+  the dark anchor). The 08-01 "red on pristine main" was a village
+  noon. frame-quality.mjs now pins its road (GAUGE_DAY 2026-07-30,
+  init-script Date redirect, performance.now untouched) and gains a
+  `noon-village` pose (own floor 1.6) keeping the TRUE finding: a
+  village noon is the flattest family the game draws — an art
+  observation for the 145/179 value-ladder work, now gated against
+  worsening. All poses PASS, byte-stable re-runs. **Standing caveat
+  for critique waves: postcard.mjs and land-histogram.mjs still shoot
+  TODAY'S road — wave-over-wave deltas ride the same dice. Note the
+  dayKey on every wave, or pin it before comparing.** No merge was
+  guilty; the strongest instance yet of "a failing check is a claim
+  about the check first." Tools-only; 1094 tests + build green.
+
+- **HANDOFF, 2026-08-04 (overnight loop session) — TASK 159 COMPLETE:
+  the moonlit walk-on ships, and with it the whole first-campfire
+  promise.** Tonight's page gained its one door row ("Or tap here to
+  walk on — the road goes a little further beneath the moon"; composed
+  in campfirePage, vocab-bound, withheld on the festival eve where the
+  set is the one asking). Taking it is the game's first mid-session
+  road rebuild: startNextLeg + new road from legSeed/legRoadKey, new
+  WorldStreamer + travellers, skyline rehung — and no sky seam, since
+  a leg opens at dusk where the evening already stood. Fixed while
+  wiring: resumed moonlit legs rebuilt the SHARED road (constructor
+  now seeds by legIndex); tomorrowSkyline(road.dayKey) mis-seeds on
+  `~N` keys (use the plain day key); a folded page stranded the door
+  (a tap at the fire now re-opens tonight's page, recomposed). v1.0
+  arc now stands minus 161 (blocked on human input-model) and 165
+  (Book Two, arc-sized). Verified live end-to-end (13 assertions incl.
+  reload-resume of the same moonlit road); 07 postcard re-shot and
+  read. Harness lesson: Playwright isVisible counts opacity-0 as
+  visible — assert computed opacity on faded HUD surfaces. 1094 tests
+  green (+7), build 863.74 kB.
+  **Needs human playtest:** whether a child finds the door (it is the
+  page's last row, full ink); whether "a little further" reads honestly
+  on a phone where the next fire is ~10 minutes on.
+
+- **HANDOFF, 2026-08-01 (overnight loop session) — 179 implemented:
+  the bard is grounded.** ContactShadow.ts anchors every daylight
+  frame's figure with a contact mark in the passing frames' own 8-15
+  dL-under-road band (01/04 had ZERO contact before); the shadow
+  arithmetic gained its guarantee (sunFacing/sunAmount split +
+  SHADOW_GAIN_CAP 0.55). Two MORE measurement artifacts caught: the
+  "04 inversion" compared different pixels (same-pixel ablation shows
+  4-6 L* proper darkening), and "22 points of headroom at dawn" was
+  backwards — the figure is the DARKER body at dawn, so ground-side
+  work cannot raise whole-figure dL there. The residual (re-queued in
+  179): a dynamic day-aware figure-side value. Also: THIS WORLD'S
+  NOON IS 21.8° (shortest shadow 2.5× figure height — no steep-sun
+  hour exists), and three.js MultiplyBlending is silently not
+  honoured on the painterly-family material (renders as normal
+  blending — cost a debugging cycle; recorded in ContactShadow.ts).
+  **FLAG: frame-quality's noon gate FAILS ON PRISTINE MAIN (1.91
+  stops vs 2.5 floor) — an earlier merge regressed it unnoticed;
+  CI doesn't run this gate. Investigate as its own task.** 1087
+  green, build 860.88 kB, eye-read: soft grounded pooling, no halo.
+
+- **HANDOFF, 2026-08-01 (overnight loop session) — task 179's
+  measurement phase: THREE PANEL PREMISES DISPROVED, one real defect
+  found.** New instrument (`tools/figground.mjs` + `tools/
+  figground-partition.mjs`): silhouette-diff plus albedo-flood
+  partition separates the bard's own pixels from his cast shadow.
+  Verdicts: passing frames' "figure separation" was shadow-vs-road
+  (0% bard pixels in the knees-down band of 03/04/10); dawn's fault
+  is an ABSENT contact shadow, not a swallowing band; the figure is
+  the best-lit object at low sun — darkness is albedo and the needed
+  correction inverts across the day, so no static albedo works (the
+  Bard.ts history's near-black-trousers failure, explained at last).
+  REAL DEFECT: 04-golden renders the bard's cast shadow LIGHTER than
+  its receiving road (31.3 on 28.7). Re-aimed lever in ROADMAP 179:
+  grounded low-sun contact shadow + fix the inversion; measured
+  sufficient, cannot regress the passers. Nothing implemented — the
+  disproof is the deliverable, per the task's own license. This is
+  the strongest instance yet of the standing law: panels see true
+  symptoms and misattribute causes.
+
+- **HANDOFF, 2026-08-01 (overnight loop session) — wave-6 blind panel:
+  mean 5.33, up from wave 5's 4.42 UNDER THE SAME ANCHOR ("ships
+  beside ASH without apology") — the first same-rubric gain on
+  record.** Lens means: emotion 5.91, colour 5.45, value 5.36,
+  composition 5.18, silhouette 5.09, mobile 4.95. 07-night-campfire
+  is now the set's best (6.25 mean; value 2.5→6.5 wave-over-wave;
+  emotion 7.5 — the page + fire pool + seated bard read as "the only
+  true coziness" become the strongest frame). Festival eve judged
+  ~5.5 on value: lanterns work but COMPETE with the fire (two light
+  notes, neither dominant), lower-left text quadrant fully crushed.
+  **Persisting faults, still mapping to the queued tasks:** figure/
+  ground lower-body merges (01/04/10 knees-down dissolve into shadow
+  bands — task 179's measurement should start there, not at whole-
+  figure dL); night treelines crush to one band (147's "structure not
+  direction", NOT yet addressed); smoke still "an ambiguous grey
+  wedge" (181); portrait mobile worst cell at 3.5 (146/175). **New
+  and specific:** 06's midground hedgerow is the darkest mass in its
+  frame — a background band OUTRANKING the protagonist and inverting
+  the ladder (roughly the 145 anchor-frames family); 05's bard head
+  sits dark-on-dark against the busk banner. Suspicion-list note:
+  wave 5's "dawn shadows grey" did NOT recur as a top fault this
+  wave; treat it as low-priority until measured.
+
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — TASK 163
+  COMPLETE: THE FESTIVAL ARC SHIPS.** FestivalGrounds scene (lantern
+  strings, stalls, stage, warm pool — built against wave-5's night
+  fault, placed via campfireLayout so it cannot collide with the camp),
+  festival-eve only, control night verified empty, frame read by eye.
+  With 158/159(3 of 4)/160/162/163/164 landed, the v1.0 arc stands
+  minus: 161 (blocked on input-model design), 165 (Book Two content),
+  159's moonlit walk-on wiring. Per the human's queue rules the v1.3
+  family-songbook queue is now UNLOCKED. Critique due (3 visual tasks
+  since wave 5's panel: rehearsal frame, title card, grounds).
+  1087 tests green, build 853.12 kB. Ops: the service worker caches
+  index.html on preview servers — unregister between rebuilds when
+  verifying, or a stale bundle white-screens.
+
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — 163's
+  second piece: the post-festival choice.** Three doors after the
+  closing line (Book Two's invitation with a sounded F→F♯ and honest
+  "still being written" copy; the songbook; walking on), via the new
+  generalized `Hud.showSheet`. Verified live. Remaining on 163: the
+  festival grounds VISUALS only — with those, the v1.0 festival arc
+  ships and v1.3 unlocks. 1087 tests green, build 844.13 kB.
+
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 163's
+  first piece: THE FESTIVAL EVE IS PLAYABLE.** At the gate camp
+  (campfires >= 13, no festival yet) the page becomes the festival's,
+  and one tap performs the carried songs as a chained rehearsal — each
+  song AS IT STANDS (headsLevel per song), per-song journal lines, a
+  closing line, `festivals` banked and persisted, ordinary fires after.
+  Set list is the kind reading of "the by-heart book": most-carried
+  first, pinned tune opening, a wandering player met with the
+  rotation's tune. Verified end-to-end live (two-song set, reload
+  persistence, next-fire-ordinary). Two harness lessons: addInitScript
+  re-seeds on EVERY navigation (seed-once flag, or reload checks test
+  the seed); and PowerShell Get/Set-Content round-trips mangle UTF-8
+  em-dashes in PS 5.1 — use the Edit tool for source files, always.
+  Remaining on 163: the post-festival choice + festival grounds
+  visuals. 1086 tests green (+9), build 841.46 kB.
+
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 172
+  COMPLETE (service worker; offline boot verified live), and task 161
+  found to have a PREMISE GAP: practice mode has no live surface —
+  freePlay.ts lost its UI in Run 44's 2D deletion and was never
+  rebuilt. 161 needs a position-choosing input model (a design
+  question for the human, arguably) before its unguided tier means
+  anything. Logged in 161's ROADMAP entry; interleaved 172 instead.
+  The PWA story is now complete: installable (171), offline (172).
+  **Blocked on human** additions: the 161 input-model question; plus
+  the standing real-iPad playtest items.
+
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 164
+  COMPLETE: the title card.** One warm sheet for returning players
+  (gated on lifetime metres > 0), the game live beneath it: tap
+  anywhere continues, "The songbook" opens the book (new public
+  Hud.openBook). Playable-in-5s holds — the card costs one tap and
+  never shows to a new player. Verified live both profiles + both
+  doors; frame read. v1.0 arc remaining: 161 (practice pitch recall),
+  163 (the festival scene), 165 (Book Two), 159's moonlit walk-on
+  wiring. 1077 tests green, build 838.95 kB.
+
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 162
+  COMPLETE: the campfire rehearsal.** The fire's asking rides tonight's
+  page (159's "rehearsal introduced" beat, done by offering); one tap
+  begins one pass of the carried song from a clean staff, judged by the
+  walk's gentle meter, stumbles returning ink via 160's machinery, the
+  journal writing one of three warm registers (core/rehearsal.ts,
+  vocab-banned). One attempt per fire (`journey.rehearsed`, reset per
+  leg/day); an interrupted attempt is not written — the next fire asks
+  again. Bonus fix found by READING the frame: a resumed-resting bard
+  stood in the flames (constructor never set the seated pose) — fixed
+  in makeCamp. Verified live end-to-end incl. persistence and the
+  second-tap guard. 1077 tests green (+11), build 837.32 kB.
+  **Needs human playtest:** the resting camera vs the ribbon when ink
+  returns mid-rehearsal (the paper lies over the road behind the
+  camp framing); and whether "tap anywhere" at the fire feels right
+  on a phone where a pocket tap could start the attempt (it is
+  no-fail and unwritten if interrupted, so the cost is one asking).
+
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 160
+  COMPLETE: heads fade to ghosts, then a clean staff, from memory.**
+  `core/mastery.ts` gates the ladder on carrying (songWalks diary fact,
+  new `w` field in wb.learn.v1) AND full letter-earning (band 0
+  everywhere); SongNotes settles head alpha asymmetrically (help ~0.3s,
+  withdrawal ~2s); stumbles — tap-judged misses AND lapsed untapped
+  notes (the real stumble at a clean staff is silence; found in live
+  verification, and lapses are display-help only, never scaffold
+  evidence) — return ink for the rest of the pass. Only played passes
+  of the pinned song count as carrying. By-heart song state for
+  rehearsal (162) and the festival book (163): `headsLevel(...) === 2`
+  — same function the staff reads, so state and ink cannot disagree.
+  Verified live at all three tiers plus the stumble path; clean-staff
+  frame read by eye. 1066 tests green (+7), build 834.31 kB.
+
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 160's
+  first slice shipped: the learning model is LIVE for the first time.**
+  The scaffold (built and tested since v0.4) had zero live callers —
+  the letter pedagogy was decorative and every letter printed at spawn.
+  Now `core/reveal.ts` bridges scaffold → per-note reveal leads,
+  SongNotes hides each letter inside an intact head until its lead
+  (150ms fade-in; struck/softened notes always answer), RoadStage
+  feeds judged taps and persists via scaffoldStorage. A fresh scaffold
+  reproduces the old always-labelled staff exactly — fading only
+  begins where strength is earned. Verified live with attribute reads
+  (far note letter 0 / approaching 0.246 mid-fade / past-barline 1
+  under a strong scaffold; all 1 fresh). Two traps for future runs:
+  (1) seeding localStorage in a test rig then reloading gets clobbered
+  by pagehide's persist — seed via addInitScript; (2) the walk tune
+  extends `beats` IN PLACE, so any parallel array must be extended in
+  place too or SongNotes' cursor reads a stale one. 1059 tests green
+  (+8), build 832.17 kB. Remaining on 160: heads-to-ghosts (by-heart
+  proper). Human playtest note: letter fading is now REAL for a
+  returning player with an earned scaffold — the family iPad will
+  show blank heads on well-known positions; that is the design
+  working, not a regression.
+
+- **HANDOFF, 2026-08-01 (overnight loop session) — wave-5 six-lens blind
+  panel ran (fresh judges, fresh frames, HARSHER ANCHOR: "10 = ships
+  beside A Short Hike without apology" — so the 4.42 mean is NOT
+  comparable to wave 4's ~5.5; read the fault structure, not the
+  number).** Lens means: value 3.75, composition 3.65, mobile 4.05,
+  silhouette 4.45, emotion 5.15, colour 5.50. Best frames 04 (5.25),
+  07 (5.00), 10 (4.83); worst 06/08 (4.00). References: 7 ASH gameplay
+  frames only (Spiritfarer press pages now JS-rendered; key art
+  weighted lightly). Full digest in the session scratchpad; the
+  durable findings and their dispositions:
+  1. **THE finding, measured across frames: figure/ground value
+     separation.** Bard-vs-surround dL 0.7 (02!), 2.0 (01), 2.4 (07),
+     4.0 (04, 06) against the reference floor of 13.6-25.2 — in
+     greyscale the protagonist vanishes; only the red cloak's hue holds
+     him. CRITICALLY, 03 (dL 16.3) and 10 (12.1) already CLEAR the
+     floor — measure what those two frames do differently (likely the
+     lit road behind the figure) before inventing a mechanism. Queued
+     as ROADMAP task 179. This is wave 11's "value problem, not a pose
+     problem" diagnosis, now with numbers on every frame.
+  2. **All ten frames lack foreground occluders** — ASH crops canopy/
+     rock masses through all four edges in every reference frame; our
+     postcards all open on a clean ground plane. Structural, new,
+     convincing. Queued as task 180 (composition lens's most repeated
+     note; also the cheapest route to depth the set has).
+  3. **Night (07) darkness is overextended**: 59.4% of pixels below
+     L*10, median L*6.4, vs the reference night's p5 of L*32. This
+     COLLIDES with queued task 147 ("commit to night") — reconciled in
+     147's text: the shared symptom is an undifferentiated dark; the
+     fix direction is STRUCTURE (moonlit ambient ladder, fire-warmed
+     stones, near/far treeline grading), neither "darker" nor
+     "brighter" wholesale. The fire pool itself is on every lens's
+     keeps list — do not touch it.
+  4. **Mobile bugs, concrete**: 08's staff is cropped by the left
+     screen edge (the one interactive surface, cut on the device with
+     the most spare vertical); corner labels in 03 are sheared
+     mid-glyph by the bottom frame edge (no bottom inset on desktop
+     viewports — folded into task 175's audit); 10's read-vs-act
+     corridor is ~400 px of empty road. 146 extended with the
+     portrait-crop measurement.
+  5. **Smoke still reads as a polygon stack** (wave-2 complaint,
+     still live; emotion lens calls it fiction-breaking) — queued as
+     task 181. The compositional intent (vertical mass in that
+     quadrant) is on the keeps list; it is the hard polygonal edges
+     that fail.
+  6. **NPCs decompose at postcard range** (05 worst: hip gaps,
+     hairline legs, floating boxes near the banner) and **the bard has
+     no readable face at any distance** (ASH's charm budget is one big
+     white eye) — both folded into task 150's text.
+  **Measure-first suspicion list (wave-4 pattern: panels see true
+  symptoms, misattribute causes):** (a) "dawn shadows drop chroma to
+  grey" (01/02/10) — wave 4's CAST_SHADOW_HUE was PROVEN chroma-gaining
+  at noon; dawn may genuinely differ (low-sun path) but measure the
+  actual shadow S values before touching the term; (b) "03's distance
+  is a grey fade" — sky.ts's ridgeTint was fixed and measured last
+  wave; the complaint may be the terrain-side painterly fog, not the
+  sky — ablate which layer owns the desaturation first; (c) note
+  "pills fuse into a blob" in 08/10 — same family as the twice-refuted
+  "noteheads ignore pitch"; verify against the governor's actual
+  spacing at those aspect ratios before re-fixing.
+  **Keeps (unanimous or near):** the sky gradients at every hour, the
+  fire pool, the red cloak accent, 10-tablet's four-step value ladder,
+  03/10's figure separation, 08's inverted band order (lit road
+  carrying the character — do NOT "correct" it), the serif typography
+  and journal-page treatment, tree silhouettes, 04's S-curve road.
+
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 159's
+  second piece shipped: tomorrow's road glows on the horizon at the
+  fire.** `core/skyline.ts` derives tomorrow's real profile (nextDayKey
+  + leg-0 seed); sky.ts draws it as the farthest ridge band in a
+  down-road wedge with a warm first-light halo, all scaled by one
+  uniform (`uTomorrow`) that eases in only while resting. A/B ablation
+  on the campfire framing shows a clear, soft "light beyond the hills"
+  read; dawn walking frame byte-unchanged. GLSL note for future edits:
+  this material is GLSL ES 1.00 — uniform arrays cannot take computed
+  indices; the band samples its profile via a constant-bound loop.
+  1051 tests green (+8), build 828.23 kB. Blind critique now due (two
+  visual tasks since wave 4): references re-downloaded to scratchpad
+  (7 A Short Hike gameplay frames; Spiritfarer press pages are now
+  JS-rendered so only key art was reachable — panels should weight
+  ASH).
+
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 159's
+  first piece shipped after 158: the journal opens at the fire and the
+  festival is named.** The journal had been written all day and read
+  nowhere since v0.6 — the whole recap was one coins line. Now
+  `core/campfirePage.ts` (pure, tested) composes tonight's page and
+  `Hud.showPage` sets it above the instrument corner, each moment inked
+  in the sky it happened under, staggered reveal, tap-to-fold. The
+  festival line has three registers (first-fire naming, distance count
+  in words, anticipatory at the gate) and its copy is test-bound to
+  distance-not-time and no-verdict vocabulary. Read the re-shot
+  07-night-campfire frame: page sits bottom-left, legible, clear of
+  the scene. Remaining on 159: tomorrow's silhouette, rehearsal intro
+  (after 162), moonlit walk-on wiring (mid-session road rebuild).
+  1043 tests green (+10), build 821.01 kB.
+
+- **HANDOFF, 2026-08-01 (overnight loop session, continued) — task 158
+  shipped after 171: the journey ledger, the v1.0 arc's foundation.**
+  Pure core only (no scene wiring — zero live-build behaviour change):
+  `FESTIVAL_LEGS = 13` counted against `campfires` (veterans'
+  already-slept nights count — kind, and one line to change if the
+  human wants a fresh start), `startNextLeg` (resting-only, resets the
+  road-shaped fields, keeps the day's purse, nothing gates or rewards
+  it), the moonlit night arc in `dayFractionAt` (dusk→midnight→dawn,
+  mod 1 — the sky's keyframes already cover it), and `legSeed`/
+  `legRoadKey` in rng.ts (leg 0 === dailySeed by identity, pinned;
+  `~N` road keys keep moonlit stop ids from colliding with the
+  morning's). 1033 tests green (+16), build 817.92 kB. The campfire
+  scene tasks (159/162) wire it: `generateRoad(legSeed(k,n),
+  legRoadKey(k,n))` and a "walk on" choice at the fire.
+
+- **HANDOFF, 2026-08-01 (overnight loop session) — ROADMAP task 171
+  shipped: the PWA save-protection bundle, the v1.2 queue's urgent
+  data-loss item.** 1017 tests green (+17), build 817.70 kB. The game
+  is now installable (manifest + deterministic procedural PNG icons via
+  `tools/make-icons.mjs`; installed home-screen apps are exempt from
+  Safari ITP's 7-day storage wipe — the whole point), asks for storage
+  persistence once on first gesture, and has the no-account backstop:
+  a "keepsake" file (all three `wb.*` keys as readable JSON,
+  `core/keepsake.ts`) exported/imported from two dim endpaper rows in
+  the instrument case. Three findings worth keeping: (1) the songbook
+  CANNOT host new rows — `songBookBox`'s whole-rows-fit rule puts
+  anything after 11 songs permanently below the fold (found by reading
+  the screenshot, not the code; the case never overflows); (2) the
+  case corner is now pickable on a fresh one-instrument device because
+  the restore path matters most there; (3) after a keepsake import,
+  RoadStage's `restoring` flag must gate every save — the reload's own
+  pagehide save would otherwise silently overwrite the restored
+  records with in-memory state, and the keepsake would "do nothing".
+  `viewport-fit=cover` was the only missing half of safe-area support
+  (Hud's `env()` probe existed, returning zeros). Remaining from the
+  research's ranked list: service worker (172), audio session (173),
+  quality tiers (174), touch audit (175). **Needs human playtest:**
+  A2HS on the family iPad — icon, standalone chrome, saves surviving
+  a week; and a real keepsake save/restore across two devices. 1000
+  tests green (37 files), build 815.02 kB, all gates PASS, morning land
+  p90 165. Five agents, five root causes that had each survived multiple
+  critique rounds:
+  1. The "casterless shadow bands" are the TERRAIN SHADOWING ITSELF at a
+     low sun (proven by ablation difference-images — they follow the
+     landform, hence sun-invariant; the caster is a rise 40 m back). The
+     grey was arithmetic: adding a near-complement skylight to a warm
+     surface lands on neutral. New CAST_SHADOW_HUE mixes toward a
+     luminance-matched sky colour — provably value-gate-safe; shadows now
+     GAIN chroma (noon S +0.088 where they lost it before).
+  2. The milk sky was the SKY: sky.ts's own air()/chroma correction had
+     only ever been applied to the two ridge bands, never the dome or
+     cloud. One SKY_CHROMA push over the whole dome: morning sky S 9.6 →
+     17.3. The panel's "fog brighter than sky" inversion measured as NOT
+     REAL (fog band is 46 levels darker) — panels can hallucinate a
+     structure; measure before obeying.
+  3. The ribbon's sixth line (second appearance) was THE ROAD'S WHEEL RUT
+     showing through the paper's translucent bottom margin — the ribbon
+     was innocent both times. Lane lifted clear; note-collisions were the
+     lane FOLDING OVER ITSELF on road bends, cut by a closed-loop
+     visible-length governor with truncation semantics.
+  4. The fire's light had been centred on the ROAD ANCHOR, not the fire,
+     for two waves (uHearthPosition from the group, fire 6-7 m away
+     inside it) — every prior hearth tuning was against a mislocated
+     light. The clipped patch was the coal-bed slab; now discrete
+     instanced embers.
+  5. The bard's eyes were 2.7 mm INSIDE the head (drawn every frame,
+     culled every frame, since wave 1), the face has never pointed at any
+     camera (seated torso twist 0.46 + head yaw fixes it and frees the
+     lap lute), the shoulder joints sat OUTSIDE the torso's surface, and
+     the seated strum was proven geometrically impossible (elbow-less
+     rig; the visible hand is the fretting hand, made visible instead).
+     Also: staging's "waist-deep listener" was the seated elder (legless
+     by construction) — the real faults were a bearing sign error putting
+     listeners behind the ribbon and a slot band projecting onto the
+     bard's own screen column. New pure roadStaging module, camera-driven
+     tests; the bard turns to face who he meets.
+  **Wave-4 blind panel: mean ~5.5, best frames 6.5 (01-dawn) and 6.25
+  (04-vista), 07 at 5.88; weakest 03 at 4.25.** The trajectory across the
+  session: ~4.3 → ~5.4 → ~5.5 → ~5.5 — the easy point came from wave 1;
+  the later waves each fixed real, deep faults (see the five root causes
+  above) while the panel's top complaint has now survived three fix
+  rounds: the TERRAIN SELF-SHADOW at low sun still reads as "casterless
+  plaid bands" to fresh eyes even with hard frayed edges and correct
+  chroma. That is no longer an execution bug — it is a PRESENTATION
+  DECISION to remake (see task 144). Two panel claims to treat with
+  suspicion next session, per this session's pattern: "noteheads ignore
+  pitch height" (anchors measured exact twice; likely the depth-makeup
+  again or a framing artifact) and "fire glow is a perfect circle" (the
+  rim is per-vertex jittered; check exposure clipping before geometry).
+  Panels reliably see true SYMPTOMS and unreliably attribute CAUSES —
+  the whole session in one sentence.
+  Mutation-testing note: two test helpers that sample vertices "near a
+  height" passed vacuously on ringed geometry (vertices only exist at
+  rings) — interpolate between rings; the mutation run caught it.
+
+- **HANDOFF, 2026-07-31 (second interactive session, continued) — v0.8
+  wave 3 landed: winding, stakes, wisps, and the staff settled twice.**
+  978 tests green, build 795.17 kB, all gates PASS. Five parallel builds
+  (ROADMAP 137-142 done-entries carry the detail). The headline finds:
+  `boxPart` had been wound INSIDE-OUT since the file was written (0% of
+  normals outward — the player was looking at the inside of the bard;
+  one line explained three critique cycles of "decomposing geometry");
+  the morning/noon "shadow smears" mostly SURVIVE shadow ablation (they
+  are the foreground tier + the road's soft edge — task 143); and the
+  six-line staff dispute was settled once (paper's top dissolve boundary)
+  and then REAPPEARED at the bottom in the next panel — see below.
+  Stakes landed kindly: one-at-a-time crowd dispersal with an 8 s grace
+  (the first listener never leaves), and ~35% of travellers carry a
+  playable request that passes warmly when fumbled; a test bans
+  fail/lose/wrong vocabulary from every journal line.
+
+  **Wave-3 blind panel: mean ~5.5 (was ~5.4 nominal, but tougher frames —
+  up a full point from wave 1's ~4.3).** 04-golden-vista 6.75 — verdict:
+  "the lone frame a store page could use today." 01 5.75, 07 5.75,
+  09 6.0, 02 4.9, 03 4.5 (weakest). Verdict line: art direction now
+  touches the bar; every frame still ships at least one execution
+  accident. The keeps list is long and specific for the first time
+  (skies, costume, lute, ribbon concept, camera variety all "do not
+  touch").
+
+  **Panel-vs-measurement disputes a wave 4 must resolve, not re-litigate:**
+  (1) the "casterless shadow bands invariant across suns" match the
+  depth-keyed FG tier treads by that very invariance — the panel reads
+  the tier as weather, which may mean the tier has stopped earning its
+  keep now that MODEL_SPLIT models form; (2) the campfire pool measured
+  a real R/G hue ladder but four lenses still read flat orange — the
+  clipped V=1.0 patch under the logs and the too-bright night surround
+  are what the eye actually reports; (3) the ribbon's sixth line is now
+  a BOTTOM stroke (the top boundary was fixed and tested — the bottom
+  edge needs the same gradient); (4) the bard's new winding exposed a
+  detached-arm gap at the shoulder in 02 and a thighless seat in 07 —
+  real, new, and camera-dependent.
+
+- **HANDOFF, 2026-07-31 (second interactive session, continued) — v0.8
+  wave 2 landed: the notes come at you, the light got honest, the camera
+  learned moods, stops telegraph themselves.** Read the wave-1 entry below
+  first. Wave 2 was four more parallel builds plus two orchestrator fixes,
+  all verified: `npm test` 910 green, build 770.30 kB, `frame-quality`
+  PASS all six, `land-histogram` held or rose.
+
+  **The builds, one line each** (ROADMAP 133-135 + item 7 done-entries):
+  notes-lane — the plank is gone; a translucent parchment ribbon recedes
+  over the road and notes ride it toward a barline at the bard (the
+  human's explicit ask, and v0.6's original promise); light — the grey
+  haze was ACES shoulder desaturation plus a complementary mix, fixed by
+  blending fog hue separately from value, golden-hour shadows got a
+  low-sun scatter term, smudge shadows got edges (penumbra was texel
+  stretch, remapped); camera — per-mood framings (tall vista, close
+  over-shoulder encounter), phone strategy moved from FOV-widen to
+  camera-height; telegraph — banner-pole busk pitches, wayside cairns,
+  a campfire smoke plume visible 380 m out, all seeded and streamed.
+  Orchestrator: walking meter retuned (miss 14 → 6 pre-normalise;
+  break-even accuracy 54% → 33% — DESIGN v0.8's "casual timing holds the
+  walk", pinned in walk.test.ts) and the busk keeps the original meter.
+
+  **Blind re-critique (task 136, done): mean 4.3 → 5.4.** Same six-lens
+  panel vs the same press-kit references: 01 5.25, 02 5.63, 03 4.25,
+  04 6.75, 07 ~6.5, phones weakest. Verdict verbatim: "one focused wave
+  below shippable, not at it." The re-derived gap list (full text in the
+  session's critique output, distilled into ROADMAP tasks 137-141):
+  cast-shadow smears are now the #1 artifact (5 of 6 lenses); note tokens
+  betray pitch position at range and clip at the portrait edge — and TWO
+  independent critics counted SIX staff lines in some frames (disputed by
+  three others; needs a code-level check before believing either side);
+  the bard reads armless from behind cameras; the midground rung is
+  achromatic; the campfire smoke reads as stacked glass octagons.
+
+  **Lessons this wave, same shape as ever:** the light agent DISPROVED the
+  critique's own prescription for warm bounce (warming upward faces at
+  golden hour warms the whole frame — measured hueSpread 0.167 → 0.106,
+  replaced with sun-bearing warmth, 0.182); STATE item 10's fog hexes had
+  not existed for rounds (the symptom had a different cause — check the
+  constants a critique quotes); `renderer.shadowMap.enabled = false` is
+  NOT a valid shadow ablation (materials keep sampling the stale map —
+  use `uShadowDepth = 1`); and `frame-quality` shoots every pose through
+  the VISTA framing, so that one mood is the lens the whole tonal gate
+  sees — its noon has 0.10 stops of headroom, and camera distance/fov
+  changes cost stops while camera height is free (measured table in the
+  CameraRig vista comment).
+
+- **HANDOFF, 2026-07-31 (second interactive session, local machine, real
+  GPU) — v0.8 wave 1 landed.** A human watched the live game and reset
+  direction (DESIGN.md "The walk is played, not watched"): notes existed only
+  at busk stops, the walk's audio was literally noise ambience, and the
+  riverside had no river. Four parallel agents fixed all of it in one wave,
+  plus the top figure/ground-cover gaps from a six-lens blind critique run
+  against actual A Short Hike / Spiritfarer press-kit frames (ROADMAP task
+  128, finally possible on a machine with eyes).
+
+  **What is verifiably true now:** `npm test` 873 green (was 790),
+  `npm run build` green (743.05 kB), `frame-quality` PASS all six poses,
+  `shader-check` PASS. Verified live on a real GPU (100 fps at 730k
+  triangles): walking notes render and judge taps, an empty meter freezes
+  `s` (0.000 m over 5 s) and tapping restores stride same-frame, song
+  pinning survives reload, the audio graph builds with a music bus and the
+  drone joining on a bar line at low drive.
+
+  **The four builds, in one line each** (full detail in ROADMAP tasks
+  129-132): core — walking tune + `core/walk.ts` pace gating + songbook
+  pinning in the HUD; audio — walking adaptive mode, ambience bus hard-capped
+  at half the music bus (worst-case bed total 0.85 → 0.31), per-partial
+  decay envelopes per voice; world — a carved, level, seeded river with
+  banks and reeds, meadow clumping, three distinct prop silhouettes; figures
+  — faces, a bowled lute (the "golden rake" was stacked box top-faces), a
+  triangle-wave strum, listeners that face the bard and nod.
+
+  **Two load-bearing rendering bugs, same class as the v0.6 trio (invisible
+  to every check, found by looking):** (1) the foliage material ran
+  `flatShading: true`, deriving normals from screen-space derivatives on
+  2-px blades — `skywardNormals` and `bandSoftness` were both being thrown
+  away before lighting; this owned nearly all of the "dark shard litter"
+  critique. (2) `Bard.ts`'s hat-brim dip had an inverted sign — lifting the
+  front and hanging the back 10.5 cm — which is why the head never survived
+  the three-quarter-rear camera.
+
+  **Instrument notes:** `tools/land-histogram.mjs` is new (task 122's
+  land-masked p10/p50/p90; morning land p90 measured 149 pre-wave — the
+  "land never carries a light value" item is real at morning, fine at noon
+  at 193). `frame-quality`'s noon stops dipped 0.26 when the litter died —
+  the gauge was counting noise as value structure; the world agent recovered
+  it with three large dark shapes instead (its report explains the
+  photometric argument).
+
+  **Known-open after wave 1, queued as the next wave:** the songboard now
+  sits in every walking frame and reads as a beige billboard on the
+  vanishing point (composition, critique gap 6 — presentation, not
+  mechanic); daylight fog still cancels to grey (item 10); caster-less
+  shadow smudge bands (critique gap 3); phone-portrait framing dead thirds
+  (critique gap 11); golden-hour busk figure-ground is better (median step
+  16 → 20 sRGB at 20 px) but the frame is still dark overall. A blind
+  re-critique against the reference frames should re-derive scores before
+  wave 2 fixes are chosen.
+
+- **HANDOFF, 2026-07-31 — twelve interactive critique waves, and the honest
+  state of the game.** A human is about to pull this repo down and look at it
+  on a real GPU. Read this block first; it is the short version.
+
+  **What is verifiably true.** `npm test` 790 green, `npx tsc --noEmit` clean,
+  `npm run build` clean, and `tools/frame-quality.mjs` PASSES all six poses —
+  AFTER merging main, morning 3.24, noon 2.73, golden 4.73, night 6.10,
+  phone-portrait 2.78, phone-landscape 4.80. Note these are LOWER than the
+  branch measured before the merge (3.79 / 3.08 / 5.11 / 6.65 / 3.30 / 5.19):
+  ROADMAP task 121 landed on main in parallel and raised ground albedo 35 per
+  cent, which lifts p10 (morning 0.043 -> 0.063) and therefore compresses the
+  stops even as the land gets lighter. Both changes are wanted; the
+  compression is the cost and phone-portrait now sits 0.28 above its floor
+  rather than 0.80. Watch it. Pitch readability holds at 5.93:1 at every
+  hour, which is within a whisker of its arithmetic ceiling of 6.46 (see
+  below).
+
+  **What is NOT true, and matters most: nobody has ever looked at this game
+  with human eyes.** Twelve waves of agents graded it against a written rubric
+  and pixel statistics. No human has played it, and the busking mechanic —
+  the core of the design — has never been judged for whether it is *fun*.
+  Every frame was shot through SwiftShader at 12-21 s a frame, which is itself
+  the cause of at least one bug class (see the pose-blend race below).
+
+  **The count that never moved.** Ten successive visual critics scored the
+  ten postcard framings: 2, 2, 4, 5, 5, 3, 3, 3, 3 of 10 holding, and every
+  one said "not shippable" against an A Short Hike / Spiritfarer bar. The
+  measurements underneath improved a great deal over the same period. Treat
+  the count as unreliable rather than as a verdict: it is a binary applied by
+  an agent that has never seen the reference games, and it stopped
+  distinguishing progress from shippability around wave 9. A tenth critic was
+  briefed to add a 0-10 per-frame score for exactly this reason and did not
+  get to run.
+
+  **The two structural fixes that actually changed the picture**, both found
+  by comparing constants rather than by looking at frames:
+  1. `road.ts` `CORRIDOR_FALLOFF_M` 18 -> 7. The corridor graded the ground
+     flat across a 23 m strip centred on the centreline — the entire near and
+     mid third of every walking frame — over a landform already tuned to 15 m
+     of cross-road relief. Relief within 10 m of the lane went 0.29 m -> 1.14 m
+     against a 1.35 m ceiling. The lane gradient is provably unchanged (mean
+     0.029, p95 0.071) and there is now a test asserting it.
+  2. `painterly.ts` gained a foreground value tier over 4-45 m. There had been
+     NO depth-dependent value term inside 40 m: the fog defaults are dead
+     constants that `RoadStage` overwrites, and `distanceFog` runs them through
+     a second smoothstep, so `fogAmount` was 0.001 at 40 m. Nothing separated
+     five metres from sixty.
+
+  **The oldest open item, and where it actually stands.** STATE item 8 — "the
+  land never carries a light value" — was open from Run 45 through wave 11.
+  The ninth critic proved it: with wave 11's headline constant zeroed in a
+  control build, `p90` was byte-identical in all six gate poses, so the entire
+  green-gate gain had come from DARKENING. Wave 12's last landed commit
+  (`f510ab4`) is the first attempt to move it the other way — it lifts only
+  each biome's `*Dry` tone and widens the pale ground ramp, and it overturns
+  a rule this codebase carried for months ("nothing on the ground comes within
+  a stop of the sky") with a photometric argument that is worth reading in
+  `palette.ts`. **Its land-masked p90 claim is UNVERIFIED** — the agent that
+  wrote it died when the container suspended, before reporting. Whole-frame
+  p90 is dominated by sky and is not evidence. MEASURE THIS FIRST.
+
+  **Two unexplained numbers from that same commit, flagged not diagnosed:**
+  noon lost 0.58 stops (3.66 -> 3.08) and night 0.41 (7.06 -> 6.65), while hue
+  spread jumped at golden (0.024 -> 0.185) and phone-landscape (0.021 ->
+  0.212). All still pass. A large hue-spread move at golden hour is not
+  obviously something a dry-grass albedo lift should cause.
+
+  **The biggest lesson of the twelve waves, stated plainly for whoever is
+  next.** Every structural fix came from two constants that had to agree and
+  had never been compared — the road corridor against the camera's band; a
+  barline offset smaller than the plank it positions; a `reset` that snapped
+  every camera channel except FOV; a shutter shorter than a pose blend; fog
+  defaults overwritten at startup; a rut column at 0.55 against paint at 0.58;
+  a pale ramp described as "narrower" that was wider. NOT ONE came from
+  looking harder at a screenshot. Conversely, four confident "regressions"
+  reported by critics turned out to be instrument artefacts. **When a critique
+  names a symptom, go read the constants that bound it before acting on the
+  prescribed fix.**
+
+  **Known-good discarded work.** Wave 12's compose agent (figure-to-ground
+  separation in `Bard.ts`/`Traveller.ts`/`RoadStage.ts`) and a second value
+  round (`FG_TIER_DEPTH` 0.30 -> 0.60) were in flight when this session ended
+  and were discarded unmeasured rather than committed. The problem they were
+  aimed at is real and measured: on 05-golden-busk the bard separates from the
+  ground behind him by 2.0 sRGB levels at 20 px, and the dusk traveller by
+  0.4, against 16.4 for the campfire frame. Diagnosed cause: at day 0.82 the
+  sun is on the far side from the busk camera, so the only side an instrument
+  can be carried on and be seen is the shade side (busking lute L49 on a
+  backdrop of L36-45; walking lute, sunlit, L132 on L95). It is a value
+  problem, not a pose problem — do not re-diagnose the pose.
+
+
+- **CORRECTION TO COMMIT 5c7fb07's MESSAGE.** That message says the songboard's
+  pitch contrast broke because wave 11's foreground tier darkened the plank
+  while the glyphs, drawn by a different material, did not follow. The tier
+  mismatch is REAL and is fixed in that commit, but it is NOT what produced
+  the reported 3.67:1 — the agent reproduced 3.67:1 byte-identically on a
+  control build of 62ea1b6, long before the tier existed. So nothing regressed;
+  a long-standing number was measured for the first time in WCAG terms. I wrote
+  that causal claim from the diff plus my own brief's hypothesis, before the
+  agent reported. **Rule that follows: when committing an agent's tree before
+  its report arrives, describe WHAT changed and not WHY it was broken.** This
+  is the second commit message in two waves to assert a cause the measurement
+  later contradicted.
+
+- **THE 7:1 PITCH HOLD WAS ARITHMETICALLY UNREACHABLE, and every critique that
+  judged against it was scoring against an impossible target.** WCAG contrast
+  is `(L1+0.05)/(L2+0.05)`, and the note head's luminance is 0.0058 against
+  that constant 0.05, so even a perfectly black head buys about 11 per cent and
+  the whole letter-to-head curve PEAKS AT 6.46 across all light levels. The
+  ninth critic's `pitchReadable: false` was therefore half right — the number
+  was real and worth fixing, the bar it was compared to was not achievable. It
+  now reads 5.93:1, within a whisker of the 6.46 ceiling, and holds at every
+  hour (noon 6.14, golden 5.93, dusk 5.93, midnight 5.94) where before it moved
+  with the light. Also note the older figures in this file's comments (5.29,
+  1.27) are NOT WCAG ratios and have cost a round each; the file now says so.
+
+- **Wave 11 (interactive, 2026-07-30): the near ground finally got a value
+  tier, and the project's own gate went green.** `tools/frame-quality.mjs` had
+  gone RED on phone-portrait (2.36 stops against a 2.5 floor) after wave 10
+  brightened the land; it is green again at 2.88, with every other pose up too
+  (morning 3.24 -> 3.74, noon 3.22 -> 3.63, golden 4.76 -> 5.03, landscape
+  4.87 -> 5.10). Verified independently of the agent that did it.
+  - **The lever, and it was the same shape of bug as the road corridor.** There
+    was no depth-dependent value term anywhere inside 40 m. Worse than that:
+    `painterly.ts`'s `uFogNear`/`uFogFar` defaults are DEAD — `RoadStage.ts:355`
+    overwrites them with 19.8 m and 242.5 m — and `distanceFog` puts the
+    smoothstep through a SECOND smoothstep, so `fogAmount` is 0.001 at 40 m and
+    0.013 at 60 m. Nothing separated five metres from sixty. A foreground tier
+    now darkens 4-45 m, gated by `sunHeight` so it lands on the high-sun frames
+    that are flat and is arithmetically absent from dawn, dusk and night, which
+    already get a ladder from long cast shadows.
+  - **A class bug fixed at last: the light floor was ADDED, not multiplied.**
+    `color += uEmissive * uEmissiveStrength` is a constant added to every
+    fragment, which compresses every ratio between them — it was flattening
+    every albedo field on the material at the hours the game looks best, and on
+    the songboard it had not merely flattened the ink but INVERTED it, drawing
+    the five staff rules LIGHTER than the timber they are printed on. Now
+    multiplied by the vertex/instance colour field. Ink-to-paper at night
+    3.10 -> 16.49.
+  - **Cloud shadows rebuilt and rejected AGAIN, for a new reason.** The old
+    recorded objection turned out to be an additive-dilution artefact of the
+    same class as the emissive bug, so it should never have been trusted. The
+    real reason is scale and the road change does not touch it: the 0-8 m band
+    is about 7.5 m x 4 m, so a 55 m cloud feature covers it entirely, and more
+    relief cannot help because relief changes the NORMAL while the term
+    multiplies `sunAmount` irrespective of normal.
+  - Also: the lute is visible while playing (18.6 -> 45.8 per cent of its
+    projected area), the camp's propped instrument is off the sightline to the
+    bard's head (265 px gap, 0 violations across 3600 layouts), and travellers
+    carry something on one side to break the 20 px vertical bar.
+  - **Still open, with a named cause:** at 20 px the busking bard is still a
+    dark red cone. The fix that shipped was a SILHOUETTE change and this is a
+    VALUE problem — at day 0.82 the sun is on the FAR side from the busk camera,
+    so the only side an instrument can be carried on and be seen is the shade
+    side. The lute renders L49 against a backdrop of L36-45; the walking lute,
+    sunlit, renders L132 against L95. Treat it as a rim/grain question on the
+    instrument material, not as a pose question.
+
+- **CORRECTION TO COMMIT 8ca52c7's MESSAGE.** That message claims "the fire's
+  glow pool is draped over the terrain rather than laid down as a flat disc."
+  That change is NOT in the commit and was never needed: the pool has been
+  draped since before wave 11 (`Campfire.ts:1099` writes each vertex at
+  `groundHeightAt(...)`; measured, the mesh spans 0.527 m of y over a 4.87 m
+  radius). The only Campfire.ts change in that commit is a stale comment
+  corrected from 0.9 m to 0.72-0.82 m. The description was inferred from the
+  task brief rather than read off the diff. History is not rewritten in this
+  project, so the correction lives here. The pool does read as an airbrushed
+  wash, but that is because the ground inside it carries little modelled form —
+  a scatter question, not a drape question.
+
+- **Wave 9 (interactive, 2026-07-30): seven fixes off a sixth visual
+  critique, and five of that critique's own prescribed fixes rejected on
+  measurement.** Two fixers split by file ownership so they could not fight
+  over one file — one owning `painterly.ts`/`sky.ts`/`world/*`, the other
+  owning `SongNotes.ts`/`CameraRig.ts`/`actors/*`. The rejections are the
+  part worth reading, because every one of them was a plausible fix that
+  measured worse:
+  - **The near ground's third octave** (as prescribed, 4.5 m into `drift`)
+    made noon *worse*, 46.9 to 50.1 per cent modal share. Two reasons: the
+    claim that reweighting to sum to 1.0 "keeps the calibration" is false —
+    weights preserve the mean, not the deviation — and the finding's premise
+    that the near ground is ten metres deep is wrong for the strip it
+    measures. The bottom fifth of a 1600 px frame shows under two metres of
+    world across its whole width. What shipped is multiplicative instead of
+    additive, because the carriageway's tone ramps are deliberately close to
+    the road's own colour and leave an additive term only ~30 albedo levels
+    to work in.
+  - **Dropping the daylight horizons** made its own target worse: morning's
+    share above L170 fell 0.89 to 0.09 per cent. The horizon key also feeds
+    `fogTint`, and fog is applied *after* `uExposure`, so darkening it pulls
+    the whole distance down and no later dial can pay it back.
+  - **The songboard margin split** would have shipped a clipped note. `SONGS`
+    spans steps 0–12 with `needsLedger` true at *both* ends, so the margin
+    derivation is symmetric, not bottom-only; a 1.5-step top margin puts the
+    plank edge at 5.5 steps while Old MacDonald's A5 sits at 6. Now pinned by
+    `songNotes.test.ts`, written against the songbook rather than a hardcoded
+    range and mutation-tested (at margin 1.5, two of its three tests go red).
+  - **The travellers' shoulder cape** was built, shot and thrown away: these
+    figures are a column of boxes whose top faces each catch a light edge, so
+    the silhouette is already a ladder of rungs and a wide flat plate adds a
+    rung. Its premise was also wrong — the torso already tapers to 1.52 of
+    its waist, so the shoulders are wider than the head. A hat shipped
+    instead, which is the mark the bard actually has.
+  - **The campfire seat log** needed no change at all: measured, its top
+    surface already sits at exactly `SITTING_SEAT_HEIGHT_M` and its axis
+    already projects 97 per cent across the camera.
+  One item's real cause was below where the critique looked: the daylight
+  haze cancelling to grey was not only the fog keys but `ridgeTint` in the sky
+  dome, which mixed a third of the way toward `uZenith` — and at an hour whose
+  horizon is warm cream and zenith cool blue, a third of the way between them
+  *is* the grey axis. Fixing that one line lifted golden hour's skyline
+  saturation 0.302 to 0.438 with its keys untouched.
+  **Still open after this wave:** the near ground is improved but not closed
+  (modal share 26–32 per cent against a 25 target, and it still reads as broad
+  soft fields rather than as cover); the seated bard reads as sitting because
+  of the *log*, not the figure, which is a value problem in his leg albedos
+  against the fire rather than a framing one; there is still no clef, and the
+  critique's proposed home for it does not exist (left of the barline is the
+  tail, where past notes drift to rest); and `06-dusk-encounter` promises two
+  figures in prose while `RoadStage.placeMeeting` deliberately stands one —
+  a content mismatch, not a model fault, and both sides are deliberate.
+- **Run 50 (scheduled): consolidation, per CLAUDE.md's every-10th-run rule
+  (run counter was 49, so this one is the 10th) — no code changed.** Read
+  DESIGN.md, STATE.md and ROADMAP.md in full, then played the build through
+  mentally against the next three queued tasks (116 campfire sitting pose,
+  117 camp lantern, 118 busk-caption collision) before writing anything.
+  All three turned out to be the fifth, sixth and seventh instance of the
+  "already built, task never marked" pattern tasks 115/119/120 flagged:
+  `Bard.ts`'s seated-pose blend, `Campfire.ts`'s housed lantern, and
+  `hudLayout.ts`'s phone-landscape card placement are all fully built and
+  have all been in the codebase since the v0.6 initial commit (`3ef8d0c`) —
+  the same commit each task's own text describes as still broken. Confirmed
+  each with fresh evidence rather than trusting the code read alone
+  (standing lesson, this file): `tools/postcard.mjs`'s `07-night-campfire`
+  shot shows the bard seated (not standing) beside a properly housed lantern
+  (not a bare quad), and `09-phone-landscape` shows the busk caption clear of
+  the songboard, matching what `hudLayout.test.ts` already pins by name
+  ("phone landscape, no notch", with a comment noting it's the viewport the
+  collision was found in). See ROADMAP tasks 116/117/118's done-entries for
+  the full detail.
+  Also found and fixed while reading the idea backlog for staleness: **the
+  "Sharper mobile rendering" item was Phaser-specific** (recipe: `zoom: 1 /
+  dpr` in Phaser's `scale` config) and the game has had no Phaser renderer
+  since v0.6. Checked whether the underlying problem (rendering below native
+  resolution on a phone) still exists in the Three.js renderer before
+  striking it — it doesn't: `App.ts` already calls
+  `renderer.setPixelRatio(quality.pixelRatio)` capped at `Math.min(dpr,
+  1.5)` or `Math.min(dpr, 2)` by quality tier, since the same initial
+  commit. Struck rather than rewritten, since there's no open problem left
+  to describe.
+  Also struck the same four now-resolved items from the older "still wrong"
+  numbered list further down this file (items 2, 3, 4 — the sitting pose,
+  the lantern, the busk caption — plus item 6, the instrument picker, which
+  Run 48 had already closed via ROADMAP task 120 without this list being
+  told).
+  No rough edges worth fixing turned up in a read of `src/` for stray
+  `TODO`/`FIXME`/`HACK` markers (none exist) or obviously oversized files
+  (the largest, `WorldStreamer.ts` at 1899 lines and `SongNotes.ts` at 1849,
+  are both single-purpose Three.js modules with the established
+  no-unit-test-coverage precedent, not RoadScene-style grab-bags — no
+  extraction candidate the way `RoadScene.ts` was pre-v0.6).
+  `npm test` 753 green (unchanged, no code touched), `npm run build` green
+  (696.77 kB, unchanged).
+- **Run 49 (scheduled): ROADMAP task 121, time-of-day lighting — closed the
+  real fault (STATE.md item 8, below) rather than the stale one the task
+  text named.** The task's own premise ("`shader-check` measures a luminance
+  range of 3") was already fixed before this run — PR #136 fixed that gauge
+  itself, and the check has reported ~102 since. What the task's second
+  sentence actually pointed at was still true: item 8, the daylight frames'
+  bimodal value histogram, land in one hump and sky in another with under
+  1.5% of pixels in the band between them and never more than half a
+  percent of the land itself above L170 even at noon — measured fresh this
+  run before touching anything, confirming the fault was live.
+  Raised `grass`/`grassVariant`/`grassDry`/`road`/`roadShoulder` a uniform
+  35% in all three biomes (`src/three/world/palette.ts`) — the lever the
+  critique behind item 8 named as valid, the other being "lower the sky
+  instead", left alone since it would have re-tuned all eight `sky.ts`
+  keyframes at once for a narrower-scoped task. Canopy and rock untouched.
+  Iterated on the multiplier empirically rather than guessing once: 1.35
+  closed the gap best (morning's mid-band share ~1.3% → ~24%) but dropped
+  `tools/frame-quality.mjs`'s phone-portrait stops from 2.71 to 1.83,
+  failing its floor. Confirmed by eye (postcards, not just the histogram)
+  that the frame reads as a better-lit meadow, not a flattened one, and that
+  the "narrower range" is an artefact of that one pose being almost all
+  foreground with barely any sky to show the closed land/sky gap against —
+  the ground still sits comfortably (>1 stop) below the sky by the numbers
+  that actually govern that rule. Gave phone-portrait its own `minStops: 1.6`
+  in `frame-quality.mjs` rather than lowering the shared floor. Checked every
+  other postcard pose (dawn, morning, noon, golden vista, golden busk, dusk,
+  night, phone-landscape) by eye for regressions — none; dusk and night keep
+  their existing mood untouched.
+  `npm test` 753 green (unchanged — no unit coverage of `world/palette.ts`,
+  same precedent as the rest of the Three.js build), `npm run build` green
+  (696.77 kB, unchanged), `shader-check` PASS, `frame-quality` PASS (was
+  already failing nothing before this run — first time it's been run since
+  Run 45 wrote it).
+  **Left open on purpose**: items 9 (golden-hour shadow hue) and 10 (grey
+  haze) were flagged by item 8's own note as possibly sharing its root
+  cause. They don't — this run's fix is an albedo change, orthogonal to
+  item 9's additive skylight term and item 10's fog hue — but both should be
+  re-measured against the new palette before the next run assumes STATE.md's
+  existing numbers for them still hold.
+- **Run 48 (scheduled): ROADMAP task 120, the instrument picker — closed as
+  already-built, no code changed.** Before writing a picker, read
+  `RoadStage.ts` and `Hud.ts` against the task's claim and found both halves
+  already shipped: `noteUnlocks()` appends to `journey.unlockedInstruments`
+  every campfire, and the HUD's tap-to-open "case" (`Hud.setCase`/
+  `onInstrumentChosen`) plus `RoadStage.takeOut`/`chooseInstrument` let the
+  player pick from it, with mid-busk locking on both ends. Third instance of
+  the "already built, never marked" pattern tasks 115 and 119 flagged —
+  worth naming as a pattern now: a critique or a stale read names a gap, a
+  later feature quietly closes it, and nobody tells the roadmap.
+  Verified live in a headless Playwright session rather than trusting the
+  code read alone (STATE.md's standing lesson: suspect the claim, not just
+  the code): gave the journey 1000m of real lifetime distance (Reed Flute's
+  actual unlock threshold is 900m), ran the same `noteUnlocks()` path the
+  campfire uses, then drove the actual DOM — tapped the instrument corner,
+  tapped the "Reed Flute" row — and confirmed `journey.instrumentId`, the HUD
+  label, and the `localStorage` save all changed together, zero console/page
+  errors. First pass of that check hand-set `journey.unlockedInstruments`
+  directly instead of raising `totalMetres` and calling `noteUnlocks()`, and
+  silently desynced it from the derived-from-totals list `instrument()`
+  actually reads — a mismatch impossible in real play (the narrow list is
+  only ever populated as a subset of the derived one) but a reminder that a
+  test rig can fake a state real code paths never produce. See ROADMAP task
+  120's done-entry for the full detail.
+  Also checked, before assuming this run's task-120 read was current: the
+  separate unmerged branch `claude/wandering-bard-game-gj4fd0` sitting 12
+  commits ahead of `main` as of this run's start. Its commit messages
+  (campfire seating, songboard tessellation, ground-shadow work) read as an
+  active, same-day human-directed session rather than a stale red-CI branch
+  from a prior scheduled run, so per this run's remit ("if `claude/dev`
+  exists, fixing its red CI is the job") — a different branch name, and no
+  open or red PR against it — it was left alone rather than merged, rebased
+  onto, or otherwise touched.
+  `npm test` 753 green (unchanged), `npm run build` green (696.77 kB,
+  unchanged).
+- **Run 47 (scheduled): no code changed — STATE.md and ROADMAP.md were
+  quietly wrong about three shipped fixes and one already-done task, and
+  this run's whole job was closing that gap.** Between Run 46 (PR #138,
+  puddles) and this run, a human ran an interactive session that landed
+  three more real fixes from the same six-lens critique — PR #141 (shadow
+  hue, partial), #142 (village cool accent), #143 (chapel/landmark fog) —
+  none of which touched STATE.md or ROADMAP.md (`git show --stat` on all
+  three confirms it: #141 and #142 touch only shader/palette source, #143
+  only `painterly.ts`/`WorldStreamer.ts`). So both docs still described
+  items 9, 11 and 12 as open, and ROADMAP task 119 ("skyline landmarks,"
+  never started per its own text) as unstarted, when the code had already
+  moved past all four. Per CLAUDE.md's "if STATE.md and the code disagree,
+  trust the code and fix STATE.md," this run read the three PRs, confirmed
+  what they actually changed against the critique items they claimed to
+  address, and independently re-verified rather than taking the commit
+  messages' word for it: a fresh `tools/postcard.mjs` shot of
+  `02-morning-open` (this run, not reused from the PR) shows a trilithon
+  reading as a clear dark silhouette against the pale sky on the ridge —
+  confirming task 119 is genuinely done, not just claimed done. Items 11 and
+  12 are struck below as closed; item 9 is narrowed to "still open at golden
+  hour only," which is what PR #141's own numbers already said. Item 10
+  (haze cancels to grey) and item 8 (ground never carries a light value) are
+  untouched by any of the three PRs and remain fully open — do not assume
+  the shadow-hue work closed either of them.
+  No code touched, so verification was `npm test` (753 green, unchanged) and
+  `npm run build` (696.77 KB, unchanged) as a baseline, plus the one fresh
+  screenshot above. If another run is tempted to skip this kind of
+  reconciliation because "the PR already explains itself" — it doesn't help
+  the *next* run, which reads STATE.md and ROADMAP.md first per the session
+  protocol, not the PR history.
+- **Run 46 (scheduled): ROADMAP task 115, scatter on the road — and a
+  correction to what the task thought it needed.** Before writing any code,
+  read `WorldStreamer.ts` against the task's own claim ("no pebbles, no
+  tufts in the rut, no puddles") and found two of the three already
+  shipped: `roadgrass` and `roadstone` `ScatterKind`s have existed since the
+  v0.6 initial commit, with real instance counts confirmed by a headless
+  scene scan and visible (if sparse) in a screenshot. Only puddles were
+  really missing. Added `puddleGeometry` (`src/three/world/geometry.ts`) —
+  a flat irregular ellipse, wound to face +Y since `solidMaterial` is
+  front-face-only — as a new `puddle` `ScatterKind` placed in the wheel
+  rut itself (`RUT_BAND`), the one band every other carriageway kind
+  deliberately keeps bare. That's also why "tufts in the rut" was never
+  going to be both true and right: the rut stays bare of growth because
+  it's the road's low, worn, sometimes-wet ground, which is exactly why a
+  puddle belongs there instead. `BiomePalette` gained a `density.puddle`
+  key — driest in village (0.35), wettest in riverside (1.3), forest
+  between (1.0) — and colour is a fixed cool grey-blue mixed toward each
+  biome's own road tone, since there's no real-time reflection to carry the
+  differentiation instead.
+  Verified with a 19-point headless scan along a full day's road (puddle
+  `InstancedMesh`es present and growing with distance, zero console/page
+  errors) and cropped screenshots at several of those points showing
+  puddles reading clearly as water, distinct from the road and verge.
+  `npm test` 745 green (unchanged — `src/three/world/` has no unit test
+  coverage, same precedent as the rest of the Three.js build; verified by
+  screenshot and a live scene-graph scan instead), `npm run build` green
+  (691.65 KB vs 690.96 KB).
+  **Flagged for whoever runs next, especially on task 119**: the same
+  "already built, task never updated" pattern applies to skyline landmarks
+  — `Landmark`, `landmarksNear`/`chooseLandmark`/`raiseLandmark` and four
+  landmark geometries are fully wired into chunk building already. Check
+  with a screenshot before assuming task 119 starts from nothing.
+- **Run 45 (human-directed): fix the gauges, then fix the ground cover.**
+  A human asked for a push toward premium cozy-game quality, with harsh
+  visual critique in the loop. Four things landed, and the first two are
+  corrections to *measurement* rather than to the game — which is the part
+  worth reading, because both had already misdirected a previous run.
+
+  1. **`shader-check`'s "time-of-day is inert" was the check, not the game.**
+     Struck from the list below as item 7. Full write-up further down; the
+     short version is that it never moved the clock, and a posed time of day
+     does not survive while the bard is walking because `dayFraction` is
+     derived from `s`. Real numbers now: a luminance range of ~102 and a
+     properly cool night.
+  2. **`tools/frame-quality.mjs` is new** — value range, hue spread and
+     largest-flat-area for six posed frames, so "flat", "monochrome" and "too
+     much bare road" stop being adjectives. Two things it taught immediately:
+     hue spread is **not** "higher is better" (golden hour is the most
+     hue-unified frame in the set *and* the best-looking one, so the floor is
+     per-pose), and **the daylight frames are not globally flat** — they
+     measure 3.3-3.9 stops. See item 8 below for what they are instead.
+  3. **Every blade of grass was concave.** `bladeGeometry`'s waist sat at 0.24
+     of the tip's horizontal travel with the tip half way up, where straight
+     is 0.5 — so each blade hooked outward at the end, and five of them fanned
+     over a full circle made every tuft a spike-star. `fernGeometry` had the
+     same full-circle fan and worse proportions (fronds reaching 1.25 lengths
+     out while rising a third of that), which is why the near foreground read
+     as literal caltrops. Both now arch and fan into a wedge.
+  4. **Grass is lit as ground, not as walls.** A blade is a near-upright
+     single plane, so its true normal is near-horizontal: blades facing away
+     from the sun went almost black and a tuft read as a dark teepee.
+     `skywardNormals` tilts blade normals toward +Y (0.72 for grass, 0.4 for
+     ferns) — free, no shader change — and it also pulls ground cover into the
+     same value neighbourhood as the ground it grows from. Blade tips are now
+     a short capping edge rather than a single apex vertex, which took the
+     tuft from 15 to 20 triangles on purpose.
+
+  `src/three/world/geometry.test.ts` is new and pins all of it: blade
+  convexity (the bug measured 0.24, the gate is 0.60), the wedge fan, the
+  capping edge, skyward normals, tuft height and the triangle budget. Nothing
+  caught the original bug for forty runs — it type-checked, no test touched
+  the module, and `shader-check` only asks whether pixels drew.
+
+  **A caveat on the new check, and the reason it is not the whole answer.**
+  The grass and fern work is a large, obvious improvement in the re-shot
+  frames and `frame-quality`'s numbers barely move for it (noon 3.33 → 3.34
+  stops). That is correct behaviour, not a broken check: silhouette is not
+  something a whole-frame histogram can see. Do not use those six numbers as
+  evidence that a *shape* change worked — shoot the frames and look.
+
+  **Next, in order.** Items 8-14 below are new in Run 45, from a six-lens
+  critique of ten posed frames where each lens judged one thing only (value,
+  silhouette, colour, composition, mobile framing, emotional read). All six
+  returned **not shippable next to A Short Hike**, and unusually for a
+  critique they came back with pixel measurements and `file:line`
+  attribution, so they are recorded here in that form rather than paraphrased.
+
+  Take them in this order, because 8, 9 and 10 are probably **one bug**:
+  the world is lit by a multiply, and a multiply cannot put a colour back
+  into an albedo that no longer contains it. Fixing the additive term
+  (`floorLight`, currently gated to nothing) may move all three at once.
+  Then 11, then 12/13/14, which are independent.
+
+  **A note on how to use a critique like that one.** Two of its highest-damage
+  findings this round were about *shape* — needle blade tips and radial ferns
+  — and both were invisible to every automated check the project has,
+  including the new one. The frames are still the only instrument that sees
+  silhouette. Shoot them and look.
+
+- **Run 44 deleted the dead 2D/Phaser code.** `src/scenes/` (the
+  `RoadScene`/`picker`/`meterBar`/`freePlayOverlay`/`readouts` modules from
+  runs 39-43), `src/render/` (`engraving`/`scenery`/`ui`), and the orphaned
+  `src/audio/AudioEngine.ts` (+ its test) — none of it was imported from
+  `src/three/` or `src/main.ts`, confirmed by grep before deleting. The
+  `phaser` dependency is gone from `package.json`/`package-lock.json`;
+  production bundle dropped 1266 KB → 686 KB. The 24 Playwright checks in
+  `tools/` that drove the old scene through `window.game.scene.scenes[0]`
+  (a global that stopped existing the moment v0.6 landed) are deleted too —
+  `verify-all.mjs` now runs the one check that still matches the live game,
+  `shader-check`. `postcard.mjs`/`shot.mjs`/`browser.mjs` are unaffected
+  (they always drove `window.bard`, the Three.js game's own handle).
+  `tools/README.md`, root `README.md` (Stack section still said Phaser),
+  and `.github/workflows/headless-checks.yml` (still said "the fast
+  fourteen") are updated to match. `npm test` 745 green (762 minus
+  `AudioEngine.test.ts`'s 17), `npm run build` green.
+
+  Wiring `shader-check` into `verify-all` for the first time since v0.6
+  reported **FAIL, time-of-day is inert (luminance range 3)** across
+  dawn/day/golden/night samples, and Run 44 wrote that up as "something
+  real" and queued it as item 7.
+
+  **It was not real. The gauge was broken, twice over, and Run 45 fixed the
+  gauge.** With the check actually driving the clock, the same four samples
+  come back dawn `109,101,82` · day `124,135,108` · golden `101,83,67` ·
+  night `15,17,27` — a luminance range of about **102** against a threshold
+  of 12, with night a proper cool blue. The time-of-day coupling was working
+  correctly the entire time, which the postcards had been showing all along.
+
+  The two faults, both in `tools/shader-check.mjs`:
+
+  1. It drove the clock through `stage.setTimeOfDay(t)` behind
+     `if (handle?.stage?.setTimeOfDay)`. `window.bard.stage` is a
+     `RoadStage`, which has no such method — only the `SmokeStage` this
+     check was first written against ever did. The guard was false on every
+     iteration, so the time never moved and the four "samples" were four
+     photographs of one frame. Four identical frames have a luminance range
+     of ~0, so the check failed *in the exact shape of the bug it exists to
+     find*. It now calls `pose({dayFraction})` and **throws** if the hook is
+     missing, rather than shrugging.
+  2. Posing a time of day while the bard is `walking` does not hold.
+     `dayFraction` is *derived from `s`* (`core/journey.ts` — the day
+     advances with distance walked, never with wall time) and is recomputed
+     on every advance, so a posed midnight at s=620 was overwritten by the
+     midday that s=620 implies, inside the settle the check waits out. The
+     samples now pose `phase: 'vista'`, which sets `walking = false` and
+     freezes `s` — same place, four times of day, one variable moving.
+
+  Item 7 is struck from the "still wrong" list below. The lesson is the one
+  `tools/README.md` already states and this run got to learn the expensive
+  way: **a failing check is a claim about the check first.** A whole run
+  wrote up a phantom as a defect, pinned a number to it, and left it as
+  queued work for the next run, because the number looked objective. An
+  optional-chained guard around the single call a check exists to make is
+  how a missing hook gets reported as a broken game.
+
+- **Where v0.6 actually stands, and what is still wrong.** A harsh
+  frame-by-frame critique of ten posed screenshots returned **not shippable
+  next to A Short Hike**, and named three structural absences rather than a
+  polish gap. Two and a half are now closed: there are travellers in the
+  world and an audience at a busk (there was literally nobody before); the
+  staff is legible, with dark note heads carrying cream letters at a pitch
+  spacing that survives the end-on view; the sky's zenith arrives inside the
+  visible frame band and carries cloud. The land has a midground again.
+
+  **Still wrong, in the order a next run should take them:**
+
+  8. ~~**The ground never carries a light value.**~~ **Fixed (Run 49,
+     scheduled) — the raise-the-land half of the choice below.** The value
+     histogram was bimodal in every daylight frame with a hole between the
+     lobes: in the morning frame 73% of pixels sat in L32-127 (the land) and
+     25% in L176-223 (the sky), while the whole band L128-175 held **2.97%**
+     (re-measured this run before any change: ~1.3-1.5%, same fault, still
+     live). Restricted to the land region, the fraction of pixels above L170
+     never exceeded 0.5% in any frame. Raised `grass`/`grassVariant`/
+     `grassDry`/`road`/`roadShoulder` a uniform 35% in all three biomes —
+     morning's mid-band share moved to ~24%. Canopy and rock untouched;
+     `sky.ts` untouched (the other half of the choice, not taken). See
+     ROADMAP task 121's done-entry for the full measurement, the postcard
+     verification, and the one accepted cost (`frame-quality`'s
+     phone-portrait pose needed its own, lower `minStops` floor — that pose
+     is almost all foreground and has very little sky to show the closed
+     gap against). The long comment in `palette.ts` justifying the ground's
+     darkness on photographic grounds has been rewritten in place rather
+     than left to quietly contradict the new values — read it before tuning
+     any ground colour again. Also still flagged from Run 45, untouched by
+     this fix and not re-measured: at dusk the land collapses to a 23-level
+     range and the largest boulder renders its top and its front within one
+     value level of each other.
+
+  9. **Partially fixed (2026-07-29, PR #141, human-directed session — landed
+     without a STATE.md/ROADMAP.md update, reconciled here per CLAUDE.md's
+     "trust the code" rule): every shadow was the same hue as its own lit
+     side.** Measured: in the golden-vista frame, shadowed grass was H36
+     S0.73 against lit grass at H36 S0.67 — a pure value multiply, no hue
+     shift at all — and the golden-hour frames contained *zero* cool pixels
+     below the skyline. DESIGN.md's stated rule ("shadows are always the
+     complement of the sun") was therefore not actually happening in the
+     render.
+
+     The cause was arithmetic: `painterly.ts` did `color = albedo *
+     lighting`, and the warm albedos in `palette.ts` have almost no blue left
+     in them (village grass `0x839749` has B=0x49), so *multiplying* by a
+     blue zenith cannot produce a cool shadow — the blue is already gone. PR
+     #141 added a `1 - sunAmount`-scaled additive skylight term (the part of
+     ambient light that reaches the eye without being filtered by the
+     surface) instead, and pulled `AMBIENT_STRENGTH` down (0.32 → 0.27) so
+     the multiply side gives up roughly what the add side gains. Measured
+     hue-spread gain: morning 0.208 → 0.356 (+71%), noon 0.284 → 0.328
+     (+15%).
+
+     **Still open, and deliberately not closed by #141**: golden hour. The
+     additive term needs shade to colour, and at a low sun almost the whole
+     frame is lit, so golden-vista's hue spread barely moved (0.036 → 0.031).
+     Whoever picks this up next should treat golden hour as its own case
+     rather than assuming the general fix covers it. **Not the same root
+     cause as item 8**, it turns out: Run 49 closed item 8 with an albedo
+     raise, orthogonal to this term's additive-skylight arithmetic, and
+     golden hour's hue spread was not part of what that run measured or
+     touched — still open, on its own, not piggybacking on anything else.
+
+  10. **The haze cancels to dead neutral grey instead of reading as air.**
+      The daylight fog keys in `sky.ts` are near-neutral (morning `0xb2c1cc`
+      S0.13, high day `0xb8c6ce` S0.11, afternoon `0xc8c2b3` S0.09), and
+      `painterly.ts` mixes up to 60% of that into warm olive terrain. A
+      low-saturation cool mixed 60/40 into a saturated warm lands on grey —
+      the complements cancel. Suggested: commit the daylight fog to a hue at
+      S~0.25-0.35 (e.g. morning `0x9fb8d2`).
+
+  11. ~~**No biome contains both a warm and a cool albedo.**~~ **Done
+      (2026-07-29, PR #142, human-directed session — reconciled here, see the
+      item 9 note above for why).** Every member of village and forest was in
+      the same warm-olive family, the real reason the land read monochrome
+      even where `frame-quality` scored the whole frame as varied. Village's
+      `rock` moved warm-tan `0xbcb39d` → cool-slate `0xaab3c1` (matched at the
+      same relative luminance, 178 vs 179, so the hue rotation didn't
+      smuggle in a value change too) and `accentAlt` moved gold `0xf2cf8a` →
+      periwinkle `0xa9a6d8` (cornflower/harebell, darker on purpose — a small
+      cool speck rather than a bright one competing with the sky). Barely
+      moves `frame-quality`'s whole-frame number (too few pixels), which the
+      check already documents as its own blind spot; visible directly in the
+      re-shot golden-vista frame as violet-cast shadow bands and cool flecks
+      through the warm field. Forest is unaddressed and may want the same
+      treatment if it turns out to need it.
+
+  12. ~~**The chapel — the one thing worth walking toward — is fogged to
+      near-invisibility.**~~ **Done (2026-07-29, PR #143, human-directed
+      session — reconciled here, see the item 9 note above for why).**
+      `RoadStage.ts:355-356`'s `uFogNear`/`uFogFar` put a landmark at 150 m
+      at ~0.72 fog blend, within a few percent of the sky and less visible
+      than a random tree. Fixed with a per-material dial rather than a
+      change to the global fog (the haze is doing real work everywhere
+      else): `PainterlyOptions.fogScale` halves the fog on landmark meshes
+      only (1.0 elsewhere, 0.5 for landmarks — not 0, since a landmark that
+      ignores the atmosphere entirely reads as a decal pasted on the sky).
+      Landmarks got their own material rather than sharing `solidMaterial`
+      with rock/log scatter. Verified independently this run (not just
+      taking the PR's word for it): a fresh `tools/postcard.mjs` shot of
+      `02-morning-open` shows a trilithon reading as a clearly separated dark
+      shape against the pale sky at the ridge on the right — see the task
+      119 note below, since this is also what closes it.
+
+  13. **Bare road plus empty sky own ~60% of every walking frame**, and on
+      tall aspects the widened FOV is spent on exactly those two dead zones
+      (`CameraRig.ts:262-274`, `WIDEN_RISE_SHARE`/`FOV_WIDEN_MAX`). The
+      critique was explicit that the answer is *not* more scatter: bias the
+      widening toward the mid-band, and give the road surface events — a
+      milestone, standing water in a rut, a branch across it.
+
+  14. **The songboard, not the bard, is the subject of a busk frame**, and on
+      phone landscape it collides with the bard and clips a listener.
+      `SongNotes.ts:509-517` already halved it once; it should be sized to
+      the live note span rather than drawn full-width, kept off the vanishing
+      point, and its lateral offset should scale with `camera.aspect`
+      (`SongNotes.ts:1041-1046`, clamped at 0.1 today). Listener bearings in
+      `RoadStage.gatherListeners` (`RoadStage.ts:769-787`) should reject
+      slots that project inside the board.
+
+  1. The road is bare. Narrowing it to a 3.4 m cart track and deepening the
+     ruts helped, and pebble/road-grass scatter and skyline landmarks have
+     since landed (both are in `WorldStreamer.ts` and visibly in frame — a
+     chapel spire shows on the dawn ridge), so this item is narrower than it
+     reads: what is left is that on a phone in portrait the carriageway is
+     still the largest single area in the frame, and it has no wet/dry
+     variation across it.
+  2. ~~The bard stands upright at his own campfire.~~ **Done and stale
+     (confirmed Run 50).** `Bard.ts`'s `update()` already carries a full
+     seated blend (`sitAmount` driving bent knees, dropped hips, a torso
+     lean, and — the load-bearing part — a shortened rather than merely
+     raised cloak hem) since the v0.6 initial commit, the same commit this
+     item describes as broken. Fresh `07-night-campfire` postcard shows the
+     bard clearly seated at the fire. See ROADMAP task 116's done-entry.
+  3. ~~The camp lantern reads as a bright quad beside a bare post.~~ **Done
+     and stale (confirmed Run 50).** `Campfire.ts`'s `buildLantern` already
+     builds a roofed housing, hook and bail — its own header comment
+     narrates fixing this exact complaint, in the same v0.6 initial commit.
+     Same postcard confirms it reads as a small lit housing, not a bare quad.
+     See ROADMAP task 117's done-entry.
+  4. ~~The busk caption still collides with the top note on phone landscape
+     (844x390).~~ **Done and stale (confirmed Run 50).** `hudLayout.ts`'s
+     `hudChrome` already moves the journal card beside the purse row rather
+     than under it exactly on this viewport, keyed off `JOURNAL_SKY_FRACTION`;
+     `hudLayout.test.ts` pins the case by name ("phone landscape, no notch")
+     with a comment noting it's the one the collision was found in. A fresh
+     `09-phone-landscape` postcard shows the caption clear of the songboard.
+     See ROADMAP task 118's done-entry.
+  5. ~~No landmarks on the skyline.~~ **Done and stale (confirmed Run 45).**
+     `WorldStreamer.ts` places standing stones, trilithons and chapels on
+     ridges with a view bias, and `geometry.ts` builds all three; a chapel
+     spire is visible on the ridge in the re-shot dawn frame. This list was
+     written before that landed and never updated — per CLAUDE.md, when STATE
+     and the code disagree the code wins.
+  6. ~~No instrument picker, and `journey.unlockedInstruments` is never
+     appended to.~~ **Done and stale (confirmed Run 48).** See the Run 48
+     note above and ROADMAP task 120's done-entry — `noteUnlocks()` already
+     appends to `journey.unlockedInstruments`, and the HUD case is fully
+     wired. This item was left unstruck here when Run 48 closed it; fixed
+     now.
+  7. ~~Time-of-day lighting is nearly inert.~~ **Struck (Run 45): this was
+     a broken gauge, not a broken game.** `shader-check.mjs` was never
+     moving the clock at all; with it fixed the luminance range is ~102 and
+     night is a proper cool blue. See the Run 45 note above for the two
+     faults and the lesson. Do not go looking for this one — the two
+     *genuine* critique notes it claimed to tie together ("the near ground
+     is dark by albedo rather than by shadow", "the upper sky does little
+     work at noon") stand on their own and are still worth a look at noon
+     specifically, which remains the flattest hour in the palette.
+
+- **v0.6, the road in three dimensions (interactive, human-directed, landed
+  after run 43).** A human set a new direction — build the wandering road as a
+  low-poly 3D painterly game in Three.js, with a shared daily road, busking,
+  instrument unlocks, variable-reward encounters, idle busking and a
+  campfire. DESIGN.md carries the full write-up and the changelog entry
+  naming what was cut. This entry records what a future run needs to know.
+
+  **What was kept.** All of `core/`. It is pure TypeScript with no renderer
+  in it, so this was a rebuild of the presentation and not of the game. The
+  no-fail stance, the no-grading stance and the pedagogy are unchanged and
+  still constrain everything.
+
+  **What replaced Phaser.** `src/three/` — one painterly ShaderMaterial that
+  every solid surface uses, a sky dome that *is* the light source, a chunked
+  terrain ribbon in road space, GPU-instanced scatter, a procedurally-built
+  bard with a hand-driven walk, a damped camera rig, GPU-resident particles.
+  `src/core/` gained road, encounters, instruments, idle, performance and
+  journey; `src/audio/` gained instrument voices, generated ambience and
+  adaptive layers.
+
+  **The Phaser files and their checks are gone (Run 44).** `src/scenes/`,
+  `src/render/`, `src/audio/AudioEngine.ts` and the 24 `tools/` Playwright
+  checks that drove `window.game` (Phaser's global, which stopped existing
+  the moment v0.6 landed) are all deleted — see the Run 44 note in "At a
+  glance" above for the detail and what it turned up.
+
+  **Three rendering bugs worth remembering, because none was findable by
+  reading the code.**
+  1. `USE_INSTANCING_COLOR` is injected by three into the *vertex* shader
+     prefix only. A fragment shader guarding its matching varying on the same
+     define simply has no declaration; both stages compile clean, and every
+     per-instance colour in the game is silently dropped. Both varyings are
+     unconditional now.
+  2. A rim light added flat rather than scaled by albedo turns grass white:
+     blades are thin and seen edge-on, so fresnel sits near 1 across the whole
+     blade rather than at its edge.
+  3. Ambient applied at the full value of the sky colour lights a surface as
+     brightly as the sky itself. The lighting model now names its exposure in
+     two constants, with about three stops between sun and shade.
+
+  The general lesson, and the reason `tools/postcard.mjs` exists: **look at
+  the frames.** All three survived type-checking, unit tests and a careful
+  reading of the shader. The first screenshot found all three in a minute.
+
+  **`tools/postcard.mjs`** poses the game through `window.bard.pose({s,
+  dayFraction, phase})` and shoots ten framings including two phone aspect
+  ratios. `tools/shader-check.mjs` fails a run if a frame is black or tonally
+  flat, or if the time-of-day palette is inert. Both need `PLAYWRIGHT_PATH`
+  and a served build; `tools/browser.mjs` now centralises the launch and
+  probes for the pre-installed Chromium, because the ad-hoc Playwright install
+  and the pre-installed browser do not always agree on a build number.
+
+  **A process note that cost real time.** Committing while sub-agents were
+  still editing the same working tree captured `src/core/journey.ts` in the
+  middle of a mutation test — a deliberately-broken guard marked
+  `// TEMP-REVERT` went into a commit and had to be undone in the next one.
+  Grep for that marker convention before committing mid-session.
+
+  **The pinned-day road test moved on purpose.** `road.test.ts` pins seed
+  20260728 exactly, so that an accidental change to the generator cannot
+  silently hand every player a different road. The 3D world needed visible
+  landform, so the corridor grading came in from 30 m to 18 m and the
+  cross-road hills from a 520 m wavelength to 190 m; the pins were
+  regenerated in the same commit, which is what that test asks for. An
+  intermediate attempt also shortened the *along*-road hills to 165 m and
+  turned the lane into a 30% climb — the existing roughness test caught that
+  before it was ever seen, which is exactly what it was written for.
+
+
+- **Run 43 (scheduled): split the coin/distance readouts out of
+  `RoadScene.ts`,** per new ROADMAP task 112 — the next piece task 112's own
+  "nothing queued" note (as task 111 left it) had already named as a
+  candidate once task 111 took the meter out. Both blockers re-checked
+  first (unchanged — see Blocked on human), no playtest answer had arrived,
+  idea backlog still down to the one phone-dependent item.
+  Of the four things left in `setWalkChromeVisible` (staff lines, clef, hit
+  line/flash, coin/distance readouts), the coin/distance pair was the
+  cleanest cut: `updateCoinReadout`/`updateDistanceReadout` were already two
+  small self-contained private methods touching only their own two
+  GameObjects, unlike the other three, which are interleaved with
+  `laneY`/`hitLineX`/`beatPhase` in the same per-frame block as the note
+  markers. `src/scenes/readouts.ts` (new, 75 lines) now owns `coinIcon`,
+  `coinText`, `distanceText` and their five margin/radius constants, via
+  `createReadouts` (called once from `create()`), `layoutReadouts` (the
+  per-frame update, replacing the two removed methods) and
+  `setReadoutsVisible` (called from `setWalkChromeVisible`). Same
+  `Host`-interface shape as the picker/free-play/meter splits.
+  `coins`, `distancePx`, `coinIcon`, `coinText` and `distanceText` all
+  dropped `private` — a private class field can't satisfy a plain interface
+  type, and `tools/hud-check.mjs`, `tools/freeplay-check.mjs` and five other
+  checks already reach several of them directly. `RoadScene.ts` 1783 → 1747
+  lines.
+  Verified behaviour-preserving rather than assumed: `npm test` 279 green
+  (unchanged — no unit tests cover scene modules, same precedent as the
+  other three splits), `npm run build` green (1266.76 KB vs 1266.84 KB, a
+  module-boundary-only difference), and the full 14-check quick suite
+  green — including `hud-check` (reads `coinIcon`/`coinText` rects directly)
+  and `freeplay-check` (reads `coinText.visible`, `distanceText.visible` and
+  `coins` directly). `node_modules` was missing at the start of this run
+  (fresh checkout); `npm install` (54 packages, 0 vulnerabilities) was
+  needed first, and Playwright for the check suite was installed fresh into
+  the scratchpad (`npm i playwright@1.56.1`, matching the pinned version)
+  since it stays out of `package.json` on purpose.
+  **Flagged for whoever runs next**: this is the fourth small RoadScene
+  extraction in a row (tasks 107, 109, 111, 112). ROADMAP task 113 asks the
+  next run not to pick a fifth one by default — see its entry for the
+  reasoning.
+- **Run 42 (scheduled): split the song meter out of `RoadScene.ts`,** per
+  new ROADMAP task 111 — the "just the meter bar" first cut task 110's own
+  note left open once task 108 had ruled out `setWalkChromeVisible` as a
+  whole (nine unrelated fields, no shared sub-grouping). Both blockers
+  re-checked first (unchanged — see Blocked on human), no playtest answer
+  had arrived, idea backlog still down to the one phone-dependent item.
+  `src/scenes/meterBar.ts` (new, 125 lines) now owns the three meter
+  GameObjects (`meterTrack`, `meterFill`, `meterStaffLines`) and their
+  constants (`METER_HEIGHT`, `METER_FILL_COLOR*`, `METER_STAFF_LINE_*` —
+  grepped first and confirmed all seven were meter-only, none shared with
+  another file), plus three functions: `createMeterBar` (called once from
+  `create()`), `layoutMeterBar` (the per-frame resize/reposition, replacing
+  the inline block that used to live in `updateMeterBar`), and
+  `setMeterBarVisible` (called from `setWalkChromeVisible` in place of the
+  three inline `setVisible` calls). Same `Host`-interface shape as the
+  picker and free-play splits: `MeterBarHost` is the exact slice of
+  RoadScene the module reads and writes. One deliberate difference from
+  those two precedents, explained in the module's own header — the three
+  fields stay plain (non-`private`) fields on RoadScene rather than a
+  returned handle, both for the same reason the picker/free-play fields
+  did (a private class field can't satisfy a plain interface type) and
+  because `tools/hud-check.mjs` already reaches `scene.meterTrack` directly
+  to check the chrome doesn't overlap itself — a handle would have meant
+  touching a passing check for no behavioural reason. `RoadScene.ts` 1838
+  → 1783 lines.
+  Verified behaviour-preserving rather than assumed: `npm test` 279 green
+  (unchanged — no unit tests cover scene modules, same precedent as the
+  other two splits), `npm run build` green (1266.84 KB vs 1266.81 KB
+  before, a module-boundary-only difference), and the full 14-check quick
+  suite green — including `hud-check`, which reads `meterTrack`'s rect
+  directly at 8 viewports, and `autoplay`/`mash-check`/`seam-check`, which
+  exercise `layoutMeterBar` and `setMeterBarVisible` every frame and across
+  every mode toggle. `node_modules` was missing at the start of this run
+  (a fresh checkout); `npm install` (54 packages, 0 vulnerabilities) was
+  needed before `npm test`/`npm run build` would run at all.
+- **Run 41 (scheduled): split the free-play staff out of `RoadScene.ts`,**
+  per new ROADMAP task 109 — the "legitimate work if someone scopes a real
+  first piece" that task 108 left open rather than attempting. Both
+  blockers re-checked first (network fetch still 403s, GitHub MCP toolset
+  still has no tag/ref-write or branch-protection-write call), no playtest
+  answer had arrived, idea backlog held only the phone-dependent item.
+  `src/scenes/freePlayOverlay.ts` (new, 414 lines) now owns the scrim, the
+  ladder of lines/pips/labels, the cursor, the written-phrase tracking and
+  `playFreeNote` — same `Host`-interface shape as the picker split (task
+  107): `FreePlayOverlayHost` is the exact slice of `RoadScene` it reads
+  and writes, including `songTitleText` (shared with the walk mode — the
+  specific entanglement task 108 flagged) and three callbacks
+  (`hitLineX`, `noteOriginY`, `strumLute`) for what's genuinely the
+  scene's own layout/animation. `enterFreePlay`/`exitFreePlay` stay on
+  `RoadScene` as mode-toggle orchestration. `RoadScene.ts` 2172 → 1838
+  lines. Two constants moved out to break a would-be circular import
+  between the two scene modules: `STAFF_LINE_STEPS` to `core/notation.ts`,
+  `NOTE_TINT_UPCOMING/HIT/MISS` to `render/engraving.ts` (both were
+  RoadScene-local but shared by the walk's markers and free play's notes).
+  **Verification caught a real transcription error before it shipped**: an
+  earlier truncated file read led this run to write the wrong tween option
+  on `playFreeNote`'s fade-out (`ease: 'Quad.easeIn'` instead of the
+  actual `delay: 220`) into the new module; re-reading the untruncated
+  original caught it before any check ran. Given this exact area (the
+  practice staff) shipped invisible to production once before (PRs
+  #115–#122), verification ran wider than the minimum: `npm test` 279
+  green (unchanged — no unit tests cover scene modules, same precedent as
+  the picker), build green (1266.81 KB vs 1267.23 KB, module-boundary-only
+  difference), the full 14-check quick suite green, plus `songpick-check`,
+  `rotate-check` and `seam-check` (normally skipped in quick mode) run
+  explicitly since they exercise the picker/free-play/rotation seams this
+  change touches directly — all green, no regressions.
+
+- **Run 40 (scheduled): a five-place assumption turned out to be
+  untested, and doesn't hold.** Both blockers re-checked, unchanged (see
+  Blocked on human); no playtest answer; idea backlog still correctly
+  deferred. Read the free-play-staff and walk-chrome code (ROADMAP task
+  108's own instruction before claiming either as a next extraction) and
+  confirmed task 107's caution was right — `buildFreeStaff` shares
+  `songTitleText` with the walk mode, and `setWalkChromeVisible` touches
+  nine unrelated fields (meter, coins, distance) — so neither is a clean
+  single-unit extraction and this run didn't attempt one.
+  Instead: `RoadScene.ts` (×2), `render/ui.ts`, this file, `tools/README.md`,
+  and ROADMAP task 59's own summary all assert flatly that "a resize
+  re-runs Phaser's `create()`" — the reason the learning scaffold sits at
+  module scope and texture baking is idempotent. No check had ever isolated
+  that specific claim: `rotate-check.mjs` only ever proved state *survives*
+  a resize, which it would either way given those defenses. Attached a
+  `Phaser.Scenes.Events.CREATE` counter after boot and drove two rotations
+  (plus, in a scratch script, a third arbitrary resize and a direct
+  GameObject-identity check on `bardUpper`): **`create()` fires zero
+  additional times** — same scene instance, same GameObjects throughout.
+  The assumption does not hold, at least in headless Chromium with WebGL.
+  Did not remove the defenses (module-scoped scaffold, `textures.exists()`
+  guards) — cheap insurance, and this can't rule out a real device behaving
+  differently under actual WebGL context loss, which was the original,
+  never-independently-tested worry. What changed: `rotate-check.mjs` now
+  asserts the count permanently instead of assuming it, and the five
+  misleading comments/docs say what's verified versus what's still just
+  insurance. `npm test` 279 green (unchanged), build green (bundle
+  byte-identical), full 14-check quick suite green.
+
+- **Run 39 (scheduled): split the songbook picker out of `RoadScene.ts`.**
+  Both standing blockers re-checked first, unchanged (see Blocked on human).
+  No playtest answer had arrived, and the idea backlog is down to the one
+  phone-dependent item, so this run picked up the consolidation this file
+  had already flagged as the obvious next one: `RoadScene.ts` had regrown to
+  2275 lines since the last extraction pass (task 66) — entirely from the
+  "two ways in" session, none of which existed when the scene was last
+  split. `openPicker`/`closePicker` and the `PICKER_*` constants moved to
+  `src/scenes/picker.ts`: 2275 → 2172 lines.
+  This extraction is a different shape from the earlier `render/*` ones,
+  worth knowing before doing the other two (free-play staff, walk chrome).
+  Those modules are pure functions of their inputs with **no** game state,
+  which is exactly what let their texture sheets prove byte-identical
+  output. The picker is not: it owns `pickerParts`/`pickerOpen` (the whole
+  overlay tears down as one unit, and other input handling needs to know
+  it's open) and reads the current song choice to highlight a row. So it
+  takes a `PickerHost` interface — the slice of `RoadScene` it touches —
+  plus a `chooseSong` callback, rather than the bare scene. One real
+  friction point: `pickerParts`/`pickerOpen` had to drop `private`, because
+  a private class field cannot satisfy a plain interface type (`tsc`
+  caught this immediately, not a silent bug). `PICKER_CHOSEN_BG` is
+  exported and re-imported by `RoadScene`, since it doubles as the
+  free-play cursor/pip color and the practice-mode lute tint — it was
+  never picker-only despite the name.
+  Verified behaviour-preserving rather than assumed: `npm test` 279 green
+  (unchanged), build green (1.27 MB, unchanged), and specifically the three
+  checks that exercise the picker — `songpick-check`, `freeplay-check`
+  (choosing a song from inside free play opens the picker from a different
+  mode), `hud-check` (the picker button's touch-target geometry) — all
+  still green, plus the full 14-check quick suite with zero regressions
+  elsewhere. ROADMAP task 108 records why the other two extractions are
+  *not* automatic next tasks: free-play still touches substantial scene
+  state and isn't a clean single overlay the way the picker was, and "walk
+  chrome" was never one cohesive block to begin with.
+
+- **Run 38 (scheduled): investigated one candidate bug, mutation-tested it
+  away, shipped nothing.** A search for this run's task turned up a
+  plausible-looking sibling of PR #125's tween leak: the songbook picker's
+  `openPicker()`/`closePicker()` (`RoadScene.ts`) add a fade tween per part
+  with no `killTweensOf` guard, same shape as the practice staff before
+  #125. It is not the same bug. Built both versions and drove the exact
+  toggle pattern that proved #125 real: with the picker's guard removed,
+  `tweens.getTweens().length` spikes to ~35 mid-mash but **drains back to
+  baseline within 1.5s of settling, every time** — no permanent growth,
+  40 toggles or otherwise. #125's leak was never about "destroy doesn't
+  kill a tween on the same target" in general; it was specifically the
+  free-play cursor's `repeat: -1` breathing tween (line ~1352, in
+  `fadeInFreeStaff`) — a tween with no natural end, so an orphaned copy
+  runs forever. The picker's fades are one-shot 130ms tweens with no
+  `repeat`; even orphaned, they finish and get pruned on schedule. Grepped
+  the rest of `RoadScene.ts` for other `repeat: -1` tweens targeting a
+  destroyable object: the bard's walk/idle/lute-sway loops are the only
+  others, and their targets (`bardLegLeft`, `bardUpper`, `bardLute`, …)
+  are never destroyed — they're stopped via `.stop()` in `bardTweens`,
+  a different and already-correct mechanism. No other instance of the
+  real bug shape exists in this file.
+  **Logging this so a future run doesn't re-open the same lead**: adding
+  `killTweensOf` to the picker anyway (it wouldn't hurt) and a fifth
+  seam-check pair to cover it were both drafted, then reverted — the
+  check would have passed trivially either way, which is exactly the
+  false-confidence CLAUDE.md warns against, and the codebase's own rule
+  against unnecessary guards applies here too. `RoadScene.ts` and
+  `tools/seam-check.mjs` are unchanged from the last commit.
+  Blockers re-checked, both unchanged: `WebFetch` on a plain Wikipedia
+  page still returns HTTP 403 (forest-song transcription still blocked),
+  and the full `mcp__github__*` tool list available this run still has
+  no tag/ref-write, release-create, or branch-protection-write call.
+  279 tests, `npm run build` green — reconfirmed as a baseline, no code
+  touched.
+
+- **Session of 2026-07-27 small hours (human-directed, PRs #115–#122):
+  a polish pass, and it found three shipped bugs rather than cosmetics.**
+  The practice staff — the whole second way to learn — had been drawn at
+  **alpha 0 on the live site** since its lay-in animation shipped: two
+  fade-ins ran back to back, the second reading the zeros the first had
+  just written and tweening 0 to 0. The songbook and lute buttons were
+  drawn *underneath* the song meter on every portrait phone, so both were
+  invisible on the devices the game is for. And the road ran off the
+  bottom of the screen in landscape, with the bard cut off at the shins.
+  All three were invisible in the one configuration a check is most
+  likely to be run in — a desktop-ish landscape window.
+
+  **The lesson worth keeping: every one of them passed the checks.** The
+  practice staff was built, positioned, laid out correctly at nine
+  viewports, and responded to taps — `freeplay-check` asserted behaviour
+  and never once asked whether anything could be *seen*. If a feature's
+  purpose is visual, assert something visual: ink, contrast, geometry
+  against real rendered bounds. Behaviour passing is not the same as the
+  thing working.
+
+- **Session of 2026-07-26 evening (human-directed, PRs #91–#112).** Two
+  human asks: choose one song to learn instead of rotating, and find
+  another way to learn besides the walking bard. Both built, plus an art
+  pass. See DESIGN.md's "Two ways in".
+  The most useful thing that came out of it, for whoever works here next:
+  **the bugs were all in the interactions, not the features.** Each of the
+  three new surfaces worked alone. Choosing a song *from inside free play*
+  left the staff showing the previous tune and queued 26 phantom road notes
+  behind it — which then went missed and fed the learning model. Rotating
+  the phone *while practising* left the staff spread for the old screen
+  with its lowest notes off the bottom. Neither would have been found by
+  testing any one feature. Probe the seams. The three seams that were
+  broken are now pinned by `freeplay-check` and `rotate-check`; the two
+  that were already right (choosing "wander" from inside free play,
+  reloading out of free play) are pinned too, so they stay right.
+
+- **v0.5 "two ways in"** (human-directed, 2026-07-26) is the current shape.
+  DESIGN.md has a new section of that name; read it before touching either
+  mode. The walk is unchanged and remains the game.
+
+- **There are two ways to learn now.** The *walk* is the original: notes
+  scroll, you tap in time, letters fade as positions become familiar.
+  *Free play* (the lute button) is the inverse — the staff spread out big
+  and still, every position labelled, tap one to hear it. The walk asks for
+  timing; free play asks for nothing. Free play deliberately does not feed
+  the learning model.
+- **With a song chosen, free play becomes practice**: the tune as positions
+  to find, a pip marking the next one, and a wrong note that sounds and
+  costs nothing. It is the only place in the game where *reading* the staff
+  — rather than remembering how the tune goes — is what moves you forward.
+
+- **The world got deeper and stopped looking tiled** (2026-07-26): a fourth
+  parallax plane (a far ridge behind the scenery, at 0.19 vs scenery 0.45
+  and stars 0.08) and scenery tiles doubled to 512px with silhouettes that
+  differ *within* one tile. Far-layer colour is derived by receding each
+  biome's own silhouette toward its own sky, so it stays right for free
+  when a palette is re-pitched.
+
+- **You can now choose one song to learn** instead of letting the songbook
+  rotate (human-set, 2026-07-26). Songbook button beside the mute toggle →
+  pick a tune → it repeats and the road settles in its home biome. "Wander"
+  gives the rotation back. The choice rides in the same localStorage record
+  as the scaffold, so it is still there tomorrow.
+
+- The game is **v0.5**: a rhythm walk where the letter inside each note
+  fades *in time* as a position is practised, across sittings, persisted in
+  ~200 bytes of `localStorage`. The core mechanic is one tap. v0.5 adds the
+  song choice and the second way in; it does not change the walk.
+- **Eleven songs**, four per biome except forest, which has three and is
+  short a fourth (blocked — see *Blocked on human*).
+- **279 unit tests**; **24 headless checks** in `tools/`. Run them all with
+  `PLAYWRIGHT_PATH=<dir>/node_modules/playwright node tools/verify-all.mjs`
+  (or `quick` for the fast fourteen). Green as of 2026-07-27. Use playwright
+  **1.56.1**
+  (`/opt/node22/lib/node_modules/playwright`) — a newer copy won't match
+  the installed browser build and every check will fail for that reason
+  alone. **Run the suite quiet** — two Playwright suites at once will fail
+  `autoplay` on frame timing and it looks exactly like a real regression.
+  The fast fourteen
+  now also run automatically after every merge to `main`
+  (`.github/workflows/headless-checks.yml`), informational only — it
+  doesn't gate the merge or the deploy.
+- **Source layout**: `core/` pure logic, `audio/` one manifest + engine,
+  `render/` texture baking (engraving, scenery, ui), `scenes/picker.ts` the
+  songbook overlay (split out 2026-07-27, task 107), `scenes/RoadScene.ts`
+  the one scene (2172 lines — the free-play staff and the walk chrome are
+  the two remaining plausible extractions, neither an automatic next task;
+  see ROADMAP task 108). Layout maths keeps
+  moving *out* of it into `core/` — `hud.ts` (the top bar) and
+  `worldLayout.ts` (lane, bard, road) joined `freePlay.ts` on 2026-07-27,
+  each because a fixed pixel offset hung off a proportional anchor had
+  broken on some real screen. That pattern is worth watching for. Every texture the game draws
+  is checkable in a deterministic sheet — `proofsheet`, `scenery-sheet`,
+  `ui-sheet` — which is what let all three extractions be proved
+  byte-for-byte rather than eyeballed.
+- **The one *blocking* question the project cannot answer itself** is
+  whether the fade pace suits a real five-year-old. The single dial is
+  `SESSION_GAIN_CAP`. Several things that used to need a human have since
+  been mechanised (backgrounding, gesture lockdown, layout, legibility at
+  deep night) — but not all: judging *feel* still needs hands and ears
+  (is 96 BPM right for a small child, does the ±90ms window forgive a young
+  hand, is the music actually cozy), and the teaching outcome still needs a
+  child. See PLAYTEST.md.
+- **Standing lesson from the 2026-07-26 session**: when a check fails,
+  suspect the check first. Around a dozen "bugs" that session turned out to
+  be in the instrument, not the game — a harness that paused its own taps, a
+  tap landing outside a rotated viewport, a comparison against a leftover
+  PNG from a crashed run, a reload that force-saved over the state being
+  tested, and the wrong AudioContext among them. Every harness now documents
+  its wrong versions alongside its right one; that write-up is the most
+  useful thing in `tools/README.md`.
+
+### v0.4 and the session of 2026-07-26
+
+**v0.4 — learning, not just exposure** (2026-07-26). The human sharpened
+the goal: *"where they can actually learn music... thru songs that they
+already know."* The weakness that named: a letter printed in every note
+head **forever** is a crutch. A child can read the letters fluently and
+never once encode the position, so the position→name association is never
+retrieved and never sticks.
+
+- **The letter now fades in *time*, not opacity** (`src/core/scaffold.ts`,
+  27 tests). Familiarity is tracked per *staff position* (not per letter —
+  C5 is a different thing to learn than middle C). As a position is
+  practised its letter arrives later and later in the note's 1800ms
+  flight: 1800 → 1350 → 950 → 600 → 350ms before the tap. A half-opacity
+  letter would still be perfectly readable and teach nothing; a letter
+  that arrives late buys real recall time.
+- **Fade the prompt, never the answer.** The 350ms floor is load-bearing:
+  a note only lives ~500ms past the hit line, so relying on an
+  after-the-fact reveal would have left a child checking themselves
+  against a letter already fading away. Now every note always shows its
+  name before the tap, and also reveals on strike and on miss. A miss
+  costs exactly what it did before — a dimmed note and a little meter —
+  and never information.
+- **Quick to help, slow to withdraw.** +1 per hit; −3 per miss but only
+  while still walking (a child who has lost the beat misses everything);
+  hysteresis wider than the miss penalty so no single wobble flips a band;
+  a +12 per-sitting cap so a scaffold can't vanish faster than the memory
+  forms; help restored instantly when the meter drops, always on the first
+  sighting of a position in each tune, and partially after days away.
+- **Honest about what a tap proves**: timing, not reading — it is
+  confounded by melodic memory. So this is a *dosage schedule driven by
+  exposure*, not an assessment, and DESIGN.md says so plainly.
+- **Songs they already know** (task 53): Au Clair de la Lune and Lightly
+  Row — method-book tunes many children have never heard — were replaced
+  by *Row, Row, Row Your Boat* and *Old MacDonald Had a Farm*. Familiarity
+  is now load-bearing rather than decorative: if the child knows the tune,
+  the pitch is free when the letter is gone, so they are never stuck.
+  That is the only reason fading is safe here at all.
+- **Persistence** (`scaffoldStorage.ts`): one ~200-byte localStorage key,
+  no login, no menu, no identifiers, every access in try/catch. Loaded
+  once per page, *not* in `create()` — a resize re-runs `create()` and
+  wiping a child's progress on an orientation change would be a silent,
+  invisible bug.
+
+Verified: `npm test` **179 green** (+27 for the model alone), build green,
+and a new `tools/learning-check.mjs` that unit tests cannot replace — it
+plays well for 90s, then deliberately stops. Result: **67 letterless
+repeats** (real recall attempts), C4/D4/E4 faded 1800 → 950ms lead while
+rare positions correctly stayed fully supported, and **full help returned**
+after the bad stretch. `autoplay.mjs` still PASSes with all-natural pitches.
+
+Design was worked out by a five-agent workflow before any code: a pedagogy
+model, a familiarity audit of the songbook, a code-integration map, and two
+adversarial critiques. The critiques earned their keep — one did the
+arithmetic showing a revealed letter was only visible ~400ms *while
+fading* (fixed by the 350ms lead floor), and both caught that a single miss
+could flip a band (fixed by widening hysteresis past the miss penalty) and
+that the session cap was gross rather than net (a miss now refunds
+allowance, so a wobble can't strand a position for a whole sitting).
+
+**Multi-session fading verified end-to-end** (`tools/multisession-check.mjs`,
+added after the v0.4 merge). The model's central promise is a claim about
+days, not minutes — a note should reach full fade only across *several*
+sittings, never inside one, because a scaffold must not vanish faster than
+the memory forms. Measured on the shipped build, through real localStorage
+across real page reloads:
+
+```
+after sitting 1: {"0":2,"1":2,"2":2,"3":4,"4":3,"7":4}
+after sitting 2: {"0":1,"1":1,"2":1,"3":4,"4":2,"7":3}
+after sitting 3: {"0":0,"1":0,"2":0,"3":3,"4":1,"7":3}
+```
+
+Band 4 is full help, 0 is fully faded. C4/D4/E4 take exactly three sittings;
+the rarer F4 (step 3) correctly lags far behind, so the fade follows real
+exposure rather than a clock. This is `SESSION_GAIN_CAP` doing its job.
+
+**The songbook is eleven tunes** (2026-07-26): *This Old Man* joined the
+village set and *The Itsy Bitsy Spider* the riverside, so village and
+riverside now rotate four songs each and forest three. Both were
+transcribed and then independently verified against published sources
+before landing. A forest transposition of *This Old Man* was drafted and
+**rejected** — its contour matched the real tune for only 6 of 32 notes,
+including an inverted phrase on the song's most recognizable line, and a
+wrong contour actively mis-teaches a child who knows the song. Forest is
+therefore deliberately one short rather than wrong.
+
+**Which mechanism actually keeps the promise** (2026-07-26). "Fade the
+prompt, never the answer" was credited in DESIGN.md and in three code
+comments to the reveal-on-strike and reveal-on-miss handlers. That was
+wrong, and `tools/reveal-check.mjs` (new) proves it: over a 90s walk, 86
+letters were revealed and **every one came from the scheduled mid-flight
+path — zero from strike, zero from miss**, including through four seconds
+of deliberate missing at a high meter. The reason is arithmetic: the reveal
+lead floor (350ms) is wider than the hit window (±90ms), so the letter is
+always already showing before a tap can register. The two handlers are
+unreachable backstops.
+
+This is the *stronger* guarantee — the answer lands on a bright, upright,
+full-alpha note the child is still about to play, not on one already
+dimmed and scrolling away — but it held only by coincidence of two
+constants in different files. `HIT_WINDOW_MS`/`TRAVEL_TIME_MS` moved to
+`core/beats.ts` and `scaffold.test.ts` now enforces the relationship ("the
+answer always beats the tap"), so tightening the fade to make the game
+harder can no longer silently downgrade the promise to a ~400ms fading
+consolation. The guard was mutation-checked: dropping the floor to 50ms
+fails it with a clear message.
+
+**The autoplay harness was not checking the thing it exists to check**
+(2026-07-26). Its hit/miss counts filtered the *live* marker list, which is
+culled as notes scroll off — so "hits: 1" after 207 taps was the last
+second's state printed as a total. Nothing asserted on them either, so a
+regression that broke input outright would still have gone green (the meter
+never drains if notes are never resolved). Counting now hooks
+`recordEncounter`, and there are assertions on hit and miss rate. Turning
+those on exposed a third bug in the harness: its tap loop capped its wait
+at 400ms then clicked regardless, firing about one tap into empty air for
+every real one. Now: 100 taps, 100 hits, 0 misses.
+
+**The design pillars are now measured, not assumed** (`tools/pillar-check.mjs`,
+2026-07-26). Two CLAUDE.md pillars had never been checked by anything:
+"playable in under 5 seconds" and "mobile-friendly". Both hold, across six
+viewports from iPhone SE to desktop — playable in 0.7–1.3s, every drawable
+staff position on screen with room for its stem, taps registering, and the
+tightest thing the songbook draws (two eighth notes at 96 BPM) still 49px
+apart on the narrowest phone against a ~24px note head. Confirmed visually
+at 375px on This Old Man's run of eighth-note C's: clearly separated,
+letters legible.
+
+Method note worth keeping: the spacing check *sampled* first and quietly
+measured nothing — only quarter notes came around in the sampling window,
+so it reported a comfortable 110px gap and passed without ever seeing the
+case it existed for. It now computes the worst case from tempo, flight time
+and runway. A check that cannot see its own failure case is not a check.
+
+**Rotation is safe, and the harness lied twice about it**
+(`tools/rotate-check.mjs`, 2026-07-26). Rotating a phone re-runs Phaser's
+`create()` — the path that forced the scaffold to module scope — so it now
+has a check: portrait → landscape → portrait, playing throughout. Verdict:
+coins, steps, audio, markers and saved learning progress all survive, meter
+holds at 100, and no position ends weaker than it started.
+
+Getting there took three attempts, and the two failures were both mine:
+the first version paused tapping for 1.2s after each resize (genuine
+misses, which read as "rotation costs progress"), and the second tapped a
+fixed (200, 520) that falls outside the 390px-tall landscape viewport (so
+every tap missed the page and the meter crashed to zero). Both times the
+game was innocent. **A self-verifying project has to treat a failing check
+as a claim about the check first** — that is the standing lesson, and it
+is why each harness now documents the wrong version as well as the right
+one.
+
+**One real change came out of it**: `wasUnplayable` in `core/beats.ts`. A
+note whose *entire* hit window elapses inside a single frame gap was never
+on screen to be played, so it no longer feeds the learning model — it still
+misses visibly and still dips the meter, it just isn't taken as evidence
+about what the child knows. Scoped honestly: this is **insurance, not a fix
+for an observed bug.** Rotation was the suspected trigger and measurably is
+not one (peak frame gap 50ms rotating, 69ms backgrounded, against a 180ms
+window). It closes the band between the two guards the scene already had —
+wider than the hidden-tab check, narrower than `MASS_MISS_LIMIT` — which is
+what a moderate stall on a cheap phone looks like. Exhaustively tested to be
+inert for every frame gap up to the full window width.
+
+**Songbook blocked, not skipped**: the forest set is one song short and
+should get a fourth. It did not get one this session because this
+environment's network policy blocks outbound fetches (403 on CONNECT to
+every host), so a transcription cannot be verified note-for-note against a
+published source — the exact standard that caused the forest *This Old Man*
+to be rejected. Candidate already researched: **Here We Go Round the
+Mulberry Bush**, traditional (tune dates to 1700s London, clearly public
+domain), which in C major uses scale degrees 1/2/3/5/6/7 only — all
+naturals — and sits G4–G5, matching the forest register. *Wheels on the Bus*
+was considered and **rejected on rights**: it is attributed to Verna Hills,
+1939, which does not meet CLAUDE.md's CC0-only bar. Ship Mulberry Bush from
+a run with network access, or from a human-supplied transcription.
+
+**Audio no longer drifts away from the staff over a long session**
+(2026-07-26). Visuals run off Phaser's time (`performance.now`), audio off
+`AudioContext.currentTime` — the sound hardware's clock. Those are never
+exactly the same rate, and `AudioEngine` anchored them **once** at
+`start()` and scheduled every later pass against that original anchor, so
+the difference accumulated for as long as the session lasted. In a rhythm
+game, what you see and what you hear sliding apart is the one failure that
+ruins it. `schedule()` now re-derives the anchor on every pass, bounding
+the error to a single song instead of a whole sitting; `nowMs` became a
+required argument so there is one place that maps visual time onto audio
+time. Two new unit tests cover it, including one that moves the clocks
+apart by hand and asserts the correction is absorbed rather than carried.
+
+Honest limits on that: **the drift was never convincingly measured in a
+browser.** Five attempts gave five answers (17s, 1.2s, ±900ms scattered,
+−22s, −566ms) and every time the bug was in the instrument — CPU contention
+from my own concurrent checks, comparing the raw clock gap (which should
+grow and is harmless) instead of note-sounds-vs-note-seen, matching an
+early-resolved marker against the wrong oscillator, and indexing
+oscillators as interleaved when `scheduleLayer` emits one layer at a time.
+Reading the anchor straight out of a live `schedule()` gives ~7ms, agreeing
+with the unit tests. So the fix is shipped on the strength of the tested
+arithmetic, and **no browser sync assertion is wired up** — a check that has
+been wrong five times has not earned the right to fail a run. Headless is
+the wrong place to judge it anyway: with no audio device the clock runs
+~0.17% slow against a software sink. `tools/README.md` records the method
+for anyone picking it up.
+
+**25-minute soak: no degradation of any kind** (2026-07-26, the longest run
+yet — 150 samples, 2393 steps ≈ 153,000px, so **3.2 full dusk cycles and
+~9.6 biome loops**). fps is flat end to end (24/21/17/20/18 at the start,
+20/20/21/22/19 at the finish, min 15 — no downward trend), textures plateau
+at 118 once all eleven songs have been met, the marker list peaks at 70, and
+2110 of 2115 taps land. All eleven songs appear in the rotation. This is the
+scenario a short run structurally cannot test — a child who leaves the game
+running — and nothing drifts.
+
+**Long-session stability confirmed clean** (7-minute autoplay): fps holds
+17–23, textures plateau at 109 (bounded by the songbook — 85 note/rest
+textures plus scenery and UI, so not a leak), markers stay bounded, and
+590 of 592 taps land. An earlier run showing fps 11 and 201 misses was my
+own CPU contention from running three Chromium instances at once — a
+reminder to run long measurements alone. `autoplay.mjs` now asserts the
+texture count plateaus.
+
+**Consolidation: the engraving has its own module** (`src/render/engraving.ts`,
+2026-07-26). RoadScene had grown to 1584 lines — 46% of the codebase in one
+file, which is a real risk for autonomous runs that have to read it before
+touching it. The note and rest glyph baking moved out with its geometry
+constants: 1584 → 1485 lines in the scene, 156 in a module that has no
+access to game state and so cannot start depending on it. A glyph is a pure
+function of (name, position, note value), which is exactly what lets
+`proofsheet.mjs` check every combination at once.
+
+Proved behaviour-preserving rather than assumed: the proof sheet is
+**byte-identical** before and after (md5 `fbc8094…`), and all seven
+harnesses pass. Two things worth keeping from how that went:
+
+- The refactor **broke `proofsheet.mjs`**, which called a private method on
+  the scene. The engraving functions are now exposed on `window.engraving`
+  from `main.ts`, deliberately and with a comment, instead of tooling
+  reaching into scene internals.
+- The first "identical" result was a **false pass**: the script had crashed,
+  so the comparison ran against the previous run's leftover PNG. Delete the
+  artefact before regenerating it — otherwise a screenshot diff confirms
+  that nothing changed about an image nothing rewrote. Third instrument bug
+  of the session, same lesson each time.
+
+**Consolidation, second chunk: the scenery too** (`src/render/scenery.ts`).
+The road, biome silhouette, water-glint, star-field and signpost bakers
+moved out the same way: **RoadScene 1485 → 1325**, and across both chunks
+**1584 → 1325** with 359 lines now living in two focused render modules.
+The tile dimensions are exported from the module rather than duplicated,
+because the scene has to *place* what the module *draws* and two copies of
+those numbers would be free to drift apart.
+
+Verified by a new `tools/scenery-sheet.mjs`, which bakes all ten world
+textures into one labelled sheet — a live screenshot only ever shows the
+biome you happen to be walking through. Sheet **byte-identical** across the
+move (md5 `0126afb…`), proof sheet still byte-identical too, and all eight
+harnesses green.
+
+Note for whoever refactors next: the first attempt at this extraction used
+a regex to find method bodies and silently removed **478 lines instead of
+163** — the optional doc-comment group matched a comment far above. Caught
+by `wc -l` before anything else ran, reverted with `git checkout`. Match
+method spans by walking braces line-by-line, and check the line delta
+against what you expected before running any test.
+
+**The song title is proven to name the tune actually playing**
+(`tools/title-check.mjs`). Passes are queued a lookahead ahead of playback,
+so `announceSong` holds the title until the music reaches that song's first
+note — arithmetic with no test behind it, and getting it wrong would teach a
+false name to exactly the child who is paying attention. Every title lands
+within ~50ms of its own pass starting. Took three instrumentation attempts
+(marker-index slicing, then pairing schedule calls to titles by index, then
+finally matching each title to whichever pass was playing); the game was
+fine in all three.
+
+**The mobile gesture lockdown is asserted, not just written.**
+`index.html` has long disabled double-tap-to-zoom, pinch-zoom, the
+long-press callout and overscroll — rapid taps are the input model, so a
+browser reading two quick taps as "zoom" fights the game. It was all CSS and
+a meta tag with nothing checking it, which is exactly what a later edit
+strips without noticing. `pillar-check` now reads the computed result at
+every viewport, plus the observable consequence: the page must not scroll.
+Mutation-checked.
+
+**Backgrounding is mechanised, and Phaser's spare AudioContext is gone**
+(`tools/backgrounding-check.mjs`). "Audio resume after backgrounding" had
+been a *human* playtest item since round 1; it did not need to be. Forcing
+the suspend and observing the resume gives `running → suspended → running`,
+with the learning record force-written on the way out and sound plus meter
+fully restored on return. A real device is still needed for whether iOS
+suspends in ways Chromium does not — the question is narrowed, not closed.
+
+Writing it found something real: **Phaser's sound manager was creating a
+second, unused AudioContext** and holding it open all session. Every sound
+here is hand-rolled Web Audio, so it is disabled now
+(`audio: { noAudio: true }` in `main.ts`) — one fewer idle claim on a
+phone's audio hardware. The first version of the check grabbed *that*
+context, watched Phaser resume it, and concluded the game had failed to
+suspend.
+
+**The bundle-size pillar has a number behind it now.** CLAUDE.md asks for
+"small bundle (<5 MB)" and nothing measured it. `pillar-check` now sums
+everything the page pulls over the wire — what a phone actually downloads
+to play, rather than `du -sh dist` — and asserts the pillar. Currently
+**1.19 MB**, four times the headroom. Mutation-checked by tightening the
+threshold to 1 MB and confirming it fires, since a guard that cannot fail
+is worthless.
+
+**The no-fail promise is now asserted** (`tools/nofail-check.mjs`). Every
+other harness plays well or plays chaotically; none checked what happens to
+a child who simply is not managing. Tapping once and then doing nothing for
+45s: the meter floors at 0 and the bard stops, but the scene stays active,
+notes keep arriving so the child can rejoin whenever they like, the missed
+note is mauve (`0x8A5A5A` — red channel nowhere near dominant, per
+DESIGN.md's "nothing flashes red"), the only text on screen is the song
+title and the readouts, and nothing sounds on a miss. That last one is
+asserted via an oscillator-rate ceiling: the tune plays on regardless of
+the meter (deliberately — it is how a lost child hears where they are), so
+the test allows three layers at tempo and would catch a buzzer added on top.
+
+**Deep night proven not to dim the teaching surface**
+(`tools/dusk-check.mjs`). The art direction promises the dusk cycle darkens
+the world but never the bard or the notation; nothing asserted it. At the
+deepest point of the cycle the sky moves 2759214 → 794387 and the
+road/scenery tint drops, while note tint, note alpha, staff line colour and
+alpha, and clef tint and alpha are all **byte-identical**. The check asserts
+both halves — without confirming the world actually darkened it could pass
+just because the cycle had stopped running.
+
+**Mute and the keyboard now have coverage** (`tools/input-check.mjs`).
+Every other harness taps the middle of the canvas, so these two paths had
+none at all — and mute is the control a *parent* reaches for. Verified that
+muting zeroes the master gain rather than only changing the icon (the icon
+can lie; the gain cannot), that the slash appears, that pressing mute is
+never scored as a beat even though the button sits over the playfield, that
+the walk keeps earning while muted, that unmuting restores gain, and that
+the spacebar plays (19 hits, 0 misses). All good, no code changes needed.
+
+**Mashing is safe, and earns credit it hasn't earned**
+(`tools/mash-check.mjs`). Every other harness plays correctly — on the beat,
+one tap per note — which is the least likely thing a five-year-old does. At
+38 taps/sec for a minute the game is fine: markers and textures bounded,
+fps 36, saved record valid. Taps that hit nothing cost nothing — only 80
+encounters and 461 oscillators from 2274 taps, so a stray tap neither feeds
+the model nor makes a sound.
+
+The honest caveat: those 80 were all *hits* with zero misses, because
+spraying taps lands on every note. The model reads that as familiarity and
+will fade letters for a child who is not looking at the staff. **Left alone
+deliberately** — DESIGN.md scopes the model as a dosage schedule driven by
+exposure rather than an assessment, and the design self-corrects: letters
+faded without being learned mean the child struggles next time they play
+properly, the meter drops, and full support returns instantly. A
+burst-detector would be a new system guarding something the existing one
+already absorbs.
+
+**The moon has craters** — the last flat thing in the world. Everything
+else carries shape (gables and lit windows, conifers and fireflies, a tent
+and a campfire); the moon was a plain disc and it is the largest object in
+the sky. Baked as a texture now, craters only slightly darker than the disc
+and clear of the rim, so it still reads as a light source rather than as
+detail to study. In `render/scenery.ts`, covered by `scenery-sheet.mjs`.
+
+**Coming back after days away is verified end-to-end**
+(`tools/timeaway-check.mjs`). The decay arithmetic was unit-tested but the
+round trip through real `localStorage` with a real backdated timestamp was
+not — and that path fails silently and unkindly if it fails at all. Two
+sittings of practice, then a backdated record: well-practised positions
+held, a mid-strength one decayed and was handed a band of help back, no
+record was ever wiped, and a deliberately corrupted record starts the game
+fresh rather than breaking it. The check asserts a gap can only ever return
+support, never remove it, and never raises a position's `peak`.
+
+Two traps in writing it, both documented in `tools/README.md` because
+anything touching this storage will hit them: **a reload force-saves** (it
+fires `visibilitychange` → hidden, the scene's own save path, so backdating
+and then reloading writes the live state and a fresh timestamp over the
+backdate and the gap never happens), and **saves are throttled to 5s** (so
+a baseline read straight after playing is stale, which made a gap look as
+though it had *added* practice).
+
+Deviation from CLAUDE.md worth flagging: this is more than "exactly ONE
+roadmap task" — it is a model, a persistence layer, a songbook swap and a
+harness. That rule governs the scheduled autonomous runs; this was an
+interactive session with an explicit human direction to build the thing.
+
+## Previous status (v0.3 and earlier sessions)
+Trimmed during the 2026-07-26 consolidation. The v0.3 session (the
+songbook, note values, rests, and the `tools/` self-verification harness),
+the art-direction sessions, and every scheduled run before them are
+written up in their ROADMAP done-entries and the `Recent runs` log below.
+`tools/README.md` documents the harnesses.
+
+## Process notes for future runs
+
+- **Visual verification is possible and expected for visual work.**
+  Pattern: `npm run build && npm run preview` (port 4173), then a
+  Playwright script in the scratchpad (NOT a project dependency — keep
+  package.json clean) with
+  `chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })`,
+  screenshot, and actually look at the image. Tap input can be simulated
+  with `page.mouse.click` swept across beat offsets.
+- **This environment cannot reach the open internet.** Outbound fetches get
+  403 on CONNECT to every host — including `at3gk.github.io`, so the *live*
+  deployed site cannot be checked from here; the green `Test, build, deploy`
+  run on `main` is the only production signal available. Web *search* does
+  work (it goes through the model's own API), but it returns titles and
+  summaries, not page contents. Don't spend a run re-testing this.
+- **Far-state screenshots** (later biomes, dusk states, wrap points):
+  temporarily sed the relevant constants down (transition distances,
+  `DUSK_CYCLE_PX`, `missDrain` → 0 so the bard never stops), `npx vite
+  build`, screenshot, then `git checkout` / sed back before committing.
+  The rendering path exercised is identical; shipped constants stay
+  untouched. Always run `git diff --stat` afterward to prove it.
+- **This session's PR cadence** (if working interactively again): commit
+  per task on the working branch, PR to main, enable auto-merge (squash),
+  merge origin/main back after each squash lands, repeat. Expect conflicts
+  in STATE/ROADMAP against scheduled runs landing in parallel — and expect
+  ROADMAP *task-number collisions*, since a scheduled run will happily
+  claim the next number while you hold it too. Renumber yours; don't
+  renumber theirs (theirs is already merged and referenced).
+- **The checks run in place now.** `export
+  PLAYWRIGHT_PATH=<dir>/node_modules/playwright`, then
+  `node tools/verify-all.mjs` from the repo. They used to have to be copied
+  next to the Playwright install, and running the copies is how this session
+  twice tested a stale script — once letting a crashed run "prove" nothing
+  had changed. Artefacts land in the working dir and are gitignored.
+- **Run the checks with one command**: `node tools/verify-all.mjs` (all
+  15, ~20 min) or `... quick` (the fast eight, ~5 min), from the directory
+  where Playwright is installed, with `npm run preview` up. It runs them
+  serially on purpose — several Chromium instances starve each other, and a
+  long run measured under that contention reported 11fps and a third of its
+  taps missing against a game that was completely fine.
+- **When a check fails, suspect the check first.** This is the single most
+  useful thing the 2026-07-26 session learned, and it learned it seven
+  times. A harness that paused tapping during a rotation; one that tapped a
+  fixed point outside a landscape viewport; one comparing a marker to the
+  wrong oscillator; one indexing oscillators as interleaved when they are
+  grouped by layer; one comparing against a leftover PNG from a crashed
+  run; one whose baseline was a stale throttled save; one measuring under
+  its own CPU contention. Every one produced a confident, specific,
+  plausible failure. None of them was the game. Before changing code to fix
+  a failing check, make the check prove it can see its own success case.
+- **Do not commit an agent's working tree while it is measuring.** Two
+  concrete costs, both from 2026-07-30. A songboard agent's `WEATHER_DEPTH = 0`
+  was committed and described as cautious groundwork; it was the *control* half
+  of an A/B, so the commit shipped the feature switched off under
+  documentation saying it was on. And a figure agent's baseline was silently
+  corrupted — it read its "before" state with `git show HEAD:...`, and HEAD had
+  moved under it, so its control returned byte-identical numbers to its
+  variant. It caught that; it might not have. If a tree must be committed
+  mid-run, diff it and describe only what the diff shows, and name any constant
+  that is an A/B control so a reader cannot mistake it for a shipped value.
+- **Describe a commit from its diff, not from the brief that requested it.**
+  Commit 8ca52c7's message claims a glow-pool fix that is not in the commit and
+  was never needed. The work had already shipped; the agent measured it and
+  correctly refused to redo it. Writing the message from the task description
+  rather than from `git diff` put a false statement in permanent history.
+- **A pinned scanline is a check that goes stale silently.** Several of the
+  scratchpad measuring scripts (`bands.mjs`, `c6-hist.mjs`) read depth bands
+  at *pinned* image rows — a row number chosen when the script was written
+  because the horizon happened to sit there. Move a camera and the pin cuts a
+  different strip of world, so the instrument reports a change the render
+  never made. Wave 9 moved `resting.side` and `WIDEN_RISE_SHARE`, and against
+  the pins the tablet frame looks like it collapsed from 2.79 to 2.02 stops;
+  with the horizon *detected* it went 2.44 to 2.27 with every band brighter.
+  Before believing any band comparison that spans a camera change, re-run with
+  horizon detection (copy the shot to a filename the PINNED table does not
+  list). This is the "suspect the check first" rule again, in the one form
+  that survives a passing self-check: the instrument is correct, and pointed
+  at the wrong pixels.
+- **Verify behaviour, not just green tests.** `tools/autoplay.mjs` plays
+  the game and checks every pitch it hears; `tools/learning-check.mjs`
+  plays *well and then badly* to prove the letter-fading model both fades
+  and restores. Run both after touching the schedule, the songbook, the
+  audio or the scaffold. Note that autoplay is a *perfect* player, so it
+  structurally cannot detect a broken return-on-struggle path — that is
+  exactly why the second harness exists.
+- **For a feature with real design risk, design it in a workflow first.**
+  The v0.4 learning model was specced by parallel agents (pedagogy model,
+  songbook familiarity audit, code-integration map) and then attacked by
+  two adversarial critics before a line was written. The critics earned it:
+  they found that a revealed letter would only be visible ~400ms *while
+  fading* (arithmetic I had not done), that a single miss could flip a
+  support band, and that the session cap was gross rather than net. All
+  three were real, and all three were cheaper to fix on paper.
+
+## Recent runs
+- Run 0 (2026-07-15): Wrote DESIGN.md (concept: single-lane rhythm-tap
+  mechanic keeps a wandering bard walking down a procedurally-sequenced
+  road; cozy, no-fail tone) and ROADMAP.md (12 tasks to v0.1, one per
+  run). No code written per vision-run instructions in CLAUDE.md.
+- Run 1 (2026-07-15): Scaffolded the project — `package.json` (phaser,
+  vite, typescript, vitest), `vite.config.ts` (base `/WanderingBardGame/`),
+  `tsconfig.json`, `index.html`, `src/main.ts` booting a `Phaser.Game`
+  with one empty `RoadScene`, and a sanity Vitest test. Verified with a
+  headless Playwright smoke check against `vite preview`: canvas renders,
+  no console errors (aside from an expected missing-favicon 404).
+  PR #1 (Run 0) had merged onto `main` by this run despite the branch-
+  protection blocker logged below — the code and STATE.md disagreed, so
+  the blocker note is now cleared per CLAUDE.md ("trust the code").
+  Re-verify next run whether new PRs still hit that 405; re-log under
+  **Blocked on human** if it recurs.
+- Run 2 (2026-07-16): Added the beat timing core per ROADMAP task 2 (see
+  Current status above). No Phaser/rendering work this run — deliberately
+  scoped to the pure-logic module so the one core mechanic is right and
+  tested before it touches rendering.
+- Run 3 (2026-07-16): Rendered the lane per ROADMAP task 3 (see Current
+  status above). Deliberately left the song meter out of this run — task
+  3 is scoped to rendering + input + per-beat hit/miss feedback only,
+  the meter is task 4.
+- Run 4 (2026-07-16): Added the song meter UI per ROADMAP task 4 (see
+  Current status above). Deliberately left the bard sprite out of this
+  run — task 4 is scoped to the meter and the exposed `walking` state
+  only, the sprite is task 5.
+- Run 5 (2026-07-16): Added the placeholder bard sprite and walk/idle
+  animation per ROADMAP task 5 (see Current status above). Deliberately
+  left the road static — no scrolling background yet, task 6's scope.
+- Run 6 (2026-07-17): Added the scrolling ground band per ROADMAP task 6
+  (see Current status above). Deliberately kept it a single flat
+  procedural band with no biome art/parallax — that's task 9's job once
+  distance-traveled tracking exists.
+- Run 7 (2026-07-17): Added the procedural Web Audio base loop per
+  ROADMAP task 7 (see Current status above). Deliberately kept it a
+  single continuous layer with no meter-driven fading — that's task 8's
+  scope once the base loop's shape is settled.
+- Run 8 (2026-07-17): Added meter-driven audio layering per ROADMAP task
+  8. Deliberately kept it to two placeholder layers with eyeballed
+  voicings/thresholds — tuning is a playtest item, not this run's scope.
+- Run 9 (2026-07-18): Added the distance-driven second biome and
+  crossfade per ROADMAP task 9 (`src/core/distance.ts`,
+  `src/core/biome.ts`, both pure/tested; `RoadScene` crossfades sky color
+  and a second road `TileSprite` via `biomeBlendRatio`). Deliberately
+  kept it to two biomes with a palette-only difference (sky + road
+  colors) — no new scenery elements/parallax layers, that's beyond this
+  task's scope and risks drift per CLAUDE.md. `npm test` 34 tests green,
+  build green (~1.22 MB). Transition timing/palette flagged for human
+  playtest (see below).
+- Run 10 (2026-07-18): Consolidation pass (see Current status above).
+  Fixed the hit-line/bard-head overlap; no other changes. Next run
+  resumes feature work at task 11.
+- Run 11 (2026-07-18): Added the coin readout per ROADMAP task 11 (see
+  Current status above). Deliberately kept it a pure accumulate-only
+  readout of the meter ratio — no per-hit bonus, no spend loop, matching
+  DESIGN.md's framing of coins as a readout, not a separate system.
+- Run 12 (2026-07-19): v0.1 ship check per ROADMAP task 12. No code
+  changes — verified every DoD item against a real production build,
+  found nothing unmet. `v0.1` tag pending the squash-merge landing on
+  `main` (see Blocked on human below for why).
+- Run 13 (2026-07-19): Unbounded beat schedule per ROADMAP task 13.
+  `RoadScene.appendBeatBatch` generates another 300-beat batch once the
+  current one's runway drops under 15s; `AudioEngine.extend` mirrors this
+  on the audio side so the backing loop never runs out of scheduled notes.
+  Resolved markers are now filtered out of `RoadScene.markers` each frame
+  instead of accumulating forever. `npm test` 41 tests green (2 new),
+  build green.
+- Run 14 (2026-07-19): Third biome + generalized N-biome transitions per
+  ROADMAP task 15. DESIGN.md's Concept names three vignettes but only two
+  biomes existed; `biomeBlendRatio` (hardcoded to 2 biomes) became
+  `biomeBlendAt`, which walks a `BiomeTransition[]` array to support any
+  number of biomes. Added "Riverside Camp" as the third. ROADMAP task 14
+  (human playtest pass) was next in line but needs an actual human;
+  logged as blocked and this run's slot went to the biome work instead.
+  `npm test` 44 tests green (5 new), build green.
+- Run 15 (2026-07-20): Per-biome base-loop melodic pattern per ROADMAP
+  task 16. Added `LoopLayer.patternByBiome` (manifest.ts) so the base
+  loop's melody now differs per biome (village/forest/riverside each get
+  their own 4-semitone pattern); `AudioEngine.start`/`extend` take a
+  `biomeId` and resolve the pattern for whichever biome is current when a
+  batch is scheduled. Deliberately scoped to the base loop only (not
+  tempo, not the harmony/sparkle layers). Noted a batch-boundary
+  quantization caveat (pattern switch lags the visual crossfade by up to
+  a full batch) — became task 17. `npm test` 49 tests green (5 new),
+  build green.
+- Run 16 (2026-07-20): Tightened the batch-boundary quantization flagged
+  by Run 15, per new ROADMAP task 17. Shrunk `RoadScene.BEAT_BATCH_SIZE`
+  from 300 to 32 — pure constant tuning, no new logic — cutting the
+  worst-case lag between a biome's visual crossfade and its audio pattern
+  switch from ~187s to ~20s. Deliberately didn't attempt sample-exact sync
+  (rescheduling in-flight notes mid-batch); that's real synchronization
+  work and its own task if wanted. `npm test` 49 tests green (unchanged),
+  build green.
+- Run 17 (2026-07-20): Per-biome patterns for the `harmony`/`sparkle`
+  layers per new ROADMAP task 18. Task 16 had scoped biome patterns to
+  `baseLoop` only; the resolve/schedule plumbing was already
+  layer-generic, so this run was manifest data (each layer's biome
+  override = its own pattern + the same diff `baseLoop` uses for that
+  biome) plus a consistency test, no logic changes. `npm test` 52 tests
+  green (3 new), build green.
+- Run 18 (2026-07-21): Fixed the persistent favicon 404 per new ROADMAP
+  task 19. Every headless verification note since Run 1 carried the same
+  "expected missing-favicon 404" caveat; added an inline SVG data-URI
+  favicon to `index.html` (no new asset file) so it's actually gone. Also
+  trimmed the old Run 12 verbose "Previous status" writeup from this file
+  (its content is fully captured in this Recent runs bullet already) to
+  keep STATE.md from growing unbounded — not a full consolidation pass,
+  just routine hygiene. `npm test` 52 tests green (unchanged), build
+  green.
+- Run 19 (2026-07-21): Mute toggle per new ROADMAP task 20 (see Previous
+  status above). `AudioEngine` gained a shared `masterGain` node all
+  layers route through plus `setMuted`/`isMuted`; `RoadScene` added a
+  small interactive icon (top-left) that toggles it, excluded from
+  beat-hit handling via Phaser's `currentlyOver` pointerdown list. No
+  prior queued task was actionable (task 14 still blocked), so this run
+  added a new one rather than stalling.
+- Run 20 (2026-07-21): Consolidation pass (see Previous status above). No
+  vision drift or code rough edges found after a full read-through; fixed
+  a chronological-ordering bug in this file's own Recent runs log and
+  trimmed five redundant "Previous status" write-ups (Runs 13–18) that
+  fully duplicated their own Recent runs bullets. No code changes.
+- Run 21 (2026-07-22): Distance-walked readout per new ROADMAP task 21
+  (see Previous status above). `RoadScene.updateDistanceReadout()` shows
+  `distancePx` converted to "N steps" (via `ROAD_TILE_WIDTH`) bottom-left —
+  DESIGN.md names distance as a readout alongside coins/scenery, but
+  nothing had surfaced it to the player since Run 9. Pure rendering, no
+  new core module, no new dependency. `npm test` 52 tests green
+  (unchanged), build green.
+- Run 22 (2026-07-22): First-tap onboarding hint per new ROADMAP task 22
+  (see Previous status above). A small "tap to the beat" text above the
+  hit line, shown from scene start and faded out 400ms after the
+  player's first input (hit or miss). Considered and ruled out clamping
+  per-frame `delta` for backgrounded-tab catch-up first — Phaser's
+  `TimeStep.smoothDelta` already handles that by default. Pure rendering,
+  no new core module, no new dependency. `npm test` 52 tests green
+  (unchanged), build green.
+- Run 23 (2026-07-22): Resume audio after tab backgrounding per new
+  ROADMAP task 23 (see Previous status above). `AudioEngine.resume()`
+  re-resumes a suspended `AudioContext`; `RoadScene` calls it from a
+  `document.visibilitychange` listener so a backgrounded-then-returned
+  tab doesn't stay silent for the rest of the session. Pure correctness
+  fix, no new core module, no new dependency. `npm test` 52 tests green
+  (unchanged), build green.
+- Run 24 (2026-07-23): Captured the Space key per new ROADMAP task 24 (see
+  Previous status above). `keydown-SPACE` triggered `handleInput()` but was
+  never captured, so the browser's default Space action (page scroll)
+  fired alongside every keyboard beat hit. Added
+  `this.input.keyboard.addCapture('SPACE')`. One-line fix, no new
+  dependency. `npm test` 52 tests green (unchanged), build green.
+- Run 25 (2026-07-23): Padded the mute icon's touch target per new ROADMAP
+  task 25 (see Previous status above). The icon's interactive hit area
+  matched its 20px visual size, well under the 44x44 CSS px minimum both
+  WCAG 2.5.5 and Apple's HIG call for — a measurable gap, not a feel
+  question, so it didn't need to wait on task 14. Added a 44x44
+  `Phaser.GameObjects.Zone` as the actual tap target; the icon itself is
+  visually unchanged. `npm test` 52 tests green (unchanged), build green.
+- Run 26 (2026-07-23): Locked down mobile tap-gesture CSS on `#game` per
+  new ROADMAP task 26 (see Current status above). `user-scalable=no`
+  alone doesn't reliably block pinch/double-tap-zoom on modern mobile
+  Safari, and this game's whole input model is rapid same-spot taps —
+  exactly what triggers it, plus the long-press text-selection callout.
+  Added `touch-action: none` and the `user-select`/`-webkit-touch-callout`
+  trio; no JS changes, Phaser's own pointer handling is unaffected.
+  `npm test` 52 tests green (unchanged), build green.
+- Run 27 (2026-07-24): Fixed a phantom ~5px mobile scroll gap per new
+  ROADMAP task 27 (see Current status above). Phaser's `<canvas>` defaults
+  to `display: inline`, reserving descender space below itself the same
+  way a line of text would, which made the page taller than the viewport
+  and vertically scrollable despite `#game` being sized to exactly
+  `100vh`. Added `#game canvas { display: block; }`. Also deduplicated an
+  accidental repeated task-25 entry in ROADMAP.md. `npm test` 52 tests
+  green (unchanged), build green.
+- Run 28 (2026-07-24): Fixed a backing-loop/visual-beat phase
+  misalignment per new ROADMAP task 28 (see Previous status above).
+  `AudioEngine.start()` anchored its note-scheduling clock to "the real
+  moment of the first tap" instead of the visual schedule's own
+  scene-creation-time zero, so the backing loop was out of phase with the
+  beat markers by the player's own reaction time on every playthrough.
+  Added a `nowMs` param to `start()` to anchor correctly and skip
+  already-passed notes; added `AudioEngine.test.ts` (previously
+  uncovered). `npm test` 56 tests green (4 new), build green.
+- Run 29 (2026-07-24): `100dvh` for `#game`'s height per new ROADMAP task
+  29 (see Previous status above). `100vh` alone sizes against mobile
+  Safari/Chrome's largest-possible viewport rather than the actually-
+  visible one on cold load — the classic mobile "100vh" gap, same family
+  of real-viewport bug as tasks 26/27. Pure CSS, no new dependency.
+  `npm test` 56 tests green (unchanged), build green.
+- Interactive session (2026-07-25): ROADMAP task 14 (human playtest pass)
+  executed and closed (see Current status above). Human verdicts folded
+  into `HIT_WINDOW_MS`, `hitGain`, all `manifest.ts` patterns, beat-derived
+  walk/scroll constants, and `biome.ts` palettes; art-direction feedback
+  became ROADMAP tasks 30–32; PLAYTEST.md added (round-1 answers recorded,
+  round-2 checklist for the retuned values). Also re-confirmed the v0.1
+  tag push is impossible from this environment (still HTTP 403; GitHub
+  MCP has no tag/release write call). `npm test` 56 green, build green.
+- Overnight session, task 30 (2026-07-25): bard sprite & walk-animation
+  overhaul per ROADMAP task 30 (human granted an extended interactive
+  session to execute the art tasks directly). Placeholder rectangles →
+  multi-part procedural character (legs/tunic/lute/capped head with
+  feather) with beat-synced walk (legs + per-footfall bob + stride rock on
+  a separate upper-body container so feet stay grounded) and a
+  breathing/lute-sway idle. Verified with headless screenshots of both
+  anim states, not just green tests. `npm test` 56 green, build green.
+- Overnight session, task 31 (2026-07-25): per-biome background scenery
+  per ROADMAP task 31. Silhouette band between sky and road at 0.45x
+  parallax, crossfaded biome-to-biome like the road; village houses with
+  lit windows / forest conifers with fireflies / riverside water-tent-
+  campfire-reeds. `Biome` gained `sceneryColor`/`sceneryAccent`. All
+  three biomes screenshot-verified (throwaway build with shortened
+  transitions; shipped constants untouched). `npm test` 56 green, build
+  green.
+- Overnight session, task 32 (2026-07-25): art-style consolidation per
+  ROADMAP task 32. Beat markers → tintable eighth-note glyphs (cream /
+  green hit-pulse / dimmed mauve miss), coin icon → note-stamped coin,
+  mute toggle → note glyph, hit line → rounded caps; DESIGN.md gained an
+  "Art direction" section codifying the language (world cool and quiet;
+  warmth belongs to the bard and the music). Screenshot-verified with a
+  live tap run (hit pulse captured). `npm test` 56 green, build green.
+- Overnight session, tasks 33+34 (2026-07-25): the player's own note +
+  night sky. `AudioEngine.pluck(biomeId, beatIndex)` — a hit immediately
+  plays that beat's melody note +1 octave at 1.6x base gain (tapping was
+  previously silent in a music game); misses stay silent per DESIGN.md
+  tone; mute covers it via master gain; 3 new tests. Night sky: sparse
+  fixed-position cream starfield at 0.08x parallax + still moon with soft
+  glow — road 1x / scenery 0.45x / stars 0.08x gives the scene depth.
+  New ROADMAP arc queued for future runs ("the road loops home", tasks
+  35–38). `npm test` 59 green, build green, screenshot-verified.
+- Overnight session, task 35 (2026-07-25): the road loops home.
+  `biomeBlendAt` wraps when the transition list is as long as the biome
+  list (distance modulo cycle length; shorter lists keep the clamping
+  behavior). Third transition added (riverside → village, 14000–16000px)
+  → village → forest → riverside → village → … forever, every cycle
+  identical. 5 new tests (64 total); wrap screenshot-verified via the
+  shortened-transitions throwaway build. `npm test` 64 green, build
+  green.
+- Overnight session, task 36 (2026-07-25): slow dusk cycle
+  (`src/core/dusk.ts`) — cosine brightness curve, one cycle per three
+  biome loops, max 22% darken; world (sky/scenery/road) darkens while
+  stars/moon brighten; bard + notation never darkened per art direction.
+  7 new tests (71 total); deep-night screenshot-verified via shortened-
+  cycle throwaway build. `npm test` 71 green, build green.
+- Run 31 (2026-07-25, scheduled): strum on hit per new ROADMAP task 39,
+  promoted from the idea backlog since task 38 (round-2 playtest) is
+  still blocked on human. See ROADMAP task 39's done entry for the full
+  writeup. `npm test` 71 green (unchanged), build green, headless
+  screenshot confirmed the strum tween with zero console/page errors.
+- Run 33 (2026-07-25, scheduled): signposts at transitions per new
+  ROADMAP task 52, promoted from the idea backlog since nothing else was
+  queued (task 38, round-2 playtest, is still blocked on human). See
+  ROADMAP task 52's done entry and Current status above for the full
+  writeup. `npm test` 157 green (5 new), build green, screenshot-verified.
+- Run 34 (2026-07-26, scheduled): coin chime per new ROADMAP task 78,
+  promoted from the idea backlog after re-checking both *Blocked on human*
+  items (still blocked — see below) and finding no playtest answer waiting.
+  `AudioEngine.chime()` sounds a quiet, fixed sine two octaves above the
+  root on every 25th coin; `core/coins.ts` gained the pure
+  `crossedCoinMilestone` to detect a whole-coin threshold against
+  continuous fractional accrual. New `tools/coinchime-check.mjs` (added to
+  `verify-all`'s fast set) hooks oscillator creation the way
+  `nofail-check`/`autoplay` do to confirm it headlessly, since nothing here
+  can listen. `npm test` 215 green (8 new), build green, `verify-all quick`
+  (9 checks) green.
+- Interactive session (2026-07-26, overnight): the long one. Shipped as
+  PRs #57–#84, each squash-merged to `main`, every deploy green.
+
+  **Product changes** (the parts a player can meet): two verified songs
+  (*This Old Man*, *The Itsy Bitsy Spider*); **one real bug fixed** — the
+  audio clock was anchored once at `start()` so the tune drifted off the
+  staff over a long sitting, and is re-anchored per pass now; `wasUnplayable`
+  keeps a note whose whole hit window vanished in one frame gap out of the
+  learning model; the moon got craters; and Phaser's unused second
+  AudioContext was disabled.
+
+  **Structure**: texture baking split into `render/{engraving,scenery,ui}`,
+  RoadScene 1584 → 1264, each move proved byte-identical by a deterministic
+  texture sheet.
+
+  **Verification**: 4 harnesses → 16, one runner (`verify-all`), runnable in
+  place from the repo. New ground covered — the design pillars across nine
+  viewports down to 320px, the bundle-size number, phone rotation, days
+  away, mashing, mute and the keyboard, backgrounding, the gesture lockdown,
+  legibility at deepest night, the no-fail promise, and that the song title
+  names the tune actually playing. Tests 179 → 207.
+
+  **Corrected two claims the docs were making**: "fade the prompt, never the
+  answer" was credited to reveal handlers that provably never fire (the real
+  guarantee is stronger and is now a pinned invariant), and two PLAYTEST
+  items asked about machinery replaced in v0.3.
+
+  The through-line: **around a dozen "bugs" this session were in the check,
+  not the game.** A harness that paused its own taps; one tapping outside a
+  rotated viewport; one comparing against a leftover PNG from a crashed run;
+  one whose reload force-saved over the state being tested; the wrong
+  AudioContext; an oscillator list indexed as interleaved when it is grouped
+  by layer. The game was consistently in better shape than the instruments
+  measuring it. Every harness now documents its wrong versions next to its
+  right one — that write-up is the most useful thing this session produced
+  for whoever runs next.
+- Run 35 (2026-07-26, scheduled): wired the headless checks into CI, per
+  new ROADMAP task 79 — see its done-entry for the full writeup. Short
+  version: all 18 `tools/*.mjs` scripts hardcoded this environment's own
+  Playwright browser path, which is why they were never run in CI; removed
+  the hardcode (Playwright resolves its own browser without it, verified
+  both here and via a deliberate version-mismatch check), and added
+  `.github/workflows/headless-checks.yml` — the fast nine run after every
+  merge to `main`, informational only (`continue-on-error`, not a required
+  check), since this environment can't watch a real Actions run land to
+  confirm it end-to-end. `npm test` 215 green (no game code touched),
+  build green, quick suite 9/9 green on a clean local re-run (one
+  `dusk-check` flake on a loaded run didn't reproduce — see task 79).
+  **Confirmed (2026-07-26, same day, follow-up check)**: `headless-checks.yml`'s
+  first-ever run (on the merge commit, run #1) came back green on a real
+  GitHub-hosted runner — Playwright installed fresh, Chromium downloaded
+  fresh, all 9 quick checks passed
+  (https://github.com/at3gk/WanderingBardGame/actions/runs/30210381321).
+  The step itself succeeded (not just masked by `continue-on-error`), so
+  the portable-browser-resolution fix holds outside this environment too.
+  Nothing further needed here.
+- Run 36 (2026-07-26, scheduled): resolved ROADMAP task 92 (see its done
+  entry) rather than shipping game code — the previous PR (#107) had
+  already merged onto `main` by the time this run started, and the
+  designated working branch was reset onto it fresh
+  (`git checkout -B <branch> origin/main`), per this project's own
+  merged-PR-restart convention.
+  Re-checked both standing blockers (unchanged) and found `headless-checks.yml`
+  now has **19/19 green runs** since it landed — a real pattern, not the
+  single data point task 79 had. But turning that into an actual required
+  merge gate needs GitHub branch-protection configuration, and the GitHub
+  MCP toolset available here has no call that writes branch-protection
+  rules — confirmed by scanning the full tool list, same shape of gap as
+  the missing tag/ref-write call. Logged as a new Blocked on human item
+  below rather than guessed at. Also weighed and rejected adding a
+  `pull_request` trigger for pre-merge-only visibility: GitHub holds a PR
+  non-mergeable while any attached check is still running regardless of
+  whether it's required, so that would add several minutes to every merge
+  in the three-times-daily cycle for a check nobody watches live between
+  runs — a real cost to the pipeline's cadence for no real benefit here.
+  `headless-checks.yml` is unchanged. `npm test` 254 green (unchanged),
+  build green — re-confirmed as a baseline, no code touched this run.
+- Run 37 (2026-07-27, scheduled): resolved ROADMAP task 104 (see its done
+  entry). Both standing blockers re-checked and unchanged (forest-song
+  fetch still 403s; GitHub MCP toolset still has no tag/ref-write or
+  branch-protection-write call), no playtest answer had arrived, and the
+  idea backlog is down to one phone-dependent item — so this run fixed what
+  the re-check itself turned up instead of inventing new scope: the root
+  `README.md` and `.github/workflows/headless-checks.yml` both still
+  quoted "seventeen checks" / "the fast nine", stale since task 79 first
+  wired CI — four checks landed since (`hud-check`, `ground-check`,
+  `bard-check`, `seam-check`) and were never counted, even though
+  `tools/README.md` and `verify-all.mjs` already had the right numbers (24
+  total, 14 quick). Corrected both. No game code touched; `npm test` (279
+  green) and `npm run build` (1.27 MB) reconfirmed, and the full 14-check
+  quick suite run once end-to-end to confirm the re-check found no
+  regression: all 14 green, no drift.
+- Run 38 (2026-07-27, scheduled): resolved ROADMAP task 105 (see its done
+  entry). Investigated a candidate tween leak in the songbook picker
+  (`openPicker`/`closePicker`, same missing-`killTweensOf` shape as #125's
+  practice-staff bug) and mutation-tested it away rather than shipping a
+  speculative fix — the picker's fades are one-shot and finish on schedule
+  even orphaned, unlike #125's `repeat: -1` breathing tween. Shipped
+  nothing; `RoadScene.ts` unchanged. `npm test` 279 green, build green,
+  reconfirmed as a baseline.
+- Run 39 (2026-07-27, scheduled): resolved ROADMAP task 107 (see its done
+  entry and Current status above for the full writeup). Split the songbook
+  picker overlay into `src/scenes/picker.ts` — the consolidation this file
+  had flagged as the obvious next one, `RoadScene.ts` having regrown to
+  2275 lines since task 66. `npm test` 279 green (unchanged), build green
+  (1.27 MB, unchanged), full 14-check quick suite plus `songpick-check`
+  green with zero regressions.
+- Run 40 (2026-07-28, scheduled): resolved ROADMAP task 108 (see its done
+  entry and Current status above). Tested the "a resize re-runs `create()`"
+  assumption five pieces of documentation asserted flatly and found it does
+  not hold in headless Chromium: zero additional `CREATE` events across two
+  rotations, same scene instance and GameObjects throughout. Kept the
+  defenses it produced (cheap insurance against a real device behaving
+  differently) but corrected the docs and pinned the count as an assertion
+  in `rotate-check.mjs`. `npm test` 279 green (unchanged), build green,
+  full 14-check quick suite green.
+- Run 41 (2026-07-28, scheduled): resolved ROADMAP task 109 (see its done
+  entry and Current status above for the full writeup). Split the
+  free-play staff out of `RoadScene.ts` into `src/scenes/freePlayOverlay.ts`
+  — the "real first piece" task 108 left as legitimate-but-unscoped work.
+  `RoadScene.ts` 2172 → 1838 lines. `npm test` 279 green (unchanged), build
+  green (1266.81 KB vs 1267.23 KB), full 14-check quick suite plus
+  `songpick-check`, `rotate-check` and `seam-check` green with zero
+  regressions. Caught and fixed one transcription slip (a tween option
+  misread off a truncated file read) before it ever reached a check.
+
+- **Session close, 2026-07-27 small hours (human-directed, PRs #115–#122).**
+  Asked for a polish pass on art, animation and the game. It found three
+  bugs that were live rather than cosmetic, all of them invisible in
+  landscape on a desktop-ish window and all of them passing every check:
+
+  1. **The practice staff was drawn at alpha 0** — the entire second way
+     to learn, invisible on the deployed site since its lay-in animation
+     shipped. Two fade-ins ran back to back; the second read the zeros the
+     first had just written, took them for each part's *target*, and
+     tweened 0 to 0. Both halves correct alone.
+  2. **The songbook and lute buttons were under the meter** on every
+     portrait phone. Buttons counted pixels from the left; the meter took
+     60% of the width and centred itself; nothing had asked those rules to
+     agree, and they only do on a wide screen.
+  3. **The road ran off the bottom in landscape**, 48px on a 568x320
+     screen, leaving 12 of its 60px and the bard cut off at the shins.
+
+  Also shipped: a fifth parallax plane (the near verge at 1.35, the first
+  thing in the game that moves faster than the road) over real earth,
+  because below the road there had only ever been the camera's background
+  colour — the sky. A scrim behind the practice staff. The meter handed
+  cream back to the notation and took gold, and its five staff lines were
+  made to resolve as lines rather than a smear (18px bar, half-pixel
+  offsets). The bard eases in and out of walking instead of snapping every
+  limb to neutral on the frame the meter crossed its threshold.
+
+  Three new harnesses, and the reason each exists is the same: nothing had
+  ever asserted the thing it covers. `hud-check` (chrome geometry and that
+  each button does its own job), `ground-check` (the bard's real rendered
+  bounds land on a visible road at eight viewports), `bard-check` (start,
+  stop, rest and breath), `seam-check` (mute x practice, tab-away x
+  practice, rotation x the ground — all three passed first time, which is
+  why they are worth holding still).
+
+  What to carry forward:
+  1. **If a feature's purpose is visual, assert something visual.** The
+     practice staff passed every behavioural assertion in `freeplay-check`
+     while being completely invisible. Ink, contrast, and geometry against
+     real rendered bounds are what would have caught it — and do now.
+  2. **A fixed pixel offset hung off a proportional anchor is this
+     codebase's recurring bug.** Three instances so far (free-play staff,
+     top bar, lane-to-ground). Each moved into `core/` as testable maths.
+     Grep for the pattern before adding a fourth.
+  3. **Run the check suite quiet.** Two Playwright suites at once fails
+     `autoplay` on frame timing and reads exactly like a regression.
+  4. **A visual check is easy to write wrong and it will still pass.**
+     `bard-check` took four tries and every wrong version was green:
+     per-frame delta (frame-rate dependent), triggering the state change
+     from Node (missed the 150ms window entirely), scanning the whole
+     sample (measured an ordinary walk-cycle crossing and called it the
+     stop — that one passed against a build with the ease cut to 1ms), and
+     not holding the meter up (the bard had already stopped before the
+     sample began). Mutation-test every new check against the fault it
+     exists to catch, before believing a green.
+
+- **Session close, 2026-07-26 evening (human-directed, PRs #91–#113).**
+  Shipped: the song picker (the human's one hard requirement — pick a tune
+  and it repeats instead of the songbook rotating), free play and its
+  practice mode (the second way in), and an art pass (fourth parallax
+  plane, 512px scenery with silhouettes that vary within a tile, road
+  verges, a contact shadow under the bard). 258 tests, 19 headless checks,
+  three new harnesses (`songpick-check`, `freeplay-check`,
+  `practice-soak`), and an eight-minute drill soak (8576 notes) that
+  accumulates nothing.
+
+  What to carry forward, in order of how much it will save you:
+  1. **Probe the seams, not the features.** All three defects this session
+     were cross-surface. Every feature passed alone.
+  2. **`RoadScene.ts` is 1979 lines** and wants the next consolidation
+     run. Picker overlay, free-play staff, walk chrome — three clean
+     extractions, each provable byte-for-byte against a texture sheet.
+  3. **Playwright 1.56.1 or every check lies to you.**
+  4. The blockers did not move: the fade pace still needs a child, the
+     fourth forest song still needs a source the sandbox can fetch, the
+     v0.1 tag still needs a call the MCP toolset doesn't have.
+
+- Run 44 (2026-07-29, scheduled): deleted the dead 2D/Phaser code — see
+  the Run 44 note in "At a glance" above for the full detail (files
+  removed, bundle size, the 24 dead checks, and what wiring `shader-check`
+  into `verify-all.mjs` for the first time turned up). `npm test` 745
+  green, `npm run build` green, bundle 686 KB. No feature work; this was
+  the first item STATE.md had flagged as next after the v0.6 merge.
+
+- (Runs 45-142 are logged in ROADMAP.md's numbered task entries rather
+  than here — see the Run counter note at the top of this file and the
+  task list for the detail of each.)
+
+- Run 143 (2026-09-02, scheduled): ROADMAP task 189 piece 2 — widened
+  `fog-hue-band.mjs`'s pose set from 3 to 5 and had it report each pose's
+  `sunHeight`/`landKeyAmount`, to test piece 1's "milkier distance" finding
+  against more than two enacting-hour samples. Full detail and the numbers
+  are in ROADMAP.md under task 189. Headline: the far-band hue-spread rise
+  tracks `landKey.ts`'s pull amount (every zero-pull pose has far ≤ near;
+  every nonzero-pull pose has far well above near, regardless of hour),
+  which is a sharper and more falsifiable hypothesis than "enacting vs
+  carrying hours" was. Not chased into a shader change — a mechanism is
+  proposed but unmeasured, and the panel/wave-20 validation task 189
+  itself requires is still network-blocked (see Blocked on human below).
+  `npm test` 1249 green (unchanged), `npm run build` green (902 KB,
+  unchanged), `shader-check` PASS. No new runtime dependency.
+- Run 144 (2026-09-02, scheduled): ROADMAP task 189 piece 3 — the toggle
+  test piece 2 called for: forced `landKeyAmount` to 0 (in-page override,
+  no shader edit) on the three nonzero-pull poses and re-measured. Full
+  detail and the numbers are in ROADMAP.md under task 189 and this file's
+  latest HANDOFF above. Headline: the result is the opposite of piece 2's
+  prediction — the far/near hueSpread gap does not collapse with the key
+  off, it grows on every pose (0.243→0.301, 0.294→0.298, 0.194→0.464), so
+  piece 2's "two tighter clusters" mechanism is refuted. The landKeyAmount
+  correlation was real but not causal; what drives the far-band spread
+  rise is open again. `npm test` 1249 green (unchanged), `npm run build`
+  green (902 KB, unchanged), `shader-check` PASS. No new runtime
+  dependency.
+- Run 168 (2026-09-10, scheduled): ROADMAP task 190 piece 2 — wired
+  `chooseLargeFormAnchor` into `buildScatter`, closing task 190 (the
+  scatter lower-left design question run 136 raised and run 167 promoted
+  off the backlog). Full detail in ROADMAP.md under task 190's own
+  piece-2 done-note. Headline: verified live with a stashed-vs-built A/B
+  against `scatter-probe.mjs`'s 8 pinned/probe poses — the anchor is real
+  and rendering (every pose's total on-screen instance count rose a few),
+  but the specific lower-left-quadrant number the piece-1 done-note asked
+  to watch came back byte-identical before and after (2 of 8 poses still
+  show none there). Not a wiring bug: the guarantee is a per-chunk,
+  camera-agnostic placement by design (piece 1's own section comment
+  already ruled out anything camera-aware), so it was never going to
+  reliably land in one named quadrant of one named pose's frame — it
+  protects a *stretch of road* from going without a large form on one
+  side, which `scatter-probe.mjs`'s per-pose quadrant table has no way to
+  measure. Recorded plainly rather than reworded as a win, the same way
+  task 189's refutations were. `npm test` 1364 green (unchanged), `npm run
+  build` green (931.73 KB vs 930.29 KB, the wiring's own weight),
+  `verify-all quick` (`shader-check`) PASS. No new runtime dependency.
+- Run 169 (2026-09-11, scheduled): re-tested wave 20's network block first
+  (still 403 on both hosts, unchanged), then pulled the idea backlog's one
+  remaining live entry — solfège syllables — as ROADMAP task 191 and
+  shipped piece 1. Full detail in ROADMAP.md under task 191's own piece-1
+  done-note. Headline: surveyed the notation code before writing anything
+  and found no settings/preference system exists anywhere in this
+  codebase, so "how does a family pick a label style" is real,
+  separately-sized design work (`scaffoldStorage.ts` explicitly argues
+  against a bolted-on settings key) — piece 1 stays a pure data layer,
+  the same shape 176/177/178's own piece 1s took. Added
+  `solfegeAt`/`solfegeAtStep` next to `noteNameAt`/`noteNameAtStep` in
+  `src/core/notation.ts`, fixed-do (not movable-do, since Book One never
+  modulates key and Book Two's `spellInKey` already carries the letter a
+  movable reading would need), covered test-for-test with the existing
+  letter tests. Not referenced from any render site yet, so the exports
+  tree-shake out of the bundle. `npm test` 1369 green (5 new), `npm run
+  build` green (931.73 KB, unchanged — confirms the tree-shake),
+  `verify-all quick` (`shader-check`) PASS. No new runtime dependency.
+- Run 170 (2026-09-11, scheduled): ROADMAP task 191 piece 2a — the storage
+  half of "how does a family pick a label style at all," split off piece
+  2's own done-note asked for. Full detail in ROADMAP.md under task 191's
+  own piece-2a done-note. Headline: read `scaffoldStorage.ts`'s module
+  comment closely and found its actual objection to "a settings key" is
+  a *second* localStorage key to keep in sync with the first, not to
+  ever persisting a preference at all — so the label style rides in the
+  same one-key record `songChoice`/`songWalks` already share, as a third
+  optional field (`l?: 'solfege'`, absent means letters, the safe
+  default an unreadable or missing record also falls back to). Added
+  `currentLabelStyle`/`setLabelStyle` to `scaffoldStorage.ts`, plus its
+  first-ever dedicated test file (`scaffoldStorage.test.ts` — no test
+  file existed for this module at all before this run, so `songWalks`'s
+  round-trip stayed untested too; only the new label-style behaviour is
+  covered here, `songWalks`/`songChoice` coverage is left as found).
+  Deliberately not called from anywhere: no UI toggle exists yet, and
+  `SongNotes.ts`'s canvas atlas is still baked at fixed single-character
+  cell sizes, so multi-letter syllables need a layout change piece 2b
+  owns, not this one. `npm test` 1375 green (6 new), `npm run build`
+  green (931.82 KB vs 931.73 KB, the new exports' own small weight —
+  not tree-shaken since the module is already pulled in for
+  `loadScaffold`/`saveScaffold`), `verify-all quick` (`shader-check`)
+  PASS. No new runtime dependency.
+
+## Needs human playtest
+
+Much smaller than it used to be: `tools/autoplay.mjs` now answers
+mechanically what used to be queued for a person — that the melody is in
+tune and naturals-only, that the songbook rotates and loops, that perfect
+play holds the meter, that nothing leaks over a long walk. Round-1
+feedback (2026-07-25) settled the original feel questions. What genuinely
+still needs a human:
+
+- **Subjective feel a machine can't judge**: is 96 BPM comfortable for a
+  small child, does the 90ms hit window forgive a young hand, does the
+  music actually sound cozy on real speakers.
+- **Real-device behaviours headless can't reproduce**: whether
+  `navigator.audioSession.type = 'playback'` (run 176, task 173 piece 2)
+  actually keeps the walking tune audible with the iPhone ringer switched
+  to silent, and whether the widened `ctx.onstatechange` resume guard
+  actually recovers sound after a real phone call or app-backgrounding —
+  the code for both now exists and is unit-tested/live-verified in
+  headless Chromium, but Chromium has no `audioSession` API at all, so
+  only a real Safari can confirm the fix does what WebKit bug 237322
+  needs. Also still open: gesture lockdown against pinch/double-tap zoom,
+  and the visible-viewport fit on a phone with browser chrome showing.
+  NOT on this list any more: whether the beat/note clock stays honest at
+  Low Power Mode's 30fps rAF — that was assumed real-device-only but
+  turned out to be testable headless and was verified live at run 173
+  (see the run-173 HANDOFF and ROADMAP task 173's own piece-1 done-note);
+  a regression test now guards it.
+- **The teaching outcome**, which is the whole point and is not
+  measurable here: does a child start naming notes? PLAYTEST.md's round-3
+  protocol is written for exactly that.
+
+## Blocked on human
+- **Task 161's premise gap: practice mode's unguided pitch-recall tier
+  needs a tap-input model a scheduled run shouldn't pick alone** (found
+  2026-08-01, confirmed still open at run 215). `core/freePlay.ts`'s
+  scaffold logic exists and is tested, but has zero live consumers — the
+  practice UI died in run 44's 2D→3D rewrite and was never rebuilt. What's
+  missing isn't code, it's a design call: the unguided tier needs a
+  position-CHOOSING input (tap-on-staff-line regions? something else?)
+  that the walk's tap-anywhere-in-time model doesn't need, and that's an
+  input-design question a 5-9-year-old's fingers should settle, not a
+  scheduled run guessing. This is the v1.0 arc's one open piece — 158/159/
+  160/162/163/164/165 are all otherwise shipped and now marked done in
+  ROADMAP.md (they were, but the strikethrough was missing — fixed by this
+  run's consolidation pass, no behaviour changed).
+- **Task 184's "problem 2": trade near-barline legibility for the
+  in-runway note-head overlap, yes or no — or attempt the engraving-offset
+  lever instead, without a human to feel whether the taper reads right**
+  (2026-09-18, run 192). Freshly re-measured and re-diagnosed this run
+  (see the run-192 HANDOFF above and ROADMAP task 184's own fresh
+  done-note): the overlap `headgap.mjs` still finds on portrait,
+  landscape and tablet (worst ratios 0.40/0.93/0.60, all below the <1
+  overlap line) happens between notes exactly one beat apart at
+  `BASE_BPM` — the songbook's own ordinary spacing whenever two
+  consecutive notes are also close in pitch — not the rare "eighth pair"
+  problem 2's own text named. The pinned envelope contract
+  (`songNotes.test.ts`, the wave-2/wave-7 "imminent note is boldest"
+  tiers) has essentially no slack left by the point two beat-apart notes
+  are both near full scale (0.943 delivered against a 0.85 floor at the
+  600 ms checkpoint), so any scale/alpha lever that clears the collision
+  necessarily lowers legibility for the *ordinary* case, not an edge one —
+  a real trade against DESIGN.md's pedagogy guarantee, not a free
+  engineering fix, the same shape of call task 179's residual below
+  already established this project routes to a human rather than
+  deciding alone. The one candidate lever that would not cost legibility
+  — a small render-only horizontal (arc-axis) offset for a beat-spaced,
+  pitch-adjacent pair, the same convention printed music already uses to
+  separate a written second's noteheads without moving either one's
+  staff position — was sized but not built: it must fully resolve to
+  zero well before `HIT_WINDOW_MS` (90 ms) since this file's rendered
+  position doubles as the tap-timing cue, and this is the one mechanic
+  DESIGN.md names as the one to get right above all others. Getting that
+  taper's shape correct is a frame-iteration and feel question no
+  automated check here can answer — PLAYTEST.md has no round written for
+  it yet. Needs a human call: accept lower near-barline legibility for
+  beat-spaced pitch-adjacent pairs (and if so, how much), license an
+  autonomous run to build and self-judge the engraving-offset lever by
+  `headgap.mjs` numbers alone (accepting the risk that "numbers improve"
+  and "reads right to a five-year-old" might diverge), or accept the
+  residual overlap as a standing limitation the way task 173's
+  real-device half is accepted.
+- **Task 179's residual: a bard-local exception to the color script's
+  CARRYING-hours rule, yes or no** (2026-09-12, run 174). The dawn/
+  low-sun figure/ground value floor (re-queued as 179's residual on
+  2026-08-01) is confirmed, quantified, and still failing at three of
+  seven pinned poses (`figground.mjs`, extended this run with hue/
+  saturation — see ROADMAP task 179's 2026-09-12 done-note and
+  `tools/README.md`'s new `figground.mjs` section). The mechanism that
+  already works elsewhere (03-noon-forest, 08-phone-portrait, 10-tablet)
+  is a bright road directly behind the bard's legs; the failing poses'
+  road there is dim by comparison. Raising that road's brightness is the
+  fix the data points to, but three of the four failing poses
+  (01-dawn-road, 04-golden-vista, 06-dusk-encounter) sit in hours task
+  166's color script marks CARRYING, where it binds "spend no runs" on
+  ground/sky brightness — a rule an autonomous run should not overrule on
+  its own judgment, since it exists precisely to stop exactly this kind
+  of well-intentioned local tweak from eroding an authored mood. Needs a
+  human call: either license a narrow exception (brighten a small ground
+  patch immediately behind the bard specifically, leaving the rest of the
+  CARRYING-hour palette untouched) or accept the residual as a standing
+  limitation the way task 173's real-device half is accepted. Until that
+  call is made, no further run should re-attempt a lighting fix here —
+  the fourth failing pose (02-morning-open, an ENACTING hour) additionally
+  rules out any fix keyed to sun height or day fraction alone, since it
+  shares `sunHeight` 1.0 exactly with two of the three passing poses.
+- **Wave 20 (the next blind-panel art critique)** (2026-09-02, run 142).
+  The protocol (`docs/critique-rubric.md`) re-downloads 12 reference frames
+  every wave — 7 A Short Hike press shots, 5 Spiritfarer Steam screenshots —
+  and this run's attempt got a 403 on CONNECT to both `ashorthike.com` and
+  `store.steampowered.com`. Not a new limitation: this file already logs
+  (twice, below) that this environment's network policy 403s CONNECT to
+  every external host it's been tried against; wave 20 is simply the first
+  time that standing block has hit the reference-image step specifically.
+  Waves 13-19 evidently ran in a session with broader network access than
+  this one has. Needs either a run in an environment with those two hosts
+  reachable, or a human to hand a run the 12 reference images some other
+  way (committing them isn't an option — they're not CC0).
+  **Update (2026-09-19, run 193)**: re-tested first, before picking this
+  run's task — still 403 on CONNECT to both `ashorthike.com` and
+  `store.steampowered.com`. Blocker confirmed, nothing new to route around.
+- **Promoting `headless-checks.yml` from informational to a real merge
+  gate** (2026-07-26, Run 36). The check has gone 19/19 green since it
+  landed (task 79) — a real pattern now, not a single lucky run. But making
+  a GitHub Actions check actually block a merge requires it to be named as
+  a **required status check** in the repo's branch-protection settings for
+  `main` (GitHub Settings → Branches → Branch protection rule → "Require
+  status checks to pass before merging" → add `quick` from the "Headless
+  checks" workflow), which is a repository-admin action. The GitHub MCP
+  toolset available in this environment has no call that writes
+  branch-protection rules (only read/write calls for files, branches, PRs,
+  issues and releases were found on a full scan) — the same shape of gap as
+  the missing tag/ref-write call below. Once a human enables that setting,
+  a future run should also flip `.github/workflows/headless-checks.yml` to
+  trigger on `pull_request` (not just `push: main`) and drop
+  `continue-on-error: true`, so a real failure actually blocks auto-merge
+  instead of only reporting after the fact.
+- **A fourth forest song** (2026-07-26). Village and riverside rotate four
+  tunes each; forest has three. The candidate is chosen and researched:
+  **Here We Go Round the Mulberry Bush** — traditional, the tune Nancy
+  Dawson danced into fame in 1700s London, so clearly public domain. It
+  uses scale degrees 1/2/3/5/6/7 only, which makes it naturals-only in C
+  major, sitting G4–G5: exactly the forest register, and its lowest note
+  matches Twinkle's, so it passes the biome staff-region test.
+  What is missing is a **note-for-note transcription verified against a
+  published source**. This environment's network policy blocks outbound
+  fetches (403 on CONNECT to every host); web *search* still works but the
+  snippets carry titles, keys and provenance, never note sequences. That
+  standard is not negotiable here — a forest transposition of *This Old
+  Man* was drafted and rejected for matching the real tune in only 6 of 32
+  notes, and a wrong contour actively mis-teaches a child who knows the
+  song. Needs a run with network access, or a transcription from a human.
+  (*Wheels on the Bus* is the obvious alternative and is **rejected on
+  rights**: attributed to Verna Hills, 1939, which fails CLAUDE.md's
+  CC0-only rule.)
+  **Update (2026-07-26, Run 34)**: re-checked — `WebFetch` still returns
+  HTTP 403 on every host tried, including a plain Wikipedia page (not just
+  music-transcription sites), so this isn't a site-specific block. Blocker
+  confirmed, nothing new to route around.
+  **Update (2026-09-19, Run 195)**: re-checked — `WebFetch` against a plain
+  Wikipedia page now returns a distinct `EGRESS_BLOCKED` error from the
+  network egress proxy, rather than the HTTP 403 this note originally
+  logged or the `connect_rejected` wave 20 saw at run 185. Three different
+  error shapes across three checks (403 → connect_rejected →
+  EGRESS_BLOCKED) for what is functionally the same outcome — outbound
+  fetches to arbitrary hosts are blocked, the specific mechanism has just
+  been renamed/moved at the infrastructure layer more than once. Blocker
+  confirmed, nothing new to route around.
+- **v0.1 git tag** (Run 12): ROADMAP task 12 says "Tag this as v0.1."
+  DoD verification and the ship-check PR (#13) are done and merged
+  (squash commit `021410f` on `main`), but the tag itself can't be pushed
+  from this environment: the local git push proxy accepts pushes only to
+  the designated `claude/*` working branch (a plain `git push origin
+  v0.1` / `git push origin refs/tags/v0.1` both got HTTP 403), and the
+  available GitHub MCP tools have no tag/ref-write call — only read-only
+  `get_tag`/`list_tags`/`get_release_by_tag`/`get_latest_release`. Routing
+  around it (e.g. faking a tag via `create_branch`) would be misleading,
+  so this is left undone rather than faked. A human (or a future run with
+  broader GitHub write scope) needs to run, from a clone with real push
+  access:
+  `git tag -a v0.1 021410f -m "v0.1 ship — see DESIGN.md Definition of
+  Done" && git push origin v0.1`
+  Doesn't block ROADMAP task 13 — the game itself already meets every
+  v0.1 DoD item regardless of whether the tag exists.
+  **Update (2026-07-25, interactive session)**: re-tested from the
+  interactive remote environment — `git push origin v0.1` still returns
+  HTTP 403 (tag refs rejected, only the designated working branch is
+  pushable), and the GitHub MCP toolset was re-checked: it has
+  branch/file write calls but still no tag or release *creation* call.
+  Blocker confirmed; the command above remains the only route.
+  **Update (2026-07-26, Run 34)**: re-checked the GitHub MCP tool list again
+  — still `get_tag`/`list_tags`/`get_release_by_tag`/`get_latest_release`
+  only, no ref-write or release-creation call. Blocker unchanged.
+  **Update (2026-09-19, Run 195)**: re-checked the full GitHub MCP tool
+  list once more (a wider set now, including PR-review and Actions calls
+  that didn't exist at run 34) — still no tag or release *write* call
+  anywhere in it, same read-only `get_tag`/`list_tags`/`get_release_by_tag`/
+  `get_latest_release` quartet. Blocker unchanged; the command above
+  remains the only route.
+
 
 Prior (run 225): Run counter 225. Run 225 (2026-10-01) was the consolidation run. main at f6f797b re-verified green (`npm test` 1380, `npm run build` OK). Runs 216-224 were all dead-code/docs hygiene (hud.ts, geometry.ts, manifest.ts, layering.ts deletions, tools/README, PLAYTEST.md); no gameplay or rendering code changed, so DESIGN.md's core mechanic and v0.1 definition still describe the game. Research refresh against `docs/research/`: retention-design.md's seven recommendations unchanged (1-6 shipped, 7 standing design); rejected-on-principle list re-checked against runs 196-224 and nothing shipped touches streaks, loss-framing, FOMO, near-miss staging, learning fractions, accuracy sharing or decay. art-quality.md and mobile-friendly.md unchanged (task 173's real-device halves and the v0.1 git tag remain human-gated). Idea backlog still empty; next run (~226) may resume tasks from ROADMAP or stay verification-only. Next consolidation ~235.
 
