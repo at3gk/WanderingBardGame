@@ -1,6 +1,8 @@
 # STATE
 
-Run counter: 254. Run 254 (2026-10-19) was a verification-only run: main at 1593218 re-checked green (`npm test` 1380, `npm run build` OK); no open PRs, no new lead, no code changed. Next consolidation ~255.
+Run counter: 255. Run 255 (2026-10-20) was the consolidation run: main at d94a6c5 re-verified green (`npm test` 1380, `npm run build` OK). Runs 246-254 changed no code, so DESIGN.md's core mechanic and v0.1 definition still describe the game. Research refresh: retention-design.md's seven recommendations unchanged (1-6 shipped, 7 standing design); rejected-on-principle list untouched by anything shipped; art-quality.md and mobile-friendly.md unchanged (task 173's real-device halves and the v0.1 git tag remain human-gated). Idea backlog still empty. Next consolidation ~265.
+
+Prior: Run counter: 254. Run 254 (2026-10-19) was a verification-only run: main at 1593218 re-checked green (`npm test` 1380, `npm run build` OK); no open PRs, no new lead, no code changed. Next consolidation ~255.
 
 Prior: Run counter: 253. Run 253 (2026-10-19) was a verification-only run: main at e4f5c34 re-checked green (`npm test` 1380, `npm run build` OK); no open PRs, no new lead, no code changed. Next consolidation ~255.
 
