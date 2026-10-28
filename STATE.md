@@ -1,6 +1,8 @@
 # STATE
 
-Run counter: 275. Run 275 (2026-10-28) was a verification-only run: main at e383ee4 re-checked green (`npm test` 1380, `npm run build` OK); no open PRs, no new lead, no code changed. Consolidation window (~275) reached; next consolidation ~285.
+Run counter: 276. Run 276 (2026-10-28) was a verification-only run: main at 970c53e re-checked green (`npm test` 1380, `npm run build` OK); no open PRs, no new lead, no code changed. Next consolidation ~285.
+
+Prior: Run counter: 275. Run 275 (2026-10-28) was a verification-only run: main at e383ee4 re-checked green (`npm test` 1380, `npm run build` OK); no open PRs, no new lead, no code changed. Consolidation window (~275) reached; next consolidation ~285.
 
 Prior: Run counter: 274. Run 274 (2026-10-27) was a verification-only run: main at 35e0bd4 re-checked green (`npm test` 1380, `npm run build` OK); no open PRs, no new lead, no code changed. Next consolidation ~275.
 
