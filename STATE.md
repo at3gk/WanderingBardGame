@@ -1,6 +1,8 @@
 # STATE
 
-Run counter: 286. Run 286 (2026-11-02) was a verification-only run: main at fcfdfb4 re-checked green (`npm test` 1380, `npm run build` OK); no open PRs, no new lead, no code changed. Next consolidation ~295.
+Run counter: 287. Run 287 (2026-11-03) was a verification-only run: main at cfb5e85 re-checked green (`npm test` 1380, `npm run build` OK); no open PRs, no new lead, no code changed. Next consolidation ~295.
+
+Prior: Run counter: 286. Run 286 (2026-11-02) was a verification-only run: main at fcfdfb4 re-checked green (`npm test` 1380, `npm run build` OK); no open PRs, no new lead, no code changed. Next consolidation ~295.
 
 Prior: Run counter: 285. Run 285 (2026-11-02) was a verification-only run: main at 89f5149 re-checked green (`npm test` 1380, `npm run build` OK); no new lead, no code changed. Consolidation window (~285) reached; next ~295.
 
