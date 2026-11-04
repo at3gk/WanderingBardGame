@@ -1,6 +1,8 @@
 # STATE
 
-Run counter: 290. Run 290 (2026-11-04) was a verification-only run: main at a9dcfa7 re-checked green (`npm test` 1380, `npm run build` OK); no new lead, no code changed. Next consolidation ~295.
+Run counter: 291. Run 291 (2026-11-04) was a verification-only run: main at a52f4c8 re-checked green (`npm test` 1380, `npm run build` OK); no new lead, no code changed. Next consolidation ~295.
+
+Prior: run counter: 290. Run 290 (2026-11-04) was a verification-only run: main at a9dcfa7 re-checked green (`npm test` 1380, `npm run build` OK); no new lead, no code changed. Next consolidation ~295.
 
 Prior: Run counter: 289. Run 289 (2026-11-03) was a verification-only run: main at 72842b2 re-checked green (`npm test` 1380, `npm run build` OK); no new lead, no code changed. Next consolidation ~295.
 
