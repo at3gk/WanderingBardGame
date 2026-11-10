@@ -527,6 +527,12 @@ makes it long. You do not need to read it top to bottom.
   20, task 189's far-band lead, task 184's problem 2, the v0.1 git tag);
   the idea backlog is empty with no unstarted arc left to pull from. Next
   consolidation due around run 215.
+- **Run 300 update**: STATE.md hygiene. Runs 223-299 were all
+  verification-only (1380 tests, build green, no code changed); their 75
+  near-identical one-line entries at the top of STATE.md were compressed
+  into one index paragraph (STATE.md 5311 → ~5165 lines). No code touched.
+  The queue is still entirely human-gated; run ~305's consolidation should
+  either declare the loop at rest in DESIGN.md or propose a small new arc.
 - The **v0.7 queue** right below (tasks 122-128) is superseded, not next:
   it was written on the premise that "no agent in this environment can
   judge art quality," which the v1.1 queue's blind-panel system (run 135
