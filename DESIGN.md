@@ -1071,3 +1071,10 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   **Not cut, and deliberately so:** the entire `core/` brain, the no-fail
   stance, the no-grading stance, and the pedagogy. A renderer swap is not a
   licence to redesign the game underneath it.
+
+- 2026-11-11 (run 301) — **Book Two gets written.** After ~78
+  verification-only runs with every open thread human-gated, the loop
+  takes a small self-set arc instead of idling: fill Book Two (one song
+  since task 165) with keyed public-domain tunes, one per run, under the
+  existing keyed engraving rules. First: *Yankee Doodle* in G. No new
+  system, no change to the core mechanic; nothing cut.

@@ -371,12 +371,46 @@ export const MY_BONNIE: Song = {
 };
 
 /**
+ * Yankee Doodle — traditional (18th-century American; unambiguously public
+ * domain), Book Two's second tune and its first in common time. Run 301.
+ *
+ * Transcribed from the tune as it is universally taught to beginners in C
+ * (2/4: CCDE CEDG | CCDE C B | CCDE FEDC | BGAB C C), then transposed up a
+ * fifth into G so its leading tone becomes the signature's F♯ — met three
+ * times, always resolving up to G ("po-NY", "MAC-a-ro-ni"), the same
+ * leading-tone lesson My Bonnie opens with, now in a march a child already
+ * knows. The source's eighths are written as quarters here (4/4, two of the
+ * source's bars per bar) so the walking tap stays the game's usual pace.
+ * Range D4–C5: the low end of the staff, no ledger lines.
+ */
+export const YANKEE_DOODLE: Song = {
+  id: 'yankee-doodle',
+  title: 'Yankee Doodle',
+  beatsPerBar: 4,
+  key: 'G',
+  notes: [
+    // Yan-kee Doo-dle | went to town, a-
+    { semitone: 7, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 },
+    { semitone: 7, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 2, beats: 1 },
+    // rid-ing on a | po-ny,
+    { semitone: 7, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 },
+    { semitone: 7, beats: 2 }, { semitone: 6, beats: 2 },
+    // stuck a fea-ther | in his cap and
+    { semitone: 7, beats: 1 }, { semitone: 7, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 },
+    { semitone: 12, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 7, beats: 1 },
+    // called it mac-a- | ro-ni.
+    { semitone: 6, beats: 1 }, { semitone: 2, beats: 1 }, { semitone: 4, beats: 1 }, { semitone: 6, beats: 1 },
+    { semitone: 7, beats: 2 }, { semitone: 7, beats: 2 },
+  ],
+};
+
+/**
  * The accidentals volume. Its own list, not a biome set: Book Two is a
  * choice made after the festival, not scenery met on the road — the
  * volume-structure piece wires where these become reachable. Every song
  * here carries a key and is held to the keyed engraving rules.
  */
-export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE];
+export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE, YANKEE_DOODLE];
 
 /**
  * The song a biome plays on its `pass`-th time through, cycling. Falls back
