@@ -1078,3 +1078,6 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   since task 165) with keyed public-domain tunes, one per run, under the
   existing keyed engraving rules. First: *Yankee Doodle* in G. No new
   system, no change to the core mechanic; nothing cut.
+- 2026-11-11 (run 302) — *Clementine* in F joins Book Two: the shelf's
+  first flat key, so the volume now teaches both directions of the
+  signature (F♯ leading up, B♭ falling down). Nothing cut.

@@ -405,12 +405,51 @@ export const YANKEE_DOODLE: Song = {
 };
 
 /**
+ * Oh My Darling, Clementine — American folk song (1880s; public domain).
+ * Book Two's third tune and its first flat key. Run 302.
+ *
+ * Transcribed from the melody as songbooks give it in C, 3/4 with an
+ * eighth-note pickup ("In a | CAV-ern, in a | CAN-yon…": C C | C G3 E E |
+ * E C C E | G G F E | D D E | F F E D | E C C E | D G3 B3 D | C), then
+ * transposed up a fourth into F so the source's F becomes the signature's
+ * B♭ — met three times ("for a MINE", "MI-ner, for-ty"), each time stepping
+ * down to A: fa falling to mi, the flat side's mirror of the F♯ that leads
+ * up to G in the two sharp-key tunes. Each bar keeps the source's long-short
+ * lilt as a dotted quarter and three eighths. The closing bar is short by
+ * the pickup, so a looping pass hands the upbeat back, as in My Bonnie.
+ * Range C4–C5: inside the staff, no ledger lines.
+ */
+export const CLEMENTINE: Song = {
+  id: 'clementine',
+  title: 'Oh My Darling, Clementine',
+  beatsPerBar: 3,
+  pickupBeats: 1,
+  key: 'F',
+  notes: [
+    // In a
+    { semitone: 5, beats: 0.5 }, { semitone: 5, beats: 0.5 },
+    // cav-ern, in a | can-yon, ex-ca-
+    { semitone: 5, beats: 1.5 }, { semitone: 0, beats: 0.5 }, { semitone: 9, beats: 0.5 }, { semitone: 9, beats: 0.5 },
+    { semitone: 9, beats: 1.5 }, { semitone: 5, beats: 0.5 }, { semitone: 5, beats: 0.5 }, { semitone: 9, beats: 0.5 },
+    // va-ting for a | mine, dwelt a
+    { semitone: 12, beats: 1.5 }, { semitone: 12, beats: 0.5 }, { semitone: 10, beats: 0.5 }, { semitone: 9, beats: 0.5 },
+    { semitone: 7, beats: 2 }, { semitone: 7, beats: 0.5 }, { semitone: 9, beats: 0.5 },
+    // mi-ner, for-ty | ni-ner, and his
+    { semitone: 10, beats: 1.5 }, { semitone: 10, beats: 0.5 }, { semitone: 9, beats: 0.5 }, { semitone: 7, beats: 0.5 },
+    { semitone: 9, beats: 1.5 }, { semitone: 5, beats: 0.5 }, { semitone: 5, beats: 0.5 }, { semitone: 9, beats: 0.5 },
+    // daugh-ter Clem-en- | tine.
+    { semitone: 7, beats: 1.5 }, { semitone: 0, beats: 0.5 }, { semitone: 4, beats: 0.5 }, { semitone: 7, beats: 0.5 },
+    { semitone: 5, beats: 2 },
+  ],
+};
+
+/**
  * The accidentals volume. Its own list, not a biome set: Book Two is a
  * choice made after the festival, not scenery met on the road — the
  * volume-structure piece wires where these become reachable. Every song
  * here carries a key and is held to the keyed engraving rules.
  */
-export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE, YANKEE_DOODLE];
+export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE, YANKEE_DOODLE, CLEMENTINE];
 
 /**
  * The song a biome plays on its `pass`-th time through, cycling. Falls back

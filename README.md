@@ -15,9 +15,9 @@ flight of the note becomes a moment of genuine recall. What fades is the
 reaches the line, however familiar the position has become. There is no
 quiz, no score and no wrong answer.
 
-The songs are the reason that is safe: fourteen tunes a child already knows
+The songs are the reason that is safe: fifteen tunes a child already knows
 (*Twinkle*, *Mary Had a Little Lamb*, *This Old Man*, *Ode to Joy*, *The
-Itsy Bitsy Spider*…), two of them (*My Bonnie*, *Yankee Doodle*) on a Book Two
+Itsy Bitsy Spider*…), three of them (*My Bonnie*, *Yankee Doodle*, *Clementine*) on a Book Two
 shelf that opens after the festival and teaches the key signature. If you
 know how the tune goes, the pitch is free even when the letter is gone, so
 you are never stuck.
