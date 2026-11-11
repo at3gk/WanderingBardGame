@@ -231,6 +231,22 @@ describe('Book Two keys', () => {
     expect(bonnie.notes.reduce((t, n) => t + n.beats, 0) % bonnie.beatsPerBar).toBe(0);
   });
 
+  it('holds Yankee Doodle to the lesson too: F sharp always resolving up to G', () => {
+    const yankee = BOOK_TWO_SONGS.find((s) => s.id === 'yankee-doodle')!;
+    expect(yankee.key).toBe('G');
+    const pitched = yankee.notes.filter((n) => !n.rest);
+    const sharps = pitched.flatMap((n, i) => (n.semitone === 6 ? [i] : []));
+    expect(sharps.length).toBeGreaterThanOrEqual(2);
+    // Every F sharp is followed, sooner or later in its phrase, by a G —
+    // the leading tone leads. Checked as: the next note above F sharp is G.
+    for (const i of sharps) {
+      const nextUp = pitched.slice(i + 1).find((n) => n.semitone > 6);
+      expect(nextUp?.semitone, `F sharp at note ${i}`).toBe(7);
+    }
+    // A shelf of distinct tunes, never a duplicate id.
+    expect(new Set(BOOK_TWO_SONGS.map((s) => s.id)).size).toBe(BOOK_TWO_SONGS.length);
+  });
+
   it('uses the leading tone — Book Two’s first lesson is a real F sharp', () => {
     const bonnie = BOOK_TWO_SONGS.find((s) => s.id === 'my-bonnie')!;
     expect(bonnie.notes.some((n) => !n.rest && ((n.semitone % 12) + 12) % 12 === 6)).toBe(true);

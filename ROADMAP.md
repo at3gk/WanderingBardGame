@@ -7709,6 +7709,33 @@ if a bug turns up that matters more.
     and the fog hue (item 10) — and both should be re-measured against the
     new palette before assuming they still read the way STATE.md describes.
 
+## The Book Two arc: "the volume gets written" (self-set, run 301, 2026-11-11)
+
+Runs 223-300 were all verification-only: every open thread is human-gated
+and no unstarted arc remained. Book Two's own invitation says it "is still
+being written" — and it held one song. This arc writes it, one keyed
+public-domain tune per run, each held to the existing keyed engraving
+rules in `songs.test.ts` (diatonic to the signature, no shown accidental,
+drawable range, whole bars). Pure content: no new system, no new screen —
+the post-festival shelf in `RoadStage` lists `BOOK_TWO_SONGS` already.
+Retention check: new pages in a book the family already opened, never a
+timer or an unlock pressure — the shelf stays gated only by the festival,
+as before.
+
+220. ~~**Yankee Doodle in G.**~~ Done (run 301): `YANKEE_DOODLE` in
+    `core/songs.ts`, 8 bars of 4/4, D4-C5, three F sharps each leading up
+    to G; a test pins that every F sharp resolves upward to G. Tests
+    1380 → 1388.
+221. **A tune in F (one flat).** Book Two has only sharps. Pick a
+    public-domain tune that is diatonic in F and actually uses B flat
+    (e.g. *Oh My Darling, Clementine* or *Michael, Row the Boat Ashore*),
+    transcribe from two sources, check `spellInKey` spells B flat as the
+    signature (not a shown flat) — if the notation core can't yet draw a
+    flat signature, that is the task instead (split it).
+222. **A tune in D (two sharps).** Same rules; C sharp as leading tone.
+223. **Retire "still being written"** once Book Two holds ~5 songs — only
+    if the shelf genuinely feels whole; otherwise leave the honest line.
+
 ## Idea backlog (pull from here when nothing is queued)
 
 Unnumbered, unordered, deliberately small — promote one to a numbered
