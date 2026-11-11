@@ -247,6 +247,26 @@ describe('Book Two keys', () => {
     expect(new Set(BOOK_TWO_SONGS.map((s) => s.id)).size).toBe(BOOK_TWO_SONGS.length);
   });
 
+  it('opens the flat side with Clementine: B flat through the signature, always falling to A', () => {
+    const clem = BOOK_TWO_SONGS.find((s) => s.id === 'clementine')!;
+    expect(songKey(clem)).toEqual({ fifths: -1 });
+    const key = songKey(clem)!;
+    const pitched = clem.notes.filter((n) => !n.rest);
+    const flats = pitched.flatMap((n, i) => (n.semitone === 10 ? [i] : []));
+    expect(flats.length).toBeGreaterThanOrEqual(2);
+    for (const i of flats) {
+      // Spelt as a B carrying a flat that the signature already shows.
+      const spelt = spellInKey(10, key);
+      expect([spelt.letter, spelt.accidental, spelt.shown]).toEqual(['B', 'flat', null]);
+      // Fa falls to mi: the next different pitch after B flat is A.
+      const next = pitched.slice(i + 1).find((n) => n.semitone !== 10);
+      expect(next?.semitone, `B flat at note ${i}`).toBe(9);
+    }
+    // The upbeat loops back: the closing bar is short by exactly the pickup.
+    expect(clem.pickupBeats).toBe(1);
+    expect(clem.notes.reduce((t, n) => t + n.beats, 0) % clem.beatsPerBar).toBe(0);
+  });
+
   it('uses the leading tone — Book Two’s first lesson is a real F sharp', () => {
     const bonnie = BOOK_TWO_SONGS.find((s) => s.id === 'my-bonnie')!;
     expect(bonnie.notes.some((n) => !n.rest && ((n.semitone % 12) + 12) % 12 === 6)).toBe(true);

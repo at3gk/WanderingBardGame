@@ -7726,12 +7726,12 @@ as before.
     `core/songs.ts`, 8 bars of 4/4, D4-C5, three F sharps each leading up
     to G; a test pins that every F sharp resolves upward to G. Tests
     1380 → 1388.
-221. **A tune in F (one flat).** Book Two has only sharps. Pick a
-    public-domain tune that is diatonic in F and actually uses B flat
-    (e.g. *Oh My Darling, Clementine* or *Michael, Row the Boat Ashore*),
-    transcribe from two sources, check `spellInKey` spells B flat as the
-    signature (not a shown flat) — if the notation core can't yet draw a
-    flat signature, that is the task instead (split it).
+221. ~~**A tune in F (one flat).**~~ Done (run 302): `CLEMENTINE` in
+    `core/songs.ts`, 3/4 with a one-beat eighth pickup, C4-C5. The
+    notation core already drew flat signatures (F = fifths -1, flat atlas
+    cell, `FLAT_SIGNATURE_STEPS`), so no split was needed. B flat appears
+    three times, each falling to A; a test pins the spelling (B, flat,
+    nothing shown) and the resolution. Tests 1388 -> 1396.
 222. **A tune in D (two sharps).** Same rules; C sharp as leading tone.
 223. **Retire "still being written"** once Book Two holds ~5 songs — only
     if the shelf genuinely feels whole; otherwise leave the honest line.
