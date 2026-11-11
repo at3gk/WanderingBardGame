@@ -444,12 +444,56 @@ export const CLEMENTINE: Song = {
 };
 
 /**
+ * Good King Wenceslas — carol, words J. M. Neale (1853) to the spring tune
+ * "Tempus adest floridum" from Piae Cantiones (1582); public domain.
+ * Book Two's fourth tune and its first with two sharps. Run 303.
+ *
+ * Transcribed from the hymnal melody in G (4/4, quarters with half-note
+ * phrase ends: GGGA GG D | EDEF♯ G G | … | DCBA G C | G), then transposed
+ * up a fifth into D with the tonic on D5, so the tune sits on the staff
+ * and only its high A (twice) takes a ledger line. C♯ is the leading tone
+ * now, met four times ("feast OF Ste-phen", "crisp AND e-ven", "frost WAS
+ * cru-el", "poor MAN came") and every one of them steps straight up to D: the
+ * lesson Yankee Doodle teaches in G, carried one sharp further round.
+ * Range A4–A5.
+ */
+export const GOOD_KING_WENCESLAS: Song = {
+  id: 'good-king-wenceslas',
+  title: 'Good King Wenceslas',
+  beatsPerBar: 4,
+  key: 'D',
+  notes: [
+    // Good King Wen-ces- | las looked out | on the feast of | Ste-phen,
+    { semitone: 14, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 16, beats: 1 },
+    { semitone: 14, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 9, beats: 2 },
+    { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 13, beats: 1 },
+    { semitone: 14, beats: 2 }, { semitone: 14, beats: 2 },
+    // when the snow lay | round a- bout, | deep and crisp and | e- ven;
+    { semitone: 14, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 16, beats: 1 },
+    { semitone: 14, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 9, beats: 2 },
+    { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 13, beats: 1 },
+    { semitone: 14, beats: 2 }, { semitone: 14, beats: 2 },
+    // bright-ly shone the | moon that night, | though the frost was | cru- el,
+    { semitone: 21, beats: 1 }, { semitone: 19, beats: 1 }, { semitone: 18, beats: 1 }, { semitone: 16, beats: 1 },
+    { semitone: 18, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 14, beats: 2 },
+    { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 13, beats: 1 },
+    { semitone: 14, beats: 2 }, { semitone: 14, beats: 2 },
+    // when a poor man | came in sight, | gath-'ring win-ter | fu- - | el.
+    { semitone: 9, beats: 1 }, { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 13, beats: 1 },
+    { semitone: 14, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 16, beats: 2 },
+    { semitone: 21, beats: 1 }, { semitone: 19, beats: 1 }, { semitone: 18, beats: 1 }, { semitone: 16, beats: 1 },
+    { semitone: 14, beats: 2 }, { semitone: 19, beats: 2 },
+    { semitone: 14, beats: 4 },
+  ],
+};
+
+/**
  * The accidentals volume. Its own list, not a biome set: Book Two is a
  * choice made after the festival, not scenery met on the road — the
  * volume-structure piece wires where these become reachable. Every song
  * here carries a key and is held to the keyed engraving rules.
  */
-export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE, YANKEE_DOODLE, CLEMENTINE];
+export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE, YANKEE_DOODLE, CLEMENTINE, GOOD_KING_WENCESLAS];
 
 /**
  * The song a biome plays on its `pass`-th time through, cycling. Falls back

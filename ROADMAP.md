@@ -7732,8 +7732,15 @@ as before.
     cell, `FLAT_SIGNATURE_STEPS`), so no split was needed. B flat appears
     three times, each falling to A; a test pins the spelling (B, flat,
     nothing shown) and the resolution. Tests 1388 -> 1396.
-222. **A tune in D (two sharps).** Same rules; C sharp as leading tone.
-223. **Retire "still being written"** once Book Two holds ~5 songs — only
+222. ~~**A tune in D (two sharps).**~~ Done (run 303): `GOOD_KING_WENCESLAS`
+    in `core/songs.ts` (Piae Cantiones 1582 tune, Neale 1853 words), 17
+    bars of 4/4, tonic on D5, range A4-A5 (one ledger, the high A twice).
+    C sharp appears four times and every one steps straight up to D; a
+    test pins the spelling (C, sharp, nothing shown) and the resolution.
+    Tests 1396 -> 1404.
+223. **Retire "still being written"** once Book Two holds ~5 songs (four
+    as of run 303 — one more keyed tune first, perhaps in A or B flat, then
+    judge) — only
     if the shelf genuinely feels whole; otherwise leave the honest line.
 
 ## Idea backlog (pull from here when nothing is queued)

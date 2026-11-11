@@ -267,6 +267,27 @@ describe('Book Two keys', () => {
     expect(clem.notes.reduce((t, n) => t + n.beats, 0) % clem.beatsPerBar).toBe(0);
   });
 
+  it('turns one more sharp with Good King Wenceslas: C sharp always stepping up to D', () => {
+    const wence = BOOK_TWO_SONGS.find((s) => s.id === 'good-king-wenceslas')!;
+    expect(songKey(wence)).toEqual({ fifths: 2 });
+    const key = songKey(wence)!;
+    const pitched = wence.notes.filter((n) => !n.rest);
+    const sharps = pitched.flatMap((n, i) => (n.semitone === 13 ? [i] : []));
+    expect(sharps.length).toBeGreaterThanOrEqual(3);
+    for (const i of sharps) {
+      // A C carrying the signature's second sharp, nothing drawn by the head.
+      const spelt = spellInKey(13, key);
+      expect([spelt.letter, spelt.accidental, spelt.shown]).toEqual(['C', 'sharp', null]);
+      // The leading tone leads: the very next note is the tonic D.
+      expect(pitched[i + 1]?.semitone, `C sharp at note ${i}`).toBe(14);
+    }
+    // The F sharp the signature also carries is really sung, not decoration.
+    expect(pitched.some((n) => n.semitone === 18)).toBe(true);
+    // No pickup: it starts on the downbeat, and ends on the tonic.
+    expect(wence.pickupBeats ?? 0).toBe(0);
+    expect(pitched[pitched.length - 1].semitone).toBe(14);
+  });
+
   it('uses the leading tone — Book Two’s first lesson is a real F sharp', () => {
     const bonnie = BOOK_TWO_SONGS.find((s) => s.id === 'my-bonnie')!;
     expect(bonnie.notes.some((n) => !n.rest && ((n.semitone % 12) + 12) % 12 === 6)).toBe(true);
