@@ -2443,7 +2443,7 @@ export class RoadStage implements Stage {
    * Three doors, none marked correct. Book Two's door SOUNDS what the
    * letter cannot say — F, then F♯, a real half step through the real
    * instrument voice, exactly tuned because the engine already is — and
-   * admits in writing that the volume is still being written. Missing the
+   * says in writing where its pages already wait (the shelf). Missing the
    * sheet costs only the demonstration: the other two doors are the
    * songbook corner and the road itself, which are always there.
    */

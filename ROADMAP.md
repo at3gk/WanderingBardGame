@@ -7738,16 +7738,27 @@ as before.
     C sharp appears four times and every one steps straight up to D; a
     test pins the spelling (C, sharp, nothing shown) and the resolution.
     Tests 1396 -> 1404.
-223. **Retire "still being written"** once Book Two holds ~5 songs — only
+223. ~~**Retire "still being written"**~~ Done (run 305). Once Book Two holds ~5 songs — only
     if the shelf genuinely feels whole; otherwise leave the honest line.
     First piece ~~**a tune in B flat (two flats)**~~ done (run 304):
     `WHEN_THE_SAINTS` in `core/songs.ts`, 4/4 with a three-beat pickup and
     a one-beat breath bar closing the loop, B♭4-F5; the tonic itself is a
     flat. A test pins both flats' spelling. Tests 1404 -> 1412. Remaining
     piece: the judgement itself (Book Two now holds five) — fold into the
-    run-305 consolidation.
+    run-305 consolidation. **Judged (run 305): retire.** The shelf is taken
+    the same night the invitation is read, so "the road will carry it to
+    you when it is ready" was already untrue. `BOOK_TWO_INVITATION`'s third
+    line now points at the shelf ("five tunes … four true keys"); a new
+    test derives both numbers from `BOOK_TWO_SONGS`, so a sixth tune fails
+    the test until the line is updated. Tests 1412 -> 1413. **Arc closed.**
+    Further Book Two tunes (A major, E flat) are welcome as backlog, not
+    queued.
 
 ## Idea backlog (pull from here when nothing is queued)
+
+- **Book Two, more pages** (run 305): a tune in A (three sharps) or E flat
+  (three flats), same rules as tasks 220-223. Update the invitation's count
+  in the same run — the test enforces it.
 
 Unnumbered, unordered, deliberately small — promote one to a numbered
 task at the start of a run if nothing above is actionable. Each respects
