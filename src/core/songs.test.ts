@@ -288,6 +288,26 @@ describe('Book Two keys', () => {
     expect(pitched[pitched.length - 1].semitone).toBe(14);
   });
 
+  it('reaches two flats with When the Saints: a home note that carries a flat', () => {
+    const saints = BOOK_TWO_SONGS.find((s) => s.id === 'when-the-saints')!;
+    expect(songKey(saints)).toEqual({ fifths: -2 });
+    const key = songKey(saints)!;
+    const pitched = saints.notes.filter((n) => !n.rest);
+    // The tonic is B flat — spelt through the signature, nothing by the head.
+    const tonic = spellInKey(10, key);
+    expect([tonic.letter, tonic.accidental, tonic.shown]).toEqual(['B', 'flat', null]);
+    expect(pitched[0].semitone).toBe(10);
+    expect(pitched[pitched.length - 1].semitone).toBe(10);
+    // The second flat is really sung, and spelt as an E the signature flattens.
+    const eFlat = spellInKey(15, key);
+    expect([eFlat.letter, eFlat.accidental, eFlat.shown]).toEqual(['E', 'flat', null]);
+    expect(pitched.filter((n) => n.semitone === 15).length).toBeGreaterThanOrEqual(3);
+    // Three-beat pickup; the breath bar is short by exactly that, so the loop is bar-true.
+    expect(saints.pickupBeats).toBe(3);
+    expect(saints.notes[saints.notes.length - 1].rest).toBe(true);
+    expect(saints.notes.reduce((t, n) => t + n.beats, 0) % saints.beatsPerBar).toBe(0);
+  });
+
   it('uses the leading tone — Book Two’s first lesson is a real F sharp', () => {
     const bonnie = BOOK_TWO_SONGS.find((s) => s.id === 'my-bonnie')!;
     expect(bonnie.notes.some((n) => !n.rest && ((n.semitone % 12) + 12) % 12 === 6)).toBe(true);

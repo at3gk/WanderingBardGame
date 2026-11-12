@@ -7738,10 +7738,14 @@ as before.
     C sharp appears four times and every one steps straight up to D; a
     test pins the spelling (C, sharp, nothing shown) and the resolution.
     Tests 1396 -> 1404.
-223. **Retire "still being written"** once Book Two holds ~5 songs (four
-    as of run 303 — one more keyed tune first, perhaps in A or B flat, then
-    judge) — only
+223. **Retire "still being written"** once Book Two holds ~5 songs — only
     if the shelf genuinely feels whole; otherwise leave the honest line.
+    First piece ~~**a tune in B flat (two flats)**~~ done (run 304):
+    `WHEN_THE_SAINTS` in `core/songs.ts`, 4/4 with a three-beat pickup and
+    a one-beat breath bar closing the loop, B♭4-F5; the tonic itself is a
+    flat. A test pins both flats' spelling. Tests 1404 -> 1412. Remaining
+    piece: the judgement itself (Book Two now holds five) — fold into the
+    run-305 consolidation.
 
 ## Idea backlog (pull from here when nothing is queued)
 
