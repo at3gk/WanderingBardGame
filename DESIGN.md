@@ -254,8 +254,8 @@ invitation to **Book Two** that *shows what it would teach* — real key
 signatures and accidentals, correctly engraved and exactly sounded — or
 freely revisiting any Book One song, choosing songs at will, or simply
 walking on. Book One stays naturals-only C-major; growth is a new
-volume, not a breaking change. Book Two's shelf (five keyed tunes as of
-run 305) opens the same night, and the invitation says so.
+volume, not a breaking change. Book Two's shelf (six keyed tunes in five keys as of
+run 306) opens the same night, and the invitation says so.
 
 **The first five minutes' promise, sequenced:** minute one is the tune
 working under your fingers (no front-loading, straight into the walk);
@@ -1090,3 +1090,8 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   its count honest against `BOOK_TWO_SONGS`. The Book Two arc (tasks
   220-223) is closed; the volume may still grow, but nothing promises it.
   Core mechanic unchanged; nothing cut.
+- 2026-11-12 (run 306) — *Oh! Susanna* in A joins Book Two from the idea
+  backlog: the shelf's first three-sharp key (six tunes, five keys). The
+  third sharp, G♯, sits in the signature but is never sung — stated in the
+  song's comment and pinned by test rather than bending the tune. Nothing
+  cut.
