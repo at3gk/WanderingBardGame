@@ -488,12 +488,60 @@ export const GOOD_KING_WENCESLAS: Song = {
 };
 
 /**
+ * When the Saints Go Marching In — traditional spiritual (sung well before
+ * its first recordings in the 1920s; public domain). Book Two's fifth tune
+ * and its first in B flat, two flats. Run 304.
+ *
+ * Transcribed from the setting every beginner's book gives in C (4/4, a
+ * three-quarter pickup: C E F | G | - C E F | G | - C E F | G E | C E | D |
+ * - E E D | C . . C | E G | G F | - - E F | G E | C D | C), then transposed
+ * down a whole step into B flat. The home note itself now carries the
+ * signature's flat, a first for the book; the second flat, E flat, tops
+ * every rising three-note call ("oh when THE", "go march-ING") — fa,
+ * climbing on to the held fifth. The
+ * closing whole note keeps its full bar and the next verse's pickup takes
+ * the last beat of a short breath bar, so the loop stays bar-true, as in
+ * My Bonnie and Clementine. Range B♭4–F5: on the staff, no ledger lines.
+ */
+export const WHEN_THE_SAINTS: Song = {
+  id: 'when-the-saints',
+  title: 'When the Saints Go Marching In',
+  beatsPerBar: 4,
+  pickupBeats: 3,
+  key: 'Bb',
+  notes: [
+    // Oh when the | saints
+    { semitone: 10, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 15, beats: 1 },
+    { semitone: 17, beats: 4 },
+    // go march-ing | in — the echo of the call above
+    { rest: true, semitone: 0, beats: 1 }, { semitone: 10, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 15, beats: 1 },
+    { semitone: 17, beats: 4 },
+    // oh when the | saints go | march-ing | in,
+    { rest: true, semitone: 0, beats: 1 }, { semitone: 10, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 15, beats: 1 },
+    { semitone: 17, beats: 2 }, { semitone: 14, beats: 2 },
+    { semitone: 10, beats: 2 }, { semitone: 14, beats: 2 },
+    { semitone: 12, beats: 4 },
+    // oh Lord I | want to | be in | that num- | ber, when the
+    { rest: true, semitone: 0, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 14, beats: 1 }, { semitone: 12, beats: 1 },
+    { semitone: 10, beats: 3 }, { semitone: 10, beats: 1 },
+    { semitone: 14, beats: 2 }, { semitone: 17, beats: 2 },
+    { semitone: 17, beats: 1 }, { semitone: 15, beats: 3 },
+    { rest: true, semitone: 0, beats: 2 }, { semitone: 14, beats: 1 }, { semitone: 15, beats: 1 },
+    // saints go | march-ing | in. | (breath)
+    { semitone: 17, beats: 2 }, { semitone: 14, beats: 2 },
+    { semitone: 10, beats: 2 }, { semitone: 12, beats: 2 },
+    { semitone: 10, beats: 4 },
+    { rest: true, semitone: 0, beats: 1 },
+  ],
+};
+
+/**
  * The accidentals volume. Its own list, not a biome set: Book Two is a
  * choice made after the festival, not scenery met on the road — the
  * volume-structure piece wires where these become reachable. Every song
  * here carries a key and is held to the keyed engraving rules.
  */
-export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE, YANKEE_DOODLE, CLEMENTINE, GOOD_KING_WENCESLAS];
+export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE, YANKEE_DOODLE, CLEMENTINE, GOOD_KING_WENCESLAS, WHEN_THE_SAINTS];
 
 /**
  * The song a biome plays on its `pass`-th time through, cycling. Falls back
