@@ -10,6 +10,7 @@ import {
   isFestivalEve,
 } from './festival';
 import { FESTIVAL_LEGS, createJourney, noteFestival } from './journey';
+import { BOOK_TWO_SONGS } from './songs';
 
 const BANNED = /\bfail|\blose|\blost\b|\bwrong\b|\bmiss(ed)?\b|streak|score/i;
 
@@ -67,8 +68,19 @@ describe('the festival’s words', () => {
     }
   });
 
-  it('the invitation shows a real sharp and admits the book is unwritten', () => {
+  it('the invitation shows a real sharp and points at the shelf that exists', () => {
     expect(BOOK_TWO_INVITATION.glyph).toContain('♯');
-    expect(BOOK_TWO_INVITATION.lines.join(' ')).toContain('still being written');
+    const text = BOOK_TWO_INVITATION.lines.join(' ');
+    // Run 305 retired "still being written": the shelf is real the same night.
+    expect(text).not.toContain('still being written');
+    expect(text).toContain('shelf');
+  });
+
+  it('the invitation counts the shelf truthfully', () => {
+    const text = BOOK_TWO_INVITATION.lines.join(' ');
+    const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
+    const keys = new Set(BOOK_TWO_SONGS.map((s) => s.key));
+    expect(text).toContain(`${words[BOOK_TWO_SONGS.length]} tunes`);
+    expect(text).toContain(`${words[keys.size]} true keys`);
   });
 });

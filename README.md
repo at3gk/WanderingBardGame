@@ -18,7 +18,9 @@ quiz, no score and no wrong answer.
 The songs are the reason that is safe: seventeen tunes a child already knows
 (*Twinkle*, *Mary Had a Little Lamb*, *This Old Man*, *Ode to Joy*, *The
 Itsy Bitsy Spider*…), five of them (*My Bonnie*, *Yankee Doodle*, *Clementine*, *Good King Wenceslas*, *When the Saints Go Marching In*) on a Book Two
-shelf that opens after the festival and teaches the key signature. If you
+shelf that opens after the festival and teaches the key signature (pick
+*Hear what Book Two would teach* at the festival's end, then find the tunes
+under *Book Two — true keys* in the songbook). If you
 know how the tune goes, the pitch is free even when the letter is gone, so
 you are never stuck.
 

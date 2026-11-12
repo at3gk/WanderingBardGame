@@ -254,7 +254,8 @@ invitation to **Book Two** that *shows what it would teach* — real key
 signatures and accidentals, correctly engraved and exactly sounded — or
 freely revisiting any Book One song, choosing songs at will, or simply
 walking on. Book One stays naturals-only C-major; growth is a new
-volume, not a breaking change.
+volume, not a breaking change. Book Two's shelf (five keyed tunes as of
+run 305) opens the same night, and the invitation says so.
 
 **The first five minutes' promise, sequenced:** minute one is the tune
 working under your fingers (no front-loading, straight into the walk);
@@ -1081,3 +1082,11 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
 - 2026-11-11 (run 302) — *Clementine* in F joins Book Two: the shelf's
   first flat key, so the volume now teaches both directions of the
   signature (F♯ leading up, B♭ falling down). Nothing cut.
+- 2026-11-12 (run 305, consolidation) — **Book Two's "still being
+  written" line retired.** The shelf holds five tunes in four keys (G, F,
+  D, B♭; one and two of each accidental), taken the same night the
+  festival is heard — so an invitation promising pages "when it is ready"
+  had become untrue. It now points at the shelf instead, and a test keeps
+  its count honest against `BOOK_TWO_SONGS`. The Book Two arc (tasks
+  220-223) is closed; the volume may still grow, but nothing promises it.
+  Core mechanic unchanged; nothing cut.
