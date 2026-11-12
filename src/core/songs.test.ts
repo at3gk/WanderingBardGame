@@ -308,6 +308,26 @@ describe('Book Two keys', () => {
     expect(saints.notes.reduce((t, n) => t + n.beats, 0) % saints.beatsPerBar).toBe(0);
   });
 
+  it('reaches three sharps with Oh! Susanna: C sharp and F sharp sung, G sharp only in the signature', () => {
+    const sus = BOOK_TWO_SONGS.find((s) => s.id === 'oh-susanna')!;
+    expect(songKey(sus)).toEqual({ fifths: 3 });
+    const key = songKey(sus)!;
+    const pitched = sus.notes.filter((n) => !n.rest);
+    const cSharp = spellInKey(13, key);
+    expect([cSharp.letter, cSharp.accidental, cSharp.shown]).toEqual(['C', 'sharp', null]);
+    const fSharp = spellInKey(18, key);
+    expect([fSharp.letter, fSharp.accidental, fSharp.shown]).toEqual(['F', 'sharp', null]);
+    expect(pitched.filter((n) => n.semitone === 13).length).toBeGreaterThanOrEqual(8);
+    expect(pitched.filter((n) => n.semitone === 18).length).toBeGreaterThanOrEqual(4);
+    // The doc comment's honest claim: the third sharp (G sharp) is never sung.
+    expect(pitched.some((n) => ((n.semitone % 12) + 12) % 12 === 8)).toBe(false);
+    // Starts and ends on the tonic A; the pickup loops back bar-true.
+    expect(pitched[0].semitone).toBe(9);
+    expect(pitched[pitched.length - 1].semitone).toBe(9);
+    expect(sus.pickupBeats).toBe(2);
+    expect(sus.notes.reduce((t, n) => t + n.beats, 0) % sus.beatsPerBar).toBe(0);
+  });
+
   it('uses the leading tone — Book Two’s first lesson is a real F sharp', () => {
     const bonnie = BOOK_TWO_SONGS.find((s) => s.id === 'my-bonnie')!;
     expect(bonnie.notes.some((n) => !n.rest && ((n.semitone % 12) + 12) % 12 === 6)).toBe(true);

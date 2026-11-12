@@ -7753,12 +7753,19 @@ as before.
     the test until the line is updated. Tests 1412 -> 1413. **Arc closed.**
     Further Book Two tunes (A major, E flat) are welcome as backlog, not
     queued.
+224. ~~**A tune in A (three sharps).**~~ Done (run 306, pulled from the idea
+    backlog): `OH_SUSANNA` in `core/songs.ts` (Foster 1848), 4/4 with a
+    two-beat pickup, values doubled from the 2/4 fiddle setting, A4-F♯5.
+    C♯ and F♯ sung throughout; G♯ only in the signature (the tune never
+    touches its leading tone) — the test pins that honestly. Invitation
+    now reads "six tunes … five true keys". Tests 1413 -> 1421.
 
 ## Idea backlog (pull from here when nothing is queued)
 
-- **Book Two, more pages** (run 305): a tune in A (three sharps) or E flat
-  (three flats), same rules as tasks 220-223. Update the invitation's count
-  in the same run — the test enforces it.
+- **Book Two, more pages** (run 305): ~~a tune in A (three sharps)~~ —
+  promoted and shipped as task 224 (run 306, *Oh! Susanna*). Still open: a
+  tune in E flat (three flats), same rules as tasks 220-224. Update the
+  invitation's count in the same run — the test enforces it.
 
 Unnumbered, unordered, deliberately small — promote one to a numbered
 task at the start of a run if nothing above is actionable. Each respects

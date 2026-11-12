@@ -94,7 +94,7 @@ export const FESTIVAL_CHOICE = {
  * caller's, since sounding is the point), and it says plainly where the
  * volume's pages are: already on the songbook's own shelf, taken the same
  * night (run 305 retired the old "still being written" line once the shelf
- * held five tunes — a promise of pages-to-come had become untrue the moment
+ * held five tunes; it holds six since run 306 — a promise of pages-to-come had become untrue the moment
  * the pages were there). Growth is a new book, not a pressure.
  */
 export const BOOK_TWO_INVITATION = {
@@ -102,7 +102,7 @@ export const BOOK_TWO_INVITATION = {
   lines: [
     'The same letter, raised a half step — listen: F, then F♯.',
     'Book Two teaches these: real key signatures, sharps and flats, engraved right and sounded exactly.',
-    'Its first five tunes are on the songbook’s own shelf now, in four true keys. Open them whenever you like.',
+    'Its first six tunes are on the songbook’s own shelf now, in five true keys. Open them whenever you like.',
   ],
 } as const;
 

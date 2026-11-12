@@ -536,12 +536,61 @@ export const WHEN_THE_SAINTS: Song = {
 };
 
 /**
+ * Oh! Susanna — Stephen Foster (1848; public domain). Book Two's sixth tune
+ * and its first in A major, three sharps. Run 306.
+ *
+ * Transcribed from the fiddle-book setting in D (2/4, an eighth-note pickup:
+ * DE | FA A>B | AF D>E | FF ED | E2 DE | FA A>B | AF D>E | FF EE | D4 ||
+ * G2 G2 | B2 B2 | AA FD | E2 DE | …verse close), then moved up a fifth so
+ * the tonic is A4 and the tune sits on the staff. As with Yankee Doodle,
+ * every value is doubled (4/4, two source bars per bar) so the tap keeps the
+ * game's walking pace. Three sharps in the signature; two of them sung all
+ * through — C♯ is the very first downbeat ("from A-la-ba-ma") and F♯ the
+ * peak of every "ban-jo" and "Su-san-na". G♯, the third, is never sung: the
+ * tune never touches its leading tone, and the page says so honestly rather
+ * than bending the melody to show it off. The two-beat pickup comes back
+ * from a closing bar short by exactly that much, as in My Bonnie.
+ * Range A4–F♯5: on the staff, no ledger lines.
+ */
+export const OH_SUSANNA: Song = {
+  id: 'oh-susanna',
+  title: 'Oh! Susanna',
+  beatsPerBar: 4,
+  pickupBeats: 2,
+  key: 'A',
+  notes: [
+    // I come
+    { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 },
+    // from A-la-ba- | ma with my ban- | jo on my | knee, I'm go-
+    { semitone: 13, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 16, beats: 1.5 }, { semitone: 18, beats: 0.5 },
+    { semitone: 16, beats: 1 }, { semitone: 13, beats: 1 }, { semitone: 9, beats: 1.5 }, { semitone: 11, beats: 0.5 },
+    { semitone: 13, beats: 1 }, { semitone: 13, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 9, beats: 1 },
+    { semitone: 11, beats: 2 }, { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 },
+    // ing to Lou-'si- | an-a, my true | love for to | see.
+    { semitone: 13, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 16, beats: 1.5 }, { semitone: 18, beats: 0.5 },
+    { semitone: 16, beats: 1 }, { semitone: 13, beats: 1 }, { semitone: 9, beats: 1.5 }, { semitone: 11, beats: 0.5 },
+    { semitone: 13, beats: 1 }, { semitone: 13, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 11, beats: 1 },
+    { semitone: 9, beats: 4 },
+    // Oh! Su- | san-na, | oh don't you cry | for me, for I
+    { semitone: 14, beats: 2 }, { semitone: 14, beats: 2 },
+    { semitone: 18, beats: 2 }, { semitone: 18, beats: 2 },
+    { semitone: 16, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 13, beats: 1 }, { semitone: 9, beats: 1 },
+    { semitone: 11, beats: 2 }, { semitone: 9, beats: 1 }, { semitone: 11, beats: 1 },
+    // come from A-la-ba- | ma with my ban- | jo on my | knee.
+    { semitone: 13, beats: 1 }, { semitone: 16, beats: 1 }, { semitone: 16, beats: 1.5 }, { semitone: 18, beats: 0.5 },
+    { semitone: 16, beats: 1 }, { semitone: 13, beats: 1 }, { semitone: 9, beats: 1.5 }, { semitone: 11, beats: 0.5 },
+    { semitone: 13, beats: 1 }, { semitone: 13, beats: 1 }, { semitone: 11, beats: 1 }, { semitone: 11, beats: 1 },
+    { semitone: 9, beats: 2 },
+  ],
+};
+
+/**
  * The accidentals volume. Its own list, not a biome set: Book Two is a
  * choice made after the festival, not scenery met on the road — the
  * volume-structure piece wires where these become reachable. Every song
  * here carries a key and is held to the keyed engraving rules.
  */
-export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE, YANKEE_DOODLE, CLEMENTINE, GOOD_KING_WENCESLAS, WHEN_THE_SAINTS];
+export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE, YANKEE_DOODLE, CLEMENTINE, GOOD_KING_WENCESLAS, WHEN_THE_SAINTS, OH_SUSANNA];
 
 /**
  * The song a biome plays on its `pass`-th time through, cycling. Falls back
