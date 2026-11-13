@@ -7774,6 +7774,15 @@ as before.
     Book One and "Your songs" rows are unchanged; so is the corner label.
     Tests pin the display names and that every Book Two tune has one.
     Tests 1429 -> 1433.
+227. ~~**Songbook rows ellipsize at their end.**~~ Done (run 309, found while
+    headlessly verifying run 308's playtest item at 320×640): plain rows set
+    their text straight on the right-justified flex row, so a long title
+    spilled off the left edge unellipsized ("nd the Mulberry Bush"). Every
+    row (titles, shelf headings, "turn the page") now puts its words in a
+    `min-width: 0` ellipsizing span (`rowLabel` in `Hud.buildBook`). Keyed
+    rows were already right; their "in B♭" still never clips (measured at
+    320 and 360 wide). DOM-only, no unit test (vitest runs headless logic);
+    tests 1433 unchanged.
 
 ## Idea backlog (pull from here when nothing is queued)
 
