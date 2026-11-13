@@ -1607,6 +1607,17 @@ export class Hud {
         textShadow: shadow,
         ...style,
       });
+    // A row's words always sit in their own span. Text set straight on the
+    // flex row becomes an anonymous flex item that `text-overflow` never
+    // reaches, and with `justify-content: flex-end` it spills off the
+    // *left* edge — a 320px phone read "nd the Mulberry Bush" and
+    // "cDonald Had a Farm" (found by headless check, run 309). In a span
+    // with `min-width: 0` the title shrinks and ellipsizes at its end.
+    const rowLabel = (text: string) => {
+      const label = element('span', { overflow: 'hidden', textOverflow: 'ellipsis', minWidth: '0' });
+      label.textContent = text;
+      return label;
+    };
     for (const entry of shown) {
       if (entry.heading) {
         // A shelf label, set like the page titles: small caps, no hand.
@@ -1617,7 +1628,7 @@ export class Hud {
           textTransform: 'uppercase',
           cursor: 'default',
         });
-        row.textContent = entry.name;
+        row.appendChild(rowLabel(entry.name));
         this.bookBox.appendChild(row);
         continue;
       }
@@ -1636,35 +1647,29 @@ export class Hud {
           : {},
       );
       const keyName = typeof entry.keyName === 'string' && entry.keyName !== '' ? entry.keyName : null;
-      if (wear >= 2 || keyName) {
-        if (wear >= 2) {
-          const mark = element('span', {
-            color: INK_SOFT,
-            marginRight: '0.4em',
-            flex: '0 0 auto',
-          });
-          mark.textContent = wear >= 3 ? '❧' : '·';
-          row.appendChild(mark);
-        }
-        const title = element('span', { overflow: 'hidden', textOverflow: 'ellipsis' });
-        title.textContent = entry.name;
-        row.appendChild(title);
-        if (keyName) {
-          // The key, pencilled after the title (Book Two only): smaller,
-          // upright, soft ink, and never the part that gets cut — a long
-          // title ellipsizes first, so "in B♭" always survives the fold.
-          const key = element('span', {
-            color: INK_SOFT,
-            fontStyle: 'normal',
-            fontSize: '0.78em',
-            marginLeft: '0.45em',
-            flex: '0 0 auto',
-          });
-          key.textContent = `in ${keyName}`;
-          row.appendChild(key);
-        }
-      } else {
-        row.textContent = entry.name;
+      if (wear >= 2) {
+        const mark = element('span', {
+          color: INK_SOFT,
+          marginRight: '0.4em',
+          flex: '0 0 auto',
+        });
+        mark.textContent = wear >= 3 ? '❧' : '·';
+        row.appendChild(mark);
+      }
+      row.appendChild(rowLabel(entry.name));
+      if (keyName) {
+        // The key, pencilled after the title (Book Two only): smaller,
+        // upright, soft ink, and never the part that gets cut — a long
+        // title ellipsizes first, so "in B♭" always survives the fold.
+        const key = element('span', {
+          color: INK_SOFT,
+          fontStyle: 'normal',
+          fontSize: '0.78em',
+          marginLeft: '0.45em',
+          flex: '0 0 auto',
+        });
+        key.textContent = `in ${keyName}`;
+        row.appendChild(key);
       }
       const activate = () => {
         this.setBookOpen(false);
@@ -1681,7 +1686,7 @@ export class Hud {
     }
     if (pages > 1) {
       const turn = makeRow({ color: INK });
-      turn.textContent = 'turn the page ⤵';
+      turn.appendChild(rowLabel('turn the page ⤵'));
       const activate = () => {
         this.bookPageIndex += 1;
         this.bookHold = CASE_HOLD_SEC;

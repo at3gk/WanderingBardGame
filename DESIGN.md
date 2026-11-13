@@ -1107,3 +1107,10 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   phone. Self-set (queue and backlog were empty): the volume exists to teach
   true keys, so the shelf should say which key each page lives in before it
   is opened. Corner label unchanged (title only). Nothing cut.
+- 2026-11-13 (run 309) — Songbook rows ellipsize at their end on narrow
+  phones. A headless check at 320×640 (post-festival save) showed every plain
+  row — no wear mark, no key — clipped off its *left* edge with no ellipsis
+  ("nd the Mulberry Bush", "cDonald Had a Farm", "K TWO — TRUE KEYS"): text
+  set straight on the right-justified flex row never reached `text-overflow`.
+  Every row's words now sit in their own shrinkable span, as run 308's keyed
+  rows already did. Layout fix only; nothing added, nothing cut.
