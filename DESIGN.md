@@ -255,7 +255,8 @@ signatures and accidentals, correctly engraved and exactly sounded — or
 freely revisiting any Book One song, choosing songs at will, or simply
 walking on. Book One stays naturals-only C-major; growth is a new
 volume, not a breaking change. Book Two's shelf (seven keyed tunes in six keys as of
-run 307) opens the same night, and the invitation says so.
+run 307) opens the same night, and the invitation says so. Each shelf row
+names its key after the title ("in B♭", run 308), small and upright.
 
 **The first five minutes' promise, sequenced:** minute one is the tune
 working under your fingers (no front-loading, straight into the walk);
@@ -1100,3 +1101,9 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   closing the "Book Two, more pages" backlog item. Pentatonic, so A♭ (the
   third flat) is never sung — pinned by test, as with Susanna's G♯. It sits
   low (B♭3–B♭4, the village's corner of the staff). Nothing cut.
+- 2026-11-13 (run 308) — Book Two's shelf names each tune's key: the open
+  songbook's row reads "Amazing Grace  in E♭", the key set small, upright and
+  in soft ink after the title, and never the part that ellipsizes on a narrow
+  phone. Self-set (queue and backlog were empty): the volume exists to teach
+  true keys, so the shelf should say which key each page lives in before it
+  is opened. Corner label unchanged (title only). Nothing cut.

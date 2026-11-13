@@ -170,7 +170,7 @@ import {
   isFestivalEve,
 } from '../core/festival';
 import { revealLeads } from '../core/reveal';
-import { staffStepAt } from '../core/notation';
+import { keyDisplayName, staffStepAt } from '../core/notation';
 import { HEADS_ALPHA, headsLevel, shownLevel, type HeadsLevel } from '../core/mastery';
 import { Ambience, dayShape } from '../audio/ambience';
 import {
@@ -2191,7 +2191,16 @@ export class RoadStage implements Stage {
     if (this.journey.festivals >= 1) {
       entries.push({ id: '', name: 'Book Two — true keys', heading: true });
       for (const song of BOOK_TWO_SONGS) {
-        entries.push({ id: song.id, name: song.title, wear: wearTier(walks[song.id] ?? 0) });
+        // Each page names its key on the shelf: the volume is about true
+        // keys, so the reader can see which one a tune lives in before
+        // opening it.
+        const keyName = song.key ? keyDisplayName(song.key) : null;
+        entries.push({
+          id: song.id,
+          name: song.title,
+          wear: wearTier(walks[song.id] ?? 0),
+          ...(keyName ? { keyName } : {}),
+        });
       }
     }
     // A family's own tunes (task 176's last piece): a shelf that exists only

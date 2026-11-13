@@ -192,6 +192,18 @@ export function majorKey(name: string): KeySignature | null {
   return fifths === undefined ? null : { fifths };
 }
 
+/**
+ * A major key's name as a reader sees it on a page: 'Bb' → 'B♭', 'Eb' →
+ * 'E♭', a sharp or natural key unchanged. Null for a name `majorKey` does
+ * not know, same stance. Used by the songbook's Book Two shelf, which names
+ * each tune's key beside its title — the volume is about true keys, so the
+ * shelf says which one each page is in.
+ */
+export function keyDisplayName(name: string): string | null {
+  if (majorKey(name) === null) return null;
+  return name.length === 2 && name[1] === 'b' ? `${name[0]}♭` : name;
+}
+
 /** Which letters this signature alters, in signature order. */
 export function alteredLetters(key: KeySignature): string[] {
   const n = clampFifths(key);
