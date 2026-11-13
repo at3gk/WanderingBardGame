@@ -328,6 +328,28 @@ describe('Book Two keys', () => {
     expect(sus.notes.reduce((t, n) => t + n.beats, 0) % sus.beatsPerBar).toBe(0);
   });
 
+  it('reaches three flats with Amazing Grace: E flat home, B flat sung, A flat only in the signature', () => {
+    const grace = BOOK_TWO_SONGS.find((s) => s.id === 'amazing-grace')!;
+    expect(songKey(grace)).toEqual({ fifths: -3 });
+    const key = songKey(grace)!;
+    const pitched = grace.notes.filter((n) => !n.rest);
+    const tonic = spellInKey(3, key);
+    expect([tonic.letter, tonic.accidental, tonic.shown]).toEqual(['E', 'flat', null]);
+    for (const semitone of [-2, 10]) {
+      const bFlat = spellInKey(semitone, key);
+      expect([bFlat.letter, bFlat.accidental, bFlat.shown]).toEqual(['B', 'flat', null]);
+    }
+    expect(pitched.filter((n) => n.semitone === 3).length).toBeGreaterThanOrEqual(8);
+    expect(pitched.filter((n) => n.semitone === -2 || n.semitone === 10).length).toBeGreaterThanOrEqual(4);
+    // The doc comment's honest claim: the third flat (A flat) is never sung.
+    expect(pitched.some((n) => ((n.semitone % 12) + 12) % 12 === 8)).toBe(false);
+    // Opens on the low B flat upbeat, closes home on E flat; the loop is bar-true.
+    expect(pitched[0].semitone).toBe(-2);
+    expect(pitched[pitched.length - 1].semitone).toBe(3);
+    expect(grace.pickupBeats).toBe(1);
+    expect(grace.notes.reduce((t, n) => t + n.beats, 0) % grace.beatsPerBar).toBe(0);
+  });
+
   it('uses the leading tone — Book Two’s first lesson is a real F sharp', () => {
     const bonnie = BOOK_TWO_SONGS.find((s) => s.id === 'my-bonnie')!;
     expect(bonnie.notes.some((n) => !n.rest && ((n.semitone % 12) + 12) % 12 === 6)).toBe(true);
