@@ -585,12 +585,63 @@ export const OH_SUSANNA: Song = {
 };
 
 /**
+ * Amazing Grace — the tune "New Britain" (1829; words John Newton, 1779;
+ * public domain). Book Two's seventh tune and its first in E flat major,
+ * three flats. Run 307.
+ *
+ * Transcribed from memory of the common hymnal setting in G (3/4, a
+ * one-beat pickup: D | G2 BG | B2 A | G2 E | D2 D | G2 BG | B2 A | d3 |
+ * — "me" held, a breath, "I" on B | d2 BG | B2 A | G2 E | D2 D | G2 BG |
+ * B2 A | G2 ||), then moved down a major third so the home note is E♭4
+ * and the low pickup B♭3 hangs under middle C's ledger line — the same
+ * low corner of the staff Book One's village tunes live in, so the
+ * newest key arrives in the most familiar place. The tune is pentatonic:
+ * E♭ and B♭ are sung all through (B♭ is the very first note, "A-"; E♭
+ * is every downbeat home), but A♭, the signature's third flat, is never
+ * sung — the page says so plainly rather than bending a hymn to show it
+ * off, as Oh! Susanna does with its unsung G♯. "Me" keeps its bar and
+ * the breath that follows hands "I" its upbeat; the closing "see" is
+ * short by exactly the pickup, so the loop stays bar-true.
+ * Range B♭3–B♭4: two ledger notes at the bottom (B♭3, C4), none on top.
+ */
+export const AMAZING_GRACE: Song = {
+  id: 'amazing-grace',
+  title: 'Amazing Grace',
+  beatsPerBar: 3,
+  pickupBeats: 1,
+  key: 'Eb',
+  notes: [
+    // A-
+    { semitone: -2, beats: 1 },
+    // ma-zing | grace how | sweet the | sound that
+    { semitone: 3, beats: 2 }, { semitone: 7, beats: 0.5 }, { semitone: 3, beats: 0.5 },
+    { semitone: 7, beats: 2 }, { semitone: 5, beats: 1 },
+    { semitone: 3, beats: 2 }, { semitone: 0, beats: 1 },
+    { semitone: -2, beats: 2 }, { semitone: -2, beats: 1 },
+    // saved a | wretch like | me, | (breath) I
+    { semitone: 3, beats: 2 }, { semitone: 7, beats: 0.5 }, { semitone: 3, beats: 0.5 },
+    { semitone: 7, beats: 2 }, { semitone: 5, beats: 1 },
+    { semitone: 10, beats: 3 },
+    { rest: true, semitone: 0, beats: 2 }, { semitone: 7, beats: 1 },
+    // once was | lost but | now am | found, was
+    { semitone: 10, beats: 2 }, { semitone: 7, beats: 0.5 }, { semitone: 3, beats: 0.5 },
+    { semitone: 7, beats: 2 }, { semitone: 5, beats: 1 },
+    { semitone: 3, beats: 2 }, { semitone: 0, beats: 1 },
+    { semitone: -2, beats: 2 }, { semitone: -2, beats: 1 },
+    // blind but | now I | see.
+    { semitone: 3, beats: 2 }, { semitone: 7, beats: 0.5 }, { semitone: 3, beats: 0.5 },
+    { semitone: 7, beats: 2 }, { semitone: 5, beats: 1 },
+    { semitone: 3, beats: 2 },
+  ],
+};
+
+/**
  * The accidentals volume. Its own list, not a biome set: Book Two is a
  * choice made after the festival, not scenery met on the road — the
  * volume-structure piece wires where these become reachable. Every song
  * here carries a key and is held to the keyed engraving rules.
  */
-export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE, YANKEE_DOODLE, CLEMENTINE, GOOD_KING_WENCESLAS, WHEN_THE_SAINTS, OH_SUSANNA];
+export const BOOK_TWO_SONGS: Song[] = [MY_BONNIE, YANKEE_DOODLE, CLEMENTINE, GOOD_KING_WENCESLAS, WHEN_THE_SAINTS, OH_SUSANNA, AMAZING_GRACE];
 
 /**
  * The song a biome plays on its `pass`-th time through, cycling. Falls back

@@ -254,8 +254,8 @@ invitation to **Book Two** that *shows what it would teach* — real key
 signatures and accidentals, correctly engraved and exactly sounded — or
 freely revisiting any Book One song, choosing songs at will, or simply
 walking on. Book One stays naturals-only C-major; growth is a new
-volume, not a breaking change. Book Two's shelf (six keyed tunes in five keys as of
-run 306) opens the same night, and the invitation says so.
+volume, not a breaking change. Book Two's shelf (seven keyed tunes in six keys as of
+run 307) opens the same night, and the invitation says so.
 
 **The first five minutes' promise, sequenced:** minute one is the tune
 working under your fingers (no front-loading, straight into the walk);
@@ -1095,3 +1095,8 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   third sharp, G♯, sits in the signature but is never sung — stated in the
   song's comment and pinned by test rather than bending the tune. Nothing
   cut.
+- 2026-11-13 (run 307) — *Amazing Grace* in E flat joins Book Two from the
+  idea backlog: the shelf's first three-flat key (seven tunes, six keys),
+  closing the "Book Two, more pages" backlog item. Pentatonic, so A♭ (the
+  third flat) is never sung — pinned by test, as with Susanna's G♯. It sits
+  low (B♭3–B♭4, the village's corner of the staff). Nothing cut.
