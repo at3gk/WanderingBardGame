@@ -7759,13 +7759,22 @@ as before.
     C♯ and F♯ sung throughout; G♯ only in the signature (the tune never
     touches its leading tone) — the test pins that honestly. Invitation
     now reads "six tunes … five true keys". Tests 1413 -> 1421.
+225. ~~**A tune in E flat (three flats).**~~ Done (run 307, pulled from the
+    idea backlog): `AMAZING_GRACE` in `core/songs.ts` (New Britain 1829,
+    Newton 1779), 3/4 with a one-beat pickup, moved down a major third from
+    the hymnal's G so it sits B♭3-B♭4 (two ledger notes below, none above).
+    E♭ and B♭ sung throughout; A♭ only in the signature (pentatonic tune) —
+    the test pins that. Invitation now reads "seven tunes … six true keys".
+    Tests 1421 -> 1429.
 
 ## Idea backlog (pull from here when nothing is queued)
 
-- **Book Two, more pages** (run 305): ~~a tune in A (three sharps)~~ —
-  promoted and shipped as task 224 (run 306, *Oh! Susanna*). Still open: a
-  tune in E flat (three flats), same rules as tasks 220-224. Update the
-  invitation's count in the same run — the test enforces it.
+- ~~**Book Two, more pages**~~ (run 305): A major shipped as task 224 (run
+  306, *Oh! Susanna*), E flat as task 225 (run 307, *Amazing Grace*). Item
+  closed: every key through three sharps/flats now has a tune. Any further
+  keys (E, A flat — four accidentals) would be a new item and should first
+  ask whether the shelf needs them; update the invitation's count in the
+  same run — the test enforces it.
 
 Unnumbered, unordered, deliberately small — promote one to a numbered
 task at the start of a run if nothing above is actionable. Each respects
