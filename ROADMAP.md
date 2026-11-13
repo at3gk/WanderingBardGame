@@ -7766,6 +7766,14 @@ as before.
     E♭ and B♭ sung throughout; A♭ only in the signature (pentatonic tune) —
     the test pins that. Invitation now reads "seven tunes … six true keys".
     Tests 1421 -> 1429.
+226. ~~**The shelf names its keys.**~~ Done (run 308, self-set — queue and
+    backlog empty): each Book Two row in the open songbook ends with its key
+    ("in B♭"), via a new `keyDisplayName` in `core/notation.ts` ('Bb' → 'B♭')
+    and an optional `keyName` on the HUD's `SongEntry`. Small, upright, soft
+    ink, `flex: 0 0 auto` so a long title ellipsizes before the key does.
+    Book One and "Your songs" rows are unchanged; so is the corner label.
+    Tests pin the display names and that every Book Two tune has one.
+    Tests 1429 -> 1433.
 
 ## Idea backlog (pull from here when nothing is queued)
 

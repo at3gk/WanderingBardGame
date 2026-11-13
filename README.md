@@ -20,7 +20,7 @@ The songs are the reason that is safe: nineteen tunes a child already knows
 Itsy Bitsy Spider*…), seven of them (*My Bonnie*, *Yankee Doodle*, *Clementine*, *Good King Wenceslas*, *When the Saints Go Marching In*, *Oh! Susanna*, *Amazing Grace*) on a Book Two
 shelf that opens after the festival and teaches the key signature (pick
 *Hear what Book Two would teach* at the festival's end, then find the tunes
-under *Book Two — true keys* in the songbook). If you
+under *Book Two — true keys* in the songbook, each tune marked with its key, e.g. "in B♭"). If you
 know how the tune goes, the pitch is free even when the letter is gone, so
 you are never stuck.
 

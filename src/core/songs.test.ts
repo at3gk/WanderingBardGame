@@ -150,7 +150,7 @@ describe('the songbook', () => {
 // drawable staff.
 // ---------------------------------------------------------------------------
 
-import { majorKey, semitoneOfSpelling, spellInKey } from './notation';
+import { keyDisplayName, majorKey, semitoneOfSpelling, spellInKey } from './notation';
 import { songKey, type Song } from './song';
 
 /** The Book Two engraving rules, as one callable check. */
@@ -353,5 +353,21 @@ describe('Book Two keys', () => {
   it('uses the leading tone — Book Two’s first lesson is a real F sharp', () => {
     const bonnie = BOOK_TWO_SONGS.find((s) => s.id === 'my-bonnie')!;
     expect(bonnie.notes.some((n) => !n.rest && ((n.semitone % 12) + 12) % 12 === 6)).toBe(true);
+  });
+});
+
+describe('the Book Two shelf names each key', () => {
+  it('every Book Two tune carries a key the shelf can write out', () => {
+    for (const song of BOOK_TWO_SONGS) {
+      expect(song.key, song.title).toBeTruthy();
+      expect(keyDisplayName(song.key!), song.title).not.toBeNull();
+    }
+  });
+
+  it('writes the shelf as a reader would read it', () => {
+    const names = BOOK_TWO_SONGS.map((s) => keyDisplayName(s.key!));
+    expect(names).toContain('B♭');
+    expect(names).toContain('E♭');
+    expect(names.every((n) => n !== null && !n.includes('b'))).toBe(true);
   });
 });

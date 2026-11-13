@@ -68,6 +68,12 @@ export interface SongEntry {
    * the scaffold. Absent reads as untouched.
    */
   wear?: 0 | 1 | 2 | 3;
+  /**
+   * The key a Book Two page is in, as a reader writes it ('B♭', 'A') — set
+   * small after the title on the open book's row only, never in the corner
+   * label. Absent for Book One and a family's own tunes, which carry none.
+   */
+  keyName?: string;
 }
 
 /** The songbook's endpaper actions: press the journey into a keepsake file, or unfold one. */
@@ -1555,6 +1561,7 @@ export class Hud {
     wear?: 0 | 1 | 2 | 3;
     freePlay?: true;
     importMidi?: true;
+    keyName?: string;
   }> {
     const rows: Array<{
       id: string | null;
@@ -1563,6 +1570,7 @@ export class Hud {
       wear?: 0 | 1 | 2 | 3;
       freePlay?: true;
       importMidi?: true;
+      keyName?: string;
     }> = [];
     if (this.pinnedSongId !== null) rows.push({ id: null, name: WANDER_ROW_LABEL });
     for (const entry of this.songEntries) {
@@ -1627,17 +1635,34 @@ export class Hud {
             }
           : {},
       );
-      if (wear >= 2) {
-        const mark = element('span', {
-          color: INK_SOFT,
-          marginRight: '0.4em',
-          flex: '0 0 auto',
-        });
-        mark.textContent = wear >= 3 ? '❧' : '·';
-        row.appendChild(mark);
+      const keyName = typeof entry.keyName === 'string' && entry.keyName !== '' ? entry.keyName : null;
+      if (wear >= 2 || keyName) {
+        if (wear >= 2) {
+          const mark = element('span', {
+            color: INK_SOFT,
+            marginRight: '0.4em',
+            flex: '0 0 auto',
+          });
+          mark.textContent = wear >= 3 ? '❧' : '·';
+          row.appendChild(mark);
+        }
         const title = element('span', { overflow: 'hidden', textOverflow: 'ellipsis' });
         title.textContent = entry.name;
         row.appendChild(title);
+        if (keyName) {
+          // The key, pencilled after the title (Book Two only): smaller,
+          // upright, soft ink, and never the part that gets cut — a long
+          // title ellipsizes first, so "in B♭" always survives the fold.
+          const key = element('span', {
+            color: INK_SOFT,
+            fontStyle: 'normal',
+            fontSize: '0.78em',
+            marginLeft: '0.45em',
+            flex: '0 0 auto',
+          });
+          key.textContent = `in ${keyName}`;
+          row.appendChild(key);
+        }
       } else {
         row.textContent = entry.name;
       }

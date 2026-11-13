@@ -155,12 +155,29 @@ import {
   SHARP_ORDER,
   SHARP_SIGNATURE_STEPS,
   alteredLetters,
+  keyDisplayName,
   majorKey,
   semitoneOfSpelling,
   spellInKey,
 } from './notation';
 
 const KEY_NAMES = ['C', 'G', 'D', 'A', 'E', 'F', 'Bb', 'Eb', 'Ab'];
+
+describe('keyDisplayName', () => {
+  it('writes flat keys with a real flat sign and leaves the rest alone', () => {
+    expect(keyDisplayName('Bb')).toBe('B♭');
+    expect(keyDisplayName('Eb')).toBe('E♭');
+    expect(keyDisplayName('Ab')).toBe('A♭');
+    expect(keyDisplayName('G')).toBe('G');
+    expect(keyDisplayName('F')).toBe('F');
+  });
+
+  it('names every supported key and refuses an unknown one', () => {
+    for (const name of KEY_NAMES) expect(keyDisplayName(name)).toMatch(/^[A-G]♭?$/);
+    expect(keyDisplayName('H')).toBeNull();
+    expect(keyDisplayName('Gb')).toBeNull();
+  });
+});
 
 describe('majorKey', () => {
   it('knows the teaching span, four sharps to four flats', () => {
