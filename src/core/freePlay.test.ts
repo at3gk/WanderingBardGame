@@ -7,6 +7,10 @@ import {
   freePlayStepY,
   MIN_STEP_BAND,
   MIN_TOP_MARGIN,
+  HINT_CLEARANCE,
+  HINT_LINE_HEIGHT,
+  HINT_TOP_PAD,
+  hintTopPad,
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
 import { advanceSequence, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
@@ -240,5 +244,32 @@ describe('fitting the ladder on the screen', () => {
     const absurd = freePlayStaff(120, 74, 56);
     expect(absurd.stepGap).toBeGreaterThanOrEqual(MIN_STEP_BAND);
     expect(absurd.topY).toBe(MIN_TOP_MARGIN);
+  });
+});
+
+describe('keeping the hint line off the top rung', () => {
+  // Run 312: on a 664x390 phone the squeezed ladder put A5's ledger at
+  // y=34, straight through the hint's words, where it read as an underline.
+  const SCREEN_MARGINS: [number, number] = [MIN_TOP_MARGIN + 30, 40];
+  const HEIGHTS = [360, 375, 390, 414, 568, 600, 667, 740, 1024];
+
+  it('ends the hint line at least the clearance above the top rung whenever the screen allows it', () => {
+    for (const h of HEIGHTS) {
+      const staff = freePlayStaff(h, ...SCREEN_MARGINS);
+      const hintBottom = hintTopPad(staff) + HINT_LINE_HEIGHT;
+      expect(freePlayStepY(FREE_PLAY_HIGH_STEP, staff) - hintBottom, `${h} tall`).toBeGreaterThanOrEqual(HINT_CLEARANCE - 1);
+    }
+  });
+
+  it('keeps the usual padding on a screen with room to spare', () => {
+    expect(hintTopPad(freePlayStaff(740, ...SCREEN_MARGINS))).toBe(HINT_TOP_PAD);
+    expect(hintTopPad(freePlayStaff(1024, ...SCREEN_MARGINS))).toBe(HINT_TOP_PAD);
+  });
+
+  it('gives up padding, never goes above the screen edge', () => {
+    const tight = freePlayStaff(390, ...SCREEN_MARGINS);
+    expect(hintTopPad(tight)).toBeLessThan(HINT_TOP_PAD);
+    expect(hintTopPad(tight)).toBeGreaterThanOrEqual(0);
+    expect(hintTopPad({ stepGap: 26, bottomY: 300, topY: 0 })).toBe(0);
   });
 });

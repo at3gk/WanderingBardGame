@@ -96,6 +96,31 @@ export function freePlayStaff(viewportH: number, topMargin: number, bottomMargin
   return { stepGap, bottomY, topY: top };
 }
 
+/** The hint line's usual distance from the top of the screen. */
+export const HINT_TOP_PAD = 16;
+/** One line of the hint at the screen's 16px/1.4 book face. */
+export const HINT_LINE_HEIGHT = 22.4;
+/**
+ * Clear air between the bottom of the hint's line box and the top rung.
+ * Any closer and A5's short ledger, centred under centred words, reads as
+ * an underline — which is what run 312 found on a 664×390 phone, where the
+ * squeezed ladder put that ledger at y=34, through the hint's descenders.
+ */
+export const HINT_CLEARANCE = 10;
+
+/**
+ * How far down the hint line may start so it stays clear of the top rung.
+ *
+ * On a tall screen the ladder's top margin leaves room and this is the
+ * usual 16px. On a short landscape phone `freePlayStaff` squeezes the top
+ * margin to its floor, and the hint gives up its padding (down to the
+ * screen edge) rather than share a line with A5's ledger.
+ */
+export function hintTopPad(staff: FreePlayStaff): number {
+  const room = staff.topY - HINT_LINE_HEIGHT - HINT_CLEARANCE;
+  return Math.max(0, Math.min(HINT_TOP_PAD, Math.floor(room)));
+}
+
 /** Screen y of a staff step in free play. */
 export function freePlayStepY(step: number, staff: FreePlayStaff): number {
   return staff.bottomY - (step - FREE_PLAY_LOW_STEP) * staff.stepGap;

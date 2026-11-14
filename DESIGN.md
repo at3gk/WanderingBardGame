@@ -1130,3 +1130,9 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   the margins to fit put that rung under the full-width "Try solfège" strip,
   so the toggle moved to the bottom-left corner. A3 (drawable, written by no
   tune) stays off. Nothing added to the mechanic; nothing cut.
+- 2026-11-14 (run 312) — Free play's hint keeps clear of the top rung. On a
+  short landscape phone the squeezed ladder put A5's ledger through the
+  centred hint line, where it read as an underline. The hint now gives up
+  its top padding (to the screen edge if needed) so its words end 10px
+  above the top rung; tall screens look as before. Layout only; nothing
+  added or cut.

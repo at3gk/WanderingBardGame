@@ -49,6 +49,8 @@ import {
   MIN_TOP_MARGIN,
   MIN_BOTTOM_MARGIN,
   freePlayStaff,
+  HINT_TOP_PAD,
+  hintTopPad,
   freePlayStepY,
   freePlayStepAt,
   FreePlayStaff,
@@ -140,7 +142,7 @@ export class FreePlayScreen {
       left: '0',
       right: '0',
       textAlign: 'center',
-      padding: '16px 12px 0',
+      padding: `${HINT_TOP_PAD}px 12px 0`,
       fontStyle: 'italic',
       letterSpacing: '0.02em',
       pointerEvents: 'none',
@@ -373,6 +375,9 @@ export class FreePlayScreen {
   private layout(): void {
     const h = this.root.clientHeight || this.host.clientHeight || window.innerHeight;
     this.staff = freePlayStaff(h, TOP_MARGIN, BOTTOM_MARGIN);
+    // On a short landscape phone the ladder's top rung climbs to y=34; the
+    // hint gives up its padding so A5's ledger doesn't underline its words.
+    this.hint.style.paddingTop = `${hintTopPad(this.staff)}px`;
     this.drawStaffLines();
   }
 
