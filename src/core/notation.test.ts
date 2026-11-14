@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ledgerLineSteps,
   needsLedger,
   noteNameAt,
   noteNameAtStep,
@@ -111,6 +112,35 @@ describe('needsLedger', () => {
 
   it('starts ledgers again above the staff at A5', () => {
     expect(needsLedger(12)).toBe(true);
+  });
+});
+
+describe('ledgerLineSteps', () => {
+  it('puts the ledger through a note that sits on one', () => {
+    expect(ledgerLineSteps(0)).toEqual([0]); // middle C
+    expect(ledgerLineSteps(12)).toEqual([12]); // A5
+  });
+
+  it('hangs a note in the space below middle C under its ledger, never through it', () => {
+    // B3 / B♭3 (My Bonnie, Amazing Grace): the line is middle C's, above the head.
+    expect(ledgerLineSteps(-1)).toEqual([0]);
+    expect(ledgerLineSteps(13)).toEqual([12]); // B5, the mirror case above
+  });
+
+  it('gives a note two ledgers below the staff both of its lines', () => {
+    expect(ledgerLineSteps(-2)).toEqual([0, -2]); // A3
+  });
+
+  it('only ever draws ledgers where a staff line would fall (even steps)', () => {
+    for (let step = -4; step <= 16; step++) {
+      for (const line of ledgerLineSteps(step)) expect(Math.abs(line % 2)).toBe(0);
+    }
+  });
+
+  it('agrees with needsLedger across the drawable range', () => {
+    for (let step = -2; step <= 13; step++) {
+      expect(ledgerLineSteps(step).length > 0, `step ${step}`).toBe(needsLedger(step));
+    }
   });
 });
 
