@@ -7783,6 +7783,17 @@ as before.
     rows were already right; their "in B♭" still never clips (measured at
     320 and 360 wide). DOM-only, no unit test (vitest runs headless logic);
     tests 1433 unchanged.
+228. ~~**B3 hangs under its ledger, not on it.**~~ Done (run 310, self-set —
+    found reading the atlas while checking run 307's Amazing Grace item):
+    `drawNote` put every ledger through the head, so the songs' one note in
+    the space below middle C (B3 in *My Bonnie*, B♭3 in *Amazing Grace*)
+    read as a line note a step too low. New pure `ledgerLineSteps(step)` in
+    `core/notation.ts` (even steps only: [0] for C4 and B3, [0, -2] for A3,
+    [12] for A5/B5); `ledgerOffsetsForCell` in `SongNotes.ts` maps each
+    ledgered atlas cell to its unique in-range step and paints those lines
+    relative to the head (`STEP_PX` from `glyphWorldSize`'s head-to-space
+    ratio). Tests pin the helper, the cell→step uniqueness, and that every
+    B3 the books write gets a line above its head. Tests 1433 -> 1442.
 
 ## Idea backlog (pull from here when nothing is queued)
 

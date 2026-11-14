@@ -170,6 +170,7 @@ import {
   FLAT_SIGNATURE_STEPS,
   SHARP_SIGNATURE_STEPS,
   alteredLetters,
+  ledgerLineSteps,
   letterForStep,
   needsLedger,
   solfegeAtStep,
@@ -2914,8 +2915,12 @@ function drawNote(ctx: CanvasRenderingContext2D, cell: number, style: LabelStyle
 
   if (ledger) {
     // Wider than the head on both sides, as engraved. A ledger that stops
-    // at the head reads as a smudge.
-    ctx.fillRect(-HEAD_RX - 12, -2.75, (HEAD_RX + 12) * 2, 5.5);
+    // at the head reads as a smudge. Each line sits where the staff would
+    // put it (`ledgerOffsetsForCell`): through a head on a line, above a
+    // head hanging in the space under middle C.
+    for (const offset of ledgerOffsetsForCell(cell)) {
+      ctx.fillRect(-HEAD_RX - 12, -offset * STEP_PX - 2.75, (HEAD_RX + 12) * 2, 5.5);
+    }
   }
 
   // Stem first so the head covers where the two meet; a stem drawn over the
@@ -3024,8 +3029,35 @@ function drawAccidental(ctx: CanvasRenderingContext2D, kind: 'sharp' | 'flat' | 
   ctx.restore();
 }
 
+/**
+ * One staff step in atlas pixels. A head (2 × HEAD_RY) spans 0.92 of a staff
+ * space — two steps — by `glyphWorldSize`'s own definition.
+ */
+const STEP_PX = (HEAD_RY * 2) / (2 * 0.92);
+
+/** The lowest and highest steps a song may write (songs.test.ts enforces it). */
+const LOWEST_DRAWN_STEP = -2;
+const HIGHEST_DRAWN_STEP = 12;
+
+/**
+ * The ledger lines a note cell is painted with, in staff steps relative to
+ * its head (0 = through the head, +1 = one step above it). A cell names a
+ * letter, a stem direction and "has ledgers" — inside the drawable range
+ * that triple belongs to exactly one step (C-up-ledger is middle C, B-up-
+ * ledger is B3, A-up-ledger is A3, A-down-ledger is A5), so the cell's
+ * ledger geometry is that step's `ledgerLineSteps`. Before run 310 every
+ * ledger went through the head, which engraved B3 (My Bonnie, Amazing
+ * Grace) as a line note one step too low.
+ */
+export function ledgerOffsetsForCell(cell: number): number[] {
+  for (let step = LOWEST_DRAWN_STEP; step <= HIGHEST_DRAWN_STEP; step++) {
+    if (cellFor(step) === cell) return ledgerLineSteps(step).map((line) => line - step);
+  }
+  return [];
+}
+
 /** Which atlas cell a written note wants. The only place this arithmetic lives. */
-function cellFor(step: number): number {
+export function cellFor(step: number): number {
   const letterIndex = ((step % 7) + 7) % 7;
   return letterIndex * 4 + (stemDown(step) ? 2 : 0) + (needsLedger(step) ? 1 : 0);
 }

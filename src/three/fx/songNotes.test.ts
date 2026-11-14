@@ -26,7 +26,9 @@ import { Color } from 'three';
 import {
   FLOOR_WARMTH,
   PAINTERLY_CONSTANTS,
+  cellFor,
   glyphEnvelope,
+  ledgerOffsetsForCell,
   headHalfSteps,
   laneSpan,
   painterlyConstant,
@@ -37,8 +39,9 @@ import {
   unitLuminance,
 } from './SongNotes';
 import { createPainterlyGlobals, createPainterlyMaterial } from '../painterly';
-import { SONGS } from '../../core/songs';
-import { staffStepAt } from '../../core/notation';
+import { BOOK_TWO_SONGS, SONGS } from '../../core/songs';
+import { songKey } from '../../core/song';
+import { spellInKey, staffStepAt } from '../../core/notation';
 import { TRAVEL_TIME_MS, beatIntervalMs } from '../../core/beats';
 import { INSTRUMENTS } from '../../core/instruments';
 import { SUPPORT_LEAD_MS } from '../../core/scaffold';
@@ -615,3 +618,42 @@ describe('the key signature is engraved, not improvised', () => {
     }
   });
 });
+
+describe('ledger lines in the note atlas (run 310)', () => {
+  it('gives each ledgered cell exactly one step in the drawable range', () => {
+    const owners = new Map<number, number[]>();
+    for (let step = -2; step <= 12; step++) {
+      if (!needsLedgerStep(step)) continue;
+      const cell = cellFor(step);
+      owners.set(cell, [...(owners.get(cell) ?? []), step]);
+    }
+    for (const [cell, steps] of owners) expect(steps, `cell ${cell}`).toHaveLength(1);
+  });
+
+  it('draws the ledger through middle C and A5 but above B3', () => {
+    expect(ledgerOffsetsForCell(cellFor(0))).toEqual([0]); // C4 on its ledger
+    expect(ledgerOffsetsForCell(cellFor(12))).toEqual([0]); // A5 on its ledger
+    expect(ledgerOffsetsForCell(cellFor(-1))).toEqual([1]); // B3 hangs under middle C
+    expect(ledgerOffsetsForCell(cellFor(-2))).toEqual([2, 0]); // A3: middle C's and its own
+  });
+
+  it('paints no ledger on a note on or around the staff', () => {
+    for (let step = 1; step <= 11; step++) expect(ledgerOffsetsForCell(cellFor(step)), `step ${step}`).toEqual([]);
+  });
+
+  it('every song note below middle C that the books write gets a ledger above its head', () => {
+    for (const song of [...SONGS, ...BOOK_TWO_SONGS]) {
+      const key = songKey(song);
+      for (const note of song.notes) {
+        if (note.rest) continue;
+        const step = key ? spellInKey(note.semitone, key).step : staffStepAt(note.semitone)!;
+        if (step !== -1) continue;
+        expect(ledgerOffsetsForCell(cellFor(step)), song.id).toEqual([1]);
+      }
+    }
+  });
+});
+
+function needsLedgerStep(step: number): boolean {
+  return step <= 0 || step >= 12;
+}

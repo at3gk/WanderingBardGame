@@ -1114,3 +1114,10 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   set straight on the right-justified flex row never reached `text-overflow`.
   Every row's words now sit in their own shrinkable span, as run 308's keyed
   rows already did. Layout fix only; nothing added, nothing cut.
+- 2026-11-14 (run 310) — B3 hangs under its ledger. The note atlas painted
+  every ledger line through the head, so B3 / B♭3 (the low note of *My
+  Bonnie* and *Amazing Grace*, a space below middle C) was engraved as a
+  line note one step too low. Ledger lines now come from the staff itself
+  (`ledgerLineSteps` in `core/notation.ts`: only on even steps, middle C's
+  line above a B3 head, two for an A3). Middle C and A5 look as before.
+  Engraving correctness on the screen kids learn from; nothing added or cut.

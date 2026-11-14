@@ -97,6 +97,22 @@ export function needsLedger(step: number): boolean {
 }
 
 /**
+ * Exactly which ledger lines a note at this step is engraved with, as staff
+ * steps. Ledger lines only ever sit where a staff line would (even steps),
+ * so a note in a space below middle C (B3, step -1) hangs under the middle-C
+ * ledger rather than wearing a line through its own head — a line through
+ * the head would spell it as a line note, which it is not. A3 (step -2)
+ * wears two: middle C's and its own. Empty for notes on the staff.
+ * Agrees with `needsLedger`: non-empty exactly when it says true.
+ */
+export function ledgerLineSteps(step: number): number[] {
+  const lines: number[] = [];
+  for (let line = 0; line >= step; line -= 2) lines.push(line);
+  for (let line = 12; line <= step; line += 2) lines.push(line);
+  return lines;
+}
+
+/**
  * The inverse of `staffStepAt`: which pitch sits on a given staff step.
  *
  * The walk only ever needs step-from-pitch, because the song says what to
