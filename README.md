@@ -24,7 +24,9 @@ under *Book Two — true keys* in the songbook, each tune marked with its key, e
 know how the tune goes, the pitch is free even when the letter is gone, so
 you are never stuck.
 
-A family can also add its own songs — tap one out in free play, or import a
+A family can also add its own songs — tap one out in free play (*Make a song ♪*
+in the songbook: a ladder of every position the books write, from the low B
+under middle C up to the A above the staff), or import a
 MIDI or MusicXML file — and every one of them is held to the same engraving
 rules as the built-in songbook, so nothing a child reads is ever wrong.
 

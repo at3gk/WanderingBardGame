@@ -7794,6 +7794,17 @@ as before.
     relative to the head (`STEP_PX` from `glyphWorldSize`'s head-to-space
     ratio). Tests pin the helper, the cell→step uniqueness, and that every
     B3 the books write gets a line above its head. Tests 1433 -> 1442.
+229. ~~**Free play reaches B3.**~~ Done (run 311, self-set — found while
+    headlessly checking run 310's atlas: the B3 cell's ledger now touches
+    the head's top, as intended). `FREE_PLAY_LOW_STEP` 0 → -1, so the
+    free-play ladder offers every position the songbooks write (*My Bonnie*
+    and *Amazing Grace* write B3); its ledgers come from `ledgerLineSteps`,
+    so middle C's line sits above the bottom rung. `freePlayStepAt` folds
+    -0 into 0. The "Try solfège" toggle moved from a full-width bottom strip
+    to the bottom-left corner — the squeezed landscape layout (664×390) put
+    B3 under the strip. A new test requires every written step (Book One
+    and Book Two, spelt in key) to be a rung and the bottom rung to be one
+    some tune writes. Tests 1442 -> 1443.
 
 ## Idea backlog (pull from here when nothing is queued)
 

@@ -1121,3 +1121,12 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   (`ledgerLineSteps` in `core/notation.ts`: only on even steps, middle C's
   line above a B3 head, two for an A3). Middle C and A5 look as before.
   Engraving correctness on the screen kids learn from; nothing added or cut.
+- 2026-11-14 (run 311) — Free play reaches B3. The free-play ladder started
+  at middle C, though its own header calls offering "fewer notes than the
+  songs use" the worse trade — and since Book Two, *My Bonnie* and *Amazing
+  Grace* write the space under middle C. The ladder now runs B3–A5 (fourteen
+  rungs, still ≥ 26px each on a 390px-tall landscape phone), with middle C's
+  ledger drawn above the bottom rung, as the walk now engraves it. Squeezing
+  the margins to fit put that rung under the full-width "Try solfège" strip,
+  so the toggle moved to the bottom-left corner. A3 (drawable, written by no
+  tune) stays off. Nothing added to the mechanic; nothing cut.

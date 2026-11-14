@@ -7,8 +7,8 @@
  * `core/customSongs.ts` has held a recording session's state machine since
  * run 147 — but nothing drew the ladder or let a finger reach it, and
  * nothing called the state machine. This file is that draw: a full-screen
- * ladder of the thirteen positions free play offers (one ledger below
- * middle C to one ledger above the staff, per
+ * ladder of the fourteen positions free play offers (B3 under the
+ * middle-C ledger up to A5 on the ledger above the staff, per
  * `FREE_PLAY_LOW_STEP`/`FREE_PLAY_HIGH_STEP`), five real staff lines at
  * `STAFF_LINE_STEPS` so the spaces read as spaces, a tap anywhere on the
  * ladder plays that pitch and shows its letter — "position → sound →
@@ -53,7 +53,7 @@ import {
   freePlayStepAt,
   FreePlayStaff,
 } from '../core/freePlay';
-import { STAFF_LINE_STEPS, needsLedger, letterForStep, solfegeAtStep, semitoneAtStep } from '../core/notation';
+import { STAFF_LINE_STEPS, ledgerLineSteps, letterForStep, solfegeAtStep, semitoneAtStep } from '../core/notation';
 import { semitoneToFrequency } from '../audio/baseLoop';
 import { playVoiceNote } from '../audio/instrumentVoice';
 import type { InstrumentVoice } from '../core/instruments';
@@ -219,16 +219,19 @@ export class FreePlayScreen {
     });
     this.root.appendChild(this.noteLabel);
 
-    // The label-style toggle: bottom-centred, in the margin `BOTTOM_MARGIN`
-    // already reserves below the ladder, styled like `keepTapping` below
-    // (italic, underlined, self-describing text rather than an icon a
-    // family would have to learn).
+    // The label-style toggle: in the bottom-left corner, styled like
+    // `keepTapping` below (italic, underlined, self-describing text rather
+    // than an icon a family would have to learn). It was a full-width strip
+    // centred under the ladder until run 311; on a short landscape phone
+    // `freePlayStaff` squeezes the bottom margin to fit every rung, which
+    // put the lowest note (B3) under that strip, so a tap aimed at it
+    // toggled the labels instead. In the corner it sizes to its own words
+    // and sits clear of the ladder, which is centred and at most 260px wide.
     this.labelToggle = element('div', {
       position: 'absolute',
-      left: '0',
-      right: '0',
+      left: '14px',
       bottom: '10px',
-      textAlign: 'center',
+      textAlign: 'left',
       fontStyle: 'italic',
       fontSize: '13px',
       letterSpacing: '0.02em',
@@ -335,7 +338,7 @@ export class FreePlayScreen {
     // `freePlayStepAt` clamps to the nearest step across the whole ladder
     // (see its own header: a tap short of the top or bottom note should
     // still play that note, not nothing) — so one listener on the root,
-    // not thirteen per-row hit targets, is the correct shape here.
+    // not fourteen per-row hit targets, is the correct shape here.
     this.root.addEventListener('pointerdown', (event) => this.tap(event));
 
     // Keyboard/screen-reader reach, matching Hud.ts's veil pattern (task
@@ -379,11 +382,12 @@ export class FreePlayScreen {
     for (const step of STAFF_LINE_STEPS) {
       this.staffLayer.appendChild(this.ledgerMark(step, width, STAFF_LINE_COLOR));
     }
-    // The ladder's own two ends double as the beginner's first ledger
-    // lines (middle C below, A5 above) — `needsLedger` names exactly
-    // those two steps.
-    for (const step of [FREE_PLAY_LOW_STEP, FREE_PLAY_HIGH_STEP]) {
-      if (!needsLedger(step)) continue;
+    // The beginner's first ledger lines: middle C's below the staff and
+    // A5's above it. `ledgerLineSteps` puts them where the staff would —
+    // the ladder's bottom rung, B3, hangs under middle C's line rather than
+    // wearing one through itself (the same rule the walk's atlas follows).
+    const ledgers = new Set([...ledgerLineSteps(FREE_PLAY_LOW_STEP), ...ledgerLineSteps(FREE_PLAY_HIGH_STEP)]);
+    for (const step of ledgers) {
       this.staffLayer.appendChild(this.ledgerMark(step, width * 0.3, LEDGER_COLOR));
     }
   }

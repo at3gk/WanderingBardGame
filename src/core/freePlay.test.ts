@@ -10,7 +10,8 @@ import {
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
 import { advanceSequence, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
-import { ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
+import { BOOK_TWO_SONGS, ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
+import { majorKey, spellInKey } from './notation';
 
 const VIEWPORTS: Array<[string, number]> = [
   ['narrow 320', 568],
@@ -62,7 +63,7 @@ describe('the free-play staff', () => {
   });
 
   it('covers exactly the range the songbook draws, naming every step', () => {
-    expect(semitoneAtStep(FREE_PLAY_LOW_STEP)).toBe(0); // middle C
+    expect(semitoneAtStep(FREE_PLAY_LOW_STEP)).toBe(-1); // B3, under middle C
     expect(semitoneAtStep(FREE_PLAY_HIGH_STEP)).toBe(21); // A5
     for (let step = FREE_PLAY_LOW_STEP; step <= FREE_PLAY_HIGH_STEP; step++) {
       expect(noteNameAtStep(step)).toMatch(/^[A-G]$/);
@@ -98,6 +99,28 @@ describe('marking the chosen song\'s notes', () => {
         expect(step, `${song.id} step ${step}`).toBeLessThanOrEqual(FREE_PLAY_HIGH_STEP);
       }
     }
+  });
+
+  it('offers every position either songbook writes, and no more than the floor needs', () => {
+    // Run 311: My Bonnie and Amazing Grace write the space under middle C
+    // (B3 / B-flat 3). Free play's ladder started at middle C, so a child
+    // could meet that note on the walk and never find it here. Every
+    // written position — Book One's naturals, Book Two's spelt-in-key
+    // steps — must be a rung; and the lowest rung must be one some tune
+    // actually writes, so the ladder never grows for nothing.
+    const written = new Set<number>();
+    for (const song of [...SONGS, ...BOOK_TWO_SONGS]) {
+      const key = majorKey(song.key ?? 'C');
+      for (const note of song.notes) {
+        if (note.rest || !key) continue;
+        written.add(spellInKey(note.semitone, key).step);
+      }
+    }
+    for (const step of written) {
+      expect(step, `written step ${step}`).toBeGreaterThanOrEqual(FREE_PLAY_LOW_STEP);
+      expect(step, `written step ${step}`).toBeLessThanOrEqual(FREE_PLAY_HIGH_STEP);
+    }
+    expect(written.has(FREE_PLAY_LOW_STEP)).toBe(true);
   });
 
   it('leaves plenty unmarked — the point is that it narrows the ladder', () => {
