@@ -27,13 +27,19 @@
 import { Song } from './song';
 import { staffStepAt } from './notation';
 
-/** One ledger below middle C up to one ledger above the staff — the range the songbook draws. */
-export const FREE_PLAY_LOW_STEP = 0;
+/**
+ * B3, hanging under the middle-C ledger, up to A5 on the ledger above the
+ * staff — every position the songbooks write. The ladder started at middle
+ * C; run 311 added B3 because *My Bonnie* and *Amazing Grace* both write it,
+ * and a child who meets that low note on the walk should be able to find it
+ * here. (A3, the drawable floor, is written by no tune, so it stays off.)
+ */
+export const FREE_PLAY_LOW_STEP = -1;
 export const FREE_PLAY_HIGH_STEP = 12;
 
 /**
  * The minimum a touch target may shrink to. Well under the 44px Apple asks
- * for, because thirteen of them have to share a phone's height — but a
+ * for, because fourteen of them have to share a phone's height — but a
  * deliberate poke at a stationary target is a far easier gesture than a
  * timed tap, and the alternative is offering fewer notes than the songs
  * use.
@@ -64,7 +70,7 @@ export interface FreePlayStaff {
  * During the walk the steps sit 9px apart, which is fine to read and
  * impossible to aim at — a fingertip covers four of them. With nothing
  * scrolling there is no reason to be that small, so free play spreads the
- * same thirteen positions over whatever room the screen has.
+ * same fourteen positions over whatever room the screen has.
  */
 export function freePlayStaff(viewportH: number, topMargin: number, bottomMargin: number): FreePlayStaff {
   const steps = FREE_PLAY_HIGH_STEP - FREE_PLAY_LOW_STEP;
@@ -72,10 +78,11 @@ export function freePlayStaff(viewportH: number, topMargin: number, bottomMargin
 
   // Give back margin before giving up on target size, and give up on target
   // size before running off the screen. A short landscape phone has 260px
-  // between the default margins for twelve gaps, which is under the floor —
-  // and simply overflowing put middle C at y=386 on a 390px screen, clipped
-  // at the edge and unreachable. Squeezing the margins first buys 27px a
-  // step, which clears the floor and keeps every note on screen.
+  // between the default margins for the ladder's gaps, which is under the
+  // floor — and simply overflowing put middle C at y=386 on a 390px screen,
+  // clipped at the edge and unreachable. Squeezing the margins first buys
+  // just over 26px a step across thirteen gaps (B3 to A5), which clears the
+  // floor and keeps every note on screen.
   let top = topMargin;
   let bottom = bottomMargin;
   if (viewportH - top - bottom < needed) {
@@ -104,7 +111,11 @@ export function freePlayStepY(step: number, staff: FreePlayStaff): number {
  */
 export function freePlayStepAt(y: number, staff: FreePlayStaff): number {
   const raw = FREE_PLAY_LOW_STEP + (staff.bottomY - y) / staff.stepGap;
-  return Math.max(FREE_PLAY_LOW_STEP, Math.min(FREE_PLAY_HIGH_STEP, Math.round(raw)));
+  // `+ 0` folds -0 into 0: with the ladder reaching below middle C, a tap
+  // just under it rounds to -0, which is equal but not `Object.is`-equal
+  // to the middle C the rest of the game names (and would be stored as-is
+  // in a recorded take).
+  return Math.max(FREE_PLAY_LOW_STEP, Math.min(FREE_PLAY_HIGH_STEP, Math.round(raw))) + 0;
 }
 
 /**
