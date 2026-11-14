@@ -7805,8 +7805,23 @@ as before.
     B3 under the strip. A new test requires every written step (Book One
     and Book Two, spelt in key) to be a rung and the bottom rung to be one
     some tune writes. Tests 1442 -> 1443.
+230. ~~**Free play's hint stops wearing A5's ledger as an underline.**~~
+    Done (run 312, self-set — closing run 311's playtest question
+    headlessly). Screenshots of the built game at 664×390 and 740×360
+    showed the squeezed ladder's top rung at y=34 and A5's short ledger
+    running through the centred hint ("Tap a line ~~or a space~~…"). New
+    pure `hintTopPad(staff)` in `core/freePlay.ts`: the hint keeps its 16px
+    padding when the ladder leaves room and gives it up (down to 0) so its
+    line box ends `HINT_CLEARANCE` (10px) above the top rung; the screen
+    sets it in `layout()`. 360×740 portrait unchanged. Tests 1443 -> 1446.
 
 ## Idea backlog (pull from here when nothing is queued)
+
+- **"keep tapping" sits on the top rungs** (run 312): the link shown under
+  the hint when a stopped take can't be saved is `pointer-events: auto` at
+  y≈50-72, across A5/G5 on every screen, so a tap aimed at those notes
+  presses the link instead. Rare state (stopped, unsaveable take); fix by
+  placing it below the hint via `hintTopPad` or beside the record button.
 
 - ~~**Book Two, more pages**~~ (run 305): A major shipped as task 224 (run
   306, *Oh! Susanna*), E flat as task 225 (run 307, *Amazing Grace*). Item
