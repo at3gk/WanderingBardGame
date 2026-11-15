@@ -9,7 +9,9 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. As of run 140, the live queue
+  authoritative, every-run-updated pointer. **As of run 315 the live
+  queue is "Practice returns" (tasks 233-235, near the end of this
+  file).** Historical note: as of run 140, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
   standing in for the human eyes v0.7 assumed weren't available, plus the
@@ -2304,6 +2306,13 @@ scene — build once).
     question a 5-9-year-old's fingers should settle, not a scheduled
     run). Arc-sized and design-sensitive; split before attempting, and
     consider asking the human about the input model first.
+    **UNBLOCKED (run 315, consolidation).** The input model this task
+    waited on now exists: free play's ladder (`ui/freePlayScreen.ts`,
+    live since run 150, reaching B3-A5 since run 311) is a full-screen
+    tap-on-a-line-or-space input, and families already use it to record
+    songs. Practice reuses it unchanged, so no new input is being
+    invented by a scheduled run. Split into tasks 233-235 below; this
+    task's own unguided tier is 235.
 162. ~~**Campfire rehearsal.**~~ Each campfire offers one attempt at the
     carried song without notes — no-fail, notes return on a stumble, the
     journal writes it warmly either way. (Campfire/RoadStage + core.)
@@ -7832,6 +7841,24 @@ as before.
     Playwright on the built game at 320×640, 360×740, 664×390: the hint
     sits between ● and × without touching either (the first, longer
     draft ran under both at 360px and was cut). Tests 1446 -> 1448.
+
+### Practice returns (run 315 consolidation, from task 161)
+
+233. **Guided practice on the free-play ladder.** With a tune open in the
+    songbook, offer a quiet way into the ladder that brings that tune
+    with it: the next position wears a pip (`songStepSequence`), a
+    right tap moves the pip on (`advanceSequence`), a wrong tap sounds
+    and costs nothing, the last note wraps to the first with a soft
+    chime, no score or count. Free play never feeds the scaffold
+    (DESIGN "Two ways in"). Recording stays as it is. Split if the
+    songbook entry point and the pip together don't fit one run — the
+    pip on a fixed test tune is the first piece.
+234. **The found notes are written out.** Correct taps lay note heads
+    left to right across the ladder (`writtenNoteSlot`), wrapping like a
+    line of sheet music, so reading order is shown every bar.
+235. **By heart (task 161's unguided tier).** Practice without the pip;
+    a few wrong taps in a row bring the pip back quietly (quick to help,
+    slow to withdraw, as on the road). No badge, no fraction.
 
 ## Idea backlog (pull from here when nothing is queued)
 

@@ -49,6 +49,13 @@ rather than remembering the melody — is what moves you forward, and it is
 therefore the only place that closes the gap the Pedagogy section admits to
 below.
 
+*Honesty note (run 315 consolidation):* free play is live — the ladder in
+the songbook's *Make a song ♪* screen — but **practice is not**. Its
+logic (`songStepSequence`, `advanceSequence`, `stepsUsedBy`,
+`writtenNoteSlot` in `core/freePlay.ts`) is written and tested, and no
+screen calls it: the 2D practice UI died in run 44's move to Three.js and
+was never rebuilt. ROADMAP task 233 rebuilds it on the free-play ladder.
+
 Two rules hold across both. Free play never feeds the learning model: a note
 the child picked is not evidence they can read one the game picked, and
 fading letters on the strength of poking about would corrupt the only signal
@@ -1148,3 +1155,13 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   last bar reads "tap 3 more to finish the bar". Copy kept short enough to
   sit between ● and × on a 320px phone. The save gate itself
   (`engravingProblem`) is unchanged. Nothing added or cut.
+- 2026-11-15 (run 315, consolidation) — Practice is back on the plan. A
+  play-through found that this document described practice mode (a chosen
+  tune as positions to find, a pip on the next one) although no screen
+  offers it; the honesty note under "Two ways in" now says so. Task 161
+  had been parked under "Blocked on human" since 2026-08-01 because
+  practice needed a position-choosing input the walk lacks. Free play's
+  ladder has been exactly that input since run 150, refined by runs
+  311-313, so practice needs no new input model. Task 161 is unblocked
+  and split: 233 (guided practice on the ladder), 234 (found notes
+  written left to right), 235 (161's unguided tier). Nothing cut.
