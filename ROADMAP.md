@@ -7823,10 +7823,20 @@ as before.
     sits at the bottom-right, a tap at the old spot (centre, y=61) no
     longer resumes the take, and the link itself still does. DOM-only;
     tests stay 1446.
+232. ~~**A short take says "tap more notes", not "whole final bar".**~~
+    Done (run 314, pulled from the idea backlog). `recordingProblem`
+    (core/customSongs.ts) now answers a tapped take's count problems
+    itself, shortness first: under 16 taps "tap more notes — a tune needs
+    16"; 16+ with a ragged bar "tap N more to finish the bar"; anything
+    else falls through to `engravingProblem`, which is unchanged.
+    Playwright on the built game at 320×640, 360×740, 664×390: the hint
+    sits between ● and × without touching either (the first, longer
+    draft ran under both at 360px and was cut). Tests 1446 -> 1448.
 
 ## Idea backlog (pull from here when nothing is queued)
 
-- **A one-note take's message** (run 313): stopping free play's recorder
+- ~~**A one-note take's message**~~ (run 313) — shipped as task 232 (run
+  314). Was: stopping free play's recorder
   after a single tap shows "does not fill a whole final bar" — true, but a
   child would understand "tap a few more notes" sooner. Check the order
   `recordingProblem` reports problems in before changing any copy.

@@ -296,15 +296,24 @@ export function resumeRecording(session: RecordingSession): RecordingSession {
 
 /**
  * A live read on whether the take so far could be saved, without needing
- * a name yet — lets the screen show the same words `saveCustomSong` would
- * decline with (e.g. "needs at least 16 notes to sound like a tune")
- * while the child is still tapping, rather than only at the name prompt.
+ * a name yet — lets the screen say what's missing in tapping words
+ * (e.g. "tap more notes — a tune needs 16") while the
+ * child is still tapping, rather than only at the name prompt.
  * `null` while recording is active is not a promise the take is done —
  * only `engravingProblem` on the frozen take, after stop, is the real
  * gate; this is guidance, not validation.
  */
 export function recordingProblem(steps: readonly number[]): string | null {
-  if (steps.length === 0) return 'needs at least one note';
+  const n = steps.length;
+  if (n === 0) return 'needs at least one note';
+  // A tapped take is all quarter notes, so its only likely problems are
+  // counts. Say them in tapping words, shortness first: before run 314 a
+  // one-to-three-tap take read "does not fill a whole final bar" (the bar
+  // check runs before the length check in `engravingProblem`), which is
+  // true but tells a child nothing about what to do next.
+  if (n < MIN_CUSTOM_SONG_NOTES) return `tap more notes — a tune needs ${MIN_CUSTOM_SONG_NOTES}`;
+  const short = (CUSTOM_SONG_BEATS_PER_BAR - (n % CUSTOM_SONG_BEATS_PER_BAR)) % CUSTOM_SONG_BEATS_PER_BAR;
+  if (short > 0) return `tap ${short} more to finish the bar`;
   return engravingProblem(buildCustomSong('preview', 'preview', steps));
 }
 

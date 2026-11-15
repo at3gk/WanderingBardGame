@@ -19,8 +19,9 @@
  * rather than inventing new ones: pressing it while idle calls
  * `startRecording` (a fresh take); pressing it while recording calls
  * `stopRecording` (freezes the take). A frozen take that still has a
- * problem (`recordingProblem`, the same words `engravingProblem` would
- * decline a save with) shows that message and a single "keep tapping"
+ * problem (`recordingProblem`: the save gate's verdict, said in tapping
+ * words — "tap more notes — a tune needs 16", "tap 2 more to finish
+ * the bar") shows that message and a single "keep tapping"
  * button — `resumeRecording`, the module's own declined-kindly path — with
  * no separate "discard" concept: pressing record again from that state
  * calls `startRecording` again, which the module already documents as a
