@@ -323,10 +323,27 @@ describe('the recording door (task 176 piece 2)', () => {
   });
 
   describe('recordingProblem', () => {
-    it('mirrors engravingProblem\'s words for a live, in-progress take', () => {
+    it('flags an empty or short take and clears a saveable one', () => {
       expect(recordingProblem([])).toMatch(/at least one note/);
-      expect(recordingProblem([0, 1, 2, 3])).toMatch(/at least/); // one whole bar, still short
+      expect(recordingProblem([0, 1, 2, 3])).toMatch(/needs 16/); // one whole bar, still short
       expect(recordingProblem(validSteps())).toBeNull();
+    });
+
+    it('asks a short take for more notes before mentioning bars, in words short enough to sit between ● and × (run 314)', () => {
+      for (const n of [1, 2, 3, 5, 15]) {
+        const problem = recordingProblem(Array.from({ length: n }, (_, i) => i % 8));
+        expect(problem).toMatch(/^tap more notes/);
+        expect(problem).toContain(String(MIN_CUSTOM_SONG_NOTES));
+        expect(problem).not.toMatch(/bar/);
+      }
+    });
+
+    it('counts the taps left to finish the last bar once the take is long enough', () => {
+      const take = (n: number) => recordingProblem(Array.from({ length: n }, (_, i) => i % 8));
+      expect(take(MIN_CUSTOM_SONG_NOTES + 1)).toBe('tap 3 more to finish the bar');
+      expect(take(MIN_CUSTOM_SONG_NOTES + 2)).toBe('tap 2 more to finish the bar');
+      expect(take(MIN_CUSTOM_SONG_NOTES + 3)).toBe('tap 1 more to finish the bar');
+      expect(take(MIN_CUSTOM_SONG_NOTES + 4)).toBeNull();
     });
   });
 

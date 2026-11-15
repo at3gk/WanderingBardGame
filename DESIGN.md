@@ -1141,3 +1141,10 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   centred just under the hint, and its box sat across the A5/G5 rungs on
   every screen, so a tap aimed at those notes resumed the take instead of
   playing them. Layout only; nothing added or cut.
+- 2026-11-15 (run 314) — Free play's recording hint speaks in tapping
+  words. A one-to-three-tap take used to read "does not fill a whole final
+  bar" (the save gate checks bars before length); now a short take reads
+  "tap more notes — a tune needs 16", and a long-enough take with a ragged
+  last bar reads "tap 3 more to finish the bar". Copy kept short enough to
+  sit between ● and × on a 320px phone. The save gate itself
+  (`engravingProblem`) is unchanged. Nothing added or cut.
