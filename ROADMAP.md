@@ -7814,10 +7814,25 @@ as before.
     padding when the ladder leaves room and gives it up (down to 0) so its
     line box ends `HINT_CLEARANCE` (10px) above the top rung; the screen
     sets it in `layout()`. 360×740 portrait unchanged. Tests 1443 -> 1446.
+231. ~~**"keep tapping" steps off the top rungs.**~~ Done (run 313, pulled
+    from the idea backlog). The link shown when a stopped take can't be
+    saved lived in a centred row at top 44px, its box (y≈50-72) across the
+    A5/G5 rungs on every screen. The controls row now sits in the
+    bottom-right corner (13px italic, like the solfège toggle opposite).
+    Playwright on the built game at 664×390, 740×360 and 360×740: the link
+    sits at the bottom-right, a tap at the old spot (centre, y=61) no
+    longer resumes the take, and the link itself still does. DOM-only;
+    tests stay 1446.
 
 ## Idea backlog (pull from here when nothing is queued)
 
-- **"keep tapping" sits on the top rungs** (run 312): the link shown under
+- **A one-note take's message** (run 313): stopping free play's recorder
+  after a single tap shows "does not fill a whole final bar" — true, but a
+  child would understand "tap a few more notes" sooner. Check the order
+  `recordingProblem` reports problems in before changing any copy.
+
+- ~~**"keep tapping" sits on the top rungs**~~ (run 312) — shipped as task
+  231 (run 313). Was: the link shown under
   the hint when a stopped take can't be saved is `pointer-events: auto` at
   y≈50-72, across A5/G5 on every screen, so a tap aimed at those notes
   presses the link instead. Rare state (stopped, unsaveable take); fix by

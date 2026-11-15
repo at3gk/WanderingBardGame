@@ -1136,3 +1136,8 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   its top padding (to the screen edge if needed) so its words end 10px
   above the top rung; tall screens look as before. Layout only; nothing
   added or cut.
+- 2026-11-15 (run 313) — Free play's "keep tapping" link moves to the
+  bottom-right corner, mirroring "Try solfège" in the bottom-left. It was
+  centred just under the hint, and its box sat across the A5/G5 rungs on
+  every screen, so a tap aimed at those notes resumed the take instead of
+  playing them. Layout only; nothing added or cut.

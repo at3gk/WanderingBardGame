@@ -150,12 +150,16 @@ export class FreePlayScreen {
     this.hint.textContent = DEFAULT_HINT;
     this.root.appendChild(this.hint);
 
+    // The "keep tapping" link's home: the bottom-right corner, mirroring the
+    // label toggle in the bottom-left. Until run 313 it was a centred row at
+    // top 44px, which put the link's box (y≈50-72) across the A5/G5 rungs on
+    // every screen size, so a tap aimed at those notes pressed the link. In
+    // the corner it sizes to its own words and sits off the ladder's centre.
     this.controlsRow = element('div', {
       position: 'absolute',
-      top: '44px',
-      left: '0',
-      right: '0',
-      textAlign: 'center',
+      right: '14px',
+      bottom: '10px',
+      textAlign: 'right',
       pointerEvents: 'none',
     });
     this.root.appendChild(this.controlsRow);
@@ -554,7 +558,8 @@ export class FreePlayScreen {
     const keepTapping = element('div', {
       pointerEvents: 'auto',
       display: 'inline-block',
-      marginTop: '6px',
+      fontSize: '13px',
+      letterSpacing: '0.02em',
       textDecoration: 'underline',
       fontStyle: 'italic',
       cursor: 'pointer',

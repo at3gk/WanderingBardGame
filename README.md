@@ -26,7 +26,9 @@ you are never stuck.
 
 A family can also add its own songs — tap one out in free play (*Make a song ♪*
 in the songbook: a ladder of every position the books write, from the low B
-under middle C up to the A above the staff), or import a
+under middle C up to the A above the staff; ● records and ■ stops, and if a
+take isn't ready to save yet, *keep tapping* in the bottom-right corner picks
+it up where you left off), or import a
 MIDI or MusicXML file — and every one of them is held to the same engraving
 rules as the built-in songbook, so nothing a child reads is ever wrong.
 
