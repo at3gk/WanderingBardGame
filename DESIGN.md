@@ -53,9 +53,10 @@ below.
 live — the ladder in the songbook's *Make a song ♪* screen — and since
 run 316 so is **guided practice**: with a tune pinned, that ladder opens
 with a gold pip on the tune's next note, a right tap moves it on, a wrong
-tap only sounds, and the last note chimes and wraps home. Still unbuilt:
-the found notes written out left to right (`writtenNoteSlot`, task 234)
-and the unguided by-heart tier (task 235).
+tap only sounds, and the last note chimes and wraps home. Since run 317
+the found notes are written out left to right, a line at a time
+(`practiceLine`, task 234). Still unbuilt: the unguided by-heart tier
+(task 235).
 
 Two rules hold across both. Free play never feeds the learning model: a note
 the child picked is not evidence they can read one the game picked, and
@@ -1176,3 +1177,12 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   pauses practice; free play still never feeds the scaffold. A tune note
   the ladder doesn't draw is skipped rather than stalling the pip.
   Nothing cut.
+- 2026-11-16 (run 317) — The found notes are written out (task 234). In
+  practice each right tap writes its note head (soft ink) into the next
+  column across the ladder, and the pip waits in the column after — where
+  the next note goes — so reading order is shown every bar. A full line
+  starts a clean one; finishing the tune starts a clean page. The page is
+  derived from the pip's index alone (`practiceLine`), so a wrong tap
+  writes nothing. The tapped letter now sits above its column (below it
+  from E5 up, clear of the hint), replacing run 316's fixed 44px pip
+  offset. Ledger notes carry their own short ledgers. Nothing cut.

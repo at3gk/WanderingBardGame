@@ -13,7 +13,7 @@ import {
   hintTopPad,
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
-import { advanceSequence, practiceSequence, practiceTap, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
+import { advanceSequence, practiceLine, practiceSequence, practiceTap, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
 import { BOOK_TWO_SONGS, ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
 import { majorKey, spellInKey } from './notation';
 
@@ -309,5 +309,64 @@ describe('practice on the ladder (task 233)', () => {
     expect(practiceTap(2, 0, seq)).toEqual({ index: 0, finished: true });
     expect(practiceTap(2, 4, seq)).toEqual({ index: 2, finished: false });
     expect(practiceTap(0, 0, [])).toEqual({ index: 0, finished: false });
+  });
+});
+
+describe('the found notes written out (task 234)', () => {
+  const seq = [4, 3, 2, 3, 4, 4, 4, 3, 3, 3]; // Mary's opening, E D C D E E E D D D
+
+  it('a fresh tune starts on a clean line with the pip in the first column', () => {
+    const line = practiceLine(0, seq, 150);
+    expect(line.written).toEqual([]);
+    expect(line.pipColumn).toBe(0);
+    expect(line.perLine).toBe(5);
+  });
+
+  it('every note found so far on this line is written, in order, left to right', () => {
+    const line = practiceLine(3, seq, 150);
+    expect(line.written).toEqual([
+      { step: 4, column: 0 },
+      { step: 3, column: 1 },
+      { step: 2, column: 2 },
+    ]);
+    expect(line.pipColumn).toBe(3);
+  });
+
+  it('a full line turns to a clean one, keeping only what is found on it', () => {
+    expect(practiceLine(5, seq, 150)).toMatchObject({ written: [], pipColumn: 0 });
+    const line = practiceLine(7, seq, 150);
+    expect(line.written.map((n) => n.step)).toEqual([4, 4]);
+    expect(line.pipColumn).toBe(2);
+  });
+
+  it('finishing the tune (the pip wrapping to 0) leaves a clean page', () => {
+    const finished = practiceTap(seq.length - 1, seq[seq.length - 1], seq);
+    expect(finished.finished).toBe(true);
+    expect(practiceLine(finished.index, seq, 150).written).toEqual([]);
+  });
+
+  it('a wrong tap writes nothing, because the page follows the pip alone', () => {
+    const before = practiceLine(2, seq, 150);
+    const after = practiceLine(practiceTap(2, 9, seq).index, seq, 150);
+    expect(after.written).toEqual(before.written);
+  });
+
+  it('centres the line on the ladder, one spacing between columns', () => {
+    const line = practiceLine(0, seq, 150);
+    expect(line.offsetX(0)).toBe(-60);
+    expect(line.offsetX(2)).toBe(0);
+    expect(line.offsetX(4)).toBe(60);
+    expect(line.offsetX(1) - line.offsetX(0)).toBe(30);
+  });
+
+  it('a whole line stays inside the width it was given', () => {
+    for (const w of [156, 192, 260]) {
+      const line = practiceLine(0, seq, w);
+      expect(Math.abs(line.offsetX(line.perLine - 1)) + 15, `width ${w}`).toBeLessThanOrEqual(w / 2);
+    }
+  });
+
+  it('copes with an empty tune', () => {
+    expect(practiceLine(3, [], 150)).toMatchObject({ written: [], pipColumn: 0 });
   });
 });
