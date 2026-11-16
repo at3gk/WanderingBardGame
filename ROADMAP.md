@@ -9,9 +9,9 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **As of run 317 the live
-  queue is "Practice returns" (task 235, near the end of this
-  file).** Historical note: as of run 140, the live queue
+  authoritative, every-run-updated pointer. **As of run 318 the
+  "Practice returns" queue (tasks 233-235) is done and nothing is
+  queued — see the idea backlog near the end of this file.** Historical note: as of run 140, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
   standing in for the human eyes v0.7 assumed weren't available, plus the
@@ -7877,7 +7877,14 @@ as before.
     seventh note starts a clean line. Original text: Correct taps lay note heads
     left to right across the ladder (`writtenNoteSlot`), wrapping like a
     line of sheet music, so reading order is shown every bar.
-235. **By heart (task 161's unguided tier).** Practice without the pip;
+235. ~~**By heart (task 161's unguided tier).**~~ Done (run 318). A
+    *play by heart* / *show the dot* link in the bottom-right corner while
+    practising; pure `byHeartTap` (3 misses in a row → pip back for 4
+    right notes) and `pipShown` in core/freePlay.ts, +8 tests (1461 ->
+    1469). Playwright on the built game at 360×740, 320×640, 664×390:
+    Mary pinned, by heart hides the pip, three misses bring it back on E,
+    *show the dot* restores guided. Not saved; never feeds the scaffold.
+    Original text: Practice without the pip;
     a few wrong taps in a row bring the pip back quietly (quick to help,
     slow to withdraw, as on the road). No badge, no fraction.
 

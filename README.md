@@ -42,6 +42,12 @@ starts. At the end a soft chime plays and the dot goes back to the first
 note on a clean line. (Choose *Wander the songbook* for plain
 free play; pressing ● to record hides the dot until you stop.)
 
+**Play it by heart:** while practising, tap *play by heart* in the
+bottom-right corner. The dot goes away and the tune is yours to find; the
+notes you get right are still written in. If three taps in a row miss,
+the dot comes back quietly for the next few notes, then steps away again.
+Tap *show the dot* to have it back for good.
+
 Play it live: https://at3gk.github.io/WanderingBardGame/
 
 See [DESIGN.md](./DESIGN.md) for the concept and the pedagogy, and

@@ -58,7 +58,11 @@ import {
   practiceSequence,
   practiceTap,
   practiceLine,
+  byHeartTap,
+  NO_HELP,
+  pipShown,
 } from '../core/freePlay';
+import type { ByHeartHelp } from '../core/freePlay';
 import type { Song } from '../core/song';
 import { STAFF_LINE_STEPS, ledgerLineSteps, letterForStep, solfegeAtStep, semitoneAtStep } from '../core/notation';
 import { semitoneToFrequency } from '../audio/baseLoop';
@@ -93,6 +97,8 @@ const RECORD_RED = '#d1503a';
 const DEFAULT_HINT = 'Tap a line or a space to hear it';
 /** Practice's resting hint: the instruction, not the tune's name (titles run long on a 320px phone). */
 const PRACTICE_HINT = 'Tap the line or space by the dot';
+/** By heart's resting hint (task 235): the dot is away, the tune is the child's to find. */
+const BY_HEART_HINT = 'Find the tune by heart';
 /** The pip: a warm note head where the next note of the chosen tune is written. */
 const PIP_COLOR = '#e8b85a';
 /** The found notes written out (task 234): ink heads, a touch softer than the tapped letter. */
@@ -141,6 +147,9 @@ export class FreePlayScreen {
   private readonly writtenLayer: HTMLDivElement;
   private readonly practiceSteps: number[];
   private practiceIndex = 0;
+  /** By heart (task 235): the pip stays away unless a few misses in a row call it back. */
+  private byHeart = false;
+  private help: ByHeartHelp = NO_HELP;
   private pipPulseTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly onResize = () => this.layout();
 
@@ -482,6 +491,10 @@ export class FreePlayScreen {
       });
       this.writtenLayer.appendChild(head);
     }
+    if (!pipShown(this.byHeart, this.help)) {
+      this.pip.style.display = 'none';
+      return;
+    }
     const pipStep = this.practiceSteps[this.practiceIndex];
     const pipX = line.offsetX(line.pipColumn);
     this.writtenLayer.appendChild(this.noteLedgers(pipStep, pipX));
@@ -560,7 +573,10 @@ export class FreePlayScreen {
       const before = this.practiceIndex;
       const result = practiceTap(this.practiceIndex, step, this.practiceSteps);
       this.practiceIndex = result.index;
-      if (result.index !== before || result.finished) this.pulsePip();
+      const right = result.index !== before || result.finished;
+      const wasShown = pipShown(this.byHeart, this.help);
+      if (this.byHeart) this.help = byHeartTap(this.help, right);
+      if (right && wasShown) this.pulsePip();
       if (result.finished) this.chime();
       this.renderPip();
     }
@@ -651,6 +667,38 @@ export class FreePlayScreen {
     this.renderRecordUI();
   }
 
+  /**
+   * By heart's way in and out (task 235), in the bottom-right corner while
+   * practising: "play by heart" sends the dot away, "show the dot" brings it
+   * back for good. Named for what tapping it does, like the label toggle.
+   */
+  private byHeartLink(): HTMLDivElement {
+    const link = element('div', {
+      pointerEvents: 'auto',
+      display: 'inline-block',
+      fontSize: '13px',
+      letterSpacing: '0.02em',
+      textDecoration: 'underline',
+      fontStyle: 'italic',
+      cursor: 'pointer',
+      opacity: '0.8',
+    });
+    link.textContent = this.byHeart ? 'show the dot' : 'play by heart';
+    link.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.onToggleByHeart();
+    });
+    bindRowActivation(link, true, () => this.onToggleByHeart());
+    return link;
+  }
+
+  private onToggleByHeart(): void {
+    this.byHeart = !this.byHeart;
+    this.help = NO_HELP;
+    this.renderRecordUI();
+  }
+
   /** "Not yet, keep tapping" — the declined-kindly path back into capture, nothing already tapped lost. */
   private onKeepTapping(): void {
     this.session = resumeRecording(this.session);
@@ -721,7 +769,8 @@ export class FreePlayScreen {
     this.recordButton.setAttribute('aria-label', 'Start recording');
 
     if (this.session.steps.length === 0) {
-      this.hint.textContent = this.practiceSteps.length ? PRACTICE_HINT : DEFAULT_HINT;
+      this.hint.textContent = !this.practiceSteps.length ? DEFAULT_HINT : this.byHeart ? BY_HEART_HINT : PRACTICE_HINT;
+      if (this.practiceSteps.length) this.controlsRow.appendChild(this.byHeartLink());
       return;
     }
 

@@ -13,7 +13,8 @@ import {
   hintTopPad,
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
-import { advanceSequence, practiceLine, practiceSequence, practiceTap, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
+import { advanceSequence, BY_HEART_HELP_NOTES, BY_HEART_MISSES, byHeartTap, NO_HELP, pipShown, practiceLine, practiceSequence, practiceTap, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
+import type { ByHeartHelp } from './freePlay';
 import { BOOK_TWO_SONGS, ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
 import { majorKey, spellInKey } from './notation';
 
@@ -368,5 +369,50 @@ describe('the found notes written out (task 234)', () => {
 
   it('copes with an empty tune', () => {
     expect(practiceLine(3, [], 150)).toMatchObject({ written: [], pipColumn: 0 });
+  });
+});
+
+describe('byHeartTap / pipShown (task 235: by heart, quick to help, slow to withdraw)', () => {
+  const run = (taps: boolean[], from: ByHeartHelp = NO_HELP) => taps.reduce(byHeartTap, from);
+
+  it('guided practice always shows the pip', () => {
+    expect(pipShown(false, NO_HELP)).toBe(true);
+  });
+
+  it('by heart starts with the pip away', () => {
+    expect(pipShown(true, NO_HELP)).toBe(false);
+  });
+
+  it('a stray wrong tap or two does not bring the pip back', () => {
+    const help = run(Array(BY_HEART_MISSES - 1).fill(false));
+    expect(pipShown(true, help)).toBe(false);
+  });
+
+  it('enough wrong taps in a row bring it back', () => {
+    const help = run(Array(BY_HEART_MISSES).fill(false));
+    expect(pipShown(true, help)).toBe(true);
+    expect(help.helping).toBe(BY_HEART_HELP_NOTES);
+  });
+
+  it('a right tap forgets the misses before it', () => {
+    const help = run([false, false, true, false, false]);
+    expect(pipShown(true, help)).toBe(false);
+  });
+
+  it('once back, the pip stays for several right notes, then goes quietly', () => {
+    const back = run(Array(BY_HEART_MISSES).fill(false));
+    const almost = run(Array(BY_HEART_HELP_NOTES - 1).fill(true), back);
+    expect(pipShown(true, almost)).toBe(true);
+    expect(pipShown(true, byHeartTap(almost, true))).toBe(false);
+  });
+
+  it('wrong taps while helping neither extend nor shorten the help, nor count', () => {
+    const back = run(Array(BY_HEART_MISSES).fill(false));
+    const after = run([true, false, false, false, false], back);
+    expect(after).toEqual({ misses: 0, helping: BY_HEART_HELP_NOTES - 1 });
+  });
+
+  it('withdraws slower than it helps', () => {
+    expect(BY_HEART_HELP_NOTES).toBeGreaterThan(BY_HEART_MISSES);
   });
 });
