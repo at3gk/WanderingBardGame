@@ -55,7 +55,10 @@ import {
   freePlayStepY,
   freePlayStepAt,
   FreePlayStaff,
+  practiceSequence,
+  practiceTap,
 } from '../core/freePlay';
+import type { Song } from '../core/song';
 import { STAFF_LINE_STEPS, ledgerLineSteps, letterForStep, solfegeAtStep, semitoneAtStep } from '../core/notation';
 import { semitoneToFrequency } from '../audio/baseLoop';
 import { playVoiceNote } from '../audio/instrumentVoice';
@@ -87,12 +90,24 @@ const BACKDROP = 'rgba(20, 14, 18, 0.95)';
 const RECORD_RED = '#d1503a';
 
 const DEFAULT_HINT = 'Tap a line or a space to hear it';
+/** Practice's resting hint: the instruction, not the tune's name (titles run long on a 320px phone). */
+const PRACTICE_HINT = 'Tap the line or space by the dot';
+/** The pip: a warm note head where the next note of the chosen tune is written. */
+const PIP_COLOR = '#e8b85a';
+/** How far left of the ladder's centre the pip sits, so the tapped note's letter (centred) never covers it. */
+const PIP_OFFSET_X = 44;
 
 export interface FreePlayScreenOptions {
   /** Which instrument's voice a tap sounds through — the one currently in hand, once wired. */
   voice: InstrumentVoice;
   /** The saved scaffold record, so the label-style toggle can persist through it (scaffoldStorage.ts). */
   scaffold: ScaffoldState;
+  /**
+   * The tune pinned in the songbook, if any (task 233). With one, the ladder
+   * becomes practice: a pip on the next note's position, a right tap moves
+   * it on, a wrong tap just sounds. Null/absent is plain free play.
+   */
+  practice?: Song | null;
   onClose: () => void;
 }
 
@@ -117,6 +132,10 @@ export class FreePlayScreen {
   private hintTimer: ReturnType<typeof setTimeout> | null = null;
   private session: RecordingSession = EMPTY_RECORDING;
   private naming = false;
+  private readonly pip: HTMLDivElement;
+  private readonly practiceSteps: number[];
+  private practiceIndex = 0;
+  private pipPulseTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly onResize = () => this.layout();
 
   constructor(host: HTMLElement, ctx: AudioContext, destination: AudioNode, opts: FreePlayScreenOptions) {
@@ -212,6 +231,27 @@ export class FreePlayScreen {
 
     this.staffLayer = element('div', { position: 'absolute', inset: '0', pointerEvents: 'none' });
     this.root.appendChild(this.staffLayer);
+
+    // Practice's pip (task 233): a filled, slightly tilted note head where
+    // the next note of the pinned tune is written, left of centre so the
+    // letter a tap shows (centred) never sits on it. Nothing else marks
+    // progress — no count, no score; the pip moving on is the whole reply.
+    this.practiceSteps = practiceSequence(opts.practice);
+    this.pip = element('div', {
+      position: 'absolute',
+      left: `calc(50% - ${PIP_OFFSET_X}px)`,
+      width: '17px',
+      height: '12px',
+      borderRadius: '50%',
+      background: PIP_COLOR,
+      boxShadow: '0 0 10px rgba(232, 184, 90, 0.55)',
+      pointerEvents: 'none',
+      transform: 'translate(-50%, -50%) rotate(-20deg) scale(1)',
+      transition: 'top 180ms ease, transform 140ms ease',
+      display: 'none',
+    });
+    this.pip.setAttribute('aria-hidden', 'true');
+    this.root.appendChild(this.pip);
 
     this.noteLabel = element('div', {
       position: 'absolute',
@@ -374,6 +414,7 @@ export class FreePlayScreen {
     window.removeEventListener('resize', this.onResize);
     if (this.labelTimer !== null) clearTimeout(this.labelTimer);
     if (this.hintTimer !== null) clearTimeout(this.hintTimer);
+    if (this.pipPulseTimer !== null) clearTimeout(this.pipPulseTimer);
     this.root.remove();
   }
 
@@ -384,6 +425,31 @@ export class FreePlayScreen {
     // hint gives up its padding so A5's ledger doesn't underline its words.
     this.hint.style.paddingTop = `${hintTopPad(this.staff)}px`;
     this.drawStaffLines();
+    this.renderPip();
+  }
+
+  /** Practice is live whenever a tune came with the ladder and no take is being recorded or named. */
+  private get practising(): boolean {
+    return this.practiceSteps.length > 0 && !this.session.recording && !this.naming;
+  }
+
+  private renderPip(): void {
+    if (!this.practising) {
+      this.pip.style.display = 'none';
+      return;
+    }
+    this.pip.style.display = 'block';
+    this.pip.style.top = `${freePlayStepY(this.practiceSteps[this.practiceIndex], this.staff)}px`;
+  }
+
+  /** A right tap: the pip swells for a moment, so a repeated note (E E E) still visibly moves on. */
+  private pulsePip(): void {
+    this.pip.style.transform = 'translate(-50%, -50%) rotate(-20deg) scale(1.35)';
+    if (this.pipPulseTimer !== null) clearTimeout(this.pipPulseTimer);
+    this.pipPulseTimer = setTimeout(() => {
+      this.pipPulseTimer = null;
+      this.pip.style.transform = 'translate(-50%, -50%) rotate(-20deg) scale(1)';
+    }, 140);
   }
 
   private drawStaffLines(): void {
@@ -423,6 +489,37 @@ export class FreePlayScreen {
     if (this.session.recording) {
       this.session = recordTap(this.session, step);
       this.renderRecordUI();
+    } else if (this.practising) {
+      const before = this.practiceIndex;
+      const result = practiceTap(this.practiceIndex, step, this.practiceSteps);
+      this.practiceIndex = result.index;
+      if (result.index !== before || result.finished) this.pulsePip();
+      if (result.finished) this.chime();
+      this.renderPip();
+    }
+  }
+
+  /**
+   * The end of the tune in practice: two soft notes above its first one,
+   * as the pip wraps home. A chime, not a grade — it says "from the top",
+   * never how well.
+   */
+  private chime(): void {
+    const home = semitoneAtStep(this.practiceSteps[0]) + 12;
+    const t = this.ctx.currentTime + 0.35;
+    try {
+      for (const [offset, at] of [[0, 0], [7, 0.16]] as const) {
+        playVoiceNote(
+          this.ctx,
+          this.destination,
+          this.opts.voice,
+          semitoneToFrequency(AUDIO_MANIFEST.rootFrequencyHz, home + offset),
+          t + at,
+          { holdSec: 0.9, gain: 0.1 },
+        );
+      }
+    } catch {
+      // A missing chime is a smaller failure than a broken screen.
     }
   }
 
@@ -526,6 +623,7 @@ export class FreePlayScreen {
     this.nameScrim.style.display = this.naming ? 'flex' : 'none';
     this.recordButton.style.visibility = this.naming ? 'hidden' : 'visible';
     this.controlsRow.replaceChildren();
+    this.renderPip();
 
     if (this.hintTimer !== null) return; // a flashed confirmation is still showing itself out
 
@@ -548,7 +646,7 @@ export class FreePlayScreen {
     this.recordButton.setAttribute('aria-label', 'Start recording');
 
     if (this.session.steps.length === 0) {
-      this.hint.textContent = DEFAULT_HINT;
+      this.hint.textContent = this.practiceSteps.length ? PRACTICE_HINT : DEFAULT_HINT;
       return;
     }
 

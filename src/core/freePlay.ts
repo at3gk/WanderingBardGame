@@ -222,3 +222,38 @@ export function writtenNoteSlot(
   const i = Math.max(0, index);
   return { column: i % perLine, line: Math.floor(i / perLine), perLine };
 }
+
+/**
+ * The chosen song as practice on the free-play ladder (task 233): its
+ * positions in order, keeping only the ones the ladder actually offers.
+ *
+ * Every songbook position sits between B3 and A5 today, but a recorded or
+ * imported tune is not bound by that, and a pip parked on a rung the ladder
+ * doesn't draw would leave the child with nothing to tap — practice would
+ * simply stop. Dropping an unreachable note skips it, which is the kinder
+ * failure. Fewer than two findable notes is not a tune to practise, so the
+ * screen stays plain free play.
+ */
+export function practiceSequence(song: Song | null | undefined): number[] {
+  const steps = songStepSequence(song).filter(
+    (step) => step >= FREE_PLAY_LOW_STEP && step <= FREE_PLAY_HIGH_STEP
+  );
+  return steps.length >= 2 ? steps : [];
+}
+
+/**
+ * One tap in practice: where the pip goes next, and whether that tap just
+ * finished the tune (so the screen can sound its soft chime as the pip
+ * wraps back to the first note). A wrong tap leaves the pip where it was
+ * and is never `finished` — there is nothing to count, by design.
+ */
+export function practiceTap(
+  index: number,
+  tappedStep: number,
+  sequence: number[]
+): { index: number; finished: boolean } {
+  if (!sequence.length) return { index: 0, finished: false };
+  const here = ((index % sequence.length) + sequence.length) % sequence.length;
+  const next = advanceSequence(here, tappedStep, sequence);
+  return { index: next, finished: next !== here && next === 0 };
+}

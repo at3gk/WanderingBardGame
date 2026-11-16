@@ -2497,6 +2497,11 @@ export class RoadStage implements Stage {
     this.freePlayScreen = new FreePlayScreen(this.hudHost, ctx, destination, {
       voice: this.instrument().voice,
       scaffold: this.scaffold,
+      // Task 233: a tune pinned in the songbook comes with the ladder as
+      // practice (a pip on its next note); wandering opens plain free play.
+      practice: this.journey.songChoice
+        ? songForPass(this.journey.songChoice, biomeAt(this.road, this.journey.s), 0)
+        : null,
       onClose: () => this.closeFreePlay(),
     });
   }
