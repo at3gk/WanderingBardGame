@@ -290,3 +290,35 @@ export function practiceLine(
     offsetX: (column: number) => (column - (perLine - 1) / 2) * spacing,
   };
 }
+
+/** By heart (task 235): this many wrong taps in a row bring the pip back. */
+export const BY_HEART_MISSES = 3;
+/** …and once back, it stays for this many right notes before it quietly goes again. */
+export const BY_HEART_HELP_NOTES = 4;
+
+/**
+ * By heart's help, the road's rule on the ladder: quick to help, slow to
+ * withdraw. `misses` counts wrong taps in a row while the pip is away;
+ * `helping` is how many more right notes the pip stays shown for. There is
+ * nothing here to keep or show the child — no count of misses survives a
+ * right tap, and the pip coming back is the whole reply.
+ */
+export interface ByHeartHelp {
+  misses: number;
+  helping: number;
+}
+
+export const NO_HELP: ByHeartHelp = { misses: 0, helping: 0 };
+
+/** One tap in by-heart practice: `right` is whether it moved the pip on. */
+export function byHeartTap(help: ByHeartHelp, right: boolean): ByHeartHelp {
+  if (right) return { misses: 0, helping: Math.max(0, help.helping - 1) };
+  if (help.helping > 0) return { misses: 0, helping: help.helping };
+  const misses = help.misses + 1;
+  return misses >= BY_HEART_MISSES ? { misses: 0, helping: BY_HEART_HELP_NOTES } : { misses, helping: 0 };
+}
+
+/** Whether practice shows the pip: always when guided; by heart, only while helping. */
+export function pipShown(byHeart: boolean, help: ByHeartHelp): boolean {
+  return !byHeart || help.helping > 0;
+}

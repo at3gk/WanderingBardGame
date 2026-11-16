@@ -49,14 +49,17 @@ rather than remembering the melody — is what moves you forward, and it is
 therefore the only place that closes the gap the Pedagogy section admits to
 below.
 
-*Honesty note (run 315 consolidation, updated run 316):* free play is
+*Honesty note (run 315 consolidation, updated runs 316-318):* free play is
 live — the ladder in the songbook's *Make a song ♪* screen — and since
 run 316 so is **guided practice**: with a tune pinned, that ladder opens
 with a gold pip on the tune's next note, a right tap moves it on, a wrong
 tap only sounds, and the last note chimes and wraps home. Since run 317
 the found notes are written out left to right, a line at a time
-(`practiceLine`, task 234). Still unbuilt: the unguided by-heart tier
-(task 235).
+(`practiceLine`, task 234). Since run 318 the unguided **by heart** tier
+is built too (task 235): *play by heart* sends the pip away; three wrong
+taps in a row bring it back for the next four right notes (quick to help,
+slow to withdraw — `byHeartTap`), and nothing counts or grades the
+misses. Practice as described here is now whole.
 
 Two rules hold across both. Free play never feeds the learning model: a note
 the child picked is not evidence they can read one the game picked, and
@@ -1186,3 +1189,10 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   writes nothing. The tapped letter now sits above its column (below it
   from E5 up, clear of the hint), replacing run 316's fixed 44px pip
   offset. Ledger notes carry their own short ledgers. Nothing cut.
+- 2026-11-16 (run 318) — By heart in practice (task 235, task 161's
+  unguided tier). A *play by heart* link (bottom-right, practice only)
+  hides the pip; found notes are still written. Three wrong taps in a row
+  bring the pip back for four right notes, then it withdraws again;
+  *show the dot* returns to guided. Pure `byHeartTap`/`pipShown` in
+  core/freePlay.ts. Per session, not saved, never fed to the scaffold.
+  Nothing cut.
