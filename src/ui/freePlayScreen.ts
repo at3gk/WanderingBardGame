@@ -57,6 +57,7 @@ import {
   FreePlayStaff,
   practiceSequence,
   practiceTap,
+  practiceLine,
 } from '../core/freePlay';
 import type { Song } from '../core/song';
 import { STAFF_LINE_STEPS, ledgerLineSteps, letterForStep, solfegeAtStep, semitoneAtStep } from '../core/notation';
@@ -94,8 +95,12 @@ const DEFAULT_HINT = 'Tap a line or a space to hear it';
 const PRACTICE_HINT = 'Tap the line or space by the dot';
 /** The pip: a warm note head where the next note of the chosen tune is written. */
 const PIP_COLOR = '#e8b85a';
-/** How far left of the ladder's centre the pip sits, so the tapped note's letter (centred) never covers it. */
-const PIP_OFFSET_X = 44;
+/** The found notes written out (task 234): ink heads, a touch softer than the tapped letter. */
+const WRITTEN_COLOR = 'rgba(240, 226, 198, 0.88)';
+/** A practised note's letter sits this far above (or, near the top, below) its head, so it never covers it. */
+const PRACTICE_LABEL_LIFT = 26;
+/** From this step up, the practice letter goes under the head instead — above A5 is the hint line. */
+const PRACTICE_LABEL_FLIP_STEP = 9;
 
 export interface FreePlayScreenOptions {
   /** Which instrument's voice a tap sounds through — the one currently in hand, once wired. */
@@ -133,6 +138,7 @@ export class FreePlayScreen {
   private session: RecordingSession = EMPTY_RECORDING;
   private naming = false;
   private readonly pip: HTMLDivElement;
+  private readonly writtenLayer: HTMLDivElement;
   private readonly practiceSteps: number[];
   private practiceIndex = 0;
   private pipPulseTimer: ReturnType<typeof setTimeout> | null = null;
@@ -237,9 +243,16 @@ export class FreePlayScreen {
     // letter a tap shows (centred) never sits on it. Nothing else marks
     // progress — no count, no score; the pip moving on is the whole reply.
     this.practiceSteps = practiceSequence(opts.practice);
+    // The found notes (task 234): every right tap writes its note head into
+    // the next column, left to right, so the phrase builds across the staff
+    // the way it reads on paper. The pip waits in the column after the last
+    // one written — where the next note will go.
+    this.writtenLayer = element('div', { position: 'absolute', inset: '0', pointerEvents: 'none' });
+    this.writtenLayer.setAttribute('aria-hidden', 'true');
+    this.root.appendChild(this.writtenLayer);
     this.pip = element('div', {
       position: 'absolute',
-      left: `calc(50% - ${PIP_OFFSET_X}px)`,
+      left: '50%',
       width: '17px',
       height: '12px',
       borderRadius: '50%',
@@ -247,7 +260,7 @@ export class FreePlayScreen {
       boxShadow: '0 0 10px rgba(232, 184, 90, 0.55)',
       pointerEvents: 'none',
       transform: 'translate(-50%, -50%) rotate(-20deg) scale(1)',
-      transition: 'top 180ms ease, transform 140ms ease',
+      transition: 'top 180ms ease, left 180ms ease, transform 140ms ease',
       display: 'none',
     });
     this.pip.setAttribute('aria-hidden', 'true');
@@ -433,13 +446,65 @@ export class FreePlayScreen {
     return this.practiceSteps.length > 0 && !this.session.recording && !this.naming;
   }
 
+  /** The staff lines' width: the ladder is centred and at most 260px wide. */
+  private ladderWidth(): number {
+    return Math.min(260, (this.root.clientWidth || 320) * 0.6);
+  }
+
+  private currentLine() {
+    return practiceLine(this.practiceIndex, this.practiceSteps, this.ladderWidth());
+  }
+
+  /**
+   * The practice page, all from `practiceIndex`: the notes found so far on
+   * this line written in ink, and the pip in the next column. Hidden
+   * (both) while a take is being recorded or named.
+   */
   private renderPip(): void {
+    this.writtenLayer.replaceChildren();
     if (!this.practising) {
       this.pip.style.display = 'none';
       return;
     }
+    const line = this.currentLine();
+    for (const note of line.written) {
+      const x = line.offsetX(note.column);
+      this.writtenLayer.appendChild(this.noteLedgers(note.step, x));
+      const head = element('div', {
+        position: 'absolute',
+        left: `calc(50% + ${x}px)`,
+        top: `${freePlayStepY(note.step, this.staff)}px`,
+        width: '15px',
+        height: '11px',
+        borderRadius: '50%',
+        background: WRITTEN_COLOR,
+        transform: 'translate(-50%, -50%) rotate(-20deg)',
+      });
+      this.writtenLayer.appendChild(head);
+    }
+    const pipStep = this.practiceSteps[this.practiceIndex];
+    const pipX = line.offsetX(line.pipColumn);
+    this.writtenLayer.appendChild(this.noteLedgers(pipStep, pipX));
     this.pip.style.display = 'block';
-    this.pip.style.top = `${freePlayStepY(this.practiceSteps[this.practiceIndex], this.staff)}px`;
+    this.pip.style.left = `calc(50% + ${pipX}px)`;
+    this.pip.style.top = `${freePlayStepY(pipStep, this.staff)}px`;
+  }
+
+  /** A written note's own short ledger lines (middle C, B3, A5), so a head at the line's ends isn't left floating past the centred ones. */
+  private noteLedgers(step: number, x: number): DocumentFragment {
+    const out = document.createDocumentFragment();
+    for (const ledger of ledgerLineSteps(step)) {
+      out.appendChild(element('div', {
+        position: 'absolute',
+        left: `calc(50% + ${x}px)`,
+        top: `${freePlayStepY(ledger, this.staff)}px`,
+        width: '24px',
+        height: '1px',
+        transform: 'translate(-50%, -50%)',
+        background: LEDGER_COLOR,
+      }));
+    }
+    return out;
   }
 
   /** A right tap: the pip swells for a moment, so a repeated note (E E E) still visibly moves on. */
@@ -454,7 +519,7 @@ export class FreePlayScreen {
 
   private drawStaffLines(): void {
     this.staffLayer.replaceChildren();
-    const width = Math.min(260, (this.root.clientWidth || 320) * 0.6);
+    const width = this.ladderWidth();
     for (const step of STAFF_LINE_STEPS) {
       this.staffLayer.appendChild(this.ledgerMark(step, width, STAFF_LINE_COLOR));
     }
@@ -485,7 +550,9 @@ export class FreePlayScreen {
     const rect = this.root.getBoundingClientRect();
     const step = freePlayStepAt(event.clientY - rect.top, this.staff);
     this.sound(step);
-    this.showLabel(step);
+    // In practice the letter belongs to the column being written (the pip's,
+    // before this tap moves it), lifted clear of the head; otherwise centred.
+    this.showLabel(step, this.practising ? this.currentLine() : null);
     if (this.session.recording) {
       this.session = recordTap(this.session, step);
       this.renderRecordUI();
@@ -538,8 +605,16 @@ export class FreePlayScreen {
     }
   }
 
-  private showLabel(step: number): void {
-    this.noteLabel.style.top = `${freePlayStepY(step, this.staff)}px`;
+  private showLabel(step: number, line: ReturnType<typeof practiceLine> | null): void {
+    const y = freePlayStepY(step, this.staff);
+    if (line) {
+      const below = step >= PRACTICE_LABEL_FLIP_STEP;
+      this.noteLabel.style.left = `calc(50% + ${line.offsetX(line.pipColumn)}px)`;
+      this.noteLabel.style.top = `${below ? y + PRACTICE_LABEL_LIFT : y - PRACTICE_LABEL_LIFT}px`;
+    } else {
+      this.noteLabel.style.left = '50%';
+      this.noteLabel.style.top = `${y}px`;
+    }
     this.noteLabel.textContent =
       currentLabelStyle() === 'solfege' ? solfegeAtStep(step) : letterForStep(step);
     this.noteLabel.style.opacity = '1';

@@ -35,9 +35,11 @@ rules as the built-in songbook, so nothing a child reads is ever wrong.
 
 **Practice a tune by reading it:** pin a song in the songbook, then open
 *Make a song ♪*. The ladder now carries that tune — a gold dot sits on the
-line or space of its next note. Tap there and the dot moves on; a wrong
-note just sounds, nothing is lost. At the end a soft chime plays and the
-dot goes back to the first note. (Choose *Wander the songbook* for plain
+line or space of its next note. Tap there and the note is written in,
+left to right like sheet music, and the dot moves on to the next spot; a
+wrong note just sounds, nothing is lost. When a line fills, a fresh line
+starts. At the end a soft chime plays and the dot goes back to the first
+note on a clean line. (Choose *Wander the songbook* for plain
 free play; pressing ● to record hides the dot until you stop.)
 
 Play it live: https://at3gk.github.io/WanderingBardGame/

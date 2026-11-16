@@ -257,3 +257,36 @@ export function practiceTap(
   const next = advanceSequence(here, tappedStep, sequence);
   return { index: next, finished: next !== here && next === 0 };
 }
+
+/** Horizontal room each written note takes on the practice line (task 234). */
+export const WRITTEN_NOTE_SPACING = 30;
+
+/**
+ * The line of sheet music practice is writing right now (task 234): the
+ * notes already found on it, each in its column, and the column the pip
+ * waits in for the next one. Derived purely from where the pip is, so a
+ * wrong tap (which leaves the pip) changes nothing on the page, finishing
+ * the tune (which wraps the pip to 0) starts a clean page, and filling a
+ * line starts the next one clean — like turning to a fresh line on paper.
+ *
+ * `offsetX(column)` places a column relative to the ladder's centre, so the
+ * whole line of `perLine` notes sits centred under the staff lines.
+ */
+export function practiceLine(
+  index: number,
+  sequence: number[],
+  availableW: number,
+  spacing = WRITTEN_NOTE_SPACING
+): { written: { step: number; column: number }[]; pipColumn: number; perLine: number; offsetX: (column: number) => number } {
+  const here = sequence.length ? ((index % sequence.length) + sequence.length) % sequence.length : 0;
+  const slot = writtenNoteSlot(here, availableW, spacing);
+  const lineStart = here - slot.column;
+  const written = sequence.slice(lineStart, here).map((step, column) => ({ step, column }));
+  const perLine = slot.perLine;
+  return {
+    written,
+    pipColumn: slot.column,
+    perLine,
+    offsetX: (column: number) => (column - (perLine - 1) / 2) * spacing,
+  };
+}

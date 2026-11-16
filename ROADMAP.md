@@ -9,8 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **As of run 316 the live
-  queue is "Practice returns" (tasks 234-235, near the end of this
+  authoritative, every-run-updated pointer. **As of run 317 the live
+  queue is "Practice returns" (task 235, near the end of this
   file).** Historical note: as of run 140, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
@@ -7865,7 +7865,16 @@ as before.
     (DESIGN "Two ways in"). Recording stays as it is. Split if the
     songbook entry point and the pip together don't fit one run — the
     pip on a fixed test tune is the first piece.
-234. **The found notes are written out.** Correct taps lay note heads
+234. ~~**The found notes are written out.**~~ Done (run 317). New pure
+    `practiceLine(index, steps, width)` in core/freePlay.ts (built on
+    `writtenNoteSlot`, 30px columns centred on the ladder) gives the notes
+    written on the current line and the pip's column, from the index
+    alone; `ui/freePlayScreen.ts` draws ink heads plus per-note ledgers
+    and moves the pip along x; the practice letter sits above its column
+    (below from E5 up). +8 tests (1453 -> 1461). Playwright on the built
+    game at 360×740, 320×640, 664×390: Mary pinned, 7 and 10 right taps
+    write E D C D E E E across the line, and at 320px (six to a line) the
+    seventh note starts a clean line. Original text: Correct taps lay note heads
     left to right across the ladder (`writtenNoteSlot`), wrapping like a
     line of sheet music, so reading order is shown every bar.
 235. **By heart (task 161's unguided tier).** Practice without the pip;
