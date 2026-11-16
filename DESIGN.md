@@ -49,12 +49,13 @@ rather than remembering the melody — is what moves you forward, and it is
 therefore the only place that closes the gap the Pedagogy section admits to
 below.
 
-*Honesty note (run 315 consolidation):* free play is live — the ladder in
-the songbook's *Make a song ♪* screen — but **practice is not**. Its
-logic (`songStepSequence`, `advanceSequence`, `stepsUsedBy`,
-`writtenNoteSlot` in `core/freePlay.ts`) is written and tested, and no
-screen calls it: the 2D practice UI died in run 44's move to Three.js and
-was never rebuilt. ROADMAP task 233 rebuilds it on the free-play ladder.
+*Honesty note (run 315 consolidation, updated run 316):* free play is
+live — the ladder in the songbook's *Make a song ♪* screen — and since
+run 316 so is **guided practice**: with a tune pinned, that ladder opens
+with a gold pip on the tune's next note, a right tap moves it on, a wrong
+tap only sounds, and the last note chimes and wraps home. Still unbuilt:
+the found notes written out left to right (`writtenNoteSlot`, task 234)
+and the unguided by-heart tier (task 235).
 
 Two rules hold across both. Free play never feeds the learning model: a note
 the child picked is not evidence they can read one the game picked, and
@@ -1165,3 +1166,13 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   311-313, so practice needs no new input model. Task 161 is unblocked
   and split: 233 (guided practice on the ladder), 234 (found notes
   written left to right), 235 (161's unguided tier). Nothing cut.
+- 2026-11-16 (run 316) — Guided practice is built (task 233). Pinning a
+  tune and opening *Make a song ♪* now brings that tune onto the ladder:
+  a gold note-head pip sits on its next position, a right tap moves it on
+  (with a small swell, so repeated notes visibly advance), a wrong tap
+  sounds and costs nothing, and the last note sounds a two-note chime as
+  the pip wraps to the first. No score, count or title in the hint — it
+  says "Tap the line or space by the dot". Recording hides the pip and
+  pauses practice; free play still never feeds the scaffold. A tune note
+  the ladder doesn't draw is skipped rather than stalling the pip.
+  Nothing cut.

@@ -9,8 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **As of run 315 the live
-  queue is "Practice returns" (tasks 233-235, near the end of this
+  authoritative, every-run-updated pointer. **As of run 316 the live
+  queue is "Practice returns" (tasks 234-235, near the end of this
   file).** Historical note: as of run 140, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
@@ -7844,7 +7844,19 @@ as before.
 
 ### Practice returns (run 315 consolidation, from task 161)
 
-233. **Guided practice on the free-play ladder.** With a tune open in the
+233. ~~**Guided practice on the free-play ladder.**~~ Done (run 316).
+    Entry point: the pinned song (`RoadStage.openFreePlay` passes
+    `songForPass(songChoice…)` as `practice`); no new songbook row. New
+    pure helpers `practiceSequence` (ladder-reachable steps, [] under two)
+    and `practiceTap` (index + `finished` for the chime) in
+    core/freePlay.ts, +5 tests (1448 -> 1453). `ui/freePlayScreen.ts`
+    draws the pip 44px left of centre (clear of the tapped letter), swells
+    it on each right tap, chimes a fifth above the tune's first note an
+    octave up on wrap, hides it while recording/naming, and swaps the
+    resting hint for "Tap the line or space by the dot". Playwright on the
+    built game (360×740, 320×640, 664×390): Mary pinned → *Make a song ♪* → pip on
+    E; seven right taps land it on D; a wrong tap leaves it; the hint fits
+    between ● and × at 320px. Original text: With a tune open in the
     songbook, offer a quiet way into the ladder that brings that tune
     with it: the next position wears a pip (`songStepSequence`), a
     right tap moves the pip on (`advanceSequence`), a wrong tap sounds

@@ -13,7 +13,7 @@ import {
   hintTopPad,
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
-import { advanceSequence, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
+import { advanceSequence, practiceSequence, practiceTap, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
 import { BOOK_TWO_SONGS, ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
 import { majorKey, spellInKey } from './notation';
 
@@ -271,5 +271,43 @@ describe('keeping the hint line off the top rung', () => {
     expect(hintTopPad(tight)).toBeLessThan(HINT_TOP_PAD);
     expect(hintTopPad(tight)).toBeGreaterThanOrEqual(0);
     expect(hintTopPad({ stepGap: 26, bottomY: 300, topY: 0 })).toBe(0);
+  });
+});
+
+describe('practice on the ladder (task 233)', () => {
+  it('every songbook tune can be practised end to end on the ladder', () => {
+    for (const song of [...SONGS, ...BOOK_TWO_SONGS]) {
+      const seq = practiceSequence(song);
+      expect(seq, song.id).toEqual(songStepSequence(song));
+      for (const step of seq) {
+        expect(step).toBeGreaterThanOrEqual(FREE_PLAY_LOW_STEP);
+        expect(step).toBeLessThanOrEqual(FREE_PLAY_HIGH_STEP);
+      }
+    }
+  });
+
+  it('skips a note the ladder does not draw rather than stalling on it', () => {
+    const base = MARY_HAD_A_LITTLE_LAMB;
+    const high = { ...base, notes: [...base.notes, { semitone: 36, beats: 1 }] };
+    expect(practiceSequence(high)).toEqual(songStepSequence(base));
+  });
+
+  it('is plain free play when wandering or with nothing to find', () => {
+    expect(practiceSequence(null)).toEqual([]);
+    const one = { ...MARY_HAD_A_LITTLE_LAMB, notes: MARY_HAD_A_LITTLE_LAMB.notes.slice(0, 1) };
+    expect(practiceSequence(one)).toEqual([]);
+  });
+
+  it('a right tap moves the pip on; a wrong one sounds and stays', () => {
+    const seq = [2, 1, 0];
+    expect(practiceTap(0, 2, seq)).toEqual({ index: 1, finished: false });
+    expect(practiceTap(1, 5, seq)).toEqual({ index: 1, finished: false });
+  });
+
+  it('finishing the tune wraps to the first note, flagged for the chime', () => {
+    const seq = [2, 1, 0];
+    expect(practiceTap(2, 0, seq)).toEqual({ index: 0, finished: true });
+    expect(practiceTap(2, 4, seq)).toEqual({ index: 2, finished: false });
+    expect(practiceTap(0, 0, [])).toEqual({ index: 0, finished: false });
   });
 });
