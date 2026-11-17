@@ -13,7 +13,7 @@ import {
   hintTopPad,
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
-import { advanceSequence, BY_HEART_HELP_NOTES, BY_HEART_MISSES, byHeartTap, NO_HELP, pipShown, practiceAccidentalAt, practiceKey, practiceLine, practiceSemitoneAt, practiceSequence, practiceTap, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
+import { advanceSequence, BY_HEART_HELP_NOTES, BY_HEART_MISSES, byHeartTap, NO_HELP, pipShown, practiceAccidentalAt, practiceKey, practiceLine, practiceSemitoneAt, practiceSequence, practiceSignature, practiceTap, SIGNATURE_PAD, WRITTEN_NOTE_SPACING, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
 import type { ByHeartHelp } from './freePlay';
 import { BOOK_TWO_SONGS, ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
 import { majorKey, spellInKey } from './notation';
@@ -466,5 +466,63 @@ describe('practising a keyed tune (task 236)', () => {
         song.notes.filter((n) => !n.rest).map((n) => n.semitone),
       );
     }
+  });
+});
+
+describe('practice shows the key signature (task 237)', () => {
+  it('draws none for a keyless tune or C major', () => {
+    expect(practiceSignature(null)).toEqual({ marks: [], width: 0 });
+    expect(practiceSignature({ fifths: 0 })).toEqual({ marks: [], width: 0 });
+  });
+
+  it('engraves sharps and flats where the walk puts them, in entry order', () => {
+    // Steps from C4 = 0: F5 = 10, C5 = 7, G5 = 11; B4 = 6, E5 = 9, A4 = 5.
+    expect(practiceSignature({ fifths: 1 }).marks.map((m) => [m.glyph, m.step])).toEqual([['♯', 10]]);
+    expect(practiceSignature({ fifths: 3 }).marks.map((m) => [noteNameAtStep(m.step), m.step])).toEqual([['F', 10], ['C', 7], ['G', 11]]);
+    expect(practiceSignature({ fifths: -3 }).marks.map((m) => [m.glyph, noteNameAtStep(m.step), m.step])).toEqual([
+      ['♭', 'B', 6],
+      ['♭', 'E', 9],
+      ['♭', 'A', 5],
+    ]);
+  });
+
+  it('names exactly the letters the tuned ladder alters, for every Book Two tune', () => {
+    for (const song of BOOK_TWO_SONGS) {
+      const key = practiceKey(song);
+      const sig = practiceSignature(key);
+      const altered = new Set(
+        Array.from({ length: 14 }, (_, i) => i - 1)
+          .filter((step) => practiceAccidentalAt(step, key) !== '')
+          .map((step) => noteNameAtStep(step))
+      );
+      expect(new Set(sig.marks.map((m) => noteNameAtStep(m.step)))).toEqual(altered);
+      for (const m of sig.marks) expect(practiceAccidentalAt(m.step, key)).toBe(m.glyph);
+    }
+  });
+
+  it('keeps the written notes clear of the signature, even at 320px', () => {
+    for (const fifths of [1, 2, 3, -1, -2, -3]) {
+      const sig = practiceSignature({ fifths });
+      const lastMarkRight = Math.max(...sig.marks.map((m) => m.x)) + SIGNATURE_PAD / 2;
+      expect(lastMarkRight).toBeLessThanOrEqual(sig.width);
+      for (const width of [192, 260]) {
+        const seq = Array.from({ length: 20 }, () => 4);
+        const line = practiceLine(0, seq, width, WRITTEN_NOTE_SPACING, sig.width);
+        // The first column's head (15px wide) starts past the reserved room, measured from the staff's left end.
+        const firstHeadLeft = width / 2 + line.offsetX(0) - 7.5;
+        expect(firstHeadLeft).toBeGreaterThanOrEqual(sig.width - SIGNATURE_PAD);
+        // And the last column still ends inside the staff.
+        expect(width / 2 + line.offsetX(line.perLine - 1) + 7.5).toBeLessThanOrEqual(width);
+        expect(line.perLine).toBeGreaterThanOrEqual(4);
+      }
+    }
+  });
+
+  it('leaves a keyless line exactly where it was', () => {
+    const seq = [2, 1, 0, 1, 2, 2, 2];
+    const plain = practiceLine(3, seq, 192);
+    const reserved = practiceLine(3, seq, 192, WRITTEN_NOTE_SPACING, 0);
+    expect(reserved.perLine).toBe(plain.perLine);
+    expect(reserved.offsetX(0)).toBe(plain.offsetX(0));
   });
 });

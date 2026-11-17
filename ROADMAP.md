@@ -9,10 +9,9 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **As of run 319 the
-  "Practice returns" queue (tasks 233-236) is done and nothing is
-  queued — see the idea backlog near the end of this file (one fresh
-  item: practice shows the key signature).** Historical note: as of run 140, the live queue
+  authoritative, every-run-updated pointer. **As of run 320 the
+  "Practice returns" queue (tasks 233-237) is done and nothing is
+  queued — the idea backlog near the end of this file is empty too.** Historical note: as of run 140, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
   standing in for the human eyes v0.7 assumed weren't available, plus the
@@ -7901,9 +7900,20 @@ as before.
     sounds each one exactly. Playwright on the built game: Yankee Doodle
     pinned, 40 pip-following taps read G G A B G B A D … G F♯ … and wrap.
 
+237. ~~**Practice shows the key signature.**~~ Done (run 320, from run
+    319's backlog item). Pure `practiceSignature(key)` in core/freePlay.ts
+    (marks at the walk's `SHARP_SIGNATURE_STEPS`/`FLAT_SIGNATURE_STEPS`,
+    entry order, plus the room they claim); `practiceLine` takes a
+    `leftReserve` so the written line gives that room up.
+    `ui/freePlayScreen.ts` draws the marks while practising (hidden while
+    recording). +5 tests (1473 -> 1478). Playwright on the built game:
+    Yankee Doodle 360×740/320×640, Amazing Grace 360×740, Oh! Susanna
+    664×390, Mary (none).
+
 ## Idea backlog (pull from here when nothing is queued)
 
-- **Practice shows the key signature** (run 319): the tuned ladder names
+- ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
+  (run 320). Was: the tuned ladder names
   "F♯" on tap but draws no signature, so the *why* is unshown. A small
   signature at the ladder's left edge (the walk's `SHARP_SIGNATURE_STEPS`
   / `FLAT_SIGNATURE_STEPS`) while practising a keyed tune would teach

@@ -61,6 +61,7 @@ import {
   practiceSemitoneAt,
   practiceAccidentalAt,
   practiceLine,
+  practiceSignature,
   byHeartTap,
   NO_HELP,
   pipShown,
@@ -110,6 +111,8 @@ const WRITTEN_COLOR = 'rgba(240, 226, 198, 0.88)';
 const PRACTICE_LABEL_LIFT = 26;
 /** From this step up, the practice letter goes under the head instead — above A5 is the hint line. */
 const PRACTICE_LABEL_FLIP_STEP = 9;
+/** The key signature's marks (task 237): a little taller than a written head, in the same soft ink. */
+const SIGNATURE_FONT_PX = 22;
 
 export interface FreePlayScreenOptions {
   /** Which instrument's voice a tap sounds through — the one currently in hand, once wired. */
@@ -466,8 +469,35 @@ export class FreePlayScreen {
     return Math.min(260, (this.root.clientWidth || 320) * 0.6);
   }
 
+  /** The written line, leaving the staff's left end to a keyed tune's signature (task 237). */
   private currentLine() {
-    return practiceLine(this.practiceIndex, this.practiceSteps, this.ladderWidth());
+    const reserve = practiceSignature(this.practiceKeySig).width;
+    return practiceLine(this.practiceIndex, this.practiceSteps, this.ladderWidth(), undefined, reserve);
+  }
+
+  /**
+   * A keyed tune's signature at the staff's left end while practising (task
+   * 237), so the F line sounding F♯ has its reason written where sheet music
+   * writes it. Soft ink like the written notes; gone while recording, since
+   * a take is written in naturals.
+   */
+  private renderSignature(): void {
+    const sig = practiceSignature(this.practiceKeySig);
+    const left = -this.ladderWidth() / 2;
+    for (const mark of sig.marks) {
+      const glyph = element('div', {
+        position: 'absolute',
+        left: `calc(50% + ${left + mark.x}px)`,
+        top: `${freePlayStepY(mark.step, this.staff)}px`,
+        fontSize: `${SIGNATURE_FONT_PX}px`,
+        lineHeight: '1',
+        color: WRITTEN_COLOR,
+        // A flat's bowl, not its stem, is what sits on the line or space.
+        transform: mark.glyph === '♭' ? 'translate(-50%, -68%)' : 'translate(-50%, -50%)',
+      });
+      glyph.textContent = mark.glyph;
+      this.writtenLayer.appendChild(glyph);
+    }
   }
 
   /**
@@ -481,6 +511,7 @@ export class FreePlayScreen {
       this.pip.style.display = 'none';
       return;
     }
+    this.renderSignature();
     const line = this.currentLine();
     for (const note of line.written) {
       const x = line.offsetX(note.column);

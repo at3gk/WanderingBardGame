@@ -25,7 +25,16 @@
  */
 
 import { Song, songKey } from './song';
-import { type KeySignature, alteredLetters, letterForStep, semitoneAtStep, spellInKey, staffStepAt } from './notation';
+import {
+  type KeySignature,
+  FLAT_SIGNATURE_STEPS,
+  SHARP_SIGNATURE_STEPS,
+  alteredLetters,
+  letterForStep,
+  semitoneAtStep,
+  spellInKey,
+  staffStepAt,
+} from './notation';
 
 /**
  * B3, hanging under the middle-C ledger, up to A5 on the ledger above the
@@ -308,10 +317,12 @@ export function practiceLine(
   index: number,
   sequence: number[],
   availableW: number,
-  spacing = WRITTEN_NOTE_SPACING
+  spacing = WRITTEN_NOTE_SPACING,
+  leftReserve = 0
 ): { written: { step: number; column: number }[]; pipColumn: number; perLine: number; offsetX: (column: number) => number } {
   const here = sequence.length ? ((index % sequence.length) + sequence.length) % sequence.length : 0;
-  const slot = writtenNoteSlot(here, availableW, spacing);
+  const reserve = Math.max(0, Math.min(leftReserve, availableW - spacing));
+  const slot = writtenNoteSlot(here, availableW - reserve, spacing);
   const lineStart = here - slot.column;
   const written = sequence.slice(lineStart, here).map((step, column) => ({ step, column }));
   const perLine = slot.perLine;
@@ -319,8 +330,43 @@ export function practiceLine(
     written,
     pipColumn: slot.column,
     perLine,
-    offsetX: (column: number) => (column - (perLine - 1) / 2) * spacing,
+    offsetX: (column: number) => reserve / 2 + (column - (perLine - 1) / 2) * spacing,
   };
+}
+
+/** Horizontal room each mark of practice's key signature takes (task 237). */
+export const SIGNATURE_MARK_SPACING = 11;
+/** Room between the staff's left end and the first mark, and between the last mark and the written notes. */
+export const SIGNATURE_PAD = 8;
+
+/**
+ * Practice's key signature (task 237): the sharps or flats a keyed tune
+ * carries, drawn at the ladder's left edge where the walk's staff and any
+ * printed page put them. Run 319 tuned the rungs to the key, so in G the F
+ * line sounds and names F♯ — this shows *why*, the way sheet music does,
+ * without a word of theory. Same engraving positions as the walk
+ * (`SHARP_SIGNATURE_STEPS` / `FLAT_SIGNATURE_STEPS`: F♯ on F5's line, B♭ on
+ * B4's), same order.
+ *
+ * `x` is each mark's centre measured from the staff's left end; `width`
+ * is the room the signature claims there (0 for a keyless tune), which the
+ * written line gives up via `practiceLine`'s `leftReserve` so a note head
+ * never lands on a sharp.
+ */
+export function practiceSignature(key: KeySignature | null): {
+  marks: { step: number; glyph: '♯' | '♭'; x: number }[];
+  width: number;
+} {
+  if (!key || !Number.isFinite(key.fifths) || key.fifths === 0) return { marks: [], width: 0 };
+  const sharp = key.fifths > 0;
+  const steps = sharp ? SHARP_SIGNATURE_STEPS : FLAT_SIGNATURE_STEPS;
+  const count = Math.min(alteredLetters(key).length, steps.length);
+  const marks = steps.slice(0, count).map((step, i) => ({
+    step,
+    glyph: (sharp ? '♯' : '♭') as '♯' | '♭',
+    x: SIGNATURE_PAD + SIGNATURE_MARK_SPACING * (i + 0.5),
+  }));
+  return { marks, width: count ? SIGNATURE_PAD * 2 + SIGNATURE_MARK_SPACING * count : 0 };
 }
 
 /** By heart (task 235): this many wrong taps in a row bring the pip back. */
