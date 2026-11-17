@@ -51,8 +51,11 @@ Tap *show the dot* to have it back for good.
 **Book Two tunes are practised in their key:** pin one (say *Yankee
 Doodle*, in G) and the ladder is tuned to it while you practise — every F
 line plays F♯, and the letter that pops up says so ("F♯"). In *Amazing
-Grace* (E♭) the B, E and A rungs play flat. Recording a take always uses
-the plain notes.
+Grace* (E♭) the B, E and A rungs play flat. The tune's key signature is
+written at the left end of the staff while you practise (one ♯ on the F
+line for G), so you can see *why* the F line plays F♯ — the same marks
+the road's staff and any printed music use. Recording a take always uses
+the plain notes, so the signature goes away while you record.
 
 Play it live: https://at3gk.github.io/WanderingBardGame/
 

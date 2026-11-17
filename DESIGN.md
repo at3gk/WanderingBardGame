@@ -64,6 +64,9 @@ misses. Practice as described here is now whole. Since run 319 (task
 flats sit on their letters' rungs (they had been silently dropped), and
 while practising every rung sounds and names its letter as the signature
 alters it (F♯ in G) — the ladder plays what a key signature means.
+Since run 320 (task 237) it also *shows* it: the key signature is written
+at the staff's left end while practising (`practiceSignature`, the walk's
+engraving positions), and the written line gives that room up.
 
 Two rules hold across both. Free play never feeds the learning model: a note
 the child picked is not evidence they can read one the game picked, and
@@ -1209,3 +1212,10 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   `practiceSemitoneAt`, `practiceAccidentalAt` tune the ladder (sound,
   chime, letter "F♯") while practising only — recording stays in
   naturals. Book One unchanged. Nothing cut.
+- 2026-11-17 (run 320) — Practice shows the key signature (task 237,
+  from run 319's backlog item). Pure `practiceSignature(key)` in
+  core/freePlay.ts gives the marks (♯/♭ at the walk's
+  `SHARP_SIGNATURE_STEPS`/`FLAT_SIGNATURE_STEPS`, entry order) and the
+  room they claim; `practiceLine` gained a `leftReserve` so written heads
+  never land on a sharp. Drawn in soft ink while practising a keyed tune,
+  hidden while recording (takes are naturals). Nothing cut.
