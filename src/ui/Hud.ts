@@ -23,6 +23,7 @@
  */
 
 import { MEMENTO_KIND } from '../core/encounters';
+import { MAKE_A_SONG_LABEL } from '../core/freePlay';
 import type { HudBox, HudChrome, SafeAreaInsets } from './hudLayout';
 import { bookCapacity, bookPage, hudChrome, instrumentCaseBox, songBookBox } from './hudLayout';
 
@@ -136,8 +137,6 @@ function pageInk(dayFraction: number): string {
 const WANDERING_LABEL = 'Wandering';
 /** The row that hands the rotation back. */
 const WANDER_ROW_LABEL = 'Wander the songbook';
-/** The row that opens the free-play staff (task 176 piece 4). */
-const MAKE_A_SONG_LABEL = 'Make a song ♪';
 /** The row that opens the MIDI file picker (task 177 piece 4's last slice). */
 const IMPORT_SONG_LABEL = 'Import a song ♪';
 
@@ -287,6 +286,12 @@ export class Hud {
   private postcardCb: (() => void) | null = null;
   private otherPageCb: (() => void) | null = null;
   private freePlayCb: (() => void) | null = null;
+  /**
+   * What the free-play row says: "Make a song ♪", or "Practise this tune ♪"
+   * while the pinned tune will open as practice (task 238). The host
+   * decides via `freePlayRowLabel`; the HUD only shows it.
+   */
+  private freePlayLabel: string = MAKE_A_SONG_LABEL;
   private importMidiCb: (() => void) | null = null;
 
   /** Seconds of brightness left on each piece. */
@@ -630,9 +635,12 @@ export class Hud {
    * The songbook, and which tune is pinned for the walk (null while
    * wandering). The corner names the pinned song, or says "Wandering"; the
    * open book lists everything else, with the wander row on top whenever a
-   * song is pinned.
+   * song is pinned. `freePlayLabel` names the ladder row (task 238); hosts
+   * that omit it keep "Make a song ♪".
    */
-  setSongbook(entries: readonly SongEntry[], pinnedId: string | null): void {
+  setSongbook(entries: readonly SongEntry[], pinnedId: string | null, freePlayLabel?: string): void {
+    this.freePlayLabel =
+      typeof freePlayLabel === 'string' && freePlayLabel !== '' ? freePlayLabel : MAKE_A_SONG_LABEL;
     this.songEntries = Array.isArray(entries)
       ? entries.filter((e) => e && typeof e.id === 'string' && typeof e.name === 'string')
       : [];
@@ -1577,7 +1585,7 @@ export class Hud {
       if (entry.heading) rows.push(entry);
       else if (entry.id !== this.pinnedSongId) rows.push(entry);
     }
-    if (this.freePlayCb) rows.push({ id: null, name: MAKE_A_SONG_LABEL, freePlay: true });
+    if (this.freePlayCb) rows.push({ id: null, name: this.freePlayLabel, freePlay: true });
     if (this.importMidiCb) rows.push({ id: null, name: IMPORT_SONG_LABEL, importMidi: true });
     return rows;
   }

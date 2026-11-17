@@ -9,8 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **As of run 320 the
-  "Practice returns" queue (tasks 233-237) is done and nothing is
+  authoritative, every-run-updated pointer. **As of run 321 the
+  "Practice returns" queue (tasks 233-238) is done and nothing is
   queued — the idea backlog near the end of this file is empty too.** Historical note: as of run 140, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
@@ -7909,6 +7909,17 @@ as before.
     recording). +5 tests (1473 -> 1478). Playwright on the built game:
     Yankee Doodle 360×740/320×640, Amazing Grace 360×740, Oh! Susanna
     664×390, Mary (none).
+
+238. ~~**The songbook names the door to practice.**~~ Done (run 321,
+    self-set). Practice opened only from a row reading *Make a song ♪*, so
+    it was hidden from a child with a tune pinned. Pure
+    `freePlayRowLabel(song)` in core/freePlay.ts: *Practise this tune ♪*
+    exactly when `practiceSequence` gives a pip, else *Make a song ♪*
+    (labels moved out of ui/Hud.ts); `Hud.setSongbook` takes the label,
+    `RoadStage.practiceSong()` shared with `openFreePlay`. +4 tests
+    (1478 -> 1482). Playwright on the built game at 360×740, 320×640,
+    664×390: wandering lists *Make a song ♪*; Mary pinned lists
+    *Practise this tune ♪*, which opens the ladder with the pip.
 
 ## Idea backlog (pull from here when nothing is queued)
 

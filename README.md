@@ -34,7 +34,8 @@ MIDI or MusicXML file — and every one of them is held to the same engraving
 rules as the built-in songbook, so nothing a child reads is ever wrong.
 
 **Practice a tune by reading it:** pin a song in the songbook, then open
-*Make a song ♪*. The ladder now carries that tune — a gold dot sits on the
+*Practise this tune ♪* (the row that reads *Make a song ♪* while you're
+wandering). The ladder now carries that tune — a gold dot sits on the
 line or space of its next note. Tap there and the note is written in,
 left to right like sheet music, and the dot moves on to the next spot; a
 wrong note just sounds, nothing is lost. When a line fills, a fresh line
