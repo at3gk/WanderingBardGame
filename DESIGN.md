@@ -67,6 +67,8 @@ alters it (F♯ in G) — the ladder plays what a key signature means.
 Since run 320 (task 237) it also *shows* it: the key signature is written
 at the staff's left end while practising (`practiceSignature`, the walk's
 engraving positions), and the written line gives that room up.
+Since run 321 (task 238) the songbook's door says so: with a tune pinned
+the row reads *Practise this tune ♪* instead of *Make a song ♪*.
 
 Two rules hold across both. Free play never feeds the learning model: a note
 the child picked is not evidence they can read one the game picked, and
@@ -1219,3 +1221,11 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   room they claim; `practiceLine` gained a `leftReserve` so written heads
   never land on a sharp. Drawn in soft ink while practising a keyed tune,
   hidden while recording (takes are naturals). Nothing cut.
+- 2026-11-17 (run 321) — The songbook names the door to practice (task
+  238, self-set). Practice was reachable only through a row labelled
+  *Make a song ♪*, so a child with a tune pinned had no reason to guess
+  that row opens the one place where reading moves you forward. While a
+  pinned tune has notes to find, the row now reads *Practise this tune ♪*
+  (pure `freePlayRowLabel` in core/freePlay.ts, true exactly when
+  `practiceSequence` would give the screen a pip); wandering keeps *Make a
+  song ♪*. Recording is still on the same screen. Nothing cut.

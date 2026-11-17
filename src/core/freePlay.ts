@@ -282,6 +282,23 @@ export function practiceSequence(song: Song | null | undefined): number[] {
   return steps.length >= 2 ? steps : [];
 }
 
+/** The songbook's door to the ladder when there is nothing to practise. */
+export const MAKE_A_SONG_LABEL = 'Make a song ♪';
+/** The same door while a pinned tune will open as practice (task 238). */
+export const PRACTISE_LABEL = 'Practise this tune ♪';
+
+/**
+ * What the songbook's ladder row says (task 238). With a tune pinned the
+ * row opens practice, not a blank page, so "Make a song" hid the one place
+ * in the game where reading moves you forward. The row names what it
+ * opens: practice exactly when `practiceSequence` would give the screen a
+ * pip, so a pinned tune with fewer than two findable notes (which opens
+ * plain free play) never promises practice it won't deliver.
+ */
+export function freePlayRowLabel(song: Song | null | undefined): string {
+  return practiceSequence(song).length > 0 ? PRACTISE_LABEL : MAKE_A_SONG_LABEL;
+}
+
 /**
  * One tap in practice: where the pip goes next, and whether that tap just
  * finished the tune (so the screen can sound its soft chime as the pip

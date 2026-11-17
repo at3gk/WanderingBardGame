@@ -72,6 +72,7 @@ import {
 import { applyPlaybackAudioSession, type NavigatorWithAudioSession } from '../audio/audioSession';
 import { BOOK_FACE, Hud, type SongEntry } from '../ui/Hud';
 import { FreePlayScreen } from '../ui/freePlayScreen';
+import { freePlayRowLabel } from '../core/freePlay';
 import { ImportSongDialog } from '../ui/importSongDialog';
 import { tomorrowSkyline } from '../core/skyline';
 import { dayKey, legRoadKey, legSeed, mulberry32, randRange, subSeed } from '../core/rng';
@@ -2214,7 +2215,16 @@ export class RoadStage implements Stage {
         entries.push({ id: song.id, name: song.title, wear: wearTier(walks[song.id] ?? 0) });
       }
     }
-    this.hud.setSongbook(entries, this.journey.songChoice);
+    // The ladder row names what it opens (task 238): practice, while the
+    // pinned tune has notes to find; otherwise a blank page to make a song.
+    this.hud.setSongbook(entries, this.journey.songChoice, freePlayRowLabel(this.practiceSong()));
+  }
+
+  /** The tune the free-play ladder opens with as practice, or null to wander. */
+  private practiceSong(): Song | null {
+    return this.journey.songChoice
+      ? songForPass(this.journey.songChoice, biomeAt(this.road, this.journey.s), 0)
+      : null;
   }
 
   private strikeCamp(): void {
@@ -2499,9 +2509,7 @@ export class RoadStage implements Stage {
       scaffold: this.scaffold,
       // Task 233: a tune pinned in the songbook comes with the ladder as
       // practice (a pip on its next note); wandering opens plain free play.
-      practice: this.journey.songChoice
-        ? songForPass(this.journey.songChoice, biomeAt(this.road, this.journey.s), 0)
-        : null,
+      practice: this.practiceSong(),
       onClose: () => this.closeFreePlay(),
     });
   }

@@ -13,7 +13,7 @@ import {
   hintTopPad,
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
-import { advanceSequence, BY_HEART_HELP_NOTES, BY_HEART_MISSES, byHeartTap, NO_HELP, pipShown, practiceAccidentalAt, practiceKey, practiceLine, practiceSemitoneAt, practiceSequence, practiceSignature, practiceTap, SIGNATURE_PAD, WRITTEN_NOTE_SPACING, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
+import { advanceSequence, freePlayRowLabel, MAKE_A_SONG_LABEL, PRACTISE_LABEL, BY_HEART_HELP_NOTES, BY_HEART_MISSES, byHeartTap, NO_HELP, pipShown, practiceAccidentalAt, practiceKey, practiceLine, practiceSemitoneAt, practiceSequence, practiceSignature, practiceTap, SIGNATURE_PAD, WRITTEN_NOTE_SPACING, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
 import type { ByHeartHelp } from './freePlay';
 import { BOOK_TWO_SONGS, ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
 import { majorKey, spellInKey } from './notation';
@@ -524,5 +524,30 @@ describe('practice shows the key signature (task 237)', () => {
     const reserved = practiceLine(3, seq, 192, WRITTEN_NOTE_SPACING, 0);
     expect(reserved.perLine).toBe(plain.perLine);
     expect(reserved.offsetX(0)).toBe(plain.offsetX(0));
+  });
+});
+
+describe('the songbook row names what it opens (task 238)', () => {
+  it('reads "Make a song" while wandering', () => {
+    expect(freePlayRowLabel(null)).toBe(MAKE_A_SONG_LABEL);
+    expect(freePlayRowLabel(undefined)).toBe(MAKE_A_SONG_LABEL);
+  });
+
+  it('offers practice for every songbook tune, Book One and Book Two', () => {
+    for (const song of [...SONGS, ...BOOK_TWO_SONGS]) {
+      expect(freePlayRowLabel(song)).toBe(PRACTISE_LABEL);
+    }
+  });
+
+  it('never promises practice the screen would not give', () => {
+    const one = { ...MARY_HAD_A_LITTLE_LAMB, notes: MARY_HAD_A_LITTLE_LAMB.notes.slice(0, 1) };
+    expect(practiceSequence(one)).toEqual([]);
+    expect(freePlayRowLabel(one)).toBe(MAKE_A_SONG_LABEL);
+  });
+
+  it('stays short enough to sit beside its fellow rows', () => {
+    expect(PRACTISE_LABEL.length).toBeLessThanOrEqual('Wander the songbook'.length + 1);
+    expect(PRACTISE_LABEL).toMatch(/♪$/);
+    expect(MAKE_A_SONG_LABEL).toMatch(/♪$/);
   });
 });
