@@ -13,7 +13,7 @@ import {
   hintTopPad,
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
-import { advanceSequence, BY_HEART_HELP_NOTES, BY_HEART_MISSES, byHeartTap, NO_HELP, pipShown, practiceLine, practiceSequence, practiceTap, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
+import { advanceSequence, BY_HEART_HELP_NOTES, BY_HEART_MISSES, byHeartTap, NO_HELP, pipShown, practiceAccidentalAt, practiceKey, practiceLine, practiceSemitoneAt, practiceSequence, practiceTap, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
 import type { ByHeartHelp } from './freePlay';
 import { BOOK_TWO_SONGS, ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
 import { majorKey, spellInKey } from './notation';
@@ -414,5 +414,57 @@ describe('byHeartTap / pipShown (task 235: by heart, quick to help, slow to with
 
   it('withdraws slower than it helps', () => {
     expect(BY_HEART_HELP_NOTES).toBeGreaterThan(BY_HEART_MISSES);
+  });
+});
+
+describe('practising a keyed tune (task 236)', () => {
+  const keyed = BOOK_TWO_SONGS.filter((s) => s.key !== undefined && s.key !== 'C');
+
+  it('keeps every sounding note of a Book Two tune — sharps and flats included', () => {
+    expect(keyed.length).toBeGreaterThan(0);
+    for (const song of keyed) {
+      const sounding = song.notes.filter((n) => !n.rest).length;
+      expect(songStepSequence(song).length, song.id).toBe(sounding);
+      expect(practiceSequence(song).length, song.id).toBe(sounding);
+    }
+  });
+
+  it('a right tap on the tuned ladder sounds the tune exactly', () => {
+    for (const song of keyed) {
+      const key = practiceKey(song);
+      expect(key, song.id).not.toBeNull();
+      const sounding = song.notes.filter((n) => !n.rest).map((n) => n.semitone);
+      const played = practiceSequence(song).map((step) => practiceSemitoneAt(step, key));
+      expect(played, song.id).toEqual(sounding);
+    }
+  });
+
+  it('tunes rungs the way the signature says: F♯ in G, B♭ E♭ A♭ in E♭', () => {
+    const g = majorKey('G');
+    const eb = majorKey('Eb');
+    // F4 = step 3, B4 = 6, E4 = 2, A4 = 5, C4 = 0.
+    expect(practiceSemitoneAt(3, g)).toBe(semitoneAtStep(3) + 1);
+    expect(practiceAccidentalAt(3, g)).toBe('♯');
+    expect(practiceAccidentalAt(10, g)).toBe('♯'); // F5 too
+    expect(practiceAccidentalAt(0, g)).toBe('');
+    for (const step of [6, 2, 5]) {
+      expect(practiceSemitoneAt(step, eb)).toBe(semitoneAtStep(step) - 1);
+      expect(practiceAccidentalAt(step, eb)).toBe('♭');
+    }
+    expect(practiceAccidentalAt(4, eb)).toBe('');
+  });
+
+  it('leaves Book One and keyless tunes on plain naturals', () => {
+    expect(practiceKey(MARY_HAD_A_LITTLE_LAMB)).toBeNull();
+    expect(practiceKey(null)).toBeNull();
+    for (let step = FREE_PLAY_LOW_STEP; step <= FREE_PLAY_HIGH_STEP; step++) {
+      expect(practiceSemitoneAt(step, null)).toBe(semitoneAtStep(step));
+      expect(practiceAccidentalAt(step, null)).toBe('');
+    }
+    for (const song of SONGS) {
+      expect(practiceSequence(song).map((s) => practiceSemitoneAt(s, practiceKey(song))), song.id).toEqual(
+        song.notes.filter((n) => !n.rest).map((n) => n.semitone),
+      );
+    }
   });
 });

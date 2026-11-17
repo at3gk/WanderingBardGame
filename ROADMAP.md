@@ -9,9 +9,10 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **As of run 318 the
-  "Practice returns" queue (tasks 233-235) is done and nothing is
-  queued — see the idea backlog near the end of this file.** Historical note: as of run 140, the live queue
+  authoritative, every-run-updated pointer. **As of run 319 the
+  "Practice returns" queue (tasks 233-236) is done and nothing is
+  queued — see the idea backlog near the end of this file (one fresh
+  item: practice shows the key signature).** Historical note: as of run 140, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
   standing in for the human eyes v0.7 assumed weren't available, plus the
@@ -7888,7 +7889,26 @@ as before.
     a few wrong taps in a row bring the pip back quietly (quick to help,
     slow to withdraw, as on the road). No badge, no fraction.
 
+236. ~~**Practice a Book Two tune in its key.**~~ Done (run 319, self-set
+    — a bug found reading `core/freePlay.ts` with the queue empty).
+    `songStepSequence` read notes through Book One's naturals-only
+    `staffStepAt`, so a pinned keyed tune's sharps and flats vanished from
+    practice and the ladder sounded naturals. Keyed songs now spell
+    through `spellInKey`; pure `practiceKey` / `practiceSemitoneAt` /
+    `practiceAccidentalAt` tune the ladder while practising (tap, chime,
+    and the letter reads "F♯"); recording stays in naturals. +4 tests
+    (1469 -> 1473): every keyed tune keeps all its notes and a right tap
+    sounds each one exactly. Playwright on the built game: Yankee Doodle
+    pinned, 40 pip-following taps read G G A B G B A D … G F♯ … and wrap.
+
 ## Idea backlog (pull from here when nothing is queued)
+
+- **Practice shows the key signature** (run 319): the tuned ladder names
+  "F♯" on tap but draws no signature, so the *why* is unshown. A small
+  signature at the ladder's left edge (the walk's `SHARP_SIGNATURE_STEPS`
+  / `FLAT_SIGNATURE_STEPS`) while practising a keyed tune would teach
+  what the walk's staff already shows. Check it fits at 320px beside the
+  written notes.
 
 - ~~**A one-note take's message**~~ (run 313) — shipped as task 232 (run
   314). Was: stopping free play's recorder

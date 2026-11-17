@@ -59,7 +59,11 @@ the found notes are written out left to right, a line at a time
 is built too (task 235): *play by heart* sends the pip away; three wrong
 taps in a row bring it back for the next four right notes (quick to help,
 slow to withdraw — `byHeartTap`), and nothing counts or grades the
-misses. Practice as described here is now whole.
+misses. Practice as described here is now whole. Since run 319 (task
+236) a keyed Book Two tune is practised **in its key**: its sharps and
+flats sit on their letters' rungs (they had been silently dropped), and
+while practising every rung sounds and names its letter as the signature
+alters it (F♯ in G) — the ladder plays what a key signature means.
 
 Two rules hold across both. Free play never feeds the learning model: a note
 the child picked is not evidence they can read one the game picked, and
@@ -1196,3 +1200,12 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   *show the dot* returns to guided. Pure `byHeartTap`/`pipShown` in
   core/freePlay.ts. Per session, not saved, never fed to the scaffold.
   Nothing cut.
+- 2026-11-17 (run 319) — Practice in a true key (task 236, self-set; a
+  bug found reading the code). `songStepSequence` used Book One's
+  naturals-only `staffStepAt`, so practising a pinned Book Two tune
+  dropped every sharp and flat (Yankee Doodle lost its F♯s; Amazing
+  Grace most of its notes) and the ladder played naturals. Keyed songs
+  now spell through `spellInKey`; new pure `practiceKey`,
+  `practiceSemitoneAt`, `practiceAccidentalAt` tune the ladder (sound,
+  chime, letter "F♯") while practising only — recording stays in
+  naturals. Book One unchanged. Nothing cut.

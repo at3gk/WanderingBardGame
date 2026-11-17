@@ -57,6 +57,9 @@ import {
   FreePlayStaff,
   practiceSequence,
   practiceTap,
+  practiceKey,
+  practiceSemitoneAt,
+  practiceAccidentalAt,
   practiceLine,
   byHeartTap,
   NO_HELP,
@@ -64,7 +67,7 @@ import {
 } from '../core/freePlay';
 import type { ByHeartHelp } from '../core/freePlay';
 import type { Song } from '../core/song';
-import { STAFF_LINE_STEPS, ledgerLineSteps, letterForStep, solfegeAtStep, semitoneAtStep } from '../core/notation';
+import { type KeySignature, STAFF_LINE_STEPS, ledgerLineSteps, letterForStep, solfegeAtStep } from '../core/notation';
 import { semitoneToFrequency } from '../audio/baseLoop';
 import { playVoiceNote } from '../audio/instrumentVoice';
 import type { InstrumentVoice } from '../core/instruments';
@@ -146,6 +149,8 @@ export class FreePlayScreen {
   private readonly pip: HTMLDivElement;
   private readonly writtenLayer: HTMLDivElement;
   private readonly practiceSteps: number[];
+  /** A keyed tune's signature (task 236): while practising it, every rung sounds and names its letter in that key. */
+  private readonly practiceKeySig: KeySignature | null;
   private practiceIndex = 0;
   /** By heart (task 235): the pip stays away unless a few misses in a row call it back. */
   private byHeart = false;
@@ -252,6 +257,7 @@ export class FreePlayScreen {
     // letter a tap shows (centred) never sits on it. Nothing else marks
     // progress — no count, no score; the pip moving on is the whole reply.
     this.practiceSteps = practiceSequence(opts.practice);
+    this.practiceKeySig = this.practiceSteps.length ? practiceKey(opts.practice) : null;
     // The found notes (task 234): every right tap writes its note head into
     // the next column, left to right, so the phrase builds across the staff
     // the way it reads on paper. The pip waits in the column after the last
@@ -588,7 +594,7 @@ export class FreePlayScreen {
    * never how well.
    */
   private chime(): void {
-    const home = semitoneAtStep(this.practiceSteps[0]) + 12;
+    const home = practiceSemitoneAt(this.practiceSteps[0], this.practiceKeySig) + 12;
     const t = this.ctx.currentTime + 0.35;
     try {
       for (const [offset, at] of [[0, 0], [7, 0.16]] as const) {
@@ -612,13 +618,26 @@ export class FreePlayScreen {
         this.ctx,
         this.destination,
         this.opts.voice,
-        semitoneToFrequency(AUDIO_MANIFEST.rootFrequencyHz, semitoneAtStep(step)),
+        semitoneToFrequency(AUDIO_MANIFEST.rootFrequencyHz, this.semitoneOf(step)),
         this.ctx.currentTime + 0.005,
         { holdSec: 0.7, gain: 0.22 },
       );
     } catch {
       // A silent tap is a smaller failure than a broken screen.
     }
+  }
+
+  /**
+   * The key the ladder is tuned to right now: the practised tune's, but
+   * only while practising — a take being recorded is written in naturals
+   * (core/customSongs.ts), so it must sound in naturals too.
+   */
+  private get tunedKey(): KeySignature | null {
+    return this.practising ? this.practiceKeySig : null;
+  }
+
+  private semitoneOf(step: number): number {
+    return practiceSemitoneAt(step, this.tunedKey);
   }
 
   private showLabel(step: number, line: ReturnType<typeof practiceLine> | null): void {
@@ -632,7 +651,8 @@ export class FreePlayScreen {
       this.noteLabel.style.top = `${y}px`;
     }
     this.noteLabel.textContent =
-      currentLabelStyle() === 'solfege' ? solfegeAtStep(step) : letterForStep(step);
+      (currentLabelStyle() === 'solfege' ? solfegeAtStep(step) : letterForStep(step)) +
+      practiceAccidentalAt(step, this.tunedKey);
     this.noteLabel.style.opacity = '1';
     if (this.labelTimer !== null) clearTimeout(this.labelTimer);
     this.labelTimer = setTimeout(() => {
