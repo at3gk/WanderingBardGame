@@ -24,8 +24,8 @@
  * moves you forward, which is precisely the gap the walk cannot close.
  */
 
-import { Song } from './song';
-import { staffStepAt } from './notation';
+import { Song, songKey } from './song';
+import { type KeySignature, alteredLetters, letterForStep, semitoneAtStep, spellInKey, staffStepAt } from './notation';
 
 /**
  * B3, hanging under the middle-C ledger, up to A5 on the ledger above the
@@ -152,14 +152,45 @@ export function freePlayStepAt(y: number, staff: FreePlayStaff): number {
  * which matters when the player cannot read.
  */
 export function stepsUsedBy(song: Song | null | undefined): Set<number> {
-  const steps = new Set<number>();
-  if (!song) return steps;
-  for (const note of song.notes) {
-    if (note.rest) continue;
-    const step = staffStepAt(note.semitone);
-    if (step !== null) steps.add(step);
-  }
-  return steps;
+  return new Set(songStepSequence(song));
+}
+
+/**
+ * A note's staff step as its song writes it. Book One (keyless) keeps the
+ * naturals-only refusal — an accidental is null — exactly as before. A
+ * keyed Book Two song spells through its key (task 236), so *Yankee
+ * Doodle*'s F♯ sits on the F line and *Amazing Grace*'s E♭ on the E line,
+ * the way the walk's notes draw them; before this, practice silently
+ * dropped every one of those notes.
+ */
+function writtenStep(semitone: number, key: KeySignature | null): number | null {
+  return key ? spellInKey(semitone, key).step : staffStepAt(semitone);
+}
+
+/** The key practice tunes the ladder to: the song's own, or null for a keyless (Book One / family) tune. */
+export function practiceKey(song: Song | null | undefined): KeySignature | null {
+  if (!song || song.key === undefined) return null;
+  return songKey(song);
+}
+
+/**
+ * What a rung sounds while practising a keyed tune (task 236): its letter
+ * as the key signature alters it — in G every F rung plays F♯, in E♭ every
+ * B, E and A rung is flat. That is what a key signature *means*, and a
+ * Book Two tune only ever uses its key's own notes (songs.test.ts pins
+ * "no shown accidental"), so every right tap sounds the tune exactly.
+ * Without a key, the plain natural.
+ */
+export function practiceSemitoneAt(step: number, key: KeySignature | null): number {
+  const natural = semitoneAtStep(step);
+  if (!key || !alteredLetters(key).includes(letterForStep(step))) return natural;
+  return natural + (key.fifths > 0 ? 1 : -1);
+}
+
+/** The accidental a rung carries in a practised key, as a reader writes it: '♯', '♭', or '' for none. */
+export function practiceAccidentalAt(step: number, key: KeySignature | null): string {
+  const shift = practiceSemitoneAt(step, key) - semitoneAtStep(step);
+  return shift > 0 ? '♯' : shift < 0 ? '♭' : '';
 }
 
 /**
@@ -173,10 +204,11 @@ export function stepsUsedBy(song: Song | null | undefined): Set<number> {
  */
 export function songStepSequence(song: Song | null | undefined): number[] {
   if (!song) return [];
+  const key = practiceKey(song);
   const steps: number[] = [];
   for (const note of song.notes) {
     if (note.rest) continue;
-    const step = staffStepAt(note.semitone);
+    const step = writtenStep(note.semitone, key);
     if (step !== null) steps.push(step);
   }
   return steps;

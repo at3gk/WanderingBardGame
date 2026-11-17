@@ -48,6 +48,12 @@ notes you get right are still written in. If three taps in a row miss,
 the dot comes back quietly for the next few notes, then steps away again.
 Tap *show the dot* to have it back for good.
 
+**Book Two tunes are practised in their key:** pin one (say *Yankee
+Doodle*, in G) and the ladder is tuned to it while you practise — every F
+line plays F♯, and the letter that pops up says so ("F♯"). In *Amazing
+Grace* (E♭) the B, E and A rungs play flat. Recording a take always uses
+the plain notes.
+
 Play it live: https://at3gk.github.io/WanderingBardGame/
 
 See [DESIGN.md](./DESIGN.md) for the concept and the pedagogy, and
