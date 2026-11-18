@@ -49,7 +49,7 @@ rather than remembering the melody — is what moves you forward, and it is
 therefore the only place that closes the gap the Pedagogy section admits to
 below.
 
-*Honesty note (run 315 consolidation, updated runs 316-318):* free play is
+*Honesty note (run 315 consolidation, updated runs 316-322; re-checked run 323):* free play is
 live — the ladder in the songbook's *Make a song ♪* screen — and since
 run 316 so is **guided practice**: with a tune pinned, that ladder opens
 with a gold pip on the tune's next note, a right tap moves it on, a wrong
@@ -1238,3 +1238,13 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   songbook* (pure `orderBookRows` in ui/hudLayout.ts); wandering, *Make a
   song ♪* stays last so it never pushes a tune off page one. Costs one
   song slot on page one only while a tune is pinned. Nothing cut.
+- 2026-11-18 (run 323) — Consolidation run, two runs early (due ~325;
+  taken now because runs 316-322 all touched practice and the backlog was
+  empty). Mentally played wander → pin a tune → *Practise this tune ♪* on
+  page one → pip, written line, signature, by heart → chime → back to the
+  road; "Two ways in" matches the code. Cut: `stepsUsedBy` in
+  core/freePlay.ts, whose doc comment promised a "mark the tune's
+  positions on the ladder" feature that was never built (the practice pip
+  replaced it) and which nothing in the game called; its tests now check
+  `songStepSequence` directly, and the "leaves plenty unmarked" test (the
+  dead feature's premise) went with it. No player-facing change.

@@ -287,6 +287,18 @@ comes precisely from the mechanics this game already bans.
   double as the project's own art instrument — the frame a player would
   share is the frame the critique waves judge, so share-surface quality
   and press-frame quality are one budget, not two.
+- **2026-11-18, practice's door (runs 316-322; recorded at the run-323
+  consolidation).** Guided practice — the one mode where reading the staff
+  moves you forward — was complete by run 318, but for three more runs it
+  opened only from a row labelled *Make a song ♪* at the very end of the
+  book. Run 321 renamed the row *Practise this tune ♪*, run 322 moved it to
+  page one. The research ranks *what* to offer a returning player; it does
+  not say that the warm thing a player came back for must be **named for
+  what it is and reachable from where they already stand**. A ritual
+  behind a mislabelled door is not a ritual anyone keeps. Same family as
+  the paged-songbook finding above: before calling a returning-player
+  feature shipped, check the door — its words and its page — at the
+  smallest viewport, not only the room.
 
 ## Recommendations, ranked by fit
 
