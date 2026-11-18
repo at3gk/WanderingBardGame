@@ -9,8 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **As of run 321 the
-  "Practice returns" queue (tasks 233-238) is done and nothing is
+  authoritative, every-run-updated pointer. **As of run 322 the
+  "Practice returns" queue (tasks 233-239) is done and nothing is
   queued — the idea backlog near the end of this file is empty too.** Historical note: as of run 140, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
@@ -7920,6 +7920,15 @@ as before.
     (1478 -> 1482). Playwright on the built game at 360×740, 320×640,
     664×390: wandering lists *Make a song ♪*; Mary pinned lists
     *Practise this tune ♪*, which opens the ladder with the pip.
+
+239. ~~**Practice sits on page one.**~~ Done (run 322, self-set, from run
+    321's playtest question). *Practise this tune ♪* was last in the book,
+    behind "turn the page" on every phone. Pure `orderBookRows` in
+    ui/hudLayout.ts puts the door right under *Wander the songbook* while
+    a pinned tune can be practised; wandering keeps it last. +4 tests
+    (1482 -> 1486). Playwright on the built game at 360×740, 320×640,
+    664×390: Mary pinned → page one reads Wander / Practise this tune ♪ /
+    …; tapping it opens the ladder with the pip hint.
 
 ## Idea backlog (pull from here when nothing is queued)
 

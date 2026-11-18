@@ -68,7 +68,8 @@ Since run 320 (task 237) it also *shows* it: the key signature is written
 at the staff's left end while practising (`practiceSignature`, the walk's
 engraving positions), and the written line gives that room up.
 Since run 321 (task 238) the songbook's door says so: with a tune pinned
-the row reads *Practise this tune ♪* instead of *Make a song ♪*.
+the row reads *Practise this tune ♪* instead of *Make a song ♪*, and since
+run 322 (task 239) it sits on page one, right under *Wander the songbook*.
 
 Two rules hold across both. Free play never feeds the learning model: a note
 the child picked is not evidence they can read one the game picked, and
@@ -1229,3 +1230,11 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   (pure `freePlayRowLabel` in core/freePlay.ts, true exactly when
   `practiceSequence` would give the screen a pip); wandering keeps *Make a
   song ♪*. Recording is still on the same screen. Nothing cut.
+- 2026-11-18 (run 322) — Practice sits on page one (task 239, self-set,
+  answering run 321's own "is it buried?" question by construction). The
+  renamed door still came last in the book, past every shelf, so on any
+  phone it lived behind one or more "turn the page" taps. While a pinned
+  tune can be practised the row now sits right under *Wander the
+  songbook* (pure `orderBookRows` in ui/hudLayout.ts); wandering, *Make a
+  song ♪* stays last so it never pushes a tune off page one. Costs one
+  song slot on page one only while a tune is pinned. Nothing cut.

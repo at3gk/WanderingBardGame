@@ -23,9 +23,9 @@
  */
 
 import { MEMENTO_KIND } from '../core/encounters';
-import { MAKE_A_SONG_LABEL } from '../core/freePlay';
+import { MAKE_A_SONG_LABEL, PRACTISE_LABEL } from '../core/freePlay';
 import type { HudBox, HudChrome, SafeAreaInsets } from './hudLayout';
-import { bookCapacity, bookPage, hudChrome, instrumentCaseBox, songBookBox } from './hudLayout';
+import { bookCapacity, bookPage, hudChrome, instrumentCaseBox, orderBookRows, songBookBox } from './hudLayout';
 
 /**
  * The keepsake mark. A six-petalled thing at text size — a pressed flower,
@@ -1560,7 +1560,9 @@ export class Hud {
   /**
    * What the open book would list: wander (when pinned), then every other
    * song, then the door to the free-play staff (when wired) — last, so
-   * paging to it never bumps an existing song off the first page.
+   * paging to it never bumps an existing song off the first page — except
+   * while a pinned tune can be practised, when the door sits under wander
+   * (task 239, `orderBookRows`).
    */
   private bookRows(): Array<{
     id: string | null;
@@ -1580,14 +1582,17 @@ export class Hud {
       importMidi?: true;
       keyName?: string;
     }> = [];
-    if (this.pinnedSongId !== null) rows.push({ id: null, name: WANDER_ROW_LABEL });
     for (const entry of this.songEntries) {
       if (entry.heading) rows.push(entry);
       else if (entry.id !== this.pinnedSongId) rows.push(entry);
     }
-    if (this.freePlayCb) rows.push({ id: null, name: this.freePlayLabel, freePlay: true });
-    if (this.importMidiCb) rows.push({ id: null, name: IMPORT_SONG_LABEL, importMidi: true });
-    return rows;
+    return orderBookRows(
+      this.pinnedSongId !== null ? { id: null, name: WANDER_ROW_LABEL } : null,
+      rows,
+      this.freePlayCb ? { id: null, name: this.freePlayLabel, freePlay: true } : null,
+      this.importMidiCb ? { id: null, name: IMPORT_SONG_LABEL, importMidi: true } : null,
+      this.freePlayLabel === PRACTISE_LABEL,
+    );
   }
 
   private buildBook(): void {
