@@ -9,9 +9,10 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **As of run 322 the
-  "Practice returns" queue (tasks 233-239) is done and nothing is
-  queued — the idea backlog near the end of this file is empty too.** Historical note: as of run 140, the live queue
+  authoritative, every-run-updated pointer. **As of run 323 the
+  "Practice returns" queue (tasks 233-239) is done, run 323 was the
+  consolidation (task 240), and nothing is queued — the idea backlog near
+  the end of this file holds one small item (the dead-export audit).** Historical note: as of run 140, the live queue
   is **v1.1, "the crafted frame"** (task 166 onward, further below): a
   wave-based art-quality loop, judged by blind panels of opus judges
   standing in for the human eyes v0.7 assumed weren't available, plus the
@@ -7930,7 +7931,24 @@ as before.
     664×390: Mary pinned → page one reads Wander / Practise this tune ♪ /
     …; tapping it opens the ladder with the pip hint.
 
+240. ~~**Consolidation (run 323, two runs early).**~~ Done. Play-through
+    of the whole practice path matched DESIGN's "Two ways in". Cut the
+    dead `stepsUsedBy` (core/freePlay.ts) — it documented a never-built
+    "mark the tune's positions" feature the pip replaced; tests moved to
+    `songStepSequence` (1486 -> 1485). Research refresh: retention recs
+    1-6 shipped, 7 standing; new shipping finding on practice's door.
+
 ## Idea backlog (pull from here when nothing is queued)
+
+- **Dead-export audit** (run 323) — ~35 `export`s across src/ are reached
+  only by tests (e.g. `isTouchable` in ui/hudLayout.ts, `songMenu` /
+  `songGridLayout` in core/songChoice.ts, `visitStop` / `hasVisited` in
+  core/journey.ts, `accumulateCoins`, `describeUnlock`). Some are honest
+  test seams for logic the game uses inline; others may document features
+  that no longer exist, as `stepsUsedBy` did. One module per run: read
+  each, cut only what describes something the game doesn't do, keep the
+  tests' intent. Reproduce the list with a grep over `^export` names whose
+  only non-test reference is their own file.
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
   (run 320). Was: the tuned ladder names

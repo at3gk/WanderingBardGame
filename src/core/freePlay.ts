@@ -153,18 +153,6 @@ export function freePlayStepAt(y: number, staff: FreePlayStaff): number {
 }
 
 /**
- * Which staff positions a song actually uses.
- *
- * Free play on its own is a ladder with no suggestion of where to start.
- * Marking the notes of the tune the child chose turns it into "here are
- * the ones in Twinkle, try those" — a pointer rather than an instruction,
- * which matters when the player cannot read.
- */
-export function stepsUsedBy(song: Song | null | undefined): Set<number> {
-  return new Set(songStepSequence(song));
-}
-
-/**
  * A note's staff step as its song writes it. Book One (keyless) keeps the
  * naturals-only refusal — an accidental is null — exactly as before. A
  * keyed Book Two song spells through its key (task 236), so *Yankee

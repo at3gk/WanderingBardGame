@@ -13,9 +13,9 @@ import {
   hintTopPad,
 } from './freePlay';
 import { noteNameAtStep, semitoneAtStep } from './notation';
-import { advanceSequence, freePlayRowLabel, MAKE_A_SONG_LABEL, PRACTISE_LABEL, BY_HEART_HELP_NOTES, BY_HEART_MISSES, byHeartTap, NO_HELP, pipShown, practiceAccidentalAt, practiceKey, practiceLine, practiceSemitoneAt, practiceSequence, practiceSignature, practiceTap, SIGNATURE_PAD, WRITTEN_NOTE_SPACING, songStepSequence, stepsUsedBy, writtenNoteSlot } from './freePlay';
+import { advanceSequence, freePlayRowLabel, MAKE_A_SONG_LABEL, PRACTISE_LABEL, BY_HEART_HELP_NOTES, BY_HEART_MISSES, byHeartTap, NO_HELP, pipShown, practiceAccidentalAt, practiceKey, practiceLine, practiceSemitoneAt, practiceSequence, practiceSignature, practiceTap, SIGNATURE_PAD, WRITTEN_NOTE_SPACING, songStepSequence, writtenNoteSlot } from './freePlay';
 import type { ByHeartHelp } from './freePlay';
-import { BOOK_TWO_SONGS, ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, ODE_TO_JOY, SONGS } from './songs';
+import { BOOK_TWO_SONGS, ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, SONGS } from './songs';
 import { majorKey, spellInKey } from './notation';
 
 const VIEWPORTS: Array<[string, number]> = [
@@ -84,22 +84,22 @@ describe('the free-play staff', () => {
   });
 });
 
-describe('marking the chosen song\'s notes', () => {
-  it('marks exactly the positions the tune uses', () => {
+describe('the positions a chosen song uses', () => {
+  it('lists exactly the positions the tune uses', () => {
     // Mary is C D E G — four notes, and famously no F.
-    expect([...stepsUsedBy(MARY_HAD_A_LITTLE_LAMB)].sort((a, b) => a - b)).toEqual([0, 1, 2, 4]);
+    expect([...new Set(songStepSequence(MARY_HAD_A_LITTLE_LAMB))].sort((a, b) => a - b)).toEqual([0, 1, 2, 4]);
   });
 
-  it('marks nothing when wandering', () => {
-    expect(stepsUsedBy(null).size).toBe(0);
-    expect(stepsUsedBy(undefined).size).toBe(0);
+  it('is empty when wandering', () => {
+    expect(songStepSequence(null)).toEqual([]);
+    expect(songStepSequence(undefined)).toEqual([]);
   });
 
-  it('only ever marks positions free play actually offers', () => {
-    // A song whose notes fell outside the ladder would draw pips against
-    // rows that are not there.
+  it('only ever uses positions free play actually offers', () => {
+    // A song whose notes fell outside the ladder would park the practice
+    // pip on a rung that is not there.
     for (const song of SONGS) {
-      for (const step of stepsUsedBy(song)) {
+      for (const step of songStepSequence(song)) {
         expect(step, `${song.id} step ${step}`).toBeGreaterThanOrEqual(FREE_PLAY_LOW_STEP);
         expect(step, `${song.id} step ${step}`).toBeLessThanOrEqual(FREE_PLAY_HIGH_STEP);
       }
@@ -126,13 +126,6 @@ describe('marking the chosen song\'s notes', () => {
       expect(step, `written step ${step}`).toBeLessThanOrEqual(FREE_PLAY_HIGH_STEP);
     }
     expect(written.has(FREE_PLAY_LOW_STEP)).toBe(true);
-  });
-
-  it('leaves plenty unmarked — the point is that it narrows the ladder', () => {
-    // If a song used every position the marking would say nothing.
-    const span = FREE_PLAY_HIGH_STEP - FREE_PLAY_LOW_STEP + 1;
-    expect(stepsUsedBy(MARY_HAD_A_LITTLE_LAMB).size).toBeLessThan(span / 2);
-    expect(stepsUsedBy(ODE_TO_JOY).size).toBeLessThan(span);
   });
 });
 
