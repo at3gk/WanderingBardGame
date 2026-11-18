@@ -295,7 +295,7 @@ describe('hudChrome', () => {
 // The paged songbook (task 165)
 // ---------------------------------------------------------------------------
 
-import { bookCapacity, bookPage } from './hudLayout';
+import { bookCapacity, bookPage, orderBookRows } from './hudLayout';
 
 describe('bookPage', () => {
   const rows = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
@@ -333,5 +333,24 @@ describe('bookPage', () => {
     // The box sized for a full page never exceeds the room the capacity claims.
     const page = bookPage(Array.from({ length: 14 }, (_, i) => i), cap, 0);
     expect(page.shown.length + 1).toBeLessThanOrEqual(cap);
+  });
+});
+
+describe('orderBookRows (task 239)', () => {
+  const songs = ['a', 'b', 'c'];
+  it('wandering: the free-play door comes after every song, import last', () => {
+    expect(orderBookRows(null, songs, 'make', 'import', false)).toEqual(['a', 'b', 'c', 'make', 'import']);
+  });
+  it('pinned but not practising: wander first, door still last', () => {
+    expect(orderBookRows('wander', songs, 'make', null, false)).toEqual(['wander', 'a', 'b', 'c', 'make']);
+  });
+  it('practising a pinned tune: the door sits right under wander, on page one', () => {
+    const rows = orderBookRows('wander', songs, 'practise', 'import', true);
+    expect(rows).toEqual(['wander', 'practise', 'a', 'b', 'c', 'import']);
+    expect(bookPage(rows, 3, 0).shown).toEqual(['wander', 'practise']);
+  });
+  it('never invents a door that is not wired, nor moves it without a wander row', () => {
+    expect(orderBookRows('wander', songs, null, null, true)).toEqual(['wander', 'a', 'b', 'c']);
+    expect(orderBookRows(null, songs, 'practise', null, true)).toEqual(['a', 'b', 'c', 'practise']);
   });
 });

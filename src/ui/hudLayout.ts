@@ -344,6 +344,31 @@ export function bookCapacity(chrome: HudChrome): number {
 }
 
 /**
+ * Where the free-play door sits in the open book (task 239). Wandering, it
+ * comes last ("Make a song ♪"), so paging to it never bumps a song off the
+ * first page. While a tune is pinned and can be practised, the door is
+ * about *that* tune, so it sits right under the wander row at the top of
+ * page one — a child holding a tune finds "Practise this tune ♪" without
+ * turning a page. Pure so the order is a unit test, not a screenshot.
+ */
+export function orderBookRows<T>(
+  wander: T | null,
+  songs: readonly T[],
+  freePlay: T | null,
+  importRow: T | null,
+  practising: boolean,
+): T[] {
+  const rows: T[] = [];
+  if (wander !== null) rows.push(wander);
+  const early = practising && wander !== null && freePlay !== null;
+  if (early) rows.push(freePlay);
+  rows.push(...songs);
+  if (freePlay !== null && !early) rows.push(freePlay);
+  if (importRow !== null) rows.push(importRow);
+  return rows;
+}
+
+/**
  * Which of the book's rows this page shows. When everything fits, one page
  * and no turn row; otherwise the last visible slot is reserved for the
  * "turn the page" row, and `page` wraps, so tapping it cycles through the
