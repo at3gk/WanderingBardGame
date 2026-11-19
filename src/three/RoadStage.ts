@@ -101,6 +101,7 @@ import {
   saveJourney,
   startNextLeg,
   unlockInstrument,
+  visitStop,
   hasJourneyRecord,
   peekJournal,
   type JourneyState,
@@ -821,6 +822,8 @@ export class RoadStage implements Stage {
   private checkArrivals(): void {
     const stop = nextStop(this.road, this.journey.s - ARRIVE_RADIUS);
     if (!stop) return;
+    // A plain `includes` rather than a journey helper: this runs every frame,
+    // and the journey here is already normalized.
     if (this.journey.visited.includes(stop.id)) return;
     if (Math.abs(stop.s - this.journey.s) > ARRIVE_RADIUS) return;
     this.arriveAt(stop);
@@ -929,10 +932,9 @@ export class RoadStage implements Stage {
   /** Leave the current stop and start walking again. */
   resume(): void {
     if (this.currentStop) {
-      this.journey = {
-        ...this.journey,
-        visited: [...this.journey.visited, this.currentStop.id],
-      };
+      // `visitStop` de-duplicates and keeps the list under the cap the save
+      // loader enforces, so a fast double resume cannot record a stop twice.
+      this.journey = visitStop(this.journey, this.currentStop.id);
       this.currentStop = null;
     }
     if (this.journey.phase === 'walking') {

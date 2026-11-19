@@ -498,11 +498,6 @@ export function visitStop(state: object, stopId: string): JourneyState {
   return next;
 }
 
-/** Whether a stop has already been played or resolved today. */
-export function hasVisited(state: object, stopId: string): boolean {
-  return normalize(state).visited.includes(stopId);
-}
-
 /**
  * Take payment for a performance or a gift.
  *

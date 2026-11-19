@@ -20,7 +20,6 @@ import {
   enterPhase,
   festivalReached,
   hasArrived,
-  hasVisited,
   isDayComplete,
   legsToFestival,
   loadJourney,
@@ -331,10 +330,10 @@ describe('visitStop', () => {
     expect(j.visited).toEqual([`${DAY}/busk/0`, `${DAY}/encounter/1`]);
   });
 
-  it('answers whether a stop is done', () => {
+  it('records exactly the stop it was given', () => {
     const j = visitStop(walking(), 'a');
-    expect(hasVisited(j, 'a')).toBe(true);
-    expect(hasVisited(j, 'b')).toBe(false);
+    expect(j.visited.includes('a')).toBe(true);
+    expect(j.visited.includes('b')).toBe(false);
   });
 
   it('ignores an empty or non-string id rather than storing a blank', () => {
