@@ -1,6 +1,8 @@
 # STATE
 
-Run counter: 325.
+Run counter: 326.
+
+Run 326 (2026-11-19) took task 243, **dead-export audit, module 3: core/coins.ts — cut whole.** main at 9842732. Neither export had a non-test caller: `accumulateCoins` described the 2D game's meter-rate coin trickle and `crossedCoinMilestone` its 25-coin chime (task 78); the 3D road pays coins per hit in core/performance.ts (warmth × streak × spot multiplier) and sounds no coin chime. Deleted `src/core/coins.ts` + its test; performance.ts's two comments that cited `coins.ts` reworded to stand alone. `describeUnlock` (also on the backlog list) checked: test-only too, but it's the honest seam the instrument tests use to keep unlock copy readable — left for the core/instruments module pass. `npm test` 1475 → 1465 green, `npm run build` green. No visible change, README unchanged. Retention check: nothing touches returning-player behaviour. Housekeeping still noticed: PR #409 (run 292) open and superseded. **Next:** dead-export audit module 4 (backlog: core/dusk, beats, customSongs, notation, distance, performance, worldLayout, instruments; audio modules; SongNotes) or a fresh small idea; next consolidation ~333. **Needs human playtest:** unchanged from run 322 (below).
 
 Run 325 (2026-11-19) took task 242, **dead-export audit, module 2: core/journey.ts (+ ui/hudLayout's `isTouchable`).** main at 7029d42. `isTouchable` kept: an honest test seam for pillar 3's thumb-size targets, nothing to cut. In core/journey the test-only constants (`DAWN_FRACTION`, `PHASES`, `MAX_JOURNAL_ENTRIES` …) and `hasArrived`/`isDayComplete`/`startNewDay` are deliberate seams describing what the game does — kept. The real find: `RoadStage.resume()` re-implemented `visitStop` inline as `[...visited, id]`, with neither its de-duplication nor the 256 cap the save loader enforces, so the tested helper described behaviour the game didn't have. `resume()` now calls `visitStop`; `hasVisited` (a one-line `includes` behind a full normalize) is cut — the per-frame `checkArrivals` keeps its plain `includes`, now commented why. One test reworded to read `visited` directly. `npm test` 1475 → 1475 green, `npm run build` green (952.91 kB). No visible change, README unchanged. Retention check: save-shape correctness only, nothing touches returning-player behaviour. Housekeeping still noticed: PR #409 (run 292) open and superseded. **Next:** dead-export audit module 3 (backlog list: core/coins `accumulateCoins`, `describeUnlock`, audio modules …) or a fresh small idea; next consolidation ~333. **Needs human playtest:** unchanged from run 322 (below).
 
@@ -286,7 +288,7 @@ mastery display must read that section first.
 
 **At a glance** — read this, then only the sections you need.
 
-- **Current pointer (run 324):** the run-by-run log at the top of this file is authoritative; the HANDOFF blocks below are history from runs ≤221. Practice (tasks 233-239) is complete; run 324 began the dead-export audit (task 241); no numbered task is queued — promote a small idea or run verification-only until the ~325 consolidation.
+- **Current pointer (run 326):** the run-by-run log at the top of this file is authoritative; the HANDOFF blocks below are history from runs ≤221. Practice (tasks 233-239) is complete; runs 324-326 work through the dead-export audit (tasks 241-243); no numbered task is queued — continue the audit or promote a small idea; next consolidation ~333.
 
 - **HANDOFF, 2026-09-28 (run 221) — new Explore-agent-found lead,
   self-originated.** The idea backlog has been empty since run 205 (every
