@@ -9,7 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **As of run 323 the
+  authoritative, every-run-updated pointer. **Run 324 took module 1 of
+  the dead-export audit (task 241). As of run 323 the
   "Practice returns" queue (tasks 233-239) is done, run 323 was the
   consolidation (task 240), and nothing is queued — the idea backlog near
   the end of this file holds one small item (the dead-export audit).** Historical note: as of run 140, the live queue
@@ -7938,6 +7939,14 @@ as before.
     `songStepSequence` (1486 -> 1485). Research refresh: retention recs
     1-6 shipped, 7 standing; new shipping finding on practice's door.
 
+241. ~~**Dead-export audit, module 1: core/songChoice.ts.**~~ Done (run
+    324, from the idea backlog). Cut `homeBiomeOf`, `songMenu`,
+    `songGridLayout`/`GridLayout` — test-only exports describing things the
+    game no longer does: the 2D road settling in a pinned tune's home biome
+    (the 3D road never did; DESIGN's "Choose a song" and PLAYTEST's matching
+    question corrected) and the pre-songbook grid picker. 1485 → 1475 tests,
+    all green. Next module from the backlog list when nothing else is queued.
+
 ## Idea backlog (pull from here when nothing is queued)
 
 - **Dead-export audit** (run 323) — ~35 `export`s across src/ are reached
@@ -7949,6 +7958,10 @@ as before.
   each, cut only what describes something the game doesn't do, keep the
   tests' intent. Reproduce the list with a grep over `^export` names whose
   only non-test reference is their own file.
+  Progress: core/songChoice.ts done (run 324). Remaining candidates after
+  that: ui/hudLayout `isTouchable`; audio/adaptive, ambience, mix,
+  instrumentVoice; three/fx/SongNotes; core/journey, coins, dusk, beats,
+  customSongs, notation, distance, performance, worldLayout, instruments.
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
   (run 320). Was: the tuned ladder names

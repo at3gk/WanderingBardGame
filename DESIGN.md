@@ -30,10 +30,11 @@ walking bard as a way to learn, go for it"* — and both are now built.
 
 **Choose a song.** Rotation is right for a long walk and wrong for learning
 a piece: repetition is the entire mechanism by which the letters come off a
-note. A songbook button pins one tune, and the road settles in that tune's
-home biome, because the three biomes *are* the three registers and letting
-the scenery wander would have the world disagree with what the child is
-reading. "Wander" gives the rotation back.
+note. A songbook entry pins one tune, and that tune plays on every pass
+wherever the road goes. (The 2D game also settled the road in the tune's
+home biome; the 3D road of v0.6 has its own fixed geography and never
+carried that over — corrected here in run 324.) "Wander" gives the
+rotation back.
 
 **Free play, and practice.** The walk hands you notes and asks for timing.
 This document has always been honest that a tap proves timing rather than
@@ -1248,3 +1249,12 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   replaced it) and which nothing in the game called; its tests now check
   `songStepSequence` directly, and the "leaves plenty unmarked" test (the
   dead feature's premise) went with it. No player-facing change.
+- 2026-11-19 (run 324) — Dead-export audit, module 1: core/songChoice.ts.
+  Cut `homeBiomeOf`, `songMenu` and `songGridLayout` (+`GridLayout`), each
+  reached only by tests. `homeBiomeOf` was the leftover of the 2D game's
+  "the road settles in the pinned tune's home biome" — the 3D road never
+  called it, yet "Choose a song" above still promised it; that paragraph
+  now says what the game does. `songMenu`/`songGridLayout` laid out the
+  old grid picker that the paged songbook (`bookPage` in ui/hudLayout.ts)
+  replaced. Ten tests went with them; the pinned-tune tests that remain
+  check that a pin holds in every biome. No player-facing change.
