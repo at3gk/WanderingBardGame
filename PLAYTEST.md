@@ -174,9 +174,9 @@ taps — so what is left is entirely about whether it *feels* right.
 - [ ] Does a child find the button at all? It is the only way to stop the
   songs rotating, and it is drawn rather than labelled because the player
   cannot read. If it goes unnoticed, the icon is wrong.
-- [ ] Picking a song stops the road wandering and settles it in that
-  song's home biome. Does staying in one place read as *settling in to
-  practise*, or as the world having got stuck?
+- [ ] ~~Picking a song settles the road in that song's home biome~~ —
+  retired (run 324): the 3D road never did this; a pinned tune simply
+  plays wherever the road goes.
 - [ ] The chosen tune starts within a second or two rather than after the
   current one finishes. Does the cut feel abrupt?
 
