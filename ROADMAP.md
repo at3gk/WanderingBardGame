@@ -9,8 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 324 took module 1 of
-  the dead-export audit (task 241). As of run 323 the
+  authoritative, every-run-updated pointer. **Run 325 took module 2 of
+  the dead-export audit (task 242); run 324 took module 1 (task 241). As of run 323 the
   "Practice returns" queue (tasks 233-239) is done, run 323 was the
   consolidation (task 240), and nothing is queued — the idea backlog near
   the end of this file holds one small item (the dead-export audit).** Historical note: as of run 140, the live queue
@@ -7947,6 +7947,14 @@ as before.
     question corrected) and the pre-songbook grid picker. 1485 → 1475 tests,
     all green. Next module from the backlog list when nothing else is queued.
 
+242. ~~**Dead-export audit, module 2: core/journey.ts + ui/hudLayout
+    `isTouchable`.**~~ Done (run 325). `isTouchable` and journey's
+    test-only constants/predicates are honest seams — kept. `visitStop`
+    was the gap the other way: RoadStage.resume() appended stop ids
+    inline without its de-dup or 256 cap; it now calls `visitStop`.
+    `hasVisited` cut (checkArrivals' per-frame `includes` stays inline).
+    1475 tests green.
+
 ## Idea backlog (pull from here when nothing is queued)
 
 - **Dead-export audit** (run 323) — ~35 `export`s across src/ are reached
@@ -7958,9 +7966,10 @@ as before.
   each, cut only what describes something the game doesn't do, keep the
   tests' intent. Reproduce the list with a grep over `^export` names whose
   only non-test reference is their own file.
-  Progress: core/songChoice.ts done (run 324). Remaining candidates after
-  that: ui/hudLayout `isTouchable`; audio/adaptive, ambience, mix,
-  instrumentVoice; three/fx/SongNotes; core/journey, coins, dusk, beats,
+  Progress: core/songChoice.ts done (run 324); core/journey + hudLayout
+  done (run 325 — lesson: also look for the game re-implementing a
+  tested helper inline). Remaining candidates: audio/adaptive, ambience, mix,
+  instrumentVoice; three/fx/SongNotes; core/coins, dusk, beats,
   customSongs, notation, distance, performance, worldLayout, instruments.
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
