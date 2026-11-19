@@ -221,8 +221,7 @@ const COINS_PER_HIT: Record<Judgement, number> = { perfect: 1, good: 0.7, late: 
  * 0.75 of the base rate and a full square pays 1.25.
  *
  * This is the entire mechanism by which a miss "costs coins". Nothing is
- * ever taken out of the purse — `coins.ts` says a readout never takes coins
- * back and that holds here — a miss simply thins the crowd, and a thinner
+ * ever taken out of the purse; a miss simply thins the crowd, and a thinner
  * crowd pays less for the notes that follow. The cost is real, it is felt a
  * few seconds later rather than immediately, and it is recoverable by
  * playing well, which is the difference between a consequence and a
@@ -257,7 +256,7 @@ export interface PerformanceState {
   lates: number;
   /** Cumulative, never decreasing. */
   delight: number;
-  /** Cumulative and fractional, like `coins.ts`; whole coins are a display concern. */
+  /** Cumulative and fractional; whole coins are a display concern. */
   coins: number;
   /** Crowd size, [0,1]. Read by the music and the effects. */
   warmth: number;

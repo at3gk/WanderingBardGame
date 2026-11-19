@@ -9,7 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 325 took module 2 of
+  authoritative, every-run-updated pointer. **Run 326 took module 3
+  (task 243, core/coins.ts cut whole); run 325 took module 2 of
   the dead-export audit (task 242); run 324 took module 1 (task 241). As of run 323 the
   "Practice returns" queue (tasks 233-239) is done, run 323 was the
   consolidation (task 240), and nothing is queued — the idea backlog near
@@ -7955,6 +7956,13 @@ as before.
     `hasVisited` cut (checkArrivals' per-frame `includes` stays inline).
     1475 tests green.
 
+243. ~~**Dead-export audit, module 3: core/coins.ts.**~~ Done (run 326).
+    The whole module was test-only: `accumulateCoins` (2D-era meter-rate
+    trickle) and `crossedCoinMilestone` (2D-era 25-coin chime) — the 3D
+    road pays per hit in core/performance.ts and has no coin chime. File
+    and its test deleted, performance.ts comments reworded. 1475 → 1465
+    tests, all green.
+
 ## Idea backlog (pull from here when nothing is queued)
 
 - **Dead-export audit** (run 323) — ~35 `export`s across src/ are reached
@@ -7968,8 +7976,10 @@ as before.
   only non-test reference is their own file.
   Progress: core/songChoice.ts done (run 324); core/journey + hudLayout
   done (run 325 — lesson: also look for the game re-implementing a
-  tested helper inline). Remaining candidates: audio/adaptive, ambience, mix,
-  instrumentVoice; three/fx/SongNotes; core/coins, dusk, beats,
+  tested helper inline); core/coins cut whole (run 326 — lesson: a
+  module can be entirely 2D-era; check whether anything outside tests
+  imports it at all). Remaining candidates: audio/adaptive, ambience, mix,
+  instrumentVoice; three/fx/SongNotes; core/dusk, beats,
   customSongs, notation, distance, performance, worldLayout, instruments.
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237

@@ -1258,3 +1258,10 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   old grid picker that the paged songbook (`bookPage` in ui/hudLayout.ts)
   replaced. Ten tests went with them; the pinned-tune tests that remain
   check that a pin holds in every biome. No player-facing change.
+- 2026-11-19 (run 326) — Dead-export audit, module 3: core/coins.ts, cut
+  whole. Both its exports were test-only fossils of the 2D game:
+  `accumulateCoins` (coins trickling in at a rate scaled by the meter) and
+  `crossedCoinMilestone` (the 25-coin chime, task 78). The 3D road pays
+  coins per hit in core/performance.ts, scaled by warmth and streak, and
+  has no coin chime. Ten tests went with the module; performance.ts's two
+  comments that cited it now stand alone. No player-facing change.
