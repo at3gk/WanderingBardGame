@@ -215,8 +215,9 @@ structurally and needed no new work — see the changelog entry for the
 survey. The second half does not: `uFogNear`/`uFogFar`
 (`RoadStage.ts`, near `TERRAIN_REACH * 0.12`/`* 1.47`) are set **once**,
 at scene construction, from `TERRAIN_REACH` alone. No hour, no biome,
-no dusk-cycle brightness (`dusk.ts`, which already runs every frame)
-ever touches them. The reach that "solves for" the treeline keeping
+no per-hour sky value ever touches them. (This once cited a
+`dusk.ts` brightness curve as a per-frame hook; that was a 2D-era
+module nothing in the 3D road called, cut in run 327.) The reach that "solves for" the treeline keeping
 most of its tone and the ribbon's far edge dissolving to air (the long
 comment at the `RoadStage.ts` call site) is a fact about geometry, not
 about the hour — it is right for every hour at once only by accident.
@@ -250,9 +251,8 @@ carried authored intent instead of one constant:
 None of this is wired in this piece — deliberately, matching 166 piece
 1's own split. `uFogNear`/`uFogFar` are read once at construction, not
 per frame, so making them authored-per-hour is a real engineering piece
-(a per-frame update alongside `dusk.ts`'s brightness curve, most likely,
-since that is the existing per-frame hook for "the world darkens
-overnight") and per-biome needs care that a biome-blend transition
+(a per-frame update driven by the same hour the sky keys read, most
+likely) and per-biome needs care that a biome-blend transition
 cannot pop the reach — both real work, not a config swap. This section
 is the spec an enacting run should build against, the same role the
 noon colour targets above played for 166's second piece. No runtime

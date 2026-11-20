@@ -1265,3 +1265,11 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   coins per hit in core/performance.ts, scaled by warmth and streak, and
   has no coin chime. Ten tests went with the module; performance.ts's two
   comments that cited it now stand alone. No player-facing change.
+- 2026-11-20 (run 327) — Dead-export audit, module 4: core/dusk.ts,
+  core/distance.ts and core/worldLayout.ts, each cut whole. None was
+  imported outside its own test: the 2D game's distance-driven dusk curve,
+  its walked-distance accumulator and its lane/road pixel layout. The 3D
+  road's hours come from the sky keys and it has no distance readout or
+  screen-pixel lane. 21 tests went with them; PLAYTEST's round-6 dusk
+  item and two color-script.md sentences that called dusk.ts live were
+  corrected. No player-facing change.

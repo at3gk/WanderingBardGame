@@ -9,7 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 326 took module 3
+  authoritative, every-run-updated pointer. **Run 327 took module 4
+  (task 244, core/dusk + distance + worldLayout cut whole); run 326 took module 3
   (task 243, core/coins.ts cut whole); run 325 took module 2 of
   the dead-export audit (task 242); run 324 took module 1 (task 241). As of run 323 the
   "Practice returns" queue (tasks 233-239) is done, run 323 was the
@@ -7963,6 +7964,18 @@ as before.
     and its test deleted, performance.ts comments reworded. 1475 → 1465
     tests, all green.
 
+244. ~~**Dead-export audit, module 4: the three Phaser-era layout/readout
+    modules.**~~ Done (run 327). Following run 326's lesson (check whether
+    anything outside tests imports a module at all), `core/dusk.ts`,
+    `core/distance.ts` and `core/worldLayout.ts` were imported by nothing
+    but their own tests: the distance-driven dusk curve (task 36), the
+    walked-distance readout (task 9) and the 2D lane/road vertical layout.
+    The 3D road takes its hours from the sky keys, has no distance readout
+    and lays out nothing in screen pixels. All three files and their tests
+    deleted; PLAYTEST's stale round-6 dusk item retired and two
+    color-script.md sentences that called dusk.ts a live per-frame hook
+    corrected. 1465 → 1444 tests, all green.
+
 ## Idea backlog (pull from here when nothing is queued)
 
 - **Dead-export audit** (run 323) — ~35 `export`s across src/ are reached
@@ -7978,9 +7991,11 @@ as before.
   done (run 325 — lesson: also look for the game re-implementing a
   tested helper inline); core/coins cut whole (run 326 — lesson: a
   module can be entirely 2D-era; check whether anything outside tests
-  imports it at all). Remaining candidates: audio/adaptive, ambience, mix,
-  instrumentVoice; three/fx/SongNotes; core/dusk, beats,
-  customSongs, notation, distance, performance, worldLayout, instruments.
+  imports it at all); core/dusk, distance, worldLayout cut whole (run
+  327 — none was imported outside its test). Every remaining candidate
+  module IS imported by the game, so the rest is per-export reading:
+  audio/adaptive, ambience, mix, instrumentVoice; three/fx/SongNotes;
+  core/beats, customSongs, notation, performance, instruments.
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
   (run 320). Was: the tuned ladder names
