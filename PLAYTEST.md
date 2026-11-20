@@ -143,13 +143,9 @@ whether the music is cozy, and whether the walk reads as one motion.
 - [ ] **The road loops home** — walk past Riverside Camp (~156 steps,
   about 1.6 min in): does returning to the village feel like coming home,
   or like a repeat?
-- [ ] **Dusk cycle** — over a long walk (**~7.8 min per full cycle**;
-  deepest night about 3.9 min in — the old "~13 min" here was wrong), does
-  the slow darkening read as night deepening, or go unnoticed / too dark?
-  (`DUSK_CYCLE_PX`, `DUSK_MAX_DARKEN` — `src/core/dusk.ts`.) Legibility at
-  deepest night is no longer a question: `dusk-check` proves the notation
-  is not darkened with the world. This is purely about whether it *feels*
-  like nightfall.
+- [x] ~~**Dusk cycle**~~ — retired run 327: the 2D game's distance-driven
+  dusk curve (`src/core/dusk.ts`) went with Phaser; nothing in the 3D road
+  read it, so the file was cut. The 3D road's hours come from the sky keys.
 - [ ] **Strum on hit** — does the lute's kick-and-spring on every hit
   read as a strum, or too subtle/too sharp? (`Bard.pluck()`/`this.strum` —
   `src/three/actors/Bard.ts`)
