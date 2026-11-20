@@ -103,9 +103,11 @@ whether the music is cozy, and whether the walk reads as one motion.
 
 ### Re-judge the retuned values
 
-- [ ] **Hit window at 90ms** — did tightening overshoot? On-beat taps
-  should still land; clearly-off taps should miss.
-  (`HIT_WINDOW_MS` — `src/core/beats.ts`)
+- ~~**Hit window at 90ms**~~ — **obsolete.** The single 90ms window
+  (`HIT_WINDOW_MS`, cut run 328) belonged to the 2D scene; the road judges
+  taps with perfect 120ms / good 240ms / a late tail
+  (`DEFAULT_PERFORMANCE_CONFIG`, `src/core/performance.ts`). If tap feel
+  is re-judged, judge those.
 - [ ] **Meter refill at hitGain 12** — recovery now feels responsive, not
   trivial? (`src/core/songMeter.ts`)
 - ~~**Recomposed melodies**~~ — **obsolete.** This asked about the 8-beat

@@ -3,7 +3,6 @@ import {
   beatIntervalMs,
   generateBeatSchedule,
   isBeatMissed,
-  isWithinHitWindow,
   scrollProgress,
   wasUnplayable,
 } from './beats';
@@ -59,21 +58,6 @@ describe('scrollProgress', () => {
   });
 });
 
-describe('isWithinHitWindow', () => {
-  const beat = { index: 0, hitTimeMs: 2000 };
-
-  it('accepts inputs inside the window, inclusive of the edges', () => {
-    expect(isWithinHitWindow(beat, 2000, 100)).toBe(true);
-    expect(isWithinHitWindow(beat, 1900, 100)).toBe(true);
-    expect(isWithinHitWindow(beat, 2100, 100)).toBe(true);
-  });
-
-  it('rejects inputs outside the window', () => {
-    expect(isWithinHitWindow(beat, 1899, 100)).toBe(false);
-    expect(isWithinHitWindow(beat, 2101, 100)).toBe(false);
-  });
-});
-
 describe('isBeatMissed', () => {
   const beat = { index: 0, hitTimeMs: 2000 };
 
@@ -94,7 +78,7 @@ describe('wasUnplayable', () => {
   // model runs on, and letters would stop fading. So most of these cases are
   // about it staying OUT of the way.
   const beat = { index: 0, hitTimeMs: 1000 };
-  const W = 90; // HIT_WINDOW_MS
+  const W = 90; // an illustrative half-window; the road passes its own (performance.ts)
 
   it('excuses a note whose whole window fell between two frames', () => {
     // Frame gap 800ms -> 1200ms swallows the window 910..1090 entirely.

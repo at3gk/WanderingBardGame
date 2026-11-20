@@ -58,8 +58,8 @@ export interface PerformanceConfig {
 /**
  * Windows about three times wider than a rhythm game would use, on purpose.
  *
- * `beats.ts` sets HIT_WINDOW_MS to 90ms, which is the tolerance of the old
- * single-window scene and is a genuinely tight ask for a thumb on a phone.
+ * The old single-window scene allowed 90ms either side of the beat, a
+ * genuinely tight ask for a thumb on a phone.
  * Busking is not a test of milliseconds — it is a tune played to strangers —
  * so the perfect window here is roughly that old window, and around it sits
  * a good window twice as wide again. The intent is that a player who is

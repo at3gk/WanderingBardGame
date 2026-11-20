@@ -9,7 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 327 took module 4
+  authoritative, every-run-updated pointer. **Run 328 took module 5
+  (task 245, core/beats); run 327 took module 4
   (task 244, core/dusk + distance + worldLayout cut whole); run 326 took module 3
   (task 243, core/coins.ts cut whole); run 325 took module 2 of
   the dead-export audit (task 242); run 324 took module 1 (task 241). As of run 323 the
@@ -7976,6 +7977,21 @@ as before.
     color-script.md sentences that called dusk.ts a live per-frame hook
     corrected. 1465 → 1444 tests, all green.
 
+245. ~~**Dead-export audit, module 5: core/beats.ts.**~~ Done (run 328).
+    Three test-only exports, three different answers. `isWithinHitWindow`
+    (a symmetric single window) described the 2D scene's judging; the road
+    judges with performance.ts's `pickBeat`/`judge` (perfect/good/late
+    tail) — cut with its tests. `scrollProgress` was the run-325 pattern:
+    SongNotes recomputed it inline twice (`1 - (hit - now) / TRAVEL`), so
+    SongNotes now calls it (signature narrowed to `Pick<Beat,'hitTimeMs'>`).
+    `HIT_WINDOW_MS` (90) was the real find: scaffold.test's "the answer
+    always beats the tap" contract compared the reveal-lead floor against
+    it, but the earliest tap `pickBeat` credits is the good window, 240ms
+    early. The floor (350) still clears it, so nothing broke — but the test
+    would have let the floor drop to 90 silently. Contract repointed at
+    `DEFAULT_PERFORMANCE_CONFIG.goodWindowMs`, constant cut, PLAYTEST's
+    "hit window at 90ms" item retired as obsolete. 1444 → 1442 tests, green.
+
 ## Idea backlog (pull from here when nothing is queued)
 
 - **Dead-export audit** (run 323) — ~35 `export`s across src/ are reached
@@ -7992,10 +8008,12 @@ as before.
   tested helper inline); core/coins cut whole (run 326 — lesson: a
   module can be entirely 2D-era; check whether anything outside tests
   imports it at all); core/dusk, distance, worldLayout cut whole (run
-  327 — none was imported outside its test). Every remaining candidate
-  module IS imported by the game, so the rest is per-export reading:
-  audio/adaptive, ambience, mix, instrumentVoice; three/fx/SongNotes;
-  core/beats, customSongs, notation, performance, instruments.
+  327 — none was imported outside its test); core/beats done (run 328 —
+  lesson: a test-only *constant* can be pinning a contract to the wrong
+  number; check what the game actually uses in its place). Every
+  remaining candidate module IS imported by the game, so the rest is
+  per-export reading: audio/adaptive, ambience, mix, instrumentVoice;
+  three/fx/SongNotes; core/customSongs, notation, performance, instruments.
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
   (run 320). Was: the tuned ladder names
