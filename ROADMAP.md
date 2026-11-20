@@ -9,7 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 328 took module 5
+  authoritative, every-run-updated pointer. **Run 329 took module 6
+  (task 246, core/customSongs) and queued task 247 (let a tune go); run 328 took module 5
   (task 245, core/beats); run 327 took module 4
   (task 244, core/dusk + distance + worldLayout cut whole); run 326 took module 3
   (task 243, core/coins.ts cut whole); run 325 took module 2 of
@@ -7992,6 +7993,34 @@ as before.
     `DEFAULT_PERFORMANCE_CONFIG.goodWindowMs`, constant cut, PLAYTEST's
     "hit window at 90ms" item retired as obsolete. 1444 → 1442 tests, green.
 
+246. ~~**Dead-export audit, module 6: core/customSongs.ts.**~~ Done (run
+    329). Most test-reached exports are honest seams the module itself
+    calls (`notesFromSteps`, `buildCustomSong`, `MIN_CUSTOM_SONG_NOTES`,
+    `MAX_CUSTOM_SONGS`, `saveCustomSong` via `finishRecording`);
+    `CUSTOM_SONG_NOTE_BEATS` was only used inside its own file and lost its
+    `export`. The real find: `deleteCustomSong` is called by nothing but
+    tests — the game has no way to remove a family's tune — yet the
+    full-shelf message told players "delete one to make room". A player
+    with eight saved tunes was sent looking for a door that doesn't exist.
+    Copy now reads "the Your songs shelf is full — it holds 8 tunes", a new
+    test forbids delete/remove wording until a door exists, README says the
+    shelf holds eight. `deleteCustomSong` kept as the seam for task 247.
+    1442 → 1443 tests, green.
+
+247. **Let a tune go (the Your songs shelf's missing door).** Queued run
+    329 from task 246's finding. A family that fills the eight-tune shelf
+    can never record or import again. Design first, small: a way to remove
+    one of *your own* tunes (never Book One/Two) from the open songbook,
+    with one gentle confirm so a child's mis-tap never loses a song (e.g.
+    a small × on Your songs rows that asks "let *Title* go?" in the row
+    itself). Must fit at 320px beside the wear marks, must not shift the
+    row a tap is aimed at, and if the pinned tune is the one let go, the
+    walk returns to wandering. Retention check: no loss-framed copy
+    ("you'll lose…"); the tune's walks/wear simply stop being shown. When
+    it ships, restore a pointer to it in the full-shelf message and update
+    the test that currently forbids delete wording. Split if the confirm
+    pattern needs its own run.
+
 ## Idea backlog (pull from here when nothing is queued)
 
 - **Dead-export audit** (run 323) — ~35 `export`s across src/ are reached
@@ -8013,7 +8042,9 @@ as before.
   number; check what the game actually uses in its place). Every
   remaining candidate module IS imported by the game, so the rest is
   per-export reading: audio/adaptive, ambience, mix, instrumentVoice;
-  three/fx/SongNotes; core/customSongs, notation, performance, instruments.
+  three/fx/SongNotes; core/notation, performance, instruments.
+  core/customSongs done (run 329 — lesson: a test-only *function* can
+  mean player-facing copy promises a feature that was never built).
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
   (run 320). Was: the tuned ladder names

@@ -204,6 +204,17 @@ describe('saveCustomSong / loadCustomSongs / deleteCustomSong', () => {
     expect(loadCustomSongs()).toHaveLength(MAX_CUSTOM_SONGS);
   });
 
+  it('the full-shelf message names the shelf and promises no door the game lacks', () => {
+    for (let i = 0; i < MAX_CUSTOM_SONGS; i++) saveCustomSong(`Song ${i}`, validSteps());
+    const result = saveCustomSong('One Too Many', validSteps());
+    if (!('error' in result)) throw new Error('expected a full shelf');
+    expect(result.error).toContain('Your songs');
+    expect(result.error).toContain(String(MAX_CUSTOM_SONGS));
+    // Until task 247 ships a way to let a tune go, the copy must not tell a
+    // player to delete one: there is nowhere in the game to do it.
+    expect(result.error).not.toMatch(/delete|remove/i);
+  });
+
   it('deleting a song id that is not there is a harmless no-op', () => {
     saveCustomSong('Kept', validSteps());
     expect(() => deleteCustomSong('custom:nonexistent')).not.toThrow();

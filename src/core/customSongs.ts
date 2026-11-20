@@ -36,7 +36,7 @@ import { bookmarkKey } from './profiles';
  */
 
 /** One tap in, one quarter note out — the only duration this mode writes. Longer/shorter notes are a later piece, not "zero parsing". */
-export const CUSTOM_SONG_NOTE_BEATS = 1;
+const CUSTOM_SONG_NOTE_BEATS = 1;
 export const CUSTOM_SONG_BEATS_PER_BAR = 4;
 
 /** Same floor `songs.test.ts` holds the built-in songbook to: long enough to be recognizable as a tune. */
@@ -216,7 +216,10 @@ function storeValidatedSong(title: string, notes: readonly SongNote[]): SaveCust
 
   const existing = loadCustomSongs();
   if (existing.length >= MAX_CUSTOM_SONGS) {
-    return { error: `the songbook page for your own tunes is full (max ${MAX_CUSTOM_SONGS}) — delete one to make room` };
+    // No "delete one to make room": the game has no way to let a tune go
+    // yet (ROADMAP task 247), and copy must not send a player looking for
+    // a door that isn't there. `deleteCustomSong` below is that door's seam.
+    return { error: `the Your songs shelf is full — it holds ${MAX_CUSTOM_SONGS} tunes` };
   }
 
   writeCustomSongs([...existing, song]);
@@ -246,7 +249,12 @@ export function saveImportedSong(title: string, notes: readonly SongNote[]): Sav
   return storeValidatedSong(title, notes);
 }
 
-/** Removes a saved song by id. Removing one that isn't there is a no-op, not an error. */
+/**
+ * Removes a saved song by id. Removing one that isn't there is a no-op, not
+ * an error. No UI calls this yet (dead-export audit, run 329): it is kept as
+ * the tested seam for ROADMAP task 247's "let a tune go" door, which the
+ * full-shelf message above waits on.
+ */
 export function deleteCustomSong(id: string): void {
   const existing = loadCustomSongs();
   const next = existing.filter((s) => s.id !== id);
