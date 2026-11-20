@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { HIT_WINDOW_MS, TRAVEL_TIME_MS } from './beats';
+import { TRAVEL_TIME_MS } from './beats';
+import { DEFAULT_PERFORMANCE_CONFIG } from './performance';
 import {
   beginSession,
   createScaffold,
@@ -219,8 +220,9 @@ describe('the answer always beats the tap', () => {
   // fired zero times, including through four seconds of deliberate missing
   // at a high meter (tools/reveal-check.mjs).
   //
-  // The reason is arithmetic. The earliest a tap can register is
-  // HIT_WINDOW_MS *before* the note reaches the line; the latest a letter can
+  // The reason is arithmetic. The earliest a tap can register is the good
+  // window *before* the note reaches the line (`pickBeat` credits nothing
+  // further ahead than that); the latest a letter can
   // appear is the lead floor before the line. While the floor is the larger
   // number, the letter is always already showing, and both handlers are
   // unreachable backstops.
@@ -233,15 +235,21 @@ describe('the answer always beats the tap', () => {
   // would start arriving via the miss path, where a note is visible for
   // roughly 400ms at declining opacity. This test is what makes the
   // coincidence a contract.
+  //
+  // (Until run 328 this compared against beats.ts's HIT_WINDOW_MS, 90ms —
+  // the old single-window scene's tolerance. The road judges taps with
+  // performance.ts's wider windows, so the real earliest tap is 240ms early
+  // and that is the number the contract has to hold against.)
   const floorMs = Math.min(...SUPPORT_LEAD_MS);
+  const earliestTapMs = DEFAULT_PERFORMANCE_CONFIG.goodWindowMs;
 
   it('shows every letter before the earliest moment a tap could land', () => {
-    expect(floorMs).toBeGreaterThanOrEqual(HIT_WINDOW_MS);
+    expect(floorMs).toBeGreaterThanOrEqual(earliestTapMs);
   });
 
   it('holds at every support band, not just the most-faded one', () => {
     for (let support = 0; support <= MAX_SUPPORT; support++) {
-      expect(leadMsFor(support), `support ${support}`).toBeGreaterThanOrEqual(HIT_WINDOW_MS);
+      expect(leadMsFor(support), `support ${support}`).toBeGreaterThanOrEqual(earliestTapMs);
     }
   });
 

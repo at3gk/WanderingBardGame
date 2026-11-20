@@ -164,7 +164,7 @@ import {
   Vector3,
   type IUniform,
 } from 'three';
-import { TRAVEL_TIME_MS } from '../../core/beats';
+import { TRAVEL_TIME_MS, scrollProgress } from '../../core/beats';
 import type { Instrument } from '../../core/instruments';
 import {
   FLAT_SIGNATURE_STEPS,
@@ -2150,7 +2150,7 @@ export class SongNotes {
     for (const note of this.live.values()) {
       if (i >= TOTAL_GLYPHS) break;
 
-      const progress = 1 - (note.hitTimeMs - nowMs) / TRAVEL_TIME_MS;
+      const progress = scrollProgress(note, nowMs, TRAVEL_TIME_MS);
       const step = note.step ?? MIDDLE_STEP;
       this.pointOnLane(this.arcAt(progress), this.scratchB);
 
@@ -2250,7 +2250,7 @@ export class SongNotes {
 
   private burst(note: LiveNote, judgement: Judgement): void {
     const step = note.step ?? MIDDLE_STEP;
-    const progress = 1 - (note.hitTimeMs - this.nowMs) / TRAVEL_TIME_MS;
+    const progress = scrollProgress(note, this.nowMs, TRAVEL_TIME_MS);
     this.pointOnLane(this.arcAt(progress), this.scratchB);
     const x = this.scratchB.x;
     const y = this.middleY + (step - MIDDLE_STEP) * STEP_M * this.notationScale;
