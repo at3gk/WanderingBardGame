@@ -4,11 +4,13 @@
  * semitones from middle C (C4), which is also the audio manifest's root,
  * so what the player sees on the staff is literally what the engine plays.
  *
- * Naturals only: the game world is C major / A minor by design — every
- * note a kid meets has a one-letter name. An accidental reaching these
- * functions is a bug, so they return null for one rather than guessing a
- * sharp/flat spelling; the manifest test enforces that shipped melodies
- * never contain any.
+ * Two halves. Book One's functions (the top of the file) are naturals
+ * only: that book is C major / A minor by design, so every note a kid
+ * meets there has a one-letter name, and an accidental reaching them is a
+ * bug — they return null rather than guess a spelling (the songs test
+ * holds Book One's melodies to that). Book Two's true keys read through
+ * the key-aware functions further down (`spellInKey` and friends), which
+ * always answer.
  */
 
 const NATURALS: ReadonlyArray<{ semitone: number; letter: string }> = [
@@ -44,12 +46,6 @@ const SOLFEGE: Readonly<Record<string, string>> = {
 export function noteNameAt(semitoneFromC4: number): string | null {
   const pitchClass = ((semitoneFromC4 % 12) + 12) % 12;
   return NATURALS.find((n) => n.semitone === pitchClass)?.letter ?? null;
-}
-
-/** Fixed-do solfège syllable (do–ti) for a natural note, or null for an accidental. */
-export function solfegeAt(semitoneFromC4: number): string | null {
-  const letter = noteNameAt(semitoneFromC4);
-  return letter === null ? null : SOLFEGE[letter];
 }
 
 /**
@@ -126,16 +122,15 @@ export function semitoneAtStep(step: number): number {
   return octave * 12 + NATURALS[index].semitone;
 }
 
-/** Letter name for a staff step. Always defined — every step is a natural. */
-export function noteNameAtStep(step: number): string {
-  const index = ((step % 7) + 7) % 7;
-  return NATURALS[index].letter;
-}
-
-/** Fixed-do solfège syllable for a staff step. Always defined — every step is a natural. */
+/**
+ * Fixed-do solfège syllable for a staff step. Always defined — every step
+ * is a natural. The game only ever asks for solfège by step (the walk's
+ * note ribbon and free play's ladder both label a drawn position), so
+ * there is no pitch-side twin; a label is the `letterForStep` of the same
+ * step, sung.
+ */
 export function solfegeAtStep(step: number): string {
-  const index = ((step % 7) + 7) % 7;
-  return SOLFEGE[NATURALS[index].letter];
+  return SOLFEGE[letterForStep(step)];
 }
 
 // ---------------------------------------------------------------------------

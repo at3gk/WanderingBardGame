@@ -12,7 +12,7 @@ import {
   HINT_TOP_PAD,
   hintTopPad,
 } from './freePlay';
-import { noteNameAtStep, semitoneAtStep } from './notation';
+import { letterForStep, semitoneAtStep } from './notation';
 import { advanceSequence, freePlayRowLabel, MAKE_A_SONG_LABEL, PRACTISE_LABEL, BY_HEART_HELP_NOTES, BY_HEART_MISSES, byHeartTap, NO_HELP, pipShown, practiceAccidentalAt, practiceKey, practiceLine, practiceSemitoneAt, practiceSequence, practiceSignature, practiceTap, SIGNATURE_PAD, WRITTEN_NOTE_SPACING, songStepSequence, writtenNoteSlot } from './freePlay';
 import type { ByHeartHelp } from './freePlay';
 import { BOOK_TWO_SONGS, ITSY_BITSY_SPIDER, MARY_HAD_A_LITTLE_LAMB, SONGS } from './songs';
@@ -71,7 +71,7 @@ describe('the free-play staff', () => {
     expect(semitoneAtStep(FREE_PLAY_LOW_STEP)).toBe(-1); // B3, under middle C
     expect(semitoneAtStep(FREE_PLAY_HIGH_STEP)).toBe(21); // A5
     for (let step = FREE_PLAY_LOW_STEP; step <= FREE_PLAY_HIGH_STEP; step++) {
-      expect(noteNameAtStep(step)).toMatch(/^[A-G]$/);
+      expect(letterForStep(step)).toMatch(/^[A-G]$/);
     }
   });
 
@@ -471,8 +471,8 @@ describe('practice shows the key signature (task 237)', () => {
   it('engraves sharps and flats where the walk puts them, in entry order', () => {
     // Steps from C4 = 0: F5 = 10, C5 = 7, G5 = 11; B4 = 6, E5 = 9, A4 = 5.
     expect(practiceSignature({ fifths: 1 }).marks.map((m) => [m.glyph, m.step])).toEqual([['♯', 10]]);
-    expect(practiceSignature({ fifths: 3 }).marks.map((m) => [noteNameAtStep(m.step), m.step])).toEqual([['F', 10], ['C', 7], ['G', 11]]);
-    expect(practiceSignature({ fifths: -3 }).marks.map((m) => [m.glyph, noteNameAtStep(m.step), m.step])).toEqual([
+    expect(practiceSignature({ fifths: 3 }).marks.map((m) => [letterForStep(m.step), m.step])).toEqual([['F', 10], ['C', 7], ['G', 11]]);
+    expect(practiceSignature({ fifths: -3 }).marks.map((m) => [m.glyph, letterForStep(m.step), m.step])).toEqual([
       ['♭', 'B', 6],
       ['♭', 'E', 9],
       ['♭', 'A', 5],
@@ -486,9 +486,9 @@ describe('practice shows the key signature (task 237)', () => {
       const altered = new Set(
         Array.from({ length: 14 }, (_, i) => i - 1)
           .filter((step) => practiceAccidentalAt(step, key) !== '')
-          .map((step) => noteNameAtStep(step))
+          .map((step) => letterForStep(step))
       );
-      expect(new Set(sig.marks.map((m) => noteNameAtStep(m.step)))).toEqual(altered);
+      expect(new Set(sig.marks.map((m) => letterForStep(m.step)))).toEqual(altered);
       for (const m of sig.marks) expect(practiceAccidentalAt(m.step, key)).toBe(m.glyph);
     }
   });
