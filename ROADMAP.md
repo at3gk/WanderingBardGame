@@ -9,7 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 329 took module 6
+  authoritative, every-run-updated pointer. **Run 331 took module 7
+  (task 248, core/instruments) and queued 249 (core/notation); run 329 took module 6
   (task 246, core/customSongs) and queued task 247 (let a tune go); run 328 took module 5
   (task 245, core/beats); run 327 took module 4
   (task 244, core/dusk + distance + worldLayout cut whole); run 326 took module 3
@@ -8029,11 +8030,18 @@ as before.
     the test that currently forbids delete wording. Split if the confirm
     pattern needs its own run.
 
-248. **Dead-export audit, module 7: core/instruments.ts** (`describeUnlock`
-    and friends — run 326 left it for its own pass) or core/notation.ts.
-    Same method as 241-246: does anything outside tests import it; is
-    each test-only export an honest seam or a feature with no door. Queued
-    run 330. Next consolidation is due ~run 333.
+248. ~~**Dead-export audit, module 7: core/instruments.ts.**~~ Done (run
+    331). Cut `describeUnlock` (copy for an unlock card that was never
+    built: the campfire names the instrument with its `character` line and
+    shows no threshold), `nextLockedInstrument` (a "coming up" teaser that
+    was never built and shouldn't be, per retention-design: instruments are
+    found, not chased), `unlockRatio` (for a HUD ring that doesn't exist)
+    and `newlyUnlocked` (replaced by RoadStage `noteUnlocks`). Kept the
+    pacing seam (`unlockDayEstimate`, `NOMINAL_DAY`) and `emptyProgress`.
+    1447 → 1439 tests, green.
+
+249. **Dead-export audit, module 8: core/notation.ts.** Same method as
+    241-248. Queued run 331. Next consolidation is due ~run 333.
 
 ## Idea backlog (pull from here when nothing is queued)
 
@@ -8059,6 +8067,9 @@ as before.
   three/fx/SongNotes; core/notation, performance, instruments.
   core/customSongs done (run 329 — lesson: a test-only *function* can
   mean player-facing copy promises a feature that was never built).
+  core/instruments done (run 331 — lesson: a test-only function can also
+  be a feature the design later chose *against*; check the retention
+  research before treating it as a missing door).
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
   (run 320). Was: the tuned ladder names

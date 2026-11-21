@@ -1286,3 +1286,11 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   has room again." The full-shelf message points at the ×. Book One/Two
   rows never get one. A "keep" button was tried and cut the same run:
   at 320px it left the title one character wide.
+- 2026-11-21 (run 331) — Dead-export audit, module 7: core/instruments.ts.
+  Four test-only exports cut. `describeUnlock` and `unlockRatio` were for
+  an unlock card and a HUD progress ring that were never built.
+  `nextLockedInstrument` was a "coming up" line for the campfire, also
+  never built, and now ruled out: instruments are found at the fire, not
+  chased toward (retention-design rec 7, "mementos, not checklists").
+  `newlyUnlocked` was replaced by RoadStage's `noteUnlocks`. Eight tests
+  went with them. No player-facing change.

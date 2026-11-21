@@ -90,7 +90,7 @@ export type UnlockRule =
 export interface Instrument {
   id: InstrumentId;
   name: string;
-  /** One line for the unlock card. What it feels like to play, not specs. */
+  /** The campfire's line when it is found. What it feels like to play, not specs. */
   character: string;
   voice: InstrumentVoice;
   /** Body colour for the bard's instrument and its note glyphs, 0xRRGGBB. */
@@ -459,59 +459,17 @@ export function unlockThreshold(rule: UnlockRule): number {
 }
 
 /**
- * Met exactly is met. A player who has walked precisely 900 m and is told
- * the flute needs 900 m has earned it; a strict inequality here would show
- * a full progress bar and no instrument, which reads as broken.
+ * Met exactly is met. A player who has walked precisely the flute's 900 m
+ * has earned it; a strict inequality would quietly make every threshold
+ * one unit higher than the number written in the catalogue.
  */
 export function isUnlocked(rule: UnlockRule, progress: UnlockProgress): boolean {
   return metricFor(rule, progress) >= unlockThreshold(rule);
 }
 
-/** Progress toward a rule in 0..1, for a HUD ring. 1 once unlocked. */
-export function unlockRatio(rule: UnlockRule, progress: UnlockProgress): number {
-  const need = unlockThreshold(rule);
-  if (need <= 0) return 1;
-  return Math.max(0, Math.min(1, metricFor(rule, progress) / need));
-}
-
 /** Unlocked instruments, in INSTRUMENTS order. Never empty — the lute is free. */
 export function unlockedInstruments(progress: UnlockProgress): Instrument[] {
   return INSTRUMENTS.filter((i) => isUnlocked(i.unlock, progress));
-}
-
-/**
- * What `after` unlocked that `before` had not — the campfire's "you found
- * something" list.
- *
- * Only additions, never removals, even if the caller hands over a `before`
- * that is somehow ahead of `after`. Progress cannot really go backwards, but
- * a corrupt save or a cleared storage key can make it look as though it did,
- * and the honest response to that is to award nothing rather than to
- * announce that the player has lost an instrument.
- */
-export function newlyUnlocked(before: UnlockProgress, after: UnlockProgress): Instrument[] {
-  const had = new Set(unlockedInstruments(before).map((i) => i.id));
-  return unlockedInstruments(after).filter((i) => !had.has(i.id));
-}
-
-/**
- * The nearest instrument still locked, for a "coming up" line at the
- * campfire. Nearest by fraction of the way there rather than by list order,
- * because the metrics are incommensurable — 200 m short and 200 coins short
- * are not remotely the same distance from the prize.
- */
-export function nextLockedInstrument(progress: UnlockProgress): Instrument | null {
-  let best: Instrument | null = null;
-  let bestRatio = -1;
-  for (const instrument of INSTRUMENTS) {
-    if (isUnlocked(instrument.unlock, progress)) continue;
-    const ratio = unlockRatio(instrument.unlock, progress);
-    if (ratio > bestRatio) {
-      best = instrument;
-      bestRatio = ratio;
-    }
-  }
-  return best;
 }
 
 /**
@@ -528,34 +486,6 @@ export function unlockDayEstimate(rule: UnlockRule): number {
   const perDay = metricFor(rule, NOMINAL_DAY);
   if (perDay <= 0) return Infinity;
   return unlockThreshold(rule) / perDay;
-}
-
-/**
- * Short phrase for the unlock card: "900 m walked", "3 nights camped".
- *
- * Every countable branch carries its own singular. The thresholds shipped
- * today are all plural, so the singular arms look like dead code — but this
- * function takes a rule, not one of the six, and the card renders whatever
- * number it is handed. A retuned threshold of 1 that printed "1 coins earned"
- * would be a seam in the one part of the game that is meant to read as
- * hand-written. "m" is a unit symbol and never takes a plural, which is why
- * `distance` is the exception rather than an oversight.
- */
-export function describeUnlock(rule: UnlockRule): string {
-  switch (rule.type) {
-    case 'start':
-      return 'yours from the first step';
-    case 'distance':
-      return `${rule.metres} m walked`;
-    case 'coins':
-      return rule.coins === 1 ? '1 coin earned' : `${rule.coins} coins earned`;
-    case 'encounters':
-      // Not "travellers": encounters include creatures and weather, and a
-      // player who is one misty morning short should be told so honestly.
-      return rule.count === 1 ? '1 meeting on the road' : `${rule.count} meetings on the road`;
-    case 'campfires':
-      return rule.count === 1 ? '1 night camped' : `${rule.count} nights camped`;
-  }
 }
 
 /** Non-finite and negative progress is treated as none rather than trusted. */

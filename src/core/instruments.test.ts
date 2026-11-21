@@ -6,15 +6,11 @@ import {
   InstrumentVoice,
   NOMINAL_DAY,
   UnlockProgress,
-  describeUnlock,
   emptyProgress,
   instrumentById,
   isInstrumentId,
   isUnlocked,
-  newlyUnlocked,
-  nextLockedInstrument,
   unlockDayEstimate,
-  unlockRatio,
   unlockThreshold,
   unlockedInstruments,
 } from './instruments';
@@ -443,68 +439,20 @@ describe('unlock rules', () => {
     expect(seen).toEqual(ids(INSTRUMENTS));
   });
 
-  it('reports progress toward a rule as a clamped fraction', () => {
-    expect(unlockRatio(byId('lute').unlock, emptyProgress())).toBe(1);
-    expect(unlockRatio(byId('reed-flute').unlock, emptyProgress())).toBe(0);
-    expect(unlockRatio(byId('reed-flute').unlock, progress({ totalMetres: 450 }))).toBeCloseTo(0.5, 10);
-    expect(unlockRatio(byId('reed-flute').unlock, progress({ totalMetres: 90000 }))).toBe(1);
-    expect(unlockRatio(byId('bells').unlock, progress({ totalMetres: Number.NaN }))).toBe(0);
-  });
-
-  it('describes every rule in words a card can show', () => {
-    for (const instrument of INSTRUMENTS) {
-      const text = describeUnlock(instrument.unlock);
-      expect(text.length).toBeGreaterThan(5);
-      expect(text).toBe(text.toLowerCase());
-    }
-    expect(describeUnlock({ type: 'distance', metres: 900 })).toBe('900 m walked');
-    expect(describeUnlock({ type: 'campfires', count: 1 })).toBe('1 night camped');
-    expect(describeUnlock({ type: 'campfires', count: 3 })).toBe('3 nights camped');
-    expect(describeUnlock({ type: 'encounters', count: 1 })).toBe('1 meeting on the road');
-    expect(describeUnlock({ type: 'encounters', count: 6 })).toBe('6 meetings on the road');
-    // The shipped coins rule is 700, so the singular arm is only ever reached
-    // by a retuned threshold — which is exactly when nobody would be looking
-    // at this string, and exactly when "1 coins earned" would ship.
-    expect(describeUnlock({ type: 'coins', coins: 1 })).toBe('1 coin earned');
-    expect(describeUnlock({ type: 'coins', coins: 700 })).toBe('700 coins earned');
-    // "m" is a symbol, not a word, so it stays singular at any count.
-    expect(describeUnlock({ type: 'distance', metres: 1 })).toBe('1 m walked');
-  });
-
   it('never grades the player or shouts at them', () => {
-    // DESIGN.md's no-grading stance covers unlock copy too: these strings say
-    // what a thing costs and what an instrument feels like, never how well
+    // DESIGN.md's no-grading stance covers the campfire's unlock line too:
+    // these strings name an instrument and say what it feels like, never how well
     // the player is doing. Cheap to check, and the sort of thing that drifts
     // in one careless line at a time.
     const prose = [
       ...INSTRUMENTS.map((i) => i.character),
       ...INSTRUMENTS.map((i) => i.name),
-      ...INSTRUMENTS.map((i) => describeUnlock(i.unlock)),
     ];
     for (const line of prose) {
       expect(line, line).not.toMatch(/!/);
       expect(line, line).not.toMatch(/\b(perfect|amazing|awesome|great job|epic|master|legendary|score|rank|grade)\b/i);
       expect(line.trim(), line).toBe(line);
     }
-  });
-
-  it('points at the nearest locked instrument, by fraction not by list order', () => {
-    expect(nextLockedInstrument(emptyProgress())?.id).toBe('reed-flute');
-    expect(nextLockedInstrument(progress({ totalMetres: 800 }))?.id).toBe('reed-flute');
-    // Both cases above are also what "the first entry still locked" would
-    // return, so on their own they prove nothing. These two separate the
-    // implementations: two campfires is two thirds of the way to the
-    // hurdy-gurdy while three earlier instruments have not moved at all, and
-    // 350 coins is halfway to the harp with the drum still on zero.
-    expect(nextLockedInstrument(progress({ campfires: 2 }))?.id).toBe('hurdy-gurdy');
-    expect(nextLockedInstrument(progress({ totalMetres: 900, totalCoins: 350 }))?.id).toBe('harp');
-    // It must never point at something the player already holds.
-    for (const p of [emptyProgress(), progress({ campfires: 2 }), progress({ totalMetres: 5000, totalCoins: 400 })]) {
-      const next = nextLockedInstrument(p);
-      if (next) expect(isUnlocked(next.unlock, p)).toBe(false);
-    }
-    const everything = progress({ totalMetres: 1e6, totalCoins: 1e6, totalEncounters: 1e4, campfires: 1e3 });
-    expect(nextLockedInstrument(everything)).toBeNull();
   });
 
   it('reads progress without writing to it', () => {
@@ -515,47 +463,11 @@ describe('unlock rules', () => {
     const p: UnlockProgress = Object.freeze(progress({ totalMetres: 1200, totalCoins: 400, campfires: 2 }));
     expect(() => {
       unlockedInstruments(p);
-      nextLockedInstrument(p);
-      newlyUnlocked(p, p);
       for (const i of INSTRUMENTS) {
         isUnlocked(i.unlock, p);
-        unlockRatio(i.unlock, p);
       }
     }).not.toThrow();
     expect(p).toEqual({ totalMetres: 1200, totalCoins: 400, totalEncounters: 0, campfires: 2 });
-  });
-});
-
-describe('newlyUnlocked', () => {
-  const at = (p: Partial<UnlockProgress>): UnlockProgress => ({ ...emptyProgress(), ...p });
-
-  it('returns nothing when nothing changed', () => {
-    const now = at({ totalMetres: 2000, totalCoins: 100 });
-    expect(newlyUnlocked(now, now)).toEqual([]);
-  });
-
-  it('returns exactly the difference', () => {
-    const before = at({ totalMetres: 800 });
-    const after = at({ totalMetres: 6200 });
-    expect(ids(newlyUnlocked(before, after))).toEqual(['reed-flute', 'bells']);
-  });
-
-  it('never announces a loss when progress appears to go backwards', () => {
-    const high = at({ totalMetres: 9000, totalCoins: 9000, totalEncounters: 90, campfires: 9 });
-    expect(newlyUnlocked(high, emptyProgress())).toEqual([]);
-  });
-
-  it('splits across two steps the same way it lands in one', () => {
-    const a = emptyProgress();
-    const b = at({ totalMetres: 1000, totalEncounters: 6 });
-    const c = at({ totalMetres: 7000, totalEncounters: 6, totalCoins: 800, campfires: 4 });
-    const twoSteps = [...ids(newlyUnlocked(a, b)), ...ids(newlyUnlocked(b, c))];
-    expect(twoSteps.sort()).toEqual(ids(newlyUnlocked(a, c)).sort());
-  });
-
-  it('returns instruments in catalogue order, not discovery order', () => {
-    const after = at({ totalMetres: 9000, totalCoins: 9000, totalEncounters: 90, campfires: 9 });
-    expect(ids(newlyUnlocked(emptyProgress(), after))).toEqual(ids(INSTRUMENTS).slice(1));
   });
 });
 
