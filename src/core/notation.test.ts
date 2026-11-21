@@ -3,9 +3,8 @@ import {
   ledgerLineSteps,
   needsLedger,
   noteNameAt,
-  noteNameAtStep,
+  letterForStep,
   semitoneAtStep,
-  solfegeAt,
   solfegeAtStep,
   staffStepAt,
   stemDown,
@@ -36,31 +35,15 @@ describe('noteNameAt', () => {
   });
 });
 
-describe('solfegeAt', () => {
-  it('sings the fixed-do syllable of each natural in the C4 octave', () => {
-    expect(solfegeAt(0)).toBe('do');
-    expect(solfegeAt(2)).toBe('re');
-    expect(solfegeAt(4)).toBe('mi');
-    expect(solfegeAt(5)).toBe('fa');
-    expect(solfegeAt(7)).toBe('sol');
-    expect(solfegeAt(9)).toBe('la');
-    expect(solfegeAt(11)).toBe('ti');
+describe('solfegeAtStep', () => {
+  it('sings the fixed-do syllable of each step in the C4 octave', () => {
+    expect([0, 1, 2, 3, 4, 5, 6].map(solfegeAtStep)).toEqual(['do', 're', 'mi', 'fa', 'sol', 'la', 'ti']);
   });
 
-  it('is octave-agnostic, same as noteNameAt', () => {
-    expect(solfegeAt(12)).toBe('do');
-    expect(solfegeAt(-3)).toBe('la');
-  });
-
-  it('returns null for accidentals instead of guessing a spelling', () => {
-    expect(solfegeAt(1)).toBeNull();
-    expect(solfegeAt(6)).toBeNull();
-  });
-
-  it('agrees with noteNameAt on which pitches are natural', () => {
-    for (let semitone = -12; semitone <= 12; semitone++) {
-      expect(solfegeAt(semitone) === null).toBe(noteNameAt(semitone) === null);
-    }
+  it('is octave-agnostic, below middle C too', () => {
+    expect(solfegeAtStep(7)).toBe('do');
+    expect(solfegeAtStep(-2)).toBe('la');
+    expect(solfegeAtStep(-7)).toBe('do');
   });
 });
 
@@ -163,14 +146,15 @@ describe('reading the staff the other way round', () => {
 
   it('names every step with a single letter, below middle C too', () => {
     for (let step = -3; step <= 13; step++) {
-      expect(noteNameAtStep(step), `step ${step}`).toMatch(/^[A-G]$/);
-      expect(noteNameAtStep(step)).toBe(noteNameAt(semitoneAtStep(step)));
+      expect(letterForStep(step), `step ${step}`).toMatch(/^[A-G]$/);
+      expect(letterForStep(step)).toBe(noteNameAt(semitoneAtStep(step)));
     }
   });
 
-  it('sings every step a syllable too, matching solfegeAt', () => {
+  it('sings every step the syllable of its own letter', () => {
+    const syllable: Record<string, string> = { C: 'do', D: 're', E: 'mi', F: 'fa', G: 'sol', A: 'la', B: 'ti' };
     for (let step = -3; step <= 13; step++) {
-      expect(solfegeAtStep(step), `step ${step}`).toBe(solfegeAt(semitoneAtStep(step)));
+      expect(solfegeAtStep(step), `step ${step}`).toBe(syllable[noteNameAt(semitoneAtStep(step))!]);
     }
   });
 });

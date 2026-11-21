@@ -9,7 +9,9 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 331 took module 7
+  authoritative, every-run-updated pointer. **Run 332 took module 8
+  (task 249, core/notation) and queued 250 (consolidation) and 251
+  (core/performance); run 331 took module 7
   (task 248, core/instruments) and queued 249 (core/notation); run 329 took module 6
   (task 246, core/customSongs) and queued task 247 (let a tune go); run 328 took module 5
   (task 245, core/beats); run 327 took module 4
@@ -8040,8 +8042,24 @@ as before.
     pacing seam (`unlockDayEstimate`, `NOMINAL_DAY`) and `emptyProgress`.
     1447 → 1439 tests, green.
 
-249. **Dead-export audit, module 8: core/notation.ts.** Same method as
-    241-248. Queued run 331. Next consolidation is due ~run 333.
+249. ~~**Dead-export audit, module 8: core/notation.ts.**~~ Done (run
+    332). Cut `noteNameAtStep` (an exact twin of `letterForStep`, which
+    every game caller uses) and `solfegeAt` (a pitch-side solfège entry
+    the game never takes; solfège is only asked for by staff step).
+    `solfegeAtStep` now reads through `letterForStep`. Kept
+    `semitoneOfSpelling` (the spelling round-trip's other half),
+    `SHARP_ORDER`/`FLAT_ORDER` and the spelling types. Stale "naturals
+    only" module header rewritten for Book One + Book Two. 1439 → 1437
+    tests, green.
+
+250. **Consolidation (run ~333).** Per CLAUDE.md's every-~10th-run rule:
+    play the build through mentally, fix rough edges, refresh
+    docs/research (note in STATE.md what the game now does about each top
+    retention recommendation), update DESIGN.md honestly. Queued run 332.
+
+251. **Dead-export audit, module 9: core/performance.ts.** Same method as
+    241-249. Remaining after it: audio/adaptive, ambience, mix,
+    instrumentVoice; three/fx/SongNotes. Queued run 332.
 
 ## Idea backlog (pull from here when nothing is queued)
 
@@ -8069,7 +8087,9 @@ as before.
   mean player-facing copy promises a feature that was never built).
   core/instruments done (run 331 — lesson: a test-only function can also
   be a feature the design later chose *against*; check the retention
-  research before treating it as a missing door).
+  research before treating it as a missing door). core/notation done
+  (run 332 — two cuts were twins/parallel entries of helpers the game
+  does use; a stale module header is part of the audit too).
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
   (run 320). Was: the tuned ladder names
