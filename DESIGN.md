@@ -1273,3 +1273,16 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   screen-pixel lane. 21 tests went with them; PLAYTEST's round-6 dusk
   item and two color-script.md sentences that called dusk.ts live were
   corrected. No player-facing change.
+- 2026-11-21 (run 330) — **task 247: a family can let one of its own
+  tunes go.** Run 329 found the eight-tune Your songs shelf had no way
+  out — a full shelf blocked recording and importing for good. Each Your
+  songs row now carries a small × to the left of its title (the title,
+  which a pin-tap aims at, does not move). The × turns that same row into
+  "let “Title” go?  yes"; only the title shortens at 320px. The yes is not
+  live for the first 450ms (`LET_GO_ARM_MS`), so a double tap on the ×
+  can't answer itself; anywhere else on the row, or the book folding,
+  keeps the tune. A pinned tune that is let go hands the walk back to
+  wandering. Farewell line: "“Title” has gone on down the road. The shelf
+  has room again." The full-shelf message points at the ×. Book One/Two
+  rows never get one. A "keep" button was tried and cut the same run:
+  at 320px it left the title one character wide.

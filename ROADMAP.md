@@ -8007,7 +8007,15 @@ as before.
     shelf holds eight. `deleteCustomSong` kept as the seam for task 247.
     1442 → 1443 tests, green.
 
-247. **Let a tune go (the Your songs shelf's missing door).** Queued run
+247. ~~**Let a tune go (the Your songs shelf's missing door).**~~ Done
+    (run 330). A small × left of each Your songs title (title never
+    moves); the × turns the row into "let “Title” go?  yes", title-only
+    ellipsis; yes arms after 450ms (`LET_GO_ARM_MS`) so a double tap
+    can't answer itself; the rest of the row, or the book folding, keeps.
+    Pinned tune let go → wandering. Full-shelf copy points at the ×; its
+    test now requires that pointer and still forbids delete/remove words.
+    Verified headlessly at 320×640 and 664×390. 1443 → 1447 tests.
+    Original brief: Queued run
     329 from task 246's finding. A family that fills the eight-tune shelf
     can never record or import again. Design first, small: a way to remove
     one of *your own* tunes (never Book One/Two) from the open songbook,
@@ -8020,6 +8028,12 @@ as before.
     it ships, restore a pointer to it in the full-shelf message and update
     the test that currently forbids delete wording. Split if the confirm
     pattern needs its own run.
+
+248. **Dead-export audit, module 7: core/instruments.ts** (`describeUnlock`
+    and friends — run 326 left it for its own pass) or core/notation.ts.
+    Same method as 241-246: does anything outside tests import it; is
+    each test-only export an honest seam or a feature with no door. Queued
+    run 330. Next consolidation is due ~run 333.
 
 ## Idea backlog (pull from here when nothing is queued)
 

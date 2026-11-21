@@ -32,8 +32,11 @@ a tune needs sixteen notes and a full last bar of four — and *keep tapping*
 in the bottom-right corner picks it up where you left off), or import a
 MIDI or MusicXML file — and every one of them is held to the same engraving
 rules as the built-in songbook, so nothing a child reads is ever wrong.
-The *Your songs* shelf holds eight tunes; there is no way to remove one
-from inside the game yet.
+The *Your songs* shelf holds eight tunes. To make room, open the
+songbook and tap the small **×** beside one of your own tunes: the row
+asks *let “…” go?* — tap **yes** at its right-hand end to let it go, or
+anywhere else on the row (or just close the book) to keep it. Book One
+and Book Two pages have no ×.
 
 **Practice a tune by reading it:** pin a song in the songbook, then open
 *Practise this tune ♪* — it sits right under *Wander the songbook* at the

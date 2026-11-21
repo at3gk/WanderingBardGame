@@ -216,10 +216,10 @@ function storeValidatedSong(title: string, notes: readonly SongNote[]): SaveCust
 
   const existing = loadCustomSongs();
   if (existing.length >= MAX_CUSTOM_SONGS) {
-    // No "delete one to make room": the game has no way to let a tune go
-    // yet (ROADMAP task 247), and copy must not send a player looking for
-    // a door that isn't there. `deleteCustomSong` below is that door's seam.
-    return { error: `the Your songs shelf is full — it holds ${MAX_CUSTOM_SONGS} tunes` };
+    // Points at the real door (ROADMAP task 247): the small × beside each
+    // of Your songs in the open songbook. Run 329 took a "delete one"
+    // pointer out because no such door existed; it exists now.
+    return { error: FULL_SHELF_MESSAGE };
   }
 
   writeCustomSongs([...existing, song]);
@@ -249,16 +249,55 @@ export function saveImportedSong(title: string, notes: readonly SongNote[]): Sav
   return storeValidatedSong(title, notes);
 }
 
+/** What a full shelf says — and where the way to make room is. */
+export const FULL_SHELF_MESSAGE = `the Your songs shelf is full — it holds ${MAX_CUSTOM_SONGS} tunes; tap the × beside one in the songbook to let it go`;
+
 /**
  * Removes a saved song by id. Removing one that isn't there is a no-op, not
- * an error. No UI calls this yet (dead-export audit, run 329): it is kept as
- * the tested seam for ROADMAP task 247's "let a tune go" door, which the
- * full-shelf message above waits on.
+ * an error. Called by the songbook's "let a tune go" door (ROADMAP task
+ * 247) once its in-row question has been answered yes.
  */
 export function deleteCustomSong(id: string): void {
   const existing = loadCustomSongs();
   const next = existing.filter((s) => s.id !== id);
   if (next.length !== existing.length) writeCustomSongs(next);
+}
+
+/**
+ * The "let a tune go" door (ROADMAP task 247): the open songbook's small ×
+ * on a Your songs row turns that row, in place, into a question with two
+ * answers — so the row a tap was aimed at never moves, and letting go
+ * always takes two separate, deliberate taps.
+ *
+ * The yes is not live the instant the question appears: a child's double
+ * tap on the × must not answer its own question. `LET_GO_ARM_MS` is that
+ * pause — long enough to outlast a double tap (~300ms), short enough that
+ * a grown-up who meant it never notices waiting.
+ */
+export const LET_GO_ARM_MS = 450;
+
+/** Whether a yes tapped at `nowMs` counts, for a question asked at `askedAtMs`. A clock that runs backwards never arms. */
+export function letGoArmed(askedAtMs: number, nowMs: number): boolean {
+  if (!Number.isFinite(askedAtMs) || !Number.isFinite(nowMs)) return false;
+  return nowMs - askedAtMs >= LET_GO_ARM_MS;
+}
+
+/** The row's question. Plain, not loss-framed: no "lose", no "forever", no warning. */
+export function letGoQuestion(title: string): string {
+  return `let “${title}” go?`;
+}
+
+/**
+ * The question's one answer button, set at the row's far edge. Keep has no
+ * word of its own: the rest of the row is keep, and so is the book folding
+ * — at 320px a "keep" label cost the title its whole width (found headless,
+ * run 330), and a question nobody answers must never let a tune go.
+ */
+export const LET_GO_YES_LABEL = 'yes';
+
+/** What the road says once a tune has gone — a farewell, not a loss. */
+export function letGoFarewell(title: string): string {
+  return `“${title}” has gone on down the road. The shelf has room again.`;
 }
 
 /**
