@@ -8,6 +8,11 @@ import {
   MIN_CUSTOM_SONG_NOTES,
   buildCustomSong,
   deleteCustomSong,
+  FULL_SHELF_MESSAGE,
+  LET_GO_ARM_MS,
+  letGoArmed,
+  letGoQuestion,
+  letGoFarewell,
   engravingProblem,
   finishRecording,
   isCustomSongId,
@@ -204,15 +209,30 @@ describe('saveCustomSong / loadCustomSongs / deleteCustomSong', () => {
     expect(loadCustomSongs()).toHaveLength(MAX_CUSTOM_SONGS);
   });
 
-  it('the full-shelf message names the shelf and promises no door the game lacks', () => {
+  it('the full-shelf message names the shelf and points at the door that exists', () => {
     for (let i = 0; i < MAX_CUSTOM_SONGS; i++) saveCustomSong(`Song ${i}`, validSteps());
     const result = saveCustomSong('One Too Many', validSteps());
     if (!('error' in result)) throw new Error('expected a full shelf');
+    expect(result.error).toBe(FULL_SHELF_MESSAGE);
     expect(result.error).toContain('Your songs');
     expect(result.error).toContain(String(MAX_CUSTOM_SONGS));
-    // Until task 247 ships a way to let a tune go, the copy must not tell a
-    // player to delete one: there is nowhere in the game to do it.
+    // Task 247's door is the songbook's × and its "let … go" question; the
+    // message names exactly that, in the door's own words — not "delete".
+    expect(result.error).toContain('×');
+    expect(result.error).toContain('let it go');
     expect(result.error).not.toMatch(/delete|remove/i);
+  });
+
+  it('letting a tune go frees exactly one place on a full shelf', () => {
+    const saved: string[] = [];
+    for (let i = 0; i < MAX_CUSTOM_SONGS; i++) {
+      const r = saveCustomSong(`Song ${i}`, validSteps());
+      if ('song' in r) saved.push(r.song.id);
+    }
+    deleteCustomSong(saved[3]);
+    expect(loadCustomSongs().map((s) => s.id)).toEqual(saved.filter((_, i) => i !== 3));
+    expect('song' in saveCustomSong('Room Again', validSteps())).toBe(true);
+    expect('error' in saveCustomSong('Full Again', validSteps())).toBe(true);
   });
 
   it('deleting a song id that is not there is a harmless no-op', () => {
@@ -379,5 +399,33 @@ describe('the recording door (task 176 piece 2)', () => {
       expect('error' in result).toBe(true);
       expect(loadCustomSongs()).toEqual([]);
     });
+  });
+});
+
+describe('the let-a-tune-go door (task 247)', () => {
+  it('a yes only counts once the question has stood long enough to outlast a double tap', () => {
+    expect(LET_GO_ARM_MS).toBeGreaterThanOrEqual(300);
+    expect(LET_GO_ARM_MS).toBeLessThanOrEqual(800);
+    expect(letGoArmed(1000, 1000)).toBe(false);
+    expect(letGoArmed(1000, 1000 + 250)).toBe(false);
+    expect(letGoArmed(1000, 1000 + LET_GO_ARM_MS)).toBe(true);
+    expect(letGoArmed(1000, 500)).toBe(false);
+    expect(letGoArmed(Number.NaN, 5000)).toBe(false);
+  });
+
+  it('the question names the title exactly once, so the songbook can shorten only the title', () => {
+    // Hud.ts splits the question around the title: words before and after
+    // stay whole at 320px, and only the title ellipsizes.
+    const parts = letGoQuestion('\u0000').split('\u0000');
+    expect(parts).toHaveLength(2);
+    expect(parts[0].length + parts[1].length).toBeLessThanOrEqual(14);
+  });
+
+  it('the question and farewell name the tune and never frame it as a loss', () => {
+    const lossWords = /lose|lost|forever|gone forever|warning|sure\?|delete|remove|can'?t be undone/i;
+    expect(letGoQuestion('Our Song')).toContain('Our Song');
+    expect(letGoFarewell('Our Song')).toContain('Our Song');
+    expect(letGoQuestion('Our Song')).not.toMatch(lossWords);
+    expect(letGoFarewell('Our Song')).not.toMatch(lossWords);
   });
 });

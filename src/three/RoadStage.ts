@@ -118,7 +118,7 @@ import { expandSong, songDurationMs, songKey, type Song, type SongBeat } from '.
 import { rehearsalLine } from '../core/rehearsal';
 import { BOOK_TWO_SONGS, SONGS } from '../core/songs';
 import { songForPass } from '../core/songChoice';
-import { loadCustomSongs } from '../core/customSongs';
+import { deleteCustomSong, letGoFarewell, loadCustomSongs } from '../core/customSongs';
 import {
   extendWalkTune,
   startWalkTune as newWalkTune,
@@ -599,6 +599,7 @@ export class RoadStage implements Stage {
     this.hud.onPostcard(() => this.pressPostcard());
     this.hud.onFreePlay(() => this.openFreePlay());
     this.hud.onImportMidi(() => this.openImportMidi());
+    this.hud.onLetGo((id) => this.letTuneGo(id));
     // The other bookmark's page (task 157 piece 3): offered only when the
     // other bench cushion holds a journey at all. Composed lazily at tap
     // time so it reads whatever their record says TONIGHT, and their road
@@ -2177,6 +2178,26 @@ export class RoadStage implements Stage {
     }
   }
 
+  /**
+   * Let one of the family's own tunes go (task 247), once its row's question
+   * was answered yes. Only ever a custom tune — the HUD offers the × on no
+   * other row, and `deleteCustomSong` only touches the family's shelf. If
+   * the tune was pinned the walk hands back to wandering, the same path the
+   * wander row takes (refused mid-busk like any pin change, so the busk's
+   * tune is never pulled from under it — the book is shut then anyway).
+   */
+  private letTuneGo(id: string): void {
+    const song = loadCustomSongs().find((s) => s.id === id);
+    if (!song) return;
+    if (this.journey.songChoice === id) {
+      if (this.tuneMode === 'busk') return;
+      this.pinSong(null);
+    }
+    deleteCustomSong(id);
+    this.refreshSongbook();
+    this.hud.say(letGoFarewell(song.title), 8);
+  }
+
   /** Hand the HUD the songbook and which tune is pinned. */
   private refreshSongbook(): void {
     // The same per-song walk record the festival's set list is drawn from —
@@ -2214,7 +2235,7 @@ export class RoadStage implements Stage {
     if (customSongs.length > 0) {
       entries.push({ id: '', name: 'Your songs', heading: true });
       for (const song of customSongs) {
-        entries.push({ id: song.id, name: song.title, wear: wearTier(walks[song.id] ?? 0) });
+        entries.push({ id: song.id, name: song.title, wear: wearTier(walks[song.id] ?? 0), letGo: true });
       }
     }
     // The ladder row names what it opens (task 238): practice, while the

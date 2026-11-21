@@ -24,6 +24,7 @@
 
 import { MEMENTO_KIND } from '../core/encounters';
 import { MAKE_A_SONG_LABEL, PRACTISE_LABEL } from '../core/freePlay';
+import { LET_GO_YES_LABEL, letGoArmed, letGoQuestion } from '../core/customSongs';
 import type { HudBox, HudChrome, SafeAreaInsets } from './hudLayout';
 import { bookCapacity, bookPage, hudChrome, instrumentCaseBox, orderBookRows, songBookBox } from './hudLayout';
 
@@ -75,6 +76,11 @@ export interface SongEntry {
    * label. Absent for Book One and a family's own tunes, which carry none.
    */
   keyName?: string;
+  /**
+   * A family's own tune (task 247): the open book sets a small × beside it,
+   * the way to let it go. Never set for Book One or Two.
+   */
+  letGo?: true;
 }
 
 /** The songbook's endpaper actions: press the journey into a keepsake file, or unfold one. */
@@ -293,6 +299,9 @@ export class Hud {
    */
   private freePlayLabel: string = MAKE_A_SONG_LABEL;
   private importMidiCb: (() => void) | null = null;
+  private letGoCb: ((id: string) => void) | null = null;
+  /** The Your songs row currently asking "let … go?", and when it asked (performance.now ms). */
+  private letGoAsk: { id: string; at: number } | null = null;
 
   /** Seconds of brightness left on each piece. */
   private coinsAttention = 0;
@@ -726,6 +735,16 @@ export class Hud {
    */
   onImportMidi(handler: () => void): void {
     this.importMidiCb = handler;
+    this.buildBook();
+  }
+
+  /**
+   * Called with a family tune's id once its row's "let … go?" has been
+   * answered yes (task 247). Same no-handler-no-door contract: until a host
+   * wires this, Your songs rows carry no × at all.
+   */
+  onLetGo(handler: (id: string) => void): void {
+    this.letGoCb = handler;
     this.buildBook();
   }
 
@@ -1572,6 +1591,7 @@ export class Hud {
     freePlay?: true;
     importMidi?: true;
     keyName?: string;
+    letGo?: true;
   }> {
     const rows: Array<{
       id: string | null;
@@ -1581,6 +1601,7 @@ export class Hud {
       freePlay?: true;
       importMidi?: true;
       keyName?: string;
+      letGo?: true;
     }> = [];
     for (const entry of this.songEntries) {
       if (entry.heading) rows.push(entry);
@@ -1645,6 +1666,45 @@ export class Hud {
         this.bookBox.appendChild(row);
         continue;
       }
+      // A family tune asking "let … go?" (task 247): the same row, in place,
+      // so nothing a finger is aimed at moves. Only the title may shorten —
+      // "let “…” go?" and the yes always survive a 320px fold. The yes waits
+      // at the row's far edge and only counts once the question has stood
+      // for `LET_GO_ARM_MS`, so a double tap on the × cannot answer itself.
+      // Anywhere else on the row is a keep, and so is the book folding.
+      const ask = this.letGoAsk;
+      if (ask && entry.letGo && entry.id === ask.id && this.letGoCb) {
+        const row = makeRow({ color: INK, cursor: 'pointer' });
+        row.setAttribute('aria-label', `Keep ${entry.name}`);
+        const keep = () => {
+          this.letGoAsk = null;
+          this.bookHold = CASE_HOLD_SEC;
+          this.buildBook();
+        };
+        const [before, after] = letGoQuestion('\u0000').split('\u0000');
+        const fixed = (text: string) => {
+          const span = element('span', { flex: '0 0 auto', whiteSpace: 'pre' });
+          span.textContent = text;
+          return span;
+        };
+        row.appendChild(fixed(before));
+        row.appendChild(rowLabel(entry.name));
+        row.appendChild(fixed(after));
+        const yesButton = this.rowButton(LET_GO_YES_LABEL, { marginLeft: '0.3em', fontStyle: 'normal' }, () => {
+          if (!letGoArmed(ask.at, performance.now())) return;
+          this.letGoAsk = null;
+          this.letGoCb?.(entry.id as string);
+        });
+        yesButton.setAttribute('aria-label', `Yes, let ${entry.name} go`);
+        row.appendChild(yesButton);
+        row.addEventListener('pointerdown', (event) => {
+          event.preventDefault();
+          keep();
+        });
+        bindRowActivation(row, this.bookOpen, keep);
+        this.bookBox.appendChild(row);
+        continue;
+      }
       // A page wears where it has been carried (task 154). Quiet on purpose:
       // warmer ink, then a scribe's mark in the margin. No count, no badge,
       // no tooltip — a reader who never notices has lost nothing, and one
@@ -1660,6 +1720,19 @@ export class Hud {
           : {},
       );
       const keyName = typeof entry.keyName === 'string' && entry.keyName !== '' ? entry.keyName : null;
+      if (entry.letGo && this.letGoCb && typeof entry.id === 'string') {
+        // The × sits at the row's left, before the title: the title (what a
+        // pin-tap aims at) stays exactly where it always was.
+        const id = entry.id;
+        const letGo = this.rowButton('×', { color: INK_SOFT, fontStyle: 'normal', marginRight: '0.35em' }, () => {
+          this.letGoAsk = { id, at: performance.now() };
+          this.bookHold = CASE_HOLD_SEC;
+          this.buildBook();
+        });
+        letGo.setAttribute('aria-label', `Let ${entry.name} go`);
+        row.setAttribute('aria-label', entry.name);
+        row.appendChild(letGo);
+      }
       if (wear >= 2) {
         const mark = element('span', {
           color: INK_SOFT,
@@ -1716,6 +1789,38 @@ export class Hud {
     this.layoutBook();
   }
 
+  /**
+   * A small tappable word inside a book row (the × and the keep/yes of task
+   * 247). Its taps and keys stop at itself, so the row under it never also
+   * pins its song.
+   */
+  private rowButton(text: string, style: Style, activate: () => void): HTMLSpanElement {
+    const button = element('span', {
+      flex: '0 0 auto',
+      alignSelf: 'stretch',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 0.45em',
+      cursor: 'pointer',
+      ...style,
+    });
+    button.textContent = text;
+    button.setAttribute('role', 'button');
+    button.tabIndex = this.bookOpen ? 0 : -1;
+    button.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      activate();
+    });
+    button.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
+      event.preventDefault();
+      event.stopPropagation();
+      activate();
+    });
+    return button;
+  }
+
   private layoutBook(): void {
     const rows = this.bookBox.children;
     place(this.bookBox, songBookBox(this.chrome, rows.length));
@@ -1745,12 +1850,19 @@ export class Hud {
       this.buildBook();
     }
     this.bookOpen = next;
+    // A question left open when the book folds is a keep: it never waits,
+    // half-answered, for the next time the book is opened.
+    if (!next && this.letGoAsk) {
+      this.letGoAsk = null;
+      this.buildBook();
+    }
     this.bookHold = next ? CASE_HOLD_SEC : 0;
     this.bookBox.style.opacity = next ? '1' : '0';
     this.bookBox.style.pointerEvents = next ? 'auto' : 'none';
     // See the matching loop in `setCaseOpen` for why this is needed here too.
-    for (const row of Array.from(this.bookBox.children)) {
-      if ((row as HTMLElement).getAttribute('role') === 'button') (row as HTMLElement).tabIndex = next ? 0 : -1;
+    // Nested too: a Your songs row's × and its keep/yes are buttons of their own.
+    for (const node of Array.from(this.bookBox.querySelectorAll('[role="button"]'))) {
+      (node as HTMLElement).tabIndex = next ? 0 : -1;
     }
     this.songBox.setAttribute('aria-expanded', String(next));
     this.songAttention = next ? Math.max(this.songAttention, CASE_HOLD_SEC) : 0;
