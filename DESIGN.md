@@ -1318,3 +1318,8 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   audio and effects shared it so layers arrive on the same note; neither
   does — audio/adaptive owns per-layer thresholds with hysteresis. No
   player-facing change.
+- 2026-11-22 (run 335) — Dead-export audit, module 10: core/songMeter.ts.
+  `isWalking` cut (the binary walk/stop line again, no game caller), and
+  the meter's `walkingThreshold` renamed `fullStrideMeter`: below it the
+  bard still walks, just slower, so the old name described the cut
+  design rather than the game. No player-facing change.

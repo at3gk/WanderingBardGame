@@ -9,7 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 334 took module 9
+  authoritative, every-run-updated pointer. **Run 335 took module 10
+  (task 252, core/songMeter) and queued 253 (audio/adaptive). Run 334 took module 9
   (task 251, core/performance) and queued 252 (core/songMeter). Run 333 was
   the consolidation (task 250). Run 332 took module 8
   (task 249, core/notation) and queued 250 (consolidation) and 251
@@ -8071,12 +8072,20 @@ as before.
     `performanceSummary`/`applyJudgement`; honest seams) and the internal
     constants. 1437 → 1436 tests, green.
 
-252. **Dead-export audit, module 10: core/songMeter.ts.** Run 334's cut
-    left `isWalking` with no game caller (performance.test also pins it
-    against `PERFORMANCE_METER_CONFIG`). Decide whether `walkingThreshold`
-    is still honestly named ("full stride", per walk.ts) and whether
-    `isWalking` should go. Remaining after it: audio/adaptive, ambience,
-    mix, instrumentVoice; three/fx/SongNotes. Queued run 334.
+252. ~~**Dead-export audit, module 10: core/songMeter.ts.**~~ Done (run
+    335). Cut `isWalking` (a binary walk/stop line, the same rejected
+    design as run 334's `isBardWalking`; no game caller). Renamed the
+    config field `walkingThreshold` → `fullStrideMeter`, because that is
+    what it is: walk.ts reads it as the meter where the stride becomes
+    full, and the bard keeps walking (slower) well below it. The
+    performance test that pinned `isWalking` now pins the stride at the
+    threshold. Kept `applyHit`/`applyMiss` (used by applyJudgement) and
+    `DEFAULT_SONG_METER_CONFIG`. 1436 → 1434 tests, green.
+
+253. **Dead-export audit, module 11: audio/adaptive.ts.** Same method:
+    list exports reached only by tests, cut what describes a design the
+    game chose against, keep honest seams. Remaining after it: ambience,
+    mix, instrumentVoice; three/fx/SongNotes. Queued run 335.
 
 ## Idea backlog (pull from here when nothing is queued)
 
