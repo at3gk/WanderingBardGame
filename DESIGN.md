@@ -1308,3 +1308,13 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   176-178 and is not gated, so the paragraph now describes the game as
   built, including the eight-tune shelf and run 330's let-go door. No
   code change, nothing cut.
+- 2026-11-22 (run 334) — Dead-export audit, module 9: core/performance.ts.
+  Two test-only exports cut, both describing designs the game chose
+  against. `isBardWalking` was a binary walk/stop at the meter's
+  `walkingThreshold`; the game eases the stride instead (`walkPaceFactor`,
+  stopping only at `WALK_STOP_METER`), because "a binary walk/stop reads
+  as punishment". Its tests claimed one miss *stops* the bard, which the
+  game never does; they now pin the easing stride. `warmthLayers` claimed
+  audio and effects shared it so layers arrive on the same note; neither
+  does — audio/adaptive owns per-layer thresholds with hysteresis. No
+  player-facing change.
