@@ -17,7 +17,6 @@ import {
   crowdFarewellLine,
   crowdFor,
   crowdKeepThreshold,
-  isBardWalking,
   judge,
   lateWindowMs,
   performanceSummary,
@@ -25,12 +24,15 @@ import {
   streakBonus,
   tickBuskCrowd,
   tickPerformance,
-  warmthLayers,
 } from './performance';
 import { expandSong } from './song';
 import { HOT_CROSS_BUNS, MARY_HAD_A_LITTLE_LAMB } from './songs';
 import { DEFAULT_SONG_METER_CONFIG, isWalking } from './songMeter';
 import { mulberry32 } from './rng';
+import { WALK_STOP_METER, walkPaceFactor } from './walk';
+
+/** The bard's stride as the game sets it from a busk's meter (RoadStage). */
+const stride = (state: PerformanceState): number => walkPaceFactor(state.meter);
 
 const CONFIG = DEFAULT_PERFORMANCE_CONFIG;
 const BPM = 100;
@@ -46,7 +48,7 @@ describe('createPerformance', () => {
   it('opens with the bard already walking and no crowd', () => {
     const state = createPerformance();
     expect(state.meter).toBe(START_METER);
-    expect(isBardWalking(state)).toBe(true);
+    expect(stride(state)).toBe(1);
     expect(state.warmth).toBe(0);
     expect(state.peakWarmth).toBe(0);
     expect(state.noteIndex).toBe(0);
@@ -62,12 +64,13 @@ describe('createPerformance', () => {
     expect(b.hits).toBe(0);
   });
 
-  it('starts where one miss stops the bard and one hit restarts him', () => {
+  it('starts where one miss eases the stride, never stops it, and one hit restores it', () => {
     const state = createPerformance();
     applyJudgement(state, 'miss', CONFIG);
-    expect(isBardWalking(state)).toBe(false);
+    expect(stride(state)).toBeGreaterThan(0);
+    expect(stride(state)).toBeLessThan(1);
     applyJudgement(state, 'good', CONFIG);
-    expect(isBardWalking(state)).toBe(true);
+    expect(stride(state)).toBe(1);
   });
 });
 
@@ -641,11 +644,12 @@ describe('the no-fail invariant', () => {
     for (let i = 0; i < 500; i++) applyJudgement(state, 'miss', CONFIG);
     expect(state.meter).toBe(0);
     expect(state.warmth).toBe(0);
-    expect(isBardWalking(state)).toBe(false);
+    expect(state.meter).toBeLessThanOrEqual(WALK_STOP_METER);
+    expect(stride(state)).toBe(0);
 
-    // One good note and the bard is moving again with money coming in.
+    // A few good notes and the bard is at full stride with money coming in.
     hit(state, 5);
-    expect(isBardWalking(state)).toBe(true);
+    expect(stride(state)).toBe(1);
     expect(state.warmth).toBeGreaterThan(0);
     expect(state.coins).toBeGreaterThan(0);
     expect(performanceSummary(state).line.length).toBeGreaterThan(0);
@@ -690,7 +694,7 @@ describe('the no-fail invariant', () => {
   });
 });
 
-describe('crowdFor and warmthLayers', () => {
+describe('crowdFor', () => {
   it('describes a crowd in order and never skips a step going up', () => {
     const order = ['none', 'passers-by', 'gathering', 'crowd', 'square'];
     let previous = 0;
@@ -717,25 +721,6 @@ describe('crowdFor and warmthLayers', () => {
     expect(crowdFor(0.6 - nudge)).toBe('gathering');
     expect(crowdFor(0.85)).toBe('square');
     expect(crowdFor(0.85 - nudge)).toBe('crowd');
-  });
-
-  it('brings layers in one at a time and always leaves the bard playing', () => {
-    expect(warmthLayers(0, 4)).toBe(1);
-    expect(warmthLayers(1, 4)).toBe(4);
-    expect(warmthLayers(0.5, 4)).toBe(3);
-    expect(warmthLayers(0.24, 4)).toBe(1);
-    expect(warmthLayers(0.25, 4)).toBe(2);
-    expect(warmthLayers(Number.NaN, 4)).toBe(1);
-    expect(warmthLayers(0.9, 0)).toBe(0);
-    expect(warmthLayers(0.9, -3)).toBe(0);
-    expect(warmthLayers(0.9, Number.POSITIVE_INFINITY)).toBe(0);
-    let previous = 0;
-    for (let w = 0; w <= 1.0001; w += 0.01) {
-      const layers = warmthLayers(w, 5);
-      expect(layers).toBeGreaterThanOrEqual(previous);
-      expect(layers).toBeLessThanOrEqual(5);
-      previous = layers;
-    }
   });
 });
 

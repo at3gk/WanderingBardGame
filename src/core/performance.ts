@@ -4,7 +4,6 @@ import {
   SongMeterConfig,
   applyHit,
   applyMiss,
-  isWalking,
 } from './songMeter';
 
 /**
@@ -561,11 +560,6 @@ export function tickPerformance(
   return { state, missed: missed ?? NO_MISSES, excused };
 }
 
-/** Whether the bard is walking, per `songMeter.ts`. */
-export function isBardWalking(state: PerformanceState): boolean {
-  return isWalking(state.meter, PERFORMANCE_METER_CONFIG);
-}
-
 export type Crowd = 'none' | 'passers-by' | 'gathering' | 'crowd' | 'square';
 
 /**
@@ -584,20 +578,6 @@ export function crowdFor(warmth: number): Crowd {
   const value = clamp01(finiteOr(warmth, 0));
   for (const step of CROWD_STEPS) if (value >= step.at) return step.crowd;
   return 'none';
-}
-
-/**
- * How many layers of an arrangement warmth should have brought in.
- *
- * Lives here rather than in the audio and effects modules so that the two
- * cannot drift apart — the whole appeal of warmth is that the extra fiddle
- * line and the extra drifting motes arrive on the same note. Layer one is
- * always on: the bard is playing whether or not anyone stopped.
- */
-export function warmthLayers(warmth: number, layers: number): number {
-  if (!Number.isFinite(layers) || layers <= 0) return 0;
-  const top = Math.floor(layers);
-  return Math.min(top, 1 + Math.floor(clamp01(finiteOr(warmth, 0)) * top));
 }
 
 export interface PerformanceSummary {

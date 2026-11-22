@@ -9,8 +9,9 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 333 was the consolidation
-  (task 250); task 251 (core/performance) is next. Run 332 took module 8
+  authoritative, every-run-updated pointer. **Run 334 took module 9
+  (task 251, core/performance) and queued 252 (core/songMeter). Run 333 was
+  the consolidation (task 250). Run 332 took module 8
   (task 249, core/notation) and queued 250 (consolidation) and 251
   (core/performance); run 331 took module 7
   (task 248, core/instruments) and queued 249 (core/notation); run 329 took module 6
@@ -8060,9 +8061,22 @@ as before.
     refresh noted in STATE, one shipping finding added to
     retention-design.md. No code change, 1437 tests green.
 
-251. **Dead-export audit, module 9: core/performance.ts.** Same method as
-    241-249. Remaining after it: audio/adaptive, ambience, mix,
-    instrumentVoice; three/fx/SongNotes. Queued run 332.
+251. ~~**Dead-export audit, module 9: core/performance.ts.**~~ Done (run
+    334). Cut `isBardWalking` (a binary walk/stop the game replaced with
+    `walkPaceFactor`'s easing stride; its tests claimed one miss stops the
+    bard, which never happens) and `warmthLayers` (claimed to sync audio
+    and effects layers; audio/adaptive owns per-layer thresholds with
+    hysteresis and nothing else used it). Tests now pin the stride the
+    game actually sets. Kept `crowdFor`, `streakBonus` (used inside
+    `performanceSummary`/`applyJudgement`; honest seams) and the internal
+    constants. 1437 → 1436 tests, green.
+
+252. **Dead-export audit, module 10: core/songMeter.ts.** Run 334's cut
+    left `isWalking` with no game caller (performance.test also pins it
+    against `PERFORMANCE_METER_CONFIG`). Decide whether `walkingThreshold`
+    is still honestly named ("full stride", per walk.ts) and whether
+    `isWalking` should go. Remaining after it: audio/adaptive, ambience,
+    mix, instrumentVoice; three/fx/SongNotes. Queued run 334.
 
 ## Idea backlog (pull from here when nothing is queued)
 
@@ -8093,6 +8107,9 @@ as before.
   research before treating it as a missing door). core/notation done
   (run 332 — two cuts were twins/parallel entries of helpers the game
   does use; a stale module header is part of the audit too).
+  core/performance done (run 334 — lesson: a test-only helper can keep a
+  *test's claim* alive that the game contradicts; "one miss stops the
+  bard" passed for months while the game eased the stride instead).
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
   (run 320). Was: the tuned ladder names
