@@ -27,7 +27,7 @@ import {
 } from './performance';
 import { expandSong } from './song';
 import { HOT_CROSS_BUNS, MARY_HAD_A_LITTLE_LAMB } from './songs';
-import { DEFAULT_SONG_METER_CONFIG, isWalking } from './songMeter';
+import { DEFAULT_SONG_METER_CONFIG } from './songMeter';
 import { mulberry32 } from './rng';
 import { WALK_STOP_METER, walkPaceFactor } from './walk';
 
@@ -80,16 +80,16 @@ describe('the meter stays in lockstep with songMeter', () => {
     expect(PERFORMANCE_METER_CONFIG.max).toBe(1);
     expect(PERFORMANCE_METER_CONFIG.hitGain).toBeCloseTo(DEFAULT_SONG_METER_CONFIG.hitGain / scale, 12);
     expect(PERFORMANCE_METER_CONFIG.missDrain).toBeCloseTo(DEFAULT_SONG_METER_CONFIG.missDrain / scale, 12);
-    expect(PERFORMANCE_METER_CONFIG.walkingThreshold).toBeCloseTo(
-      DEFAULT_SONG_METER_CONFIG.walkingThreshold / scale,
+    expect(PERFORMANCE_METER_CONFIG.fullStrideMeter).toBeCloseTo(
+      DEFAULT_SONG_METER_CONFIG.fullStrideMeter / scale,
       12
     );
   });
 
-  it('agrees with songMeter about walking at the threshold', () => {
-    const threshold = PERFORMANCE_METER_CONFIG.walkingThreshold;
-    expect(isWalking(threshold, PERFORMANCE_METER_CONFIG)).toBe(true);
-    expect(isWalking(threshold - 1e-9, PERFORMANCE_METER_CONFIG)).toBe(false);
+  it('puts the full stride exactly at the meter threshold', () => {
+    const threshold = PERFORMANCE_METER_CONFIG.fullStrideMeter;
+    expect(walkPaceFactor(threshold)).toBe(1);
+    expect(walkPaceFactor(threshold - 1e-9)).toBeLessThan(1);
   });
 });
 

@@ -130,7 +130,7 @@ export const WALK_METER_CONFIG: SongMeterConfig = normaliseMeter({
   max: 100,
   hitGain: 12,
   missDrain: 6,
-  walkingThreshold: 40,
+  fullStrideMeter: 40,
 });
 
 /** The walk's judging contract: default windows, the walk's gentler meter. */
@@ -150,7 +150,7 @@ function normaliseMeter(config: SongMeterConfig): SongMeterConfig {
     max: config.max / divisor,
     hitGain: config.hitGain / divisor,
     missDrain: config.missDrain / divisor,
-    walkingThreshold: config.walkingThreshold / divisor,
+    fullStrideMeter: config.fullStrideMeter / divisor,
   };
 }
 

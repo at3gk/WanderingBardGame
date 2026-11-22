@@ -36,7 +36,7 @@ describe('the walking meter (WALK_METER_CONFIG)', () => {
     // The pace ramp (walkPaceFactor) reads PERFORMANCE_METER_CONFIG's
     // threshold; if the walk judged against a different one, the stride and
     // the meter would disagree about what "walking" means.
-    expect(WALK_METER_CONFIG.walkingThreshold).toBe(PERFORMANCE_METER_CONFIG.walkingThreshold);
+    expect(WALK_METER_CONFIG.fullStrideMeter).toBe(PERFORMANCE_METER_CONFIG.fullStrideMeter);
   });
 
   it('is what applyJudgement actually uses when handed the walk config', () => {
@@ -59,7 +59,7 @@ describe('the walking meter (WALK_METER_CONFIG)', () => {
 
 describe('walkPaceFactor', () => {
   it('walks at full stride at or above the meter walking threshold', () => {
-    expect(walkPaceFactor(CONFIG.walkingThreshold)).toBe(1);
+    expect(walkPaceFactor(CONFIG.fullStrideMeter)).toBe(1);
     expect(walkPaceFactor(1)).toBe(1);
     // The busk-start meter is half full and half full is a full stride —
     // the walk must never open with a told-off bard.

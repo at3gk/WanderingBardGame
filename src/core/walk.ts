@@ -31,7 +31,7 @@ import { expandSong, songDurationMs, type Song, type SongBeat } from './song';
 /**
  * At or below this meter the bard has stopped walking.
  *
- * Deliberately well below the meter's own `walkingThreshold` rather than at
+ * Deliberately well below the meter's own `fullStrideMeter` rather than at
  * it: the threshold is where the stride is *full*, and the band between the
  * two is where the bard visibly slows — which is the whole feedback. A
  * binary walk/stop at one threshold reads as punishment; a stride that eases
@@ -69,7 +69,7 @@ export function walkPaceFactor(
   config: SongMeterConfig = PERFORMANCE_METER_CONFIG,
 ): number {
   const value = Number.isFinite(meter) ? Math.min(1, Math.max(0, meter)) : 1;
-  const full = Math.max(WALK_STOP_METER + 1e-6, config.walkingThreshold);
+  const full = Math.max(WALK_STOP_METER + 1e-6, config.fullStrideMeter);
   if (value <= WALK_STOP_METER) return 0;
   if (value >= full) return 1;
   return (value - WALK_STOP_METER) / (full - WALK_STOP_METER);

@@ -2,7 +2,12 @@ export interface SongMeterConfig {
   max: number;
   hitGain: number;
   missDrain: number;
-  walkingThreshold: number;
+  /**
+   * Meter at or above which the walking bard keeps a full stride. Below it
+   * the stride eases off (core/walk.ts `walkPaceFactor`) and only stops at
+   * `WALK_STOP_METER`; there is deliberately no binary walk/stop line.
+   */
+  fullStrideMeter: number;
 }
 
 // Human playtest (2026-07-25): refilling felt too slow (empty→walking took
@@ -12,7 +17,7 @@ export const DEFAULT_SONG_METER_CONFIG: SongMeterConfig = {
   max: 100,
   hitGain: 12,
   missDrain: 14,
-  walkingThreshold: 40,
+  fullStrideMeter: 40,
 };
 
 /** Meter value after a hit, clamped to the configured max. */
@@ -23,9 +28,4 @@ export function applyHit(meter: number, config: SongMeterConfig): number {
 /** Meter value after a miss, clamped to zero. */
 export function applyMiss(meter: number, config: SongMeterConfig): number {
   return Math.max(0, meter - config.missDrain);
-}
-
-/** Walking-vs-stopped state derived from the meter, per DESIGN.md. */
-export function isWalking(meter: number, config: SongMeterConfig): boolean {
-  return meter >= config.walkingThreshold;
 }
