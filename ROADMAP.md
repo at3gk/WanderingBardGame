@@ -9,7 +9,8 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 332 took module 8
+  authoritative, every-run-updated pointer. **Run 333 was the consolidation
+  (task 250); task 251 (core/performance) is next. Run 332 took module 8
   (task 249, core/notation) and queued 250 (consolidation) and 251
   (core/performance); run 331 took module 7
   (task 248, core/instruments) and queued 249 (core/notation); run 329 took module 6
@@ -8052,10 +8053,12 @@ as before.
     only" module header rewritten for Book One + Book Two. 1439 → 1437
     tests, green.
 
-250. **Consolidation (run ~333).** Per CLAUDE.md's every-~10th-run rule:
-    play the build through mentally, fix rough edges, refresh
-    docs/research (note in STATE.md what the game now does about each top
-    retention recommendation), update DESIGN.md honestly. Queued run 332.
+250. ~~**Consolidation (run ~333).**~~ Done (run 333). Play-through clean;
+    DESIGN's stale "Book Three … idea-stage" paragraph rewritten to the
+    shipped shelf (eight tunes, let-go door, not festival-gated);
+    PLAYTEST Round 7 collects runs 314-330's open questions; research
+    refresh noted in STATE, one shipping finding added to
+    retention-design.md. No code change, 1437 tests green.
 
 251. **Dead-export audit, module 9: core/performance.ts.** Same method as
     241-249. Remaining after it: audio/adaptive, ambience, mix,
