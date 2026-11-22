@@ -262,11 +262,17 @@ ever writes C-sharp it sounds exactly C-sharp (equal temperament,
 verified to the cent by the harness); engraving is never wrong; register
 shifts are octave-only so the letter is always the pitch class heard.
 
-**Book Three: the songs you bring** (idea-stage, human-set 2026-08-01).
-After the festival, families will be able to add their own songs — made
-in practice mode (tap a tune onto the staff, name it, walk with it) or
-imported from MIDI/MusicXML, locally only, validated through the same
-engraving tests as the shipped songbook. The pedagogy's safety argument
+**Book Three: the songs you bring** (human-set 2026-08-01; shipped,
+ROADMAP 176-178, door out run 330). Families add their own songs, made
+in free play (*Make a song ♪*: tap a tune onto the staff, name it, walk
+with it) or imported from MIDI/MusicXML. Everything stays local and goes
+through the same engraving rules as the shipped songbook. The *Your
+songs* shelf holds eight; a family makes room by letting one go (× on its
+row, an armed in-row "let “…” go?  yes", worded as a send-off, never a
+loss). As built, making or importing a tune is open from the first walk,
+not only after the festival (it is free play, and needs nothing the road
+teaches first); the shelf itself appears once the first tune is saved.
+The pedagogy's safety argument
 (fading is safe because the child already knows the tune) is best
 satisfied by a song the family chose. Audio transcription is rejected on
 principle: it mis-transcribes often enough to mis-teach, and the
@@ -1294,3 +1300,11 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   chased toward (retention-design rec 7, "mementos, not checklists").
   `newlyUnlocked` was replaced by RoadStage's `noteUnlocks`. Eight tests
   went with them. No player-facing change.
+- 2026-11-21 (run 332) — Dead-export audit, module 8: core/notation.ts.
+  `noteNameAtStep` (a twin of `letterForStep`) and `solfegeAt` (a
+  pitch-side entry the game never uses) cut. No player-facing change.
+- 2026-11-22 (run 333) — Consolidation. "Book Three: the songs you
+  bring" said idea-stage and festival-gated. It has shipped since tasks
+  176-178 and is not gated, so the paragraph now describes the game as
+  built, including the eight-tune shelf and run 330's let-go door. No
+  code change, nothing cut.

@@ -299,6 +299,24 @@ comes precisely from the mechanics this game already bans.
   the paged-songbook finding above: before calling a returning-player
   feature shipped, check the door — its words and its page — at the
   smallest viewport, not only the room.
+- **2026-11-22, the shelf's way out and the audit (runs 324-332;
+  recorded at the run-333 consolidation).** Two findings. First, a
+  collection the family fills needs a way out as well as a way in. The
+  eight-tune *Your songs* shelf had no way to remove a tune, so a full
+  shelf quietly blocked recording and importing for good, and its message
+  told players to "delete one" with a control that didn't exist. The
+  research covers collections the game hands out (rec 4) but not ones the
+  player makes. A full shelf is the creative version of a full inventory:
+  it ends the ritual without anything being taken away. The door that
+  shipped (run 330) is worded as a send-off, not a loss: "has gone on down
+  the road", with "forever" and warning words banned by test. Second,
+  dead code can hold retired retention designs. The audit found a
+  test-only `nextLockedInstrument` ("coming up" teaser) and `unlockRatio`
+  (for a progress ring). Both are the rejected list's
+  progress-toward-reward shape, and both waited fully tested for a later
+  run to "finish the feature". Cutting them (run 331) is retention work.
+  Before building on a test-only export, ask whether it was abandoned on
+  purpose.
 
 ## Recommendations, ranked by fit
 

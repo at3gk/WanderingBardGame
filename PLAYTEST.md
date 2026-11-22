@@ -70,7 +70,51 @@ go", or "she never got to a bare note" are all actionable.
 
 **If you have longer**, Round 5 below covers the two new ways in that
 shipped on 2026-07-26 — choosing a song, and playing the staff directly.
-Neither has ever been in front of a person.
+Neither has ever been in front of a person. Round 7 (next) covers what
+shipped in November: guided practice as it now works, Book Two's keys,
+and letting one of your own tunes go.
+
+---
+
+## Round 7 — practice, keys, and letting a tune go (runs 314-330, collected run 333)
+
+These questions were left in STATE.md handoffs, one per run, and were not
+here. Gathered so they are in one place. Needs a phone; a child for most.
+
+**Guided practice** (pin *Mary Had a Little Lamb*, open the songbook;
+*Practise this tune ♪* is the second row on page one):
+
+- [ ] Does the practice row read as belonging to the pinned tune? Does
+  it bother anyone that one tune slips off page one while a tune is
+  pinned?
+- [ ] Does the gold dot read as "tap here" with no explanation? Does a
+  wrong note that only sounds feel free to explore, or ignored?
+- [ ] Does the written row read as "the song so far", left to right, and
+  does a full line turning clean feel like a page turn, not lost work?
+- [ ] Does the end chime feel like a warm "again" rather than a reward?
+- [ ] *play by heart*: is the link findable? When the dot comes back
+  after three misses, does it feel like a friend leaning in or like being
+  caught out? Is four notes of help about right?
+
+**Book Two's keys** (after the first festival, pin *Yankee Doodle*, then
+practise it):
+
+- [ ] Is the little ♯ at the left of the staff noticed? Does it make the
+  F line sounding F♯ (and the letter "F♯") feel explained, not surprising?
+- [ ] Are the ~22px signature marks big enough on a tall phone?
+
+**Making a song** (*Make a song ♪*, with no tune pinned):
+
+- [ ] Does the top line ("tap more notes — a tune needs 16", then "tap N
+  more to finish the bar") read as friendly guidance, not a countdown?
+
+**Letting a tune go** (with a few of your own tunes saved):
+
+- [ ] Is the small × beside each of your tunes noticed but not tempting?
+- [ ] Does "let “…” go?  yes" read as a gentle question to a child, and is
+  tapping anywhere else on the row an obvious way back?
+- [ ] *yes* ignores taps for its first 450ms so a double tap can't answer
+  its own question. Is that too long for a grown-up who meant it?
 
 ---
 
