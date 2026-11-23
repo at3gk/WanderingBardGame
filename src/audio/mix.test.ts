@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { INSTRUMENTS, instrumentById } from '../core/instruments';
 import { BIOMES } from '../core/biome';
 import { AMBIENCE_LAYERS, type AmbienceWeather } from './ambience';
-import { type AdaptiveMode } from './adaptive';
+import { type AdaptiveMode, adaptiveProfile } from './adaptive';
 import {
   AMBIENCE_BUS_BASE,
   AMBIENCE_MUSIC_RATIO,
@@ -15,7 +15,6 @@ import {
   arrangementFullness,
   loudestAmbienceLayer,
   melodyGain,
-  modeLayerCount,
   musicBusGain,
   musicCeilingGain,
   musicFloorGain,
@@ -203,7 +202,7 @@ describe('the melody', () => {
 
 describe('the walk is sparser than the busk', () => {
   it('fields fewer voices on the road than in the square', () => {
-    expect(modeLayerCount('walking')).toBeLessThan(modeLayerCount('busking'));
+    expect(adaptiveProfile('walking').maxLayers).toBeLessThan(adaptiveProfile('busking').maxLayers);
   });
 
   it('asks for materially less music, so arriving at a busk stop is an event', () => {
