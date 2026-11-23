@@ -9,7 +9,6 @@ import {
   type AmbienceMix,
   type AmbienceWeather,
   ambienceMix,
-  blendMixes,
   dayShape,
   mixTotal,
   sweepRangeHz,
@@ -189,36 +188,6 @@ describe('ambienceMix', () => {
   it('produces no NaN from nonsense input', () => {
     const mix = ambienceMix({ biomeId: 'forest', dayFraction: Number.NaN, weather: 'clear' });
     for (const layer of AMBIENCE_LAYERS) expect(Number.isFinite(mix[layer.id])).toBe(true);
-  });
-});
-
-describe('blendMixes', () => {
-  const village = ambienceMix({ biomeId: 'village', dayFraction: 0.5, weather: 'clear' });
-  const riverside = ambienceMix({ biomeId: 'riverside', dayFraction: 0.5, weather: 'clear' });
-
-  it('returns the endpoints exactly', () => {
-    expect(blendMixes(village, riverside, 0)).toEqual(village);
-    expect(blendMixes(village, riverside, 1)).toEqual(riverside);
-  });
-
-  it('never leaves the range spanned by the two ends, at any t including out-of-range ones', () => {
-    for (const t of [-1, 0, 0.13, 0.5, 0.87, 1, 2]) {
-      const mix = blendMixes(village, riverside, t);
-      for (const layer of AMBIENCE_LAYERS) {
-        const low = Math.min(village[layer.id], riverside[layer.id]);
-        const high = Math.max(village[layer.id], riverside[layer.id]);
-        expect(mix[layer.id]).toBeGreaterThanOrEqual(low - 1e-12);
-        expect(mix[layer.id]).toBeLessThanOrEqual(high + 1e-12);
-      }
-    }
-  });
-
-  it('carries the total across the seam without a dip or a pile-up', () => {
-    for (let t = 0; t <= 1; t += 0.05) {
-      const total = mixTotal(blendMixes(village, riverside, t));
-      expect(total).toBeGreaterThan(Math.min(mixTotal(village), mixTotal(riverside)) - 1e-12);
-      expect(total).toBeLessThan(Math.max(mixTotal(village), mixTotal(riverside)) + 1e-12);
-    }
   });
 });
 

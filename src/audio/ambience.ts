@@ -120,7 +120,13 @@ export interface FilterSpec {
   q: number;
 }
 
-/** The range the first filter's corner wanders over, `[minHz, maxHz]`. */
+/**
+ * The range the first filter's corner wanders over, `[minHz, maxHz]`.
+ *
+ * `Ambience.createBed` drives the corner with a sine LFO whose depth gain is
+ * `corner × depth`, so this is exactly the span the shell sweeps; the tests
+ * hold every bed's sweep to it (never below 0 Hz, never above 8 kHz).
+ */
 export function sweepRangeHz(layer: AmbienceLayerDef): [number, number] {
   const frequencyHz = layer.filters?.[0]?.frequencyHz ?? 0;
   if (!layer.sweep || !layer.filters?.length) return [frequencyHz, frequencyHz];
@@ -411,23 +417,6 @@ function factorFor(id: AmbienceLayerId, day: DayShape, wind: number, wet: number
       // Frogs keep the twilight either side of the night, and rain suits them.
       return clamp01(day.night * 0.75 + day.twilight * 0.35) * (0.7 + 0.3 * wet);
   }
-}
-
-/**
- * Linear blend of two mixes.
- *
- * Offered for callers that know the width of a crossfade better than this
- * file does — a biome seam on the road is a stated distance, and blending
- * across it explicitly is more honest than letting a fixed-time ramp guess.
- * The `Ambience` shell does not use this; it ramps in time instead.
- */
-export function blendMixes(from: AmbienceMix, to: AmbienceMix, t: number): AmbienceMix {
-  const k = clamp01(t);
-  const mix = {} as AmbienceMix;
-  for (const layer of AMBIENCE_LAYERS) {
-    mix[layer.id] = from[layer.id] + (to[layer.id] - from[layer.id]) * k;
-  }
-  return mix;
 }
 
 /** Total level of a mix. Used to check the beds never pile up over the music. */
