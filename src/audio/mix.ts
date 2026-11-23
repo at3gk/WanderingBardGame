@@ -40,12 +40,7 @@
  */
 
 import type { Instrument } from '../core/instruments';
-import {
-  type AdaptiveMode,
-  adaptiveProfile,
-  guaranteedTotal,
-  modeCeilingTotal,
-} from './adaptive';
+import { type AdaptiveMode, guaranteedTotal, modeCeilingTotal } from './adaptive';
 import { type AmbienceMix, type AmbienceWeather, ambienceMix, mixTotal } from './ambience';
 
 /**
@@ -85,7 +80,8 @@ export const AMBIENCE_DUCK_DEPTH = 0.45;
  *
  * The loudest thing in the game, and it should be: the player pressed a
  * button and a note came out, and everything else in the mix is a response to
- * that. Matches the value the busk scene has always used.
+ * that. It is also the level every busked note sounds at: `melodyGain`
+ * only eases below it on the road, never in front of a crowd.
  */
 export const MELODY_GAIN = 0.22;
 
@@ -240,11 +236,6 @@ export function musicCeilingGain(mode: AdaptiveMode): number {
  */
 export function walkToBuskRatio(): number {
   return musicCeilingGain('walking') / musicCeilingGain('busking');
-}
-
-/** How many layers a mode can field. Exposed for the integration doc's sake. */
-export function modeLayerCount(mode: AdaptiveMode): number {
-  return adaptiveProfile(mode).maxLayers;
 }
 
 function clamp01(value: number): number {

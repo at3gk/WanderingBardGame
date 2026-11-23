@@ -8109,9 +8109,18 @@ as before.
     birds/frogs, never tuned); only the backing stack was keyed, and run
     336 fixed it. 1438 → 1435 tests, green.
 
-255. **Dead-export audit, module 13: audio/mix.ts.** Same method.
-    Remaining after it: instrumentVoice; three/fx/SongNotes. Queued
-    run 337.
+255. ~~**Dead-export audit, module 13: audio/mix.ts.**~~ Done (run
+    338). Cut `modeLayerCount` (a wrapper over `adaptiveProfile().maxLayers`
+    "for the integration doc's sake"; no doc named it). Kept the six other
+    test-only exports: they are the mix invariant harness the module exists
+    for. Comment numbers (0.31 worst bed, 3 of 5 layers at 62%) verified;
+    the stale "busk scene" reference on `MELODY_GAIN` rewritten. 1435
+    tests, green.
+
+256. **Dead-export audit, module 14: audio/instrumentVoice.ts.** Same
+    method; its header's "the busk scene decides what to play" is stale
+    (RoadStage decides). Remaining after it: three/fx/SongNotes. Queued
+    run 338.
 
 ## Idea backlog (pull from here when nothing is queued)
 
@@ -8148,6 +8157,8 @@ as before.
   audio/adaptive done (run 336 — lesson: audit the *promises in
   comments* too; "never a semitone off" was a musical bug). audio/ambience
   done (run 337 — an API "offered for callers" that never came is dead).
+  audio/mix done (run 338 — a test harness module's test-only exports are
+  its point; cut only the wrapper that duplicated another module).
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
   (run 320). Was: the tuned ladder names
