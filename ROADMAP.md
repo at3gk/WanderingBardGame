@@ -8096,11 +8096,22 @@ as before.
     the bard is still walking" comment fixed (it sets the stride). 1434 →
     1438 tests, green.
 
-254. **Dead-export audit, module 12: audio/ambience.ts.** Same method.
-    Also worth asking here: does anything else that *sounds* (ambience,
-    instrumentVoice) assume Book One's naturals the way the drone did?
-    Remaining after it: mix, instrumentVoice; three/fx/SongNotes. Queued
-    run 336.
+254. ~~**Dead-export audit, module 12: audio/ambience.ts.**~~ Done (run
+    337). Cut `blendMixes` (a distance-keyed crossfade "offered for
+    callers"; none ever came, and its own doc said the shell ramps in
+    time instead) with its three tests. Kept `sweepRangeHz` as the honest
+    seam for the shell's filter LFO (corner ± corner·depth, now said so
+    in its doc), and every other export (used by mix, biome, adaptive or
+    RoadStage). The naturals question: nothing else that sounds assumes
+    them. Notes, practice ladder and practice chime all play the tune's
+    spelt semitone through instrumentVoice, which takes any frequency;
+    ambience grains are unpitched against the music (random ranges,
+    birds/frogs, never tuned); only the backing stack was keyed, and run
+    336 fixed it. 1438 → 1435 tests, green.
+
+255. **Dead-export audit, module 13: audio/mix.ts.** Same method.
+    Remaining after it: instrumentVoice; three/fx/SongNotes. Queued
+    run 337.
 
 ## Idea backlog (pull from here when nothing is queued)
 
@@ -8134,6 +8145,9 @@ as before.
   core/performance done (run 334 — lesson: a test-only helper can keep a
   *test's claim* alive that the game contradicts; "one miss stops the
   bard" passed for months while the game eased the stride instead).
+  audio/adaptive done (run 336 — lesson: audit the *promises in
+  comments* too; "never a semitone off" was a musical bug). audio/ambience
+  done (run 337 — an API "offered for callers" that never came is dead).
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
   (run 320). Was: the tuned ladder names
