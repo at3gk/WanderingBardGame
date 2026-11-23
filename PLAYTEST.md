@@ -102,6 +102,10 @@ practise it):
 - [ ] Is the little ♯ at the left of the staff noticed? Does it make the
   F line sounding F♯ (and the letter "F♯") feel explained, not surprising?
 - [ ] Are the ~22px signature marks big enough on a tall phone?
+- [ ] (run 336) Pin *Oh! Susanna* (A) and walk it through the village:
+  does the backing hum under it sound settled, not sour? Before run 336
+  it droned on C under thirteen C♯s. Does the drone's glide to the new
+  root when the tune starts sound like a retune, not a wobble?
 
 **Making a song** (*Make a song ♪*, with no tune pinned):
 

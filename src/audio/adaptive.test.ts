@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { INSTRUMENTS, instrumentById } from '../core/instruments';
 import { BIOMES } from '../core/biome';
+import { songKey } from '../core/song';
+import { BOOK_TWO_SONGS, SONGS } from '../core/songs';
 import {
+  droneRootSemitone,
   ADAPTIVE_LAYERS,
   ADAPTIVE_MODES,
   type AdaptiveInput,
@@ -480,6 +483,51 @@ describe('pitch', () => {
         expect(pitchClass).not.toBe(6);
       }
     }
+  });
+
+  it('keeps every backing pitch in the key of every shipped tune, in every biome', () => {
+    for (const song of [...SONGS, ...BOOK_TWO_SONGS]) {
+      const key = songKey(song);
+      expect(key, song.id).not.toBeNull();
+      const tonic = (((key!.fifths * 7) % 12) + 12) % 12;
+      const scale = [0, 2, 4, 5, 7, 9, 11].map((step) => (tonic + step) % 12);
+      for (const biome of BIOMES) {
+        for (const def of ADAPTIVE_LAYERS) {
+          const pitchClass = ((layerSemitone(def, biome.id, key) % 12) + 12) % 12;
+          expect(scale, `${song.id}/${biome.id}/${def.id}`).toContain(pitchClass);
+        }
+      }
+    }
+  });
+
+  it('leaves the biome root alone whenever it is already in the key', () => {
+    for (const biome of BIOMES) {
+      expect(droneRootSemitone(biome.id, null)).toBe(droneRootSemitone(biome.id));
+      // C, G, F, B flat, E flat: C/D/G are all in key, so nothing moves.
+      for (const fifths of [0, 1, -1, -2, -3]) {
+        expect(droneRootSemitone(biome.id, { fifths }), `${biome.id}/${fifths}`).toBe(droneRootSemitone(biome.id));
+      }
+    }
+  });
+
+  it('moves the root to the tonic, near the biome register, when the biome root would clash', () => {
+    // A major in the village: the C drone would sit under C sharps. A below middle C.
+    expect(droneRootSemitone('village', { fifths: 3 })).toBe(-3);
+    // D major in the village: up a tone to D.
+    expect(droneRootSemitone('village', { fifths: 2 })).toBe(2);
+    // A major in the forest: G is out of key; A, a tone up.
+    expect(droneRootSemitone('forest', { fifths: 3 })).toBe(9);
+    // D major in the forest: G and D are both in D major, so the forest keeps its G.
+    expect(droneRootSemitone('forest', { fifths: 2 })).toBe(7);
+  });
+
+  it('glides the drone when a keyed tune starts, rather than cutting', () => {
+    const base = input({ warmth: 0.5 });
+    const first = updateAdaptive(initialAdaptiveState(), base);
+    const keyed = updateAdaptive(first.state, { ...base, nowSec: base.nowSec + 1, key: { fifths: 3 } });
+    const drone = keyed.changes.find((c) => c.id === 'drone');
+    expect(drone?.semitoneOffset).toBe(droneRootSemitone(base.biomeId, { fifths: 3 }) - 12);
+    expect(drone!.rampSec).toBeGreaterThan(0);
   });
 
   it('keeps the stack spread over three octaves so the layers do not mask each other', () => {
