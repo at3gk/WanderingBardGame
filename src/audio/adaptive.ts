@@ -181,24 +181,65 @@ export function effectiveLayerDef(def: AdaptiveLayerDef, profile: AdaptiveModePr
 /**
  * Where each biome's drone sits.
  *
- * The songbook is C major in the village, G major in the forest and C major
- * an octave up at the riverside (DESIGN.md, "The curriculum is the
- * songbook"), with one tune centred on F. Taken with the layer offsets above,
- * these roots make every pitch the backing can sound a C, a D or a G — the
- * three notes that are naturals in all of C, G and F major, so the backing
- * can never sit a semitone off a melody a child is being taught to read, and
- * no arrangement of biome and tune needs a key signature to explain itself.
+ * Book One is C major in the village, G major in the forest and C major an
+ * octave up at the riverside (DESIGN.md, "The curriculum is the songbook"),
+ * with one tune centred on F. Taken with the layer offsets above, these roots
+ * make every pitch the backing can sound a C, a D or a G — the three notes
+ * that are naturals in all of C, G and F major, so under a Book One tune the
+ * backing can never sit a semitone off the scale a child is being taught to
+ * read, and no arrangement of biome and tune needs a key signature to explain
+ * itself.
  *
  * The temptation is to give each biome a more characterful mode. It is not
  * worth it: DESIGN.md's rule that the notation is never allowed to be
  * musically wrong applies to what sounds underneath the notation too, and a
  * clash there would be blamed on the child rather than on this table.
+ *
+ * Book Two broke the "C, D or G is always safe" half of that (run 336): a C
+ * drone under *Oh! Susanna* in A sits a semitone under thirteen C♯s, and a
+ * G under it a semitone over the F♯s. So a keyed tune can move the root;
+ * see `droneRootSemitone`.
  */
 const BIOME_DRONE_SEMITONE: Record<string, number> = {
   village: 0,
   forest: 7,
   riverside: 12,
 };
+
+/** Pitch classes of a major key, from its signature's fifths. */
+function majorScalePitchClasses(fifths: number): Set<number> {
+  const tonic = mod12(fifths * 7);
+  return new Set([0, 2, 4, 5, 7, 9, 11].map((step) => mod12(tonic + step)));
+}
+
+function mod12(semitone: number): number {
+  return ((Math.round(semitone) % 12) + 12) % 12;
+}
+
+/**
+ * The backing's root, semitones from concert C, for a biome and the key of the
+ * tune being played over it.
+ *
+ * The biome's own root stays whenever every pitch the layer stack would sound
+ * on it is in the tune's key — which is every Book One tune, and the Book Two
+ * tunes in G, F, B♭ and E♭, so the road keeps the colour it has always had.
+ * Only when the biome's root would put a note outside the key (the D and A
+ * tunes, in the village and on the A tune in the forest) does the root move,
+ * and then to the tune's own tonic in the nearest register to where the biome
+ * sat, so the drone is the home note and the fourth-below layer is the
+ * dominant — both in the key by construction. A missing key (`null` or
+ * omitted) is Book One's contract: the biome root, unchanged.
+ */
+export function droneRootSemitone(biomeId: string, key?: { fifths: number } | null): number {
+  const biomeRoot = BIOME_DRONE_SEMITONE[biomeId] ?? 0;
+  if (!key || !Number.isFinite(key.fifths)) return biomeRoot;
+  const scale = majorScalePitchClasses(key.fifths);
+  if (ADAPTIVE_LAYERS.every((def) => scale.has(mod12(biomeRoot + def.semitoneOffset)))) return biomeRoot;
+  // Nearest tonic to the biome's register: a shift in -5..+6.
+  let shift = mod12(key.fifths * 7 - biomeRoot);
+  if (shift > 6) shift -= 12;
+  return biomeRoot + shift;
+}
 
 /** Lead time on a bar entry, so the caller has something to schedule against. */
 export const BAR_LEAD_SEC = 0.08;
@@ -216,12 +257,18 @@ export interface AdaptiveInput {
   warmth?: number;
   /**
    * How well the tune is being kept on the walk, 0..1. Read in `walking`
-   * mode. This is the core loop's song meter — the same number that decides
-   * whether the bard is still walking — so the arrangement and the legs come
-   * apart and back together for the same reason at the same moment.
+   * mode. This is the core loop's song meter — the same number that sets the
+   * bard's stride (`walkPaceFactor`, core/walk.ts) — so the arrangement and
+   * the legs thin out and fill back in for the same reason at the same
+   * moment.
    */
   meter?: number;
   biomeId: string;
+  /**
+   * Key of the tune being played, if it has one (Book Two). Omitted or null
+   * means Book One's keyless C-major world. See `droneRootSemitone`.
+   */
+  key?: { fifths: number } | null;
   instrument: Instrument;
   /** 0..1 from midnight, wrapping. Same parameter the sky is keyed on. */
   dayFraction: number;
@@ -354,9 +401,9 @@ export function layerGain(def: AdaptiveLayerDef, instrument: Instrument, dayFrac
   return Number.isFinite(gain) ? Math.max(0, gain) : 0;
 }
 
-/** Semitones from concert root for a layer in a biome. */
-export function layerSemitone(def: AdaptiveLayerDef, biomeId: string): number {
-  return (BIOME_DRONE_SEMITONE[biomeId] ?? 0) + def.semitoneOffset;
+/** Semitones from concert root for a layer in a biome, under a tune in `key`. */
+export function layerSemitone(def: AdaptiveLayerDef, biomeId: string, key?: { fifths: number } | null): number {
+  return droneRootSemitone(biomeId, key) + def.semitoneOffset;
 }
 
 /**
@@ -386,7 +433,7 @@ export function updateAdaptive(state: AdaptiveState, input: AdaptiveInput): Adap
     // do double duty as the order a thinner arrangement is built from.
     const allowed = index < profile.maxLayers;
     const previous = state.layers[def.id];
-    const semitoneOffset = layerSemitone(def, input.biomeId);
+    const semitoneOffset = layerSemitone(def, input.biomeId, input.key);
     let present = previous.present;
     let coldSinceSec = previous.coldSinceSec;
     let targetGain = previous.targetGain;
@@ -503,12 +550,12 @@ export function guaranteedTotal(
   return total;
 }
 
-/** Which layers are currently in the arrangement. A readout, and a test seam. */
+/** Which layers are currently in the arrangement. A test seam: the game reads `changes`, not this. */
 export function activeLayerIds(state: AdaptiveState): AdaptiveLayerId[] {
   return ADAPTIVE_LAYERS.filter((def) => state.layers[def.id].present).map((def) => def.id);
 }
 
-/** Total level the backing is asking for. */
+/** Total level the backing is asking for. A test seam; the mix bounds it with `modeCeilingTotal`/`guaranteedTotal`. */
 export function adaptiveTotal(update: AdaptiveUpdate): number {
   let total = 0;
   for (const layer of update.layers) total += layer.targetGain;

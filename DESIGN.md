@@ -1323,3 +1323,13 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   the meter's `walkingThreshold` renamed `fullStrideMeter`: below it the
   bard still walks, just slower, so the old name described the cut
   design rather than the game. No player-facing change.
+- 2026-11-23 (run 336) — Dead-export audit, module 11: audio/adaptive.ts.
+  No export cut (every test-only one is an honest readout of live
+  state). The audit's real finding: the drone table's promise that the
+  backing only sounds C, D or G "so it can never sit a semitone off" the
+  songbook stopped being true with Book Two. *Oh! Susanna* (A) droned on
+  C under thirteen C♯s, and *Good King Wenceslas* (D) under four. The
+  backing now takes the tune's key: the biome root stays whenever its
+  stack is already in key (all of Book One, and the G/F/B♭/E♭ tunes),
+  otherwise the root moves to the tune's tonic in the nearest register.
+  A test holds every shipped tune × biome × layer to its key.

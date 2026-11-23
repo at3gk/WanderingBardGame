@@ -9,7 +9,9 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 335 took module 10
+  authoritative, every-run-updated pointer. **Run 336 took module 11
+  (task 253, audio/adaptive; fixed the backing clashing with Book Two's
+  D and A tunes) and queued 254 (audio/ambience). Run 335 took module 10
   (task 252, core/songMeter) and queued 253 (audio/adaptive). Run 334 took module 9
   (task 251, core/performance) and queued 252 (core/songMeter). Run 333 was
   the consolidation (task 250). Run 332 took module 8
@@ -8082,10 +8084,23 @@ as before.
     threshold. Kept `applyHit`/`applyMiss` (used by applyJudgement) and
     `DEFAULT_SONG_METER_CONFIG`. 1436 → 1434 tests, green.
 
-253. **Dead-export audit, module 11: audio/adaptive.ts.** Same method:
-    list exports reached only by tests, cut what describes a design the
-    game chose against, keep honest seams. Remaining after it: ambience,
-    mix, instrumentVoice; three/fx/SongNotes. Queued run 335.
+253. ~~**Dead-export audit, module 11: audio/adaptive.ts.**~~ Done (run
+    336). No export cut: `activeLayerIds`/`adaptiveTotal` are honest
+    readouts of live state, the rest are used inside the module or by the
+    mix. Found instead that `BIOME_DRONE_SEMITONE`'s "only C, D or G, so
+    never a semitone off the songbook" was false since Book Two (C drone
+    under *Oh! Susanna*'s C♯s, G under its F♯s; C under *Wenceslas*'s
+    C♯s). New `droneRootSemitone(biome, key)`: keeps the biome root when
+    the stack is in key, otherwise the tune's tonic, nearest register.
+    RoadStage passes the playing tune's key. Stale "meter decides whether
+    the bard is still walking" comment fixed (it sets the stride). 1434 →
+    1438 tests, green.
+
+254. **Dead-export audit, module 12: audio/ambience.ts.** Same method.
+    Also worth asking here: does anything else that *sounds* (ambience,
+    instrumentVoice) assume Book One's naturals the way the drone did?
+    Remaining after it: mix, instrumentVoice; three/fx/SongNotes. Queued
+    run 336.
 
 ## Idea backlog (pull from here when nothing is queued)
 

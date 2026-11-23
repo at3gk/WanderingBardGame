@@ -172,7 +172,7 @@ import {
   isFestivalEve,
 } from '../core/festival';
 import { revealLeads } from '../core/reveal';
-import { keyDisplayName, staffStepAt } from '../core/notation';
+import { keyDisplayName, staffStepAt, type KeySignature } from '../core/notation';
 import { HEADS_ALPHA, headsLevel, shownLevel, type HeadsLevel } from '../core/mastery';
 import { Ambience, dayShape } from '../audio/ambience';
 import {
@@ -380,6 +380,8 @@ export class RoadStage implements Stage {
    * silently stayed on the simulation clock for the rest of the tune.
    */
   private tuneAnchorSec = Number.NaN;
+  /** Key of the tune now playing, so the backing stays in it (null: keyless Book One). */
+  private tuneKey: KeySignature | null = null;
   private creditedCoins = 0;
   private creditedDelight = 0;
   private busksToday = 0;
@@ -1125,6 +1127,7 @@ export class RoadStage implements Stage {
 
     this.tuneBpm = BASE_BPM * instrument.tempoFeel;
     this.tuneBeatsPerBar = song.beatsPerBar;
+    this.tuneKey = song.key === undefined ? null : songKey(song);
     this.beats = expandSong(song, this.tuneBpm);
     this.performance = createPerformance();
     this.tuneMode = 'rehearsal';
@@ -1322,6 +1325,7 @@ export class RoadStage implements Stage {
     // other way about: the tune is the tune, and a bell plays it slowly.
     this.tuneBpm = BASE_BPM * instrument.tempoFeel;
     this.tuneBeatsPerBar = song.beatsPerBar;
+    this.tuneKey = song.key === undefined ? null : songKey(song);
 
     const passLength = songDurationMs(song, this.tuneBpm);
     const passes = Math.max(
@@ -1500,6 +1504,7 @@ export class RoadStage implements Stage {
 
     this.tuneBpm = BASE_BPM * instrument.tempoFeel;
     this.tuneBeatsPerBar = song.beatsPerBar;
+    this.tuneKey = song.key === undefined ? null : songKey(song);
     this.walkTune = newWalkTune(song, this.tuneBpm);
     this.beats = this.walkTune.beats;
 
@@ -2848,6 +2853,7 @@ export class RoadStage implements Stage {
       meter: this.performance?.meter ?? 0,
       warmth: this.performance?.warmth ?? 0,
       biomeId: mix.biomeId,
+      key: this.tuneKey,
       instrument: mix.instrument,
       dayFraction: mix.dayFraction,
       nowSec: ctx.currentTime,
