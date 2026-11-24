@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
+  authoritative, every-run-updated pointer. **Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
   (task 253, audio/adaptive; fixed the backing clashing with Book Two's
   D and A tunes) and queued 254 (audio/ambience). Run 335 took module 10
   (task 252, core/songMeter) and queued 253 (audio/adaptive). Run 334 took module 9
@@ -8135,13 +8135,53 @@ as before.
     the reveal's wrong file, the atlas's "twenty-nine cells" (32). The
     audit is closed. 1435 tests, green.
 
-258. **Choose the next small queue.** No code. Nothing is queued and
+258. ~~**Choose the next small queue.**~~ Done (run 341). See the
+    decision note after this entry. Was: No code. Nothing is queued and
     every retention recommendation has shipped (run 333). Read PLAYTEST
     Round 7's open questions and the idea backlog; promote at most three
     small tasks (one per run), each checked against retention-design.md's
     recommendations and rejected list, and the one-mechanic rule. If
     nothing earns a place, say so and queue polish instead. Queued run
     340.
+
+    **Decision (run 341).** Read PLAYTEST Round 7, the idea backlog (now
+    empty: every item struck), and the three research files'
+    recommendations. Round 7's eleven questions all need a phone and a
+    person; none can be answered or pre-empted from here without guessing
+    at feel, so none becomes a task. All seven retention recommendations
+    and all seven mobile buildout recommendations have shipped (checked in
+    the code, not the docs: manifest, safe-area probe, `storage.persist()`
+    in main.ts, keepsake, service worker, audioSession, quality toggle).
+    One honest gap turned up: **pillar 1 has not been measured since the
+    renderer changed.** Task 58's `tools/pillar-check.mjs` measured 0.7 to
+    1.3 s to playable on the Phaser build (2026-07-26); the tool went with
+    Phaser at v0.6, and the bundle that ships now is a ~950 kB Three.js
+    build that generates its world at boot. Nobody has timed it since. So
+    the queue is one measurement and the consolidation that is due anyway.
+    Nothing else earned a place, and that is the right answer for a
+    game this far along: the next real input is a human playtest, not
+    another feature.
+
+259. **Re-measure pillar 1 on the 3D road: playable in under 5 seconds.**
+    Build, serve with `vite preview`, drive headless Chromium. Time from
+    navigation to the first tap that the road actually credits (a hit or
+    a sounded note, read from game state, not "canvas exists"), at two
+    profiles: unthrottled, and a throttled phone (CDP network ~1.6 Mbps
+    / 150 ms RTT, CPU 4× slowdown), each as a first visit (cold cache, no
+    service worker) and a return visit (service worker warm). Viewports
+    360×740 and 664×390. Record the table in mobile-friendly.md's
+    findings and in STATE. If any first-visit profile is over 5 s, do not
+    fix it in the same run: queue the fix with the measured breakdown
+    (download, parse, world generation, first frame). Keep the script as
+    `tools/first-tap.mjs` only if it is small; it is a check, not a
+    harness. Headless software GL says nothing about real frame rate,
+    so state that limit with the numbers. Retention check: n/a. Queued
+    run 341.
+
+260. **Consolidation** (run ~343, ten after 333). The usual: play-through
+    against the README, docs toward the code, research refresh per
+    pillar 5 (fold task 259's numbers into mobile-friendly.md's top
+    recommendations if they change anything). Queued run 341.
 
 ## Idea backlog (pull from here when nothing is queued)
 
