@@ -1333,3 +1333,9 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   stack is already in key (all of Book One, and the G/F/B♭/E♭ tunes),
   otherwise the root moves to the tune's tonic in the nearest register.
   A test holds every shipped tune × biome × layer to its key.
+- 2026-11-24 (run 339) — Dead-export audit, module 14:
+  audio/instrumentVoice.ts. Cut `soundingFrequencyHz` (the game's
+  `planVoice` did the same shift inline), the `register: false` note
+  option (written for a notation preview that was never built) and the
+  per-note `cancel()` handle (nothing ever cancelled a note; notes ring
+  out under the bus fades). No player-facing change.
