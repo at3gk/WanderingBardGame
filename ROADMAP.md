@@ -8117,10 +8117,19 @@ as before.
     the stale "busk scene" reference on `MELODY_GAIN` rewritten. 1435
     tests, green.
 
-256. **Dead-export audit, module 14: audio/instrumentVoice.ts.** Same
-    method; its header's "the busk scene decides what to play" is stale
-    (RoadStage decides). Remaining after it: three/fx/SongNotes. Queued
-    run 338.
+256. ~~**Dead-export audit, module 14: audio/instrumentVoice.ts.**~~ Done
+    (run 339). Cut `soundingFrequencyHz` (a twin of `planVoice`'s inline
+    shift; its test now reads `planVoice().soundingHz`), the unused
+    `register: false` option (for a notation preview that never existed)
+    and `ScheduledNote.cancel()` (no caller; `playVoiceNote` now returns
+    void). Kept the plan functions: they are the testable seam. Stale
+    "busk scene" header and the bell's "about 1.6" decay (capped 1.35)
+    fixed. 1435 tests, green.
+
+257. **Dead-export audit, module 15: three/fx/SongNotes.ts.** Same
+    method, including comment promises. The last module on the list:
+    after it, close the backlog item and say so in DESIGN's changelog.
+    Queued run 339.
 
 ## Idea backlog (pull from here when nothing is queued)
 
@@ -8158,7 +8167,9 @@ as before.
   comments* too; "never a semitone off" was a musical bug). audio/ambience
   done (run 337 — an API "offered for callers" that never came is dead).
   audio/mix done (run 338 — a test harness module's test-only exports are
-  its point; cut only the wrapper that duplicated another module).
+  its point; cut only the wrapper that duplicated another module). audio/instrumentVoice done (run 339 — audit
+  interface *options and methods* too, not only exports: an option and a
+  return-value method had no caller).
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
   (run 320). Was: the tuned ladder names

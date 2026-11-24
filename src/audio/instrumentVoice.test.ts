@@ -9,7 +9,6 @@ import {
   planPartials,
   planTransient,
   planVoice,
-  soundingFrequencyHz,
   spectralCentroidRatio,
   voiceInharmonicity,
   voiceRegisterOctaves,
@@ -323,7 +322,7 @@ describe('register', () => {
 
   it('only ever moves by whole octaves, so the letter on the staff stays true', () => {
     for (const instrument of INSTRUMENTS) {
-      const ratio = soundingFrequencyHz(instrument.voice, 261.63) / 261.63;
+      const ratio = planVoice(instrument.voice, 261.63).soundingHz / 261.63;
       expect(Math.log2(ratio) % 1, instrument.id).toBeCloseTo(0, 12);
     }
   });
@@ -336,14 +335,12 @@ describe('register', () => {
     expect(spectralCentroidRatio({ ...plain, partials: [[1, 1]] })).toBeCloseTo(1, 12);
   });
 
-  it('sounds the shifted pitch, and can be told not to', () => {
+  it('sounds the shifted pitch', () => {
     const flute = voiceOf('reed-flute');
     const shifted = planVoice(flute, 261.63);
+    expect(shifted.registerOctaves).toBe(1);
     expect(shifted.soundingHz).toBeCloseTo(523.26, 6);
     expect(shifted.partials[0].frequencyHz).toBeCloseTo(523.26, 6);
-    const exact = planVoice(flute, 261.63, { register: false });
-    expect(exact.registerOctaves).toBe(0);
-    expect(exact.soundingHz).toBeCloseTo(261.63, 6);
   });
 
   it('keeps every shifted voice inside the nyquist across the songbook', () => {

@@ -5,8 +5,9 @@
  * ADSR, a detune spread, a lowpass corner, a noise transient, a vibrato. This
  * file is the other half of that bargain: it turns those numbers into a Web
  * Audio node graph and nothing else. It holds no state about the performance,
- * no tempo, no song; the busk scene decides *what* to play and this decides
- * what it sounds like.
+ * no tempo, no song; its callers (RoadStage for the walk's tune, the free-play
+ * screen for the ladder) decide *what* to play and this decides what it
+ * sounds like.
  *
  * The split that matters here is between the *plan* and the *graph*. Every
  * decision — which partials survive, how loud each is, where the envelope
@@ -86,8 +87,6 @@ const MIN_ATTACK_SEC = 0.002;
 const MIN_SEGMENT_SEC = 0.001;
 /** Slack between the envelope reaching zero and the source being stopped. */
 const STOP_PADDING_SEC = 0.02;
-/** How long `cancel` takes to get out of the way. Short, but never a cut. */
-const CANCEL_FADE_SEC = 0.03;
 /** Length of the shared noise buffer. Long enough that a loop is not a pitch. */
 const NOISE_BUFFER_SEC = 2;
 
@@ -151,7 +150,7 @@ export interface VoicePlan {
    * note's nominal length means.
    */
   envelope: EnvelopePlan;
-  /** Semitone-free octave shift applied to the written pitch. See `voiceRegisterOctaves`. */
+  /** Whole-octave shift applied to the written pitch. See `voiceRegisterOctaves`. */
   registerOctaves: number;
   /** The pitch actually sounded, after `registerOctaves`. */
   soundingHz: number;
@@ -175,23 +174,6 @@ export interface VoiceNoteOptions {
   maxOscillators?: number;
   /** Partials above this are dropped as inaudible or aliasing. */
   nyquistHz?: number;
-  /**
-   * Set false to sound the written pitch exactly, ignoring the voice's own
-   * register. For callers that have already placed the note in an octave —
-   * the notation preview, say — and would otherwise displace it twice.
-   */
-  register?: boolean;
-}
-
-/** A note that has been handed to the audio clock and can still be taken back. */
-export interface ScheduledNote {
-  /** Audio-clock time the note falls silent. */
-  endSec: number;
-  /**
-   * Fade the note out early. Used when a scene tears down mid-phrase — a hard
-   * stop is a click, and this game does not click.
-   */
-  cancel(atSec: number): void;
 }
 
 /** Total ring of one note left to itself: attack, decay and release. */
@@ -275,11 +257,6 @@ export function voiceRegisterOctaves(voice: InstrumentVoice): number {
   return 0;
 }
 
-/** The pitch a voice sounds for a written pitch, after its register shift. */
-export function soundingFrequencyHz(voice: InstrumentVoice, writtenHz: number): number {
-  return writtenHz * Math.pow(2, voiceRegisterOctaves(voice));
-}
-
 /**
  * How much faster a partial at `ratio` dies away than the fundamental does.
  *
@@ -293,9 +270,10 @@ export function soundingFrequencyHz(voice: InstrumentVoice, writtenHz: number): 
  * only its release shows it.
  *
  * The clamp at the top is what makes a bell a bell. Its hum partial sits at
- * ratio 0.5, so this returns about 1.6 for it — the hum outlasts everything
- * above it, which is exactly what a real bell does and exactly what a shared
- * envelope makes impossible. Capped at 1.35 so a note's tail stays bounded:
+ * ratio 0.5, so the curve gives about 1.6 for it and the cap holds that at
+ * 1.35 — the hum still outlasts everything above it, which is exactly what a
+ * real bell does and exactly what a shared envelope makes impossible. The cap
+ * is there so a note's tail stays bounded:
  * an unbounded low partial would keep oscillator nodes alive for a long time
  * on a voice that already rings for four seconds.
  */
@@ -487,7 +465,7 @@ export function planVoice(
 ): VoicePlan {
   const nyquistHz = options.nyquistHz ?? 20000;
   const holdSec = options.holdSec ?? defaultHoldSec(voice);
-  const registerOctaves = options.register === false ? 0 : voiceRegisterOctaves(voice);
+  const registerOctaves = voiceRegisterOctaves(voice);
   const soundingHz = frequencyHz * Math.pow(2, registerOctaves);
   const envelope = planEnvelope(voice, holdSec);
   const transient = planTransient(voice, soundingHz, nyquistHz);
@@ -599,7 +577,7 @@ export function playVoiceNote(
   frequencyHz: number,
   whenSec: number,
   options: VoiceNoteOptions = {}
-): ScheduledNote {
+): void {
   const plan = planVoice(voice, frequencyHz, { nyquistHz: ctx.sampleRate / 2, ...options });
 
   const sources: AudioScheduledSourceNode[] = [];
@@ -683,8 +661,7 @@ export function playVoiceNote(
     nodes.push(band, burst);
   }
 
-  const endSec = whenSec + plan.endSec;
-  const stopSec = endSec + STOP_PADDING_SEC;
+  const stopSec = whenSec + plan.endSec + STOP_PADDING_SEC;
   let pending = sources.length;
   const teardown = (): void => {
     pending -= 1;
@@ -702,26 +679,6 @@ export function playVoiceNote(
   if (sources.length === 0) {
     for (const node of nodes) node.disconnect();
   }
-
-  return {
-    endSec,
-    cancel(atSec: number): void {
-      const from = Math.max(atSec, ctx.currentTime);
-      if (from >= endSec) return;
-      output.gain.cancelScheduledValues(from);
-      output.gain.setValueAtTime(output.gain.value, from);
-      output.gain.exponentialRampToValueAtTime(VOICE_SILENCE, from + CANCEL_FADE_SEC);
-      output.gain.setValueAtTime(0, from + CANCEL_FADE_SEC);
-      for (const source of sources) {
-        try {
-          source.stop(from + CANCEL_FADE_SEC + STOP_PADDING_SEC);
-        } catch {
-          // A source that has already ended refuses to be rescheduled, and
-          // there is nothing left to silence in that case.
-        }
-      }
-    },
-  };
 }
 
 function clamp(value: number, min: number, max: number): number {
