@@ -570,7 +570,7 @@ export class RoadStage implements Stage {
 
     this.buildPeople();
 
-    this.notes = new SongNotes({ particleDensity: app.quality.particleDensity });
+    this.notes = new SongNotes({ road: this.roadSampler, particleDensity: app.quality.particleDensity });
     this.scene.add(this.notes.group);
     this.notes.setInstrument(this.instrument());
 
@@ -1149,7 +1149,6 @@ export class RoadStage implements Stage {
     // song resolves to C and takes the signature down.
     this.notes.setKey(songKey(song));
     this.notes.setBeats(this.beats, this.tuneLeads);
-    this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.setActive(true);
     this.hud.hidePage();
     this.hud.say(
@@ -1173,7 +1172,6 @@ export class RoadStage implements Stage {
     }
 
     this.bard.setWarmth(performance.warmth);
-    this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.update(now);
 
     if (now > this.rehearsalEndMs) this.finishRehearsal();
@@ -1360,7 +1358,6 @@ export class RoadStage implements Stage {
     // song resolves to C and takes the signature down.
     this.notes.setKey(songKey(song));
     this.notes.setBeats(this.beats, this.tuneLeads);
-    this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.setActive(true);
     this.bard.setWarmth(0);
 
@@ -1399,7 +1396,6 @@ export class RoadStage implements Stage {
     this.updateListeners(dt);
 
     this.bard.setWarmth(performance.warmth);
-    this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.update(now);
 
     // Coins are banked a whole coin at a time rather than every frame. The
@@ -1525,7 +1521,6 @@ export class RoadStage implements Stage {
     // song resolves to C and takes the signature down.
     this.notes.setKey(songKey(song));
     this.notes.setBeats(this.beats, this.tuneLeads);
-    this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.setActive(true);
     this.bard.setWarmth(0);
 
@@ -1603,7 +1598,6 @@ export class RoadStage implements Stage {
     }
 
     this.bard.setWarmth(performance.warmth);
-    this.notes.setAnchor(this.subject.position, this.subject.heading, this.roadSampler);
     this.notes.update(now);
   }
 

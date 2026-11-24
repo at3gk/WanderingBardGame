@@ -72,7 +72,7 @@ export function currentLabelStyle(): 'letter' | 'solfege' {
  * label-style toggle (ROADMAP task 191 piece 2b, run 171) — free play is
  * the "position → sound → name" teaching screen, so that is where a family
  * finds this. `SongNotes.ts`'s walk staff reads it too (task 191 piece 3,
- * run 172): its glyph atlas repaints the same 32 cells in place on a style
+ * run 172): its glyph atlas repaints its 28 note cells in place on a style
  * change, so a toggle mid-walk relabels every note already on the ribbon.
  */
 export function setLabelStyle(style: 'letter' | 'solfege', state: ScaffoldState): void {

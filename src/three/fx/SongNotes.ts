@@ -573,7 +573,7 @@ const STRIKE_MS = 420;
  * 1000 ms out a note is legible and climbing (ink past half, scale past 0.7
  * nominal — which projection is by then magnifying); at 600 ms out it is
  * plainly readable (ink past 0.7, scale past 0.85); through the
- * scaffold's answer window (the 350 ms letter reveal, `core/beats.ts`) it
+ * scaffold's answer window (the 350 ms letter reveal, `core/scaffold.ts`) it
  * is at near-full presence. The test pins those tiers instead of the old
  * nominal-space blanket.
  */
@@ -1071,6 +1071,12 @@ interface LiveNote {
 }
 
 export interface SongNotesOptions {
+  /**
+   * Where the road is, `ahead` metres in front of the bard: how the lane
+   * runs along the road rather than along a heading that points off it on
+   * a bend. The caller knows the road and the bard's place on it.
+   */
+  road: RoadSampler;
   /** Burst budget multiplier, from the app's quality tier. */
   particleDensity?: number;
 }
@@ -1165,9 +1171,7 @@ export class SongNotes {
   private cursor = 0;
   private readonly live = new Map<number, LiveNote>();
 
-  private readonly origin = new Vector3();
-  private heading = 0;
-  private sampler: RoadSampler | null = null;
+  private readonly road: RoadSampler;
 
   // --- the sampled path --------------------------------------------------
   //
@@ -1234,7 +1238,8 @@ export class SongNotes {
   private camera: PerspectiveCamera | null = null;
   private lightSought = false;
 
-  constructor(options: SongNotesOptions = {}) {
+  constructor(options: SongNotesOptions) {
+    this.road = options.road;
     const density = clamp(options.particleDensity ?? 1, 0.25, 1);
     this.sparksPerHit = Math.max(4, Math.round(10 * density));
 
@@ -1421,40 +1426,6 @@ export class SongNotes {
     this.sparkMaterial.uniforms.uMotion.value = MOTION_INDEX[instrument.noteMotion] ?? 0;
   }
 
-  /**
-   * Where the bard is and which way he faces.
-   *
-   * `sampler` is how the lane runs along the road rather than in whatever the
-   * heading happens to point at on a bend: the caller knows the road and
-   * answers where it is `ahead` metres on. Without one the path is taken dead
-   * straight along the heading, which is right for a bard standing anywhere
-   * but a curve.
-   */
-  setAnchor(origin: Vector3, heading: number, sampler: RoadSampler | null = null): void {
-    this.origin.copy(origin);
-    this.heading = heading;
-    this.sampler = sampler;
-  }
-
-  /**
-   * The schedule for this busk or this stretch of walking. Windowed
-   * internally; hand over the whole thing.
-   *
-   * The whole schedule is what lets the paper be sized to the tune rather
-   * than to the songbook — see `PAPER_CLEAR_STEPS`. It is done here rather
-   * than per frame from the live notes on purpose: sizing to what is in
-   * flight would breathe the paper's extent in and out on every note, and a
-   * staff that changes shape while a child is reading it is worse than a
-   * little spare paper.
-   */
-  /**
-   * `revealLeads`, when given, is parallel to `beats`: how many flight
-   * milliseconds before its hit each note's letter becomes readable
-   * (core/reveal.ts computes it from the scaffold). Omitted, every letter
-   * is present for the whole flight — the pre-pedagogy behaviour, and the
-   * behaviour every note falls back to when struck or missed (the answer
-   * is never withheld; only the prompt fades).
-   */
   /** Where the travelling heads should settle, 0..1. See `headTarget`. */
   setHeadsAlpha(target: number): void {
     this.headTarget = Math.min(1, Math.max(0, Number.isFinite(target) ? target : 1));
@@ -1487,6 +1458,24 @@ export class SongNotes {
     return staffStepAt(beat.semitone);
   }
 
+  /**
+   * The schedule for this busk or this stretch of walking. Windowed
+   * internally; hand over the whole thing.
+   *
+   * The whole schedule is what lets the paper be sized to the tune rather
+   * than to the songbook — see `PAPER_CLEAR_STEPS`. It is done here rather
+   * than per frame from the live notes on purpose: sizing to what is in
+   * flight would breathe the paper's extent in and out on every note, and a
+   * staff that changes shape while a child is reading it is worse than a
+   * little spare paper.
+   *
+   * `revealLeads`, when given, is parallel to `beats`: how many flight
+   * milliseconds before its hit each note's letter becomes readable
+   * (core/reveal.ts computes it from the scaffold). Omitted, every letter
+   * is present for the whole flight — the pre-pedagogy behaviour, and the
+   * behaviour every note falls back to when struck or missed (the answer
+   * is never withheld; only the prompt fades).
+   */
   setBeats(beats: readonly SongBeat[], revealLeads: readonly number[] | null = null): void {
     this.beats = beats;
     this.revealLeads = revealLeads;
@@ -1534,10 +1523,6 @@ export class SongNotes {
     // the search for the shared lighting is retried at the start of each one
     // rather than made a constructor-time question with one answer.
     if (active) this.lightSought = false;
-  }
-
-  get active(): boolean {
-    return this.group.visible;
   }
 
   /**
@@ -2348,15 +2333,7 @@ export class SongNotes {
 
   /** World point `ahead` metres along the road from the bard. */
   private pointAt(ahead: number, out: Vector3): void {
-    if (this.sampler) {
-      this.sampler(ahead, out);
-      return;
-    }
-    out.set(
-      this.origin.x + Math.sin(this.heading) * ahead,
-      this.origin.y,
-      this.origin.z + Math.cos(this.heading) * ahead,
-    );
+    this.road(ahead, out);
   }
 }
 
@@ -2782,8 +2759,9 @@ const HEAD_RY = 21;
 /**
  * Draw every glyph the songbook can ask for, once, onto one canvas.
  *
- * Twenty-nine cells: seven letter names, each with a stem up and a stem
- * down, each of those with and without a ledger line, plus a rest. The
+ * Thirty-two cells: seven letter names, each with a stem up and a stem
+ * down, each of those with and without a ledger line, plus a rest, plus
+ * (task 165) the three accidental marks a key signature draws. The
  * combination is small enough to enumerate and big enough that picking the
  * wrong cell would be visible, so `cellFor` below is the only place allowed
  * to do the arithmetic.
