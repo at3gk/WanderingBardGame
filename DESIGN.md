@@ -1339,3 +1339,11 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   option (written for a notation preview that was never built) and the
   per-note `cancel()` handle (nothing ever cancelled a note; notes ring
   out under the bus fades). No player-facing change.
+- 2026-11-24 (run 340) — Dead-export audit, module 15 (the last):
+  three/fx/SongNotes.ts. Cut the `active` getter (no caller) and
+  `setAnchor` with its straight-along-the-heading fallback (the road
+  stage always handed over its live road sampler, so the stored origin
+  and heading were never read); the sampler is now required at
+  construction. The audit, opened run 323, is closed: no export is
+  referenced nowhere, and the test-only ones left are named seams. No
+  player-facing change.

@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 336 took module 11
+  authoritative, every-run-updated pointer. **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
   (task 253, audio/adaptive; fixed the backing clashing with Book Two's
   D and A tunes) and queued 254 (audio/ambience). Run 335 took module 10
   (task 252, core/songMeter) and queued 253 (audio/adaptive). Run 334 took module 9
@@ -8126,14 +8126,26 @@ as before.
     "busk scene" header and the bell's "about 1.6" decay (capped 1.35)
     fixed. 1435 tests, green.
 
-257. **Dead-export audit, module 15: three/fx/SongNotes.ts.** Same
-    method, including comment promises. The last module on the list:
-    after it, close the backlog item and say so in DESIGN's changelog.
-    Queued run 339.
+257. ~~**Dead-export audit, module 15: three/fx/SongNotes.ts.**~~ Done
+    (run 340). Exports all kept (used in-module, or test seams that say
+    which invariant they pin). Cut the unused `active` getter and
+    `setAnchor`: every call passed the live road sampler, so its origin,
+    heading and straight-line fallback were never read; the sampler is
+    now a required constructor option. Fixed setBeats's drifted doc,
+    the reveal's wrong file, the atlas's "twenty-nine cells" (32). The
+    audit is closed. 1435 tests, green.
+
+258. **Choose the next small queue.** No code. Nothing is queued and
+    every retention recommendation has shipped (run 333). Read PLAYTEST
+    Round 7's open questions and the idea backlog; promote at most three
+    small tasks (one per run), each checked against retention-design.md's
+    recommendations and rejected list, and the one-mechanic rule. If
+    nothing earns a place, say so and queue polish instead. Queued run
+    340.
 
 ## Idea backlog (pull from here when nothing is queued)
 
-- **Dead-export audit** (run 323) — ~35 `export`s across src/ are reached
+- ~~**Dead-export audit**~~ (run 323, closed run 340) — ~35 `export`s across src/ are reached
   only by tests (e.g. `isTouchable` in ui/hudLayout.ts, `songMenu` /
   `songGridLayout` in core/songChoice.ts, `visitStop` / `hasVisited` in
   core/journey.ts, `accumulateCoins`, `describeUnlock`). Some are honest
@@ -8169,7 +8181,11 @@ as before.
   audio/mix done (run 338 — a test harness module's test-only exports are
   its point; cut only the wrapper that duplicated another module). audio/instrumentVoice done (run 339 — audit
   interface *options and methods* too, not only exports: an option and a
-  return-value method had no caller).
+  return-value method had no caller). three/fx/SongNotes done (run
+  340 — a method whose arguments the only caller always fills the same
+  way can hide a whole dead fallback). **ITEM CLOSED (run 340):** all
+  fifteen modules done; a sweep over src/ finds no export referenced
+  nowhere, and the test-only ones left are seams that say what they pin.
 
 - ~~**Practice shows the key signature**~~ (run 319) — shipped as task 237
   (run 320). Was: the tuned ladder names
