@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
+  authoritative, every-run-updated pointer. **Run 343 was the consolidation (task 260); task 261 (boot CPU) is next. Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
   (task 253, audio/adaptive; fixed the backing clashing with Book Two's
   D and A tunes) and queued 254 (audio/ambience). Run 335 took module 10
   (task 252, core/songMeter) and queued 253 (audio/adaptive). Run 334 took module 9
@@ -8191,6 +8191,12 @@ as before.
     against the README, docs toward the code, research refresh per
     pillar 5 (fold task 259's numbers into mobile-friendly.md's top
     recommendations if they change anything). Queued run 341.
+    **Done run 343.** README matched the code. DESIGN's v0.1 "playable
+    within 5 seconds" line got an honest status note (over on the
+    throttled phone first visit until 261), plus a changelog entry for
+    runs 334-342. mobile-friendly.md: recs 1-7 recorded as shipped, task
+    259's numbers added as rec 8 (boot CPU budget). retention-design.md
+    and art-quality.md unchanged (nothing shipped touches them). No code.
 
 261. **Boot CPU: get the phone first visit under 5 s.** Task 259
     measured ~2.85 s of CPU between the bundle arriving and main.ts

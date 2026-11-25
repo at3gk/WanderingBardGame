@@ -578,6 +578,10 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
 
 - Loads and is playable (first beat tappable) within 5 seconds on a cold
   load, no login/account.
+  *(Honest status, run 343: met on desktop (2.6-3.2 s) and on a return
+  visit; a 4×-throttled phone's first visit measured 5.2-5.6 s in run
+  342, so this line is over on that profile until task 261 lands. Boot
+  CPU, not download, is the cause.)*
 - Single-lane rhythm mechanic implemented: beat spawn → scroll → hit
   window → hit/miss → song meter response, fully covered by headless
   Vitest tests (timing math, hit-window logic, meter drain/fill).
@@ -1347,3 +1351,13 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   construction. The audit, opened run 323, is closed: no export is
   referenced nowhere, and the test-only ones left are named seams. No
   player-facing change.
+- 2026-11-25 (run 343, consolidation over runs 334-342) — The
+  dead-export audit closed at run 340 (modules 9-15; runs 337 ambience
+  and 338 mix cut test-only helpers that described nothing the game
+  does, logged in STATE). Run 341 queued, and run 342 ran, a re-measure
+  of pillar 1 on the 3D road: the phone first visit is just over 5 s,
+  so v0.1's "playable within 5 seconds" line now carries an honest
+  status note and mobile-friendly.md gains recommendation 8 (boot CPU
+  budget). Drift check: clean. Nine runs, no new system, no player-facing
+  feature; the only open work is making the existing game start sooner.
+  Nothing cut.

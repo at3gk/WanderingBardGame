@@ -322,6 +322,10 @@ login.
    TWA prerequisite if the store track ever opens). Vite has
    well-trodden plugins; keep it to precache-plus-update, nothing
    clever. Size: one run, including the update-on-reload behavior.
+   (Run-343 note: the build is now ~980 kB on disk, 276 kB over the
+   wire gzipped. Task 259 showed the worker removes the download from a
+   return visit entirely, so this recommendation is done and is no
+   longer the load-time lever; see 8.)
 5. **Audio session + interruption handling.** Feature-detect
    `navigator.audioSession` and set `type = "playback"` (mute-switch
    fix); on `visibilitychange`/`statechange`, nudge a non-running
@@ -340,6 +344,16 @@ login.
    practical floor per the HIG's pt-to-px mapping at 1x), spacing per
    WCAG 2.5.8, both orientations laid out. Size: one run, mostly
    hudLayout.ts, which is already pure and testable.
+8. **Boot CPU budget (added run 343 from task 259's measurement).**
+   Pillar 1 is "playable in under 5 seconds", and on a 4×-throttled
+   phone profile the first visit's first credited tap lands at
+   5.2-5.6 s. The bytes arrive by 1.7 s; ~2.85 s of parse, world
+   generation and stage construction is what puts it over. So the
+   phone load-time lever is work done before the first frame, not
+   bundle size: build only what the first frame needs, defer the rest
+   over the next frames without a visible pop, and re-check with
+   `tools/first-tap.mjs` (target ≤4.5 s on the phone profile).
+   Size: task 261, measure first, then one fix run.
 
 ### Separate track (store/native — needs a human first)
 
@@ -389,6 +403,19 @@ login.
   cost on a real GPU could go either way). The Phaser-era number this
   replaces was 0.7-1.3 s (task 58). Fix queued as task 261: find where the
   ~2.8 s of boot goes before deciding what to defer.
+
+- 2026-11-25 (run 343, consolidation): status of the ranked list. 1
+  manifest + icons + standalone: shipped (`public/manifest.webmanifest`,
+  `public/icons/`). 2 safe area: shipped (`Hud.ts` inset probe feeding
+  the pure `hudLayout.ts`). 3 save protection: shipped
+  (`navigator.storage.persist()` after first interaction in `main.ts`,
+  plus the keepsake export/import in `core/keepsake.ts`). 4 service
+  worker: shipped (`main.ts`, production only). 5 audio session:
+  shipped (`audio/audioSession.ts`). 6 quality tiers + hand toggle:
+  shipped (the quiet quality door in `Hud.ts`, no auto-degradation). 7
+  touch targets: shipped (`hudLayout.ts`). New 8 (boot CPU) is the only
+  open item, queued as task 261. Everything in "Blocked on human" is
+  still blocked: no real device has been in a run.
 
 ## Blocked on human
 
