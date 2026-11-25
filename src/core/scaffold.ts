@@ -9,9 +9,9 @@ import { letterForStep } from './notation';
  *
  * It fades in TIME, not in opacity. As a staff position becomes familiar,
  * its letter arrives later and later in the note's flight — from present at
- * spawn, down to not arriving before the tap at all. A half-faded letter
- * would still be readable and would teach nothing; a letter that arrives
- * 900ms late buys 900ms of genuine attempted recall.
+ * spawn, down to 350ms before the line (the floor, see `SUPPORT_LEAD_MS`).
+ * A half-faded letter would still be readable and would teach nothing; a
+ * letter that arrives 850ms late buys 850ms of genuine attempted recall.
  *
  * The governing safety rule is **fade the prompt, never the answer**: every
  * note shows its letter when it is struck *or* missed (see `core/reveal.ts`), so

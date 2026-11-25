@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
+  authoritative, every-run-updated pointer. **Run 343 was the consolidation (task 260): fixed the letter-fade ladder in DESIGN/README/scaffold.ts (the code's 350 ms floor), refreshed the research (mobile rec 8 = task 261). Next: task 261 piece 1; next consolidation ~353.** **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
   (task 253, audio/adaptive; fixed the backing clashing with Book Two's
   D and A tunes) and queued 254 (audio/ambience). Run 335 took module 10
   (task 252, core/songMeter) and queued 253 (audio/adaptive). Run 334 took module 9
@@ -8191,6 +8191,12 @@ as before.
     against the README, docs toward the code, research refresh per
     pillar 5 (fold task 259's numbers into mobile-friendly.md's top
     recommendations if they change anything). Queued run 341.
+    **Done run 343.** README claims checked on the code; one real
+    contradiction fixed (DESIGN, README and scaffold.ts described the
+    letter fade ending "not before the tap", while `SUPPORT_LEAD_MS`
+    keeps a 350 ms floor). Research: mobile rec 8 added (boot CPU =
+    task 261), recs 1-7 marked shipped; retention finding added (a
+    passing test can keep a rejected design alive). Nothing cut.
 
 261. **Boot CPU: get the phone first visit under 5 s.** Task 259
     measured ~2.85 s of CPU between the bundle arriving and main.ts

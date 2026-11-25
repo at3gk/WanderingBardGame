@@ -370,10 +370,11 @@ the position→name association is never retrieved and never consolidates.
 
 It fades in **time**, not in opacity. As a staff position becomes
 familiar, its letter arrives later and later in the note's 1800ms flight —
-present from spawn, then 1350ms before the line, then 900, 450, and
-finally not before the tap at all. A half-transparent letter would still
-be perfectly readable and would teach nothing; a letter that arrives 900ms
-late buys 900ms of genuine attempted recall. That silent naming, followed
+present from spawn, then 1350ms before the line, then 950, 600, and
+finally 350, the floor (`SUPPORT_LEAD_MS` in core/scaffold.ts). A
+half-transparent letter would still be perfectly readable and would teach
+nothing; a letter that arrives 850ms late buys 850ms of genuine attempted
+recall, and at the floor the child has ~1450ms of blank flight. That silent naming, followed
 by the letter surfacing, is a retrieval-and-confirm loop — the testing
 effect, without ever externalising an answer the game could mark wrong.
 
@@ -1347,3 +1348,15 @@ mechanic, with no menus, upgrades, or currency spend loop layered on top.
   construction. The audit, opened run 323, is closed: no export is
   referenced nowhere, and the test-only ones left are named seams. No
   player-facing change.
+
+- 2026-11-25 (run 343, consolidation) — Runs 334-342 were the end of the
+  dead-export audit, a drone fix (the backing now follows a Book Two
+  tune's key), and a pillar-1 re-measure. Drift check clean: no new
+  system, no new runtime dependency, bundle 955 kB of the 5 MB budget.
+  One doc fix: the Pedagogy section's letter-fade ladder now matches the
+  code (1800 → 1350 → 950 → 600 → 350 ms floor; it used to say the
+  letter finally stops arriving before the tap, which contradicted the
+  floor described in the next paragraph). **Honest status of pillar 1:**
+  on a throttled phone profile the first visit reaches its first playable
+  note in 5.2-5.6 s, over the 5 s line, because of boot CPU, not
+  download. Task 261 is the fix. NOTHING CUT.

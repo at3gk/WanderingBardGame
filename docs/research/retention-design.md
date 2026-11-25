@@ -317,6 +317,19 @@ comes precisely from the mechanics this game already bans.
   run to "finish the feature". Cutting them (run 331) is retention work.
   Before building on a test-only export, ask whether it was abandoned on
   purpose.
+- **2026-11-25, a passing test can keep a rejected design alive (runs
+  334-342; recorded at the run-343 consolidation).** Run 333's audit
+  finding held for the rest of the audit, and in a sharper form. Run 334
+  found `isBardWalking`, a binary walk/stop, whose test "one miss stops
+  the bard" passed for months while the game did the opposite: it eases
+  the stride and stops only near an empty meter, because a hard stop
+  reads as punishment. A test describes the design someone *meant*, not
+  the one that shipped. So when a returning-player check reads a test as
+  evidence of what the game does, confirm it against the code path the
+  game actually calls. Run 336's audit of comment promises found a
+  sound-correctness bug the same way (the drone sat a semitone off Book
+  Two's sharp keys). A tune that sounds wrong on a revisit wears away the
+  comfort the ritual depends on.
 
 ## Recommendations, ranked by fit
 
