@@ -371,6 +371,25 @@ login.
   wants to track keyboard/AT support as its own line should treat the
   195-197 arc as the buildout's starting point, not a one-off.
 
+- 2026-11-25 (run 342, task 259): **pillar 1 re-measured on the 3D road,
+  and the throttled-phone first visit is just over 5 s.** First credited
+  tap (a real hit on the walk's tune, read from game state) via
+  `tools/first-tap.mjs`, headless Chromium + SwiftShader against
+  `vite preview`. Unthrottled: 2.6-3.2 s first or return visit. Phone
+  profile (1.6 Mbps / 150 ms RTT, CPU 4×): first visit 5.58 s at 360×740
+  and 5.20 s at 664×390; return visit (service worker warm, 0 kB over the
+  wire) 3.8-4.0 s. Breakdown of the 360×740 phone first visit: 276 kB
+  over the wire arrive by 1.74 s; boot (parse + world generation + stage
+  construction) ends at 4.59 s, so ~2.85 s of CPU; first frame 4.99 s;
+  first credited tap 5.58 s (the rest is the first note reaching the
+  line). The download is not the problem: the worker removes it entirely
+  and the return visit is still 3.8 s. **Boot CPU is.** Caveats: the
+  container's CPU is not a desktop's, so 4× of it is pessimistic, and
+  SwiftShader says nothing about a phone GPU's frame rate (shader compile
+  cost on a real GPU could go either way). The Phaser-era number this
+  replaces was 0.7-1.3 s (task 58). Fix queued as task 261: find where the
+  ~2.8 s of boot goes before deciding what to defer.
+
 ## Blocked on human
 
 - Real-iPad playtest of the three quality tiers (STATE.md already

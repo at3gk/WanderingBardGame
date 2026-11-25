@@ -596,6 +596,19 @@ session's own natural reading, never from an earlier piece's label. See
 ROADMAP task 189's piece-5 done-note and `docs/research/art-quality.md`'s
 findings section for the full account.
 
+## `first-tap.mjs`
+
+Pillar 1 ("playable in under 5 seconds"), measured as the first tap the
+road actually credits: a page-side loop taps the canvas every 40 ms from
+the moment `window.bard` exists and stops when `stage.performance.hits`
+goes above zero. Four profiles per viewport (360×740 and 664×390):
+unthrottled and a throttled phone (CDP: 1.6 Mbps / 150 ms RTT, CPU 4×),
+each as a first visit (fresh context, cold cache, no worker) and a return
+visit (same context, new page, worker controlling). Prints kB over the
+wire, bundle arrival, boot (main.ts done), first frame and first hit, and
+exits 1 if any first visit is over 5 s. Needs `vite preview` on 4173.
+Headless SwiftShader: load and boot cost only, never frame rate.
+
 ## `shot.mjs [prefix] [settleMs]`
 
 Plain screenshot of the running game after a delay. For far-off states

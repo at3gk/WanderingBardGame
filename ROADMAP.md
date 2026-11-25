@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
+  authoritative, every-run-updated pointer. **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
   (task 253, audio/adaptive; fixed the backing clashing with Book Two's
   D and A tunes) and queued 254 (audio/ambience). Run 335 took module 10
   (task 252, core/songMeter) and queued 253 (audio/adaptive). Run 334 took module 9
@@ -8177,11 +8177,35 @@ as before.
     harness. Headless software GL says nothing about real frame rate,
     so state that limit with the numbers. Retention check: n/a. Queued
     run 341.
+    **Done run 342.** Kept `tools/first-tap.mjs` (~130 lines). First
+    credited tap: unthrottled 2.6-3.2 s; phone first visit **5.58 s**
+    (360×740) and **5.20 s** (664×390), over the pillar; phone return
+    visit 3.8-4.0 s. Breakdown (360×740 phone, first): 276 kB arrive by
+    1.74 s, boot done 4.59 s (~2.85 s parse + world generation), first
+    frame 4.99 s, hit 5.58 s. The worker removes the download and the
+    return visit is still 3.8 s, so boot CPU is the lever. Not fixed this
+    run, per the task: queued 261. Full table in mobile-friendly.md's
+    findings.
 
 260. **Consolidation** (run ~343, ten after 333). The usual: play-through
     against the README, docs toward the code, research refresh per
     pillar 5 (fold task 259's numbers into mobile-friendly.md's top
     recommendations if they change anything). Queued run 341.
+
+261. **Boot CPU: get the phone first visit under 5 s.** Task 259
+    measured ~2.85 s of CPU between the bundle arriving and main.ts
+    finishing on the 4× phone profile, and that alone puts the first
+    credited tap at 5.2-5.6 s. Piece 1 (this task): time the boot
+    in-page (`performance.mark` around `generateRoad`, the world/terrain
+    build, scatter, RoadStage's remaining constructor, the first
+    `renderer.compile`/frame) with `tools/first-tap.mjs` at the phone
+    profile, and write down which part owns the time. Piece 2 (queue
+    after reading the numbers): defer or cheapen that part, e.g. build
+    only the first stretch of road before the first frame and the rest
+    over the next frames, without a visible pop. Target: every first
+    visit under 5 s with margin (≤4.5 s) on the phone profile, no
+    change to what the player sees. Re-run first-tap.mjs to prove it.
+    Retention check: n/a. Queued run 342.
 
 ## Idea backlog (pull from here when nothing is queued)
 
