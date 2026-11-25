@@ -9,7 +9,8 @@ The teaching is the part that makes it more than a rhythm game. The lane
 the notes scroll along **is a treble staff**, and every note is drawn where
 it really sits, with its letter name inside the head. As a child meets a
 position often enough, that letter stops appearing early and starts
-appearing **late** — 1800ms before the tap, then 950, then 350 — so the
+appearing **late** — 1800ms before the tap, then 1350, 950, 600 and at
+last 350 — so the
 flight of the note becomes a moment of genuine recall. What fades is the
 *prompt*, never the answer: the letter is always shown before the note
 reaches the line, however familiar the position has become. There is no

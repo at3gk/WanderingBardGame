@@ -341,6 +341,22 @@ login.
    WCAG 2.5.8, both orientations laid out. Size: one run, mostly
    hudLayout.ts, which is already pure and testable.
 
+8. **Boot CPU inside pillar 1** (added run 343's consolidation, from
+   task 259's measurement). With 1-7 shipped, the open mobile gap is
+   time to first note: the throttled-phone first visit takes 5.2-5.6 s
+   to a credited tap, and ~2.85 s of that is CPU between the bundle
+   arriving and boot finishing (parse, world generation, stage build).
+   Bundle size is not the lever (the service-worker return visit, 0 kB
+   over the wire, still takes 3.8 s). Measure the boot in-page, then
+   defer or cheapen the part that owns it, with no visible pop. Target
+   ≤4.5 s on the phone profile. Queued as task 261.
+
+Status at run 343: recommendations 1-7 all shipped (manifest and icons,
+safe areas, `persist()` plus the keepsake, service worker, audioSession,
+quality toggle, touch-target audit). The build has grown from the ~815 kB
+recommendation 4 quotes to ~955 kB (276 kB over the wire), still a fifth
+of the 5 MB pillar. 8 is the only open item.
+
 ### Separate track (store/native — needs a human first)
 
 - **Google Play via TWA** is the cheap, honest path *if ever wanted*:
