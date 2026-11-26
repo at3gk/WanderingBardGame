@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 344 took task 261 piece 1 (boot marks: the first world stream ~0.7 s and the first draw ~0.9 s own the phone's boot; a further ~1.4 s is headless SwiftShader readback) and queued 262 (stream far chunks after frame 1) and 263 (async shader compile). Next: task 262.** **Run 343 was the consolidation (task 260): fixed the letter-fade ladder in DESIGN/README/scaffold.ts (the code's 350 ms floor), refreshed the research (mobile rec 8 = task 261). Next: task 261 piece 1; next consolidation ~353.** **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
+  authoritative, every-run-updated pointer. **Run 345 took task 262 (far chunks deferred past frame 1, no visible pop; saved only ~0.1-0.2 s because the trailhead chunk's first-use tree geometry owns ~0.33 s) and queued 264 (cheapen that). Next: task 263.** **Run 344 took task 261 piece 1 (boot marks: the first world stream ~0.7 s and the first draw ~0.9 s own the phone's boot; a further ~1.4 s is headless SwiftShader readback) and queued 262 (stream far chunks after frame 1) and 263 (async shader compile). Next: task 262.** **Run 343 was the consolidation (task 260): fixed the letter-fade ladder in DESIGN/README/scaffold.ts (the code's 350 ms floor), refreshed the research (mobile rec 8 = task 261). Next: task 261 piece 1; next consolidation ~353.** **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
   (task 253, audio/adaptive; fixed the backing clashing with Book Two's
   D and A tunes) and queued 254 (audio/ambience). Run 335 took module 10
   (task 252, core/songMeter) and queued 253 (audio/adaptive). Run 334 took module 9
@@ -8237,6 +8237,17 @@ as before.
     Re-run `MARKS=1 node tools/first-tap.mjs`: `world-stream` should
     drop to ≤0.25 s on the phone profile. Retention check: n/a. Queued
     run 344.
+    **Done run 345.** `WorldStreamer.update(s, deferFar)` builds only the
+    chunks within `BOOT_NEAR_RADIUS` (1) of the bard when RoadStage's
+    constructor asks; later updates add the rest one per call, nearest
+    first, ahead before behind (`chunkWindow`/`nextMissingChunk`, pure,
+    12 tests in `worldWindow.test.ts`, including that the deferred boot
+    reaches the eager chunk set in exactly the number of left-out
+    chunks). All other callers stay eager. No visible pop: shots at
+    0.5 s / 3 s unthrottled and at frame 2 throttled match main's.
+    **Target missed:** `world-stream` went from 0.65-0.75 s to ~0.5-0.55 s,
+    because chunk 0 alone is ~0.45-0.5 s (trees 0.33 s, first-use
+    geometry). Queued 264 for that.
 
 263. **Boot CPU, piece 2b: compile the shaders before the first draw,
     off the main thread where the browser allows.** The first draw spends
@@ -8250,6 +8261,19 @@ as before.
     `frame1-draw` before/after; note that headless SwiftShader may not
     expose the extension, in which case say so and judge the change by
     the code path, not a number. Retention check: n/a. Queued run 344.
+
+264. **Boot CPU, piece 2c: cheapen the trailhead chunk's first-use
+    geometry.** Run 345's per-chunk marks: chunk 0 costs ~0.45-0.5 s on
+    the phone profile, and ~0.33 s of that is `buildTrees`. That is almost
+    certainly the first build of each cached tree geometry (species x
+    `TREE_VARIANTS` = 4, via `cachedGeometry`). Shrubs add ~0.1 s the same
+    way. Confirm by marking the `cachedGeometry` builds, then pick the
+    cheapest honest fix: build the variants lazily (one variant up front,
+    the rest on later frames, swapping in when chunk 1+ asks), or make
+    the tree builders cheaper (fewer canopy subdivisions where nobody can
+    see them). No visible change at the trailhead. Target: `world-stream`
+    ≤0.25 s on the phone profile (task 262's original target). Retention
+    check: n/a. Queued run 345.
 
 ## Idea backlog (pull from here when nothing is queued)
 

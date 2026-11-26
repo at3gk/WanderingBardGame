@@ -1841,6 +1841,57 @@ function detailAt(distanceM: number): number {
   return detail;
 }
 
+/**
+ * The chunk indices the streaming window wants around chunk `centre`, in
+ * index order: `behind` back and `ahead` forward, clipped to the road (and
+ * one chunk past its end, so the last stretch has ground beyond it).
+ */
+export function chunkWindow(centre: number, ahead: number, behind: number, roadLengthM: number): number[] {
+  const out: number[] = [];
+  for (let i = centre - behind; i <= centre + ahead; i++) {
+    if (i < 0) continue;
+    if (i * CHUNK_LENGTH > roadLengthM + CHUNK_LENGTH) continue;
+    out.push(i);
+  }
+  return out;
+}
+
+/**
+ * How many chunks either side of the bard's own are built before the first
+ * frame when `update` is asked to defer (see `update`'s `deferFar`).
+ *
+ * One: the camera rides a few metres behind the bard, so the chunk behind
+ * can be in its near field, and the chunk ahead is the first sixty-odd
+ * metres of road the opening shot looks down. Everything past that sits
+ * 100-400 m out in the aerial perspective and arrives over the next frames.
+ */
+export const BOOT_NEAR_RADIUS = 1;
+
+/**
+ * The window chunk to build next, or undefined when the window is full.
+ *
+ * Nearest first, and ahead before behind at equal distance, because the
+ * camera looks down the road. Pure so the deferred boot's order and its
+ * end state can be tested without a GPU.
+ */
+export function nextMissingChunk(
+  window: readonly number[],
+  loaded: (index: number) => boolean,
+  centre: number,
+): number | undefined {
+  let best: number | undefined;
+  let bestKey = Infinity;
+  for (const i of window) {
+    if (loaded(i)) continue;
+    const key = Math.abs(i - centre) * 2 + (i < centre ? 1 : 0);
+    if (key < bestKey) {
+      bestKey = key;
+      best = i;
+    }
+  }
+  return best;
+}
+
 export interface WorldStreamerOptions {
   /** Chunks kept loaded ahead of the bard. */
   ahead?: number;
@@ -1887,6 +1938,13 @@ export class WorldStreamer {
   private readonly scratchTilt = new Quaternion();
 
   private lastCentre = Number.NaN;
+  /**
+   * The window as of the last centre change, with true while some of it has
+   * not been built yet (only after a deferred `update`). One chunk is added
+   * per later `update` until it is whole; see `fillOne`.
+   */
+  private window: number[] = [];
+  private windowIncomplete = false;
   /** The horizon colour the standing water was last painted for. */
   private readonly paintedHorizon = new Color(-1, -1, -1);
 
@@ -2502,9 +2560,21 @@ export class WorldStreamer {
     return false;
   }
 
-  /** Stream chunks so the window is centred on the bard's distance `s`. */
-  update(s: number): void {
+  /**
+   * Stream chunks so the window is centred on the bard's distance `s`.
+   *
+   * `deferFar` builds only the chunks within `BOOT_NEAR_RADIUS` of the bard
+   * now and leaves the rest of the window to later calls, one per call,
+   * nearest first. RoadStage's constructor asks for it: building the whole
+   * window before the first frame was 0.65-0.75 s of a phone's boot (run
+   * 344's marks), and the far chunks are fog-deep when they land. Every
+   * other caller (a walk crossing a boundary, a pose, a restored camp) gets
+   * the eager build it always had, so a posed frame is still complete the
+   * moment it is posed.
+   */
+  update(s: number, deferFar = false): void {
     const centre = Math.floor(s / CHUNK_LENGTH);
+    let built = false;
     if (centre !== this.lastCentre) {
       this.lastCentre = centre;
 
@@ -2518,11 +2588,17 @@ export class WorldStreamer {
         }
       }
 
-      for (let i = first; i <= last; i++) {
-        if (i < 0) continue;
-        if (i * CHUNK_LENGTH > this.road.lengthM + CHUNK_LENGTH) continue;
-        if (!this.chunks.has(i)) this.chunks.set(i, this.buildChunk(i, centre));
+      this.window = chunkWindow(centre, this.ahead, this.behind, this.road.lengthM);
+      this.windowIncomplete = false;
+      for (const i of this.window) {
+        if (this.chunks.has(i)) continue;
+        if (deferFar && Math.abs(i - centre) > BOOT_NEAR_RADIUS) {
+          this.windowIncomplete = true;
+          continue;
+        }
+        this.chunks.set(i, this.buildChunk(i, centre));
       }
+      built = true;
 
       // Anything that has come close enough to deserve more than it was born
       // with. Only gains are queued: a chunk falling behind keeps whatever
@@ -2539,8 +2615,11 @@ export class WorldStreamer {
     // One per frame, nearest first. Crossing a chunk boundary can promote
     // three chunks at once, and building three chunks of meadow grass in the
     // same frame is a visible stall on a phone; spread over three frames it
-    // is three ordinary chunk builds, which the walk already does.
-    this.promoteOne(centre);
+    // is three ordinary chunk builds, which the walk already does. A
+    // deferred boot's missing chunks go first, one per later call (never in
+    // the deferring call itself): a hole in the window matters more than a
+    // nearer chunk's grass.
+    if (built || !this.fillOne(centre)) this.promoteOne(centre);
 
     this.refreshWater();
   }
@@ -2660,6 +2739,18 @@ export class WorldStreamer {
     } else if (vertexColor) {
       vertexColor.needsUpdate = true;
     }
+  }
+
+  /** Build one missing window chunk, if any. True when it built one. */
+  private fillOne(centre: number): boolean {
+    if (!this.windowIncomplete) return false;
+    const index = nextMissingChunk(this.window, (i) => this.chunks.has(i), centre);
+    if (index === undefined) {
+      this.windowIncomplete = false;
+      return false;
+    }
+    this.chunks.set(index, this.buildChunk(index, centre));
+    return true;
   }
 
   private promoteOne(centre: number): void {
