@@ -609,6 +609,19 @@ wire, bundle arrival, boot (main.ts done), first frame and first hit, and
 exits 1 if any first visit is over 5 s. Needs `vite preview` on 4173.
 Headless SwiftShader: load and boot cost only, never frame rate.
 
+`MARKS=1 node tools/first-tap.mjs` also prints the game's own boot marks
+(task 261, `src/core/bootMarks.ts`): `main`, `app`, each step of
+RoadStage's constructor (`road`, `skyline`, `world-build`, `bard`,
+`people`, `notes`, `fields`, `world-stream`, `hud-tune`), `stage`, then
+`start`/`update`/`prep`/`draw` for each of the first four frames, as
+`name @ms-since-navigation +ms-since-previous-mark`. Read the gap between
+`frameN-draw` and `frame(N+1)-start` carefully: in headless Chromium the
+compositor reads the WebGL canvas back (`ReadPixels`) and waits there for
+SwiftShader in the GPU process, so that gap is mostly a software-GL
+artifact, not the game's JS. The tool's own `boot` column is when the
+tapper first saw `window.bard`, which that wait can delay by ~1.4 s;
+`boot:stage` is the true end of main.ts.
+
 ## `shot.mjs [prefix] [settleMs]`
 
 Plain screenshot of the running game after a delay. For far-off states

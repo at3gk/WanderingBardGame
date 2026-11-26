@@ -187,6 +187,7 @@ import { ambienceBusGain, melodyGain, musicBusGain, type MixInput } from '../aud
 import { AUDIO_MANIFEST } from '../audio/manifest';
 import { semitoneToFrequency } from '../audio/baseLoop';
 import { playVoiceNote } from '../audio/instrumentVoice';
+import { bootMark } from '../core/bootMarks';
 
 /** Metres per second at a comfortable walk. */
 const WALK_SPEED = 2.2;
@@ -516,6 +517,7 @@ export class RoadStage implements Stage {
     const leg = resumed?.legIndex ?? 0;
     const seed = options.seedOverride ?? legSeed(key, leg);
     this.road = generateRoad(seed, legRoadKey(key, leg));
+    bootMark('road');
 
     this.journey = resumed ?? createJourney(key, this.road.lengthM);
     // `waking` is a state with one exit and nothing in it, and a walk
@@ -555,7 +557,9 @@ export class RoadStage implements Stage {
       Math.cos(roadEnd.heading),
     );
 
+    bootMark('skyline');
     this.world = this.buildWorld();
+    bootMark('world-build');
 
     this.bard = new Bard(app.globals);
     this.actors.add(this.bard.group);
@@ -567,14 +571,18 @@ export class RoadStage implements Stage {
 
     this.bard.setInstrument(this.instrument());
     this.bard.setPose('walking', 0);
+    bootMark('bard');
 
     this.buildPeople();
+    bootMark('people');
 
     this.notes = new SongNotes({ road: this.roadSampler, particleDensity: app.quality.particleDensity });
     this.scene.add(this.notes.group);
     this.notes.setInstrument(this.instrument());
+    bootMark('notes');
 
     this.buildFields(app.quality.particleDensity);
+    bootMark('fields');
 
     this.rig = new CameraRig();
     this.rig.setMood(PHASE_TO_MOOD[this.journey.phase], 0);
@@ -589,6 +597,7 @@ export class RoadStage implements Stage {
 
     this.world.update(this.journey.s);
     this.syncSubject();
+    bootMark('world-stream');
 
     this.hudHost = options.hudHost ?? document.body;
     this.hud = new Hud(this.hudHost);
@@ -625,6 +634,7 @@ export class RoadStage implements Stage {
     // constructor never goes through `setPhase`, so the walk's tune has to
     // be raised here or the road is silent until the first stop.
     if (this.journey.phase === 'walking') this.startWalkingTune();
+    bootMark('hud-tune');
 
     // The road introduces itself, once, at the trailhead. Everyone opening
     // the tab today is standing on this same named road — which is the only

@@ -349,7 +349,15 @@ login.
    Bundle size is not the lever (the service-worker return visit, 0 kB
    over the wire, still takes 3.8 s). Measure the boot in-page, then
    defer or cheapen the part that owns it, with no visible pop. Target
-   ≤4.5 s on the phone profile. Queued as task 261.
+   ≤4.5 s on the phone profile. Queued as task 261. **Run 344 measured
+   it (task 261 piece 1):** of the ~2.85 s only ~2.0 s is the game's
+   main-thread work, and two items own most of that: the first world
+   stream (~0.7 s, building every loaded chunk's terrain, scatter and
+   trees before frame 1) and the first draw (~0.9 s, three.js setting up
+   21 shader programs and waiting on their link). The other ~1.4 s is the
+   headless compositor waiting on SwiftShader. Fixes queued as tasks 262
+   (stream the far chunks in over the first frames) and 263 (compile the
+   shaders asynchronously before the first draw).
 
 Status at run 343: recommendations 1-7 all shipped (manifest and icons,
 safe areas, `persist()` plus the keepsake, service worker, audioSession,
@@ -405,6 +413,29 @@ of the 5 MB pillar. 8 is the only open item.
   cost on a real GPU could go either way). The Phaser-era number this
   replaces was 0.7-1.3 s (task 58). Fix queued as task 261: find where the
   ~2.8 s of boot goes before deciding what to defer.
+
+- 2026-11-26 (run 344, task 261 piece 1): **where the boot goes.** In-page
+  `performance.mark`s (`src/core/bootMarks.ts`, printed by
+  `MARKS=1 node tools/first-tap.mjs`), 360×740 phone first visit, typical
+  of three runs (664×390 within ~10%): bundle in 1.75 s, `main` 1.80 s
+  (module evaluation ~50 ms), App constructor +0.10 s, road generation,
+  skyline and world constructor together +0.03 s, the Bard +0.11-0.13 s,
+  travellers, notes and fields +0.06 s, **the first world stream
+  (`world.update` building the loaded chunks: terrain, scatter, trees)
+  +0.65-0.75 s**, HUD and tune +0.03 s, so main.ts ends at ~2.9 s. Then
+  **the first draw +0.85-0.94 s** (the CPU profile puts most of it in
+  three.js program setup and `getUniforms`, which waits for each of the
+  21 programs to link). Then a ~1.4 s gap before frame 2 that is not the
+  game at all: a Chromium trace shows the compositor's `Commit` doing a
+  `GLES2::ReadPixels` and blocking in `CommandBuffer::Finish` while the
+  GPU process (SwiftShader, unthrottled CPU raster) finishes frame 1. That
+  readback exists because headless has no GPU compositor, so it says
+  little about a phone, where the same moment is the driver's own shader
+  compile. Frames 2-4 then take ~0.3 s apiece for the same reason. Lesson
+  for the research: task 259's "~2.85 s of boot CPU" was a fair first
+  read of `boot − js` but mixed the game's JS with a GPU-process wait;
+  in-page marks are what separate them. Real levers: the world stream
+  (pure JS, scales with CPU) and the first draw's program setup.
 
 ## Blocked on human
 
