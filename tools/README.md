@@ -612,7 +612,10 @@ Headless SwiftShader: load and boot cost only, never frame rate.
 `MARKS=1 node tools/first-tap.mjs` also prints the game's own boot marks
 (task 261, `src/core/bootMarks.ts`): `main`, `app`, each step of
 RoadStage's constructor (`road`, `skyline`, `world-build`, `bard`,
-`people`, `notes`, `fields`, `world-stream`, `hud-tune`), `stage`, then
+`people`, `notes`, `fields`, `world-stream`, `hud-tune`), `stage`,
+`warm-ready`/`warm-timeout`/`warm-failed`/`warm-skipped` (task 263's
+shader warm-up; headless always reads `skipped`, it has no
+KHR_parallel_shader_compile), then
 `start`/`update`/`prep`/`draw` for each of the first four frames, as
 `name @ms-since-navigation +ms-since-previous-mark`. Read the gap between
 `frameN-draw` and `frame(N+1)-start` carefully: in headless Chromium the

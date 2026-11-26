@@ -172,6 +172,28 @@ export class FinishingPass {
     renderer.render(this.compositeScene, this.compositeCamera);
   }
 
+  /**
+   * Task 263: link every program the first frame will need before it is
+   * drawn. Programs are keyed by the render target they draw into (tone
+   * mapping and output colour space are off inside the offscreen target),
+   * so the scene compiles with the target bound, exactly as render() will
+   * draw it, and the composite quad compiles against the canvas. Where the
+   * browser has KHR_parallel_shader_compile the link happens off the main
+   * thread and this only polls; elsewhere it at least yields first.
+   */
+  compileAsync(renderer: WebGLRenderer, scene: Scene, camera: PerspectiveCamera): Promise<unknown> {
+    if (!this.enabled || !this.target || !this.compositeScene) {
+      return renderer.compileAsync(scene, camera);
+    }
+    const previous = renderer.getRenderTarget();
+    renderer.setRenderTarget(this.target);
+    const world = renderer.compileAsync(scene, camera);
+    renderer.setRenderTarget(null);
+    const composite = renderer.compileAsync(this.compositeScene, this.compositeCamera);
+    renderer.setRenderTarget(previous);
+    return Promise.all([world, composite]);
+  }
+
   dispose(): void {
     this.target?.dispose();
     this.lut?.dispose();
