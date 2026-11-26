@@ -454,6 +454,23 @@ of the 5 MB pillar. 8 is the only open item.
   `TREE_VARIANTS` = 4, shrub shapes), so it pays for building them.
   Lesson: an aggregate mark ("the world stream") hides a first-use cost
   inside "the nearest chunk". Mark per item before choosing the cut.
+- 2026-11-26 (run 346, task 263): **headless Chromium cannot show the
+  parallel-compile win, and without the extension a warm-up is a small
+  loss.** `renderer.compileAsync` before the loop starts, with the scene
+  compiled while the finishing pass's offscreen target is bound (three
+  keys programs on the target: tone mapping is off inside it). With
+  KHR_parallel_shader_compile faked in the page, the 16 warmed programs
+  are exactly the ones frame 1 uses (frame 1 adds only 2, the shadow
+  depth pair) and the picture is pixel-identical. But headless SwiftShader
+  does not offer the extension under any flag tried, and there three's
+  `isReady()` is true at once while the link wait moves to the first
+  draw's uniform fetch: warm 0.23-0.33 s, then frame 1 still 0.72-0.94 s
+  on the phone profile, about the same total or worse. So the warm-up
+  runs only where the extension exists (Chrome on Android and desktop,
+  per three's docs) and is skipped elsewhere. Its real-device effect is
+  unmeasured here; it belongs on the human playtest list. Lesson: a
+  shader-compile fix is judged on real hardware or by the code path,
+  and a headless number can only prove there was no regression.
 
 ## Blocked on human
 

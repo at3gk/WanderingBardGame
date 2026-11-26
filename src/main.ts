@@ -46,7 +46,14 @@ try {
   const stage = new RoadStage(app, { hudHost: host });
   bootMark('stage');
   app.setStage(stage);
-  app.start();
+  // Link the shaders before the first frame instead of inside it (task
+  // 263), where the browser can link off the main thread. warmUp never
+  // rejects and gives up after a few seconds, so the loop always starts; a
+  // skipped or failed warm-up only means frame 1 compiles, as before.
+  void app.warmUp().then((how) => {
+    bootMark(`warm-${how}`);
+    app.start();
+  });
 
   /**
    * The handle the headless checks drive the game through — the only global

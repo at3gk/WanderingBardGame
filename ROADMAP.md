@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 345 took task 262 (far chunks deferred past frame 1, no visible pop; saved only ~0.1-0.2 s because the trailhead chunk's first-use tree geometry owns ~0.33 s) and queued 264 (cheapen that). Next: task 263.** **Run 344 took task 261 piece 1 (boot marks: the first world stream ~0.7 s and the first draw ~0.9 s own the phone's boot; a further ~1.4 s is headless SwiftShader readback) and queued 262 (stream far chunks after frame 1) and 263 (async shader compile). Next: task 262.** **Run 343 was the consolidation (task 260): fixed the letter-fade ladder in DESIGN/README/scaffold.ts (the code's 350 ms floor), refreshed the research (mobile rec 8 = task 261). Next: task 261 piece 1; next consolidation ~353.** **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
+  authoritative, every-run-updated pointer. **Run 346 took task 263 (shader warm-up with compileAsync before the loop, only where KHR_parallel_shader_compile exists; headless can't measure it, code path verified with the extension faked). Next: task 264.** **Run 345 took task 262 (far chunks deferred past frame 1, no visible pop; saved only ~0.1-0.2 s because the trailhead chunk's first-use tree geometry owns ~0.33 s) and queued 264 (cheapen that). Next: task 263.** **Run 344 took task 261 piece 1 (boot marks: the first world stream ~0.7 s and the first draw ~0.9 s own the phone's boot; a further ~1.4 s is headless SwiftShader readback) and queued 262 (stream far chunks after frame 1) and 263 (async shader compile). Next: task 262.** **Run 343 was the consolidation (task 260): fixed the letter-fade ladder in DESIGN/README/scaffold.ts (the code's 350 ms floor), refreshed the research (mobile rec 8 = task 261). Next: task 261 piece 1; next consolidation ~353.** **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
   (task 253, audio/adaptive; fixed the backing clashing with Book Two's
   D and A tunes) and queued 254 (audio/ambience). Run 335 took module 10
   (task 252, core/songMeter) and queued 253 (audio/adaptive). Run 334 took module 9
@@ -8261,6 +8261,19 @@ as before.
     `frame1-draw` before/after; note that headless SwiftShader may not
     expose the extension, in which case say so and judge the change by
     the code path, not a number. Retention check: n/a. Queued run 344.
+    **Done run 346.** `App.warmUp()` (new pure `settleWithin` in
+    core/settle.ts: resolves ready/timeout/failed, never rejects, 4 tests)
+    calls `FinishingPass.compileAsync`, which compiles the scene with the
+    offscreen target bound (programs are keyed on it) and the composite
+    quad against the canvas; main.ts starts the loop when it settles,
+    2.5 s at most. Runs only where the renderer has
+    KHR_parallel_shader_compile; elsewhere it returns `skipped` at once,
+    because without the extension the link wait just moves to frame 1's
+    uniform fetch (headless: warm 0.23-0.33 s, frame 1 still ~0.7-0.9 s).
+    Headless SwiftShader never offers the extension, so the code path was
+    checked with it faked in the page: 16 programs warmed, frame 1 adds
+    only 2 (shadow depth), same picture, no errors. Real-phone gain is
+    unmeasured (playtest item). Next: 264.
 
 264. **Boot CPU, piece 2c: cheapen the trailhead chunk's first-use
     geometry.** Run 345's per-chunk marks: chunk 0 costs ~0.45-0.5 s on

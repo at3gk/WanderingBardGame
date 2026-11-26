@@ -28,6 +28,15 @@ import { createPainterlyGlobals, type PainterlyGlobals } from './painterly';
 import { FinishingPass } from './finishing';
 import { computeFixedSteps, FIXED_STEP_MS } from './fixedStep';
 import { bootMark } from '../core/bootMarks';
+import { settleWithin, type Settled } from '../core/settle';
+
+/**
+ * The longest the boot waits for the shader warm-up before it starts the
+ * loop anyway (task 263). Generous next to the ~0.9 s the phone profile's
+ * first draw spent linking, and short enough that a driver that never
+ * reports ready costs a moment, not the road.
+ */
+export const WARM_UP_TIMEOUT_MS = 2500;
 
 /** Anything the app can run. Stages own their own content and disposal. */
 export interface Stage {
@@ -357,6 +366,29 @@ export class App {
 
   /** Frames drawn so far; the first few are boot-marked (task 261). */
   private framesDrawn = 0;
+
+  /**
+   * Task 263: compile the current stage's shaders before the first frame,
+   * so the first draw does not sit on 21 program links. Never rejects and
+   * never waits longer than `timeoutMs`: a warm-up that hangs or fails
+   * just means the first frame compiles whatever is left, as it always did.
+   *
+   * Only where the browser has KHR_parallel_shader_compile. Without it the
+   * links still happen at the first draw (three fetches uniforms there,
+   * which waits on the link), so warming up first only adds the JS half of
+   * program setup in front of a frame that pays the rest anyway: headless
+   * SwiftShader measured warm 0.23-0.33 s with frame 1 barely faster.
+   */
+  warmUp(timeoutMs = WARM_UP_TIMEOUT_MS): Promise<Settled | 'skipped'> {
+    const stage = this.stage;
+    if (!stage || !this.renderer.extensions.has('KHR_parallel_shader_compile')) {
+      return Promise.resolve('skipped');
+    }
+    return settleWithin(
+      () => this.finishing.compileAsync(this.renderer, stage.scene, stage.camera),
+      timeoutMs,
+    );
+  }
 
   start(): void {
     if (this.running) return;
