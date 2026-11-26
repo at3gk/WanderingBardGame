@@ -357,7 +357,10 @@ login.
    21 shader programs and waiting on their link). The other ~1.4 s is the
    headless compositor waiting on SwiftShader. Fixes queued as tasks 262
    (stream the far chunks in over the first frames) and 263 (compile the
-   shaders asynchronously before the first draw).
+   shaders asynchronously before the first draw). **Run 345 shipped 262**
+   (far chunks deferred): it saved only ~0.1-0.2 s, because the trailhead
+   chunk itself owns ~0.45-0.5 s, mostly first-use tree and shrub geometry
+   builds. That is queued as task 264, after 263.
 
 Status at run 343: recommendations 1-7 all shipped (manifest and icons,
 safe areas, `persist()` plus the keepsake, service worker, audioSession,
@@ -436,6 +439,21 @@ of the 5 MB pillar. 8 is the only open item.
   read of `boot − js` but mixed the game's JS with a GPU-process wait;
   in-page marks are what separate them. Real levers: the world stream
   (pure JS, scales with CPU) and the first draw's program setup.
+- 2026-11-26 (run 345, task 262): **deferring the far chunks bought less
+  than the marks suggested.** The constructor now builds only the bard's
+  chunk and its neighbours (2-3 of the 8-11 in the window) and the rest
+  stream in one per frame; throttled-phone shots at frame 2 and
+  unthrottled shots at 0.5 s and 3 s match main's, so no visible pop.
+  But `world-stream` fell only from 0.65-0.75 s to ~0.5-0.55 s (one run
+  read 0.76 s; container noise is real). Temporary per-chunk marks
+  showed why: chunk 0 costs ~0.45-0.5 s by itself (terrain 0.05, scatter
+  0.2 with grass 0.07 and shrubs 0.1, **trees 0.33**), chunk 1 ~0.07 s,
+  and each far chunk 0.01-0.03 s. The far chunks were cheap all along
+  because they carry little scatter at that LOD. Chunk 0 is expensive
+  because it is the first to ask for each cached geometry (tree species x
+  `TREE_VARIANTS` = 4, shrub shapes), so it pays for building them.
+  Lesson: an aggregate mark ("the world stream") hides a first-use cost
+  inside "the nearest chunk". Mark per item before choosing the cut.
 
 ## Blocked on human
 

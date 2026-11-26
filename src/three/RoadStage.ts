@@ -595,7 +595,9 @@ export class RoadStage implements Stage {
     // every other sky-driven uniform in this file (uSkyColor, uFogColor,
     // ...), which never get a constructor default either.
 
-    this.world.update(this.journey.s);
+    // Only the bard's own chunk and its neighbours before the first frame;
+    // the rest of the window streams in one chunk per frame (task 262).
+    this.world.update(this.journey.s, true);
     this.syncSubject();
     bootMark('world-stream');
 
