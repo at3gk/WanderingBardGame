@@ -3,6 +3,9 @@
 // as a hit on the walk's tune, read from game state.
 //
 // Usage: npm run build && npx vite preview &  node tools/first-tap.mjs
+// MARKS=1 also prints the boot marks (task 261, src/core/bootMarks.ts):
+// each step of main.ts / RoadStage's constructor / the first frame, with
+// the milliseconds since the step before it.
 //
 // A page-side loop taps the canvas every 40 ms from the instant
 // `window.bard` appears and records three moments (all ms since navigation
@@ -88,7 +91,14 @@ async function measure(page) {
     const kb = performance
       .getEntriesByType('resource')
       .reduce((sum, e) => sum + (e.transferSize || 0), performance.getEntriesByType('navigation')[0]?.transferSize || 0);
-    return { ...window.__firstTap, js, kb: Math.round(kb / 1024) };
+    // Task 261: the game's own boot marks (src/core/bootMarks.ts), each
+    // with the gap since the previous one, so the boot can be split by owner.
+    const boot = performance
+      .getEntriesByType('mark')
+      .filter((m) => m.name.startsWith('boot:'))
+      .sort((a, b) => a.startTime - b.startTime)
+      .map((m, i, all) => [m.name.slice(5), Math.round(m.startTime), Math.round(m.startTime - (i ? all[i - 1].startTime : 0))]);
+    return { ...window.__firstTap, js, kb: Math.round(kb / 1024), marks: boot };
   });
 }
 
@@ -126,6 +136,12 @@ for (const r of rows) {
   for (const [visit, m] of [['first', r.cold], ['return', r.warm]]) {
     console.log(`${r.viewport.padEnd(9)} ${r.profile.padEnd(12)} ${visit.padEnd(6)} ${String(m.kb).padEnd(5)} ${f(m.js).padEnd(7)} ${f(m.boot).padEnd(7)} ${f(m.frame).padEnd(7)} ${f(m.hit)}`);
     if (visit === 'first' && m.hit > 5000) over = true;
+  }
+  if (process.env.MARKS) {
+    for (const [visit, m] of [['first', r.cold], ['return', r.warm]]) {
+      console.log(`  ${r.viewport} ${r.profile} ${visit} boot marks (name @ms +gap):`);
+      console.log('    ' + (m.marks ?? []).map(([n, at, took]) => `${n} @${at} +${took}`).join(' | '));
+    }
   }
   if (!r.warmControlled) console.log(`  (return visit not served by the worker: ${r.sw})`);
   if (r.errors.length) console.log(`  page errors: ${r.errors.join(' | ')}`);

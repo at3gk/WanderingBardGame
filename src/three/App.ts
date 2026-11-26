@@ -27,6 +27,7 @@ import {
 import { createPainterlyGlobals, type PainterlyGlobals } from './painterly';
 import { FinishingPass } from './finishing';
 import { computeFixedSteps, FIXED_STEP_MS } from './fixedStep';
+import { bootMark } from '../core/bootMarks';
 
 /** Anything the app can run. Stages own their own content and disposal. */
 export interface Stage {
@@ -354,6 +355,9 @@ export class App {
     return this.stage;
   }
 
+  /** Frames drawn so far; the first few are boot-marked (task 261). */
+  private framesDrawn = 0;
+
   start(): void {
     if (this.running) return;
     this.running = true;
@@ -374,6 +378,8 @@ export class App {
     const stage = this.stage;
     if (!stage) return;
 
+    const n = this.framesDrawn + 1;
+    if (n <= 4) bootMark(`frame${n}-start`);
     const frameDt = this.clock.getDelta();
     const { steps, accumulatorMs } = computeFixedSteps(this.accumulatorMs, frameDt * 1000);
     this.accumulatorMs = accumulatorMs;
@@ -382,10 +388,15 @@ export class App {
       this.elapsedMs += FIXED_STEP_MS;
       stage.update(FIXED_STEP_MS / 1000, this.elapsedMs / 1000);
     }
+    if (n <= 4) bootMark(`frame${n}-update`);
 
     this.globals.uTime.value = this.elapsedMs / 1000;
     stage.render?.(this.accumulatorMs / FIXED_STEP_MS, frameDt);
+    this.framesDrawn = n;
+    if (n <= 4) bootMark(`frame${n}-prep`);
     this.renderFrame(stage.scene, stage.camera);
+    // The first draws are where every material's shader gets compiled.
+    if (n <= 4) bootMark(`frame${n}-draw`);
   }
 
   /**

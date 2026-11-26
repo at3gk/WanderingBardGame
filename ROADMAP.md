@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 343 was the consolidation (task 260): fixed the letter-fade ladder in DESIGN/README/scaffold.ts (the code's 350 ms floor), refreshed the research (mobile rec 8 = task 261). Next: task 261 piece 1; next consolidation ~353.** **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
+  authoritative, every-run-updated pointer. **Run 344 took task 261 piece 1 (boot marks: the first world stream ~0.7 s and the first draw ~0.9 s own the phone's boot; a further ~1.4 s is headless SwiftShader readback) and queued 262 (stream far chunks after frame 1) and 263 (async shader compile). Next: task 262.** **Run 343 was the consolidation (task 260): fixed the letter-fade ladder in DESIGN/README/scaffold.ts (the code's 350 ms floor), refreshed the research (mobile rec 8 = task 261). Next: task 261 piece 1; next consolidation ~353.** **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
   (task 253, audio/adaptive; fixed the backing clashing with Book Two's
   D and A tunes) and queued 254 (audio/ambience). Run 335 took module 10
   (task 252, core/songMeter) and queued 253 (audio/adaptive). Run 334 took module 9
@@ -8212,6 +8212,44 @@ as before.
     visit under 5 s with margin (≤4.5 s) on the phone profile, no
     change to what the player sees. Re-run first-tap.mjs to prove it.
     Retention check: n/a. Queued run 342.
+    **Piece 1 done run 344.** `src/core/bootMarks.ts` marks main.ts,
+    RoadStage's constructor steps and the first four frames;
+    `MARKS=1 node tools/first-tap.mjs` prints them. 360×740 phone first
+    visit: bundle 1.75 s, main.ts done ~2.9 s, of which the first world
+    stream is 0.65-0.75 s; first draw 0.85-0.94 s (three.js program setup
+    waiting on 21 programs to link); then ~1.4 s of headless-only
+    compositor readback waiting on SwiftShader (Chromium trace:
+    `Commit` → `ReadPixels` → `CommandBuffer::Finish`), not game JS.
+    Piece 2 split into 262 and 263 below. Full numbers in
+    mobile-friendly.md's run-344 finding.
+
+262. **Boot CPU, piece 2a: stream the far chunks in after the first
+    frame.** `RoadStage`'s constructor calls `world.update(s)`, which
+    builds every chunk in the ahead/behind window (8 at 'medium')
+    before frame 1: 0.65-0.75 s on the phone profile. Build only the
+    bard's own chunk and the next one (enough for the first-frame
+    camera) up front and let `WorldStreamer` add the rest at most one
+    per frame afterwards. The far chunks sit 100-400 m out in fog, so no
+    visible pop, but prove it: postcard the trailhead at 0.5 s and 3 s
+    after boot and compare against main's, and keep every existing
+    WorldStreamer test green (add one: after the deferred boot, a few
+    `update` calls reach the same chunk set as today's eager one).
+    Re-run `MARKS=1 node tools/first-tap.mjs`: `world-stream` should
+    drop to ≤0.25 s on the phone profile. Retention check: n/a. Queued
+    run 344.
+
+263. **Boot CPU, piece 2b: compile the shaders before the first draw,
+    off the main thread where the browser allows.** The first draw spends
+    0.85-0.94 s on the phone profile in three.js program setup, mostly
+    waiting for 21 programs to link. three r180 has
+    `renderer.compileAsync(scene, camera)`, which uses
+    KHR_parallel_shader_compile (Chrome Android and desktop) to poll
+    instead of block. Call it after the stage is built and start the loop
+    when it resolves (with a fallback timeout and the sync path if it
+    rejects), so the tap is never blocked by a compile. Measure
+    `frame1-draw` before/after; note that headless SwiftShader may not
+    expose the extension, in which case say so and judge the change by
+    the code path, not a number. Retention check: n/a. Queued run 344.
 
 ## Idea backlog (pull from here when nothing is queued)
 

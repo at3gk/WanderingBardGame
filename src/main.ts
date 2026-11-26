@@ -12,6 +12,11 @@
 import { App } from './three/App';
 import { RoadStage } from './three/RoadStage';
 import type { Phase } from './core/journey';
+import { bootMark } from './core/bootMarks';
+
+// Everything before this line is the bundle arriving and three.js and the
+// game's modules evaluating; the marks after it are ours (task 261).
+bootMark('main');
 
 const host = document.getElementById('game');
 if (!host) throw new Error('no #game host element');
@@ -33,11 +38,13 @@ function fail(message: string, detail?: unknown): void {
 
 try {
   const app = new App(host);
+  bootMark('app');
   // The heads-up chrome lives inside the game element rather than loose in
   // the body, so it inherits the touch and selection rules index.html sets
   // there — a HUD that could be text-selected would turn a mistimed tap
   // into a highlight instead of a note.
   const stage = new RoadStage(app, { hudHost: host });
+  bootMark('stage');
   app.setStage(stage);
   app.start();
 
