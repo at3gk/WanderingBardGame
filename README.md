@@ -89,6 +89,13 @@ poses the game and bakes screenshots for review. Run the automated checks
 with `PLAYWRIGHT_PATH=... node tools/verify-all.mjs`; see
 [`tools/README.md`](./tools/README.md) for setup.
 
+The baked ambient occlusion of the trees, shrubs, rocks, pebbles and log
+is stored in `src/three/world/aoTable.generated.ts` so the first frame
+doesn't wait on it. If you change one of those shapes, `npm test` will say
+the table is stale; regenerate it with
+`UPDATE_AO=1 npx vitest run src/three/world/aoTable.test.ts`. (A stale
+table is never wrong in the game, only slower: a miss bakes live.)
+
 ## Stack
 
 Three.js + TypeScript + Vite. No login, no build step beyond the above, no

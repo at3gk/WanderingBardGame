@@ -849,7 +849,7 @@ interface ScatterKind {
 /** Seeds for the four grass silhouettes and the four ferns. Arbitrary primes. */
 const GRASS_SEEDS = [7, 11, 19, 23];
 const FERN_SEEDS = [9, 13, 29, 37];
-const PEBBLE_SEEDS = [41, 53, 67];
+export const PEBBLE_SEEDS = [41, 53, 67];
 const PUDDLE_SEEDS = [71, 79, 83];
 /*
  * Shrubs and rocks get silhouettes of their own (task 149, run 91). Grass
@@ -861,8 +861,10 @@ const PUDDLE_SEEDS = [71, 79, 83];
  * untouched (the shrub's dark mass is load-bearing for the noon gate);
  * only the SHAPE now varies.
  */
-const SHRUB_SEEDS = [23, 31, 43, 59];
-const ROCK_SEEDS = [17, 47, 61];
+export const SHRUB_SEEDS = [23, 31, 43, 59];
+export const ROCK_SEEDS = [17, 47, 61];
+/** The fallen log's one seed. */
+export const LOG_SEED = 29;
 
 const SCATTER_KINDS: ScatterKind[] = [
   /**
@@ -1214,7 +1216,7 @@ const SCATTER_KINDS: ScatterKind[] = [
   },
   {
     key: 'log',
-    geometry: () => cachedGeometry('log', () => fallenLogGeometry(29)),
+    geometry: () => cachedGeometry('log', () => fallenLogGeometry(LOG_SEED)),
     perSquareMetre: 0.006,
     densityKey: 'log',
     spread: 44,
@@ -1245,9 +1247,13 @@ const SCATTER_KINDS: ScatterKind[] = [
   },
 ];
 
-const TREE_KINDS = ['conifer', 'broadleaf', 'willow'] as const;
+export const TREE_KINDS = ['conifer', 'broadleaf', 'willow'] as const;
 /** Distinct base shapes per species. Four is enough to stop a wood repeating. */
-const TREE_VARIANTS = 4;
+export const TREE_VARIANTS = 4;
+/** The geometry seed of one (species, variant) base shape. */
+export function treeSeed(kind: string, variant: number): number {
+  return 1000 + variant * 37 + TREE_KINDS.indexOf(kind as never) * 911;
+}
 
 /**
  * Landmarks: the one thing in the world placed for the walk.
@@ -3830,7 +3836,7 @@ export class WorldStreamer {
         treeGeometry(kind, {
           trunkColor: palette.trunk,
           canopyColor: palette.canopyVariant,
-          seed: 1000 + variant * 37 + TREE_KINDS.indexOf(kind as never) * 911,
+          seed: treeSeed(kind, variant),
         }),
       );
       const mesh = new InstancedMesh(geometry, this.treeMaterial(kind), list.length);
