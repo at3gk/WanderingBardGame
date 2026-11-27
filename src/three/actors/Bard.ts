@@ -1068,7 +1068,7 @@ function discGeometry(radius: number, sides: number): BufferGeometry {
  * and a drum and a lute of different lengths hang from the same pivot
  * without each needing its own offset.
  */
-interface InstrumentParts {
+export interface InstrumentParts {
   /** The timber. Carries the name every headless check looks the shape up by. */
   body: BufferGeometry;
   /** Soundhole and bridge. */
@@ -1077,7 +1077,7 @@ interface InstrumentParts {
   bright: BufferGeometry | null;
 }
 
-function instrumentGeometry(kind: string): InstrumentParts {
+export function instrumentGeometry(kind: string): InstrumentParts {
   const parts: BufferGeometry[] = [];
   const dark: BufferGeometry[] = [];
   const bright: BufferGeometry[] = [];
