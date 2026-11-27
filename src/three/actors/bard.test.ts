@@ -17,7 +17,8 @@
  */
 import { Box3, BufferAttribute, Matrix4, Mesh, Object3D, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { Bard, SITTING_SEAT_HEIGHT_M } from './Bard';
+import { Bard, INSTRUMENT_SHAPES, SITTING_SEAT_HEIGHT_M, instrumentShape } from './Bard';
+import { INSTRUMENTS, instrumentById } from '../../core/instruments';
 import { createPainterlyGlobals } from '../painterly';
 
 /** A bard, settled into a pose, with every matrix up to date. */
@@ -630,5 +631,43 @@ describe('the slung instrument', () => {
     // hat brim's screen box however far down the bowl has gone.
     expect(Math.abs(pegbox.x - foot.x)).toBeGreaterThan(0.38);
     expect(pegbox.y - foot.y).toBeGreaterThan(0.3);
+  });
+});
+
+describe('the carried body matches the instrument', () => {
+  it('gives every instrument in the game an intended shape', () => {
+    for (const instrument of INSTRUMENTS) {
+      expect(INSTRUMENT_SHAPES[instrument.id], instrument.id).toBeDefined();
+    }
+  });
+
+  it('draws the reed flute as a flute and the hand drum as a drum', () => {
+    expect(instrumentShape('reed-flute')).toBe('flute');
+    expect(instrumentShape('hand-drum')).toBe('drum');
+    expect(instrumentShape('lute')).toBe('lute');
+  });
+
+  it('puts that body in the bard\'s hands when the instrument is swapped', () => {
+    const bard = new Bard(createPainterlyGlobals());
+    const size = (): Vector3 => {
+      let body: Mesh | null = null;
+      bard.object.traverse((child) => {
+        if (child instanceof Mesh && child.name === 'bard-instrument') body = child;
+      });
+      const mesh = body as unknown as Mesh;
+      mesh.geometry.computeBoundingBox();
+      return mesh.geometry.boundingBox!.getSize(new Vector3());
+    };
+    bard.setInstrument(instrumentById('reed-flute'));
+    const flute = size();
+    // A pipe: long and thin in both other directions.
+    expect(flute.y).toBeGreaterThan(0.6);
+    expect(Math.max(flute.x, flute.z)).toBeLessThan(0.08);
+    bard.setInstrument(instrumentById('hand-drum'));
+    const drum = size();
+    // A frame drum: wide and flat.
+    expect(Math.min(drum.x, drum.z)).toBeGreaterThan(0.3);
+    expect(drum.y).toBeLessThan(0.15);
+    bard.dispose();
   });
 });

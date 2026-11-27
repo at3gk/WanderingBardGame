@@ -1077,12 +1077,38 @@ export interface InstrumentParts {
   bright: BufferGeometry | null;
 }
 
-export function instrumentGeometry(kind: string): InstrumentParts {
+/** The three bodies the bard can carry. */
+export type InstrumentShape = 'lute' | 'flute' | 'drum';
+
+/**
+ * Which body each instrument in `core/instruments.ts` is drawn with, keyed by
+ * its real id. Until run 349 the shape was picked by string guesses
+ * (`'reedflute'`, `'bodhran'`) that matched no id the game uses, so the reed
+ * flute and the hand drum were both drawn as lutes. The harp, hurdy-gurdy and
+ * bells are lute-shaped on purpose for now (their own bodies are a separate
+ * art question); `bard.test.ts` checks every instrument has an entry here so
+ * a new one cannot silently fall through.
+ */
+export const INSTRUMENT_SHAPES: Readonly<Record<string, InstrumentShape>> = {
+  lute: 'lute',
+  'reed-flute': 'flute',
+  'hand-drum': 'drum',
+  harp: 'lute',
+  'hurdy-gurdy': 'lute',
+  bells: 'lute',
+};
+
+/** The body for an instrument id; unknown ids get the lute. */
+export function instrumentShape(id: string): InstrumentShape {
+  return INSTRUMENT_SHAPES[id] ?? 'lute';
+}
+
+export function instrumentGeometry(shape: InstrumentShape): InstrumentParts {
   const parts: BufferGeometry[] = [];
   const dark: BufferGeometry[] = [];
   const bright: BufferGeometry[] = [];
-  const isDrum = kind === 'drum' || kind === 'bodhran';
-  const isFlute = kind === 'flute' || kind === 'reedflute' || kind === 'pipe';
+  const isDrum = shape === 'drum';
+  const isFlute = shape === 'flute';
   let length: number;
 
   if (isFlute) {
@@ -1825,7 +1851,7 @@ export class Bard {
     const id = instrument?.id ?? 'lute';
     const color = instrument?.color ?? 0xb5773f;
     const accent = instrument?.accent ?? 0xe8c98a;
-    const parts = instrumentGeometry(id);
+    const parts = instrumentGeometry(instrumentShape(id));
 
     /**
      * The timber.
