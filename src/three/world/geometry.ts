@@ -40,6 +40,7 @@
 
 import { BufferAttribute, BufferGeometry } from 'three';
 import { mulberry32, type Rand } from '../../core/rng';
+import { aoKey, aoRecorder, countLiveBake, storedAO } from './aoCache';
 
 /**
  * Attach an `aSway` attribute derived from height.
@@ -317,6 +318,22 @@ export function bakeVertexAO(
   if (!geometry.attributes.normal) geometry.computeVertexNormals();
   const normal = geometry.attributes.normal as BufferAttribute;
 
+  // Dev-time bakes first (task 264, aoCache.ts): a hit is the same answer
+  // without the rays. The key covers everything the result depends on, so a
+  // changed shape or setting misses and bakes live below.
+  const record = aoRecorder();
+  const key = aoKey(position.array, normal.array, geometry.index ? geometry.index.array : null, [
+    samples,
+    maxDist,
+    strength,
+    options.seed ?? 1,
+    AO_FLOOR,
+    AO_RAY_EPSILON,
+  ]);
+  const stored = record ? null : storedAO(key, count);
+  if (stored) return applyAO(geometry, stored);
+  countLiveBake();
+
   // Triangles, flattened. Indexed geometries are rare in this file but the
   // bard's parts are built by hand elsewhere, so read through the index when
   // one is present rather than quietly baking the wrong triangles.
@@ -388,17 +405,7 @@ export function bakeVertexAO(
   const rand = mulberry32((options.seed ?? 1) >>> 0);
   const candidates = new Int32Array(triCount);
 
-  const existing = geometry.attributes.color as BufferAttribute | undefined;
-  const colors = new Float32Array(count * 3);
-  if (existing) {
-    for (let i = 0; i < count; i++) {
-      colors[i * 3] = existing.getX(i);
-      colors[i * 3 + 1] = existing.getY(i);
-      colors[i * 3 + 2] = existing.getZ(i);
-    }
-  } else {
-    colors.fill(1);
-  }
+  const factors = new Float64Array(count);
 
   for (let i = 0; i < count; i++) {
     const nx = normal.getX(i);
@@ -517,12 +524,33 @@ export function bakeVertexAO(
       if (nearest < maxDist) occluded += 1 - nearest / maxDist;
     }
 
-    const ao = Math.max(floor, 1 - strength * (occluded / samples));
+    factors[i] = Math.max(floor, 1 - strength * (occluded / samples));
+  }
+
+  if (record) record(key, factors);
+  return applyAO(geometry, factors);
+}
+
+/** Multiply per-vertex AO factors into the colour attribute (white if none). */
+function applyAO(geometry: BufferGeometry, factors: ArrayLike<number>): BufferGeometry {
+  const count = factors.length;
+  const existing = geometry.attributes.color as BufferAttribute | undefined;
+  const colors = new Float32Array(count * 3);
+  if (existing) {
+    for (let i = 0; i < count; i++) {
+      colors[i * 3] = existing.getX(i);
+      colors[i * 3 + 1] = existing.getY(i);
+      colors[i * 3 + 2] = existing.getZ(i);
+    }
+  } else {
+    colors.fill(1);
+  }
+  for (let i = 0; i < count; i++) {
+    const ao = factors[i];
     colors[i * 3] *= ao;
     colors[i * 3 + 1] *= ao;
     colors[i * 3 + 2] *= ao;
   }
-
   geometry.setAttribute('color', new BufferAttribute(colors, 3));
   return geometry;
 }

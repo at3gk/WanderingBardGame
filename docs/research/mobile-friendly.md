@@ -471,6 +471,21 @@ of the 5 MB pillar. 8 is the only open item.
   unmeasured here; it belongs on the human playtest list. Lesson: a
   shader-compile fix is judged on real hardware or by the code path,
   and a headless number can only prove there was no regression.
+- 2026-11-27 (run 347, task 264): **the trailhead's first-use cost was
+  the AO bake, and a deterministic bake can be done at dev time.** Timed
+  in Node: `bakeVertexAO` is ~90% of building a tree (a broadleaf ~10 ms
+  warm, ×4 variants ×2-3 species on chunk 0, ×4 on the phone profile).
+  Speeding the ray caster up was tried first (a plane pre-reject and a
+  uniform grid, both exact): only ~10% in a fair same-process A/B, because
+  a broadleaf vertex keeps ~15 candidate triangles out of 220 and the work
+  is already small per vertex; reverted. What worked: the bake's answers
+  for the 23 scatter/tree shapes are stored in `aoTable.generated.ts`
+  (20 kB raw, 16-bit), keyed by a hash of positions + normals + index +
+  every bake parameter, so a changed shape misses and bakes live (never
+  wrong, only slow), and a test fails when the table is stale. Phone
+  profile `world-stream` 0.50-0.55 s → 0.27-0.36 s (target 0.25 s, not
+  quite). Lesson: before optimising a hot deterministic function, ask
+  whether its output can be shipped instead of computed.
 
 ## Blocked on human
 
