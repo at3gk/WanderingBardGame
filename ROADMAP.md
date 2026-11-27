@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 347 took task 264 (the trailhead's first-use cost was the AO bake: the 23 scatter/tree shapes' AO now ships in a hash-keyed dev-time table, `world-stream` 0.5 s → ~0.3 s on the phone profile) and queued 265 (same for the Bard). Next: task 265.** **Run 346 took task 263 (shader warm-up with compileAsync before the loop, only where KHR_parallel_shader_compile exists; headless can't measure it, code path verified with the extension faked). Next: task 264.** **Run 345 took task 262 (far chunks deferred past frame 1, no visible pop; saved only ~0.1-0.2 s because the trailhead chunk's first-use tree geometry owns ~0.33 s) and queued 264 (cheapen that). Next: task 263.** **Run 344 took task 261 piece 1 (boot marks: the first world stream ~0.7 s and the first draw ~0.9 s own the phone's boot; a further ~1.4 s is headless SwiftShader readback) and queued 262 (stream far chunks after frame 1) and 263 (async shader compile). Next: task 262.** **Run 343 was the consolidation (task 260): fixed the letter-fade ladder in DESIGN/README/scaffold.ts (the code's 350 ms floor), refreshed the research (mobile rec 8 = task 261). Next: task 261 piece 1; next consolidation ~353.** **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
+  authoritative, every-run-updated pointer. **Run 348 took task 265 (the Bard's cloak/hat/instrument AO now in the table; phone `bard` mark 0.09-0.14 s → 0.03-0.055 s; pillar 1's remaining headless gap is mostly SwiftShader) and found the reed flute and hand drum are drawn as lutes (queued 266). Next: task 266.** **Run 347 took task 264 (the trailhead's first-use cost was the AO bake: the 23 scatter/tree shapes' AO now ships in a hash-keyed dev-time table, `world-stream` 0.5 s → ~0.3 s on the phone profile) and queued 265 (same for the Bard). Next: task 265.** **Run 346 took task 263 (shader warm-up with compileAsync before the loop, only where KHR_parallel_shader_compile exists; headless can't measure it, code path verified with the extension faked). Next: task 264.** **Run 345 took task 262 (far chunks deferred past frame 1, no visible pop; saved only ~0.1-0.2 s because the trailhead chunk's first-use tree geometry owns ~0.33 s) and queued 264 (cheapen that). Next: task 263.** **Run 344 took task 261 piece 1 (boot marks: the first world stream ~0.7 s and the first draw ~0.9 s own the phone's boot; a further ~1.4 s is headless SwiftShader readback) and queued 262 (stream far chunks after frame 1) and 263 (async shader compile). Next: task 262.** **Run 343 was the consolidation (task 260): fixed the letter-fade ladder in DESIGN/README/scaffold.ts (the code's 350 ms floor), refreshed the research (mobile rec 8 = task 261). Next: task 261 piece 1; next consolidation ~353.** **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
   (task 253, audio/adaptive; fixed the backing clashing with Book Two's
   D and A tunes) and queued 254 (audio/ambience). Run 335 took module 10
   (task 252, core/songMeter) and queued 253 (audio/adaptive). Run 334 took module 9
@@ -8315,6 +8315,40 @@ as before.
     remaining gap is the game's or headless SwiftShader's (frame 1 draw
     ~0.8 s and the ~1.3 s compositor wait). Retention check: n/a. Queued
     run 347.
+    **Done run 348.** The Bard bakes only three parts (cloak, hat,
+    instrument timber); none depends on road or colours. They are in
+    `aoTable.test.ts`'s SOURCES (`new Bard(...)` plus
+    `instrumentGeometry` for all three body families, now exported), 5
+    new entries. New test: building the bard and swapping through every
+    instrument casts zero AO rays. Travellers bake nothing (checked).
+    Phone profile `bard` mark 0.09-0.14 s → 0.03-0.055 s (target 0.03
+    met in one of three runs; the remainder is meshes/materials).
+    **Pillar 1 verdict (headless):** after this, main.ts ends ~2.3 s
+    into the phone first visit (1.8 s of it is bundle fetch+parse on the
+    throttled link), then frame-1 draw 0.6-0.85 s (shader link; the
+    compileAsync warm-up skips in headless, no KHR_parallel_shader_compile)
+    and ~0.9-1.1 s before frame 2 (SwiftShader compositor wait, run 344).
+    So the remaining gap over 5 s is mostly headless GPU emulation, not
+    the game's JS; only a real phone can settle it (Needs human
+    playtest). First-tap phone first visit 5.9-6.1 s this run.
+    Found while here: **the reed flute and hand drum are drawn as a
+    lute** (queued 266).
+
+266. **The bard carries the instrument he is playing.**
+    `Bard.ts instrumentGeometry` picks the flute shape for ids `flute`,
+    `reedflute`, `pipe` and the drum shape for `drum`, `bodhran`, but
+    `core/instruments.ts` names them `reed-flute` and `hand-drum`, so both
+    fall through to the lute body. Map the real ids (better: a typed
+    `shapeFamily` lookup keyed by `InstrumentId`, with a test that every
+    entry of `INSTRUMENTS` maps to an intended family so a new instrument
+    can't silently become a lute). The flute and drum shapes have
+    probably never been on screen: pose all three in the walk, busk and
+    rest cameras with the existing tools (`tools/shot.mjs`), check the
+    carrying offsets don't bury them in the cloak or float them off the
+    hand, and fix offsets only as far as needed. Harp, hurdy-gurdy and
+    bells staying lute-shaped is a separate, bigger art question: note
+    it, don't solve it here. Retention check: n/a (a returning player who
+    unlocked the flute finally sees it). Queued run 348.
 
 ## Idea backlog (pull from here when nothing is queued)
 

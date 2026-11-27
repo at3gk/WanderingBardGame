@@ -34,12 +34,20 @@ import {
 } from './WorldStreamer';
 import { createPainterlyGlobals } from '../painterly';
 import { generateRoad } from '../../core/road';
+import { Bard, instrumentGeometry } from '../actors/Bard';
+import { INSTRUMENTS } from '../../core/instruments';
 
 /**
  * Every shape the world streamer bakes in its scatter and ordinary trees:
  * the first-use builds the trailhead chunk pays before frame 1. Landmarks
  * and stop dressings are not here: they stand 140 m out and later, and
  * bake live when their chunk streams in.
+ *
+ * Plus the Bard's three baked parts (task 265): the cloak, the hat and the
+ * instrument's timber. None of them depends on the road or the colours, so
+ * one entry each serves every boot. The instrument body has three shapes
+ * (lute-family, flute-family, drum-family); all three are listed so a swap
+ * mid-session never casts rays either.
  */
 const SOURCES: Array<() => void> = [
   ...TREE_KINDS.flatMap((kind) =>
@@ -51,6 +59,8 @@ const SOURCES: Array<() => void> = [
   ...ROCK_SEEDS.map((seed) => () => void rockGeometry(seed)),
   ...PEBBLE_SEEDS.map((seed) => () => void pebbleGeometry(seed)),
   () => void fallenLogGeometry(LOG_SEED),
+  () => void new Bard(createPainterlyGlobals()),
+  ...['lute', 'flute', 'drum'].map((kind) => () => void instrumentGeometry(kind)),
 ];
 
 function recordAll(): Map<string, Float64Array> {
@@ -170,5 +180,13 @@ describe('aoTable.generated', () => {
       world.update(0, true);
       expect(liveBakeCount() - before, `road seed ${seed}`).toBe(0);
     }
+  });
+
+  it('the bard boots, and changes into every instrument, without casting AO rays', () => {
+    const before = liveBakeCount();
+    const bard = new Bard(createPainterlyGlobals());
+    for (const instrument of INSTRUMENTS) bard.setInstrument(instrument);
+    bard.setInstrument(null);
+    expect(liveBakeCount() - before).toBe(0);
   });
 });
