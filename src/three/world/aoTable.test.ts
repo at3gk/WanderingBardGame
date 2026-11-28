@@ -60,7 +60,7 @@ const SOURCES: Array<() => void> = [
   ...PEBBLE_SEEDS.map((seed) => () => void pebbleGeometry(seed)),
   () => void fallenLogGeometry(LOG_SEED),
   () => void new Bard(createPainterlyGlobals()),
-  ...(['lute', 'flute', 'drum'] as const).map((shape) => () => void instrumentGeometry(shape)),
+  ...(['lute', 'flute', 'drum', 'harp'] as const).map((shape) => () => void instrumentGeometry(shape)),
 ];
 
 function recordAll(): Map<string, Float64Array> {

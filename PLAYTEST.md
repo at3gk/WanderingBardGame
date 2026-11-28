@@ -112,6 +112,14 @@ practise it):
 - [ ] Does the top line ("tap more notes — a tune needs 16", then "tap N
   more to finish the bar") read as friendly guidance, not a countdown?
 
+**Instruments in hand** (runs 349-351; unlock them from the instrument shelf):
+
+- [ ] The reed flute busking: does the bard read as playing a flute
+  (pipe at the face, out to the side), or does the pipe get lost against
+  the sleeve?
+- [ ] The hand drum and the small harp, walking (on his back) and at
+  camp (in his lap): do they read as a drum and a harp at phone size?
+
 **Letting a tune go** (with a few of your own tunes saved):
 
 - [ ] Is the small × beside each of your tunes noticed but not tempting?
