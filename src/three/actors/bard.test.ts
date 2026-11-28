@@ -671,3 +671,96 @@ describe('the carried body matches the instrument', () => {
     bard.dispose();
   });
 });
+
+/**
+ * The flute is played at the lips (run 350, task 267).
+ *
+ * Run 349 put a pipe in his hands and busking showed it held at the hip in
+ * the lute's strumming carry. These pin the flute's own carry against world
+ * positions, the same way the lute's is pinned: the mouthpiece at the mouth,
+ * both hands on the pipe through a whole strum cycle (a flute is not
+ * strummed, so they must not slide off it), and nothing up past the brim.
+ */
+describe('the flute is played at the lips', () => {
+  function fluting(): Bard {
+    const bard = new Bard(createPainterlyGlobals());
+    bard.setInstrument(instrumentById('reed-flute'));
+    bard.setPose('playing', 0.01);
+    bard.settlePose();
+    bard.update(1 / 60, 0);
+    bard.update(1 / 60, 0);
+    bard.object.updateMatrixWorld(true);
+    return bard;
+  }
+
+  function mouthOf(bard: Bard): Vector3 {
+    let mouth: Mesh | null = null;
+    bard.object.traverse((child) => {
+      if (child instanceof Mesh && child.name === 'bard-mouth') mouth = child;
+    });
+    expect(mouth).not.toBeNull();
+    return (mouth as unknown as Mesh).getWorldPosition(new Vector3());
+  }
+
+  /** Nearest distance from a hand to the pipe's axis, and where on it. */
+  function onPipe(bard: Bard, arm: string): { distance: number; t: number } {
+    const pivot = part(bard, 'instrumentPivot');
+    const hand = worldPoint(part(bard, arm), new Vector3(0, -0.43, 0));
+    let distance = Infinity;
+    let at = 0;
+    for (let t = -0.33; t <= 0.33; t += 0.005) {
+      const d = hand.distanceTo(worldPoint(pivot, new Vector3(0, t, 0)));
+      if (d < distance) {
+        distance = d;
+        at = t;
+      }
+    }
+    return { distance, t: at };
+  }
+
+  it('puts the mouthpiece at his mouth', () => {
+    const bard = fluting();
+    const mouthpiece = worldPoint(part(bard, 'instrumentPivot'), new Vector3(0, 0.31, 0));
+    expect(mouthpiece.distanceTo(mouthOf(bard))).toBeLessThan(0.06);
+    bard.dispose();
+  });
+
+  it('does not put the lute at his mouth, so the check can fail', () => {
+    const bard = seated('playing');
+    const top = worldPoint(part(bard, 'instrumentPivot'), new Vector3(0, 0.31, 0));
+    // The lute's pegbox rises past his face on the strumming side, 15 cm
+    // off the mouth: well outside the flute's 6 cm, which is what matters.
+    expect(top.distanceTo(mouthOf(bard))).toBeGreaterThan(0.12);
+    bard.dispose();
+  });
+
+  it('keeps both hands on the pipe through a whole cycle, left above right', () => {
+    const bard = fluting();
+    for (let step = 0; step < 24; step++) {
+      bard.update(1 / 2.1 / 24, 0);
+      bard.object.updateMatrixWorld(true);
+      const left = onPipe(bard, 'leftArm');
+      const right = onPipe(bard, 'rightArm');
+      expect(left.distance).toBeLessThan(0.05);
+      expect(right.distance).toBeLessThan(0.05);
+      // Left hand up by the mouthpiece, right among the lower holes, a
+      // hand's width apart at least.
+      expect(left.t - right.t).toBeGreaterThan(0.12);
+    }
+    bard.dispose();
+  });
+
+  it('runs the pipe down and away from his face, clear of the hat brim', () => {
+    const bard = fluting();
+    const pivot = part(bard, 'instrumentPivot');
+    const mouthpiece = worldPoint(pivot, new Vector3(0, 0.33, 0));
+    const foot = worldPoint(pivot, new Vector3(0, -0.33, 0));
+    expect(mouthpiece.y).toBeLessThan(1.05);
+    expect(foot.y).toBeLessThan(mouthpiece.y);
+    // Out from the body rather than straight down his chest: the foot is
+    // at least a forearm's length from the mouthpiece across the ground.
+    const across = Math.hypot(foot.x - mouthpiece.x, foot.z - mouthpiece.z);
+    expect(across).toBeGreaterThan(0.3);
+    bard.dispose();
+  });
+});

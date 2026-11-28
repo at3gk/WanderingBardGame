@@ -282,6 +282,40 @@ const PLAY_CARRY_ROT: readonly [number, number, number] = [0.25, -0.6, 0.566];
 const PLAY_CARRY_POS: readonly [number, number, number] = [0.28, 0.70 - SHOULDER_Y, 0.25];
 
 /**
+ * The flute's playing carry, which is not the lute's (run 350, task 267).
+ *
+ * Run 349 finally drew the reed flute as a pipe, and busking showed it held
+ * where the lute is strummed: at the right hip, a short stub by the hand. A
+ * flute is played at the lips, so it gets its own carry, used only while
+ * playing (slung and lap carries are shared and read fine for a pipe).
+ *
+ * Solved rather than dialled, in torso space, from three measured points: the
+ * mouth (0.004, 0.974, 0.282 in the playing pose) and the two shoulders.
+ * The mouthpiece end of the pipe (local +Y 0.33) sits 3 cm in front of the
+ * mouth, and the pipe runs out sideways, 85 degrees off his heading and
+ * 15 below level, on the same side as the lute's playing carry (the side
+ * the busk camera stands on). Swept over heading and pitch, then rendered at
+ * the busk camera for four candidates: every steeper carry (35-52 degrees
+ * down) put the rigid arm along the pipe on screen, so the pipe showed as a
+ * stub past the hand, the lute's old "arm standing on the instrument" fault.
+ * Near level, the pipe runs *above* the arm from the face out past the hand
+ * with its finger holes showing, which is what a flute looks like from
+ * behind. Both 0.43 m arms still meet it: the left hand about 18 cm down
+ * from the mouthpiece, the right about 52 cm (just past the lowest hole).
+ * The roll turns the finger holes up and back toward that camera.
+ *
+ * These are the final Euler angles (the lute's half-turn spin is already in
+ * them), and the `y` is again an offset from `SHOULDER_Y`.
+ */
+const FLUTE_CARRY_ROT: readonly [number, number, number] = [-2.168, 0.265, 1.647];
+const FLUTE_CARRY_POS: readonly [number, number, number] = [0.322, 0.889 - SHOULDER_Y, 0.340];
+/** Where on the pipe (its local +Y) each hand goes while the flute is played. */
+const FLUTE_UPPER_GRIP_MIN = 0.08;
+const FLUTE_UPPER_GRIP_MAX = 0.22;
+const FLUTE_LOWER_GRIP_MIN = -0.25;
+const FLUTE_LOWER_GRIP_MAX = -0.1;
+
+/**
  * How far the seated bard's boots reach below his own origin.
  *
  * This is the whole contract between the sitting pose and whatever the bard
@@ -1252,6 +1286,8 @@ export class Bard {
   /** Knees, in the same left-then-right order as `boots`. */
   private readonly knees: Group[] = [];
   private readonly instrumentPivot = new Group();
+  /** The body being carried, which picks the playing carry. */
+  private shape: InstrumentShape = 'lute';
   /** Timber, dark facets and strings. Swapped together, disposed together. */
   private readonly instrumentMeshes: Mesh[] = [];
   /** Ankles, so the foot can stay flatter than the leg it hangs off. */
@@ -1851,7 +1887,8 @@ export class Bard {
     const id = instrument?.id ?? 'lute';
     const color = instrument?.color ?? 0xb5773f;
     const accent = instrument?.accent ?? 0xe8c98a;
-    const parts = instrumentGeometry(instrumentShape(id));
+    this.shape = instrumentShape(id);
+    const parts = instrumentGeometry(this.shape);
 
     /**
      * The timber.
@@ -2313,7 +2350,11 @@ export class Bard {
     // material's rim went up by half for the same reason the lute's did.
     const strumCycle = this.elapsed * 2.1;
     const stroke = Math.abs((strumCycle - Math.floor(strumCycle)) * 2 - 1) * 2 - 1;
-    const strumSwing = stroke * playAmount * (0.6 + this.warmth * 0.4);
+    // A flute is not strummed: the shoulder stays put so the hands, solved
+    // onto the pipe below, stay on the finger holes instead of sliding along.
+    const flute = this.shape === 'flute';
+    const strumSwing = flute ? 0 : stroke * playAmount * (0.6 + this.warmth * 0.4);
+    const carryPos = flute ? FLUTE_CARRY_POS : PLAY_CARRY_POS;
     this.rightArm.position.set(
       ARM_ROOT_X,
       // A centimetre and a half more lift than before. The carry was
@@ -2359,7 +2400,7 @@ export class Bard {
     // toward them, and that lean is most of what says "resting" rather than
     // "balanced there".
     this.instrumentPivot.position.set(
-      playAmount * PLAY_CARRY_POS[0] - slung * 0.03 + lap * LAP_X,
+      playAmount * carryPos[0] - slung * 0.03 + lap * LAP_X,
       // The lap term came up seven millimetres and forward eighteen, which
       // is the whole of the "the lute sinks into his knee" report. Measured
       // rather than eyeballed: with the seated pose settled, sixteen of the
@@ -2381,7 +2422,7 @@ export class Bard {
       // instrument's projected length unchanged — 184 px on the diagonal
       // against the old 187, so the neck still lies across the frame rather
       // than pointing at the lens.
-      SHOULDER_Y + playAmount * PLAY_CARRY_POS[1] - slung * 0.25 - lap * LAP_Y,
+      SHOULDER_Y + playAmount * carryPos[1] - slung * 0.25 - lap * LAP_Y,
       // Six centimetres further off the spine than it hung, and the reason is
       // a depth test rather than a taste. The old body was four boxes, so its
       // rear face was a flat slab a hand's width across sitting at one depth;
@@ -2391,7 +2432,7 @@ export class Bard {
       // ninety per cent of it inside the cloth. Measured: at 0.285 the
       // instrument projected 100 px wide against a cloak 138 px wide and ten
       // of those pixels were outside it.
-      playAmount * PLAY_CARRY_POS[2] - slung * 0.345 + lap * LAP_Z,
+      playAmount * carryPos[2] - slung * 0.345 + lap * LAP_Z,
     );
     // Thirty degrees across the back, not forty. The steeper tilt threw the
     // bowl clear of the cloak's outline with daylight showing between the
@@ -2456,14 +2497,17 @@ export class Bard {
     // like a knapsack, which is a failure this file already records. Slung,
     // the identification is carried by the outline and by the bowl's five
     // staves instead.
+    const playRot = flute
+      ? FLUTE_CARRY_ROT
+      : [PLAY_CARRY_ROT[0], PLAY_CARRY_ROT[1] + Math.PI, -PLAY_CARRY_ROT[2]];
     this.instrumentPivot.rotation.set(
-      this.strum * 0.07 + slung * 0.15 + playAmount * PLAY_CARRY_ROT[0] + lap * LAP_ROT[0],
-      playAmount * (PLAY_CARRY_ROT[1] + Math.PI) + slung * 0.08 + lap * LAP_ROT[1],
+      this.strum * (flute ? 0.02 : 0.07) + slung * 0.15 + playAmount * playRot[0] + lap * LAP_ROT[0],
+      playAmount * playRot[1] + slung * 0.08 + lap * LAP_ROT[1],
       // 0.76 rather than 0.52: the other half of the pegbox clearance above.
       // Rolling the neck flatter across the back moves the top of it sideways
       // out of the head's screen box rather than only downward, which is what
       // buys the clearance without dropping the bowl toward the cloak's hem.
-      -slung * 0.76 - playAmount * PLAY_CARRY_ROT[2] + lap * LAP_ROT[2],
+      -slung * 0.76 + playAmount * playRot[2] + lap * LAP_ROT[2],
     );
 
     // Both hands go on the instrument, and both are solved rather than
@@ -2472,8 +2516,19 @@ export class Bard {
     // only while playing, because the seated bard's right hand belongs on the
     // log beside him and not on the strings.
     const fret = Math.min(1, lap + playAmount);
-    if (fret > 0) this.gripLine(this.leftArm, NECK_GRIP_MIN, NECK_GRIP_MAX, fret, true, 0.035);
-    if (playAmount > 0) {
+    // Playing the flute, the left hand takes the pipe up by the mouthpiece
+    // and the right takes the lower holes; neither strums.
+    const fluteHands = flute && playAmount >= lap;
+    if (fret > 0) {
+      if (fluteHands) {
+        this.gripLine(this.leftArm, FLUTE_UPPER_GRIP_MIN, FLUTE_UPPER_GRIP_MAX, fret, true, 0.03);
+      } else {
+        this.gripLine(this.leftArm, NECK_GRIP_MIN, NECK_GRIP_MAX, fret, true, 0.035);
+      }
+    }
+    if (playAmount > 0 && fluteHands) {
+      this.gripLine(this.rightArm, FLUTE_LOWER_GRIP_MIN, FLUTE_LOWER_GRIP_MAX, playAmount, false, 0.03);
+    } else if (playAmount > 0) {
       // The strum grip is a moving target rather than a range: the triangle
       // above walks it from the bridge end of the soundboard to the rose and
       // back, and the pair of bounds is kept an inch wide so the solve still
@@ -2495,8 +2550,11 @@ export class Bard {
     // Smaller than it was, because the sweep above now carries the gesture.
     // At 0.5 a full-strength pluck threw the hand thirty centimetres clear of
     // an instrument the rest of this file works hard to keep it on.
-    this.rightArm.rotation.x -= this.strum * 0.24;
-    this.rightArm.rotation.z -= this.strum * 0.1;
+    // On the flute the note is a finger lifting, not a stroke: a kick this
+    // size would throw the hand off the pipe, so it is a twitch there.
+    const kick = flute ? 0.15 : 1;
+    this.rightArm.rotation.x -= this.strum * 0.24 * kick;
+    this.rightArm.rotation.z -= this.strum * 0.1 * kick;
   }
 
   /**
