@@ -1111,23 +1111,23 @@ export interface InstrumentParts {
   bright: BufferGeometry | null;
 }
 
-/** The three bodies the bard can carry. */
-export type InstrumentShape = 'lute' | 'flute' | 'drum';
+/** The bodies the bard can carry. */
+export type InstrumentShape = 'lute' | 'flute' | 'drum' | 'harp';
 
 /**
  * Which body each instrument in `core/instruments.ts` is drawn with, keyed by
  * its real id. Until run 349 the shape was picked by string guesses
  * (`'reedflute'`, `'bodhran'`) that matched no id the game uses, so the reed
- * flute and the hand drum were both drawn as lutes. The harp, hurdy-gurdy and
- * bells are lute-shaped on purpose for now (their own bodies are a separate
- * art question); `bard.test.ts` checks every instrument has an entry here so
- * a new one cannot silently fall through.
+ * flute and the hand drum were both drawn as lutes. The harp has its own
+ * frame since run 351; the hurdy-gurdy and bells are still lute-shaped (their
+ * own bodies are queued one per run); `bard.test.ts` checks every instrument
+ * has an entry here so a new one cannot silently fall through.
  */
 export const INSTRUMENT_SHAPES: Readonly<Record<string, InstrumentShape>> = {
   lute: 'lute',
   'reed-flute': 'flute',
   'hand-drum': 'drum',
-  harp: 'lute',
+  harp: 'harp',
   'hurdy-gurdy': 'lute',
   bells: 'lute',
 };
@@ -1143,9 +1143,51 @@ export function instrumentGeometry(shape: InstrumentShape): InstrumentParts {
   const bright: BufferGeometry[] = [];
   const isDrum = shape === 'drum';
   const isFlute = shape === 'flute';
+  const isHarp = shape === 'harp';
   let length: number;
 
-  if (isFlute) {
+  if (isHarp) {
+    // A small lap harp: the three-sided frame is the whole of what tells a
+    // harp from a lute at twenty pixels, so all three sides are drawn and the
+    // middle is left open. Built in the same plane as the lute's soundboard
+    // (face toward +z), so every carry that shows the lute's face shows the
+    // harp's open triangle. The pillar stands at +x, the soundbox runs up
+    // and back from its foot, and the neck closes the top with the shallow
+    // hump a real harp's neck has.
+    length = 0.56;
+    const foot: Vec2 = [0.08, 0.02];
+    const boxTop: Vec2 = [-0.14, 0.46];
+    const hump: Vec2 = [-0.02, 0.56];
+    const pillarTop: Vec2 = [0.11, 0.53];
+    parts.push(beamPart([0.11, 0], pillarTop, 0.034, 0.034, 0.85));
+    // Wide at the foot and narrowing up, which is how a soundbox is built:
+    // the long strings want the most air.
+    parts.push(beamPart(foot, boxTop, 0.075, 0.06, 0.5));
+    parts.push(beamPart(boxTop, hump, 0.036, 0.03));
+    parts.push(beamPart(hump, pillarTop, 0.036, 0.03));
+    // Two sound holes down the soundbox's face, the harp's one dark mark.
+    for (const t of [0.3, 0.6]) {
+      const hole = discGeometry(0.012, 8);
+      const [hx, hy] = lerp2(foot, boxTop, t);
+      // On the face, which comes forward less as the box tapers.
+      translate(hole, hx, hy, 0.03 * (1 - 0.5 * t) + 0.0015);
+      dark.push(hole);
+    }
+    // Six strings, vertical, from the soundbox up to the neck. Fewer than a
+    // real harp on purpose: at the size this is seen, more than six merge
+    // into one pale plate and the frame stops reading as open.
+    for (let i = 0; i < 6; i++) {
+      const x = -0.105 + i * 0.034;
+      const bottom = 0.02 + ((foot[0] - x) * (boxTop[1] - foot[1])) / (foot[0] - boxTop[0]);
+      const top =
+        x < hump[0]
+          ? boxTop[1] + ((x - boxTop[0]) * (hump[1] - boxTop[1])) / (hump[0] - boxTop[0])
+          : hump[1] + ((x - hump[0]) * (pillarTop[1] - hump[1])) / (pillarTop[0] - hump[0]);
+      const string = boxPart(0.007, top - bottom, 0.006, 1);
+      translate(string, x, bottom, 0);
+      bright.push(string);
+    }
+  } else if (isFlute) {
     length = 0.66;
     parts.push(boxPart(0.046, length, 0.046, 0.88));
     // A mouthpiece block, so the pipe has an end and a direction rather than
@@ -1223,7 +1265,7 @@ export function instrumentGeometry(shape: InstrumentShape): InstrumentParts {
    * built: the bowl bottoms out at `SOUNDBOARD_Z - 1.1 * 0.086`, and this is
    * the number that brings that back to the old 0.062.
    */
-  const depthCentre = isFlute || isDrum ? 0 : -0.062 - (SOUNDBOARD_Z - 1.1 * 0.086);
+  const depthCentre = isFlute || isDrum || isHarp ? 0 : -0.062 - (SOUNDBOARD_Z - 1.1 * 0.086);
   const finish = (pieces: BufferGeometry[]): BufferGeometry | null => {
     if (pieces.length === 0) return null;
     const merged = concat(pieces);
@@ -1255,6 +1297,30 @@ function translate(geometry: BufferGeometry, dx: number, dy: number, dz: number)
   for (let i = 0; i < position.count; i++) {
     position.setXYZ(i, position.getX(i) + dx, position.getY(i) + dy, position.getZ(i) + dz);
   }
+}
+
+type Vec2 = readonly [number, number];
+
+function lerp2(a: Vec2, b: Vec2, t: number): [number, number] {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+}
+
+/** A `boxPart` stood on `from` and laid toward `to`, in the x-y plane. */
+function beamPart(from: Vec2, to: Vec2, width: number, depth: number, topScale = 1): BufferGeometry {
+  const dx = to[0] - from[0];
+  const dy = to[1] - from[1];
+  const beam = boxPart(width, Math.hypot(dx, dy), depth, topScale);
+  // Turn the box's +y onto the beam's direction.
+  const angle = Math.atan2(-dx, dy);
+  const c = Math.cos(angle);
+  const sn = Math.sin(angle);
+  const position = beam.attributes.position as BufferAttribute;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const y = position.getY(i);
+    position.setXY(i, x * c - y * sn + from[0], x * sn + y * c + from[1]);
+  }
+  return beam;
 }
 
 function concat(parts: BufferGeometry[]): BufferGeometry {

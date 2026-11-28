@@ -9,7 +9,7 @@ This file is an append-only record of every task and why it was done, which
 makes it long. You do not need to read it top to bottom.
 
 - **What to do next**: read STATE.md's HANDOFF block first — it is the
-  authoritative, every-run-updated pointer. **Run 350 took task 267 (the flute gets its own playing carry: mouthpiece at the lips, pipe out to the side near level, both hands solved onto it, no strum; chosen by rendering four carries at the busk camera). Nothing queued next: pick from the idea backlog or run verification-only; next consolidation ~353.** **Run 349 took task 266 (reed flute and hand drum now drawn as a flute and a drum via a typed `INSTRUMENT_SHAPES` table, tested against every instrument; posed in walk/busk/rest, no offsets needed) and found the busking flute is held at the hip like a lute (queued 267). Next: task 267; next consolidation ~353.** **Run 348 took task 265 (the Bard's cloak/hat/instrument AO now in the table; phone `bard` mark 0.09-0.14 s → 0.03-0.055 s; pillar 1's remaining headless gap is mostly SwiftShader) and found the reed flute and hand drum are drawn as lutes (queued 266). Next: task 266.** **Run 347 took task 264 (the trailhead's first-use cost was the AO bake: the 23 scatter/tree shapes' AO now ships in a hash-keyed dev-time table, `world-stream` 0.5 s → ~0.3 s on the phone profile) and queued 265 (same for the Bard). Next: task 265.** **Run 346 took task 263 (shader warm-up with compileAsync before the loop, only where KHR_parallel_shader_compile exists; headless can't measure it, code path verified with the extension faked). Next: task 264.** **Run 345 took task 262 (far chunks deferred past frame 1, no visible pop; saved only ~0.1-0.2 s because the trailhead chunk's first-use tree geometry owns ~0.33 s) and queued 264 (cheapen that). Next: task 263.** **Run 344 took task 261 piece 1 (boot marks: the first world stream ~0.7 s and the first draw ~0.9 s own the phone's boot; a further ~1.4 s is headless SwiftShader readback) and queued 262 (stream far chunks after frame 1) and 263 (async shader compile). Next: task 262.** **Run 343 was the consolidation (task 260): fixed the letter-fade ladder in DESIGN/README/scaffold.ts (the code's 350 ms floor), refreshed the research (mobile rec 8 = task 261). Next: task 261 piece 1; next consolidation ~353.** **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
+  authoritative, every-run-updated pointer. **Run 351 took task 268 (the small harp gets its own open-framed, strung body; the lute's carries hold it fine) and queued 269 (hurdy-gurdy) and 270 (bells). Next: task 269; consolidation ~353.** **Run 350 took task 267 (the flute gets its own playing carry: mouthpiece at the lips, pipe out to the side near level, both hands solved onto it, no strum; chosen by rendering four carries at the busk camera). Nothing queued next: pick from the idea backlog or run verification-only; next consolidation ~353.** **Run 349 took task 266 (reed flute and hand drum now drawn as a flute and a drum via a typed `INSTRUMENT_SHAPES` table, tested against every instrument; posed in walk/busk/rest, no offsets needed) and found the busking flute is held at the hip like a lute (queued 267). Next: task 267; next consolidation ~353.** **Run 348 took task 265 (the Bard's cloak/hat/instrument AO now in the table; phone `bard` mark 0.09-0.14 s → 0.03-0.055 s; pillar 1's remaining headless gap is mostly SwiftShader) and found the reed flute and hand drum are drawn as lutes (queued 266). Next: task 266.** **Run 347 took task 264 (the trailhead's first-use cost was the AO bake: the 23 scatter/tree shapes' AO now ships in a hash-keyed dev-time table, `world-stream` 0.5 s → ~0.3 s on the phone profile) and queued 265 (same for the Bard). Next: task 265.** **Run 346 took task 263 (shader warm-up with compileAsync before the loop, only where KHR_parallel_shader_compile exists; headless can't measure it, code path verified with the extension faked). Next: task 264.** **Run 345 took task 262 (far chunks deferred past frame 1, no visible pop; saved only ~0.1-0.2 s because the trailhead chunk's first-use tree geometry owns ~0.33 s) and queued 264 (cheapen that). Next: task 263.** **Run 344 took task 261 piece 1 (boot marks: the first world stream ~0.7 s and the first draw ~0.9 s own the phone's boot; a further ~1.4 s is headless SwiftShader readback) and queued 262 (stream far chunks after frame 1) and 263 (async shader compile). Next: task 262.** **Run 343 was the consolidation (task 260): fixed the letter-fade ladder in DESIGN/README/scaffold.ts (the code's 350 ms floor), refreshed the research (mobile rec 8 = task 261). Next: task 261 piece 1; next consolidation ~353.** **Run 342 took task 259 (re-measured pillar 1: the throttled-phone first visit is 5.2-5.6 s, over; boot CPU, not download, is why) and queued 261 (boot CPU fix, after the 260 consolidation). Run 341 took task 258 (chose the next queue, no code): queued 259 (re-measure pillar 1, playable in under 5 seconds, on the 3D road) and 260 (consolidation, run ~343). **Run 340 closed the dead-export audit (task 257, SongNotes) and queued 258 (choose the next small queue). Run 336 took module 11
   (task 253, audio/adaptive; fixed the backing clashing with Book Two's
   D and A tunes) and queued 254 (audio/ambience). Run 335 took module 10
   (task 252, core/songMeter) and queued 253 (audio/adaptive). Run 334 took module 9
@@ -8380,6 +8380,36 @@ as before.
     mouthpiece, right ~52 cm), so no rig change was needed. Steeper carries
     put the arm over the pipe on screen (rendered and rejected). Four tests
     pin it in `bard.test.ts`.
+
+268. **The small harp is drawn as a harp.** (self-set, run 351; the art
+    question runs 348-349 left open.) Harp, hurdy-gurdy and bells all
+    borrow the lute's body, so three of six instruments look like the
+    first one. One body per run, harp first (the most recognisable
+    silhouette, and the lute/harp pair is already the one the voices work
+    hardest to tell apart). A lap harp in the lute's soundboard plane:
+    pillar, tapered soundbox, humped neck, open middle, six strings, two
+    sound holes. Keep the lute's carries unless a render shows they fail.
+    Regenerate the AO table. Retention check: n/a (a returning player who
+    unlocked the harp finally sees it).
+    **Done run 351.** New `'harp'` `InstrumentShape`, built from a new
+    `beamPart` (a `boxPart` laid between two points). Test: `harp` maps to
+    the harp shape, the body is a tall, wide, shallow frame whose middle no
+    timber triangle covers, strung, with sound holes. AO table +1 entry.
+    Posed in walk/busk/rest with the lute's carries: slung, the open
+    strung triangle across the back reads as a harp outright; busking it
+    sits at the hip with the strings showing past the forearm; resting it
+    lies across the lap. No carry change needed.
+
+269. **The hurdy-gurdy is drawn as a hurdy-gurdy.** Same recipe as 268:
+    a fiddle-shaped box with a crank at the tail and a keybox along the
+    neck (the crank and keybox are what tell it from a lute), in the
+    lute's carries; pose walk/busk/rest, regenerate AO, a shape test.
+    Retention check: n/a. Queued run 351.
+
+270. **The bells are drawn as bells.** A hand-held frame or strap with
+    three or four small bells hanging from it, in the lute's carries if
+    they read, otherwise its own carry (split like 266/267). Retention
+    check: n/a. Queued run 351.
 
 ## Idea backlog (pull from here when nothing is queued)
 

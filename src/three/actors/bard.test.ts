@@ -17,7 +17,7 @@
  */
 import { Box3, BufferAttribute, Matrix4, Mesh, Object3D, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { Bard, INSTRUMENT_SHAPES, SITTING_SEAT_HEIGHT_M, instrumentShape } from './Bard';
+import { Bard, INSTRUMENT_SHAPES, SITTING_SEAT_HEIGHT_M, instrumentGeometry, instrumentShape } from './Bard';
 import { INSTRUMENTS, instrumentById } from '../../core/instruments';
 import { createPainterlyGlobals } from '../painterly';
 
@@ -645,6 +645,45 @@ describe('the carried body matches the instrument', () => {
     expect(instrumentShape('reed-flute')).toBe('flute');
     expect(instrumentShape('hand-drum')).toBe('drum');
     expect(instrumentShape('lute')).toBe('lute');
+  });
+
+  it('draws the small harp as an open-framed harp, not a lute', () => {
+    expect(instrumentShape('harp')).toBe('harp');
+    const parts = instrumentGeometry('harp');
+    parts.body.computeBoundingBox();
+    const size = parts.body.boundingBox!.getSize(new Vector3());
+    // A frame standing in one plane: tall, a hand-span and more wide, shallow.
+    expect(size.y).toBeGreaterThan(0.5);
+    expect(size.x).toBeGreaterThan(0.22);
+    expect(size.z).toBeLessThan(0.08);
+    // The open middle is what reads as a harp. Looking straight at the face,
+    // no timber triangle may cover the points around the frame's centre.
+    const pos = parts.body.attributes.position;
+    const inside = (px: number, py: number): boolean => {
+      for (let i = 0; i < pos.count; i += 3) {
+        const [ax, ay, bx, by, cx, cy] = [
+          pos.getX(i), pos.getY(i), pos.getX(i + 1), pos.getY(i + 1), pos.getX(i + 2), pos.getY(i + 2),
+        ];
+        const d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
+        const d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);
+        const d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
+        const neg = d1 < 0 || d2 < 0 || d3 < 0;
+        const posi = d1 > 0 || d2 > 0 || d3 > 0;
+        if (!(neg && posi)) return true;
+      }
+      return false;
+    };
+    // The frame's centroid, in the built (centred) coordinates.
+    for (const [dx, dy] of [[0, 0], [0.03, 0], [-0.03, 0], [0, 0.06], [0, -0.06]]) {
+      expect(inside(0.017 + dx, 0.057 + dy), `${dx},${dy}`).toBe(false);
+    }
+    // And strung: six strings in the bright tier, each standing upright.
+    expect(parts.bright).not.toBeNull();
+    parts.bright!.computeBoundingBox();
+    const strung = parts.bright!.boundingBox!.getSize(new Vector3());
+    expect(strung.x).toBeGreaterThan(0.15);
+    expect(strung.y).toBeGreaterThan(0.3);
+    expect(parts.dark).not.toBeNull();
   });
 
   it('puts that body in the bard\'s hands when the instrument is swapped', () => {
